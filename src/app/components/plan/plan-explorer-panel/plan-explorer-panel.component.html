@@ -95,7 +95,7 @@
                     <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
                       <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
                         [checked]="isTestSelected(test.laboratoryTestID)"
-                        (click)="toggleSelectTest(test, $event)"
+                        (click)="toggleSelectTest(test, grade, $event)"
                         title="Select for batch apply">
                       <i class="bi bi-check-circle-fill text-success flex-shrink-0"></i>
                       <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
@@ -121,7 +121,7 @@
                         }"></i>{{ test.sourceTag || 'Lab Scope' }}
                       </span>
                       <button type="button" class="btn btn-xs btn-outline-primary btn-lims-icon p-0"
-                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        (click)="onQuickApplyTest(test, grade, $event)" title="Apply single test row">
                         <i class="bi bi-plus-lg"></i>
                       </button>
                     </div>
@@ -146,7 +146,7 @@
                     <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
                       <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
                         [checked]="isTestSelected(test.laboratoryTestID)"
-                        (click)="toggleSelectTest(test, $event)"
+                        (click)="toggleSelectTest(test, grade, $event)"
                         title="Select for batch apply">
                       <i class="bi bi-droplet-fill text-info flex-shrink-0"></i>
                       <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
@@ -172,7 +172,7 @@
                         }"></i>{{ test.sourceTag || 'Lab Scope' }}
                       </span>
                       <button type="button" class="btn btn-xs btn-outline-info btn-lims-icon p-0"
-                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        (click)="onQuickApplyTest(test, grade, $event)" title="Apply single test row">
                         <i class="bi bi-plus-lg"></i>
                       </button>
                     </div>
@@ -255,7 +255,7 @@
                     <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
                       <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
                         [checked]="isTestSelected(test.laboratoryTestID)"
-                        (click)="toggleSelectTest(test, $event)"
+                        (click)="toggleSelectTest(test, grade, $event)"
                         title="Select for batch apply">
                       <i class="bi bi-gear-fill text-primary flex-shrink-0"></i>
                       <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
@@ -264,7 +264,7 @@
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                       <span class="badge badge-lims-both-scope extra-small">Metal Spec</span>
                       <button type="button" class="btn btn-xs btn-outline-primary btn-lims-icon p-0"
-                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        (click)="onQuickApplyTest(test, grade, $event)" title="Apply single test row">
                         <i class="bi bi-plus-lg"></i>
                       </button>
                     </div>
@@ -287,7 +287,7 @@
                     <div class="d-flex align-items-center gap-2 overflow-hidden me-2 flex-grow-1">
                       <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
                         [checked]="isTestSelected(test.laboratoryTestID)"
-                        (click)="toggleSelectTest(test, $event)"
+                        (click)="toggleSelectTest(test, grade, $event)"
                         title="Select for batch apply">
                       <i class="bi bi-droplet-fill text-info flex-shrink-0"></i>
                       <span class="fw-semibold text-dark text-truncate" [title]="test.laboratoryTestName">{{ test.laboratoryTestName }}</span>
@@ -296,7 +296,7 @@
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                       <span class="badge badge-lims-both-scope extra-small">Metal Spec</span>
                       <button type="button" class="btn btn-xs btn-outline-info btn-lims-icon p-0"
-                        (click)="onQuickApplyTest(test, $event)" title="Apply single test row">
+                        (click)="onQuickApplyTest(test, grade, $event)" title="Apply single test row">
                         <i class="bi bi-plus-lg"></i>
                       </button>
                     </div>
@@ -351,7 +351,7 @@
           <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
             <input type="checkbox" class="form-check-input form-check-input-sm mt-0 flex-shrink-0 cursor-pointer"
               [checked]="isTestSelected(test.laboratoryTestID)"
-              (click)="toggleSelectTest(test, $event)"
+              (click)="toggleSelectTest(test, undefined, $event)"
               title="Select for batch apply">
             <i class="bi flex-shrink-0" [ngClass]="test.testType === 'Chemical' ? 'bi-droplet-fill text-info' : 'bi-gear-fill text-primary'"></i>
             <strong class="text-dark text-truncate">{{ test.laboratoryTestName }}</strong>
@@ -362,7 +362,7 @@
               {{ test.testType }}
             </span>
             <button type="button" class="btn btn-xs btn-outline-danger btn-lims-icon p-0"
-              (click)="onQuickApplyTest(test, $event)"
+              (click)="onQuickApplyTest(test, undefined, $event)"
               title="Quick apply test to plan">
               <i class="bi bi-plus-lg"></i>
             </button>

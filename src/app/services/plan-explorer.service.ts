@@ -18,6 +18,8 @@ export interface ConfiguredTest {
   laboratoryTestName: string;
   testType: 'General' | 'Chemical';
   subGroup: string;
+  laboratoryTestSubGroupID?: number;
+  laboratoryTestAnalysisTypeID?: number;
   sourceTag?: string;
   sourceTags?: string[];
   testMethodSpecificationID?: number;
@@ -25,6 +27,10 @@ export interface ConfiguredTest {
   testMethodStandardID?: number;
   testMethodStandardName?: string;
   quantity: number;
+  specificationGradeID?: number;
+  gradeName?: string;
+  specificationName?: string;
+  chemicalElements?: ConfiguredParameter[];
 }
 
 export interface ConfiguredGrade {

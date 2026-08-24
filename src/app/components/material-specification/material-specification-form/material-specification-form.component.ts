@@ -400,11 +400,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     this.selectedSpecTab[newIndex] = this.selectedSpecTab[newIndex] || 'chemical';
     if (seedFromHeader) this.selectedGradeIndex = newIndex; // jump to the new grade tab (not on rebind)
     // MS-B: the legacy UNS/Steel single field is replaced by configurable grade identifiers — no required validator.
-    // Auto-compose initial grade name from display title if user hasn't typed anything yet.
     this.gradeBaseNames[newIndex] = '';
-    if (seedFromHeader) {
-      this.composeGradeName(newIndex);
-    }
   }
 
   /** Switch the active grade tab. */
@@ -859,6 +855,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       const gradeGroup = this.grades.at(gradeIndex);
 
       this.gradeIdentifierValues[gradeIndex] = this.normalizeGradeIdentifier(grade.identifierValuesJson);
+      this.gradeBaseNames[gradeIndex] = grade.grade || '';
 
       gradeGroup.patchValue({
         id: grade.id,
@@ -1343,39 +1340,35 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   };
 
   /**
-   * Compose the full grade name for a given grade index:
-   *   "{displayTitle} Grade {baseName} {IdentifierLabel} {IdentifierValue}"
+   * Compose the grade name for a given grade index:
+   *   "{baseName} {IdentifierLabel} {IdentifierValue}"
    * Stores the user-typed base name separately (gradeBaseNames) so re-composition
    * doesn't overwrite manual edits, only appends/changes the identifier suffix.
    */
   composeGradeName(gi: number): void {
-    const displayTitle = this.MaterialSpecificationForm.get('displayTitle')?.value || '';
     const baseName = this.gradeBaseNames[gi] || '';
     const idf = this.gradeIdentifierValues[gi];
-    let composed = displayTitle.trim() ? `${displayTitle} Grade` : 'Grade';
-    if (baseName.trim()) composed += ` ${baseName.trim()}`;
+    let composed = baseName.trim();
     if (idf?.key && idf?.value?.trim()) {
       const label = this.getIdentifierLabel(idf.key);
-      composed += ` ${label} ${idf.value.trim()}`;
+      composed = composed ? `${composed} ${label} ${idf.value.trim()}` : `${label} ${idf.value.trim()}`;
     }
     this.grades.at(gi).patchValue({ grade: composed }, { emitEvent: false });
   }
 
   /** Called when user types in the grade field — captures the base name, then re-composes. */
   onGradeInput(gi: number, value: string): void {
-    const displayTitle = this.MaterialSpecificationForm.get('displayTitle')?.value || '';
-    const prefix = displayTitle.trim() ? `${displayTitle} Grade ` : 'Grade ';
-    // Extract typed text after the prefix
-    let typed = value;
-    if (typed.startsWith(prefix)) typed = typed.substring(prefix.length);
+    let typed = value || '';
     // Strip any identifier suffix at the end (e.g. " UNS K92460")
     const idf = this.gradeIdentifierValues[gi];
     if (idf?.key && idf?.value?.trim()) {
       const idfLabel = this.getIdentifierLabel(idf.key);
       const idfSuffix = ` ${idfLabel} ${idf.value.trim()}`;
-      if (typed.endsWith(idfSuffix)) typed = typed.substring(0, typed.length - idfSuffix.length);
+      if (typed.endsWith(idfSuffix)) {
+        typed = typed.substring(0, typed.length - idfSuffix.length);
+      }
     }
-    this.gradeBaseNames[gi] = typed.trim();
+    this.gradeBaseNames[gi] = typed;
   }
 
   /** Called when grade identifier key or value changes — re-compose the grade name. */

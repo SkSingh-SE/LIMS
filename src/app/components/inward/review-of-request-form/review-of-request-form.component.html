@@ -304,9 +304,12 @@
                   <td>{{ getSpecificationName(test.specification1) }}</td>
                   <td>{{ getSpecificationName(test.specification2) }}</td>
                   <td>
-                    <ng-container *ngIf="getTestMethodName(test.testMethodID) as testMethodName">
-                      {{ testMethodName }}
+                    <ng-container *ngIf="test.subGroupName as sgName; else masterTestTpl">
+                      {{ sgName }}
                     </ng-container>
+                    <ng-template #masterTestTpl>
+                      {{ getTestMethodName(test.testMethodID) }}
+                    </ng-template>
                   </td>
                   <td>{{ test.standardName || '-' }}</td>
                   <td class="text-center">{{ test.quantity }}</td>
@@ -330,7 +333,7 @@
                 <tr class="small text-muted text-uppercase">
                   <th>Report No</th>
                   <th>ULR</th>
-                  <th>Test Types</th>
+                  <th>Analysis Type / Test Types</th>
                   <th>Metal Classification</th>
                   <th>Spec 1</th>
                   <th>Spec 2</th>
@@ -342,6 +345,9 @@
                   <td>{{ test.reportNo || '-' }}</td>
                   <td>{{ test.ulrNo || '-' }}</td>
                   <td>
+                    <div *ngIf="test.analysisTypeName" class="fw-semibold small text-primary mb-1">
+                      {{ test.analysisTypeName }}
+                    </div>
                     <ng-container *ngIf="test.testTypes">
                       <span *ngFor="let type of testTypeList">
                         <span *ngIf="test.testTypes[type]" class="badge bg-primary-subtle text-primary me-1 small">

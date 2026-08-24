@@ -182,6 +182,8 @@ export class ReviewOfRequestFormComponent implements OnInit {
                     sampleNo: gt.sampleNo,
                     specification1: gt.specification1,
                     specification2: gt.specification2,
+                    laboratoryTestSubGroupID: gt.laboratoryTestSubGroupID,
+                    subGroupName: gt.subGroupName,
                     parameter: gt.parameter,
                     methods: (gt.methods || []).map((m: any) => ({
                       testMethodID: m.testMethodID,
@@ -197,6 +199,8 @@ export class ReviewOfRequestFormComponent implements OnInit {
                     sampleNo: ct.sampleNo,
                     reportNo: ct.reportNo,
                     ulrNo: ct.ulrNo,
+                    laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID,
+                    analysisTypeName: ct.analysisTypeName,
                     testTypes: {
                       Spectro: ct.testTypes?.Spectro ?? false,
                       Chemical: ct.testTypes?.Chemical ?? false,

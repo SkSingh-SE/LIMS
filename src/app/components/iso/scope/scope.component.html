@@ -176,7 +176,7 @@
                       <td class="text-center text-muted small fw-medium">{{ j + 1 }}</td>
                       <td class="text-center">
                         <div class="form-check d-flex justify-content-center">
-                          <input class="form-check-input" type="checkbox" formControlName="isUnderISO" [disabled]="isViewMode" />
+                          <input class="form-check-input" type="checkbox" formControlName="isUnderISO" />
                         </div>
                       </td>
                       <td class="wide-input">
@@ -209,7 +209,6 @@
                         <select
                           formControlName="qualitativeQuantitative"
                           class="form-select form-select-sm wide-input"
-                          [disabled]="isViewMode"
                         >
                           <option value="" disabled>Select</option>
                           <option value="Qualitative">Qualitative</option>
@@ -221,14 +220,13 @@
                           <select
                             class="form-select form-select-sm" style="width:60px; min-width:60px;"
                             formControlName="lowerLimit"
-                            [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
                           >
                             <option value="">Op</option>
                             <option *ngFor="let op of lowerLimitOptions" [value]="op.value">{{ op.label }}</option>
                           </select>
                           <input type="number" class="form-control form-control-sm" style="width:100px;"
                             formControlName="lowerLimitValue" placeholder="Value"
-                            [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
+                            [readOnly]="param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
                         </div>
                       </td>
                       <td>
@@ -236,14 +234,13 @@
                           <select
                             class="form-select form-select-sm" style="width:60px; min-width:60px;"
                             formControlName="upperLimit"
-                            [disabled]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'"
                           >
                             <option value="">Op</option>
                             <option *ngFor="let op of upperLimitOptions" [value]="op.value">{{ op.label }}</option>
                           </select>
                           <input type="number" class="form-control form-control-sm" style="width:100px;"
                             formControlName="upperLimitValue" placeholder="Value"
-                            [readOnly]="isViewMode || param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
+                            [readOnly]="param.get('qualitativeQuantitative')?.value !== 'Quantitative'" />
                         </div>
                       </td>
                       <td class="wide-input">
@@ -263,7 +260,6 @@
                           class="form-select form-select-sm wide-input"
                           formControlName="groupID"
                           (change)="onGroupSelected($event, i, j)"
-                          [disabled]="isViewMode"
                         >
                           <option value="null" disabled>Select Group</option>
                           <option *ngFor="let group of groupOptionsPerParam[i + '-' + j] || []" [value]="group.id">{{ group.name }}</option>
@@ -273,7 +269,6 @@
                         <select
                           class="form-select form-select-sm wide-input"
                           formControlName="subGroupID"
-                          [disabled]="isViewMode"
                         >
                           <option value="null" disabled>Select Sub Group</option>
                           <option *ngFor="let subGroup of subGroupOptionsPerParam[i + '-' + j] || []" [value]="subGroup.id">

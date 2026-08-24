@@ -22,7 +22,6 @@
           <select 
             class="form-select" 
             formControlName="amendmentType"
-            [disabled]="isTypeDeterminedByBackend"
           >
             <option *ngFor="let option of amendmentTypeOptions" [value]="option.value">
               {{ option.label }}

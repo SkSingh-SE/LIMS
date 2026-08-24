@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, HostListener } from '@angular/core';
+import { Component, Input, OnInit, HostListener, ChangeDetectorRef } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
@@ -150,7 +150,32 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   onSampleCardClick(idx: number): void {
     if (this.isCombinedMode) return;
     this.activeSampleIdx = idx;
+
+    // Reset transient suggest panels
+    this.suggestedTests = [];
+    this.showSuggestPanel = {};
+
+    // Ensure test plan exists for this sample if not in view mode
+    if (!this.isViewMode) {
+      const testPlans = this.getTestPlans(idx);
+      if (!testPlans || testPlans.length === 0) {
+        this.addPlanToSample(idx);
+      } else {
+        const planIdx = 0;
+        const key = `${idx}-${planIdx}`;
+        if (!this.activeTabs[key]) {
+          this.activeTabs[key] = 'general';
+        }
+        const genArr = this.getTestArray(idx, planIdx, 'generalTests');
+        if (genArr && genArr.length === 0) {
+          this.addTestBlock(idx, planIdx, 'generalTests');
+          this.addMethodRow(idx, planIdx);
+        }
+      }
+    }
+
     this.preloadExplorerForSample(idx);
+    this.cdr.markForCheck();
   }
 
   toggleCombined(idx: number, checked: boolean): void {
@@ -392,7 +417,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     private unsavedChangesService: UnsavedChangesService,
     private productMasterService: ProductMasterService,
     private productSizeMasterService: ProductSizeMasterService,
-    private explorerService: PlanExplorerService) { }
+    private explorerService: PlanExplorerService,
+    private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     let isRouted = false;
@@ -498,9 +524,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   createGeneralTestGroup(): FormGroup {
     return this.fb.group({
+      id: [0],
       sampleNo: [''],
       specification1: [null],
       specification2: [null],
+      laboratoryTestSubGroupID: [null],
       parameter: [''],
       methods: this.fb.array([])
     }, { validators: this.uniqueSpecificationValidator });
@@ -508,9 +536,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   createChemicalTestGroup(reportNo: string, ulrNo: string): FormGroup {
     return this.fb.group({
+      id: [0],
       sampleNo: [''],
       reportNo: [reportNo || ''],
       ulrNo: [ulrNo || ''],
+      laboratoryTestAnalysisTypeID: [null],
+      metalClassificationID: [null],
       testTypeIds: [[]],
       specification1: [null],
       specification2: [null],
@@ -521,7 +552,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   createTestMethodRow(reportNo: string, ulrNo: string): FormGroup {
     return this.fb.group({
+      id: [0],
       testMethodID: [null, Validators.required],
+      laboratoryTestSubGroupID: [null],
+      laboratoryTestAnalysisTypeID: [null],
       quantity: ['1'],
       reportNo: [reportNo],
       ulrNo: [ulrNo],
@@ -532,10 +566,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
   }
 
-  createElementRow(): FormGroup {
+  createElementRow(sourceType = 'Specification', labTestAnalysisTypeId?: number, testName?: string): FormGroup {
     return this.fb.group({
-      parameterID: [null],
+      id: [0],
+      parameterID: [null, Validators.required],
       specificationLineID: [null],
+      laboratoryTestAnalysisTypeID: [labTestAnalysisTypeId || null],
+      sourceType: [sourceType || 'Specification'],
+      sourceTitle: [testName || (sourceType === 'Specification' ? 'Specification Grade' : 'Analysis Type')],
       parameterName: [''],
       minValue: [null],
       maxValue: [null],
@@ -651,11 +689,15 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   addChemicalMethodRow(sampleIdx: number, planIdx: number, chemIdx: number): void {
+    if (!this.hasSelectedTechnique(sampleIdx)) {
+      this.toastService.show('Please select at least one Analytical Technique (e.g. OES, WET, ICP, etc.) before adding chemical tests.', 'warning');
+      return;
+    }
     const methods = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx);
     methods.push(this.createTestMethodRow('', ''));
   }
 
-  // Added: select-all helpers for chemical elements
+  // Added: select-all and grouping helpers for chemical elements
   isAllElementsSelected(sampleIdx: number, planIdx: number, chemIdx: number): boolean {
     const elements = this.getElementsArray(sampleIdx, planIdx, chemIdx);
     if (!elements || elements.length === 0) return false;
@@ -670,6 +712,95 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       const ctrl = el.get('selected');
       if (ctrl) ctrl.setValue(checked);
     });
+    this.planForm.markAsDirty();
+  }
+
+  getGroupedChemicalElements(sampleIdx: number, planIdx: number, chemIdx: number): Array<{
+    key: string;
+    title: string;
+    sourceType: string;
+    analysisTypeId?: number | null;
+    elements: Array<{ control: AbstractControl; originalIndex: number }>;
+    isAllSelected: boolean;
+  }> {
+    const elements = this.getElementsArray(sampleIdx, planIdx, chemIdx);
+    if (!elements || elements.length === 0) return [];
+
+    const groupMap = new Map<string, {
+      key: string;
+      title: string;
+      sourceType: string;
+      analysisTypeId?: number | null;
+      elements: Array<{ control: AbstractControl; originalIndex: number }>;
+      isAllSelected: boolean;
+    }>();
+
+    elements.forEach((control: AbstractControl, originalIndex: number) => {
+      const rawSrcType = control.get('sourceType')?.value;
+      const minVal = control.get('minValue')?.value;
+      const maxVal = control.get('maxValue')?.value;
+      const specLineId = control.get('specificationLineID')?.value;
+      const isSpec = rawSrcType === 'Specification' || 
+                     (!rawSrcType && (minVal !== null && minVal !== undefined || maxVal !== null && maxVal !== undefined || specLineId));
+      
+      const srcType = isSpec ? 'Specification' : 'AnalysisType';
+      const analysisTypeId = control.get('laboratoryTestAnalysisTypeID')?.value || null;
+      const rawTitle = control.get('sourceTitle')?.value;
+      const srcTitle = isSpec 
+        ? 'Specification Grade Elements' 
+        : (rawTitle && rawTitle !== 'Specification Grade' ? rawTitle : 'Analysis Type Spectro Matrix');
+      
+      const groupKey = isSpec ? 'Specification' : `Analysis_${analysisTypeId || srcTitle}`;
+
+      if (!groupMap.has(groupKey)) {
+        groupMap.set(groupKey, {
+          key: groupKey,
+          title: srcTitle,
+          sourceType: srcType,
+          analysisTypeId,
+          elements: [],
+          isAllSelected: true
+        });
+      }
+
+      const grp = groupMap.get(groupKey)!;
+      grp.elements.push({ control, originalIndex });
+      if (!control.get('selected')?.value) {
+        grp.isAllSelected = false;
+      }
+    });
+
+    return Array.from(groupMap.values());
+  }
+
+  toggleSelectGroupElements(sampleIdx: number, planIdx: number, chemIdx: number, group: any, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (!group || !group.elements) return;
+    group.elements.forEach((item: { control: AbstractControl }) => {
+      item.control.get('selected')?.setValue(checked);
+    });
+    this.planForm.markAsDirty();
+  }
+
+  reloadAllConfiguredSpectroMatrices(sampleIdx: number, planIdx: number, chemIdx: number): void {
+    const methods = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx);
+    if (!methods || methods.length === 0) {
+      this.toastService.show('No Chemical Test rows configured.', 'info');
+      return;
+    }
+
+    let loadedCount = 0;
+    methods.controls.forEach(ctrl => {
+      const aId = ctrl.get('laboratoryTestAnalysisTypeID')?.value || ctrl.get('testMethodID')?.value;
+      if (aId) {
+        this.loadMachineSpectroMatrix(sampleIdx, planIdx, +aId);
+        loadedCount++;
+      }
+    });
+
+    if (loadedCount === 0) {
+      this.toastService.show('Please select at least one Chemical Test / Analysis Type in the table.', 'warning');
+    }
   }
 
   // ────────────── Add/Remove Methods ──────────────
@@ -768,12 +899,63 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.setActiveTab(sampleIdx, newPlanIdx, 'general');
   }
 
+  clearSamplePlan(sampleIdx: number): void {
+    if (this.isViewMode) return;
+
+    const sampleGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sampleGroup) return;
+
+    const sampleNo = sampleGroup.get('sampleNo')?.value || `Sample #${sampleIdx + 1}`;
+    const confirmed = window.confirm(
+      `Are you sure you want to clear all planned tests for ${sampleNo}?\n\nThis will remove all General and Chemical test rows for this sample.`
+    );
+    if (!confirmed) return;
+
+    const testPlansArray = this.getTestPlans(sampleIdx);
+    if (testPlansArray) {
+      testPlansArray.clear();
+      testPlansArray.push(this.createTestPlan(sampleNo));
+      this.setActiveTab(sampleIdx, 0, 'general');
+    }
+
+    // Reset technique selections
+    this.availableTechniques.forEach(tech => {
+      delete this.selectedTechniquesMap[`${sampleIdx}_${tech.code}`];
+    });
+
+    // Reset sample-specific suggestion state
+    const prefix = `${sampleIdx}_`;
+    Object.keys(this.subGroupStandardsMap).forEach(k => {
+      if (k.startsWith(prefix)) delete this.subGroupStandardsMap[k];
+    });
+    Object.keys(this.showSuggestPanel).forEach(k => {
+      if (k.startsWith(prefix)) delete this.showSuggestPanel[k];
+    });
+
+    this.planForm.markAsDirty();
+    this.planForm.updateValueAndValidity();
+    this.cdr.markForCheck();
+    this.toastService.show(`Planned tests for ${sampleNo} have been cleared.`, 'info');
+  }
+
   /** Auto-create a default plan for each sample that has no test plans yet */
   private ensurePlansExist(): void {
     for (let i = 0; i < this.samples.length; i++) {
       const testPlans = this.getTestPlans(i);
-      if (testPlans.length === 0) {
+      if (!testPlans || testPlans.length === 0) {
         this.addPlanToSample(i);
+      } else {
+        for (let j = 0; j < testPlans.length; j++) {
+          const key = `${i}-${j}`;
+          if (!this.activeTabs[key]) {
+            this.activeTabs[key] = 'general';
+          }
+          const genArr = this.getTestArray(i, j, 'generalTests');
+          if (genArr && genArr.length === 0) {
+            this.addTestBlock(i, j, 'generalTests');
+            this.addMethodRow(i, j);
+          }
+        }
       }
     }
   }
@@ -796,33 +978,51 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           notDestroyed: data.notDestroyed,
           statementOfConformity: data.statementOfConformity ?? 'Not Applicable',
           decisionRule: data.decisionRule ?? 'Not Applicable',
-          sampleDetails: (data.sampleDetails || []).filter((s: any) => !s.isCancelled).map((s: any) => ({
-            id: s.id,
-            sampleNo: s.sampleNo,
-            details: s.details,
-            metalClassificationID: s.metalClassificationID,
-            metalClassificationName: s.metalClassificationName ?? '',
-            productConditionID: s.productConditionID,
-            specimenOrientationID: s.specimenOrientationID,
-            productFormID: s.productFormID,
-            tpiAgencyID: s.tpiAgencyID,
-            remarks: s.remarks,
-            quantity: s.quantity,
-            thickness: s.thickness,
-            diameter: s.diameter,
-            width: s.width,
-            length: s.length,
-            preparationRequired: s.preparationRequired ?? false,
-            machiningRequired: s.machiningRequired ?? false,
-            machiningAmount: s.machiningAmount ?? 0,
-            specimen: s.specimen ?? '',
-            otherPreparation: s.otherPreparation ?? false,
-            otherPreparationCharge: s.otherPreparationCharge ?? 0,
-            tpiRequired: s.tpiRequired ?? false,
-            testInstructions: s.testInstructions ?? '',
-            fileName: s.fileName ?? '',
-            sampleFilePath: s.sampleFilePath ?? ''
-          })),
+          sampleDetails: (data.sampleDetails || []).filter((s: any) => !s.isCancelled).map((s: any, idx: number) => {
+            if (s.tpiAgencyID) {
+              this.tpiAgencyDetails[idx] = {
+                emailId: s.tpiEmailId || '',
+                contactNo: s.tpiContactNo || ''
+              };
+            }
+            return {
+              id: s.id,
+              sampleNo: s.sampleNo,
+              details: s.details,
+              metalClassificationID: s.metalClassificationID,
+              metalClassificationName: s.metalClassificationName ?? '',
+              productConditionID: s.productConditionID,
+              productConditionName: s.productConditionName ?? '',
+              productMasterID: s.productMasterID ?? null,
+              productMasterName: s.productMasterName ?? '',
+              productSizeID: s.productSizeID ?? s.productSizeMasterID ?? null,
+              productSizeName: s.productSizeName ?? s.sizeDisplayName ?? '',
+              specificationGradeID: s.specificationGradeID ?? null,
+              isUnknownSample: s.isUnknownSample ?? false,
+              specimenOrientationID: s.specimenOrientationID,
+              productFormID: s.productFormID,
+              tpiAgencyID: s.tpiAgencyID,
+              tpiAgencyName: s.tpiAgencyName ?? '',
+              tpiEmailId: s.tpiEmailId ?? '',
+              tpiContactNo: s.tpiContactNo ?? '',
+              remarks: s.remarks,
+              quantity: s.quantity,
+              thickness: s.thickness,
+              diameter: s.diameter,
+              width: s.width,
+              length: s.length,
+              preparationRequired: s.preparationRequired ?? false,
+              machiningRequired: s.machiningRequired ?? false,
+              machiningAmount: s.machiningAmount ?? 0,
+              specimen: s.specimen ?? '',
+              otherPreparation: s.otherPreparation ?? false,
+              otherPreparationCharge: s.otherPreparationCharge ?? 0,
+              tpiRequired: s.tpiRequired ?? false,
+              testInstructions: s.testInstructions ?? '',
+              fileName: s.fileName ?? '',
+              sampleFilePath: s.sampleFilePath ?? ''
+            };
+          }),
           sampleAdditionalDetails: (data.sampleAdditionalDetails || []).map((ad: any) => ({
             id: ad.id,
             sampleID: ad.sampleID,
@@ -844,15 +1044,18 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               sampleNo: gt.sampleNo,
               specification1: gt.specification1,
               specification2: gt.specification2,
+              laboratoryTestSubGroupID: gt.laboratoryTestSubGroupID || null,
               parameter: gt.parameter,
               methods: (gt.methods || []).map((m: any) => ({
                 id: m.id,
                 testMethodID: m.testMethodID,
+                laboratoryTestSubGroupID: m.laboratoryTestSubGroupID || gt.laboratoryTestSubGroupID || null,
                 quantity: m.quantity,
                 reportNo: m.reportNo,
                 ulrNo: m.ulrNo,
                 cancel: m.cancel,
-                standardID: m.standardID || null
+                standardID: m.standardID || null,
+                standardName: m.standardName || ''
               }))
             })),
             chemicalTests: (tp.chemicalTests || []).map((ct: any) => ({
@@ -860,9 +1063,32 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               sampleNo: ct.sampleNo,
               reportNo: ct.reportNo,
               ulrNo: ct.ulrNo,
+              laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID || null,
+              metalClassificationID: ct.metalClassificationID || null,
               testTypeIds: ct.testTypeIds || [],
               specification1: ct.specification1,
               specification2: ct.specification2,
+              methods: (ct.methods && ct.methods.length > 0) ? ct.methods.map((m: any) => ({
+                id: m.id,
+                testMethodID: m.testMethodID || ct.laboratoryTestAnalysisTypeID || null,
+                laboratoryTestAnalysisTypeID: m.laboratoryTestAnalysisTypeID || ct.laboratoryTestAnalysisTypeID || null,
+                quantity: m.quantity || 1,
+                reportNo: m.reportNo || ct.reportNo || '',
+                ulrNo: m.ulrNo || ct.ulrNo || '',
+                cancel: m.cancel || false,
+                standardID: m.standardID || null,
+                standardName: m.standardName || ''
+              })) : (ct.laboratoryTestAnalysisTypeID ? [{
+                id: 0,
+                testMethodID: ct.laboratoryTestAnalysisTypeID,
+                laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID,
+                quantity: 1,
+                reportNo: ct.reportNo || '',
+                ulrNo: ct.ulrNo || '',
+                cancel: false,
+                standardID: null,
+                standardName: ''
+              }] : []),
               elements: (ct.elements || []).map((el: any) => ({
                 parameterID: el.parameterID || 0,
                 specificationLineID: el.specificationLineID || 0,
@@ -948,7 +1174,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         : explorerData.grades[0];
 
       if (targetGrade) {
-        this.onApplyGradeConfig(targetGrade);
+        this.onApplyGradeConfig(targetGrade, sampleIdx);
         this.toastService.show(`Auto-populated plan from ${targetGrade.gradeName}.`, 'success');
       }
     } else {
@@ -956,7 +1182,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         next: (data) => {
           this.explorerProductDataMap[sampleIdx] = data;
           if (data && data.grades && data.grades.length > 0) {
-            this.onApplyGradeConfig(data.grades[0]);
+            this.onApplyGradeConfig(data.grades[0], sampleIdx);
             this.toastService.show(`Auto-populated plan from ${data.productName || 'Product Master'}.`, 'success');
           } else {
             this.toastService.show('No configured grades found in this Product Master.', 'info');
@@ -1083,9 +1309,15 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const suggestedTests = targetGrade.configuredTests
             .filter((t: ConfiguredTest) => t.testType !== 'Chemical')
             .map((t: ConfiguredTest) => ({
-              id: t.laboratoryTestID,
+              id: t.laboratoryTestSubGroupID || t.laboratoryTestID,
               name: `${t.laboratoryTestName}${t.subGroup ? ' (' + t.subGroup + ')' : ''}`,
-              isConfigured: true
+              level: 1,
+              selectable: true,
+              isConfigured: true,
+              additionalValues: {
+                masterTestId: t.laboratoryTestID,
+                subGroupId: t.laboratoryTestSubGroupID
+              }
             }));
 
           const suggestedIds = new Set(suggestedTests.map((t: any) => +t.id));
@@ -1098,20 +1330,20 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const result: any[] = [];
           if (suggestedTests.length > 0) {
             if (!term || term.trim() === '') {
-              result.push({ isHeader: true, name: headerName });
+              result.push({ isHeader: true, level: 0, selectable: false, name: headerName });
               result.push(...suggestedTests);
               if (otherTests.length > 0) {
-                result.push({ isHeader: true, name: 'All Laboratory Tests' });
+                result.push({ isHeader: true, level: 0, selectable: false, name: 'All Laboratory Tests' });
                 result.push(...otherTests);
               }
             } else {
               const lower = term.toLowerCase().trim();
               const matchingSuggested = suggestedTests.filter((s: any) => s.name.toLowerCase().includes(lower));
               if (matchingSuggested.length > 0) {
-                result.push({ isHeader: true, name: headerName });
+                result.push({ isHeader: true, level: 0, selectable: false, name: headerName });
                 result.push(...matchingSuggested);
                 if (otherTests.length > 0) {
-                  result.push({ isHeader: true, name: 'All Laboratory Tests' });
+                  result.push({ isHeader: true, level: 0, selectable: false, name: 'All Laboratory Tests' });
                   result.push(...otherTests);
                 }
               } else {
@@ -1130,6 +1362,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   buildChemicalLabTestFetchFnWithSuggestions = (sampleIdx: number) => {
     return (term: string, page: number, pageSize: number): Observable<any[]> => {
       if (!this.hasSelectedTechnique(sampleIdx)) {
+        this.toastService.show('Please select at least one Analytical Technique (e.g. OES, WET, ICP, etc.) above to search and select chemical tests.', 'warning');
         return of([]);
       }
       const isUnknown = this.getSampleGroupSafely(sampleIdx)?.get('isUnknownSample')?.value;
@@ -1141,10 +1374,25 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
       const isProductMasterBase = !!(pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0);
 
+      // Selected techniques filter
+      const selectedCodes = this.availableTechniques
+        .filter(tech => this.isTechniqueSelected(sampleIdx, tech.code))
+        .map(tech => tech.code.toUpperCase());
+
       return this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize).pipe(
         map((allTests: any[]) => {
+          let filteredAll = allTests || [];
+          if (selectedCodes.length > 0) {
+            const matched = filteredAll.filter((t: any) => {
+              const nameUpper = (t.name || '').toUpperCase();
+              const subGroupUpper = (t.subGroup || t.additionalValues?.technique || '').toUpperCase();
+              return selectedCodes.some(c => nameUpper.includes(c) || subGroupUpper.includes(c));
+            });
+            filteredAll = matched;
+          }
+
           if (isUnknown || !activeExplorer || !activeExplorer.grades || activeExplorer.grades.length === 0) {
-            return allTests || [];
+            return filteredAll;
           }
 
           const gradeId = this.getSampleGroupSafely(sampleIdx)?.get('specificationGradeID')?.value;
@@ -1153,19 +1401,33 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             : activeExplorer.grades[0];
 
           if (!targetGrade || !targetGrade.configuredTests || targetGrade.configuredTests.length === 0) {
-            return allTests || [];
+            return filteredAll;
           }
 
-          const suggestedTests = targetGrade.configuredTests
+          let suggestedTests = targetGrade.configuredTests
             .filter((t: ConfiguredTest) => t.testType === 'Chemical')
             .map((t: ConfiguredTest) => ({
-              id: t.laboratoryTestID,
+              id: t.laboratoryTestAnalysisTypeID || t.laboratoryTestID,
               name: `${t.laboratoryTestName}${t.subGroup ? ' (' + t.subGroup + ')' : ''}`,
-              isConfigured: true
+              level: 2,
+              selectable: true,
+              isConfigured: true,
+              additionalValues: {
+                masterTestId: t.laboratoryTestID,
+                subGroupId: t.laboratoryTestSubGroupID,
+                analysisTypeId: t.laboratoryTestAnalysisTypeID
+              }
             }));
 
+          if (selectedCodes.length > 0) {
+            suggestedTests = suggestedTests.filter((t: any) => {
+              const nameUpper = (t.name || '').toUpperCase();
+              return selectedCodes.some(c => nameUpper.includes(c));
+            });
+          }
+
           const suggestedIds = new Set(suggestedTests.map((t: any) => +t.id));
-          const otherTests = (allTests || []).filter((t: any) => !suggestedIds.has(+t.id));
+          const otherTests = (filteredAll || []).filter((t: any) => !suggestedIds.has(+t.id));
 
           const headerName = isProductMasterBase
             ? '⭐ Suggested Chemical Tests (Product Master Mappings)'
@@ -1174,28 +1436,28 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           const result: any[] = [];
           if (suggestedTests.length > 0) {
             if (!term || term.trim() === '') {
-              result.push({ isHeader: true, name: headerName });
+              result.push({ isHeader: true, level: 0, selectable: false, name: headerName });
               result.push(...suggestedTests);
               if (otherTests.length > 0) {
-                result.push({ isHeader: true, name: 'All Chemical Tests' });
+                result.push({ isHeader: true, level: 0, selectable: false, name: 'All Chemical Tests' });
                 result.push(...otherTests);
               }
             } else {
               const lower = term.toLowerCase().trim();
               const matchingSuggested = suggestedTests.filter((s: any) => s.name.toLowerCase().includes(lower));
               if (matchingSuggested.length > 0) {
-                result.push({ isHeader: true, name: headerName });
+                result.push({ isHeader: true, level: 0, selectable: false, name: headerName });
                 result.push(...matchingSuggested);
                 if (otherTests.length > 0) {
-                  result.push({ isHeader: true, name: 'All Chemical Tests' });
+                  result.push({ isHeader: true, level: 0, selectable: false, name: 'All Chemical Tests' });
                   result.push(...otherTests);
                 }
               } else {
-                result.push(...(allTests || []));
+                result.push(...filteredAll);
               }
             }
           } else {
-            result.push(...(allTests || []));
+            result.push(...filteredAll);
           }
           return result;
         })
@@ -1530,15 +1792,39 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.tpiService.getTPIDropdown(term, page, pageSize);
 
   // ────────────── Quick Preset Chips & Decision Engine Handlers ──────────────
-  appendInstruction(sampleIndex: number, text: string): void {
+  isInstructionSelected(sampleIndex: number, text: string): boolean {
+    const sampleGroup = this.getSampleGroupSafely(sampleIndex);
+    if (!sampleGroup) return false;
+    const val = sampleGroup.get('testInstructions')?.value || '';
+    return val.toLowerCase().includes(text.toLowerCase());
+  }
+
+  toggleInstruction(sampleIndex: number, text: string): void {
     const sampleGroup = this.getSampleGroupSafely(sampleIndex);
     if (!sampleGroup) return;
     const ctrl = sampleGroup.get('testInstructions');
     if (!ctrl) return;
-    const current = ctrl.value ? ctrl.value.trim() : '';
-    if (current.includes(text)) return;
-    const updated = current ? `${current}. ${text}` : text;
-    ctrl.setValue(updated);
+    const current = (ctrl.value || '').trim();
+
+    if (this.isInstructionSelected(sampleIndex, text)) {
+      // Remove instruction cleanly
+      const escaped = text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`(^|\\.\\s*|\\n\\s*)${escaped}(\\.\\s*|\\n\\s*|$)`, 'gi');
+      let updated = current.replace(regex, '$1').replace(/\.\s*\./g, '.').replace(/^\.\s*/, '').replace(/\.\s*$/, '').trim();
+      ctrl.setValue(updated);
+    } else {
+      // Append instruction cleanly
+      const updated = current ? `${current}. ${text}` : text;
+      ctrl.setValue(updated);
+    }
+    ctrl.markAsDirty();
+    ctrl.updateValueAndValidity();
+    sampleGroup.patchValue({ testInstructions: ctrl.value });
+    this.cdr.markForCheck();
+  }
+
+  appendInstruction(sampleIndex: number, text: string): void {
+    this.toggleInstruction(sampleIndex, text);
   }
 
   onProductMasterSelected(item: any, sampleIndex: number): void {
@@ -1596,6 +1882,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         });
       }
     }
+  }
+
+  getProductMasterName(sampleIdx: number): string {
+    return this.getSampleGroupSafely(sampleIdx)?.get('productMasterName')?.value || '';
   }
 
   onProductSizeSelected(item: any, sampleIndex: number): void {
@@ -1800,56 +2090,38 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               return;
             }
 
-            const existingMap = new Map<number, AbstractControl>();
+            const specParams = elements || [];
+            // Retain any existing AnalysisType elements (Spectro Matrix)
+            const nonSpecElements = elementsArray.controls.filter(
+              c => c.get('sourceType')?.value === 'AnalysisType'
+            );
 
-            elementsArray.controls.forEach(ctrl => {
-              const id = ctrl.get('parameterID')?.value;
-              existingMap.set(id, ctrl);
-            });
-
-            const nextControls: AbstractControl[] = [];
-
-            elements.forEach(el => {
+            const specControls: AbstractControl[] = [];
+            specParams.forEach(el => {
               const id = el.parameterID || el.id || 0;
-              const existing = existingMap.get(id);
-
-              if (existing) {
-                const patch: any = {
-                  specificationLineID: el.specificationLineID || 0,
-                  parameterName: el.parameterName || '',
-                  minValue: el.minValue ?? null,
-                  maxValue: el.maxValue ?? null,
-                  parameterUnitID: el.parameterUnitID || 0,
-                  parameterUnit: el.parameterUnit || '',
-                };
-
-                if (el.isCommon !== undefined && el.isCommon !== null) {
-                  patch.selected = el.isCommon ?? false;
-                }
-
-                existing.patchValue(patch);
-                nextControls.push(existing);
-              } else {
-                nextControls.push(
-                  this.fb.group({
-                    parameterID: [id],
-                    specificationLineID: [el.specificationLineID || 0],
-                    parameterName: [el.parameterName || ''],
-                    minValue: [el.minValue ?? null],
-                    maxValue: [el.maxValue ?? null],
-                    parameterUnitID: [el.parameterUnitID || 0],
-                    parameterUnit: [el.parameterUnit || ''],
-                    selected: [true],
-                  })
-                );
-              }
+              const row = this.createElementRow('Specification', undefined, 'Specification Grade');
+              row.patchValue({
+                id: 0,
+                parameterID: id,
+                specificationLineID: el.specificationLineID || 0,
+                parameterName: el.parameterName || '',
+                minValue: el.minValue ?? null,
+                maxValue: el.maxValue ?? null,
+                parameterUnitID: el.parameterUnitID || 0,
+                parameterUnit: el.parameterUnit || '',
+                selected: el.isCommon !== undefined ? (el.isCommon ?? true) : true,
+                sourceType: 'Specification',
+                sourceTitle: 'Specification Grade'
+              });
+              specControls.push(row);
             });
 
-            // Replace FormArray contents safely (no clear)
+            // Replace FormArray contents safely: Spec elements first, then Analysis Type elements
             while (elementsArray.length) {
               elementsArray.removeAt(0);
             }
-            nextControls.forEach(ctrl => elementsArray.push(ctrl));
+            specControls.forEach(ctrl => elementsArray.push(ctrl));
+            nonSpecElements.forEach(ctrl => elementsArray.push(ctrl));
           },
 
           error: err => {
@@ -1863,11 +2135,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
     }
 
-    // Auto-trigger test suggestions only on create (not edit — user must click manually)
     const isEditing = this.isEditMode || (this.inwardID != null && this.inwardID > 0);
     if (newId && !isEditing) {
       this.loadSuggestedTests(sampleIndex, planIndex);
     }
+    this.planForm.markAsDirty();
+    this.cdr.markForCheck();
   }
 
   onLaboratorySelected(item: any, sampleIndex: number, planIndex: number, methodIndex: number) {
@@ -1941,10 +2214,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               sampleNo: [sample.sampleNo],
               specification1: [gt.specification1 !== undefined && gt.specification1 !== null ? +gt.specification1 : null],
               specification2: [gt.specification2 !== undefined && gt.specification2 !== null ? +gt.specification2 : null],
+              laboratoryTestSubGroupID: [gt.laboratoryTestSubGroupID || null],
               parameter: [gt.parameter],
               methods: this.fb.array((gt.methods || []).map((m: any) => this.fb.group({
                 id: [m.id || 0],
                 testMethodID: [m.testMethodID, Validators.required],
+                laboratoryTestSubGroupID: [m.laboratoryTestSubGroupID || gt.laboratoryTestSubGroupID || null],
                 quantity: [m.quantity || 1],
                 reportNo: [m.reportNo || ''],
                 ulrNo: [m.ulrNo || ''],
@@ -1957,12 +2232,37 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
           const chemicalTestsArr = (tp.chemicalTests || []).map((ct: any) => {
             const testTypeIds: number[] = (ct.testTypeIds || []).map((id: any) => +id);
+            const methodsList = (ct.methods && ct.methods.length > 0)
+              ? ct.methods
+              : (ct.laboratoryTestAnalysisTypeID
+                  ? [{ id: 0, testMethodID: ct.laboratoryTestAnalysisTypeID, laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID, quantity: 1, reportNo: ct.reportNo || '', ulrNo: ct.ulrNo || '', standardID: null, standardName: '' }]
+                  : [{ id: 0, testMethodID: null, laboratoryTestAnalysisTypeID: null, quantity: 1, reportNo: ct.reportNo || '', ulrNo: ct.ulrNo || '', standardID: null, standardName: '' }]);
+
+            // Rebind Technique checkboxes from loaded tests
+            const allTechCodes = ['OES', 'WET', 'ICP', 'LECO', 'WDXRF', 'EDXRF'];
+            allTechCodes.forEach(code => {
+              const matchesInMethods = methodsList.some((m: any) => 
+                (m.standardName && m.standardName.toUpperCase().includes(code)) ||
+                (m.analysisTypeName && m.analysisTypeName.toUpperCase().includes(code)) ||
+                (m.testMethodName && m.testMethodName.toUpperCase().includes(code))
+              );
+              if (matchesInMethods) {
+                this.selectedTechniquesMap[`${sampleIdx}_${code}`] = true;
+              }
+            });
+
+            // If any chemical method exists with a test ID and no technique is selected, default to OES
+            if (methodsList.some((m: any) => !!m.testMethodID) && !this.hasSelectedTechnique(sampleIdx)) {
+              this.selectedTechniquesMap[`${sampleIdx}_OES`] = true;
+            }
 
             return this.fb.group({
               id: [ct.id || 0],
               sampleNo: [sample.sampleNo],
               reportNo: [ct.reportNo],
               ulrNo: [ct.ulrNo],
+              laboratoryTestAnalysisTypeID: [ct.laboratoryTestAnalysisTypeID || null],
+              metalClassificationID: [ct.metalClassificationID || null],
               testTypeIds: [testTypeIds],
               specification1: [
                 ct.specification1 !== undefined && ct.specification1 !== null ? +ct.specification1 : null
@@ -1970,19 +2270,41 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               specification2: [
                 ct.specification2 !== undefined && ct.specification2 !== null ? +ct.specification2 : null
               ],
-              elements: this.fb.array((ct.elements || []).map((el: any) =>
-                this.fb.group({
+              methods: this.fb.array(methodsList.map((m: any) => this.fb.group({
+                id: [m.id || 0],
+                testMethodID: [m.testMethodID || ct.laboratoryTestAnalysisTypeID || null, Validators.required],
+                laboratoryTestAnalysisTypeID: [m.laboratoryTestAnalysisTypeID || ct.laboratoryTestAnalysisTypeID || null],
+                quantity: [m.quantity || 1],
+                reportNo: [m.reportNo || ct.reportNo || ''],
+                ulrNo: [m.ulrNo || ct.ulrNo || ''],
+                cancel: [m.cancel || false],
+                standardID: [m.standardID || null],
+                standardName: [m.standardName || '']
+              }))),
+              elements: this.fb.array((ct.elements || []).map((el: any) => {
+                const isSpec = el.sourceType === 'Specification' || 
+                               (el.sourceType !== 'AnalysisType' && !el.laboratoryTestAnalysisTypeID && (el.specificationLineID || el.minValue != null || el.maxValue != null));
+                const resolvedSourceType = isSpec ? 'Specification' : 'AnalysisType';
+                const resolvedAnalysisTypeId = el.laboratoryTestAnalysisTypeID || (!isSpec ? (ct.laboratoryTestAnalysisTypeID || (ct.methods && ct.methods[0] ? ct.methods[0].laboratoryTestAnalysisTypeID || ct.methods[0].testMethodID : null)) : null);
+                const resolvedSourceTitle = isSpec 
+                  ? 'Specification Grade Elements' 
+                  : (el.sourceTitle || el.laboratoryTestAnalysisTypeName || (ct.methods && ct.methods[0] ? ct.methods[0].analysisTypeName : null) || 'Analysis Type Spectro Matrix');
+
+                return this.fb.group({
                   id: [el.id || 0],
                   parameterID: [el.parameterID || 0],
-                  specificationLineID: [el.specificationLineID || 0],
+                  specificationLineID: [el.specificationLineID || null],
+                  laboratoryTestAnalysisTypeID: [resolvedAnalysisTypeId],
+                  sourceType: [resolvedSourceType],
+                  sourceTitle: [resolvedSourceTitle],
                   parameterName: [el.parameterName || ''],
                   minValue: [el.minValue ?? null],
                   maxValue: [el.maxValue ?? null],
                   parameterUnitID: [el.parameterUnitID || 0],
                   parameterUnit: [el.parameterUnit || ''],
-                  selected: [el.selected ?? false]
-                })
-              ))
+                  selected: [el.selected ?? true]
+                });
+              }))
             });
           });
 
@@ -2003,6 +2325,13 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           });
         });
 
+      if (sample.tpiAgencyID && (sample.tpiEmailId || sample.tpiContactNo)) {
+        this.tpiAgencyDetails[sampleIdx] = {
+          emailId: sample.tpiEmailId || '',
+          contactNo: sample.tpiContactNo || ''
+        };
+      }
+
       this.samples.push(this.fb.group({
         id: [sample.id ?? 0],
         inwardID: [sample.inwardID ?? 0],
@@ -2018,7 +2347,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         assignedGradeNote: [''],
         productSizeID: [sample.productSizeID ?? sample.productSizeMasterID ?? null],
         productSizeName: [sample.productSizeName ?? sample.sizeDisplayName ?? ''],
-        productConditionID: [sample.productConditionID],
+        productConditionID: [sample.productConditionID ?? null],
+        productConditionName: [sample.productConditionName ?? ''],
         specimenOrientationID: [sample.specimenOrientationID],
         productFormID: [sample.productFormID],
         tpiAgencyID: [sample.tpiAgencyID],
@@ -2042,6 +2372,24 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         additionalDetails: this.fb.array(additionalDetailsArr),
         testPlans: this.fb.array(testPlansArr)
       }));
+
+      // Preload explorer data for this sample
+      const pmId = sample.productMasterID ?? null;
+      if (pmId) {
+        this.explorerService.getProductMasterExplorer(+pmId).subscribe({
+          next: (explorerData) => {
+            this.explorerProductDataMap[sampleIdx] = explorerData;
+          }
+        });
+      }
+      const metalId = sample.metalClassificationID ?? null;
+      if (metalId) {
+        this.explorerService.getMetalClassificationExplorer(+metalId).subscribe({
+          next: (metalData) => {
+            this.explorerMetalDataMap[sampleIdx] = metalData;
+          }
+        });
+      }
 
     });
   }
@@ -2099,6 +2447,23 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     action?.();
   }
 
+  private validateTechniquesForChemicalTests(): boolean {
+    for (let i = 0; i < this.samples.length; i++) {
+      const chemTests = this.getChemicalTestsArray(i, 0);
+      if (chemTests && chemTests.length > 0) {
+        const methods = this.getChemicalMethodRows(i, 0, 0);
+        const hasAnyChemTest = methods.controls.some(m => !!m.get('testMethodID')?.value);
+        if (hasAnyChemTest && !this.hasSelectedTechnique(i)) {
+          const sNo = this.samples.at(i).get('sampleNo')?.value || `Sample #${i + 1}`;
+          this.toastService.show(`${sNo}: At least one Analytical Technique must be selected for Chemical Tests.`, 'warning');
+          this.setActiveTab(i, 0, 'chemical');
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   // ────────────── Submission ──────────────
   onSave(): void {
     this.planForm.markAllAsTouched();
@@ -2111,6 +2476,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.toastService.show(`Please select at least one test for: ${missingSamples.join(', ')}`, 'warning');
       return;
     }
+    if (!this.validateTechniquesForChemicalTests()) return;
     if (!this.checkEmptyTabsAndProceed(() => this.proceedSave())) return;
     this.proceedSave();
   }
@@ -2146,6 +2512,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       this.toastService.show(`Please select at least one test for: ${missingSamples.join(', ')}`, 'warning');
       return;
     }
+    if (!this.validateTechniquesForChemicalTests()) return;
     if (!this.checkEmptyTabsAndProceed(() => this.proceedSendForReview())) return;
     this.proceedSendForReview();
   }
@@ -2181,6 +2548,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         sampleNo: s.sampleNo || '',
         details: s.details || '',
         productConditionID: s.productConditionID || null,
+        productMasterID: s.productMasterID || null,
+        productSizeMasterID: s.productSizeID || null,
+        productSizeID: s.productSizeID || null,
+        specificationGradeID: s.specificationGradeID || null,
+        isUnknownSample: s.isUnknownSample || false,
         metalClassificationID: s.metalClassificationID || null,
         specimenOrientationID: s.specimenOrientationID || null,
         productFormID: s.productFormID || null,
@@ -2224,10 +2596,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             sampleNo: g.sampleNo || '',
             specification1: g.specification1 || null,
             specification2: g.specification2 || null,
+            laboratoryTestSubGroupID: g.laboratoryTestSubGroupID || (g.methods && g.methods[0] ? g.methods[0].laboratoryTestSubGroupID : null) || null,
             parameter: g.parameter || '',
             methods: (g.methods || []).map((m: any) => ({
               id: m.id || 0,
               testMethodID: m.testMethodID || 0,
+              standardID: m.standardID || null,
               quantity: m.quantity || 0,
               reportNo: m.reportNo === 'Auto Generate' ? '' : m.reportNo || '',
               ulrNo: m.ulrNo === 'Auto Generate' ? '' : m.ulrNo || '',
@@ -2235,26 +2609,52 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
             }))
           })),
 
-          chemicalTests: (tp.chemicalTests || []).map((c: any) => ({
-            id: c.id || 0,
-            sampleNo: c.sampleNo || '',
-            reportNo: c.reportNo === 'Auto Generate' ? '' : c.reportNo || '',
-            ulrNo: c.ulrNo === 'Auto Generate' ? '' : c.ulrNo || '',
-            testTypeIds: c.testTypeIds || [],
-            specification1: c.specification1 || 0,
-            specification2: c.specification2 || null,
-            elements: (c.elements || []).map((e: any) => ({
-              id: e.id || 0,
-              parameterID: e.parameterID || 0,
-              specificationLineID: e.specificationLineID || 0,
-              parameterName: e.parameterName || '',
-              minValue: e.minValue ?? null,
-              maxValue: e.maxValue ?? null,
-              parameterUnitID: e.parameterUnitID || 0,
-              parameterUnit: e.parameterUnit || '',
-              selected: e.selected || false
-            }))
-          }))
+          chemicalTests: (tp.chemicalTests || []).map((c: any) => {
+            const methodLabIds = (c.methods || [])
+              .map((m: any) => m.laboratoryTestAnalysisTypeID || m.testMethodID)
+              .filter((id: any) => !!id && +id > 0);
+            const combinedTestTypeIds = Array.from(new Set([
+              ...(Array.isArray(c.testTypeIds) ? c.testTypeIds : []),
+              ...methodLabIds
+            ]));
+
+            return {
+              id: c.id || 0,
+              sampleNo: c.sampleNo || '',
+              reportNo: c.reportNo === 'Auto Generate' ? '' : c.reportNo || '',
+              ulrNo: c.ulrNo === 'Auto Generate' ? '' : c.ulrNo || '',
+              laboratoryTestAnalysisTypeID: c.laboratoryTestAnalysisTypeID || (c.methods && c.methods[0] ? (c.methods[0].laboratoryTestAnalysisTypeID || c.methods[0].testMethodID) : null) || null,
+              metalClassificationID: c.metalClassificationID || null,
+              testTypeIds: combinedTestTypeIds,
+              analysisTypeIds: combinedTestTypeIds,
+              specification1: c.specification1 || null,
+              specification2: c.specification2 || null,
+              methods: (c.methods || []).map((m: any) => ({
+                id: m.id || 0,
+                testMethodID: m.testMethodID || m.laboratoryTestAnalysisTypeID || 0,
+                laboratoryTestAnalysisTypeID: m.laboratoryTestAnalysisTypeID || m.testMethodID || 0,
+                standardID: m.standardID || null,
+                testMethodSpecificationID: m.standardID || null,
+                quantity: m.quantity || 1,
+                reportNo: m.reportNo === 'Auto Generate' ? '' : m.reportNo || '',
+                ulrNo: m.ulrNo === 'Auto Generate' ? '' : m.ulrNo || '',
+                cancel: m.cancel || false
+              })),
+              elements: (c.elements || []).map((e: any) => ({
+                id: e.id || 0,
+                parameterID: e.parameterID || 0,
+                specificationLineID: e.specificationLineID || null,
+                laboratoryTestAnalysisTypeID: e.laboratoryTestAnalysisTypeID || null,
+                sourceType: e.sourceType || (e.laboratoryTestAnalysisTypeID ? 'AnalysisType' : ((e.minValue != null || e.maxValue != null || e.specificationLineID) ? 'Specification' : 'AnalysisType')),
+                parameterName: e.parameterName || '',
+                minValue: e.minValue ?? null,
+                maxValue: e.maxValue ?? null,
+                parameterUnitID: e.parameterUnitID || 0,
+                parameterUnit: e.parameterUnit || '',
+                selected: e.selected !== undefined ? !!e.selected : true
+              }))
+            };
+          })
         }))
       }))
     };
@@ -2369,7 +2769,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   // ────────────── Auto-Suggest Tests ──────────────
-  loadSuggestedTests(sampleIdx: number, planIdx: number): void {
+  loadSuggestedTests(sampleIdx: number, planIdx: number, targetTab?: 'general' | 'chemical'): void {
     const key = `${sampleIdx}_${planIdx}`;
     this.suggestLoading[key] = true;
     this.showSuggestPanel[key] = true;
@@ -2390,9 +2790,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const generalTests = plan.get('generalTests') as FormArray;
     const chemicalTests = plan.get('chemicalTests') as FormArray;
 
-    let specificationGradeId: number | undefined;
+    let specificationGradeId: number | undefined = sampleGroup.get('specificationGradeID')?.value
+      ? +sampleGroup.get('specificationGradeID')!.value
+      : undefined;
 
-    if (generalTests && generalTests.length > 0) {
+    if (!specificationGradeId && generalTests && generalTests.length > 0) {
       const spec1 = generalTests.at(0).get('specification1')?.value;
       if (spec1) specificationGradeId = +spec1;
     }
@@ -2415,22 +2817,121 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       customerId,
     };
 
+    const aggregatedSuggestions: any[] = [];
+    const seenIds = new Set<string>();
+
+    // 1. Incorporate Product Master / Grade Configured Tests (Highest Confidence Score: 100)
+    const pmExplorer = this.explorerProductDataMap[sampleIdx];
+    if (pmExplorer && pmExplorer.grades) {
+      const grade = specificationGradeId
+        ? pmExplorer.grades.find((g: any) => g.specificationGradeID === specificationGradeId)
+        : pmExplorer.grades[0];
+      if (grade && grade.configuredTests) {
+        grade.configuredTests.forEach((ct: any) => {
+          const testId = ct.laboratoryTestAnalysisTypeID || ct.laboratoryTestSubGroupID || ct.laboratoryTestID;
+          const keyId = `pm_${ct.testType}_${testId}`;
+          if (testId && !seenIds.has(keyId)) {
+            seenIds.add(keyId);
+            aggregatedSuggestions.push({
+              id: testId,
+              laboratoryTestID: ct.laboratoryTestID,
+              laboratoryTestSubGroupID: ct.laboratoryTestSubGroupID,
+              laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID,
+              laboratoryTestName: ct.laboratoryTestName,
+              subGroup: ct.subGroup,
+              testType: ct.testType || (ct.isChemical ? 'Chemical' : 'General'),
+              testMethodStandardID: ct.testMethodSpecificationID || ct.testMethodStandardID,
+              testMethodStandardName: ct.testMethodSpecificationName || ct.testMethodStandardName,
+              source: 'Product Master Config',
+              score: 100,
+              tags: ['Configured', ct.testType || 'General'],
+              isPerBatch: false,
+              selected: true
+            });
+          }
+        });
+      }
+    }
+
+    // 2. Incorporate Metal Classification Configured Tests (Confidence Score: 95)
+    const metalExplorer = this.explorerMetalDataMap[sampleIdx];
+    if (metalExplorer && metalExplorer.grades) {
+      const mGrade = specificationGradeId
+        ? metalExplorer.grades.find((g: any) => g.specificationGradeID === specificationGradeId)
+        : metalExplorer.grades[0];
+      if (mGrade && mGrade.configuredTests) {
+        mGrade.configuredTests.forEach((ct: any) => {
+          const testId = ct.laboratoryTestAnalysisTypeID || ct.laboratoryTestSubGroupID || ct.laboratoryTestID;
+          const keyId = `metal_${ct.testType}_${testId}`;
+          if (testId && !seenIds.has(keyId)) {
+            seenIds.add(keyId);
+            aggregatedSuggestions.push({
+              id: testId,
+              laboratoryTestID: ct.laboratoryTestID,
+              laboratoryTestSubGroupID: ct.laboratoryTestSubGroupID,
+              laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID,
+              laboratoryTestName: ct.laboratoryTestName,
+              subGroup: ct.subGroup,
+              testType: ct.testType || (ct.isChemical ? 'Chemical' : 'General'),
+              testMethodStandardID: ct.testMethodSpecificationID || ct.testMethodStandardID,
+              testMethodStandardName: ct.testMethodSpecificationName || ct.testMethodStandardName,
+              source: 'Metal Classification',
+              score: 95,
+              tags: ['Metal Standard', ct.testType || 'General'],
+              isPerBatch: false,
+              selected: true
+            });
+          }
+        });
+      }
+    }
+
+    // 3. Query Backend Smart Auto-Suggest Engine
     this.testAutoSuggestService.getSmartSuggestions(request).subscribe({
       next: (result) => {
-        this.suggestedTests = (result?.suggestedTests || []).map((item: SuggestedTestDto) => ({
-          ...item,
-          selected: false
-        }));
+        const backendSuggestions = result?.suggestedTests || [];
+        backendSuggestions.forEach((item: SuggestedTestDto) => {
+          const testId = item.laboratoryTestID || (item as any).testMethodId;
+          const isChem = (item as any).testType === 'Chemical' || (item as any).isChemical ||
+            (item.subGroup && item.subGroup.toLowerCase().includes('chemical')) ||
+            (item.laboratoryTestName && item.laboratoryTestName.toLowerCase().includes('chemical'));
+          const testType = (item as any).testType || (isChem ? 'Chemical' : 'General');
+          const keyId = `smart_${testType}_${testId}`;
+          if (testId && !seenIds.has(keyId)) {
+            seenIds.add(keyId);
+            aggregatedSuggestions.push({
+              ...item,
+              id: testId,
+              testType: testType,
+              source: item.source || 'Grade Required',
+              score: item.score || 85,
+              tags: item.tags || [item.source || 'Suggested'],
+              selected: aggregatedSuggestions.length < 5
+            });
+          }
+        });
+
+        // Filter and sort suggestions by score descending
+        aggregatedSuggestions.sort((a, b) => (b.score || 0) - (a.score || 0));
+        this.suggestedTests = aggregatedSuggestions;
         this.suggestLoading[key] = false;
+
         if (this.suggestedTests.length === 0) {
           this.toastService.show('No test suggestions found for current context.', 'info');
+        } else {
+          this.toastService.show(`Loaded ${this.suggestedTests.length} smart suggested test(s).`, 'info');
         }
       },
       error: (err) => {
         console.error('[PlanForm] Error loading smart suggestions:', err);
-        this.suggestedTests = [];
-        this.suggestLoading[key] = false;
-        this.toastService.show('Failed to load test suggestions.', 'error');
+        if (aggregatedSuggestions.length > 0) {
+          this.suggestedTests = aggregatedSuggestions;
+          this.suggestLoading[key] = false;
+        } else {
+          this.suggestedTests = [];
+          this.suggestLoading[key] = false;
+          this.toastService.show('Failed to load test suggestions.', 'error');
+        }
       }
     });
   }
@@ -2471,13 +2972,93 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
     let addedCount = 0;
     selected.forEach(test => {
-      const testId = test.laboratoryTestID || test.testMethodId || test.laboratoryTestId || test.id;
-      if (testId && !existingIds.has(+testId)) {
-        const row = this.createTestMethodRow('', '');
-        row.patchValue({ testMethodID: +testId, quantity: test.isPerBatch ? 1 : 1 });
-        methodsArray.push(row);
-        existingIds.add(+testId);
-        addedCount++;
+      const isChem = test.testType === 'Chemical' || test.isChemical;
+      const leafId = test.laboratoryTestAnalysisTypeID || test.laboratoryTestSubGroupID || test.laboratoryTestID || test.testMethodId || test.laboratoryTestId || test.id;
+      
+      if (isChem) {
+        let chemTests = this.getTestArray(sampleIdx, planIdx, 'chemicalTests');
+        if (!chemTests || chemTests.length === 0) {
+          this.addTestBlock(sampleIdx, planIdx, 'chemicalTests');
+        }
+        const chemMethods = this.getChemicalMethodRows(sampleIdx, planIdx, 0);
+        if (chemMethods && leafId) {
+          const emptyRow = chemMethods.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+          if (emptyRow) {
+            const rowIdx = chemMethods.controls.indexOf(emptyRow);
+            emptyRow.patchValue({
+              testMethodID: +leafId,
+              standardID: test.testMethodStandardID || null,
+              standardName: test.testMethodStandardName || '',
+              quantity: test.isPerBatch ? 1 : 1
+            });
+            this.onChemicalLabTestSelected(
+              { id: +leafId, name: test.laboratoryTestName },
+              sampleIdx,
+              planIdx,
+              0,
+              rowIdx
+            );
+            addedCount++;
+          } else {
+            const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +leafId);
+            if (!exists) {
+              const row = this.createTestMethodRow('', '');
+              row.patchValue({
+                testMethodID: +leafId,
+                standardID: test.testMethodStandardID || null,
+                standardName: test.testMethodStandardName || '',
+                quantity: test.isPerBatch ? 1 : 1
+              });
+              chemMethods.push(row);
+              this.onChemicalLabTestSelected(
+                { id: +leafId, name: test.laboratoryTestName },
+                sampleIdx,
+                planIdx,
+                0,
+                chemMethods.length - 1
+              );
+              addedCount++;
+            }
+          }
+        }
+      } else {
+        if (leafId) {
+          const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+          if (emptyRow) {
+            const rowIdx = methodsArray.controls.indexOf(emptyRow);
+            emptyRow.patchValue({
+              testMethodID: +leafId,
+              standardID: test.testMethodStandardID || null,
+              standardName: test.testMethodStandardName || '',
+              quantity: test.isPerBatch ? 1 : 1
+            });
+            this.onLabTestSubGroupSelected(
+              { id: +leafId, name: test.laboratoryTestName },
+              sampleIdx,
+              planIdx,
+              rowIdx
+            );
+            existingIds.add(+leafId);
+            addedCount++;
+          } else if (!existingIds.has(+leafId)) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue({
+              testMethodID: +leafId,
+              standardID: test.testMethodStandardID || null,
+              standardName: test.testMethodStandardName || '',
+              quantity: test.isPerBatch ? 1 : 1
+            });
+            methodsArray.push(row);
+            this.onLabTestSubGroupSelected(
+              { id: +leafId, name: test.laboratoryTestName },
+              sampleIdx,
+              planIdx,
+              methodsArray.length - 1
+            );
+            existingIds.add(+leafId);
+            addedCount++;
+          }
+        }
       }
     });
 
@@ -2492,13 +3073,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   getSuggestBadgeClass(source: string): string {
     const map: Record<string, string> = {
-      'Spec Required': 'bg-primary',
-      'Lab Scope': 'bg-success',
+      'Product Master Config': 'bg-danger text-white',
+      'Metal Classification': 'bg-primary text-white',
+      'Spec Required': 'bg-primary text-white',
+      'Grade Required': 'bg-primary text-white',
+      'Lab Scope': 'bg-success text-white',
       'Customer Favorite': 'bg-warning text-dark',
-      'Most Popular': 'bg-info',
-      'Trending': 'bg-purple',
+      'Most Popular': 'bg-info text-dark',
+      'Trending': 'bg-secondary text-white',
     };
-    return map[source] || 'bg-secondary';
+    return map[source] || 'bg-secondary text-white';
   }
 
   onCancel(): void {
@@ -2519,7 +3103,13 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   isActiveTab(sampleIdx: number, planIdx: number, tab: string): boolean {
-    return this.activeTabs[`${sampleIdx}-${planIdx}`] === tab;
+    const key = `${sampleIdx}-${planIdx}`;
+    const active = this.activeTabs[key];
+    if (!active) {
+      this.activeTabs[key] = 'general';
+      return tab === 'general';
+    }
+    return active === tab;
   }
 
   setActiveTab(sampleIdx: number, planIdx: number, tab: 'general' | 'chemical') {
@@ -2536,6 +3126,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         }
       }
     }
+    this.cdr.markForCheck();
   }
 
   // Dropdown functions for template
@@ -2592,7 +3183,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     });
   }
 
-  loadMachineSpectroMatrix(sampleIdx: number, planIdx: number, analysisTypeId: number): void {
+  loadMachineSpectroMatrix(sampleIdx: number, planIdx: number, analysisTypeId: number, testName?: string): void {
     if (!analysisTypeId) return;
     this.laboratoryTestService.getAnalysisTypeParameters(analysisTypeId).subscribe({
       next: (params: any[]) => {
@@ -2600,25 +3191,48 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         if (!chemGroup) return;
 
         const elements = chemGroup.get('elements') as FormArray;
-        while (elements.length) elements.removeAt(0);
-
         if (!params || params.length === 0) {
-          this.toastService.show('No machine spectro elements configured for this Analysis Type.', 'info');
           return;
         }
 
-        params.forEach(p => {
-          const row = this.createElementRow();
-          row.patchValue({
-            parameterID: p.id,
-            parameterName: p.name,
-            parameterUnit: p.description || '',
-            selected: true
-          });
-          elements.push(row);
+        const existingParamMap = new Map<number, AbstractControl>();
+        elements.controls.forEach(ctrl => {
+          const pId = ctrl.get('parameterID')?.value;
+          const aId = ctrl.get('laboratoryTestAnalysisTypeID')?.value;
+          if (pId && aId === analysisTypeId) {
+            existingParamMap.set(+pId, ctrl);
+          }
         });
 
-        this.toastService.show(`Loaded ${params.length} Machine Spectro Parameters directly from Analysis Type.`, 'success');
+        let addedCount = 0;
+        params.forEach(p => {
+          const pId = p.id || p.parameterID;
+          if (!pId) return;
+          const existing = existingParamMap.get(+pId);
+          if (existing) {
+            existing.patchValue({
+              parameterName: p.name || p.parameterName || '',
+              parameterUnit: p.description || p.unit || '',
+              sourceType: 'AnalysisType',
+              sourceTitle: testName || 'Analysis Type Spectro Matrix'
+            });
+          } else {
+            const row = this.createElementRow('AnalysisType', analysisTypeId, testName || 'Analysis Type Spectro Matrix');
+            row.patchValue({
+              parameterID: pId,
+              parameterName: p.name || p.parameterName || '',
+              parameterUnit: p.description || p.unit || '',
+              selected: true
+            });
+            elements.push(row);
+            addedCount++;
+          }
+        });
+
+        this.planForm.markAsDirty();
+        if (addedCount > 0) {
+          this.toastService.show(`Loaded ${addedCount} spectro matrix parameters for ${testName || 'Analysis Type'}.`, 'success');
+        }
       }
     });
   }
@@ -2627,16 +3241,24 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const methodRow = this.getMethodRows(sampleIdx, planIdx).at(methodIdx);
     if (!methodRow) return;
 
-    const testId = item?.id ? +item.id : null;
+    const subGroupId = item?.id ? +item.id : null;
+    const masterTestId = item?.additionalValues?.masterTestId ? +item.additionalValues.masterTestId : subGroupId;
+
     methodRow.patchValue({
-      testMethodID: testId
+      testMethodID: masterTestId,
+      laboratoryTestSubGroupID: subGroupId
     });
 
-    if (testId) {
-      this.laboratoryTestService.getTestMethodSpecificationByLabTest(testId).subscribe({
+    const genGroup = this.getGeneralTestSection(sampleIdx, planIdx);
+    if (genGroup) {
+      genGroup.patchValue({ laboratoryTestSubGroupID: subGroupId });
+    }
+
+    if (subGroupId) {
+      this.laboratoryTestService.getTestMethodSpecificationByLabTest(subGroupId).subscribe({
         next: (specs: any[]) => {
           const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
-          this.labTestStandardsCache[testId] = specs || [];
+          this.labTestStandardsCache[subGroupId] = specs || [];
           if (specs && specs.length === 1) {
             // Auto-bind single configured test method specification
             const single = specs[0];
@@ -2655,10 +3277,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           this.evaluateRowCompliance(sampleIdx, planIdx, methodIdx);
         },
         error: () => {
-          this.laboratoryTestService.getTestMethodSpecificationBySubGroup(testId).subscribe({
+          this.laboratoryTestService.getTestMethodSpecificationBySubGroup(subGroupId).subscribe({
             next: (specs: any[]) => {
               const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
-              this.labTestStandardsCache[testId] = specs || [];
+              this.labTestStandardsCache[subGroupId] = specs || [];
               if (specs && specs.length === 1) {
                 const single = specs[0];
                 methodRow.patchValue({
@@ -2690,16 +3312,35 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const methodRow = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx)?.at(mIdx);
     if (!methodRow) return;
 
-    const testId = item?.id ? +item.id : null;
+    const analysisTypeId = item?.id ? +item.id : null;
+    const masterTestId = item?.additionalValues?.masterTestId ? +item.additionalValues.masterTestId : analysisTypeId;
+
     methodRow.patchValue({
-      testMethodID: testId
+      testMethodID: masterTestId,
+      laboratoryTestAnalysisTypeID: analysisTypeId
     });
 
-    if (testId) {
-      this.laboratoryTestService.getTestMethodSpecificationByLabTest(testId).subscribe({
+    const chemGroup = this.getChemicalTestSection(sampleIdx, planIdx);
+    if (chemGroup) {
+      chemGroup.patchValue({ laboratoryTestAnalysisTypeID: analysisTypeId });
+    }
+
+    if (analysisTypeId) {
+      // Auto-load spectro element parameters for this selected Analysis Type
+      this.loadMachineSpectroMatrix(sampleIdx, planIdx, analysisTypeId, item?.name);
+
+      // Auto-check technique if not checked
+      if (item?.name) {
+        const matchingTech = this.availableTechniques.find(t => item.name.toUpperCase().includes(t.code));
+        if (matchingTech) {
+          this.selectedTechniquesMap[`${sampleIdx}_${matchingTech.code}`] = true;
+        }
+      }
+
+      this.laboratoryTestService.getTestMethodSpecificationByAnalysisType(analysisTypeId).subscribe({
         next: (specs: any[]) => {
           const key = `chem_${sampleIdx}_${planIdx}_${chemIdx}_${mIdx}`;
-          this.labTestStandardsCache[testId] = specs || [];
+          this.labTestStandardsCache[analysisTypeId] = specs || [];
           if (specs && specs.length === 1) {
             const single = specs[0];
             methodRow.patchValue({
@@ -2716,7 +3357,29 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
           this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
         },
         error: () => {
-          this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
+          if (masterTestId) {
+            this.laboratoryTestService.getTestMethodSpecificationByLabTest(masterTestId).subscribe({
+              next: (specs: any[]) => {
+                const key = `chem_${sampleIdx}_${planIdx}_${chemIdx}_${mIdx}`;
+                this.labTestStandardsCache[analysisTypeId] = specs || [];
+                if (specs && specs.length === 1) {
+                  const single = specs[0];
+                  methodRow.patchValue({
+                    standardID: single.id,
+                    standardName: single.name
+                  });
+                } else if (specs && specs.length > 1) {
+                  this.chemicalStandardsMap[key] = specs;
+                }
+                this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
+              },
+              error: () => {
+                this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
+              }
+            });
+          } else {
+            this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
+          }
         }
       });
     }
@@ -2745,9 +3408,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   }
 
 
-  onApplyGradeConfig(grade: ConfiguredGrade): void {
+  onApplyGradeConfig(grade: ConfiguredGrade, targetSampleIdx?: number): void {
     if (this.isViewMode || !grade) return;
-    const sampleIdx = this.activeSampleIdx;
+    const sampleIdx = targetSampleIdx !== undefined ? targetSampleIdx : this.activeSampleIdx;
     const testPlans = this.getTestPlans(sampleIdx);
     if (!testPlans || testPlans.length === 0) {
       this.addPlanToSample(sampleIdx);
@@ -2765,28 +3428,45 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       const generalTests = grade.configuredTests.filter(t => t.testType !== 'Chemical');
 
       generalTests.forEach(test => {
-        if (!test.laboratoryTestID) return;
+        const leafId = test.laboratoryTestSubGroupID || test.laboratoryTestID;
+        if (!leafId) return;
+
+        const specId = test.testMethodSpecificationID || test.testMethodStandardID || null;
+        const specName = test.testMethodSpecificationName || test.testMethodStandardName || '';
 
         // Check for empty row (testMethodID is null)
         const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
         if (emptyRow) {
+          const rowIdx = methodsArray.controls.indexOf(emptyRow);
           emptyRow.patchValue({
-            testMethodID: +test.laboratoryTestID,
-            standardID: test.testMethodStandardID || null,
-            standardName: test.testMethodStandardName || '',
+            testMethodID: +leafId,
+            standardID: specId,
+            standardName: specName,
             quantity: test.quantity || 1
           });
+          this.onLabTestSubGroupSelected(
+            { id: +leafId, name: test.laboratoryTestName },
+            sampleIdx,
+            planIdx,
+            rowIdx
+          );
         } else {
-          const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +test.laboratoryTestID);
+          const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +leafId);
           if (!exists) {
             const row = this.createTestMethodRow('', '');
             row.patchValue({
-              testMethodID: +test.laboratoryTestID,
-              standardID: test.testMethodStandardID || null,
-              standardName: test.testMethodStandardName || '',
+              testMethodID: +leafId,
+              standardID: specId,
+              standardName: specName,
               quantity: test.quantity || 1
             });
             methodsArray.push(row);
+            this.onLabTestSubGroupSelected(
+              { id: +leafId, name: test.laboratoryTestName },
+              sampleIdx,
+              planIdx,
+              methodsArray.length - 1
+            );
           }
         }
       });
@@ -2805,10 +3485,82 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         chemSection.patchValue({ specification1: grade.specificationGradeID });
       }
 
-      // Automatically select ALL techniques for chemical scope
+      // Populate Chemical Method Rows if chemicalTests are present
+      const chemMethods = this.getChemicalMethodRows(sampleIdx, planIdx, 0);
+      if (chemMethods && chemicalTests.length > 0) {
+        chemicalTests.forEach(ct => {
+          const chemLeafId = ct.laboratoryTestAnalysisTypeID || ct.laboratoryTestSubGroupID || ct.laboratoryTestID;
+          if (!chemLeafId) return;
+
+          const specId = ct.testMethodSpecificationID || ct.testMethodStandardID || null;
+          const specName = ct.testMethodSpecificationName || ct.testMethodStandardName || '';
+
+          const emptyRow = chemMethods.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+          if (emptyRow) {
+            const rowIdx = chemMethods.controls.indexOf(emptyRow);
+            emptyRow.patchValue({
+              testMethodID: +chemLeafId,
+              standardID: specId,
+              standardName: specName,
+              quantity: ct.quantity || 1
+            });
+            this.onChemicalLabTestSelected(
+              { id: +chemLeafId, name: ct.laboratoryTestName },
+              sampleIdx,
+              planIdx,
+              0,
+              rowIdx
+            );
+          } else {
+            const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +chemLeafId);
+            if (!exists) {
+              const row = this.createTestMethodRow('', '');
+              row.patchValue({
+                testMethodID: +chemLeafId,
+                standardID: specId,
+                standardName: specName,
+                quantity: ct.quantity || 1
+              });
+              chemMethods.push(row);
+              this.onChemicalLabTestSelected(
+                { id: +chemLeafId, name: ct.laboratoryTestName },
+                sampleIdx,
+                planIdx,
+                0,
+                chemMethods.length - 1
+              );
+            }
+          }
+        });
+      }
+
+      // Clear previous technique selections for this sample
       this.availableTechniques.forEach(tech => {
-        this.selectedTechniquesMap[`${sampleIdx}_${tech.code}`] = true;
+        delete this.selectedTechniquesMap[`${sampleIdx}_${tech.code}`];
       });
+
+      // Select ONLY the techniques that match the configured chemical tests
+      const matchedTechs = new Set<string>();
+      chemicalTests.forEach(ct => {
+        const testNameUpper = (ct.laboratoryTestName || '').toUpperCase();
+        const subGroupUpper = (ct.subGroup || '').toUpperCase();
+        const specUpper = (ct.testMethodSpecificationName || ct.testMethodStandardName || '').toUpperCase();
+
+        this.availableTechniques.forEach(tech => {
+          if (testNameUpper.includes(tech.code) || subGroupUpper.includes(tech.code) || specUpper.includes(tech.code)) {
+            matchedTechs.add(tech.code);
+          }
+        });
+      });
+
+      if (matchedTechs.size > 0) {
+        matchedTechs.forEach(code => {
+          this.selectedTechniquesMap[`${sampleIdx}_${code}`] = true;
+        });
+      } else if (chemicalTests.length > 0) {
+        // If chemical tests exist but without explicit acronym, default only to OES
+        this.selectedTechniquesMap[`${sampleIdx}_OES`] = true;
+      }
 
       if (grade.chemicalElements?.length > 0 && chemSection) {
         const elementsArray = chemSection.get('elements') as FormArray;
@@ -2839,14 +3591,30 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.planForm.markAsDirty();
   }
 
-  onApplyTestConfig(test: ConfiguredTest): void {
+  onApplyTestConfig(test: ConfiguredTest, targetSampleIdx?: number): void {
     if (this.isViewMode || !test) return;
-    const sampleIdx = this.activeSampleIdx;
+    const sampleIdx = targetSampleIdx !== undefined ? targetSampleIdx : this.activeSampleIdx;
     const testPlans = this.getTestPlans(sampleIdx);
     if (!testPlans || testPlans.length === 0) {
       this.addPlanToSample(sampleIdx);
     }
     const planIdx = 0;
+
+    const sampleGroup = this.getSampleGroupSafely(sampleIdx);
+    const specGradeId = test.specificationGradeID
+      || sampleGroup?.get('specificationGradeID')?.value
+      || this.explorerProductDataMap[sampleIdx]?.grades?.[0]?.specificationGradeID
+      || this.explorerMetalDataMap[sampleIdx]?.grades?.[0]?.specificationGradeID
+      || null;
+
+    const gradeName = test.gradeName
+      || (specGradeId ? this.explorerProductDataMap[sampleIdx]?.grades?.find((g: any) => g.specificationGradeID === +specGradeId)?.gradeName : '')
+      || (specGradeId ? this.explorerMetalDataMap[sampleIdx]?.grades?.find((g: any) => g.specificationGradeID === +specGradeId)?.gradeName : '')
+      || '';
+
+    if (specGradeId && sampleGroup && !sampleGroup.get('specificationGradeID')?.value) {
+      sampleGroup.patchValue({ specificationGradeID: +specGradeId });
+    }
 
     const isChemical = test.testType === 'Chemical' || (test.subGroup && test.subGroup.toLowerCase().includes('chemical'));
 
@@ -2860,39 +3628,82 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         this.addTestBlock(sampleIdx, planIdx, 'chemicalTests');
       }
 
+      // Auto-select Specification Grade in Chemical Section & load chemical elements
+      const chemSection = this.getChemicalTestSection(sampleIdx, planIdx);
+      if (chemSection && specGradeId) {
+        const currSpec1 = chemSection.get('specification1')?.value;
+        if (!currSpec1) {
+          chemSection.patchValue({ specification1: +specGradeId });
+          this.onSpecificationGradeSelected(
+            sampleIdx,
+            planIdx,
+            { id: +specGradeId, name: gradeName },
+            'specification1',
+            'chemicalTests'
+          );
+        }
+      }
+
       // Add/Populate Chemical Test Method Row
       const chemMethods = this.getChemicalMethodRows(sampleIdx, planIdx, 0);
-      if (chemMethods) {
+      const chemLeafId = test.laboratoryTestAnalysisTypeID || test.laboratoryTestSubGroupID || test.laboratoryTestID;
+      if (chemMethods && chemLeafId) {
+        const specId = test.testMethodSpecificationID || test.testMethodStandardID || null;
+        const specName = test.testMethodSpecificationName || test.testMethodStandardName || '';
         const emptyRow = chemMethods.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
         if (emptyRow) {
           emptyRow.patchValue({
-            testMethodID: +test.laboratoryTestID,
-            standardID: test.testMethodStandardID || null,
-            standardName: test.testMethodStandardName || '',
+            testMethodID: +chemLeafId,
+            standardID: specId,
+            standardName: specName,
             quantity: test.quantity || 1
           });
+          this.onChemicalLabTestSelected(
+            { id: +chemLeafId, name: test.laboratoryTestName },
+            sampleIdx,
+            planIdx,
+            0,
+            chemMethods.controls.indexOf(emptyRow)
+          );
         } else {
-          const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +test.laboratoryTestID);
+          const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +chemLeafId);
           if (!exists) {
             const row = this.createTestMethodRow('', '');
             row.patchValue({
-              testMethodID: +test.laboratoryTestID,
-              standardID: test.testMethodStandardID || null,
-              standardName: test.testMethodStandardName || '',
+              testMethodID: +chemLeafId,
+              standardID: specId,
+              standardName: specName,
               quantity: test.quantity || 1
             });
             chemMethods.push(row);
+            this.onChemicalLabTestSelected(
+              { id: +chemLeafId, name: test.laboratoryTestName },
+              sampleIdx,
+              planIdx,
+              0,
+              chemMethods.length - 1
+            );
           }
         }
       }
 
-      // Automatically select ALL techniques for Chemical Test
-      this.availableTechniques.forEach(tech => {
-        this.selectedTechniquesMap[`${sampleIdx}_${tech.code}`] = true;
-      });
+      // Automatically select ONLY the matching technique for this Chemical Test
+      const testNameUpper = (test.laboratoryTestName || '').toUpperCase();
+      const subGroupUpper = (test.subGroup || '').toUpperCase();
+      const specUpper = (test.testMethodSpecificationName || test.testMethodStandardName || '').toUpperCase();
 
-      if (test.laboratoryTestID) {
-        this.laboratoryTestService.getTestMethodSpecificationByLabTest(+test.laboratoryTestID).subscribe({
+      const matchingTech = this.availableTechniques.find(tech => 
+        testNameUpper.includes(tech.code) || subGroupUpper.includes(tech.code) || specUpper.includes(tech.code)
+      );
+
+      if (matchingTech) {
+        this.selectedTechniquesMap[`${sampleIdx}_${matchingTech.code}`] = true;
+      } else if (!this.hasSelectedTechnique(sampleIdx)) {
+        this.selectedTechniquesMap[`${sampleIdx}_OES`] = true;
+      }
+
+      if (chemLeafId) {
+        this.laboratoryTestService.getTestMethodSpecificationByLabTest(+chemLeafId).subscribe({
           next: (stds: any[]) => {
             const rowKey = `chem_${sampleIdx}_${planIdx}_0_${chemMethods ? chemMethods.length - 1 : 0}`;
             if (stds && stds.length > 0) {
@@ -2902,42 +3713,78 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         });
       }
 
-      this.toastService.show(`Applied ${test.laboratoryTestName} to Chemical Tests & enabled techniques.`, 'success');
+      this.toastService.show(`Applied ${test.laboratoryTestName} to Chemical Tests with specification grade.`, 'success');
     } else {
       // General Test (Non-Chemical)
       this.setActiveTab(sampleIdx, planIdx, 'general');
+
+      // Ensure General Test Group exists
+      let genTests = this.getTestArray(sampleIdx, planIdx, 'generalTests');
+      if (!genTests || genTests.length === 0) {
+        this.addTestBlock(sampleIdx, planIdx, 'generalTests');
+      }
+
+      // Auto-select Specification Grade in General Section
+      const genSection = this.getGeneralTestSection(sampleIdx, planIdx);
+      if (genSection && specGradeId) {
+        const currSpec1 = genSection.get('specification1')?.value;
+        if (!currSpec1) {
+          genSection.patchValue({ specification1: +specGradeId });
+          this.onSpecificationGradeSelected(
+            sampleIdx,
+            planIdx,
+            { id: +specGradeId, name: gradeName },
+            'specification1',
+            'generalTests'
+          );
+        }
+      }
+
       const methodsArray = this.getMethodRows(sampleIdx, planIdx);
-      if (methodsArray && test.laboratoryTestID) {
+      const mechLeafId = test.laboratoryTestSubGroupID || test.laboratoryTestID;
+      if (methodsArray && mechLeafId) {
         const specId = test.testMethodSpecificationID || test.testMethodStandardID || null;
         const specName = test.testMethodSpecificationName || test.testMethodStandardName || '';
 
         const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
         if (emptyRow) {
           emptyRow.patchValue({
-            testMethodID: +test.laboratoryTestID,
+            testMethodID: +mechLeafId,
             standardID: specId,
             standardName: specName,
             quantity: test.quantity || 1
           });
-          this.toastService.show(`Applied ${test.laboratoryTestName} to General Tests.`, 'success');
+          this.onLabTestSubGroupSelected(
+            { id: +mechLeafId, name: test.laboratoryTestName },
+            sampleIdx,
+            planIdx,
+            methodsArray.controls.indexOf(emptyRow)
+          );
+          this.toastService.show(`Applied ${test.laboratoryTestName} to General Tests with specification grade.`, 'success');
         } else {
-          const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +test.laboratoryTestID);
+          const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +mechLeafId);
           if (!exists) {
             const row = this.createTestMethodRow('', '');
             row.patchValue({
-              testMethodID: +test.laboratoryTestID,
+              testMethodID: +mechLeafId,
               standardID: specId,
               standardName: specName,
               quantity: test.quantity || 1
             });
             methodsArray.push(row);
-            this.toastService.show(`Added ${test.laboratoryTestName} to General Tests.`, 'success');
+            this.onLabTestSubGroupSelected(
+              { id: +mechLeafId, name: test.laboratoryTestName },
+              sampleIdx,
+              planIdx,
+              methodsArray.length - 1
+            );
+            this.toastService.show(`Added ${test.laboratoryTestName} to General Tests with specification grade.`, 'success');
           } else {
             this.toastService.show(`${test.laboratoryTestName} is already in the plan.`, 'info');
           }
         }
 
-        this.laboratoryTestService.getTestMethodSpecificationByLabTest(+test.laboratoryTestID).subscribe({
+        this.laboratoryTestService.getTestMethodSpecificationByLabTest(+mechLeafId).subscribe({
           next: (stds: any[]) => {
             const rowKey = `${sampleIdx}_${planIdx}_${methodsArray ? methodsArray.length - 1 : 0}`;
             if (stds && stds.length > 0) {
@@ -2948,6 +3795,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
       }
     }
     this.planForm.markAsDirty();
+    this.cdr.markForCheck();
   }
 
   onUnknownSampleToggle(sampleIdx: number): void {
@@ -3040,79 +3888,43 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     const methodRow = this.getMethodRows(sampleIdx, planIdx).at(methodIdx);
     if (!methodRow) return;
 
+    const leafId = test.laboratoryTestSubGroupID || test.laboratoryTestID;
+
     methodRow.patchValue({
-      testMethodID: test.laboratoryTestID,
+      testMethodID: leafId,
       standardID: test.testMethodStandardID || null,
       standardName: test.testMethodStandardName || '',
       quantity: test.quantity || 1
     });
 
     this.onLabTestSubGroupSelected(
-      { id: test.laboratoryTestID, name: test.laboratoryTestName },
+      { id: leafId, name: test.laboratoryTestName },
       sampleIdx,
       planIdx,
       methodIdx
     );
   }
 
-  onApplyBatchTests(tests: ConfiguredTest[]): void {
+  onApplyBatchTests(tests: ConfiguredTest[], targetSampleIdx?: number): void {
     if (this.isViewMode || !tests || tests.length === 0) return;
-    const sampleIdx = this.activeSampleIdx;
-    const testPlans = this.getTestPlans(sampleIdx);
-    if (!testPlans || testPlans.length === 0) {
-      this.addPlanToSample(sampleIdx);
-    }
-    const planIdx = 0;
+    const sampleIdx = targetSampleIdx !== undefined ? targetSampleIdx : this.activeSampleIdx;
 
-    let appliedCount = 0;
+    const hasChemical = tests.some(t => t.testType === 'Chemical' || (t.subGroup && t.subGroup.toLowerCase().includes('chemical')));
+    const hasGeneral = tests.some(t => t.testType !== 'Chemical' && (!t.subGroup || !t.subGroup.toLowerCase().includes('chemical')));
+
     tests.forEach(test => {
-      if (test.testType === 'Chemical') {
-        this.onApplyTestConfig(test);
-        appliedCount++;
-      } else {
-        const methodsArray = this.getMethodRows(sampleIdx, planIdx);
-        if (methodsArray && test.laboratoryTestID) {
-          const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
-          if (emptyRow) {
-            emptyRow.patchValue({
-              testMethodID: +test.laboratoryTestID,
-              standardID: test.testMethodStandardID || null,
-              standardName: test.testMethodStandardName || '',
-              quantity: test.quantity || 1
-            });
-            this.onLabTestSubGroupSelected(
-              { id: test.laboratoryTestID, name: test.laboratoryTestName },
-              sampleIdx,
-              planIdx,
-              methodsArray.controls.indexOf(emptyRow)
-            );
-            appliedCount++;
-          } else {
-            const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +test.laboratoryTestID);
-            if (!exists) {
-              const row = this.createTestMethodRow('', '');
-              row.patchValue({
-                testMethodID: +test.laboratoryTestID,
-                standardID: test.testMethodStandardID || null,
-                standardName: test.testMethodStandardName || '',
-                quantity: test.quantity || 1
-              });
-              methodsArray.push(row);
-              this.onLabTestSubGroupSelected(
-                { id: test.laboratoryTestID, name: test.laboratoryTestName },
-                sampleIdx,
-                planIdx,
-                methodsArray.length - 1
-              );
-              appliedCount++;
-            }
-          }
-        }
-      }
+      this.onApplyTestConfig(test, sampleIdx);
     });
 
-    this.toastService.show(`Applied ${appliedCount} test(s) from batch selection.`, 'success');
+    if (hasChemical && !hasGeneral) {
+      this.setActiveTab(sampleIdx, 0, 'chemical');
+    } else {
+      this.setActiveTab(sampleIdx, 0, 'general');
+    }
+
+    this.toastService.show(`Applied ${tests.length} test(s) with specification grade(s) from batch selection.`, 'success');
     this.planForm.markAsDirty();
+    this.cdr.markForCheck();
   }
 
   canDeactivate(): Observable<boolean> | boolean {

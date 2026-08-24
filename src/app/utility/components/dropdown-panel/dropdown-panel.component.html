@@ -5,26 +5,39 @@
   (scroll)="onScrollEvent($event)"
 >
   <ng-container *ngFor="let item of items; let i = index; trackBy: trackById">
-    <!-- Non-selectable Group Header -->
+    <!-- Non-selectable Group Header (Level 0: Master Test Group or general header) -->
     <li
-      *ngIf="item.isHeader"
-      class="list-group-item bg-light text-secondary fw-bold small py-1 px-2 text-uppercase position-sticky top-0 z-1 border-bottom border-top"
-      style="font-size: 0.72rem; letter-spacing: 0.5px;"
+      *ngIf="item.isHeader && (item.level === 0 || !item.level)"
+      class="list-group-item bg-light text-secondary fw-bold small py-1 px-2 text-uppercase position-sticky top-0 z-1 border-bottom border-top dropdown-group-header-0"
+      style="font-size: 0.72rem; letter-spacing: 0.5px; cursor: default; user-select: none;"
     >
       <i class="bi bi-folder2-open me-1 text-danger"></i> {{ item.name }}
     </li>
 
-    <!-- Selectable Unit Option -->
+    <!-- Non-selectable Intermediate SubGroup Header (Level 1: e.g. Chemical SubGroup) -->
     <li
-      *ngIf="!item.isHeader"
-      class="list-group-item cursor-pointer py-1"
-      [class.ps-4]="item.isChild"
+      *ngIf="item.isHeader && item.level === 1"
+      class="list-group-item bg-light-subtle text-dark fw-semibold small py-1 ps-3 pe-2 border-bottom dropdown-group-header-1"
+      style="font-size: 0.74rem; letter-spacing: 0.2px; cursor: default; user-select: none;"
+    >
+      <i class="bi bi-folder me-1 text-secondary"></i> {{ item.name }}
+    </li>
+
+    <!-- Selectable Option -->
+    <li
+      *ngIf="!item.isHeader && item.selectable !== false"
+      class="list-group-item cursor-pointer py-1 dropdown-selectable-item"
+      [class.ps-3]="item.level === 1 || (item.isChild && !item.level)"
+      [class.ps-4]="item.level === 2"
       [class.active]="i === highlightedIndex"
       (click)="onSelect(item, i)"
-      (mouseenter)="highlightedIndex = i"
+      (mouseenter)="onHover(item, i)"
     >
       <div class="d-flex align-items-center justify-content-between">
-        <span>{{ item.name }}</span>
+        <span class="d-flex align-items-center">
+          <i *ngIf="item.level > 0 || item.isChild" class="bi bi-arrow-return-right text-muted me-1" style="font-size: 0.7rem;"></i>
+          <span>{{ item.name }}</span>
+        </span>
         <span *ngIf="item.isBase" class="badge bg-secondary-subtle text-secondary border text-xs ms-1">Base</span>
       </div>
     </li>

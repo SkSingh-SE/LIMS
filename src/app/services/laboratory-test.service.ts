@@ -125,4 +125,12 @@ export class LaboratoryTestService {
   deleteAnalysisType(id: number): Observable<any> {
     return this.http.delete<any>(`${environment.apiUrl}/lab-test-analysistype/delete/${id}`);
   }
+
+  getTestMethodSpecificationByAnalysisType(analysisTypeId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/lab-test-analysistype/test-method-specification/${analysisTypeId}`);
+  }
+
+  getStandardsByAnalysisType(analysisTypeId: number): Observable<any[]> {
+    return this.getTestMethodSpecificationByAnalysisType(analysisTypeId);
+  }
 }

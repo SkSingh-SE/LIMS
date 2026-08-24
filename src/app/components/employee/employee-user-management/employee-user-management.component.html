@@ -129,7 +129,6 @@
                         [type]="showPassword ? 'text' : 'password'"
                         class="form-control"
                         formControlName="password"
-                        [disabled]="isViewMode"
                         placeholder="Enter new password..."
                         [ngClass]="{ 'is-invalid': isFieldInvalid('password', submitted) }"
                       />
@@ -164,7 +163,6 @@
                           role="switch"
                           id="loginEnabled"
                           formControlName="isLoginEnabled"
-                          [disabled]="isViewMode"
                           style="width: 3rem; height: 1.5rem"
                         />
                       </div>
@@ -208,7 +206,6 @@
                           role="switch"
                           id="remoteLogin"
                           formControlName="allowRemoteLogin"
-                          [disabled]="isViewMode"
                           style="width: 3rem; height: 1.5rem"
                         />
                       </div>
@@ -223,7 +220,6 @@
                       class="form-control"
                       rows="2"
                       formControlName="ipRestriction"
-                      [disabled]="isViewMode"
                       maxlength="100"
                       placeholder="e.g. 192.168.1.100, 10.0.0.50"
                     ></textarea>
@@ -259,7 +255,6 @@
                                       type="time"
                                       class="form-control"
                                       formControlName="startTime"
-                                      [disabled]="isViewMode"
                                       placeholder="Type here e.g., 09:00"
                                       aria-label="Start time"
                                       [ngClass]="{ 'is-invalid': isFieldInvalid('startTime', submitted) }"
@@ -273,7 +268,6 @@
                                       type="time"
                                       class="form-control"
                                       formControlName="endTime"
-                                      [disabled]="isViewMode"
                                       placeholder="Type here e.g., 18:00"
                                       aria-label="End time"
                                       [ngClass]="{ 'is-invalid': isFieldInvalid('endTime', submitted) }"
@@ -320,7 +314,7 @@
                   <!-- Session Timeout -->
                   <div class="col-md-6">
                     <label class="form-label text-muted small fw-bold">SESSION TIMEOUT</label>
-                    <select class="form-select" formControlName="sessionTimeout" [disabled]="isViewMode"
+                    <select class="form-select" formControlName="sessionTimeout"
                       [ngClass]="{ 'is-invalid': isFieldInvalid('sessionTimeout', submitted) }">
                       <option [value]="0">Default Session</option>
                       <option [value]="15">15 Minutes</option>
@@ -348,7 +342,6 @@
                           role="switch"
                           id="forcePass"
                           formControlName="forcePasswordChange"
-                          [disabled]="isViewMode"
                           style="width: 2.5rem; height: 1.25rem"
                         />
                       </div>

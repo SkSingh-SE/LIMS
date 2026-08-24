@@ -40,19 +40,33 @@ ul.list-group {
   line-height: 1.4;
 }
 
-/* ─── Mouse Hover ─── */
-.dropdown-panel .list-group-item:hover {
-  background-color: var(--primary-50);
-  color: var(--primary-color);
-  padding-left: 16px;
+/* ─── Header Overrides (Non-selectable) ─── */
+.dropdown-panel .dropdown-group-header-0,
+.dropdown-panel .dropdown-group-header-1 {
+  cursor: default !important;
+  user-select: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
 }
 
-/* ─── Keyboard Active / Selected ─── */
-.dropdown-panel .list-group-item.active,
-.dropdown-panel .list-group-item:hover.active {
+.dropdown-panel .dropdown-group-header-0:hover,
+.dropdown-panel .dropdown-group-header-1:hover {
+  background-color: inherit !important;
+  color: inherit !important;
+  padding-left: inherit !important;
+}
+
+/* ─── Mouse Hover (Selectable Only) ─── */
+.dropdown-panel .dropdown-selectable-item:hover {
+  background-color: var(--primary-50);
+  color: var(--primary-color);
+}
+
+/* ─── Keyboard Active / Selected (Selectable Only) ─── */
+.dropdown-panel .dropdown-selectable-item.active,
+.dropdown-panel .dropdown-selectable-item:hover.active {
   background-color: var(--primary-color);
   color: #fff;
-  padding-left: 16px;
   font-weight: 500;
 }
 

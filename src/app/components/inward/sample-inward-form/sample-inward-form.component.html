@@ -785,7 +785,6 @@
                 placeholder="Enter any specific sample receipt notes, packaging condition, or visual remarks..."
                 formControlName="sampleReceiptNote"
                 rows="3"
-                [disabled]="isViewMode"
               ></textarea>
             </fieldset>
           </div>
@@ -806,7 +805,7 @@
                   <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white me-2 px-2 py-0.5 text-xs-68">
                     <i class="bi bi-check-circle-fill me-1"></i> URGENT
                   </span>
-                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="urgent" id="urgent" [disabled]="isViewMode" />
+                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="urgent" id="urgent" />
                 </div>
 
                 <div class="handling-option-card return-card" [class.active-checked]="sampleInwardForm.get('returnSample')?.value">
@@ -817,7 +816,7 @@
                   <span *ngIf="sampleInwardForm.get('returnSample')?.value" class="badge bg-primary text-white me-2 px-2 py-0.5 text-xs-68">
                     <i class="bi bi-check-circle-fill me-1"></i> RETURN
                   </span>
-                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="returnSample" id="returnSample" [disabled]="isViewMode" />
+                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="returnSample" id="returnSample" />
                 </div>
 
                 <div class="handling-option-card retain-card" [class.active-checked]="sampleInwardForm.get('notDestroyed')?.value">
@@ -828,7 +827,7 @@
                   <span *ngIf="sampleInwardForm.get('notDestroyed')?.value" class="badge bg-warning text-dark fw-bold me-2 px-2 py-0.5 text-xs-68">
                     <i class="bi bi-check-circle-fill me-1"></i> RETAIN
                   </span>
-                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="notDestroyed" id="notDestroyed" [disabled]="isViewMode" />
+                  <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="notDestroyed" id="notDestroyed" />
                 </div>
               </div>
             </fieldset>

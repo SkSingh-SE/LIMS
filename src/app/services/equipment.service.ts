@@ -48,7 +48,11 @@ export class EquipmentService {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
   }
 
-  getEquipmentDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  getEquipmentDropdown(searchTerm: string, pageNumber: number, pageSize: number, labTestId?: number, subGroupId?: number, analysisTypeId?: number): Observable<any> {
+    let url = `${this.apiUrl}/dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}`;
+    if (labTestId) url += `&labTestId=${labTestId}`;
+    if (subGroupId) url += `&subGroupId=${subGroupId}`;
+    if (analysisTypeId) url += `&analysisTypeId=${analysisTypeId}`;
+    return this.http.get<any>(url);
   }
 }

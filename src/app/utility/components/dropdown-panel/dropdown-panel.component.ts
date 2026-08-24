@@ -34,9 +34,14 @@ export class DropdownPanelComponent {
   }
 
   onSelect(item: any, index: number): void {
-    if (item?.isHeader) return;
+    if (item?.isHeader || item?.selectable === false) return;
     this.highlightedIndex = index;
     this.selectItem.emit(item);
+  }
+
+  onHover(item: any, index: number): void {
+    if (item?.isHeader || item?.selectable === false) return;
+    this.highlightedIndex = index;
   }
 
   onScrollEvent(event: any): void {

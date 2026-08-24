@@ -138,15 +138,31 @@ export class PlanExplorerPanelComponent implements OnChanges {
     this.toastService.show(`Applied ${grade.gradeName} configuration to active plan tab.`, 'success');
   }
 
-  onQuickApplyTest(test: ConfiguredTest, event: Event): void {
-    event.stopPropagation();
+  onQuickApplyTest(test: ConfiguredTest, grade?: ConfiguredGrade, event?: Event): void {
+    if (event) event.stopPropagation();
     if (this.isViewMode) return;
+    if (grade) {
+      test.specificationGradeID = grade.specificationGradeID;
+      test.gradeName = grade.gradeName;
+      test.specificationName = grade.specificationName;
+      if (grade.chemicalElements) {
+        test.chemicalElements = grade.chemicalElements;
+      }
+    }
     this.applyTestConfig.emit(test);
     this.toastService.show(`Applied ${test.laboratoryTestName} to active plan tab.`, 'success');
   }
 
-  toggleSelectTest(test: ConfiguredTest, event: Event): void {
-    event.stopPropagation();
+  toggleSelectTest(test: ConfiguredTest, grade?: ConfiguredGrade, event?: Event): void {
+    if (event) event.stopPropagation();
+    if (grade) {
+      test.specificationGradeID = grade.specificationGradeID;
+      test.gradeName = grade.gradeName;
+      test.specificationName = grade.specificationName;
+      if (grade.chemicalElements) {
+        test.chemicalElements = grade.chemicalElements;
+      }
+    }
     if (this.selectedTestsToApply.has(test.laboratoryTestID)) {
       this.selectedTestsToApply.delete(test.laboratoryTestID);
     } else {

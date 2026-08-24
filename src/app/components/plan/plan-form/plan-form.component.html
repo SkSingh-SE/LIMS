@@ -383,6 +383,12 @@
                       </span>
                     </div>
                     <div class="d-flex gap-2 align-items-center">
+                      <button *ngIf="!isViewMode && samples.length > 1" type="button"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center"
+                        (click)="copyActivePlanToAllOtherSamples()"
+                        title="Copy this sample's plan to all other samples">
+                        <i class="bi bi-copy me-1.5"></i>Copy to All Samples
+                      </button>
                       <button *ngIf="!isViewMode" type="button"
                         class="btn btn-sm btn-outline-danger d-inline-flex align-items-center"
                         (click)="clearSamplePlan(activeSampleIdx)"
@@ -1072,123 +1078,174 @@
 
       <!-- Combined Panel -->
       <div *ngIf="isCombinedMode" [formGroup]="combinedPlanForm">
-        <div class="combined-header rounded-top">
-          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-            <span class="fw-semibold small"><i class="bi bi-collection me-2"></i>Combined Plan for:</span>
-            <span *ngFor="let idx of getCombinedIdxsArray()" class="combined-sample-tag">
-              {{ samples.at(idx).get('sampleNo')?.value }}
-              <button type="button" class="btn-close combined-close-btn ms-1"
-                (click)="removeFromCombined(idx)"></button>
-            </span>
-            <button type="button" class="btn btn-sm btn-secondary ms-auto"
-              (click)="isCombinedMode = false; combinedIdxs.clear(); selectAllChecked = false">
-              <i class="bi bi-x me-2"></i>Cancel Combined
-            </button>
+        <!-- Header with active tags, cancel -->
+        <div class="combined-header rounded-top p-2 bg-dark text-white">
+          <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="fw-semibold small text-uppercase">
+                <i class="bi bi-collection-play me-1.5 text-danger"></i>Combined Multi-Sample Plan ({{ combinedIdxs.size }} Samples):
+              </span>
+              <span *ngFor="let idx of getCombinedIdxsArray()" class="badge bg-danger bg-opacity-75 text-white d-inline-flex align-items-center gap-1.5 py-1 px-2">
+                #{{ idx + 1 }} {{ samples.at(idx).get('sampleNo')?.value }}
+                <button type="button" class="btn-close btn-close-white extra-small" (click)="removeFromCombined(idx)" title="Remove from combined batch"></button>
+              </span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small"
+                (click)="isCombinedMode = false; combinedIdxs.clear(); selectAllChecked = false">
+                <i class="bi bi-x-circle me-1"></i>Cancel Combined
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Master Classification & Quick Load Toolbar -->
+        <div class="p-2 bg-light border-start border-end border-bottom">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <app-searchable-dropdown
+                [placeholder]="'Product Master (Optional)'"
+                [labelName]="'Product Master'"
+                [fetchDataFn]="getProductMasterDrop"
+                [smallInput]="true"
+                [hideLabel]="false"
+                (itemSelected)="onCombinedProductMasterSelected($event)"
+                [selectedItem]="combinedPlanForm.get('productMasterID')?.value">
+              </app-searchable-dropdown>
+            </div>
+            <div class="col-md-3">
+              <app-searchable-dropdown
+                [placeholder]="'Metal Classification (Optional)'"
+                [labelName]="'Metal Classification'"
+                [fetchDataFn]="getMetalDrop"
+                [smallInput]="true"
+                [hideLabel]="false"
+                (itemSelected)="onCombinedMetalSelected($event)"
+                [selectedItem]="combinedPlanForm.get('metalClassificationID')?.value">
+              </app-searchable-dropdown>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">Quick Load from Sample</label>
+              <select class="form-select form-select-sm" (change)="copyPlanFromSampleToCombined($any($event.target).value); $any($event.target).value = ''">
+                <option value="" selected disabled>-- Copy from Sample --</option>
+                <option *ngFor="let sample of samples.controls; let sIdx = index" [value]="sIdx">
+                  📋 Sample #{{ sIdx + 1 }} ({{ sample.get('sampleNo')?.value }})
+                </option>
+              </select>
+            </div>
+            <div class="col-md-3 d-flex justify-content-end">
+              <button type="button" class="btn btn-sm btn-lims btn-lims-primary w-100 py-1.5 extra-small" (click)="openExplorerModal()">
+                <i class="bi bi-layout-sidebar-reverse me-1.5"></i>Explore Configured Scope
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Combined Tabs -->
-        <ul class="nav nav-tabs combined-nav">
+        <ul class="nav nav-tabs combined-nav border-bottom-0 mt-2">
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'general' }"
               (click)="combinedActiveTab = 'general'" type="button">
-              <i class="bi bi-gear me-2"></i>General Test
+              <i class="bi bi-gear me-1.5"></i>General Test ({{ getCombinedMethods().length }})
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'chemical' }"
               (click)="combinedActiveTab = 'chemical'" type="button">
-              <i class="bi bi-droplet me-2"></i>Chemical Test
+              <i class="bi bi-droplet me-1.5"></i>Chemical Test ({{ getCombinedChemMethods().length }} tests / {{ getCombinedElements().length }} elements)
             </button>
           </li>
         </ul>
 
-        <div class="combined-plan-block rounded-bottom border-top-0">
-          <!-- Combined General Test -->
+        <div class="combined-plan-block rounded-bottom border p-2 bg-white">
+          <!-- Combined General Test Tab -->
           <div *ngIf="combinedActiveTab === 'general'">
             <div class="row row-cols-auto row-cols-md-2 mb-2 spec-row">
-              <div class="">
+              <div>
                 <app-searchable-dropdown [placeholder]="'Type & Search Specification'" [labelName]="'Specification'"
-                  [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(activeSampleIdx)"
+                  [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedGenSpecSelected($event, 'genSpec1')" [hideLabel]="false" [smallInput]="true"
                   [selectedItem]="combinedPlanForm.get('genSpec1')?.value"></app-searchable-dropdown>
               </div>
-              <div class="">
+              <div>
                 <app-searchable-dropdown [placeholder]="'Type & Search Specification 2'" [labelName]="'Specification 2'"
-                  [fetchDataFn]="getMaterialSpecificationGradeForGeneralWrapper(activeSampleIdx)"
+                  [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedGenSpecSelected($event, 'genSpec2')" [hideLabel]="false" [smallInput]="true"
                   [selectedItem]="combinedPlanForm.get('genSpec2')?.value"></app-searchable-dropdown>
               </div>
             </div>
-            <table class="table table-sm table-bordered table-compact align-middle">
-              <thead class="table-light">
-                <tr class="text-nowrap text-muted small">
-                  <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
-                  <th class="fw-medium text-center">Laboratory Test</th>
-                  <th class="fw-medium text-center">Test Method Specification</th>
-                  <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
-                  <th class="fw-medium text-center" style="width: 60px;">Action</th>
-                </tr>
-              </thead>
-              <tbody formArrayName="methods">
-                <tr *ngFor="let method of getCombinedMethods().controls; let methodIdx = index"
-                  [formGroupName]="methodIdx">
-                  <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
-                  <td>
-                    <app-searchable-dropdown [fetchDataFn]="getLabTestDropdown" [placeholder]="'Search Lab Test'"
-                      [hideLabel]="true" [smallInput]="true"
-                      (itemSelected)="onCombinedLabTestSelected($event, methodIdx)"
-                      [selectedItem]="method.get('testMethodID')?.value"></app-searchable-dropdown>
-                  </td>
-                  <td>
-                    <app-searchable-dropdown [fetchDataFn]="getTestMethodSpecificationDrop"
-                      [placeholder]="'Search Test Method Specification'" [labelName]="'Test Method Specification'"
-                      [hideLabel]="true" [smallInput]="true"
-                      (itemSelected)="onCombinedStandardSelected($event, methodIdx)"
-                      [selectedItem]="method.get('standardID')?.value"></app-searchable-dropdown>
-                  </td>
-                  <td class="text-center">
-                    <input type="number" class="form-control form-control-sm text-center" formControlName="quantity"
-                      placeholder="Qty" />
-                  </td>
-                  <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
-                      (click)="getCombinedMethods().removeAt(methodIdx)" title="Delete Row">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+            <div class="table-responsive mb-2">
+              <table class="table table-sm table-bordered table-compact align-middle mb-0">
+                <thead class="table-light">
+                  <tr class="text-nowrap text-muted small">
+                    <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
+                    <th class="fw-medium text-center">Laboratory Test</th>
+                    <th class="fw-medium text-center">Test Method Specification</th>
+                    <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
+                    <th class="fw-medium text-center" style="width: 60px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="methods">
+                  <tr *ngFor="let method of getCombinedMethods().controls; let methodIdx = index" [formGroupName]="methodIdx">
+                    <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
+                    <td>
+                      <app-searchable-dropdown [fetchDataFn]="getLabTestDropdown" [placeholder]="'Search Lab Test'"
+                        [hideLabel]="true" [smallInput]="true"
+                        (itemSelected)="onCombinedLabTestSelected($event, methodIdx)"
+                        [selectedItem]="method.get('testMethodID')?.value"></app-searchable-dropdown>
+                    </td>
+                    <td>
+                      <app-searchable-dropdown [fetchDataFn]="getTestMethodSpecificationDrop"
+                        [placeholder]="'Search Test Method Specification'" [labelName]="'Test Method Specification'"
+                        [hideLabel]="true" [smallInput]="true"
+                        (itemSelected)="onCombinedStandardSelected($event, methodIdx)"
+                        [selectedItem]="method.get('standardID')?.value"></app-searchable-dropdown>
+                    </td>
+                    <td class="text-center">
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="quantity" placeholder="1" min="1" />
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
+                        (click)="removeCombinedMethodRow(methodIdx)" title="Delete Row">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <button type="button" class="btn btn-sm btn-lims btn-lims-add mt-1" (click)="addCombinedMethodRow()">
-              <i class="bi bi-plus-circle me-2"></i>Add Row
+              <i class="bi bi-plus-circle me-1.5"></i>Add General Test Row
             </button>
           </div>
 
-          <!-- Combined Chemical Test -->
+          <!-- Combined Chemical Test Tab -->
           <div *ngIf="combinedActiveTab === 'chemical'">
-            <div class="mb-2 combined-metal-wrapper">
-              <app-searchable-dropdown [placeholder]="'Type & Search Metal Classification'"
-                [labelName]="'Metal Classification'" [fetchDataFn]="getMetalDrop"
-                (itemSelected)="onCombinedMetalSelected($event)" [smallInput]="true"
-                [selectedItem]="combinedPlanForm.get('metalClassificationID')?.value"></app-searchable-dropdown>
+            <!-- Analytical Techniques Selector -->
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-3 p-2 bg-light rounded border">
+              <span class="text-xs-78 fw-semibold text-secondary text-uppercase me-2">
+                <i class="bi bi-cpu me-1 text-danger"></i>Analytical Techniques:
+              </span>
+              <button *ngFor="let tech of availableTechniques" type="button"
+                class="btn btn-xs btn-outline-secondary tech-pill-btn"
+                [class.active]="isCombinedTechniqueSelected(tech.code)"
+                (click)="toggleCombinedTechnique(tech.code)">
+                <i class="bi bi-check2-circle me-1" *ngIf="isCombinedTechniqueSelected(tech.code)"></i>
+                {{ tech.name }} ({{ tech.code }})
+              </button>
             </div>
-            <div class="col-md-6 mb-2">
-              <app-multi-select-dropdown [labelName]="'Laboratory Test Types'"
-                [placeholder]="'Select chemical test types...'" [fetchDataFn]="getChemicalTestTypeDrop"
-                [selectedValues]="combinedPlanForm.get('testTypeIds')?.value"
-                (itemsSelected)="onCombinedChemicalTestTypesSelected($event)" [smallInput]="true">
-              </app-multi-select-dropdown>
-            </div>
-            <div class="row mt-2 spec-row">
-              <div class="col-md-3">
+
+            <!-- Chemical Specifications -->
+            <div class="row row-cols-auto row-cols-md-2 mb-2 spec-row">
+              <div>
                 <app-searchable-dropdown [placeholder]="'Type & Search Specification'" [labelName]="'Specification'"
                   [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedChemSpecSelected($event, 'chemSpec1')" [hideLabel]="false"
                   [smallInput]="true"
                   [selectedItem]="combinedPlanForm.get('chemSpec1')?.value"></app-searchable-dropdown>
               </div>
-              <div class="col-md-3">
+              <div>
                 <app-searchable-dropdown [placeholder]="'Type & Search Specification 2'" [labelName]="'Specification 2'"
                   [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedChemSpecSelected($event, 'chemSpec2')" [hideLabel]="false"
@@ -1196,47 +1253,115 @@
                   [selectedItem]="combinedPlanForm.get('chemSpec2')?.value"></app-searchable-dropdown>
               </div>
             </div>
-            <div *ngIf="getCombinedElements().length > 0" class="mt-2">
+
+            <!-- Chemical Method Rows Table -->
+            <div class="table-responsive mb-2">
               <table class="table table-sm table-bordered table-compact align-middle mb-0">
                 <thead class="table-light">
                   <tr class="text-nowrap text-muted small">
-                    <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
-                    <th class="fw-medium text-center">Element</th>
-                    <th class="fw-medium text-center" style="width: 100px;">Min</th>
-                    <th class="fw-medium text-center" style="width: 100px;">Max</th>
-                    <th class="fw-medium text-center" style="width: 80px;">Unit</th>
-                    <th class="fw-medium text-center" style="width: 60px;">Select</th>
+                    <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
+                    <th class="fw-medium text-center">Chemical Test / Analysis Type</th>
+                    <th class="fw-medium text-center">Test Method Specification</th>
+                    <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
+                    <th class="fw-medium text-center" style="width: 60px;">Action</th>
                   </tr>
                 </thead>
-                <tbody formArrayName="elements">
-                  <tr *ngFor="let el of getCombinedElements().controls; let elIdx = index" [formGroupName]="elIdx">
-                    <td class="text-center fw-semibold text-secondary">{{ elIdx + 1 }}</td>
+                <tbody formArrayName="chemMethods">
+                  <tr *ngFor="let method of getCombinedChemMethods().controls; let methodIdx = index" [formGroupName]="methodIdx">
+                    <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                     <td>
-                      <app-searchable-dropdown class="w-100" [placeholder]="'Parameter'"
-                        [fetchDataFn]="getParameterDrop" [isDisabled]="true" [hideLabel]="true"
-                        [selectedItem]="el.get('parameterID')?.value" [smallInput]="true"></app-searchable-dropdown>
+                      <app-searchable-dropdown
+                        [fetchDataFn]="buildCombinedChemicalLabTestFetchFn()"
+                        [placeholder]="'Search Chemical Test / Analysis Type'"
+                        [hideLabel]="true"
+                        [smallInput]="true"
+                        (itemSelected)="onCombinedChemLabTestSelected($event, methodIdx)"
+                        [selectedItem]="method.get('testMethodID')?.value">
+                      </app-searchable-dropdown>
                     </td>
-                    <td class="text-center"><input type="number" class="form-control form-control-sm text-center"
-                        formControlName="minValue" [readonly]="true" /></td>
-                    <td class="text-center"><input type="number" class="form-control form-control-sm text-center"
-                        formControlName="maxValue" [readonly]="true" /></td>
-                    <td class="text-center small text-secondary"><span>{{ el.get("parameterUnit")?.value || "-"
-                        }}</span></td>
+                    <td>
+                      <app-searchable-dropdown
+                        [fetchDataFn]="getTestMethodSpecificationDrop"
+                        [placeholder]="'Search Test Method Specification'"
+                        [labelName]="'Test Method Specification'"
+                        [hideLabel]="true"
+                        [smallInput]="true"
+                        (itemSelected)="onCombinedChemStandardSelected($event, methodIdx)"
+                        [selectedItem]="method.get('standardID')?.value">
+                      </app-searchable-dropdown>
+                    </td>
                     <td class="text-center">
-                      <div class="form-check d-flex align-items-center justify-content-center mb-0">
-                        <input type="checkbox" class="form-check-input mt-0" formControlName="selected" />
-                      </div>
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="quantity" placeholder="1" min="1" />
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
+                        (click)="removeCombinedChemMethodRow(methodIdx)" title="Delete Row">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            <button type="button" class="btn btn-sm btn-lims btn-lims-add mt-1 mb-3" (click)="addCombinedChemMethodRow()">
+              <i class="bi bi-plus-circle me-1.5"></i>Add Chemical Test Row
+            </button>
+
+            <!-- Chemical Elements Matrix -->
+            <div *ngIf="getCombinedElements().length > 0" class="mt-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="text-xs-78 fw-semibold text-secondary text-uppercase">
+                  <i class="bi bi-table me-1 text-danger"></i>Chemical Elements & Specification Limits ({{ getCombinedElements().length }})
+                </span>
+                <div class="form-check form-check-inline mb-0">
+                  <input type="checkbox" class="form-check-input cursor-pointer" id="combinedSelectAllElements"
+                    [checked]="isAllCombinedElementsSelected()" (change)="toggleSelectAllCombinedElements($event)" />
+                  <label class="form-check-label text-xs-78 cursor-pointer" for="combinedSelectAllElements">Select All Elements</label>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered table-compact align-middle mb-0">
+                  <thead class="table-light">
+                    <tr class="text-nowrap text-muted small">
+                      <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
+                      <th class="fw-medium text-center">Element</th>
+                      <th class="fw-medium text-center" style="width: 100px;">Min</th>
+                      <th class="fw-medium text-center" style="width: 100px;">Max</th>
+                      <th class="fw-medium text-center" style="width: 80px;">Unit</th>
+                      <th class="fw-medium text-center" style="width: 60px;">Select</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="elements">
+                    <tr *ngFor="let el of getCombinedElements().controls; let elIdx = index" [formGroupName]="elIdx">
+                      <td class="text-center fw-semibold text-secondary">{{ elIdx + 1 }}</td>
+                      <td>
+                        <span class="fw-semibold text-dark">{{ el.get('parameterName')?.value || 'Parameter ' + (elIdx + 1) }}</span>
+                      </td>
+                      <td class="text-center">
+                        <input type="number" class="form-control form-control-sm text-center" formControlName="minValue" [readonly]="true" />
+                      </td>
+                      <td class="text-center">
+                        <input type="number" class="form-control form-control-sm text-center" formControlName="maxValue" [readonly]="true" />
+                      </td>
+                      <td class="text-center small text-secondary">
+                        <span>{{ el.get('parameterUnit')?.value || '-' }}</span>
+                      </td>
+                      <td class="text-center">
+                        <div class="form-check d-flex align-items-center justify-content-center mb-0">
+                          <input type="checkbox" class="form-check-input cursor-pointer" formControlName="selected" />
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <!-- Apply Button -->
-          <div class="d-flex justify-content-end mt-3">
-            <button type="button" class="btn btn-lims btn-lims-save" (click)="applyCombinedPlan()">
-              <i class="bi bi-check2-all me-2"></i>Apply to {{ combinedIdxs.size }} Samples
+          <div class="d-flex justify-content-end mt-3 pt-2 border-top">
+            <button type="button" class="btn btn-lims btn-lims-save px-4 shadow-sm" (click)="applyCombinedPlan()">
+              <i class="bi bi-check2-all me-1.5"></i>Apply Combined Plan to {{ combinedIdxs.size }} Samples
             </button>
           </div>
         </div>
@@ -1329,8 +1454,7 @@
         class="modal-header card-form-header text-white py-2 bg-danger d-flex align-items-center justify-content-between"
         (mousedown)="startDragExplorer($event)" title="Click and drag to move window anywhere">
         <h6 class="modal-title text-white mb-0 d-flex align-items-center gap-2 cursor-move">
-          <i class="bi bi-arrows-move me-2"></i> Configured Explorer — Sample #{{
-          getActiveSample().get('sampleNo')?.value }}
+          <i class="bi bi-arrows-move me-2"></i> Configured Explorer — {{ isCombinedMode ? ('Combined Plan (' + combinedIdxs.size + ' Samples)') : ('Sample #' + getActiveSample().get('sampleNo')?.value) }}
         </h6>
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-white bg-opacity-25 text-white extra-small"><i
@@ -1339,10 +1463,11 @@
         </div>
       </div>
       <div class="modal-body p-3 bg-light" style="overflow-y: auto;">
-        <app-plan-explorer-panel [productMasterId]="getActiveSample().get('productMasterID')?.value"
-          [metalClassificationId]="getActiveSample().get('metalClassificationID')?.value"
-          [activeSampleNo]="getActiveSample().get('sampleNo')?.value"
-          [activeTabType]="activeTabs[activeSampleIdx + '-0'] === 'chemical' ? 'chemical' : 'general'"
+        <app-plan-explorer-panel
+          [productMasterId]="isCombinedMode ? combinedPlanForm.get('productMasterID')?.value : getActiveSample().get('productMasterID')?.value"
+          [metalClassificationId]="isCombinedMode ? combinedPlanForm.get('metalClassificationID')?.value : getActiveSample().get('metalClassificationID')?.value"
+          [activeSampleNo]="isCombinedMode ? ('Combined (' + combinedIdxs.size + ' Samples)') : (getActiveSample().get('sampleNo')?.value || '')"
+          [activeTabType]="isCombinedMode ? combinedActiveTab : (activeTabs[activeSampleIdx + '-0'] === 'chemical' ? 'chemical' : 'general')"
           [isViewMode]="isViewMode" (applyGradeConfig)="onApplyGradeConfig($event)"
           (applyTestConfig)="onApplyTestConfig($event)" (applyBatchTests)="onApplyBatchTests($event)">
         </app-plan-explorer-panel>

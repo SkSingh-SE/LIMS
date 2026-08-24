@@ -32,7 +32,7 @@ import { PlanExplorerService, ConfiguredGrade, ConfiguredTest, ProductMasterExpl
   selector: 'app-plan-form',
   templateUrl: './plan-form.component.html',
   styleUrls: ['./plan-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, PlanExplorerPanelComponent]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, PlanExplorerPanelComponent]
 })
 export class PlanFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
@@ -221,21 +221,36 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     return Array.from(this.combinedIdxs);
   }
 
+  combinedTechniquesMap: { [code: string]: boolean } = {};
+
   initCombinedPlanForm(): void {
+    this.combinedTechniquesMap = { OES: true };
     this.combinedPlanForm = this.fb.group({
+      productMasterID: [null],
+      productMasterName: [''],
       metalClassificationID: [null],
+      metalClassificationName: [''],
+      preparationRequired: [false],
+
+      // General Tests
       genSpec1: [null],
       genSpec2: [null],
+      methods: this.fb.array([this.createTestMethodRow('', '')]),
+
+      // Chemical Tests
       chemSpec1: [null],
       chemSpec2: [null],
-      testTypeIds: [[]],
-      methods: this.fb.array([this.createTestMethodRow('', '')]),
+      chemMethods: this.fb.array([this.createTestMethodRow('', '')]),
       elements: this.fb.array([])
     });
   }
 
   getCombinedMethods(): FormArray {
     return this.combinedPlanForm.get('methods') as FormArray;
+  }
+
+  getCombinedChemMethods(): FormArray {
+    return this.combinedPlanForm.get('chemMethods') as FormArray;
   }
 
   getCombinedElements(): FormArray {
@@ -246,6 +261,41 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.getCombinedMethods().push(this.createTestMethodRow('', ''));
   }
 
+  addCombinedChemMethodRow(): void {
+    this.getCombinedChemMethods().push(this.createTestMethodRow('', ''));
+  }
+
+  removeCombinedMethodRow(idx: number): void {
+    this.getCombinedMethods().removeAt(idx);
+  }
+
+  removeCombinedChemMethodRow(idx: number): void {
+    this.getCombinedChemMethods().removeAt(idx);
+  }
+
+  toggleCombinedTechnique(code: string): void {
+    this.combinedTechniquesMap[code] = !this.combinedTechniquesMap[code];
+  }
+
+  isCombinedTechniqueSelected(code: string): boolean {
+    return !!this.combinedTechniquesMap[code];
+  }
+
+  toggleSelectAllCombinedElements(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const elements = this.getCombinedElements();
+    if (!elements) return;
+    elements.controls.forEach(ctrl => {
+      ctrl.get('selected')?.setValue(checked);
+    });
+  }
+
+  isAllCombinedElementsSelected(): boolean {
+    const elements = this.getCombinedElements();
+    if (!elements || elements.length === 0) return false;
+    return elements.controls.every(ctrl => !!ctrl.get('selected')?.value);
+  }
+
   getCombinedSpecWrapper() {
     return (term: string, page: number, pageSize: number) => {
       const metalId = this.combinedPlanForm.get('metalClassificationID')?.value || 0;
@@ -253,8 +303,27 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     };
   }
 
+  onCombinedProductMasterSelected(item: any): void {
+    this.combinedPlanForm.patchValue({
+      productMasterID: item?.id ?? null,
+      productMasterName: item?.name ?? ''
+    });
+    if (item?.id) {
+      this.explorerService.getProductMasterExplorer(item.id).subscribe({
+        next: (data: any) => {
+          if (data && data.grades && data.grades.length > 0) {
+            this.toastService.show(`Found scope with ${data.grades.length} grade(s) for Product Master.`, 'info');
+          }
+        }
+      });
+    }
+  }
+
   onCombinedMetalSelected(item: any): void {
-    this.combinedPlanForm.patchValue({ metalClassificationID: item?.id ?? null });
+    this.combinedPlanForm.patchValue({
+      metalClassificationID: item?.id ?? null,
+      metalClassificationName: item?.name ?? ''
+    });
   }
 
   onCombinedGenSpecSelected(item: any, field: 'genSpec1' | 'genSpec2'): void {
@@ -292,7 +361,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
         .getChemicalElementsBySpecifications(spec1 || 0, spec2 || 0)
         .subscribe({
           next: (elements: any[]) => {
-            const arr = this.combinedPlanForm.get('elements') as FormArray;
+            const arr = this.getCombinedElements();
             while (arr.length) arr.removeAt(0);
             if (!elements || elements.length === 0) {
               this.toastService.show('No chemical elements found.', 'info');
@@ -302,6 +371,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
               const row = this.createElementRow();
               row.patchValue({
                 parameterID: el.parameterID || el.id || 0,
+                parameterName: el.name || el.parameterName || '',
                 parameterUnit: el.unit || el.parameterUnit || '',
                 parameterUnitID: el.unitID || el.parameterUnitID || 0,
                 specificationLineID: el.specificationLineID || 0,
@@ -326,61 +396,256 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     if (m) m.patchValue({ standardID: item?.id ?? null, standardName: item?.name ?? null });
   }
 
+  onCombinedChemLabTestSelected(item: any, methodIdx: number): void {
+    const m = this.getCombinedChemMethods().at(methodIdx);
+    if (m) m.patchValue({ testMethodID: item?.id ?? null });
+  }
+
+  onCombinedChemStandardSelected(item: any, methodIdx: number): void {
+    const m = this.getCombinedChemMethods().at(methodIdx);
+    if (m) m.patchValue({ standardID: item?.id ?? null, standardName: item?.name ?? null });
+  }
+
+  buildCombinedChemicalLabTestFetchFn = () => {
+    return (term: string, page: number, pageSize: number): Observable<any[]> => {
+      const selectedCodes = this.availableTechniques
+        .filter(tech => !!this.combinedTechniquesMap[tech.code])
+        .map(tech => tech.code.toUpperCase());
+
+      return this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize).pipe(
+        map((allTests: any[]) => {
+          let filteredAll = allTests || [];
+          if (selectedCodes.length > 0) {
+            filteredAll = filteredAll.filter((t: any) => {
+              const nameUpper = (t.name || '').toUpperCase();
+              const subGroupUpper = (t.subGroup || t.additionalValues?.technique || '').toUpperCase();
+              return selectedCodes.some(c => nameUpper.includes(c) || subGroupUpper.includes(c));
+            });
+          }
+          return filteredAll;
+        })
+      );
+    };
+  };
+
+  copyPlanFromSampleToCombined(sourceSampleIdx: number): void {
+    if (sourceSampleIdx === undefined || sourceSampleIdx === null || isNaN(+sourceSampleIdx)) return;
+    const srcIdx = +sourceSampleIdx;
+    const testPlans = this.getTestPlans(srcIdx);
+    if (!testPlans || testPlans.length === 0) {
+      this.toastService.show(`Sample #${srcIdx + 1} has no plan to copy.`, 'warning');
+      return;
+    }
+
+    const plan = testPlans.at(0) as FormGroup;
+    const generalTests = plan.get('generalTests') as FormArray;
+    const chemicalTests = plan.get('chemicalTests') as FormArray;
+
+    // 1. Copy General Tests
+    if (generalTests && generalTests.length > 0) {
+      const gt = generalTests.at(0) as FormGroup;
+      this.combinedPlanForm.patchValue({
+        genSpec1: gt.get('specification1')?.value || null,
+        genSpec2: gt.get('specification2')?.value || null
+      });
+
+      const combinedMethods = this.getCombinedMethods();
+      while (combinedMethods.length) combinedMethods.removeAt(0);
+
+      const srcMethods = gt.get('methods') as FormArray;
+      if (srcMethods && srcMethods.length > 0) {
+        srcMethods.controls.forEach(m => {
+          const row = this.createTestMethodRow('', '');
+          row.patchValue(m.value);
+          combinedMethods.push(row);
+        });
+      }
+    }
+
+    // 2. Copy Chemical Tests
+    if (chemicalTests && chemicalTests.length > 0) {
+      const ct = chemicalTests.at(0) as FormGroup;
+      this.combinedPlanForm.patchValue({
+        chemSpec1: ct.get('specification1')?.value || null,
+        chemSpec2: ct.get('specification2')?.value || null
+      });
+
+      const combinedChemMethods = this.getCombinedChemMethods();
+      while (combinedChemMethods.length) combinedChemMethods.removeAt(0);
+
+      const srcChemMethods = ct.get('methods') as FormArray;
+      if (srcChemMethods && srcChemMethods.length > 0) {
+        srcChemMethods.controls.forEach(m => {
+          const row = this.createTestMethodRow('', '');
+          row.patchValue(m.value);
+          combinedChemMethods.push(row);
+        });
+      }
+
+      const combinedElements = this.getCombinedElements();
+      while (combinedElements.length) combinedElements.removeAt(0);
+
+      const srcElements = ct.get('elements') as FormArray;
+      if (srcElements && srcElements.length > 0) {
+        srcElements.controls.forEach(e => {
+          const row = this.createElementRow();
+          row.patchValue(e.value);
+          combinedElements.push(row);
+        });
+      }
+    }
+
+    // 3. Copy Techniques
+    this.availableTechniques.forEach(t => {
+      this.combinedTechniquesMap[t.code] = !!this.selectedTechniquesMap[`${srcIdx}_${t.code}`];
+    });
+
+    const sampleNo = this.samples.at(srcIdx)?.get('sampleNo')?.value || `#${srcIdx + 1}`;
+    this.toastService.show(`Loaded test plan from Sample ${sampleNo} into Combined Plan.`, 'success');
+  }
+
+  copyActivePlanToAllOtherSamples(): void {
+    if (this.samples.length <= 1) return;
+    const srcIdx = this.activeSampleIdx;
+    const srcSampleNo = this.samples.at(srcIdx)?.get('sampleNo')?.value || `#${srcIdx + 1}`;
+
+    this.copyPlanFromSampleToCombined(srcIdx);
+
+    this.combinedIdxs.clear();
+    for (let i = 0; i < this.samples.length; i++) {
+      if (i !== srcIdx) {
+        this.combinedIdxs.add(i);
+      }
+    }
+
+    this.applyCombinedPlan();
+    this.toastService.show(`Copied test plan from Sample ${srcSampleNo} to all other ${this.samples.length - 1} samples.`, 'success');
+  }
+
   applyCombinedPlan(): void {
     if (this.combinedIdxs.size === 0) return;
     const methods = this.getCombinedMethods();
-    const combinedTestTypeIds: number[] = this.combinedPlanForm.get('testTypeIds')?.value || [];
-    const hasChemical = combinedTestTypeIds.length > 0;
+    const chemMethods = this.getCombinedChemMethods();
     const combinedElements = this.getCombinedElements();
+    const activeTechniques = this.availableTechniques.filter(t => !!this.combinedTechniquesMap[t.code]);
+
+    const hasGeneral = methods.length > 0 && methods.controls.some(m => !!m.get('testMethodID')?.value);
+    const hasChemical = (chemMethods.length > 0 && chemMethods.controls.some(m => !!m.get('testMethodID')?.value))
+      || combinedElements.length > 0
+      || activeTechniques.length > 0;
+
+    const prodId = this.combinedPlanForm.get('productMasterID')?.value;
+    const metalId = this.combinedPlanForm.get('metalClassificationID')?.value;
+    const prepReq = this.combinedPlanForm.get('preparationRequired')?.value;
 
     for (const sampleIdx of this.combinedIdxs) {
-      const sampleNo = this.samples.at(sampleIdx).get('sampleNo')?.value || '';
-      const testPlans = this.getTestPlans(sampleIdx);
+      const sampleGroup = this.samples.at(sampleIdx) as FormGroup;
+      const sampleNo = sampleGroup.get('sampleNo')?.value || '';
 
+      if (prodId) sampleGroup.patchValue({ productMasterID: prodId });
+      if (metalId) sampleGroup.patchValue({ metalClassificationID: metalId });
+      if (prepReq !== undefined && prepReq !== null) sampleGroup.patchValue({ preparationRequired: prepReq });
+
+      const testPlans = this.getTestPlans(sampleIdx);
       let plan: FormGroup;
       if (testPlans.length === 0) {
-        plan = this.fb.group({ id: [0], sampleNo: [sampleNo], generalTests: this.fb.array([]), chemicalTests: this.fb.array([]) });
+        plan = this.fb.group({
+          id: [0],
+          sampleNo: [sampleNo],
+          generalTests: this.fb.array([]),
+          chemicalTests: this.fb.array([])
+        });
         testPlans.push(plan);
-        this.setActiveTab(sampleIdx, 0, 'general');
       } else {
         plan = testPlans.at(0) as FormGroup;
       }
 
-      const generalTests = plan.get('generalTests') as FormArray;
-      while (generalTests.length) generalTests.removeAt(0);
-      if (methods.length > 0) {
+      // 1. Apply General Tests
+      if (hasGeneral) {
+        const generalTests = plan.get('generalTests') as FormArray;
+        while (generalTests.length) generalTests.removeAt(0);
+
         const gtGroup = this.createGeneralTestGroup();
-        gtGroup.patchValue({ sampleNo, specification1: this.combinedPlanForm.get('genSpec1')?.value, specification2: this.combinedPlanForm.get('genSpec2')?.value });
+        gtGroup.patchValue({
+          sampleNo,
+          specification1: this.combinedPlanForm.get('genSpec1')?.value || null,
+          specification2: this.combinedPlanForm.get('genSpec2')?.value || null
+        });
+
+        const gtMethods = gtGroup.get('methods') as FormArray;
+        while (gtMethods.length) gtMethods.removeAt(0);
+
         for (let m = 0; m < methods.length; m++) {
           const srcM = methods.at(m).value;
-          const row = this.createTestMethodRow('', '');
-          row.patchValue({ testMethodID: srcM.testMethodID, quantity: srcM.quantity, standardID: srcM.standardID, standardName: srcM.standardName });
-          (gtGroup.get('methods') as FormArray).push(row);
+          if (srcM.testMethodID) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue(srcM);
+            gtMethods.push(row);
+          }
         }
-        generalTests.push(gtGroup);
+        if (gtMethods.length > 0) {
+          generalTests.push(gtGroup);
+        }
       }
 
-      if (hasChemical || combinedElements.length > 0) {
+      // 2. Apply Chemical Tests
+      if (hasChemical) {
         const chemTests = plan.get('chemicalTests') as FormArray;
         while (chemTests.length) chemTests.removeAt(0);
+
         const newChem = this.createChemicalTestGroup('', '');
-        newChem.patchValue({ sampleNo, specification1: this.combinedPlanForm.get('chemSpec1')?.value, specification2: this.combinedPlanForm.get('chemSpec2')?.value });
-        newChem.get('testTypeIds')?.setValue([...combinedTestTypeIds]);
+        newChem.patchValue({
+          sampleNo,
+          specification1: this.combinedPlanForm.get('chemSpec1')?.value || null,
+          specification2: this.combinedPlanForm.get('chemSpec2')?.value || null
+        });
+
+        // Copy Chemical Methods
+        const ctMethods = newChem.get('methods') as FormArray;
+        while (ctMethods.length) ctMethods.removeAt(0);
+
+        for (let m = 0; m < chemMethods.length; m++) {
+          const srcM = chemMethods.at(m).value;
+          if (srcM.testMethodID) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue(srcM);
+            ctMethods.push(row);
+          }
+        }
+
+        // Copy Chemical Elements
+        const ctElements = newChem.get('elements') as FormArray;
+        while (ctElements.length) ctElements.removeAt(0);
+
         for (let e = 0; e < combinedElements.length; e++) {
           const row = this.createElementRow();
           row.patchValue(combinedElements.at(e).value);
-          (newChem.get('elements') as FormArray).push(row);
+          ctElements.push(row);
         }
+
         chemTests.push(newChem);
+
+        // Synchronize Active Techniques for this sample
+        this.availableTechniques.forEach(t => {
+          this.selectedTechniquesMap[`${sampleIdx}_${t.code}`] = !!this.combinedTechniquesMap[t.code];
+        });
+      }
+
+      // Auto-set specificationGradeID on sample if present
+      const specGradeId = this.combinedPlanForm.get('genSpec1')?.value || this.combinedPlanForm.get('chemSpec1')?.value;
+      if (specGradeId && !sampleGroup.get('specificationGradeID')?.value) {
+        sampleGroup.patchValue({ specificationGradeID: +specGradeId });
       }
     }
 
-    this.toastService.show(`Combined plan applied to ${this.combinedIdxs.size} samples.`, 'success');
+    this.toastService.show(`Successfully applied combined test plan to ${this.combinedIdxs.size} samples.`, 'success');
     const firstIdx = Array.from(this.combinedIdxs)[0];
     this.combinedIdxs = new Set();
     this.isCombinedMode = false;
     this.selectAllChecked = false;
     this.activeSampleIdx = firstIdx;
+    this.planForm.markAsDirty();
+    this.cdr.markForCheck();
   }
 
   displayUlr(value: string | null | undefined): string {
@@ -3403,13 +3668,109 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
     this.planForm.markAsDirty();
   }
 
-  onCombinedChemicalTestTypesSelected(items: any[]): void {
-    this.combinedPlanForm.get('testTypeIds')?.setValue(items.map(i => i.id));
-  }
-
-
   onApplyGradeConfig(grade: ConfiguredGrade, targetSampleIdx?: number): void {
     if (this.isViewMode || !grade) return;
+
+    if (this.isCombinedMode) {
+      if (grade.specificationGradeID) {
+        this.combinedPlanForm.patchValue({
+          genSpec1: grade.specificationGradeID,
+          chemSpec1: grade.specificationGradeID
+        });
+      }
+
+      // 1. General Tests in Combined Mode
+      const generalTests = grade.configuredTests?.filter(t => t.testType !== 'Chemical') || [];
+      const methodsArray = this.getCombinedMethods();
+      generalTests.forEach(test => {
+        const leafId = test.laboratoryTestSubGroupID || test.laboratoryTestID;
+        if (!leafId) return;
+        const specId = test.testMethodSpecificationID || test.testMethodStandardID || null;
+        const specName = test.testMethodSpecificationName || test.testMethodStandardName || '';
+        const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+        if (emptyRow) {
+          emptyRow.patchValue({ testMethodID: +leafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+        } else {
+          const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +leafId);
+          if (!exists) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue({ testMethodID: +leafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+            methodsArray.push(row);
+          }
+        }
+      });
+
+      // 2. Chemical Tests in Combined Mode
+      const chemicalTests = grade.configuredTests?.filter(t => t.testType === 'Chemical') || [];
+      const chemMethods = this.getCombinedChemMethods();
+      chemicalTests.forEach(ct => {
+        const chemLeafId = ct.laboratoryTestAnalysisTypeID || ct.laboratoryTestSubGroupID || ct.laboratoryTestID;
+        if (!chemLeafId) return;
+        const specId = ct.testMethodSpecificationID || ct.testMethodStandardID || null;
+        const specName = ct.testMethodSpecificationName || ct.testMethodStandardName || '';
+        const emptyRow = chemMethods.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+        if (emptyRow) {
+          emptyRow.patchValue({ testMethodID: +chemLeafId, standardID: specId, standardName: specName, quantity: ct.quantity || 1 });
+        } else {
+          const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +chemLeafId);
+          if (!exists) {
+            const row = this.createTestMethodRow('', '');
+            row.patchValue({ testMethodID: +chemLeafId, standardID: specId, standardName: specName, quantity: ct.quantity || 1 });
+            chemMethods.push(row);
+          }
+        }
+      });
+
+      // Enable techniques matching configured chemical tests
+      this.availableTechniques.forEach(tech => {
+        delete this.combinedTechniquesMap[tech.code];
+      });
+      const matchedTechs = new Set<string>();
+      chemicalTests.forEach(ct => {
+        const testNameUpper = (ct.laboratoryTestName || '').toUpperCase();
+        const subGroupUpper = (ct.subGroup || '').toUpperCase();
+        const specUpper = (ct.testMethodSpecificationName || ct.testMethodStandardName || '').toUpperCase();
+        this.availableTechniques.forEach(tech => {
+          if (testNameUpper.includes(tech.code) || subGroupUpper.includes(tech.code) || specUpper.includes(tech.code)) {
+            matchedTechs.add(tech.code);
+          }
+        });
+      });
+      if (matchedTechs.size > 0) {
+        matchedTechs.forEach(code => { this.combinedTechniquesMap[code] = true; });
+      } else if (chemicalTests.length > 0) {
+        this.combinedTechniquesMap['OES'] = true;
+      }
+
+      // 3. Chemical Elements in Combined Mode
+      if (grade.chemicalElements?.length > 0) {
+        const elementsArray = this.getCombinedElements();
+        const existingMap = new Map<number, AbstractControl>();
+        elementsArray.controls.forEach(ctrl => {
+          const id = ctrl.get('parameterID')?.value;
+          if (id) existingMap.set(+id, ctrl);
+        });
+        grade.chemicalElements.forEach(el => {
+          if (el.parameterID && !existingMap.has(+el.parameterID)) {
+            const row = this.createElementRow();
+            row.patchValue({
+              parameterID: +el.parameterID,
+              parameterName: el.parameterName || '',
+              minValue: el.minValue ?? null,
+              maxValue: el.maxValue ?? null,
+              parameterUnitID: el.parameterUnitID || 0,
+              parameterUnit: el.parameterUnit || '',
+              selected: true
+            });
+            elementsArray.push(row);
+          }
+        });
+      }
+
+      this.toastService.show(`Applied scope for ${grade.gradeName || 'grade'} to Combined Plan.`, 'success');
+      return;
+    }
+
     const sampleIdx = targetSampleIdx !== undefined ? targetSampleIdx : this.activeSampleIdx;
     const testPlans = this.getTestPlans(sampleIdx);
     if (!testPlans || testPlans.length === 0) {
@@ -3593,6 +3954,78 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit {
 
   onApplyTestConfig(test: ConfiguredTest, targetSampleIdx?: number): void {
     if (this.isViewMode || !test) return;
+
+    if (this.isCombinedMode) {
+      const isChemical = test.testType === 'Chemical' || (test.subGroup && test.subGroup.toLowerCase().includes('chemical'));
+      const specGradeId = test.specificationGradeID || this.combinedPlanForm.get('chemSpec1')?.value || this.combinedPlanForm.get('genSpec1')?.value;
+
+      if (isChemical) {
+        this.combinedActiveTab = 'chemical';
+        if (specGradeId && !this.combinedPlanForm.get('chemSpec1')?.value) {
+          this.combinedPlanForm.patchValue({ chemSpec1: +specGradeId });
+          this.onCombinedChemSpecSelected({ id: +specGradeId, name: test.gradeName }, 'chemSpec1');
+        }
+
+        const chemMethods = this.getCombinedChemMethods();
+        const chemLeafId = test.laboratoryTestAnalysisTypeID || test.laboratoryTestSubGroupID || test.laboratoryTestID;
+        if (chemLeafId) {
+          const specId = test.testMethodSpecificationID || test.testMethodStandardID || null;
+          const specName = test.testMethodSpecificationName || test.testMethodStandardName || '';
+          const emptyRow = chemMethods.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+          if (emptyRow) {
+            emptyRow.patchValue({ testMethodID: +chemLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+          } else {
+            const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +chemLeafId);
+            if (!exists) {
+              const row = this.createTestMethodRow('', '');
+              row.patchValue({ testMethodID: +chemLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+              chemMethods.push(row);
+            }
+          }
+        }
+
+        // Enable matching technique
+        const testNameUpper = (test.laboratoryTestName || '').toUpperCase();
+        const subGroupUpper = (test.subGroup || '').toUpperCase();
+        const specUpper = (test.testMethodSpecificationName || test.testMethodStandardName || '').toUpperCase();
+        const matchingTech = this.availableTechniques.find(tech =>
+          testNameUpper.includes(tech.code) || subGroupUpper.includes(tech.code) || specUpper.includes(tech.code)
+        );
+        if (matchingTech) {
+          this.combinedTechniquesMap[matchingTech.code] = true;
+        } else if (!Object.values(this.combinedTechniquesMap).some(Boolean)) {
+          this.combinedTechniquesMap['OES'] = true;
+        }
+
+        this.toastService.show(`Applied ${test.laboratoryTestName} to Combined Chemical Tests.`, 'success');
+      } else {
+        this.combinedActiveTab = 'general';
+        if (specGradeId && !this.combinedPlanForm.get('genSpec1')?.value) {
+          this.combinedPlanForm.patchValue({ genSpec1: +specGradeId });
+        }
+
+        const methodsArray = this.getCombinedMethods();
+        const mechLeafId = test.laboratoryTestSubGroupID || test.laboratoryTestID;
+        if (mechLeafId) {
+          const specId = test.testMethodSpecificationID || test.testMethodStandardID || null;
+          const specName = test.testMethodSpecificationName || test.testMethodStandardName || '';
+          const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
+          if (emptyRow) {
+            emptyRow.patchValue({ testMethodID: +mechLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+          } else {
+            const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +mechLeafId);
+            if (!exists) {
+              const row = this.createTestMethodRow('', '');
+              row.patchValue({ testMethodID: +mechLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+              methodsArray.push(row);
+            }
+          }
+        }
+
+        this.toastService.show(`Applied ${test.laboratoryTestName} to Combined General Tests.`, 'success');
+      }
+      return;
+    }
     const sampleIdx = targetSampleIdx !== undefined ? targetSampleIdx : this.activeSampleIdx;
     const testPlans = this.getTestPlans(sampleIdx);
     if (!testPlans || testPlans.length === 0) {

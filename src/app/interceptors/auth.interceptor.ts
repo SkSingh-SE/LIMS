@@ -30,11 +30,26 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);
 
   let token = authService.getUserData()?.token; // Retrieve token from service
-  const excludedUrls = ['/api/Auth/login', 'api/Auth/refresh-token', '/api/Auth/forgot'];
-  const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/GstValidator', '/api/ParameterUnitMaster/equivalents'];
+  const excludedUrls = ['/api/Auth/login', '/api/Auth/refresh-token', 'api/Auth/refresh-token', '/api/Auth/forgot'];
+  const excludeLoaderUrl = [
+    '/api/Auth/login',
+    '/api/Auth/forgot',
+    '/api/Auth/refresh-token',
+    'api/Auth/refresh-token',
+    '/api/GstValidator',
+    '/api/ParameterUnitMaster/equivalents',
+    '/hubs/',
+    '/api/Notification/'
+  ];
 
-  const isDropdownCall = req.url.includes('dropdown');
-  const shouldExclude = excludedUrls.some(url => req.url.includes(url));
+  const urlLower = req.url.toLowerCase();
+  const isDropdownOrLookup = urlLower.includes('dropdown') ||
+                             urlLower.includes('distinct-names') ||
+                             urlLower.includes('search') ||
+                             urlLower.includes('lookup');
+
+  const shouldExcludeAuth = excludedUrls.some(url => req.url.includes(url));
+  const shouldExcludeLoader = isDropdownOrLookup || excludeLoaderUrl.some(url => req.url.includes(url));
 
   const getErrorMessage = (error: HttpErrorResponse): string => {
     if (error.status === 0) {
@@ -81,23 +96,18 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       setHeaders: { Authorization: `Bearer ${accessToken}` }
     });
 
-    let showedLoader = false;
-    if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
-      loaderService.show();
-      showedLoader = true;
+    let reqId: string | null = null;
+    if (!shouldExcludeLoader) {
+      reqId = loaderService.show();
     }
 
-    let responseReceived = false;
     return next(modifiedReq).pipe(
       tap(event => {
         if (event.type === HttpEventType.Response) {
-          responseReceived = true;
           unauthorizedCount = 0;
-          console.log(modifiedReq.url, 'returned a response with status', event.status);
         }
       }),
       catchError((error: HttpErrorResponse) => {
-        responseReceived = true;
         if (error.status === 401) {
           unauthorizedCount++;
           if (unauthorizedCount >= unauthorizedLimit) {
@@ -115,15 +125,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => enhancedError);
       }),
       finalize(() => {
-        if (showedLoader) {
-          loaderService.hide();
+        if (reqId) {
+          loaderService.hide(reqId);
         }
       })
     );
-  }
+  };
 
   // If the token is expiring soon, refresh it before making the request
-  if (token && !shouldExclude && authService.isTokenExpiringSoon()) {
+  if (token && !shouldExcludeAuth && authService.isTokenExpiringSoon()) {
     return authService.refreshToken(token).pipe(
       tap((response: any) => {
         if (response && response.token) {
@@ -149,22 +159,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   // Token exists and not expiring — handleRequest manages loader internally
-  if (token && !shouldExclude) {
+  if (token && !shouldExcludeAuth) {
     return handleRequest(token);
   }
 
   // No token or excluded — show loader for non-excluded URLs
-  let showedLoader = false;
-  if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
-    loaderService.show();
-    showedLoader = true;
+  let reqId: string | null = null;
+  if (!shouldExcludeLoader) {
+    reqId = loaderService.show();
   }
 
   return next(req).pipe(
     tap(event => {
       if (event.type === HttpEventType.Response) {
         unauthorizedCount = 0;
-        console.log(req.url, 'returned a response with status', event.status);
       }
     }),
     catchError((error: HttpErrorResponse) => {
@@ -185,8 +193,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       return throwError(() => enhancedError);
     }),
     finalize(() => {
-      if (showedLoader) {
-        loaderService.hide();
+      if (reqId) {
+        loaderService.hide(reqId);
       }
     })
   );

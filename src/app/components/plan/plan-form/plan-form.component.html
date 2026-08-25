@@ -54,7 +54,8 @@
       <!-- Panel Header (sticky) -->
       <div class="sample-panel-header">
         <div class="d-flex align-items-center gap-2">
-          <input type="checkbox" class="form-check-input mt-0" [checked]="selectAllChecked"
+          <input *ngIf="!isViewMode && samples.length > 1" type="checkbox" class="form-check-input mt-0 cursor-pointer"
+            [checked]="isAllSamplesSelected()" [indeterminate]="isSomeSamplesSelected()"
             (change)="toggleSelectAll($event)" title="Select all samples for combined planning">
           <span class="sample-panel-label"><i class="bi bi-collection ms-1 me-2 text-danger"></i>SAMPLES</span>
         </div>
@@ -330,25 +331,25 @@
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Preserve broken specimen')"
                               title="Click to toggle 'Preserve broken specimen'">
-                              <i class="bi" [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'bi-check-lg' : 'bi-plus'"></i> Preserve
+                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'bi-check-lg' : 'bi-plus'"></i>Preserve
                             </button>
                             <button type="button" class="btn btn-xs preset-chip-btn"
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Provide stress-strain graph')"
                               title="Click to toggle 'Provide stress-strain graph'">
-                              <i class="bi" [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'bi-check-lg' : 'bi-plus'"></i> Graph
+                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'bi-check-lg' : 'bi-plus'"></i>Graph
                             </button>
                             <button type="button" class="btn btn-xs preset-chip-btn"
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Impact test at -46°C')"
                               title="Click to toggle 'Impact test at -46°C'">
-                              <i class="bi" [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'bi-check-lg' : 'bi-plus'"></i> -46°C
+                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'bi-check-lg' : 'bi-plus'"></i>-46°C
                             </button>
                             <button type="button" class="btn btn-xs preset-chip-btn"
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Protect polished surface')"
                               title="Click to toggle 'Protect polished surface'">
-                              <i class="bi" [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'bi-check-lg' : 'bi-plus'"></i> Protect
+                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'bi-check-lg' : 'bi-plus'"></i>Protect
                             </button>
                           </div>
                         </div>
@@ -384,25 +385,27 @@
                     </div>
                     <div class="d-flex gap-2 align-items-center">
                       <button *ngIf="!isViewMode && samples.length > 1" type="button"
-                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5"
                         (click)="copyActivePlanToAllOtherSamples()"
                         title="Copy this sample's plan to all other samples">
-                        <i class="bi bi-copy me-1.5"></i>Copy to All Samples
+                        <i class="bi bi-copy me-1"></i><span>Copy to All Samples</span>
                       </button>
                       <button *ngIf="!isViewMode" type="button"
-                        class="btn btn-sm btn-outline-danger d-inline-flex align-items-center"
+                        class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1.5"
                         (click)="clearSamplePlan(activeSampleIdx)"
                         title="Clear all planned tests for this sample">
-                        <i class="bi bi-trash3 me-1.5"></i>Clear Plan
+                        <i class="bi bi-trash3 me-1"></i><span>Clear Plan</span>
                       </button>
                       <button *ngIf="testPlan.get('id')?.value > 0" type="button"
-                        class="btn btn-sm btn-outline-secondary" (click)="togglePlanHistory(testPlan.get('id')?.value)"
+                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5"
+                        (click)="togglePlanHistory(testPlan.get('id')?.value)"
                         title="View History">
-                        <i class="bi bi-clock-history me-1.5"></i>History
+                        <i class="bi bi-clock-history me-1"></i><span>History</span>
                       </button>
-                      <button *ngIf="isPlanApproved(testPlan)" type="button" class="btn btn-sm btn-outline-warning"
+                      <button *ngIf="isPlanApproved(testPlan)" type="button"
+                        class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1.5"
                         (click)="openReplanModal(testPlan.get('id')?.value)" title="Request Replan">
-                        <i class="bi bi-arrow-repeat me-1.5"></i>Replan
+                        <i class="bi bi-arrow-repeat me-1"></i><span>Replan</span>
                       </button>
                     </div>
                   </div>
@@ -733,8 +736,8 @@
                         [class.border-warning]="!hasSelectedTechnique(activeSampleIdx)"
                         [class.border-light-subtle]="hasSelectedTechnique(activeSampleIdx)">
                         <div class="d-flex flex-wrap gap-3 align-items-center">
-                          <span class="fw-semibold small text-dark d-flex align-items-center gap-1.5">
-                            <i class="bi bi-funnel text-danger"></i>
+                          <span class="fw-semibold small text-dark d-flex align-items-center">
+                            <i class="bi bi-funnel text-danger me-1.5"></i>
                             <span>Analytical Techniques <span class="text-danger">*</span>:</span>
                           </span>
                           <label *ngFor="let tech of availableTechniques" class="tech-check-item">
@@ -745,7 +748,7 @@
                             <span>{{ tech.name }}</span>
                           </label>
                           <span *ngIf="!hasSelectedTechnique(activeSampleIdx)" class="extra-small text-danger fw-semibold ms-auto">
-                            <i class="bi bi-exclamation-circle me-1"></i>Select at least 1 technique to add/search chemical tests
+                            <i class="bi bi-exclamation-circle me-1.5"></i>Select at least 1 technique to add/search chemical tests
                           </span>
                         </div>
                       </div>
@@ -943,15 +946,15 @@
                               *ngIf="getElementsArray(activeSampleIdx, planIdx, chemIdx) && getElementsArray(activeSampleIdx, planIdx, chemIdx).length > 0"
                               class="mt-3">
                               <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
-                                <div class="fw-semibold text-secondary small d-flex align-items-center gap-1.5">
-                                  <i class="bi bi-grid-3x3-gap text-danger"></i>
+                                <div class="fw-semibold text-secondary small d-flex align-items-center">
+                                  <i class="bi bi-grid-3x3-gap text-danger me-1.5"></i>
                                   <span>Chemical Element Matrix (Test-Wise Categorized)</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                  <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-primary"
+                                  <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1.5"
                                     (click)="reloadAllConfiguredSpectroMatrices(activeSampleIdx, planIdx, chemIdx)"
                                     title="Load / Refresh machine spectro matrices for all selected chemical tests">
-                                    <i class="bi bi-arrow-repeat me-1"></i>Load Spectro Elements
+                                    <i class="bi bi-arrow-repeat me-1"></i><span>Load Spectro Elements</span>
                                   </button>
                                 </div>
                               </div>
@@ -968,8 +971,9 @@
                                       <th class="fw-medium text-center" style="width: 70px;">UNIT</th>
                                       <th class="fw-medium text-center" style="width: 80px;">
                                         <div class="d-flex align-items-center justify-content-center gap-1">
-                                          <input type="checkbox" class="form-check-input mt-0"
+                                          <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
                                             [checked]="isAllElementsSelected(activeSampleIdx, planIdx, chemIdx)"
+                                            [indeterminate]="isSomeElementsSelected(activeSampleIdx, planIdx, chemIdx)"
                                             (change)="toggleSelectAllElements($event, activeSampleIdx, planIdx, chemIdx)"
                                             [disabled]="isViewMode" title="Select / Deselect all elements" />
                                           <span class="extra-small text-muted">All</span>
@@ -979,17 +983,17 @@
                                   </thead>
                                   <tbody formArrayName="elements">
                                     <ng-container
-                                      *ngFor="let grp of getGroupedChemicalElements(activeSampleIdx, planIdx, chemIdx)">
+                                      *ngFor="let grp of getGroupedChemicalElements(activeSampleIdx, planIdx, chemIdx); trackBy: trackByGroupKey">
                                       <!-- Categorized Header Row -->
                                       <tr class="table-light">
                                         <td colspan="6" class="py-1 px-2 fw-semibold small bg-light-subtle">
                                           <span *ngIf="grp.sourceType === 'Specification'"
                                             class="badge bg-danger-subtle text-danger border border-danger-subtle me-2">
-                                            <i class="bi bi-bookmark-check me-1"></i>Specification Grade
+                                            <i class="bi bi-bookmark-check me-1.5"></i>Specification Grade
                                           </span>
                                           <span *ngIf="grp.sourceType !== 'Specification'"
                                             class="badge bg-info-subtle text-info-emphasis border border-info-subtle me-2">
-                                            <i class="bi bi-cpu me-1"></i>Analysis Type
+                                            <i class="bi bi-cpu me-1.5"></i>Analysis Type
                                           </span>
                                           <span class="text-dark">{{ grp.title }}</span>
                                           <span class="text-muted extra-small ms-2">({{ grp.elements.length }}
@@ -998,8 +1002,9 @@
                                         <td class="text-center py-1 bg-light-subtle">
                                           <div class="form-check d-inline-block mb-0"
                                             title="Select / Deselect all in this group">
-                                            <input type="checkbox" class="form-check-input mt-0"
-                                              [checked]="grp.isAllSelected"
+                                            <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                                              [checked]="isGroupAllSelected(grp)"
+                                              [indeterminate]="isGroupSomeSelected(grp)"
                                               (change)="toggleSelectGroupElements(activeSampleIdx, planIdx, chemIdx, grp, $event)"
                                               [disabled]="isViewMode" />
                                           </div>
@@ -1007,7 +1012,7 @@
                                       </tr>
 
                                       <!-- Categorized Element Rows -->
-                                      <tr *ngFor="let item of grp.elements" [formGroupName]="item.originalIndex">
+                                      <tr *ngFor="let item of grp.elements; trackBy: trackByElementItem" [formGroupName]="item.originalIndex">
                                         <td class="text-center fw-semibold text-secondary">{{ item.originalIndex + 1 }}
                                         </td>
                                         <td>
@@ -1039,8 +1044,10 @@
                                           <span>{{ item.control.get("parameterUnit")?.value || "%" }}</span>
                                         </td>
                                         <td class="text-center">
-                                          <input type="checkbox" class="form-check-input mt-0"
-                                            formControlName="selected" />
+                                          <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                                            [checked]="item.control.get('selected')?.value"
+                                            (change)="toggleElementSelection(item.control, $event)"
+                                            [disabled]="isViewMode" />
                                         </td>
                                       </tr>
                                     </ng-container>
@@ -1091,9 +1098,9 @@
               </span>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small"
+              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small d-inline-flex align-items-center gap-1.5"
                 (click)="isCombinedMode = false; combinedIdxs.clear(); selectAllChecked = false">
-                <i class="bi bi-x-circle me-1"></i>Cancel Combined
+                <i class="bi bi-x-circle me-1"></i><span>Cancel Combined</span>
               </button>
             </div>
           </div>
@@ -1180,25 +1187,27 @@
                 <thead class="table-light">
                   <tr class="text-nowrap text-muted small">
                     <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
-                    <th class="fw-medium text-center">Laboratory Test</th>
-                    <th class="fw-medium text-center">Test Method Specification</th>
-                    <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
-                    <th class="fw-medium text-center" style="width: 60px;">Action</th>
+                    <th class="fw-medium">LABORATORY TEST</th>
+                    <th class="fw-medium">TEST METHOD SPECIFICATION</th>
+                    <th class="fw-medium text-center" style="width: 90px;">QUANTITY</th>
+                    <th class="fw-medium text-center" style="width: 60px;">ACTION</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="methods">
                   <tr *ngFor="let method of getCombinedMethods().controls; let methodIdx = index" [formGroupName]="methodIdx">
                     <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                     <td>
-                      <app-searchable-dropdown [fetchDataFn]="getLabTestDropdown" [placeholder]="'Search Lab Test'"
+                      <app-searchable-dropdown [fetchDataFn]="buildCombinedGeneralLabTestFetchFn()" [placeholder]="'Search General / Mechanical Test'"
                         [hideLabel]="true" [smallInput]="true"
+                        [reloadKey]="'comb_gen_test_' + methodIdx + '_' + combinedPlanForm.get('genSpec1')?.value"
                         (itemSelected)="onCombinedLabTestSelected($event, methodIdx)"
                         [selectedItem]="method.get('testMethodID')?.value"></app-searchable-dropdown>
                     </td>
                     <td>
-                      <app-searchable-dropdown [fetchDataFn]="getTestMethodSpecificationDrop"
+                      <app-searchable-dropdown [fetchDataFn]="buildCombinedStandardFetchFn(methodIdx)"
                         [placeholder]="'Search Test Method Specification'" [labelName]="'Test Method Specification'"
                         [hideLabel]="true" [smallInput]="true"
+                        [reloadKey]="'comb_gen_std_' + methodIdx + '_' + method.get('testMethodID')?.value"
                         (itemSelected)="onCombinedStandardSelected($event, methodIdx)"
                         [selectedItem]="method.get('standardID')?.value"></app-searchable-dropdown>
                     </td>
@@ -1215,25 +1224,38 @@
                 </tbody>
               </table>
             </div>
-            <button type="button" class="btn btn-sm btn-lims btn-lims-add mt-1" (click)="addCombinedMethodRow()">
-              <i class="bi bi-plus-circle me-1.5"></i>Add General Test Row
-            </button>
+            <div class="d-flex gap-2 mb-2">
+              <button type="button" class="btn btn-sm btn-lims btn-lims-add" (click)="addCombinedMethodRow()">
+                <i class="bi bi-plus-circle me-2"></i>Add Row
+              </button>
+              <button type="button" class="btn btn-sm btn-lims btn-lims-secondary" (click)="openExplorerModal()">
+                <i class="bi bi-layout-sidebar-reverse me-2"></i>Configured Explorer
+              </button>
+            </div>
           </div>
 
           <!-- Combined Chemical Test Tab -->
           <div *ngIf="combinedActiveTab === 'chemical'">
-            <!-- Analytical Techniques Selector -->
-            <div class="d-flex align-items-center gap-2 flex-wrap mb-3 p-2 bg-light rounded border">
-              <span class="text-xs-78 fw-semibold text-secondary text-uppercase me-2">
-                <i class="bi bi-cpu me-1 text-danger"></i>Analytical Techniques:
-              </span>
-              <button *ngFor="let tech of availableTechniques" type="button"
-                class="btn btn-xs btn-outline-secondary tech-pill-btn"
-                [class.active]="isCombinedTechniqueSelected(tech.code)"
-                (click)="toggleCombinedTechnique(tech.code)">
-                <i class="bi bi-check2-circle me-1" *ngIf="isCombinedTechniqueSelected(tech.code)"></i>
-                {{ tech.name }} ({{ tech.code }})
-              </button>
+            <!-- Technique-First Checkbox Selector (Clean Inline Banner - Same as Single Sample) -->
+            <div class="p-2 mt-2 mb-2 bg-light rounded border"
+              [class.border-warning]="!hasSelectedCombinedTechnique()"
+              [class.border-light-subtle]="hasSelectedCombinedTechnique()">
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <span class="fw-semibold small text-dark d-flex align-items-center">
+                  <i class="bi bi-funnel text-danger me-1.5"></i>
+                  <span>Analytical Techniques <span class="text-danger">*</span>:</span>
+                </span>
+                <label *ngFor="let tech of availableTechniques" class="tech-check-item">
+                  <input type="checkbox" class="form-check-input mt-0"
+                    [id]="'comb_tech_' + tech.code"
+                    [checked]="isCombinedTechniqueSelected(tech.code)"
+                    (change)="toggleCombinedTechnique(tech.code, $event)">
+                  <span>{{ tech.name }}</span>
+                </label>
+                <span *ngIf="!hasSelectedCombinedTechnique()" class="extra-small text-danger fw-semibold ms-auto">
+                  <i class="bi bi-exclamation-circle me-1.5"></i>Select at least 1 technique to add/search chemical tests
+                </span>
+              </div>
             </div>
 
             <!-- Chemical Specifications -->
@@ -1260,10 +1282,10 @@
                 <thead class="table-light">
                   <tr class="text-nowrap text-muted small">
                     <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
-                    <th class="fw-medium text-center">Chemical Test / Analysis Type</th>
-                    <th class="fw-medium text-center">Test Method Specification</th>
-                    <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
-                    <th class="fw-medium text-center" style="width: 60px;">Action</th>
+                    <th class="fw-medium">LABORATORY TEST</th>
+                    <th class="fw-medium">TEST METHOD SPECIFICATION</th>
+                    <th class="fw-medium text-center" style="width: 90px;">QUANTITY</th>
+                    <th class="fw-medium text-center" style="width: 60px;">ACTION</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="chemMethods">
@@ -1272,20 +1294,22 @@
                     <td>
                       <app-searchable-dropdown
                         [fetchDataFn]="buildCombinedChemicalLabTestFetchFn()"
-                        [placeholder]="'Search Chemical Test / Analysis Type'"
-                        [hideLabel]="true"
-                        [smallInput]="true"
+                        [placeholder]="hasSelectedCombinedTechnique() ? 'Search Chemical Test / Analysis Type' : 'Select at least 1 technique above first'"
+                        [labelName]="'Laboratory Test'" [hideLabel]="true" [smallInput]="true"
+                        [reloadKey]="'comb_chem_test_' + methodIdx + '_' + combinedPlanForm.get('chemSpec1')?.value"
                         (itemSelected)="onCombinedChemLabTestSelected($event, methodIdx)"
-                        [selectedItem]="method.get('testMethodID')?.value">
+                        [selectedItem]="method.get('testMethodID')?.value"
+                        [isDisabled]="!hasSelectedCombinedTechnique()">
                       </app-searchable-dropdown>
                     </td>
                     <td>
                       <app-searchable-dropdown
-                        [fetchDataFn]="getTestMethodSpecificationDrop"
+                        [fetchDataFn]="buildCombinedChemStandardFetchFn(methodIdx)"
                         [placeholder]="'Search Test Method Specification'"
                         [labelName]="'Test Method Specification'"
                         [hideLabel]="true"
                         [smallInput]="true"
+                        [reloadKey]="'comb_chem_std_' + methodIdx + '_' + method.get('testMethodID')?.value"
                         (itemSelected)="onCombinedChemStandardSelected($event, methodIdx)"
                         [selectedItem]="method.get('standardID')?.value">
                       </app-searchable-dropdown>
@@ -1303,20 +1327,28 @@
                 </tbody>
               </table>
             </div>
-            <button type="button" class="btn btn-sm btn-lims btn-lims-add mt-1 mb-3" (click)="addCombinedChemMethodRow()">
-              <i class="bi bi-plus-circle me-1.5"></i>Add Chemical Test Row
-            </button>
+            <div class="d-flex gap-2 mb-2">
+              <button type="button" class="btn btn-sm btn-lims btn-lims-add" (click)="addCombinedChemMethodRow()">
+                <i class="bi bi-plus-circle me-2"></i>Add Row
+              </button>
+              <button type="button" class="btn btn-sm btn-lims btn-lims-secondary" (click)="openExplorerModal()">
+                <i class="bi bi-layout-sidebar-reverse me-2"></i>Configured Explorer
+              </button>
+            </div>
 
-            <!-- Chemical Elements Matrix -->
-            <div *ngIf="getCombinedElements().length > 0" class="mt-2">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="text-xs-78 fw-semibold text-secondary text-uppercase">
-                  <i class="bi bi-table me-1 text-danger"></i>Chemical Elements & Specification Limits ({{ getCombinedElements().length }})
-                </span>
-                <div class="form-check form-check-inline mb-0">
-                  <input type="checkbox" class="form-check-input cursor-pointer" id="combinedSelectAllElements"
-                    [checked]="isAllCombinedElementsSelected()" (change)="toggleSelectAllCombinedElements($event)" />
-                  <label class="form-check-label text-xs-78 cursor-pointer" for="combinedSelectAllElements">Select All Elements</label>
+            <!-- Chemical Elements Matrix (Grouped - Identical to Single Sample) -->
+            <div *ngIf="getCombinedElements().length > 0" class="mt-3">
+              <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                <div class="fw-semibold text-secondary small d-flex align-items-center">
+                  <i class="bi bi-grid-3x3-gap text-danger me-1.5"></i>
+                  <span>Chemical Element Matrix (Test-Wise Categorized)</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1.5"
+                    (click)="reloadAllConfiguredSpectroMatricesForCombined()"
+                    title="Load / Refresh machine spectro matrices for all selected chemical tests">
+                    <i class="bi bi-arrow-repeat me-1"></i><span>Load Spectro Elements</span>
+                  </button>
                 </div>
               </div>
               <div class="table-responsive">
@@ -1324,34 +1356,84 @@
                   <thead class="table-light">
                     <tr class="text-nowrap text-muted small">
                       <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
-                      <th class="fw-medium text-center">Element</th>
-                      <th class="fw-medium text-center" style="width: 100px;">Min</th>
-                      <th class="fw-medium text-center" style="width: 100px;">Max</th>
-                      <th class="fw-medium text-center" style="width: 80px;">Unit</th>
-                      <th class="fw-medium text-center" style="width: 60px;">Select</th>
+                      <th class="fw-medium">ELEMENT / PARAMETER</th>
+                      <th class="fw-medium" style="width: 220px;">CATEGORY / TEST SOURCE</th>
+                      <th class="fw-medium text-center" style="width: 90px;">MIN</th>
+                      <th class="fw-medium text-center" style="width: 90px;">MAX</th>
+                      <th class="fw-medium text-center" style="width: 70px;">UNIT</th>
+                      <th class="fw-medium text-center" style="width: 80px;">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                            [checked]="isAllCombinedElementsSelected()"
+                            [indeterminate]="isSomeCombinedElementsSelected()"
+                            (change)="toggleSelectAllCombinedElements($event)"
+                            title="Select / Deselect all elements" />
+                          <span class="extra-small text-muted">All</span>
+                        </div>
+                      </th>
                     </tr>
                   </thead>
-                  <tbody formArrayName="elements">
-                    <tr *ngFor="let el of getCombinedElements().controls; let elIdx = index" [formGroupName]="elIdx">
-                      <td class="text-center fw-semibold text-secondary">{{ elIdx + 1 }}</td>
-                      <td>
-                        <span class="fw-semibold text-dark">{{ el.get('parameterName')?.value || 'Parameter ' + (elIdx + 1) }}</span>
-                      </td>
-                      <td class="text-center">
-                        <input type="number" class="form-control form-control-sm text-center" formControlName="minValue" [readonly]="true" />
-                      </td>
-                      <td class="text-center">
-                        <input type="number" class="form-control form-control-sm text-center" formControlName="maxValue" [readonly]="true" />
-                      </td>
-                      <td class="text-center small text-secondary">
-                        <span>{{ el.get('parameterUnit')?.value || '-' }}</span>
-                      </td>
-                      <td class="text-center">
-                        <div class="form-check d-flex align-items-center justify-content-center mb-0">
-                          <input type="checkbox" class="form-check-input cursor-pointer" formControlName="selected" />
-                        </div>
-                      </td>
-                    </tr>
+                  <tbody>
+                    <ng-container *ngFor="let grp of getGroupedCombinedChemicalElements(); trackBy: trackByGroupKey">
+                      <!-- Categorized Header Row -->
+                      <tr class="table-light">
+                        <td colspan="6" class="py-1 px-2 fw-semibold small bg-light-subtle">
+                          <span *ngIf="grp.sourceType === 'Specification'"
+                            class="badge bg-danger-subtle text-danger border border-danger-subtle me-2">
+                            <i class="bi bi-bookmark-check me-1.5"></i>Specification Grade
+                          </span>
+                          <span *ngIf="grp.sourceType !== 'Specification'"
+                            class="badge bg-info-subtle text-info-emphasis border border-info-subtle me-2">
+                            <i class="bi bi-cpu me-1.5"></i>Analysis Type
+                          </span>
+                          <span class="text-dark">{{ grp.title }}</span>
+                          <span class="text-muted extra-small ms-2">({{ grp.elements.length }} elements)</span>
+                        </td>
+                        <td class="text-center py-1 bg-light-subtle">
+                          <div class="form-check d-inline-block mb-0"
+                            title="Select / Deselect all in this group">
+                            <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                              [checked]="isGroupAllSelected(grp)"
+                              [indeterminate]="isGroupSomeSelected(grp)"
+                              (change)="toggleSelectCombinedGroupElements(grp, $event)" />
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Categorized Element Rows -->
+                      <ng-container formArrayName="elements">
+                        <tr *ngFor="let item of grp.elements; trackBy: trackByElementItem" [formGroupName]="item.originalIndex">
+                          <td class="text-center fw-semibold text-secondary">{{ item.originalIndex + 1 }}</td>
+                          <td>
+                            <div class="fw-medium text-dark">{{ item.control.get('parameterName')?.value || 'Parameter #' + item.control.get('parameterID')?.value }}</div>
+                          </td>
+                          <td>
+                            <span *ngIf="item.control.get('sourceType')?.value === 'Specification' || (item.control.get('minValue')?.value != null || item.control.get('maxValue')?.value != null)"
+                              class="badge bg-danger-subtle text-danger border border-danger-subtle extra-small">
+                              Specification Limit
+                            </span>
+                            <span *ngIf="item.control.get('sourceType')?.value !== 'Specification' && item.control.get('minValue')?.value == null && item.control.get('maxValue')?.value == null"
+                              class="badge bg-info-subtle text-info-emphasis border border-info-subtle extra-small">
+                              {{ item.control.get('sourceTitle')?.value || 'Analysis Type Spectro Channel' }}
+                            </span>
+                          </td>
+                          <td class="text-center">
+                            <span class="small font-monospace">{{ item.control.get('minValue')?.value != null ? item.control.get('minValue')?.value : '-' }}</span>
+                          </td>
+                          <td class="text-center">
+                            <span class="small font-monospace">{{ item.control.get('maxValue')?.value != null ? item.control.get('maxValue')?.value : '-' }}</span>
+                          </td>
+                          <td class="text-center small text-secondary">
+                            <span>{{ item.control.get('parameterUnit')?.value || '%' }}</span>
+                          </td>
+                          <td class="text-center">
+                            <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                              [checked]="item.control.get('selected')?.value"
+                              (change)="toggleElementSelection(item.control, $event)" />
+                          </td>
+                        </tr>
+                      </ng-container>
+                    </ng-container>
                   </tbody>
                 </table>
               </div>

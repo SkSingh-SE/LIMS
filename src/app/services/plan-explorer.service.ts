@@ -20,6 +20,9 @@ export interface ConfiguredTest {
   subGroup: string;
   laboratoryTestSubGroupID?: number;
   laboratoryTestAnalysisTypeID?: number;
+  techniqueIDs?: number[];
+  techniqueCodes?: string[];
+  techniqueNames?: string[];
   sourceTag?: string;
   sourceTags?: string[];
   testMethodSpecificationID?: number;

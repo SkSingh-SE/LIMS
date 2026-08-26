@@ -1,191 +1,394 @@
 <div class="lifecycle-workspace">
 
-  <!-- ═══════════════════════════ HEADER BAR ═══════════════════════════ -->
-  <div class="workspace-header">
-    <div class="d-flex align-items-center gap-3">
-      <button type="button" class="btn-back" (click)="navigateToCaseList()">
-        <i class="bi bi-arrow-left"></i>
-      </button>
-      <div>
-        <h5 class="workspace-title mb-0">
-          <i class="bi bi-folder2-open me-2"></i>
-          Sample Case Lifecycle Workspace
-          <span class="workspace-case-no ms-2" *ngIf="caseInfo?.caseNo">{{ caseInfo.caseNo }}</span>
-        </h5>
-        <div class="workspace-subtitle" *ngIf="caseInfo?.customerName">
-          <i class="bi bi-building me-1 text-muted"></i> {{ caseInfo.customerName }}
-        </div>
-      </div>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-      <app-test-status-badge *ngIf="currentStageStatus" [status]="currentStageStatus"></app-test-status-badge>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════ STAGE PROGRESS STEPPER ═══════════════════════ -->
-  <div class="stepper-card">
-    <div class="stepper-track">
-      <ng-container *ngFor="let step of stageSteps; let i = index">
-
-        <!-- Step node -->
-        <div class="stepper-step" [class.completed]="step.status === 'completed'"
-             [class.active]="step.status === 'active'"
-             [class.pending]="step.status === 'pending'">
-
-          <!-- Circle -->
-          <div class="step-circle">
-            <ng-container *ngIf="step.status === 'completed'">
-              <i class="bi bi-check-circle-fill text-white"></i>
-            </ng-container>
-            <ng-container *ngIf="step.status === 'active'">
-              <i class="bi bi-play-circle-fill text-white"></i>
-            </ng-container>
-            <ng-container *ngIf="step.status === 'pending'">
-              <span class="step-number">{{ step.id }}</span>
-            </ng-container>
-          </div>
-
-          <!-- Label -->
-          <div class="step-label">{{ step.label }}</div>
-        </div>
-
-        <!-- Connector line -->
-        <div *ngIf="i < stageSteps.length - 1" class="step-connector"
-             [class.connector-completed]="step.status === 'completed'"
-             [class.connector-active]="step.status === 'active'">
-        </div>
-
-      </ng-container>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════ TAB NAVIGATION ═══════════════════════════ -->
-  <div class="workspace-tabs-wrapper">
-    <!-- Tab headers -->
-    <div class="workspace-tab-nav">
-      <ng-container *ngFor="let tab of visibleTabs">
-        <button
-          class="workspace-tab-btn"
-          [class.active]="tab.isActive"
-          [class.readonly-tab]="tab.isReadOnly"
-          (click)="setActiveTab(tab.id)"
-          type="button">
-          <i class="bi {{ tab.icon }} me-1"></i>
-          {{ tab.label }}
-          <span *ngIf="tab.isReadOnly" class="tab-lock-badge">
-            <i class="bi bi-lock-fill"></i>
-          </span>
+  <!-- ═══════════════════════ UNIFIED COMPACT STICKY HEADER & STEPPER ═══════════════════════ -->
+  <header class="workspace-compact-header">
+    
+    <!-- ── TOP ROW: Case Meta + Compact Inline KPIs + Status Badge ── -->
+    <div class="header-main-row">
+      
+      <!-- Left: Back Button + Case Number + Title + Customer -->
+      <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        <button type="button" class="btn-compact-back" (click)="navigateToCaseList()" title="Back to Case Register">
+          <i class="bi bi-arrow-left"></i>
         </button>
-      </ng-container>
+        
+        <div class="case-meta-group">
+          <span class="case-number-pill" *ngIf="caseInfo?.caseNo">{{ caseInfo.caseNo }}</span>
+          <span class="case-title-text">Sample Case Lifecycle</span>
+          <span class="customer-name-text" *ngIf="caseInfo?.customerName" [title]="caseInfo.customerName">
+            <i class="bi bi-building me-1"></i>{{ caseInfo.customerName }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Compact Inline KPIs + Status Badge -->
+      <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+        <!-- Inline Compressed Metadata -->
+        <div class="compact-kpi-strip" *ngIf="lifecycleSummary">
+          <span class="kpi-mini-item" title="Turnaround Days">
+            <i class="bi bi-clock-history me-1"></i>{{ lifecycleSummary.daysSinceInward }}d
+          </span>
+          <span class="kpi-sep">·</span>
+          <span class="kpi-mini-item" title="Active Samples">
+            <i class="bi bi-collection me-1"></i>{{ lifecycleSummary.activeSampleCount }} Samples
+          </span>
+          <span class="kpi-sep">·</span>
+          <span class="kpi-mini-item" title="Allocated Tests (General + Chemical)">
+            <i class="bi bi-flask me-1"></i>{{ lifecycleSummary.totalTests }} Tests
+          </span>
+          <span class="kpi-sep">·</span>
+          <span class="kpi-mini-item" title="Billing Status">
+            <i class="bi bi-receipt me-1"></i>{{ lifecycleSummary.hasTaxInvoice ? 'Invoiced' : (lifecycleSummary.hasProformaInvoice ? 'PI Gen' : 'Billing Pend') }}
+          </span>
+          <span class="kpi-sep" *ngIf="lifecycleSummary.isReportStopped">·</span>
+          <span class="kpi-mini-item text-danger fw-bold" *ngIf="lifecycleSummary.isReportStopped" title="Report Halted">
+            <i class="bi bi-pause-circle-fill me-1"></i>Hold
+          </span>
+        </div>
+
+        <app-test-status-badge *ngIf="currentStageStatus" [status]="currentStageStatus"></app-test-status-badge>
+      </div>
+
     </div>
 
-    <!-- Read-only notice banner -->
-    <div *ngIf="getActiveTab()?.isReadOnly" class="readonly-notice">
-      <i class="bi bi-lock-fill me-2"></i>
-      <strong>Read-Only Mode</strong> — This stage has been completed. Data is visible for reference only and cannot be modified.
+    <!-- ── BOTTOM ROW: COMPACT HORIZONTAL LIFECYCLE STEPPER ── -->
+    <nav class="stepper-nav-row" aria-label="Case Lifecycle Stepper">
+      <div class="stepper-nav-track">
+        
+        <!-- Overview Trigger Button -->
+        <button
+          type="button"
+          class="stepper-nav-node overview-node"
+          [class.node-selected]="activeStageId === 'overview'"
+          (click)="selectStage('overview')"
+          title="Case Overview & Summary Matrix">
+          <i class="bi bi-grid-1x2-fill me-1"></i>
+          <span>Overview</span>
+        </button>
+
+        <div class="stepper-nav-divider"></div>
+
+        <!-- 7 Lifecycle Stages -->
+        <ng-container *ngFor="let stage of stages; let i = index">
+          
+          <div
+            class="stepper-nav-item"
+            [class.completed]="stage.status === 'completed'"
+            [class.active]="stage.status === 'active'"
+            [class.pending]="stage.status === 'pending'"
+            [class.na]="stage.status === 'na'"
+            [class.selected]="activeStageId === stage.id"
+            [class.locked]="!stage.isAccessible"
+            (click)="selectStage(stage.id)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="stage.label + ' - ' + stage.status"
+            (keydown.enter)="selectStage(stage.id)"
+            (mouseenter)="showStageTooltip(stage, $event)"
+            (mouseleave)="hideStageTooltip()">
+            
+            <!-- Indicator Symbol: ✓, ●, ○, ⊘ -->
+            <span class="stage-indicator">
+              <i class="bi bi-check-lg" *ngIf="stage.status === 'completed'"></i>
+              <span class="active-dot" *ngIf="stage.status === 'active'"></span>
+              <span class="pending-circle" *ngIf="stage.status === 'pending'"></span>
+              <i class="bi bi-slash-circle" *ngIf="stage.status === 'na'"></i>
+            </span>
+
+            <!-- Stage Label -->
+            <span class="stage-text">{{ stage.label }}</span>
+
+            <!-- Lock badge if restricted -->
+            <i class="bi bi-lock-fill stage-lock-icon" *ngIf="!stage.isAccessible && stage.status !== 'completed'" title="Stage Locked"></i>
+          </div>
+
+          <!-- Connector line between stages -->
+          <div *ngIf="i < stages.length - 1" class="stage-line"
+               [class.line-completed]="stage.status === 'completed'"
+               [class.line-active]="stage.status === 'active'">
+          </div>
+
+        </ng-container>
+
+      </div>
+    </nav>
+
+  </header>
+
+  <!-- ═══════════════════════ FLOATING COMPACT TOOLTIP / POPOVER ═══════════════════════ -->
+  <div class="stage-popover-card" *ngIf="hoveredStage && tooltipPos" [ngStyle]="{ top: tooltipPos.y + 'px', left: tooltipPos.x + 'px' }">
+    <div class="popover-header">
+      <span class="fw-bold">{{ hoveredStage.label }}</span>
+      <span class="badge" [ngClass]="getStageBadgeClass(hoveredStage.status)">
+        {{ getStageStatusLabel(hoveredStage.status) }}
+      </span>
     </div>
-
-    <!-- ═══════════════════════════ TAB CONTENT ═══════════════════════════ -->
-    <div class="workspace-tab-content">
-
-      <!-- Tab 1: Inward (Sample Inward Register) -->
-      <div *ngIf="activeTabId === 'inward'" class="tab-pane-body">
-        <div *ngIf="inwardId > 0">
-          <app-sample-inward-form
-            [embeddedInwardId]="inwardId"
-            [isEmbeddedMode]="true"
-            [isEmbeddedReadOnly]="isTabReadOnly('inward')">
-          </app-sample-inward-form>
-        </div>
+    <div class="popover-body fs-8">
+      <div *ngIf="hoveredStage.status === 'completed'">
+        <span class="text-muted">Status:</span> Completed
+        <div *ngIf="hoveredStage.completedOn"><span class="text-muted">Date:</span> {{ hoveredStage.completedOn | date:'dd-MMM-yyyy' }}</div>
       </div>
-
-      <!-- Tab 2: Review of Request & Plan Review -->
-      <div *ngIf="activeTabId === 'review'" class="tab-pane-body">
-        <div *ngIf="inwardId > 0">
-          <app-review-of-request-form
-            [embeddedInwardId]="inwardId"
-            [isEmbeddedMode]="true"
-            [isEmbeddedReadOnly]="isTabReadOnly('review')">
-          </app-review-of-request-form>
-        </div>
+      <div *ngIf="hoveredStage.status === 'active'">
+        <span class="text-muted">Status:</span> Current / In Progress
+        <div *ngIf="hoveredStage.pendingAction"><span class="text-muted">Action:</span> {{ hoveredStage.pendingAction }}</div>
       </div>
-
-      <!-- Tab 3: Testing (Test Execution & Verification) -->
-      <div *ngIf="activeTabId === 'testing'" class="tab-pane-body">
-        <div class="card p-3">
-          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-            <h6 class="fw-semibold text-primary mb-0">
-              <i class="bi bi-flask me-2"></i> Testing & Verification Stage
-            </h6>
-            <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
-          </div>
-          <div class="alert alert-info py-2 fs-7 mb-3">
-            <i class="bi bi-info-circle-fill me-1"></i>
-            This stage includes parameter-wise result recording, formula evaluation, raw data attachments, and technical verification.
-          </div>
-          <div *ngIf="isTabReadOnly('testing')" class="alert alert-warning py-1.5 fs-7 mb-0">
-            <i class="bi bi-lock-fill me-1"></i> Testing completed for this case. Verification sign-off locked.
-          </div>
-        </div>
+      <div *ngIf="hoveredStage.status === 'pending'">
+        <span class="text-muted">Status:</span> Pending
+        <div *ngIf="hoveredStage.dependencyText"><span class="text-muted">Dependency:</span> {{ hoveredStage.dependencyText }}</div>
       </div>
-
-      <!-- Tab 4: Reporting & Dispatch -->
-      <div *ngIf="activeTabId === 'reporting'" class="tab-pane-body">
-        <div class="card p-3">
-          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-            <h6 class="fw-semibold text-primary mb-0">
-              <i class="bi bi-file-earmark-text me-2"></i> Report Generation & Dispatch Stage
-            </h6>
-            <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
-          </div>
-          <div class="alert alert-info py-2 fs-7 mb-3">
-            <i class="bi bi-info-circle-fill me-1"></i>
-            This stage includes QuestPDF report compilation, signatory approval, and release via WhatsApp, Email, Courier, or Hand Pickup.
-          </div>
-        </div>
+      <div *ngIf="hoveredStage.status === 'na'">
+        <span class="text-muted">Status:</span> Not Applicable
+        <div *ngIf="hoveredStage.naReason"><span class="text-muted">Reason:</span> {{ hoveredStage.naReason }}</div>
       </div>
+      <div class="text-muted mt-1 fst-italic" *ngIf="hoveredStage.isAccessible">
+        Click to open {{ hoveredStage.label }} workspace
+      </div>
+      <div class="text-danger mt-1" *ngIf="!hoveredStage.isAccessible && hoveredStage.status !== 'completed'">
+        <i class="bi bi-lock-fill me-1"></i> Locked until prerequisite stages finish
+      </div>
+    </div>
+  </div>
 
-      <!-- Tab 5: Accounts & Case Close -->
-      <div *ngIf="activeTabId === 'accounts'" class="tab-pane-body">
-        <div class="card p-3">
-          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-            <h6 class="fw-semibold text-primary mb-0">
-              <i class="bi bi-bank me-2"></i> Accounts, Billing & Case Closure
-            </h6>
-            <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
-          </div>
+  <!-- ═══════════════════════ STAGE WORKSPACE CONTENT ═══════════════════════ -->
+  <main class="workspace-main-content">
 
-          <div class="case-summary-grid" *ngIf="caseInfo">
-            <div class="case-info-section">
-              <div class="case-section-title">
-                <i class="bi bi-folder2-open me-2"></i> Case Financial & Closure Summary
+    <!-- ── OVERVIEW STAGE ── -->
+    <div *ngIf="activeStageId === 'overview'" class="stage-pane-body">
+      <!-- Case Summary & Timeline Grid -->
+      <div class="row g-2 mb-2" *ngIf="caseInfo">
+        
+        <!-- Case Information & Customer Details Card -->
+        <div class="col-md-8">
+          <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
+            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
+                <i class="bi bi-info-circle text-danger"></i> Case Information & Customer Details
+              </span>
+            </div>
+
+            <div class="row g-1.5">
+              <div class="col-md-4 col-sm-6">
+                <div class="meta-field-box">
+                  <span class="meta-field-label">Case Number</span>
+                  <span class="meta-field-val text-danger fw-bold">{{ caseInfo.caseNo || '-' }}</span>
+                </div>
               </div>
-              <div class="row g-2 p-3">
-                <div class="col-md-3 col-6">
-                  <label class="form-label-sm">Case No</label>
-                  <div class="case-info-value">{{ caseInfo.caseNo || '-' }}</div>
+              <div class="col-md-4 col-sm-6">
+                <div class="meta-field-box">
+                  <span class="meta-field-label">Customer Name</span>
+                  <span class="meta-field-val text-dark fw-semibold text-truncate" [title]="caseInfo.customerName">{{ caseInfo.customerName || '-' }}</span>
                 </div>
-                <div class="col-md-3 col-6">
-                  <label class="form-label-sm">Customer Name</label>
-                  <div class="case-info-value">{{ caseInfo.customerName || '-' }}</div>
+              </div>
+              <div class="col-md-4 col-sm-6">
+                <div class="meta-field-box">
+                  <span class="meta-field-label">Collection Date</span>
+                  <span class="meta-field-val text-dark">{{ (caseInfo.collectionDate || caseInfo.collectionTime || caseInfo.createdOn) | date:'dd-MMM-yyyy' }}</span>
                 </div>
-                <div class="col-md-3 col-6">
-                  <label class="form-label-sm">Collection Date</label>
-                  <div class="case-info-value">{{ caseInfo.collectionDate | date:'dd/MM/yyyy' }}</div>
+              </div>
+              <div class="col-md-4 col-sm-6">
+                <div class="meta-field-box">
+                  <span class="meta-field-label">Contact Person</span>
+                  <span class="meta-field-val text-secondary text-truncate">{{ caseInfo.contactPerson || caseInfo.contacts?.[0]?.name || '-' }}</span>
                 </div>
-                <div class="col-md-3 col-6">
-                  <label class="form-label-sm">Status</label>
-                  <div>
-                    <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
-                  </div>
+              </div>
+              <div class="col-md-4 col-sm-6">
+                <div class="meta-field-box">
+                  <span class="meta-field-label">City / State</span>
+                  <span class="meta-field-val text-secondary text-truncate">{{ caseInfo.city ? caseInfo.city + (caseInfo.state ? ', ' + caseInfo.state : '') : '-' }}</span>
                 </div>
+              </div>
+              <div class="col-md-4 col-sm-6">
+                <div class="meta-field-box">
+                  <span class="meta-field-label">Address</span>
+                  <span class="meta-field-val text-secondary text-truncate" [title]="caseInfo.address">{{ caseInfo.address || '-' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial & Accounts Status Card -->
+        <div class="col-md-4">
+          <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
+            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
+                <i class="bi bi-wallet2 text-danger"></i> Billing & Accounts Status
+              </span>
+            </div>
+
+            <div class="d-flex flex-column gap-1" *ngIf="lifecycleSummary">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted fs-7">Proforma Invoice:</span>
+                <span class="badge bg-light text-dark border fs-8">{{ lifecycleSummary.proformaInvoiceStatus || (lifecycleSummary.hasProformaInvoice ? 'Generated' : 'None') }}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted fs-7">Tax Invoice:</span>
+                <span class="badge bg-light text-dark border fs-8">{{ lifecycleSummary.taxInvoiceStatus || (lifecycleSummary.hasTaxInvoice ? 'Generated' : 'None') }}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted fs-7">Total Billed:</span>
+                <span class="fw-bold text-dark fs-7">₹{{ lifecycleSummary.totalBilledAmount | number:'1.2-2' }}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted fs-7">Amount Received:</span>
+                <span class="fw-semibold text-success fs-7">₹{{ lifecycleSummary.totalReceivedAmount | number:'1.2-2' }}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-0.5">
+                <span class="text-muted fs-7">Balance Due:</span>
+                <span class="fw-bold fs-7" [class.text-danger]="lifecycleSummary.balanceDueAmount > 0" [class.text-success]="lifecycleSummary.balanceDueAmount === 0">
+                  ₹{{ lifecycleSummary.balanceDueAmount | number:'1.2-2' }}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Sample Status Selector Table -->
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'overview'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
     </div>
-  </div>
+
+    <!-- ── 1. INWARD STAGE ── -->
+    <div *ngIf="activeStageId === 'inward'" class="stage-pane-body">
+      <div *ngIf="inwardId > 0">
+        <app-sample-inward-form
+          [embeddedInwardId]="inwardId"
+          [isEmbeddedMode]="true"
+          [isEmbeddedReadOnly]="isStageReadOnly('inward')">
+        </app-sample-inward-form>
+      </div>
+    </div>
+
+    <!-- ── 2. REVIEW & PLAN STAGE ── -->
+    <div *ngIf="activeStageId === 'review-plan'" class="stage-pane-body">
+      <div *ngIf="inwardId > 0">
+        <app-review-of-request-form
+          [embeddedInwardId]="inwardId"
+          [isEmbeddedMode]="true"
+          [isEmbeddedReadOnly]="isStageReadOnly('review-plan')"
+          (reviewCompleted)="onReviewCompleted($event)">
+        </app-review-of-request-form>
+      </div>
+    </div>
+
+    <!-- ── 3. PREPARATION STAGE ── -->
+    <div *ngIf="activeStageId === 'preparation'" class="stage-pane-body">
+      <div *ngIf="inwardId > 0">
+        <app-cutting-machining-plan-tab
+          [inwardId]="inwardId"
+          [isReadOnly]="isStageReadOnly('preparation')">
+        </app-cutting-machining-plan-tab>
+      </div>
+    </div>
+
+    <!-- ── 4. TESTING STAGE ── -->
+    <div *ngIf="activeStageId === 'testing'" class="stage-pane-body">
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'testing'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
+
+      <div *ngIf="selectedSampleId && activeInlineAction === 'testing'" class="inline-form-panel">
+        <div class="inline-form-header">
+          <span class="inline-form-title">
+            <i class="bi bi-flask"></i> Testing Execution: {{ getSelectedSample()?.sampleNo }}
+          </span>
+          <button type="button" class="btn btn-sm btn-outline-secondary py-0" (click)="onCloseInlineForm()">
+            <i class="bi bi-x"></i> Close
+          </button>
+        </div>
+        <div class="alert alert-info py-2 fs-7 mb-0">
+          <i class="bi bi-info-circle me-1.5"></i>
+          Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for test execution. 
+          (Integrated inline parameter entry will render here in Phase 5).
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 5. REPORTING STAGE ── -->
+    <div *ngIf="activeStageId === 'reporting'" class="stage-pane-body">
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'reporting'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
+
+      <div *ngIf="selectedSampleId && activeInlineAction === 'reporting'" class="inline-form-panel">
+        <div class="inline-form-header">
+          <span class="inline-form-title">
+            <i class="bi bi-file-earmark-text"></i> Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}
+          </span>
+          <button type="button" class="btn btn-sm btn-outline-secondary py-0" (click)="onCloseInlineForm()">
+            <i class="bi bi-x"></i> Close
+          </button>
+        </div>
+        <div class="alert alert-info py-2 fs-7 mb-0">
+          <i class="bi bi-info-circle me-1.5"></i>
+          Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for report generation / dispatch. 
+          (QuestPDF report preview & signatory approval will render here in Phase 6).
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 6. ACCOUNTS & BILLING STAGE ── -->
+    <div *ngIf="activeStageId === 'accounts'" class="stage-pane-body">
+      <div class="card p-3 shadow-sm border">
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+          <span class="fw-bold text-dark fs-7">
+            <i class="bi bi-receipt me-1.5 text-danger"></i> Accounts, Invoicing & Billing Summary
+          </span>
+          <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
+        </div>
+
+        <div class="row g-2 fs-7" *ngIf="lifecycleSummary">
+          <div class="col-md-3 col-6">
+            <span class="form-label-sm">Total Billed:</span>
+            <span class="fw-bold text-dark">₹{{ lifecycleSummary.totalBilledAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="col-md-3 col-6">
+            <span class="form-label-sm">Total Received:</span>
+            <span class="fw-bold text-success">₹{{ lifecycleSummary.totalReceivedAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="col-md-3 col-6">
+            <span class="form-label-sm">Balance Due:</span>
+            <span class="fw-bold" [class.text-danger]="lifecycleSummary.balanceDueAmount > 0" [class.text-success]="lifecycleSummary.balanceDueAmount === 0">
+              ₹{{ lifecycleSummary.balanceDueAmount | number:'1.2-2' }}
+            </span>
+          </div>
+          <div class="col-md-3 col-6">
+            <span class="form-label-sm">Case Status:</span>
+            <span class="badge" [ngClass]="lifecycleSummary.isClosed ? 'bg-success' : 'bg-warning text-dark'">
+              {{ lifecycleSummary.isClosed ? 'Closed' : 'Open' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 7. CLOSE STAGE ── -->
+    <div *ngIf="activeStageId === 'close'" class="stage-pane-body">
+      <div class="card p-3 shadow-sm border">
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+          <span class="fw-bold text-dark fs-7">
+            <i class="bi bi-check2-circle me-1.5 text-success"></i> Case Closure Verification
+          </span>
+          <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
+        </div>
+        <div class="alert alert-success fs-7 mb-0">
+          <i class="bi bi-info-circle me-1.5"></i>
+          Lifecycle stage 7: Case Close verification & formal closure workflow.
+        </div>
+      </div>
+    </div>
+
+  </main>
 
 </div>

@@ -1,428 +1,325 @@
-<div class="review-page">
-  <!-- Page Header & Sub-Tabs -->
-  <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom flex-wrap gap-2">
-    <ul class="nav nav-tabs border-0 flex-grow-1" id="reviewSubTabs" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button
-          class="nav-link fw-semibold px-3 py-1.5"
-          [class.active]="activeSubTab === 'plan'"
-          (click)="setSubTab('plan')"
-          type="button"
-        >
-          <i class="bi bi-journal-text me-1.5 text-primary"></i> 1. Plan Review & Update
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button
-          class="nav-link fw-semibold px-3 py-1.5"
-          [class.active]="activeSubTab === 'prep'"
-          (click)="setSubTab('prep')"
-          type="button"
-        >
-          <i class="bi bi-scissors me-1.5 text-warning"></i> 2. Sample Preparation & Cutting Plan
-        </button>
-      </li>
-    </ul>
+<div class="review-tabbed-workspace">
 
-    <div class="d-flex align-items-center gap-2">
-      <button
-        class="btn-lims btn-lims-print btn-sm"
-        (click)="printInwardChallan()"
-        title="Print Formal Sample Inward Receipt Challan PDF"
-      >
-        <i class="bi bi-printer me-1.5"></i> Print Inward Challan
+  <!-- ═══════════════════════ PREMIUM LIMS SUB-NAV TABS ═══════════════════════ -->
+  <div class="review-nav-container d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2 pb-1">
+    <div class="nav nav-pills review-pills d-flex align-items-center gap-2">
+      <button type="button" class="nav-tab-btn" [class.active]="activeTab === 'test-plan'" (click)="setTab('test-plan')">
+        <i class="bi bi-clipboard-check text-primary"></i>
+        <span>Test Plan</span>
       </button>
+      <button type="button" class="nav-tab-btn" [class.active]="activeTab === 'tpi'" (click)="setTab('tpi')">
+        <i class="bi bi-shield-check text-info"></i>
+        <span>TPI & Special</span>
+      </button>
+      <button type="button" class="nav-tab-btn" [class.active]="activeTab === 'approval'" (click)="setTab('approval')">
+        <i class="bi bi-check-circle text-success"></i>
+        <span>Review & Approval</span>
+      </button>
+      <button type="button" class="nav-tab-btn" [class.active]="activeTab === 'history'" (click)="setTab('history')">
+        <i class="bi bi-clock-history text-secondary"></i>
+        <span>History</span>
+      </button>
+    </div>
 
-      <button
-        *ngIf="!isEmbeddedReadOnly"
-        class="btn-lims btn-lims-save btn-sm"
-        (click)="verifyAndLockReview()"
-      >
-        <i class="bi bi-check-circle me-1.5"></i> Approve & Finalize Review
-      </button>
+    <!-- Quick Reference Action -->
+    <button type="button" class="btn-lims btn-lims-print btn-sm d-flex align-items-center gap-1.5" (click)="printInwardChallan()" title="Download Inward Receipt Challan PDF">
+      <i class="bi bi-printer"></i>
+      <span>Inward Challan</span>
+    </button>
+  </div>
 
-      <button
-        *ngIf="isEmbeddedReadOnly"
-        class="btn-lims btn-lims-cancel btn-sm"
-        (click)="openReplanModal()"
-      >
-        <i class="bi bi-arrow-counterclockwise me-1.5"></i> Request Re-Plan
-      </button>
+  <!-- ═══════════════════════ TAB 1: TEST PLAN ═══════════════════════ -->
+  <div class="tab-pane-content" [class.d-none]="activeTab !== 'test-plan'">
+    <div class="card border rounded-2 shadow-xs p-2 bg-white">
+      <app-plan-form
+        #planFormRef
+        *ngIf="inwardId > 0"
+        [inwardID]="inwardId"
+        [mode]="isEmbeddedReadOnly ? 'review' : 'plan'">
+      </app-plan-form>
     </div>
   </div>
 
-  <!-- Samples Section -->
-  <div class="mb-3">
-    <div class="d-flex align-items-center mb-2">
-      <h6 class="fw-semibold mb-0">
-        <i class="bi bi-box-seam me-1 text-muted"></i> Samples
-      </h6>
-      <span class="badge bg-secondary-subtle text-secondary ms-2">{{ samples.length }}</span>
-    </div>
-
-    <div *ngFor="let sample of samples; let sampleIdx = index" class="sample-card mb-3">
-      <!-- Sample Header -->
-      <div class="sample-card-header">
-        <span class="sample-badge">#{{ sampleIdx + 1 }}</span>
-        <span class="fw-semibold">{{ sample.sampleNo }}</span>
-        <span class="text-muted ms-2 small" *ngIf="sample.details">- {{ sample.details }}</span>
+  <!-- ═══════════════════════ TAB 2: TPI & SPECIAL REQUIREMENTS ═══════════════════════ -->
+  <div class="tab-pane-content" [class.d-none]="activeTab !== 'tpi'">
+    <div class="card border rounded-2 shadow-xs p-3 bg-white">
+      
+      <!-- Section Title Header -->
+      <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <div class="tpi-header-icon-box">
+            <i class="bi bi-shield-shaded text-danger fs-5"></i>
+          </div>
+          <div>
+            <span class="fw-bold fs-7 text-dark d-block">Third Party Inspection (TPI) & Special Witness Requirements</span>
+            <span class="text-muted fs-8">Configure inspection agencies, witness engineers, and client handling instructions</span>
+          </div>
+        </div>
       </div>
 
-      <div class="sample-card-body">
-        <div class="row g-2">
-          <!-- Sample Details Grid -->
-          <div [class]="sample.sampleFilePath ? 'col-md-10' : 'col-12'">
-            <div class="row g-2">
-              <div class="col-md-3">
-                <div class="review-field">
-                  <label class="review-label">Details</label>
-                  <div class="review-value">{{ sample.details || '-' }}</div>
+      <!-- Sample Cards -->
+      <div class="sample-tpi-grid d-flex flex-column gap-3">
+        <div *ngFor="let sample of samples" class="card sample-tpi-card border rounded-2 shadow-2xs overflow-hidden" [formGroup]="sampleForms[sample.id]">
+          
+          <!-- Sample Card Header -->
+          <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold fs-8 px-2 py-1">
+                SAMPLE #{{ sample.sampleNo }}
+              </span>
+              <span class="fw-semibold text-dark fs-7.5">{{ sample.details || 'General Sample' }}</span>
+              <span class="text-muted fs-8" *ngIf="sample.productConditionName">({{ sample.productConditionName }})</span>
+            </div>
+
+            <!-- Sleek Theme Segmented Switch -->
+            <div class="tpi-switch-toggle">
+              <button type="button" 
+                      class="tpi-toggle-btn" 
+                      [class.active]="sampleForms[sample.id].get('tpiRequired')?.value === false" 
+                      (click)="toggleTpi(sample.id, false)">
+                <i class="bi bi-x-circle"></i>
+                <span>No TPI</span>
+              </button>
+              <button type="button" 
+                      class="tpi-toggle-btn active-tpi" 
+                      [class.active]="sampleForms[sample.id].get('tpiRequired')?.value === true" 
+                      (click)="toggleTpi(sample.id, true)">
+                <i class="bi bi-shield-check"></i>
+                <span>TPI Required</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sample Card Body -->
+          <div class="card-body p-3" *ngIf="sampleForms[sample.id]?.get('tpiRequired')?.value === true">
+            
+            <!-- Row 1: TPI Agency Selection & Live Contact Badge -->
+            <div class="row g-2.5 align-items-center mb-3">
+              <div class="col-md-6 col-12">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label-sm fw-semibold mb-0 text-dark d-flex align-items-center gap-1">
+                    <i class="bi bi-building text-danger me-1"></i> TPI Agency Master
+                  </label>
+                  <a class="btn-nav-link" routerLink="/master/tpi" target="_blank">
+                    <i class="bi bi-box-arrow-up-right"></i> Manage Agencies
+                  </a>
                 </div>
+                <app-searchable-dropdown
+                  placeholder="Select Inspection Agency (e.g. TUV, BVQI, SGS)"
+                  [fetchDataFn]="getTPIAgencies"
+                  [hideLabel]="true"
+                  [smallInput]="true"
+                  [selectedItem]="sampleForms[sample.id].get('tpiAgencyID')?.value ? { id: sampleForms[sample.id].get('tpiAgencyID')?.value, name: getTpiAgencyName(sampleForms[sample.id].get('tpiAgencyID')?.value) } : null"
+                  (itemSelected)="onTPIAgencySelected($event, sample.id)">
+                </app-searchable-dropdown>
               </div>
-              <div class="col-md-3">
-                <div class="review-field">
-                  <label class="review-label">Metal Classification</label>
-                  <div class="review-value">{{ sample.metalClassificationName || getMetalClassificationName(sample.metalClassificationID) || '-' }}</div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="review-field">
-                  <label class="review-label">Quantity</label>
-                  <div class="review-value">{{ sample.quantity || '0' }}</div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="review-field">
-                  <label class="review-label">Product Condition</label>
-                  <div class="review-value">{{ sample.productConditionName || productConditionMap[sample.productConditionID] || '-' }}</div>
-                </div>
-              </div>
-              <div class="col-md-3" *ngIf="sample.remarks">
-                <div class="review-field">
-                  <label class="review-label">Remarks</label>
-                  <div class="review-value">{{ sample.remarks }}</div>
-                </div>
-              </div>
-              <div class="col-md-3" *ngIf="sample.testInstructions">
-                <div class="review-field">
-                  <label class="review-label">Test Instructions</label>
-                  <div class="review-value">{{ sample.testInstructions }}</div>
-                </div>
-              </div>
-              <div class="col-md-6" *ngIf="sample.thickness || sample.diameter || sample.width || sample.length">
-                <div class="review-field">
-                  <label class="review-label">Dimensions</label>
-                  <div class="review-value">
-                    <span *ngIf="sample.thickness">Thickness: {{ sample.thickness }}mm </span>
-                    <span *ngIf="sample.diameter">Diameter: {{ sample.diameter }}mm </span>
-                    <span *ngIf="sample.width">Width: {{ sample.width }}mm </span>
-                    <span *ngIf="sample.length">Length: {{ sample.length }}mm</span>
+
+              <!-- Agency Contact Pill Box -->
+              <div class="col-md-6 col-12">
+                <div class="tpi-agency-contact-pill p-2 border rounded-2 bg-light d-flex flex-column justify-content-center">
+                  <div class="d-flex align-items-center gap-1.5 text-muted fs-8 mb-1">
+                    <i class="bi bi-person-lines-fill me-1"></i> Agency Contact Information
+                  </div>
+                  <div class="d-flex align-items-center gap-3 fs-7.5 text-dark fw-medium flex-wrap">
+                    <span class="d-flex align-items-center gap-1">
+                      <i class="bi bi-telephone-fill text-success fs-7"></i>
+                      <span>{{ tpiAgencyContactDetails[sample.id] ? tpiAgencyContactDetails[sample.id].contactNo || 'Phone: Not on file' : 'Phone: Not on file' }}</span>
+                    </span>
+                    <span class="d-flex align-items-center gap-1">
+                      <i class="bi bi-envelope-fill text-info fs-7"></i>
+                      <span>{{ tpiAgencyContactDetails[sample.id] ? tpiAgencyContactDetails[sample.id].emailId || 'Email: Not on file' : 'Email: Not on file' }}</span>
+                    </span>
                   </div>
                 </div>
               </div>
-
-              <!-- Additional Details -->
-              <ng-container *ngFor="let row of getAdditionalDetailsArray(sample)">
-                <div class="col-md-3">
-                  <div class="review-field">
-                    <label class="review-label">{{ row.label }}</label>
-                    <div class="review-value">{{ row.value }}</div>
-                  </div>
-                </div>
-              </ng-container>
             </div>
 
-            <!-- Preparation Flags -->
-            <div class="d-flex flex-wrap gap-2 mt-2">
-              <span *ngIf="sample.preparationRequired" class="prep-chip prep-chip--cutting">
-                <i class="bi bi-scissors me-1"></i>Sample Preparation Required
-              </span>
-              <span *ngIf="sample.machiningRequired" class="prep-chip prep-chip--machining">
-                <i class="bi bi-gear me-1"></i>Machining Required
-                <small *ngIf="sample.machiningAmount" class="ms-1">({{ sample.machiningAmount | currency:'INR':'symbol':'1.0-0' }})</small>
-              </span>
-              <span *ngIf="sample.otherPreparation" class="prep-chip prep-chip--other">
-                <i class="bi bi-tools me-1"></i>Other Preparation
-                <small *ngIf="sample.otherPreparationCharge" class="ms-1">({{ sample.otherPreparationCharge | currency:'INR':'symbol':'1.0-0' }})</small>
-              </span>
-              <span *ngIf="sample.tpiRequired" class="prep-chip prep-chip--tpi">
-                <i class="bi bi-eye me-1"></i>TPI: {{ getTpiAgencyName(sample.tpiAgencyID) }}
-              </span>
-              <span *ngIf="!sample.preparationRequired && !sample.machiningRequired && !sample.otherPreparation && !sample.tpiRequired"
-                    class="text-muted small fst-italic">No preparation required</span>
-            </div>
-
-            <!-- Collapsible Prep Edit Section -->
-            <div class="prep-toggle" (click)="togglePrepSection(sample.id)">
-              <span class="fw-semibold small">
-                <i class="bi bi-tools me-1"></i> Sample Preparation Details
-                <span class="ms-2 text-muted small fw-normal">
-                  Prep: <span [class]="sample.preparationRequired ? 'text-success' : 'text-danger'">{{ sample.preparationRequired ? 'Yes' : 'No' }}</span>
-                  &nbsp;| Machining: <span [class]="sample.machiningRequired ? 'text-success' : 'text-danger'">{{ sample.machiningRequired ? 'Yes' : 'No' }}</span>
-                  &nbsp;| Other: <span [class]="sample.otherPreparation ? 'text-success' : 'text-danger'">{{ sample.otherPreparation ? 'Yes' : 'No' }}</span>
-                  &nbsp;| TPI: <span [class]="sample.tpiRequired ? 'text-success' : 'text-danger'">{{ sample.tpiRequired ? 'Yes' : 'No' }}</span>
+            <!-- Row 2: Structured Inspector Persons Table -->
+            <div class="inspector-section mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-1.5">
+                <span class="fw-semibold fs-7.5 text-dark d-flex align-items-center gap-1.5">
+                  <i class="bi bi-people-fill text-primary"></i> TPI Inspector Persons / Witness Engineers
                 </span>
-              </span>
-              <i class="bi" [ngClass]="openPrepSections[sample.id] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                <button type="button" class="btn-lims btn-lims-add btn-sm" (click)="addTpiPerson(sample.id)">
+                  <i class="bi bi-plus-circle me-1"></i> Add TPI Person
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered table-compact align-middle mb-0">
+                  <thead class="table-light">
+                    <tr class="fs-8 text-muted text-uppercase">
+                      <th style="width: 40px;" class="text-center">#</th>
+                      <th>Inspector Person Name</th>
+                      <th style="width: 220px;">Contact Phone</th>
+                      <th style="width: 260px;">Role / Witness Stage</th>
+                      <th style="width: 50px;" class="text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let person of getTpiPersons(sample.id); let pIdx = index">
+                      <td class="text-center text-muted fw-semibold fs-8">{{ pIdx + 1 }}</td>
+                      <td>
+                        <input type="text" class="form-control form-control-sm" placeholder="Inspector Name (e.g. Sudhanshu Singh)" [(ngModel)]="person.name" (ngModelChange)="onTpiPersonModified(sample.id)" [ngModelOptions]="{standalone: true}" />
+                      </td>
+                      <td>
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-text py-0 px-2 fs-8 bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                          <input type="text" class="form-control form-control-sm" placeholder="Phone No." [(ngModel)]="person.contactNo" (ngModelChange)="onTpiPersonModified(sample.id)" [ngModelOptions]="{standalone: true}" />
+                        </div>
+                      </td>
+                      <td>
+                        <input type="text" class="form-control form-control-sm" placeholder="e.g. Lead Inspector / Witness Engineer" [(ngModel)]="person.role" (ngModelChange)="onTpiPersonModified(sample.id)" [ngModelOptions]="{standalone: true}" />
+                      </td>
+                      <td class="text-center">
+                        <button type="button" class="btn-lims btn-lims-delete btn-lims-icon" (click)="removeTpiPerson(sample.id, pIdx)" title="Remove Person">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div *ngIf="openPrepSections[sample.id] && prepForms[sample.id]" [formGroup]="prepForms[sample.id]" class="ps-2 pe-2 pb-2">
-              <div class="row g-2">
-                <div class="col-md-3">
-                  <label class="form-label small d-block mb-1">Sample Preparation Required</label>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="true" formControlName="preparationRequired" />
-                    <label class="form-check-label small">Yes</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="false" formControlName="preparationRequired" />
-                    <label class="form-check-label small">No</label>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label small d-block mb-1">Machining Required</label>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="true" formControlName="machiningRequired" />
-                    <label class="form-check-label small">Yes</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="false" formControlName="machiningRequired" />
-                    <label class="form-check-label small">No</label>
-                  </div>
-                </div>
-                <ng-container *ngIf="prepForms[sample.id]?.get('machiningRequired')?.value === true">
-                  <div class="col-md-3">
-                    <label class="form-label small mb-1">Machining Amount</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="machiningAmount" />
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label small mb-1">Specimen</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="specimen" />
-                  </div>
-                </ng-container>
-                <div class="col-md-3">
-                  <label class="form-label small d-block mb-1">Other Preparation</label>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="true" formControlName="otherPreparation" />
-                    <label class="form-check-label small">Yes</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="false" formControlName="otherPreparation" />
-                    <label class="form-check-label small">No</label>
-                  </div>
-                </div>
-                <div class="col-md-3" *ngIf="prepForms[sample.id]?.get('otherPreparation')?.value === true">
-                  <label class="form-label small mb-1">Other Prep Charge</label>
-                  <input type="number" class="form-control form-control-sm" formControlName="otherPreparationCharge" />
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label small d-block mb-1">TPI Required</label>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="true" formControlName="tpiRequired" />
-                    <label class="form-check-label small">Yes</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input type="radio" class="form-check-input" [value]="false" formControlName="tpiRequired" />
-                    <label class="form-check-label small">No</label>
-                  </div>
-                </div>
-                <div class="col-md-6" *ngIf="prepForms[sample.id]?.get('tpiRequired')?.value === true">
-                  <label class="form-label small mb-1">TPI Agency</label>
-                  <app-searchable-dropdown
-                    placeholder="Select TPI Agency"
-                    [fetchDataFn]="getTPIAgencies"
-                    [hideLabel]="true"
-                    [smallInput]="true"
-                    [selectedItem]="prepForms[sample.id].get('tpiAgencyID')?.value ? { id: prepForms[sample.id].get('tpiAgencyID')?.value, name: getTpiAgencyName(prepForms[sample.id].get('tpiAgencyID')?.value) } : null"
-                    (itemSelected)="onTPIAgencySelected($event, sample.id)">
-                  </app-searchable-dropdown>
-                </div>
-                <div class="col-12">
-                  <label class="form-label small mb-1">Test Instructions</label>
-                  <textarea class="form-control form-control-sm" rows="2" formControlName="testInstructions"></textarea>
-                </div>
-                <div class="col-12 text-end">
-                  <button type="button" class="btn btn-sm btn-save px-3" (click)="savePrepForSample(sample.id)">
-                    <i class="bi bi-check-circle me-1"></i> Save Prep
-                  </button>
-                </div>
+
+            <!-- Row 3: Special Witness Instructions + Save Button -->
+            <div class="tpi-footer-bar d-flex align-items-end justify-content-between flex-wrap gap-3 mt-3 pt-2 border-top">
+              <div class="flex-grow-1" style="min-width: 280px;">
+                <label class="form-label-sm fw-semibold mb-1 text-dark d-flex align-items-center gap-1.5">
+                  <i class="bi bi-chat-left-text text-secondary"></i> Special Witness & Preservation Instructions
+                </label>
+                <input type="text" class="form-control form-control-sm" placeholder="e.g. Preserve broken specimen after tensile test, witness hardness calibration..." formControlName="testInstructions" />
+              </div>
+              <div>
+                <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="saveTPI(sample.id)">
+                  <i class="bi bi-check-circle me-1.5"></i> Save TPI Details
+                </button>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Image Preview -->
-          <div class="col-md-2 d-flex align-items-start justify-content-center" *ngIf="sample.sampleFilePath">
-            <div class="preview-box cursor-pointer" (click)="openFileInNewTab(sample.sampleFilePath)">
-              <img [src]="baseUrl + sample.sampleFilePath" [alt]="sample.fileName" class="img-fluid rounded" />
-            </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ TAB 3: REVIEW & APPROVAL ═══════════════════════ -->
+  <div class="tab-pane-content" [class.d-none]="activeTab !== 'approval'">
+    <div class="card border rounded-2 shadow-xs p-3 bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-2 pb-1.5 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-shield-check text-success fs-6"></i>
+          <div>
+            <span class="fw-bold fs-7 text-dark">Review Completion Checklist & Plan Finalization</span>
+            <span class="text-muted fs-8 d-block">Validate all ISO 17025 planning requirements before locking review</span>
           </div>
         </div>
+        <span class="badge bg-primary-subtle text-primary border fs-8">Status: {{ reviewStatus }}</span>
+      </div>
 
-        <!-- Test Plan Info -->
-        <div *ngIf="getTestPlansArray(sample).length > 0" class="test-section mt-3">
-          <div class="test-section-title">
-            <i class="bi bi-clipboard-check me-1"></i>Test Plan
-          </div>
-          <div *ngFor="let tp of getTestPlansArray(sample); let tpIdx = index" class="px-3 py-2">
-            <div class="d-flex gap-3 flex-wrap small text-muted mb-1">
-              <span><strong>Version:</strong> {{ tp.version || 1 }}</span>
-              <span><strong>Status:</strong>
-                <span class="badge ms-1"
-                  [ngClass]="tp.planStatus === 'Approved' ? 'bg-success-subtle text-success' :
-                             tp.planStatus === 'Submitted' ? 'bg-warning-subtle text-warning' :
-                             'bg-secondary-subtle text-secondary'">
-                  {{ tp.planStatus || '-' }}
-                </span>
-              </span>
-              <span *ngIf="tp.approvedByName"><strong>Approved by:</strong> {{ tp.approvedByName }} on {{ tp.approvedAt | date:'dd-MMM-yyyy hh:mm a' }}</span>
-            </div>
+      <!-- Checklist Grid -->
+      <div class="row g-2 mb-3 fs-7">
+        <div class="col-md-4 col-6">
+          <div class="d-flex align-items-center gap-2 p-2 border rounded-2 bg-light">
+            <i class="bi bi-check-circle-fill text-success fs-6"></i>
+            <span class="fs-8 fw-medium text-dark">Customer Request Verified</span>
           </div>
         </div>
-
-        <!-- General Tests -->
-        <div *ngIf="getFlatTests(sample, 'generalTests').length > 0" class="test-section mt-3">
-          <div class="test-section-title">
-            General Tests
-            <span class="badge bg-primary-subtle text-primary ms-1">{{ getFlatTests(sample, 'generalTests').length }}</span>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm table-striped table-hover mb-0">
-              <thead>
-                <tr class="small text-muted text-uppercase">
-                  <th>#</th>
-                  <th>Specification 1</th>
-                  <th>Specification 2</th>
-                  <th>Lab Test</th>
-                  <th>Standard</th>
-                  <th class="text-center">Qty</th>
-                  <th>Report No</th>
-                  <th>ULR No</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let test of getFlatTests(sample, 'generalTests'); let i = index">
-                  <td class="text-muted">{{ i + 1 }}</td>
-                  <td>{{ getSpecificationName(test.specification1) }}</td>
-                  <td>{{ getSpecificationName(test.specification2) }}</td>
-                  <td>
-                    <ng-container *ngIf="test.subGroupName as sgName; else masterTestTpl">
-                      {{ sgName }}
-                    </ng-container>
-                    <ng-template #masterTestTpl>
-                      {{ getTestMethodName(test.testMethodID) }}
-                    </ng-template>
-                  </td>
-                  <td>{{ test.standardName || '-' }}</td>
-                  <td class="text-center">{{ test.quantity }}</td>
-                  <td>{{ test.reportNo || '-' }}</td>
-                  <td>{{ test.ulrNo || '-' }}</td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="col-md-4 col-6">
+          <div class="d-flex align-items-center gap-2 p-2 border rounded-2"
+               [ngClass]="isAllSamplesPlanned() ? 'bg-light' : 'bg-warning-subtle'">
+            <i class="bi fs-6" [ngClass]="isAllSamplesPlanned() ? 'bi-check-circle-fill text-success' : 'bi-exclamation-circle-fill text-warning'"></i>
+            <span class="fs-8 fw-medium text-dark">Test Plans & Specs Finalized</span>
           </div>
         </div>
-
-        <!-- Chemical Tests -->
-        <div *ngIf="getFlatTests(sample, 'chemicalTests').length > 0" class="test-section mt-3">
-          <div class="test-section-title">
-            Chemical Tests
-            <span class="badge bg-success-subtle text-success ms-1">{{ getFlatTests(sample, 'chemicalTests').length }}</span>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm table-striped table-hover mb-0">
-              <thead>
-                <tr class="small text-muted text-uppercase">
-                  <th>Report No</th>
-                  <th>ULR</th>
-                  <th>Analysis Type / Test Types</th>
-                  <th>Metal Classification</th>
-                  <th>Spec 1</th>
-                  <th>Spec 2</th>
-                  <th>Elements</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let test of getFlatTests(sample, 'chemicalTests')">
-                  <td>{{ test.reportNo || '-' }}</td>
-                  <td>{{ test.ulrNo || '-' }}</td>
-                  <td>
-                    <div *ngIf="test.analysisTypeName" class="fw-semibold small text-primary mb-1">
-                      {{ test.analysisTypeName }}
-                    </div>
-                    <ng-container *ngIf="test.testTypes">
-                      <span *ngFor="let type of testTypeList">
-                        <span *ngIf="test.testTypes[type]" class="badge bg-primary-subtle text-primary me-1 small">
-                          {{ type }}
-                        </span>
-                      </span>
-                    </ng-container>
-                  </td>
-                  <td>{{ getMetalClassificationName(test.metalClassificationID) }}</td>
-                  <td>{{ getSpecificationName(test.specification1) }}</td>
-                  <td>{{ getSpecificationName(test.specification2) }}</td>
-                  <td>
-                    <div *ngIf="(getElementsArray(test)).length > 0" class="d-flex flex-wrap gap-1">
-                      <span *ngFor="let element of getElementsArray(test)" class="badge bg-light text-dark border">
-                        {{ getParameterName(element.parameterID) }}
-                      </span>
-                    </div>
-                    <span *ngIf="!(getElementsArray(test)).length" class="text-muted">-</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="col-md-4 col-12">
+          <div class="d-flex align-items-center gap-2 p-2 border rounded-2 bg-light">
+            <i class="bi bi-check-circle-fill text-success fs-6"></i>
+            <span class="fs-8 fw-medium text-dark">TPI & Witness Checked</span>
           </div>
         </div>
+      </div>
+
+      <!-- Reviewer Remarks -->
+      <div class="mb-3">
+        <label class="form-label-sm fw-semibold mb-1">Technical Reviewer Remarks / ISO 17025 Capability Notes</label>
+        <textarea class="form-control form-control-sm" rows="3" [(ngModel)]="reviewRemark"
+                  placeholder="Enter technical verification notes, laboratory capability review observations, or approval remarks..."></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex justify-content-end gap-2">
+        <button *ngIf="isEmbeddedReadOnly" type="button" class="btn-lims btn-lims-cancel btn-sm" (click)="openReplanModal()">
+          <i class="bi bi-arrow-counterclockwise me-1"></i> Request Re-Plan
+        </button>
+
+        <button *ngIf="!isEmbeddedReadOnly" type="button" class="btn-lims btn-lims-save btn-sm" (click)="verifyAndLockReview()">
+          <i class="bi bi-check2-circle me-1"></i> Approve & Finalize Review
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Sticky Action Bar -->
-  <div class="review-action-bar" *ngIf="showReviewButton()">
-    <div class="d-flex align-items-center gap-3 flex-wrap">
-      <div class="btn-group" role="group">
-        <ng-container *ngFor="let act of actions">
-          <input
-            type="radio"
-            class="btn-check"
-            name="reviewAction"
-            [id]="'action_' + act.action"
-            [value]="act"
-            [(ngModel)]="selectedAction"
-          />
-          <label
-            class="btn btn-sm fw-semibold"
-            [class.btn-outline-success]="act.name.toLowerCase().includes('approve')"
-            [class.btn-outline-warning]="act.name.toLowerCase().includes('back')"
-            [class.btn-remove]="act.name.toLowerCase().includes('reject')"
-            [class.btn-add]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
-            [for]="'action_' + act.action"
-          >
-            <i class="bi me-1"
-              [class.bi-check2-circle]="act.name.toLowerCase().includes('approve')"
-              [class.bi-arrow-return-left]="act.name.toLowerCase().includes('back')"
-              [class.bi-x-circle]="act.name.toLowerCase().includes('reject')"
-              [class.bi-arrow-right]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
-            ></i>{{ act.name }}
-          </label>
-        </ng-container>
+  <!-- ═══════════════════════ TAB 4: HISTORY ═══════════════════════ -->
+  <div class="tab-pane-content" [class.d-none]="activeTab !== 'history'">
+    <div class="card border rounded-2 shadow-xs p-3 bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-2 pb-1.5 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history text-secondary fs-6"></i>
+          <div>
+            <span class="fw-bold fs-7 text-dark">Plan Revisions & Approval Audit Trail</span>
+            <span class="text-muted fs-8 d-block">Complete history of test plan versions, replan requests, and reviewer approvals</span>
+          </div>
+        </div>
       </div>
 
-      <textarea
-        *ngIf="selectedAction?.action?.toLowerCase() !== 'next'"
-        class="form-control form-control-sm flex-grow-1"
-        [(ngModel)]="reviewRemark"
-        rows="1"
-        placeholder="Enter remarks..."
-        style="max-width: 400px;"
-      ></textarea>
-
-      <button
-        class="btn btn-primary px-4"
-        [disabled]="!selectedAction || (selectedAction?.action?.toLowerCase() !== 'next' && !reviewRemark)"
-        (click)="submitReview()"
-      >
-        <i class="bi bi-send-check me-1"></i>Submit
-      </button>
+      <div class="table-responsive border rounded-2">
+        <table class="table table-sm table-striped table-hover mb-0 fs-7.5">
+          <thead class="table-light">
+            <tr>
+              <th>Date & Time</th>
+              <th>Sample</th>
+              <th>Version</th>
+              <th>Action</th>
+              <th>Performed By</th>
+              <th>Remarks / Changed Fields</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of getHistoryEntries()">
+              <td class="text-muted fs-8">{{ item.createdOn | date:'dd-MMM-yyyy hh:mm a' }}</td>
+              <td class="fw-semibold text-danger">{{ item.sampleNo }}</td>
+              <td><span class="badge bg-light text-dark border fs-8">v{{ item.version || 1 }}</span></td>
+              <td><span class="badge bg-primary-subtle text-primary border fs-8">{{ item.action }}</span></td>
+              <td class="text-dark">{{ item.createdByName || item.createdBy || 'System' }}</td>
+              <td class="text-secondary fs-8">{{ item.remarks || item.changedFieldsJson || '-' }}</td>
+            </tr>
+            <tr *ngIf="getHistoryEntries().length === 0">
+              <td colspan="6" class="text-center text-muted py-3">No history entries recorded yet for this plan.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <!-- ═══════════════════════ RE-PLAN MODAL DIALOG ═══════════════════════ -->
+  <div class="modal-backdrop-custom" *ngIf="showReplanModal">
+    <div class="modal-dialog-custom">
+      <div class="modal-header-custom">
+        <span class="fw-bold fs-7 text-dark"><i class="bi bi-arrow-counterclockwise text-danger me-1.5"></i> Request Case Re-Plan</span>
+        <button type="button" class="btn-close-sm" (click)="closeReplanModal()"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="modal-body-custom fs-7">
+        <label class="form-label-sm fw-semibold mb-1">Reason for Re-Planning Request *</label>
+        <textarea class="form-control form-control-sm" rows="3" [(ngModel)]="replanReason"
+                  placeholder="Explain why re-planning is required (e.g. customer revised specification, insufficient sample size, scope modification)..."></textarea>
+      </div>
+      <div class="modal-footer-custom d-flex justify-content-end gap-2">
+        <button type="button" class="btn-lims btn-lims-cancel btn-sm" (click)="closeReplanModal()">Cancel</button>
+        <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="submitReplan()">Submit Re-Plan Request</button>
+      </div>
+    </div>
+  </div>
+
 </div>

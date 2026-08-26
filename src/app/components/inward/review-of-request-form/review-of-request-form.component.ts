@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { SampleInwardService } from '../../../services/sample-inward.service';
@@ -14,25 +14,28 @@ import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
-import { routes } from '../../../app.routes';
-import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
-import { CuttingMachiningPlanTabComponent } from '../cutting-machining-plan-tab/cutting-machining-plan-tab.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
+
+export interface TpiPerson {
+  name: string;
+  contactNo?: string;
+  email?: string;
+  role?: string;
+}
 
 @Component({
   selector: 'app-review-of-request-form',
+  standalone: true,
   templateUrl: './review-of-request-form.component.html',
   styleUrls: ['./review-of-request-form.component.css'],
   imports: [
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    TestStatusBadgeComponent,
     SearchableDropdownComponent,
-    PlanFormComponent,
-    CuttingMachiningPlanTabComponent
+    PlanFormComponent
   ]
 })
 export class ReviewOfRequestFormComponent implements OnInit {
@@ -42,17 +45,20 @@ export class ReviewOfRequestFormComponent implements OnInit {
   @Input() embeddedInwardId: number = 0;
   @Input() isEmbeddedMode: boolean = false;
   @Input() isEmbeddedReadOnly: boolean = false;
+  @Output() reviewCompleted = new EventEmitter<any>();
 
-  activeSubTab: 'plan' | 'prep' = 'plan';
+  // Primary 4-Tab Navigation State
+  activeTab: 'test-plan' | 'tpi' | 'approval' | 'history' = 'test-plan';
+
+  @ViewChild('planFormRef') planFormRef?: PlanFormComponent;
+
+  // Re-plan modal state
   showReplanModal: boolean = false;
   replanReason: string = '';
 
   plan: any = null;
-
   baseUrl = environment.baseUrl;
   reviewRemark: string = '';
-  submitAttempted = false;
-  testTypeList = ['Spectro', 'Chemical', 'XRF', 'Full Analysis', 'ROHS'];
   reviewStatus: SampleStatus = SampleStatus.UNDER_REVIEW_REQUEST;
 
   // Dropdown data maps
@@ -64,16 +70,11 @@ export class ReviewOfRequestFormComponent implements OnInit {
   parameterMap: { [id: string]: string } = {};
   tpiAgencyMap: { [id: string]: string } = {};
 
-  // Filtered test methods and standards for dependent dropdowns
-  filteredTestMethods: { [key: string]: any[] } = {};
-  filteredStandards: any[] = [];
-
-  actions: any[] = [];
-  selectedAction: any = null;
-  showReviewButton = signal(true);
-
-  prepForms: { [sampleId: number]: FormGroup } = {};
-  openPrepSections: { [sampleId: number]: boolean } = {};
+  // TPI and Sample Forms
+  sampleForms: { [sampleId: number]: FormGroup } = {};
+  sampleTpiPersons: { [sampleId: number]: TpiPerson[] } = {};
+  tpiPersonsDirtyMap: { [sampleId: number]: boolean } = {};
+  tpiAgencyContactDetails: { [sampleId: number]: { emailId: string; contactNo: string } } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -89,24 +90,90 @@ export class ReviewOfRequestFormComponent implements OnInit {
     private toast: ToastService,
     private productConditionService: ProductConditionService,
     private tpiService: TPIService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
-    // Support embedded mode from CaseLifecycleWorkspace
     if (this.isEmbeddedMode && this.embeddedInwardId > 0) {
       this.inwardId = this.embeddedInwardId;
     } else {
-      this.activeRoute.paramMap.subscribe((params) => {
+      this.activeRoute.paramMap.subscribe(params => {
         this.inwardId = Number(params.get('id'));
       });
     }
 
-    this.fetchDropdowns();
-    this.fetchSampleInwardDetails(this.inwardId);
+    if (this.inwardId > 0) {
+      this.fetchDropdowns();
+      this.fetchSampleInwardDetails(this.inwardId);
+    }
+  }
+
+  isPlanDirty(): boolean {
+    return !!this.planFormRef?.planForm?.dirty;
+  }
+
+  isTpiDirty(): boolean {
+    if (!this.sampleForms) return false;
+    return Object.keys(this.sampleForms).some(id => {
+      const sampleId = +id;
+      const form = this.sampleForms[sampleId];
+      const isTpiReq = form?.get('tpiRequired')?.value === true;
+      // Only block tab switching if TPI is enabled AND has unsaved changes
+      if (isTpiReq) {
+        return form.dirty || !!this.tpiPersonsDirtyMap[sampleId];
+      }
+      return false;
+    });
+  }
+
+  toggleTpi(sampleId: number, isRequired: boolean): void {
+    const form = this.sampleForms[sampleId];
+    if (!form) return;
+
+    form.patchValue({ tpiRequired: isRequired });
+
+    if (!isRequired) {
+      // Direct auto-sync for No TPI so form remains pristine and unlocked
+      const payload = {
+        ...form.value,
+        tpiRequired: false,
+        tpiAgencyID: null,
+        testInstructions: form.get('testInstructions')?.value || '',
+        tpiInspectorsJson: null
+      };
+
+      this.inwardService.updateSamplePrep(sampleId, payload).subscribe({
+        next: () => {
+          form.markAsPristine();
+          this.tpiPersonsDirtyMap[sampleId] = false;
+          this.toast.show('Sample marked: No TPI Required.', 'success');
+        },
+        error: () => {
+          form.markAsPristine();
+          this.tpiPersonsDirtyMap[sampleId] = false;
+        }
+      });
+    } else {
+      form.markAsDirty();
+    }
+  }
+
+  setTab(tab: 'test-plan' | 'tpi' | 'approval' | 'history'): void {
+    if (this.activeTab === tab) return;
+
+    if (this.activeTab === 'test-plan' && this.isPlanDirty()) {
+      this.toast.show('You have unsaved changes in Test Plan. Please save your changes before switching tabs.', 'warning');
+      return;
+    }
+
+    if (this.activeTab === 'tpi' && this.isTpiDirty()) {
+      this.toast.show('You have unsaved changes in TPI & Special Requirements. Please save your changes before switching tabs.', 'warning');
+      return;
+    }
+
+    this.activeTab = tab;
   }
 
   fetchDropdowns(): void {
-    // Fetch all dropdowns in parallel and build maps for ID->Name
     this.materialSpecificationService.getMaterialSpecificationGradeDropdown('', 0, 1000).subscribe(list => {
       this.specificationMap = {};
       (list || []).forEach((item: any) => this.specificationMap[item.id] = item.name);
@@ -141,15 +208,13 @@ export class ReviewOfRequestFormComponent implements OnInit {
     return this.tpiService.getTPIDropdown(searchTerm, pageNumber, pageSize);
   };
 
-
   fetchSampleInwardDetails(inwardId: number): void {
     this.inwardService.getSampleInwardWithPlans(inwardId).subscribe({
       next: (data) => {
         if (data) {
-          // Map API response to plan structure for review
           this.plan = {
             id: data.id,
-            customerName: data.customerName,
+            customerName: data.customerName || data.customer?.name,
             customerAddress: data.address,
             customerContact: data.contacts?.find((c: any) => c.selected)?.name || data.contacts?.[0]?.name || '-',
             caseNo: data.caseNo,
@@ -161,15 +226,10 @@ export class ReviewOfRequestFormComponent implements OnInit {
             decisionRule: data.decisionRule ?? 'Not Applicable',
 
             samples: (data.sampleDetails || []).map((s: any) => {
-              // Find additional details for this sample
               const additionalDetails = (data.sampleAdditionalDetails || [])
                 .filter((ad: any) => ad.sampleID === s.id)
-                .map((ad: any) => ({
-                  label: ad.label,
-                  value: ad.value
-                }));
+                .map((ad: any) => ({ label: ad.label, value: ad.value }));
 
-              // Find test plans for this sample
               const testPlans = (data.sampleTestPlans || [])
                 .filter((tp: any) => tp.sampleID === s.id)
                 .map((tp: any) => ({
@@ -178,14 +238,17 @@ export class ReviewOfRequestFormComponent implements OnInit {
                   planStatus: tp.planStatus,
                   approvedByName: tp.approvedByName,
                   approvedAt: tp.approvedAt,
-                  generalTests: (tp.generalTests || []).map((gt: any) => ({
-                    sampleNo: gt.sampleNo,
+                  planHistories: tp.planHistories || [],
+                  generalTests: (tp.generalTests || []).map((gt: any, gtIdx: number) => ({
+                    id: gt.id || `gt_${s.id}_${gtIdx}`,
+                    sampleNo: gt.sampleNo || s.sampleNo,
                     specification1: gt.specification1,
                     specification2: gt.specification2,
                     laboratoryTestSubGroupID: gt.laboratoryTestSubGroupID,
                     subGroupName: gt.subGroupName,
                     parameter: gt.parameter,
                     methods: (gt.methods || []).map((m: any) => ({
+                      id: m.id,
                       testMethodID: m.testMethodID,
                       standardID: m.standardID,
                       standardName: m.standardName,
@@ -195,27 +258,19 @@ export class ReviewOfRequestFormComponent implements OnInit {
                       cancel: m.cancel
                     }))
                   })),
-                  chemicalTests: (tp.chemicalTests || []).map((ct: any) => ({
-                    sampleNo: ct.sampleNo,
+                  chemicalTests: (tp.chemicalTests || []).map((ct: any, ctIdx: number) => ({
+                    id: ct.id || `ct_${s.id}_${ctIdx}`,
+                    sampleNo: ct.sampleNo || s.sampleNo,
                     reportNo: ct.reportNo,
                     ulrNo: ct.ulrNo,
                     laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID,
                     analysisTypeName: ct.analysisTypeName,
-                    testTypes: {
-                      Spectro: ct.testTypes?.Spectro ?? false,
-                      Chemical: ct.testTypes?.Chemical ?? false,
-                      XRF: ct.testTypes?.XRF ?? false,
-                      'Full Analysis': ct.testTypes?.['Full Analysis'] ?? false,
-                      ROHS: ct.testTypes?.ROHS ?? false
-                    },
+                    testTypes: ct.testTypes,
                     metalClassificationID: ct.metalClassificationID,
                     specification1: ct.specification1,
                     specification2: ct.specification2,
                     standardID: ct.standardID ?? ct.testMethod,
-                    elements: (ct.elements || []).map((el: any) => ({
-                      parameterID: el.parameterID,
-                      selected: el.selected
-                    }))
+                    elements: ct.elements || []
                   }))
                 }));
 
@@ -229,14 +284,9 @@ export class ReviewOfRequestFormComponent implements OnInit {
                 productConditionName: s.productConditionName,
                 remarks: s.remarks,
                 quantity: s.quantity,
-                preparationRequired: s.preparationRequired ?? false,
-                machiningRequired: s.machiningRequired ?? false,
-                machiningAmount: s.machiningAmount ?? 0,
-                specimen: s.specimen ?? '',
-                otherPreparation: s.otherPreparation ?? false,
-                otherPreparationCharge: s.otherPreparationCharge ?? 0,
                 tpiRequired: s.tpiRequired ?? false,
                 tpiAgencyID: s.tpiAgencyID ?? null,
+                tpiInspectorsJson: s.tpiInspectorsJson ?? null,
                 testInstructions: s.testInstructions ?? '',
                 fileName: s.fileName ?? '',
                 sampleFilePath: s.sampleFilePath ?? '',
@@ -246,30 +296,57 @@ export class ReviewOfRequestFormComponent implements OnInit {
             })
           };
 
-          // Build prep FormGroups for each sample
-          this.prepForms = {};
-          this.openPrepSections = {};
+          // Initialize sampleForms and parse TPI persons
+          this.sampleForms = {};
+          this.sampleTpiPersons = {};
+
           (this.plan.samples || []).forEach((s: any) => {
-            this.prepForms[s.id] = this.fb.group({
-              preparationRequired: [s.preparationRequired],
-              machiningRequired: [s.machiningRequired],
-              machiningAmount: [s.machiningAmount],
-              specimen: [s.specimen],
-              otherPreparation: [s.otherPreparation],
-              otherPreparationCharge: [s.otherPreparationCharge],
-              testInstructions: [s.testInstructions],
+            this.sampleForms[s.id] = this.fb.group({
               tpiRequired: [s.tpiRequired],
-              tpiAgencyID: [s.tpiAgencyID]
+              tpiAgencyID: [s.tpiAgencyID],
+              testInstructions: [s.testInstructions || ''],
+              specialInstructions: [s.specialInstructions || '']
             });
-            this.openPrepSections[s.id] = !!(s.preparationRequired || s.machiningRequired || s.otherPreparation || s.tpiRequired);
+
+            // Initialize persons list: parse tpiInspectorsJson if present, or legacy text, or default row
+            let parsedPersons: TpiPerson[] = [];
+            if (s.tpiInspectorsJson) {
+              try {
+                parsedPersons = JSON.parse(s.tpiInspectorsJson);
+              } catch {
+                parsedPersons = [];
+              }
+            } else if (s.testInstructions && s.testInstructions.includes('TPI Inspectors:')) {
+              try {
+                const parts = s.testInstructions.split('TPI Inspectors:')[1].trim();
+                const names = parts.split(',').map((p: string) => p.trim()).filter((p: string) => p);
+                parsedPersons = names.map((n: string) => ({ name: n, role: 'Inspector' }));
+              } catch {
+                parsedPersons = [];
+              }
+            }
+
+            if (parsedPersons.length === 0) {
+              parsedPersons = [{ name: '', contactNo: '', email: '', role: 'Lead Inspector' }];
+            }
+
+            this.sampleTpiPersons[s.id] = parsedPersons;
+
+            // Fetch contact details if TPI agency is already selected
+            if (s.tpiAgencyID) {
+              this.tpiService.getTPIById(s.tpiAgencyID).subscribe({
+                next: (res: any) => {
+                  this.tpiAgencyContactDetails[s.id] = {
+                    emailId: res?.emailId || res?.email || '',
+                    contactNo: res?.contactNo || res?.phone || res?.mobileNo || ''
+                  };
+                },
+                error: () => {}
+              });
+            }
           });
 
           this.reviewStatus = data.status;
-          this.showReviewButton.set(data.canTakeAction);
-          this.actions = data.actions || [];
-          if (this.actions.length > 0) {
-            this.selectedAction = this.actions[0];
-          }
         }
       },
       error: (err) => {
@@ -278,145 +355,64 @@ export class ReviewOfRequestFormComponent implements OnInit {
     });
   }
 
-  // Samples getter
   get samples(): any[] {
     return this.plan?.samples || [];
   }
 
-  // Get all test plans for a sample (for accordion/tables)
-  getTestPlansArray(sample: any): any[] {
-    return sample?.testPlans || [];
-  }
-
-  // Get all general or chemical tests in a flat array for tables
-  getFlatTests(sample: any, type: 'generalTests' | 'chemicalTests'): any[] {
-    if (!sample?.testPlans) return [];
-    const flat: any[] = [];
-    sample.testPlans.forEach((plan: any) => {
-      if (type === 'generalTests') {
-        (plan.generalTests || []).forEach((gt: any) => {
-          (gt.methods || []).forEach((method: any) => {
-            flat.push({
-              specification1: gt.specification1,
-              specification2: gt.specification2,
-              standardID: method.standardID,
-              standardName: method.standardName,
-              testMethodID: method.testMethodID,
-              quantity: method.quantity,
-              reportNo: method.reportNo,
-              ulrNo: method.ulrNo
-            });
-          });
-        });
-      } else if (type === 'chemicalTests') {
-        (plan.chemicalTests || []).forEach((ct: any) => {
-          flat.push({
-            reportNo: ct.reportNo,
-            ulrNo: ct.ulrNo,
-            testTypes: ct.testTypes, // <-- ADD THIS LINE
-            metalClassificationID: ct.metalClassificationID,
-            specification1: ct.specification1,
-            specification2: ct.specification2,
-            standardID: ct.standardID,
-            elements: ct.elements || []
-          });
-        });
-      }
-    });
-    return flat;
-  }
-
-  // For accordion: get general/chemical tests array for a testPlan
-  getTestArray(sample: any, testPlan: any, type: 'generalTests' | 'chemicalTests'): any[] {
-    return testPlan?.[type] || [];
-  }
-
-  // For accordion: get methods array for a general test
-  getMethodRows(generalTest: any): any[] {
-    return generalTest?.methods || [];
-  }
-
-  // For chemical test: get elements array
-  getElementsArray(test: any): any[] {
-    return test?.elements || [];
-  }
-
-  // For additional details (if you want to show extra sample info)
-  getAdditionalDetailsArray(sample: any): any[] {
-    return sample?.additionalDetails || [];
-  }
-
-  // --- Name mapping helpers ---
-  getSpecificationName(id: any): string {
-    if (!id) return '-';
-    return this.specificationMap[id] || id;
-  }
-  getStandardName(id: any): string {
-    if (!id) return '-';
-    return this.standardMap[id] || id;
-  }
-  getMetalClassificationName(id: any): string {
-    if (!id) return '-';
-    return this.metalClassificationMap[id] || id;
-  }
-  getParameterName(id: any): string {
-    if (!id) return '-';
-    return this.parameterMap[id] || id;
-  }
-
-  // --- Dependent Dropdown Logic (reference from plan component) ---
-  getTestMethodsForSpecifications(spec1: string, spec2: string): Observable<any[]> {
-    const spec1Num = spec1 ? +spec1 : 0;
-    const spec2Num = spec2 ? +spec2 : 0;
-    return this.materialSpecificationService.getTestMethodsBySpecifications(spec1Num, spec2Num);
-  }
-
-  // For displaying test method name in table with dependency
-  getTestMethodName(id: any, spec1?: any, spec2?: any): string {
-    if (!id) return '-';
-    // Try to use filteredTestMethods if available for this spec1+spec2
-    const key = `${spec1 || ''}_${spec2 || ''}`;
-    if (this.filteredTestMethods[key]) {
-      const found = this.filteredTestMethods[key].find((tm: any) => tm.id == id);
-      if (found) return found.name;
+  // ─── Multiple TPI Persons Handlers ───
+  getTpiPersons(sampleId: number): TpiPerson[] {
+    if (!this.sampleTpiPersons[sampleId]) {
+      this.sampleTpiPersons[sampleId] = [{ name: '', contactNo: '', email: '', role: 'Inspector' }];
     }
-    return this.testMethodMap[id] || id;
+    return this.sampleTpiPersons[sampleId];
   }
 
-  // When rendering table, prefetch dependent test methods for each spec1/spec2
-  prefetchTestMethodsForSample(sample: any): void {
-    // For each general test, fetch test methods for its spec1/spec2
-    this.getFlatTests(sample, 'generalTests').forEach(test => {
-      const key = `${test.specification1 || ''}_${test.specification2 || ''}`;
-      if (!this.filteredTestMethods[key]) {
-        this.getTestMethodsForSpecifications(test.specification1, test.specification2).subscribe(methods => {
-          this.filteredTestMethods[key] = methods || [];
-        });
-      }
-    });
+  onTpiPersonModified(sampleId: number): void {
+    this.tpiPersonsDirtyMap[sampleId] = true;
   }
 
-  openFileInNewTab(filePath: string): void {
-    if (filePath) {
-      window.open(this.baseUrl + filePath, '_blank');
+  addTpiPerson(sampleId: number): void {
+    if (!this.sampleTpiPersons[sampleId]) {
+      this.sampleTpiPersons[sampleId] = [];
     }
+    this.sampleTpiPersons[sampleId].push({ name: '', contactNo: '', email: '', role: 'Inspector' });
+    this.tpiPersonsDirtyMap[sampleId] = true;
   }
 
-  togglePrepSection(sampleId: number): void {
-    this.openPrepSections[sampleId] = !this.openPrepSections[sampleId];
-  }
-
-  savePrepForSample(sampleId: number): void {
-    const form = this.prepForms[sampleId];
-    if (!form) return;
-    this.inwardService.updateSamplePrep(sampleId, form.value).subscribe({
-      next: () => this.toast.show('Preparation details saved.', 'success'),
-      error: () => this.toast.show('Failed to save preparation details.', 'error')
-    });
+  removeTpiPerson(sampleId: number, index: number): void {
+    if (this.sampleTpiPersons[sampleId] && this.sampleTpiPersons[sampleId].length > 1) {
+      this.sampleTpiPersons[sampleId].splice(index, 1);
+    } else if (this.sampleTpiPersons[sampleId]) {
+      this.sampleTpiPersons[sampleId][0] = { name: '', contactNo: '', email: '', role: 'Inspector' };
+    }
+    this.tpiPersonsDirtyMap[sampleId] = true;
   }
 
   onTPIAgencySelected(item: any, sampleId: number): void {
-    this.prepForms[sampleId]?.patchValue({ tpiAgencyID: item?.id ?? null });
+    this.sampleForms[sampleId]?.patchValue({ tpiAgencyID: item?.id ?? null });
+    this.sampleForms[sampleId]?.markAsDirty();
+    if (item?.id) {
+      if (item?.additionalValues && (item.additionalValues['emailId'] || item.additionalValues['contactNo'])) {
+        this.tpiAgencyContactDetails[sampleId] = {
+          emailId: item.additionalValues['emailId'] || '',
+          contactNo: item.additionalValues['contactNo'] || ''
+        };
+      } else {
+        this.tpiService.getTPIById(item.id).subscribe({
+          next: (res: any) => {
+            this.tpiAgencyContactDetails[sampleId] = {
+              emailId: res?.emailId || res?.email || '',
+              contactNo: res?.contactNo || res?.phone || res?.mobileNo || ''
+            };
+          },
+          error: () => {
+            delete this.tpiAgencyContactDetails[sampleId];
+          }
+        });
+      }
+    } else {
+      delete this.tpiAgencyContactDetails[sampleId];
+    }
   }
 
   getTpiAgencyName(id: any): string {
@@ -424,56 +420,51 @@ export class ReviewOfRequestFormComponent implements OnInit {
     return this.tpiAgencyMap[id] || String(id);
   }
 
-  submitReview() {
-    this.submitAttempted = true;
-    if (!this.selectedAction) return;
-    if (this.selectedAction?.action?.toLowerCase() !== 'next' && !this.reviewRemark) return;
+  saveTPI(sampleId: number): void {
+    const form = this.sampleForms[sampleId];
+    if (!form) return;
+
+    const persons = this.getTpiPersons(sampleId).filter(p => p.name && p.name.trim());
 
     const payload = {
-      id: this.selectedAction.id,
-      action: this.selectedAction.action, // "Next" or "Cancel"
-      name: this.selectedAction.name,
-      remarks: this.reviewRemark
+      ...form.value,
+      testInstructions: form.get('testInstructions')?.value || '',
+      tpiInspectorsJson: persons.length > 0 ? JSON.stringify(persons) : null
     };
 
-    this.workflowService.performWorkflowAction(payload).subscribe({
-      next: (response) => {
-        this.toast.show(response.message, "success");
-        this.router.navigate(['/sample/review']);
+    this.inwardService.updateSamplePrep(sampleId, payload).subscribe({
+      next: () => {
+        form.markAsPristine();
+        this.tpiPersonsDirtyMap[sampleId] = false;
+        this.toast.show('TPI agencies and inspector persons saved successfully.', 'success');
       },
-      error: (error) => {
-        console.error('Error performing action:', error);
-        this.toast.show("Error performing action. Please try again.", "error");
-      }
+      error: () => this.toast.show('Failed to save TPI parameters.', 'error')
     });
   }
 
-  // Get badge class based on review status
-  getStatusBadgeClass(): string {
-    switch (this.reviewStatus) {
-      case SampleStatus.UNDER_REVIEW_REQUEST:
-        return 'bg-warning text-dark';
-      case SampleStatus.REQUEST_APPROVED:
-        return 'bg-success';
-      case SampleStatus.REQUEST_REJECTED:
-        return 'bg-danger';
-      default:
-        return 'bg-secondary';
+  // ─── Verification & Approval ───
+  printInwardChallan(): void {
+    if (this.inwardId > 0) {
+      this.inwardService.downloadInwardChallanPdf(this.inwardId).subscribe({
+        next: (blob: Blob) => {
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        },
+        error: () => {
+          this.toast.show('Failed to print Inward Receipt Challan PDF.', 'error');
+        }
+      });
     }
-  }
-
-  setSubTab(tab: 'plan' | 'prep'): void {
-    this.activeSubTab = tab;
   }
 
   verifyAndLockReview(): void {
     if (!this.inwardId) return;
-    this.inwardService.verifyAndLockReview(this.inwardId).subscribe({
-      next: (res) => {
-        this.toast.show(res.message || 'Review of Request verified and locked successfully!', 'success');
-        this.isEmbeddedReadOnly = true;
-        this.reviewStatus = SampleStatus.REQUEST_APPROVED;
+
+    this.inwardService.verifyAndLockReview(this.inwardId, this.reviewRemark).subscribe({
+      next: (res: any) => {
+        this.toast.show('Review of Request verified & approved successfully!', 'success');
         this.fetchSampleInwardDetails(this.inwardId);
+        this.reviewCompleted.emit(res);
       },
       error: () => {
         this.toast.show('Failed to verify and lock Review of Request.', 'error');
@@ -491,37 +482,46 @@ export class ReviewOfRequestFormComponent implements OnInit {
     this.replanReason = '';
   }
 
-  submitReplanRequest(): void {
+  submitReplan(): void {
     if (!this.replanReason.trim()) {
-      this.toast.show('Please enter a valid reason for requesting a re-plan.', 'error');
+      this.toast.show('Please provide a reason to request a re-plan.', 'warning');
       return;
     }
-    this.inwardService.requestInwardReplan(this.inwardId, this.replanReason.trim()).subscribe({
-
-      next: (res) => {
-        this.toast.show(res.message || 'Re-Plan request submitted successfully!', 'success');
+    this.inwardService.requestInwardReplan(this.inwardId, this.replanReason).subscribe({
+      next: () => {
+        this.toast.show('Re-Plan requested successfully.', 'success');
         this.closeReplanModal();
         this.fetchSampleInwardDetails(this.inwardId);
       },
       error: () => {
-        this.toast.show('Failed to submit re-plan request.', 'error');
+        this.toast.show('Failed to submit Re-Plan request.', 'error');
       }
     });
   }
 
-  printInwardChallan(): void {
-    if (!this.inwardId) return;
-    this.inwardService.downloadInwardChallanPdf(this.inwardId).subscribe({
-      next: (blob: Blob) => {
-        const fileURL = URL.createObjectURL(blob);
-        window.open(fileURL, '_blank');
-        this.toast.show('Inward Receipt Challan generated successfully!', 'success');
-      },
-      error: () => {
-        this.toast.show('Failed to generate Inward Receipt Challan PDF.', 'error');
-      }
+  // Pre-flight validation checks
+  isAllSamplesPlanned(): boolean {
+    if (!this.samples || this.samples.length === 0) return false;
+    return this.samples.every(s => (s.testPlans || []).length > 0);
+  }
+
+  getHistoryEntries(): any[] {
+    const list: any[] = [];
+    (this.samples || []).forEach(s => {
+      (s.testPlans || []).forEach((tp: any) => {
+        (tp.planHistories || []).forEach((h: any) => {
+          list.push({
+            ...h,
+            sampleNo: s.sampleNo,
+            version: h.version || tp.version || 1,
+            action: h.action || h.changeType || 'Modified',
+            createdByName: h.createdByName || h.changedByName || h.createdBy || 'System',
+            createdOn: h.createdOn || h.changedAt,
+            remarks: h.remarks || h.fieldChangesJson || h.changedFieldsJson || '-'
+          });
+        });
+      });
     });
+    return list.sort((a, b) => new Date(b.createdOn || 0).getTime() - new Date(a.createdOn || 0).getTime());
   }
 }
-
-

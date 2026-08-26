@@ -26,6 +26,28 @@ body {
   color: #1F2937;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   MANDATORY GLOBAL ICON-TO-TEXT SPACING RULE (STRICT)
+   All icons (<i>) placed beside text in buttons, nav tabs,
+   links, badges, and labels MUST maintain explicit spacing.
+═══════════════════════════════════════════════════════════ */
+.btn-lims i:not(:only-child),
+.btn i:not(:only-child),
+.nav-tab-btn i:not(:only-child),
+.tpi-toggle-btn i:not(:only-child),
+.btn-nav-link i:not(:only-child),
+.badge i:not(:only-child),
+button i:not(:only-child),
+a i:not(:only-child) {
+  margin-right: 6px !important;
+}
+
+button i:only-child,
+a i:only-child,
+.btn-lims-icon i {
+  margin-right: 0 !important;
+}
+
 .content-container {
   margin-top: var(--nav-height);
   margin-bottom: auto;
@@ -3806,6 +3828,250 @@ input[type="checkbox"]:checked {
   font-size: 0.7rem !important;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   LIFECYCLE WORKSPACE — GLOBAL KPI BAR & INLINE PANEL CLASSES
+   Theme: --primary-color: #da261c | Poppins | High Density
+════════════════════════════════════════════════════════════════ */
+.kpi-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
 
+.kpi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  color: #334155;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
 
+.kpi-chip:hover {
+  border-color: var(--primary-color, #da261c);
+  background: var(--primary-50, rgba(218, 38, 28, 0.04));
+}
+
+.kpi-chip-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpi-chip-value {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #0f172a;
+}
+
+.kpi-chip-icon {
+  font-size: 0.85rem;
+  color: var(--primary-color, #da261c);
+}
+
+.inline-form-panel {
+  margin-top: 12px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  animation: fadeInDown 0.2s ease-in-out;
+}
+
+.inline-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.inline-form-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-color, #da261c);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL STANDARDIZED LIMS ACTION BUTTONS & NAV LINKS
+   Source: AGENTS.md | ISO 17025 Compliant LIMS Design System
+═══════════════════════════════════════════════════════════ */
+
+.btn-lims {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  line-height: 1.35;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.btn-lims:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-lims.btn-lims-save,
+.btn-lims.btn-lims-primary {
+  background-color: var(--primary-color, #da261c);
+  color: #ffffff;
+  border-color: var(--primary-color, #da261c);
+  box-shadow: 0 1px 3px rgba(218, 38, 28, 0.25);
+}
+
+.btn-lims.btn-lims-save:hover:not(:disabled),
+.btn-lims.btn-lims-primary:hover:not(:disabled) {
+  background-color: #b81d14;
+  border-color: #b81d14;
+  color: #ffffff;
+  box-shadow: 0 2px 5px rgba(218, 38, 28, 0.35);
+}
+
+.btn-lims.btn-lims-cancel,
+.btn-lims.btn-lims-secondary {
+  background-color: #ffffff;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.btn-lims.btn-lims-cancel:hover:not(:disabled),
+.btn-lims.btn-lims-secondary:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  border-color: #94a3b8;
+}
+
+.btn-lims.btn-lims-add {
+  background-color: rgba(218, 38, 28, 0.05);
+  color: var(--primary-color, #da261c);
+  border: 1px dashed var(--primary-color, #da261c);
+}
+
+.btn-lims.btn-lims-add:hover:not(:disabled) {
+  background-color: rgba(218, 38, 28, 0.12);
+  color: #b81d14;
+  border-color: #b81d14;
+}
+
+.btn-lims.btn-lims-remove,
+.btn-lims.btn-lims-delete {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.btn-lims.btn-lims-remove:hover:not(:disabled),
+.btn-lims.btn-lims-delete:hover:not(:disabled) {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.btn-lims.btn-lims-edit {
+  background-color: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.btn-lims.btn-lims-edit:hover:not(:disabled) {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.btn-lims.btn-lims-print {
+  background-color: #1e293b;
+  color: #ffffff;
+  border-color: #1e293b;
+}
+
+.btn-lims.btn-lims-print:hover:not(:disabled) {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+.btn-lims-icon {
+  width: 26px;
+  height: 26px;
+  padding: 0 !important;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.btn-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-nav-link:hover {
+  color: #b81d14;
+  text-decoration: underline;
+}
+
+.btn-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: var(--primary-color, #da261c);
+  border: 1px solid rgba(218, 38, 28, 0.2);
+  background: rgba(218, 38, 28, 0.04);
+  text-decoration: none;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.btn-nav-icon:hover {
+  background: var(--primary-color, #da261c);
+  color: #ffffff;
+}
 

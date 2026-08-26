@@ -1345,6 +1345,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       reportNo: [reportNo],
       ulrNo: [ulrNo],
       cancel: [false],
+      preparationRequired: [false],
       standardID: [null],
       standardName: [''],
       customRemarks: ['']
@@ -1474,10 +1475,6 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   }
 
   addChemicalMethodRow(sampleIdx: number, planIdx: number, chemIdx: number): void {
-    if (!this.hasSelectedTechnique(sampleIdx)) {
-      this.toastService.show('Please select at least one Analytical Technique (e.g. OES, WET, ICP, etc.) before adding chemical tests.', 'warning');
-      return;
-    }
     const methods = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx);
     methods.push(this.createTestMethodRow('', ''));
   }
@@ -1880,6 +1877,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 reportNo: m.reportNo,
                 ulrNo: m.ulrNo,
                 cancel: m.cancel,
+                preparationRequired: m.preparationRequired ?? false,
                 standardID: m.standardID || null,
                 standardName: m.standardName || ''
               }))
@@ -1909,6 +1907,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 reportNo: m.reportNo || ct.reportNo || '',
                 ulrNo: m.ulrNo || ct.ulrNo || '',
                 cancel: m.cancel || false,
+                preparationRequired: m.preparationRequired ?? false,
                 standardID: m.standardID || m.testMethodSpecificationID || null,
                 standardName: m.standardName || ''
               })) : (ct.laboratoryTestAnalysisTypeID ? [{
@@ -1922,6 +1921,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 reportNo: ct.reportNo || '',
                 ulrNo: ct.ulrNo || '',
                 cancel: false,
+                preparationRequired: false,
                 standardID: null,
                 standardName: ''
               }] : []),
@@ -2305,12 +2305,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       if (!this.hasSelectedTechnique(sampleIdx)) {
         this.rebindTechniquesForLoadedSamples();
       }
-      if (!this.hasSelectedTechnique(sampleIdx)) {
-        if (term && term.trim().length > 0) {
-          this.toastService.show('Please select at least one Analytical Technique (e.g. OES, WET, ICP, etc.) above to search and select chemical tests.', 'warning');
-        }
-        return of([]);
-      }
+      
       const isUnknown = this.getSampleGroupSafely(sampleIdx)?.get('isUnknownSample')?.value;
       const pmExplorer = this.explorerProductDataMap[sampleIdx];
       const metalExplorer = this.explorerMetalDataMap[sampleIdx];
@@ -2320,7 +2315,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
 
       const isProductMasterBase = !!(pmExplorer && pmExplorer.grades && pmExplorer.grades.length > 0);
 
-      // Selected techniques filter
+      // Selected techniques filter (if techniques are chosen, filter by them; otherwise show all available chemical tests)
       const selectedCodes = this.availableTechniques
         .filter(tech => this.isTechniqueSelected(sampleIdx, tech.code))
         .map(tech => tech.code.toUpperCase());
@@ -2330,7 +2325,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
 
       return this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize).pipe(
         map((allTests: any[]) => {
-          const filteredAll = this.filterHierarchicalChemicalTests(allTests || [], selectedCodes, selectedIds);
+          const filteredAll = (selectedCodes.length > 0 || selectedIds.length > 0)
+            ? this.filterHierarchicalChemicalTests(allTests || [], selectedCodes, selectedIds)
+            : (allTests || []);
 
           if (isUnknown || !activeExplorer || !activeExplorer.grades || activeExplorer.grades.length === 0) {
             return filteredAll;
@@ -3278,6 +3275,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 reportNo: [m.reportNo || ''],
                 ulrNo: [m.ulrNo || ''],
                 cancel: [m.cancel || false],
+                preparationRequired: [m.preparationRequired ?? false],
                 standardID: [m.standardID || null],
                 standardName: [m.standardName || '']
               })))
@@ -3336,6 +3334,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 reportNo: [m.reportNo || ct.reportNo || ''],
                 ulrNo: [m.ulrNo || ct.ulrNo || ''],
                 cancel: [m.cancel || false],
+                preparationRequired: [m.preparationRequired ?? false],
                 standardID: [m.standardID || null],
                 standardName: [m.standardName || '']
               }))),
@@ -3549,8 +3548,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     this.inwardService.testPlanSave(payload).subscribe({
       next: () => {
         this.saved = true;
+        this.planForm.markAsPristine();
         this.toastService.show('Test Plan saved successfully!', 'success');
-        this.router.navigate(['/sample/inward']);
+        if (this.mode !== 'review') {
+          this.router.navigate(['/sample/inward']);
+        }
       },
       error: (err) => {
         console.error('[PlanForm] Save Error:', err);
@@ -3668,7 +3670,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               quantity: m.quantity || 0,
               reportNo: m.reportNo === 'Auto Generate' ? '' : m.reportNo || '',
               ulrNo: m.ulrNo === 'Auto Generate' ? '' : m.ulrNo || '',
-              cancel: m.cancel || false
+              cancel: m.cancel || false,
+              preparationRequired: m.preparationRequired ?? false
             }))
           })),
 
@@ -3709,7 +3712,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 quantity: m.quantity || 1,
                 reportNo: m.reportNo === 'Auto Generate' ? '' : m.reportNo || '',
                 ulrNo: m.ulrNo === 'Auto Generate' ? '' : m.ulrNo || '',
-                cancel: m.cancel || false
+                cancel: m.cancel || false,
+                preparationRequired: m.preparationRequired ?? false
               })),
               elements: (c.elements || []).map((e: any) => ({
                 id: e.id || 0,

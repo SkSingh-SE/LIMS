@@ -521,6 +521,7 @@
                                 <th class="fw-medium text-center" style="width: 180px;">
                                    <div>Report No / ULR No</div>
                                 </th>
+                                <th class="fw-medium text-center" style="width: 100px;">Preparation</th>
                                 <th class="fw-medium text-center" style="width: 60px;">Action</th>
                               </tr>
                             </thead>
@@ -610,6 +611,12 @@
                                       title="Cancel test method">
                                       <input type="checkbox" class="form-check-input mt-0" formControlName="cancel" />
                                     </div>
+                                  </div>
+                                </td>
+                                <td class="text-center">
+                                  <div class="form-check form-switch d-inline-flex align-items-center justify-content-center mb-0"
+                                       [title]="method.get('preparationRequired')?.value ? 'Preparation Required' : 'No Preparation'">
+                                    <input type="checkbox" class="form-check-input mt-0 cursor-pointer" formControlName="preparationRequired" role="switch" [disabled]="isViewMode" />
                                   </div>
                                 </td>
                                 <td class="text-center">
@@ -791,6 +798,7 @@
                                     <th class="fw-medium">TEST METHOD SPECIFICATION</th>
                                     <th class="fw-medium text-center" style="width: 90px;">QUANTITY</th>
                                     <th class="fw-medium text-center" style="width: 180px;">REPORT NO / ULR NO</th>
+                                    <th class="fw-medium text-center" style="width: 100px;">PREPARATION</th>
                                     <th class="fw-medium text-center" style="width: 60px;">ACTION</th>
                                   </tr>
                                 </thead>
@@ -828,6 +836,12 @@
                                       </div>
                                       <div class="text-muted ulr-text-sub">
                                         ULR: {{ displayUlr(method.get("ulrNo")?.value) }}
+                                      </div>
+                                    </td>
+                                    <td class="text-center">
+                                      <div class="form-check form-switch d-inline-flex align-items-center justify-content-center mb-0"
+                                           [title]="method.get('preparationRequired')?.value ? 'Preparation Required' : 'No Preparation'">
+                                        <input type="checkbox" class="form-check-input mt-0 cursor-pointer" formControlName="preparationRequired" role="switch" [disabled]="isViewMode" />
                                       </div>
                                     </td>
                                     <td class="text-center">
@@ -1460,9 +1474,6 @@
     <button *ngIf="canSavePlan()" type="button" class="btn btn-lims btn-lims-save px-4" (click)="onSave()"
       [disabled]="!planForm.valid">
       <i class="bi bi-check-circle me-2"></i> Save Plan
-    </button>
-    <button *ngIf="canSendForReview()" type="button" class="btn btn-lims btn-lims-primary" (click)="onSendForReview()">
-      <i class="bi bi-send me-2"></i> Send for Review
     </button>
   </div>
 </div>

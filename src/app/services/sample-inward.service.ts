@@ -30,6 +30,9 @@ export class SampleInwardService {
   getSampleInwardWithPlans(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/details-with-plan/${id}`);
   }
+  getLifecycleSummary(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/lifecycle-summary`);
+  }
   getCaseNumber(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/case-number`);
   }
@@ -108,8 +111,8 @@ export class SampleInwardService {
     return this.http.post<any>(`${this.apiUrl}/unstop-report/${inwardId}`, {});
   }
 
-  verifyAndLockReview(inwardId: number): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/verify-and-lock-review/${inwardId}`, {});
+  verifyAndLockReview(inwardId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verify-and-lock-review/${inwardId}`, { remarks: remarks || '' });
   }
 
   requestInwardReplan(inwardId: number, reason: string): Observable<any> {

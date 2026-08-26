@@ -100,7 +100,7 @@ export class SearchableDropdownComponent {
 
       if (typeof val === 'object' && val !== null && val.id !== undefined) {
         // Full object passed — use directly for rebind
-        this.selectedLabel = val.name ?? val.label ?? String(val.id);
+        this.selectedLabel = val.additionalValues?.['fullDisplayName'] || (val.name ?? val.label ?? String(val.id));
         this.hasValidSelection = true;
         this.dropdownData = [val, ...this.dropdownData.filter(x => x && x.id !== val.id)];
         this.cdr.markForCheck();
@@ -109,9 +109,9 @@ export class SearchableDropdownComponent {
 
       // Check if item is already in dropdownData (match by ID or by additionalValues master/subgroup ID)
       const matched = this.dropdownData.find(x => x && !x.isHeader && x.selectable !== false && 
-        (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId))));
+        (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
       if (matched) {
-        this.selectedLabel = matched.name;
+        this.selectedLabel = matched.additionalValues?.['fullDisplayName'] || matched.name;
         this.hasValidSelection = true;
         this.cdr.markForCheck();
       } else if (rawId && this.fetchDataFn) {
@@ -119,10 +119,10 @@ export class SearchableDropdownComponent {
         this.fetchDataFn(String(rawId), 0, 20).subscribe({
           next: (data: any[]) => {
             const found = (data || []).find(x => x && !x.isHeader && x.selectable !== false && 
-              (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId))));
+              (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
             if (found) {
               this.dropdownData = [found, ...this.dropdownData.filter(x => x && x.id !== found.id)];
-              this.selectedLabel = found.name;
+              this.selectedLabel = found.additionalValues?.['fullDisplayName'] || found.name;
               this.hasValidSelection = true;
               this.cdr.markForCheck();
             }
@@ -285,7 +285,7 @@ export class SearchableDropdownComponent {
 
   selectItem(item: any): void {
     if (!item || item.isHeader || item.selectable === false) return;
-    this.selectedLabel = item.name;
+    this.selectedLabel = item.additionalValues?.['fullDisplayName'] || item.name;
     this.searchTerm = '';
     this.hasValidSelection = true;
     this.selectedItem = item;

@@ -486,26 +486,43 @@ export class TestMethodSpecificationComponent implements OnInit {
     this.versions.at(index).patchValue({ standardFile: '', standardFilePath: '', file: null, uploadReferenceID: null });
   }
 
-  /** Test Method Caption — display title jaisa hi format but year ke sath */
-  getCaption(year: any): string {
-    const org = this.selectedStandardOrganization?.name || '';
+  /** Test Method Caption — version-specific unique caption */
+  getCaption(groupOrYear: any, index?: number): string {
+    const org = (this.selectedStandardOrganization?.name || '').toString().trim();
     const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
     const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
-    const version = this.getActiveVersionLabel();
-    let parts: string[] = [org];
+    
+    let version = '';
+    let year = '';
+    
+    if (groupOrYear && typeof groupOrYear === 'object' && groupOrYear.get) {
+      version = (groupOrYear.get('version')?.value || '').toString().trim();
+      year = (groupOrYear.get('year')?.value || '').toString().trim();
+    } else if (typeof index === 'number' && this.versions.at(index)) {
+      const g = this.versions.at(index);
+      version = (g.get('version')?.value || '').toString().trim();
+      year = (g.get('year')?.value || '').toString().trim();
+    } else {
+      version = this.getActiveVersionLabel();
+      year = (groupOrYear || '').toString().trim();
+    }
+
+    let parts: string[] = [];
+    if (org) parts.push(org);
     if (part) {
       parts.push(`${std} - ${part}`);
-    } else {
+    } else if (std) {
       parts.push(std);
     }
-    parts = parts.filter(x => x);
-    if (parts.length && version) {
-      parts.push(`: ${version}`);
+    
+    let caption = parts.join(' ');
+    if (version) {
+      caption += ` : ${version}`;
     }
-    // if (year) {
-    //   parts.push(year);
-    // }
-    return parts.join(' ');
+    if (year) {
+      caption += ` ${year}`;
+    }
+    return caption.trim();
   }
 
   onDisable() {

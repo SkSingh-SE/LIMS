@@ -56,7 +56,14 @@ ul.list-group {
   padding-left: inherit !important;
 }
 
-/* ─── Mouse Hover (Selectable Only) ─── */
+.dropdown-panel .dropdown-selectable-item.ps-3 {
+  padding-left: 22px !important;
+}
+
+.dropdown-panel .dropdown-selectable-item.ps-4 {
+  padding-left: 36px !important;
+}
+
 .dropdown-panel .dropdown-selectable-item:hover {
   background-color: var(--primary-50);
   color: var(--primary-color);

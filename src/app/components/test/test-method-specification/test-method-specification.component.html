@@ -286,7 +286,7 @@
 
                   <div class="col-md-3" *ngIf="group.get('year')?.value">
                     <label class="form-label">Test Method Caption</label>
-                    <div class="form-control form-control-sm bg-light border-0">{{ getCaption(group.get("year")?.value) }}</div>
+                    <div class="form-control form-control-sm bg-light border-0">{{ getCaption(group, i) }}</div>
                   </div>
                 </div>
 

@@ -556,14 +556,26 @@ export class LaboratoryTestComponent implements OnInit {
 
   createMethodGroup(m?: any): FormGroup {
     const methodSpec = m?.testMethodSpecification || m?.testMethodSpecificationVersion?.testMethodSpecification;
-    const specName = methodSpec?.name || m?.testMethodName || '';
-    const standard = methodSpec?.testMethodStandard || m?.standard || m?.additionalValues?.TestMethodStandard || '';
-    const version = m?.testMethodSpecificationVersion?.version || m?.version || m?.additionalValues?.Version || '';
+    const specName = methodSpec?.name 
+                  || m?.testMethodName 
+                  || m?.additionalValues?.testMethodSpecificationName 
+                  || m?.additionalValues?.Name 
+                  || '';
+    const standard = methodSpec?.testMethodStandard 
+                  || m?.standard 
+                  || m?.additionalValues?.testMethodStandard 
+                  || m?.additionalValues?.TestMethodStandard 
+                  || '';
+    const version = m?.testMethodSpecificationVersion?.version 
+                 || m?.version 
+                 || m?.additionalValues?.versionName 
+                 || m?.additionalValues?.Version 
+                 || '';
     
     return this.fb.group({
       id: [m?.id || 0],
-      testMethodSpecificationID: [m?.testMethodSpecificationID || null],
-      testMethodSpecificationVersionID: [m?.testMethodSpecificationVersionID || null, Validators.required],
+      testMethodSpecificationID: [m?.testMethodSpecificationID || methodSpec?.id || m?.additionalValues?.testMethodSpecificationId || m?.additionalValues?.TestMethodSpecificationID || null],
+      testMethodSpecificationVersionID: [m?.testMethodSpecificationVersionID || m?.testMethodSpecificationVersion?.id || m?.additionalValues?.versionId || null, Validators.required],
       testMethodName: [specName],
       standard: [standard],
       version: [version],
@@ -685,14 +697,30 @@ export class LaboratoryTestComponent implements OnInit {
   addMethodRow(form: FormGroup, item: any) {
     if (!item) return;
     const arr = form.get('testMethods') as FormArray;
-    if (arr.value.some((m: any) => m.testMethodSpecificationVersionID === item.id)) {
+    const versionId = item.id || item.additionalValues?.versionId || item.additionalValues?.VersionID;
+    if (arr.value.some((m: any) => (m.testMethodSpecificationVersionID === versionId || m.testMethodSpecificationVersionID === item.id))) {
       this.toastService.show('Method already added.', 'warning');
       return;
     }
+    const specName = item.additionalValues?.testMethodSpecificationName 
+                  || item.additionalValues?.Name 
+                  || item.additionalValues?.name 
+                  || item.additionalValues?.displayTitle 
+                  || item.name;
+    const standard = item.additionalValues?.testMethodStandard 
+                  || item.additionalValues?.TestMethodStandard 
+                  || '';
+    const version = item.additionalValues?.version 
+                 || item.additionalValues?.versionName 
+                 || item.additionalValues?.Version 
+                 || item.name;
+
     arr.push(this.createMethodGroup({
-      testMethodSpecificationID: item.additionalValues?.TestMethodSpecificationID || null,
-      testMethodSpecificationVersionID: item.id,
-      testMethodName: item.Name || item.name,
+      testMethodSpecificationID: item.additionalValues?.testMethodSpecificationId || item.additionalValues?.TestMethodSpecificationID || null,
+      testMethodSpecificationVersionID: versionId,
+      testMethodName: specName,
+      standard: standard,
+      version: version,
       additionalValues: item.additionalValues,
       isDefault: arr.length === 0
     }));
@@ -1185,13 +1213,15 @@ export class LaboratoryTestComponent implements OnInit {
           const exists = currentArray.controls.some(ctrl => ctrl.get('testMethodSpecificationVersionID')?.value === versionId);
           if (!exists) {
             currentArray.push(this.createMethodGroup({
-              testMethodSpecificationID: m.additionalValues?.TestMethodSpecificationID || null,
+              testMethodSpecificationID: m.additionalValues?.testMethodSpecificationId || m.additionalValues?.TestMethodSpecificationID || null,
               testMethodSpecificationVersionID: versionId,
-              testMethodName: m.additionalValues?.Name || m.name || m.Name,
-              standard: m.additionalValues?.TestMethodStandard || '',
-              version: m.additionalValues?.Version || '',
+              testMethodName: m.additionalValues?.testMethodSpecificationName || m.additionalValues?.Name || m.additionalValues?.name || m.name,
+              standard: m.additionalValues?.testMethodStandard || m.additionalValues?.TestMethodStandard || '',
+              version: m.additionalValues?.versionName || m.additionalValues?.Version || m.additionalValues?.version || m.name,
+              additionalValues: m.additionalValues,
               isDefault: currentArray.length === 0
             }));
+
             addedCount++;
           }
         });

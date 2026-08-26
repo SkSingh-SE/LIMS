@@ -49,25 +49,52 @@
   <!-- Validation feedback -->
   <div *ngIf="required && inputRef.invalid && inputRef.touched" class="invalid-feedback">{{ labelName }} is required.</div>
 
-  <!-- Dropdown list -->
+  <!-- Dropdown list panel with Tree Hierarchy Support -->
   <ul
     *ngIf="showDropdown"
     class="dropdown-panel"
     [ngStyle]="dropdownStyle"
     (scroll)="onScroll($event)"
   >
-    <li
-      class="dropdown-item"
-      *ngFor="let item of dropdownData; let i = index; trackBy: trackById"
-      [id]="randomId + '-item-' + i"
-      [class.active]="!isMultiSelect && highlightedIndex === i"
-      [class.multi-selected]="isMultiSelect && isSelected(item)"
-      (mouseenter)="highlightedIndex = i"
-      (mousedown)="isMultiSelect ? toggleItem(item) : selectItem(item)"
-    >
-      <i *ngIf="isMultiSelect" class="bi me-2" [ngClass]="isSelected(item) ? 'bi-check-square-fill check-selected' : 'bi-square check-unselected'"></i>
-      {{ item.name }}
-    </li>
+    <ng-container *ngFor="let item of dropdownData; let i = index; trackBy: trackById">
+      <!-- Non-selectable Group Header (Level 0: Department or Organization or General header) -->
+      <li
+        *ngIf="item.isHeader && (item.level === 0 || !item.level)"
+        class="dropdown-group-header-0"
+      >
+        <i class="bi bi-folder2-open me-1 text-danger"></i> {{ item.name }}
+      </li>
+
+      <!-- Non-selectable Intermediate SubGroup Header (Level 1: e.g. SubGroup or Test Method Standard) -->
+      <li
+        *ngIf="item.isHeader && item.level === 1"
+        class="dropdown-group-header-1"
+      >
+        <i class="bi bi-folder me-1 text-secondary"></i> {{ item.name }}
+      </li>
+
+      <!-- Selectable Option -->
+      <li
+        *ngIf="!item.isHeader && item.selectable !== false"
+        class="dropdown-item dropdown-selectable-item"
+        [id]="randomId + '-item-' + i"
+        [class.ps-3]="item.level === 1 || (item.isChild && !item.level)"
+        [class.ps-4]="item.level === 2"
+        [class.active]="!isMultiSelect && highlightedIndex === i"
+        [class.multi-selected]="isMultiSelect && isSelected(item)"
+        (mouseenter)="highlightedIndex = i"
+        (mousedown)="isMultiSelect ? toggleItem(item) : selectItem(item)"
+      >
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <span class="d-flex align-items-center">
+            <i *ngIf="isMultiSelect" class="bi me-2" [ngClass]="isSelected(item) ? 'bi-check-square-fill check-selected' : 'bi-square check-unselected'"></i>
+            <i *ngIf="!isMultiSelect && (item.level > 0 || item.isChild)" class="bi bi-arrow-return-right text-muted me-1 tree-arrow"></i>
+            <span>{{ item.name }}</span>
+          </span>
+          <span *ngIf="item.isBase" class="badge bg-secondary-subtle text-secondary border text-xs ms-1">Base</span>
+        </div>
+      </li>
+    </ng-container>
 
     <!-- Loading -->
     <li *ngIf="loading" class="dropdown-item loading-item">
@@ -76,8 +103,9 @@
     </li>
 
     <!-- Empty state -->
-    <li *ngIf="dropdownData.length === 0 && !loading" class="dropdown-item text-muted text-center">
+    <li *ngIf="dropdownData.length === 0 && !loading" class="dropdown-item text-muted text-center empty-state">
       <span class="fw-lighter fst-italic fs-6">No Record</span>
     </li>
   </ul>
 </div>
+

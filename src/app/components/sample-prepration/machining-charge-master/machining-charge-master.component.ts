@@ -382,11 +382,12 @@ export class MachiningChargeMasterComponent implements OnInit {
   }
 
   getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+    return this.laboratoryTestService.getUnifiedTestMethodDropdown(term, page, pageSize);
   };
 
   onLaboratoryTestSelected(item: any): void {
-    this.form.patchValue({ laboratoryTestID: item?.id || null });
+    const labTestId = item?.id || item?.additionalValues?.['testId'] || item?.additionalValues?.['masterTestId'] || null;
+    this.form.patchValue({ laboratoryTestID: labTestId });
     this.selectedLabTestId = item?.id || 0;
   }
 
@@ -395,7 +396,8 @@ export class MachiningChargeMasterComponent implements OnInit {
   };
 
   onTestMethodSpecificationSelected(item: any): void {
-    this.form.patchValue({ testMethodStandardID: item?.id || null });
+    const specId = item?.additionalValues?.['testMethodSpecificationId'] || item?.id || null;
+    this.form.patchValue({ testMethodStandardID: specId });
     this.selectedStandardId = item?.id || 0;
   }
 

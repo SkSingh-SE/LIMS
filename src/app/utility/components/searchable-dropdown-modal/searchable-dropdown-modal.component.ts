@@ -65,12 +65,17 @@ export class SearchableDropdownModalComponent {
       })
     ).subscribe({
       next: (data: any[]) => {
-        this.dropdownData = data;
-        this.hasMore = data.length === this.pageSize;
+        this.dropdownData = data || [];
+        this.hasMore = (data || []).length === this.pageSize;
         this.pageNo++;
         this.loading = false;
-        const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
-        this.highlightedIndex = idx >= 0 ? idx : (this.dropdownData.length ? 0 : -1);
+        const idx = this.dropdownData.findIndex(d => d && !d.isHeader && d.selectable !== false && d.id === this.selectedItem);
+        if (idx >= 0) {
+          this.highlightedIndex = idx;
+        } else {
+          const firstSelectable = this.dropdownData.findIndex(d => d && !d.isHeader && d.selectable !== false);
+          this.highlightedIndex = firstSelectable >= 0 ? firstSelectable : (this.dropdownData.length ? 0 : -1);
+        }
       },
       error: () => {
         this.loading = false;
@@ -88,7 +93,7 @@ export class SearchableDropdownModalComponent {
       const dropdownWidth = Math.max(rect.width, 280);
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      const dropdownHeight = 220;
+      const dropdownHeight = 240;
 
       if (spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove) {
         this.dropdownStyle = {
@@ -134,6 +139,20 @@ export class SearchableDropdownModalComponent {
     this.openDropdown();
   }
 
+  private getNextSelectableIndex(currentIndex: number, direction: 1 | -1): number {
+    const len = this.dropdownData.length;
+    if (!len) return -1;
+    let nextIndex = currentIndex;
+    for (let i = 0; i < len; i++) {
+      nextIndex = (nextIndex + direction + len) % len;
+      const item = this.dropdownData[nextIndex];
+      if (item && !item.isHeader && item.selectable !== false) {
+        return nextIndex;
+      }
+    }
+    return currentIndex;
+  }
+
   handleKeydown(event: KeyboardEvent): void {
     const itemsLength = this.dropdownData.length;
 
@@ -145,23 +164,25 @@ export class SearchableDropdownModalComponent {
           return;
         }
         if (!itemsLength) return;
-        this.highlightedIndex = (this.highlightedIndex + 1 + itemsLength) % itemsLength;
+        this.highlightedIndex = this.getNextSelectableIndex(this.highlightedIndex, 1);
         this.scrollToHighlighted();
         break;
       case 'ArrowUp':
         event.preventDefault();
         if (!this.showDropdown || !itemsLength) return;
-        this.highlightedIndex = (this.highlightedIndex - 1 + itemsLength) % itemsLength;
+        this.highlightedIndex = this.getNextSelectableIndex(this.highlightedIndex, -1);
         this.scrollToHighlighted();
         break;
       case 'Enter':
         event.preventDefault();
         if (this.showDropdown && this.highlightedIndex >= 0 && this.highlightedIndex < this.dropdownData.length) {
           const item = this.dropdownData[this.highlightedIndex];
-          if (this.isMultiSelect) {
-            this.toggleItem(item);
-          } else {
-            this.selectItem(item);
+          if (item && !item.isHeader && item.selectable !== false) {
+            if (this.isMultiSelect) {
+              this.toggleItem(item);
+            } else {
+              this.selectItem(item);
+            }
           }
         }
         break;
@@ -191,8 +212,13 @@ export class SearchableDropdownModalComponent {
         this.pageNo++;
         this.loading = false;
         if (this.highlightedIndex === -1 && this.dropdownData.length) {
-          const idx = this.dropdownData.findIndex(d => d.id === this.selectedItem);
-          this.highlightedIndex = idx >= 0 ? idx : 0;
+          const idx = this.dropdownData.findIndex(d => d && !d.isHeader && d.selectable !== false && d.id === this.selectedItem);
+          if (idx >= 0) {
+            this.highlightedIndex = idx;
+          } else {
+            const firstSelectable = this.dropdownData.findIndex(d => d && !d.isHeader && d.selectable !== false);
+            this.highlightedIndex = firstSelectable >= 0 ? firstSelectable : 0;
+          }
         }
       },
       error: () => {
@@ -202,7 +228,8 @@ export class SearchableDropdownModalComponent {
   }
 
   selectItem(item: any) {
-    this.selectedLabel = item.name;
+    if (!item || item.isHeader || item.selectable === false) return;
+    this.selectedLabel = item.additionalValues?.['fullDisplayName'] || item.name;
     this.searchTerm = '';
     this.hasValidSelection = true;
     this.itemSelected.emit(item);
@@ -279,7 +306,7 @@ export class SearchableDropdownModalComponent {
         this.selectedItems = [];
         const idsToResolve: any[] = [];
         this.selectedItem.forEach((id: any) => {
-          const matchedItem = this.dropdownData.find(item => item.id == id);
+          const matchedItem = this.dropdownData.find(item => item && !item.isHeader && item.id == id);
           if (matchedItem) {
             this.selectedItems.push(matchedItem);
           } else {
@@ -289,7 +316,7 @@ export class SearchableDropdownModalComponent {
         if (idsToResolve.length > 0) {
           this.fetchDataFn('', 0, 100).subscribe((data) => {
             idsToResolve.forEach((id: any) => {
-              const found = data.find(item => item.id == id);
+              const found = data.find(item => item && !item.isHeader && item.id == id);
               if (found && !this.selectedItems.some(si => si.id == found.id)) {
                 this.selectedItems.push(found);
               }
@@ -302,19 +329,22 @@ export class SearchableDropdownModalComponent {
           });
         }
       } else if (!this.isMultiSelect) {
-        const matched = this.dropdownData.find(x => x.id === this.selectedItem);
+        const rawId = typeof val === 'object' && val !== null ? val.id : val;
+        const matched = this.dropdownData.find(x => x && !x.isHeader && x.selectable !== false &&
+          (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
         if (matched) {
           if (this.selectedLabel.length === 0) {
-            this.selectedLabel = matched.name;
+            this.selectedLabel = matched.additionalValues?.['fullDisplayName'] || matched.name;
             this.hasValidSelection = true;
             this.selectItem(matched);
           }
         } else {
-          this.fetchDataFn(this.selectedItem, 0, 1).subscribe((data: any[]) => {
-            const found = data.find(x => x.id === this.selectedItem);
+          this.fetchDataFn(String(rawId), 0, 1).subscribe((data: any[]) => {
+            const found = (data || []).find(x => x && !x.isHeader && x.selectable !== false &&
+              (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
             if (found) {
               this.dropdownData = [found, ...this.dropdownData];
-              this.selectedLabel = found.name;
+              this.selectedLabel = found.additionalValues?.['fullDisplayName'] || found.name;
               this.hasValidSelection = true;
               this.selectItem(found);
               const idx = this.dropdownData.findIndex(d => d.id === found.id);
@@ -343,6 +373,7 @@ export class SearchableDropdownModalComponent {
   }
 
   toggleItem(item: any): void {
+    if (!item || item.isHeader || item.selectable === false) return;
     const index = this.selectedItems.findIndex(i => i.id === item.id);
     if (index > -1) {
       this.selectedItems = [...this.selectedItems.slice(0, index), ...this.selectedItems.slice(index + 1)];
@@ -362,7 +393,8 @@ export class SearchableDropdownModalComponent {
   }
 
   trackById(_index: number, item: any): any {
-    return item.id;
+    if (item?.isHeader) return 'header-' + (item.level ?? 0) + '-' + (item.name || _index);
+    return item?.id ?? _index;
   }
 
   updateTooltipPosition(): void {
@@ -388,3 +420,4 @@ export class SearchableDropdownModalComponent {
     this.subscription.unsubscribe();
   }
 }
+

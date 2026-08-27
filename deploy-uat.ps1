@@ -18,7 +18,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host " Deploying to IIS UAT Server..." -ForegroundColor Green
 Write-Host " Site: dmspl91-001-site5" -ForegroundColor Green
-Write-Host " URL: http://dmspl91-001-site5.htempurl.com/" -ForegroundColor Green
+Write-Host " URL: https://dmspl91-001-site5.htempurl.com/" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 
 $MSDeployPath = "C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe"
@@ -36,7 +36,7 @@ $SourcePath = Join-Path $PSScriptRoot "dist\lims\browser"
 if ($LASTEXITCODE -eq 0) {
     Write-Host "==========================================" -ForegroundColor Green
     Write-Host " SUCCESS! Angular Frontend deployed to UAT!" -ForegroundColor Green
-    Write-Host " Live URL: http://dmspl91-001-site5.htempurl.com/" -ForegroundColor Green
+    Write-Host " Live URL: https://dmspl91-001-site5.htempurl.com/" -ForegroundColor Green
     Write-Host "==========================================" -ForegroundColor Green
 } else {
     Write-Host "Deployment failed with error code $LASTEXITCODE" -ForegroundColor Red

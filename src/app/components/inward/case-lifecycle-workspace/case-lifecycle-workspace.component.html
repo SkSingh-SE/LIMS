@@ -281,7 +281,8 @@
       <div *ngIf="inwardId > 0">
         <app-cutting-machining-plan-tab
           [inwardId]="inwardId"
-          [isReadOnly]="isStageReadOnly('preparation')">
+          [isReadOnly]="isStageReadOnly('preparation')"
+          (prepCompleted)="onPrepCompleted()">
         </app-cutting-machining-plan-tab>
       </div>
     </div>

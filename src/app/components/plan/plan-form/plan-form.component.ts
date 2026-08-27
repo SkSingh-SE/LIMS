@@ -28,6 +28,7 @@ import { ProductSizeMasterService } from '../../../services/product-size-master.
 import { PlanExplorerPanelComponent } from '../plan-explorer-panel/plan-explorer-panel.component';
 import { PlanExplorerService, ConfiguredGrade, ConfiguredTest, ProductMasterExplorerData, MetalExplorerData } from '../../../services/plan-explorer.service';
 import { AnalysisTechniqueService } from '../../../services/analysis-technique.service';
+import { MachiningChargeMasterService } from '../../../services/machining-charge-master.service';
 
 @Component({
   selector: 'app-plan-form',
@@ -1202,6 +1203,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     private productSizeMasterService: ProductSizeMasterService,
     private explorerService: PlanExplorerService,
     private analysisTechniqueService: AnalysisTechniqueService,
+    private machiningChargeMasterService: MachiningChargeMasterService,
     private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
@@ -4232,6 +4234,46 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     };
   };
 
+  specimenPrepConfigCache: { [key: string]: boolean } = {};
+
+  checkAndSetPreparationRequired(methodRow: AbstractControl | null | undefined, testId?: number | null, standardId?: number | null, sampleIdx?: number): void {
+    if (!testId || !methodRow) return;
+    const stdId = standardId ? +standardId : 0;
+    const cacheKey = `${testId}_${stdId}`;
+
+    if (this.specimenPrepConfigCache[cacheKey] !== undefined) {
+      if (this.specimenPrepConfigCache[cacheKey]) {
+        methodRow.patchValue({ preparationRequired: true });
+        if (sampleIdx !== undefined) {
+          const sampleGroup = this.getSampleGroupSafely(sampleIdx);
+          if (sampleGroup && !sampleGroup.get('preparationRequired')?.value) {
+            sampleGroup.patchValue({ preparationRequired: true });
+          }
+        }
+      }
+      return;
+    }
+
+    this.machiningChargeMasterService.getByTest(testId, stdId).subscribe({
+      next: (configs: any[]) => {
+        const hasConfig = configs && configs.length > 0;
+        this.specimenPrepConfigCache[cacheKey] = hasConfig;
+        if (hasConfig) {
+          methodRow.patchValue({ preparationRequired: true });
+          if (sampleIdx !== undefined) {
+            const sampleGroup = this.getSampleGroupSafely(sampleIdx);
+            if (sampleGroup && !sampleGroup.get('preparationRequired')?.value) {
+              sampleGroup.patchValue({ preparationRequired: true });
+            }
+          }
+        }
+      },
+      error: () => {
+        this.specimenPrepConfigCache[cacheKey] = false;
+      }
+    });
+  }
+
   evaluateRowCompliance(sampleIdx: number, planIdx: number, methodIdx: number, isChemical: boolean = false): void {
     const sample = this.getSampleDetails(sampleIdx);
     const methodRow = isChemical 
@@ -4330,6 +4372,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     }
 
     if (subGroupId) {
+      this.checkAndSetPreparationRequired(methodRow, masterTestId || subGroupId, methodRow.get('standardID')?.value, sampleIdx);
+
       this.laboratoryTestService.getTestMethodSpecificationByLabTest(subGroupId).subscribe({
         next: (specs: any[]) => {
           const key = `${sampleIdx}_${planIdx}_${methodIdx}`;
@@ -4341,6 +4385,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               standardID: single.id,
               standardName: single.name
             });
+            this.checkAndSetPreparationRequired(methodRow, masterTestId || subGroupId, single.id, sampleIdx);
             this.toastService.show(`Auto-bound test method specification "${single.name}" for ${item.name || 'test'}.`, 'info');
           } else if (specs && specs.length > 1) {
             // Store multiple configured test method specifications for dropdown filtering
@@ -4362,6 +4407,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                   standardID: single.id,
                   standardName: single.name
                 });
+                this.checkAndSetPreparationRequired(methodRow, masterTestId || subGroupId, single.id, sampleIdx);
               } else if (specs && specs.length > 1) {
                 this.subGroupStandardsMap[key] = specs;
               }
@@ -4374,10 +4420,13 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   }
 
   onTestMethodSpecificationSelected(item: any, si: number, pi: number, mi: number): void {
-    this.getMethodRows(si, pi).at(mi).patchValue({
+    const row = this.getMethodRows(si, pi).at(mi);
+    if (!row) return;
+    row.patchValue({
       standardID: item?.id ?? null,
       standardName: item?.name ?? ''
     });
+    this.checkAndSetPreparationRequired(row, row.get('testMethodID')?.value, item?.id, si);
     this.evaluateRowCompliance(si, pi, mi);
   }
 
@@ -4407,6 +4456,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       // Auto-check technique if not checked
       this.enableTechniquesForTest(item, false, sampleIdx);
 
+      this.checkAndSetPreparationRequired(methodRow, masterTestId || analysisTypeId, methodRow.get('standardID')?.value, sampleIdx);
+
       this.laboratoryTestService.getTestMethodSpecificationByAnalysisType(analysisTypeId).subscribe({
         next: (specs: any[]) => {
           const key = `chem_${sampleIdx}_${planIdx}_${chemIdx}_${mIdx}`;
@@ -4417,6 +4468,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               standardID: single.id,
               standardName: single.name
             });
+            this.checkAndSetPreparationRequired(methodRow, masterTestId || analysisTypeId, single.id, sampleIdx);
             this.toastService.show(`Auto-bound test method specification "${single.name}" for ${item.name || 'test'}.`, 'info');
           } else if (specs && specs.length > 1) {
             this.chemicalStandardsMap[key] = specs;
@@ -4438,6 +4490,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                     standardID: single.id,
                     standardName: single.name
                   });
+                  this.checkAndSetPreparationRequired(methodRow, masterTestId || analysisTypeId, single.id, sampleIdx);
                 } else if (specs && specs.length > 1) {
                   this.chemicalStandardsMap[key] = specs;
                 }
@@ -4462,6 +4515,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       standardID: item?.id ?? null,
       standardName: item?.name ?? ''
     });
+    this.checkAndSetPreparationRequired(methodRow, methodRow.get('testMethodID')?.value, item?.id, sampleIdx);
     this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
   }
 
@@ -4762,12 +4816,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
           const emptyRow = chemMethods.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
           if (emptyRow) {
             emptyRow.patchValue({ testMethodID: +chemLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+            this.checkAndSetPreparationRequired(emptyRow, +chemLeafId, specId);
           } else {
             const exists = chemMethods.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +chemLeafId);
             if (!exists) {
               const row = this.createTestMethodRow('', '');
               row.patchValue({ testMethodID: +chemLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
               chemMethods.push(row);
+              this.checkAndSetPreparationRequired(row, +chemLeafId, specId);
             }
           }
         }
@@ -4790,12 +4846,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
           const emptyRow = methodsArray.controls.find(ctrl => !ctrl.get('testMethodID')?.value);
           if (emptyRow) {
             emptyRow.patchValue({ testMethodID: +mechLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
+            this.checkAndSetPreparationRequired(emptyRow, +mechLeafId, specId);
           } else {
             const exists = methodsArray.controls.some(ctrl => +ctrl.get('testMethodID')?.value === +mechLeafId);
             if (!exists) {
               const row = this.createTestMethodRow('', '');
               row.patchValue({ testMethodID: +mechLeafId, standardID: specId, standardName: specName, quantity: test.quantity || 1 });
               methodsArray.push(row);
+              this.checkAndSetPreparationRequired(row, +mechLeafId, specId);
             }
           }
         }

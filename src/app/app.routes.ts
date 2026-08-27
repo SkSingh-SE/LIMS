@@ -596,6 +596,7 @@ export const routes: Routes = [
 
             // Training Effectiveness Routes (F-10)
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
+            { path: 'specimen-preparation-master', loadComponent: () => import('./components/sample-prepration/machining-charge-master/machining-charge-master.component').then(m => m.MachiningChargeMasterComponent) },
             { path: 'machining-charge-master', loadComponent: () => import('./components/sample-prepration/machining-charge-master/machining-charge-master.component').then(m => m.MachiningChargeMasterComponent) },
             { path: 'sample-preparation-master', loadComponent: () => import('./components/sample-prepration/sample-preparation-master/sample-preparation-master.component').then(m => m.SamplePreparationMasterComponent) },
             { path: 'sample/prepration', component: CuttingSamplesComponent },

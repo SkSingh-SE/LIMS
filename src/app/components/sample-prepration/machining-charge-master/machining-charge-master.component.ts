@@ -73,7 +73,7 @@ export class MachiningChargeMasterComponent implements OnInit {
   isEditMode = false;
   isViewMode = true;
   recordId = 0;
-  formTitle = 'Machining Charge Master Form';
+  formTitle = 'Specimen Preparation Master Form';
 
   selectedLabTestId = 0;
   selectedStandardId = 0;
@@ -355,17 +355,17 @@ export class MachiningChargeMasterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Machining Charge Master Form';
+      this.formTitle = 'Specimen Preparation Master Form';
       this.versions.push(this.createVersionGroup());
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Machining Charge Master Form';
+      this.formTitle = 'Specimen Preparation Master Form';
       this.getDetails();
     } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Machining Charge Master';
+      this.formTitle = 'View Specimen Preparation Master';
       this.getDetails();
     }
 

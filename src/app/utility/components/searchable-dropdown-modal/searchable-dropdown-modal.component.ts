@@ -118,6 +118,20 @@ export class SearchableDropdownModalComponent {
   openDropdown(): void {
     this.showDropdown = true;
     this.updateDropdownPosition();
+    if (this.dropdownData.length === 0 && !this.loading) {
+      this.pageNo = 0;
+      this.hasMore = true;
+      this.loadMore();
+    }
+  }
+
+  toggleDropdown(event?: Event): void {
+    if (event) event.stopPropagation();
+    if (this.showDropdown) {
+      this.showDropdown = false;
+    } else {
+      this.openDropdown();
+    }
   }
 
   handleInput(event: any): void {
@@ -126,15 +140,15 @@ export class SearchableDropdownModalComponent {
     if (this.hasValidSelection) {
       this.hasValidSelection = false;
       this.selectedItem = null;
+      this.itemSelected.emit(null);
+    }
+    if (!this.searchTerm || !this.searchTerm.trim()) {
       this.dropdownData = [];
       this.pageNo = 0;
       this.hasMore = true;
-      this.itemSelected.emit(null);
-    }
-    if (!this.searchTerm) {
       this.loadMore();
     } else {
-      this.searchSubject.next(this.searchTerm);
+      this.searchSubject.next(this.searchTerm.trim());
     }
     this.openDropdown();
   }
@@ -268,6 +282,11 @@ export class SearchableDropdownModalComponent {
       this.closingFromBlur = false;
       return;
     }
+    if (this.dropdownData.length === 0 && !this.loading) {
+      this.pageNo = 0;
+      this.hasMore = true;
+      this.loadMore();
+    }
     this.openDropdown();
   }
 
@@ -295,11 +314,16 @@ export class SearchableDropdownModalComponent {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedItem']) {
       const val = changes['selectedItem'].currentValue;
-      if (!val || (Array.isArray(val) && val.length === 0)) {
+      if (!val || val === 0 || val === '0' || (Array.isArray(val) && val.length === 0)) {
         this.selectedLabel = '';
         this.searchTerm = '';
         this.selectedItems = [];
         this.hasValidSelection = false;
+        if (this.dropdownData.length === 0 && !this.loading) {
+          this.pageNo = 0;
+          this.hasMore = true;
+          this.loadMore();
+        }
         return;
       }
       if (this.isMultiSelect && Array.isArray(this.selectedItem)) {

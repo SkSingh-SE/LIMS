@@ -36,8 +36,9 @@ export class TestMethodSpecificationService {
     }
 
 
-    getTestMethodSpecificationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    getTestMethodSpecificationDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+      const term = searchTerm && searchTerm !== 'undefined' && searchTerm !== 'null' ? encodeURIComponent(searchTerm) : '';
+      return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
     getTestMethodSpecificationDropdownByStandard(standardId:number): Observable<any> {

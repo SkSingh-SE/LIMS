@@ -49,15 +49,18 @@ export class LaboratoryTestService {
   }
 
   getLaboratoryTestDropdownForGeneral(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/general-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    const term = searchTerm && searchTerm !== 'undefined' && searchTerm !== 'null' ? encodeURIComponent(searchTerm) : '';
+    return this.http.get<any>(`${this.apiUrl}/general-dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
   getLaboratoryTestDropdownForChemicals(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/chemical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    const term = searchTerm && searchTerm !== 'undefined' && searchTerm !== 'null' ? encodeURIComponent(searchTerm) : '';
+    return this.http.get<any>(`${this.apiUrl}/chemical-dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
   getUnifiedTestMethodDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/unified-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    const term = searchTerm && searchTerm !== 'undefined' && searchTerm !== 'null' ? encodeURIComponent(searchTerm) : '';
+    return this.http.get<any>(`${this.apiUrl}/unified-dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
   getDistinctTestNames(searchTerm: string, pageSize: number = 20): Observable<string[]> {

@@ -1,150 +1,268 @@
-<div class="cm-tab-container">
+<div class="cm-workspace-container">
 
   <!-- Empty state -->
   <div *ngIf="samples.length === 0" class="text-center py-5 text-muted">
     <i class="bi bi-box-seam fs-1 d-block mb-2 text-secondary"></i>
-    <div class="fw-medium">No samples found</div>
-    <div class="small">Samples will appear here once the inward is saved.</div>
+    <div class="fw-medium">No samples found for this inward case.</div>
+    <div class="small text-secondary">Samples and planned tests will appear here once saved.</div>
   </div>
 
-  <!-- Per-sample card -->
-  <div *ngFor="let sample of samples; let si = index" class="cm-sample-card mb-4">
-    <!-- Sample header -->
-    <div class="cm-sample-header">
+  <!-- Per-sample preparation matrix card -->
+  <div *ngFor="let sample of samples; let si = index" class="card cm-sample-card mb-3 shadow-sm border">
+    
+    <!-- Sample Header -->
+    <div class="card-header cm-sample-header d-flex justify-content-between align-items-center py-2 px-3">
       <div class="d-flex align-items-center gap-2">
-        <span class="cm-sample-number">Sample {{ sample.sampleNumber || (si + 1).toString().padStart(6, '0') }}</span>
-        <span class="badge fs-11" [ngClass]="getStatusBadgeClass(sample.status)">{{ sample.status || 'Active' }}</span>
+        <span class="badge bg-danger text-white fw-semibold px-2 py-1">
+          Sample {{ sample.sampleNo || sample.sampleNumber || (si + 1).toString().padStart(6, '0') }}
+        </span>
+        <span class="badge" [ngClass]="getStatusBadgeClass(sample.sampleStatus || sample.status)">
+          {{ sample.sampleStatus || sample.status || 'Active' }}
+        </span>
+        <span class="badge bg-light text-dark border ms-1" *ngIf="sample.metalClassificationName">
+          <i class="bi bi-layers me-1 text-primary"></i>{{ sample.metalClassificationName }}
+        </span>
+        <span class="badge bg-light text-dark border" *ngIf="sample.productMasterName">
+          <i class="bi bi-box me-1 text-danger"></i>{{ sample.productMasterName }}
+        </span>
       </div>
-      <div class="text-muted small mt-1" *ngIf="sample.description">
-        ID: {{ sample.id }} &nbsp;|&nbsp; {{ sample.description }}
+      
+      <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted" *ngIf="sample.details">
+          {{ sample.details }}
+        </span>
       </div>
     </div>
 
-    <!-- Sample body: two-panel layout -->
-    <div class="cm-sample-body" *ngIf="sampleForms[sample.id]">
+    <!-- Sample Body -->
+    <div class="card-body p-2" *ngIf="sampleForms[sample.id]">
       <ng-container [formGroup]="sampleForms[sample.id]">
 
-        <!-- Left Panel: Test table -->
-        <div class="cm-tests-panel">
-          <div class="cm-panel-title">
-            <i class="bi bi-flask me-1"></i> Test & Size Allocation
+        <!-- Smart Notice if 0 tests require preparation for this sample -->
+        <div *ngIf="getTests(sample.id).length === 0" class="alert alert-info py-2 px-3 mb-2 d-flex align-items-center gap-2 small">
+          <i class="bi bi-info-circle-fill text-info fs-5"></i>
+          <div>
+            <strong>No Specimen Preparation Required:</strong> None of the planned tests for this sample require machining or cutting. You may proceed directly to Testing.
           </div>
-          <table class="table table-sm table-hover cm-test-table mb-0">
-            <thead>
-              <tr>
-                <th style="width:36%">Test Name</th>
-                <th style="width:30%">Product Size</th>
-                <th class="text-center" style="width:12%">Cutting</th>
-                <th class="text-center" style="width:22%">No Testing</th>
-              </tr>
-            </thead>
-            <tbody>
-              <ng-container formArrayName="tests">
-                <tr *ngFor="let testCtrl of getTests(sample.id).controls; let ti = index"
-                    [formGroupName]="ti">
-                  <td class="align-middle">
-                    <span class="test-name-label">{{ getTestGroup(sample.id, ti).get('testName')?.value || 'Test ' + (ti + 1) }}</span>
-                  </td>
-                  <td class="align-middle">
-                    <app-searchable-dropdown
-                      [fetchDataFn]="getProductSizeDrop"
-                      [smallInput]="true"
-                      [placeholder]="'Select Size'"
-                      [selectedItem]="getSizeSelected(sample.id, ti)"
-                      (itemSelected)="onSizeSelected($event, sample.id, ti)"
-                      [isDisabled]="isReadOnly">
-                    </app-searchable-dropdown>
-                  </td>
-                  <td class="text-center align-middle">
-                    <input type="checkbox" class="form-check-input"
-                           formControlName="requiresCutting"
-                           [attr.disabled]="isReadOnly ? true : null">
-                  </td>
-                  <td class="text-center align-middle">
-                    <div class="d-flex align-items-center justify-content-center gap-1">
-                      <input type="checkbox" class="form-check-input"
-                             formControlName="noTesting"
-                             [attr.disabled]="isReadOnly ? true : null">
-                      <span class="text-muted small">No Testing</span>
-                    </div>
-                  </td>
-                </tr>
-              </ng-container>
-              <tr *ngIf="getTests(sample.id).length === 0">
-                <td colspan="4" class="text-center text-muted small py-2">No tests allocated for this sample.</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
 
-        <!-- Right Panel: Cutting parameters -->
-        <div class="cm-params-panel">
-          <div class="cm-panel-title">
-            <i class="bi bi-scissors me-1"></i> Cutting Parameters
-          </div>
-          <div class="row g-2 p-2">
-            <div class="col-6">
-              <label class="form-label-sm">Number of Cuts</label>
-              <input type="number" class="form-control form-control-sm"
-                     formControlName="numberOfCuts"
-                     [readOnly]="isReadOnly"
-                     placeholder="e.g. 2">
-            </div>
-            <div class="col-6">
-              <label class="form-label-sm">Cut Thickness (mm)</label>
-              <input type="number" class="form-control form-control-sm"
-                     formControlName="cutThickness"
-                     [readOnly]="isReadOnly"
-                     placeholder="e.g. 5">
-            </div>
-            <div class="col-6">
-              <label class="form-label-sm">Water Jet Cutting (mins)</label>
-              <input type="number" class="form-control form-control-sm"
-                     formControlName="waterJetCuttingMins"
-                     [readOnly]="isReadOnly"
-                     placeholder="e.g. 15">
-            </div>
-            <div class="col-6">
-              <label class="form-label-sm">EDM Cutting</label>
-              <input type="text" class="form-control form-control-sm"
-                     formControlName="edmCutting"
-                     [readOnly]="isReadOnly"
-                     placeholder="Custom">
-            </div>
-            <div class="col-6">
-              <label class="form-label-sm">Gas Cutting</label>
-              <input type="text" class="form-control form-control-sm"
-                     formControlName="gasCutting"
-                     [readOnly]="isReadOnly"
-                     placeholder="Custom">
-            </div>
-            <div class="col-6">
-              <label class="form-label-sm">Special Cutting</label>
-              <input type="text" class="form-control form-control-sm"
-                     formControlName="specialCutting"
-                     [readOnly]="isReadOnly"
-                     placeholder="Custom">
+        <!-- 2-Panel Layout -->
+        <div class="row g-2" *ngIf="getTests(sample.id).length > 0">
+
+          <!-- Left Panel: Test & Specimen Matrix -->
+          <div class="col-lg-8">
+            <div class="card h-100 border-0 bg-light-subtle shadow-none">
+              <div class="card-header bg-transparent py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-danger small d-flex align-items-center gap-1">
+                  <i class="bi bi-tools text-danger"></i> Specimen Preparation & Machining Matrix
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary small">
+                  {{ getTests(sample.id).length }} Test(s) Configured
+                </span>
+              </div>
+
+              <div class="table-responsive p-0">
+                <table class="table table-sm table-bordered table-hover cm-test-table mb-0 align-middle">
+                  <thead class="table-light small">
+                    <tr>
+                      <th class="col-test-name">Test / Method</th>
+                      <th class="col-specimen-size">Specimen Size</th>
+                      <th class="col-raw-size text-center">Raw Material Size</th>
+                      <th class="col-rates text-center">Date-Effective Rate</th>
+                      <th class="col-drawing text-center">Blueprint</th>
+                      <th class="col-flags text-center">Options</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="tests">
+                    <tr *ngFor="let testCtrl of getTests(sample.id).controls; let ti = index" [formGroupName]="ti">
+                      
+                      <!-- Test & Standard Name -->
+                      <td>
+                        <div class="fw-semibold text-dark fs-12">
+                          {{ testCtrl.get('testName')?.value || 'Test ' + (ti + 1) }}
+                        </div>
+                        <div class="text-muted fs-11 d-flex align-items-center gap-1" *ngIf="testCtrl.get('standardName')?.value">
+                          <i class="bi bi-journal-text text-secondary"></i>
+                          <span>{{ testCtrl.get('standardName')?.value }}</span>
+                          <span class="badge bg-secondary-subtle text-dark ms-1">Qty: {{ testCtrl.get('quantity')?.value || 1 }}</span>
+                        </div>
+                      </td>
+
+                      <!-- Specimen Size Dropdown -->
+                      <td>
+                        <app-searchable-dropdown
+                          [fetchDataFn]="getSpecimenDropdownFn(sample.id, ti)"
+                          [smallInput]="true"
+                          [placeholder]="'Select Specimen Size'"
+                          [selectedItem]="getSpecimenSelected(sample.id, ti)"
+                          (itemSelected)="onSpecimenSelected($event, sample.id, ti)"
+                          [isDisabled]="isReadOnly">
+                        </app-searchable-dropdown>
+                      </td>
+
+                      <!-- Auto Raw Material Size -->
+                      <td class="text-center">
+                        <span class="badge bg-info-subtle text-info-emphasis border fs-11" *ngIf="testCtrl.get('specimenRawMaterialSize')?.value">
+                          {{ testCtrl.get('specimenRawMaterialSize')?.value }}
+                        </span>
+                        <span class="text-muted fs-11" *ngIf="!testCtrl.get('specimenRawMaterialSize')?.value">-</span>
+                      </td>
+
+                      <!-- Date-effective Rate Pill -->
+                      <td class="text-center">
+                        <div *ngIf="testCtrl.get('machiningRate')?.value > 0" class="fw-bold text-success fs-12">
+                          ₹{{ testCtrl.get('machiningRate')?.value }} <span class="fs-10 text-muted fw-normal">/pc</span>
+                        </div>
+                        <div *ngIf="testCtrl.get('cuttingRate')?.value > 0" class="text-muted fs-10">
+                          Cut: ₹{{ testCtrl.get('cuttingRate')?.value }}
+                        </div>
+                        <span class="text-muted fs-11" *ngIf="!testCtrl.get('machiningRate')?.value && !testCtrl.get('cuttingRate')?.value">
+                          Standard
+                        </span>
+                      </td>
+
+                      <!-- Drawing File Link Preview -->
+                      <td class="text-center">
+                        <button *ngIf="testCtrl.get('drawingFilePath')?.value"
+                                type="button"
+                                class="btn btn-nav-icon"
+                                title="View Technical Drawing Blueprint"
+                                (click)="viewDrawing(testCtrl.get('drawingFilePath')?.value)">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </button>
+                        <span class="text-muted fs-11" *ngIf="!testCtrl.get('drawingFilePath')?.value">-</span>
+                      </td>
+
+                      <!-- Checkboxes: Requires Cutting & No Testing -->
+                      <td class="text-center">
+                        <div class="d-flex justify-content-center align-items-center gap-2">
+                          <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer" title="Requires Cutting">
+                            <input type="checkbox" class="form-check-input" formControlName="requiresCutting" [attr.disabled]="isReadOnly ? true : null" />
+                            <span>Cut</span>
+                          </label>
+                          <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer text-danger" title="Specimen Only (No Testing Required)">
+                            <input type="checkbox" class="form-check-input" formControlName="noTesting" [attr.disabled]="isReadOnly ? true : null" />
+                            <span>No Test</span>
+                          </label>
+                        </div>
+                      </td>
+
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          <!-- Save button -->
-          <div class="px-2 pb-2" *ngIf="!isReadOnly">
-            <button type="button" class="btn btn-sm btn-theme w-100 mt-2"
-                    (click)="saveSampleCuttingPlan(sample.id)">
-              <i class="bi bi-save me-1"></i> Save Cutting Plan
-            </button>
-          </div>
+          <!-- Right Panel: Cutting Parameters & Live Financial Summary -->
+          <div class="col-lg-4">
+            <div class="card h-100 border bg-white shadow-none">
+              
+              <div class="card-header bg-light py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-dark small d-flex align-items-center gap-1">
+                  <i class="bi bi-scissors text-danger"></i> Cutting Parameters & Charges
+                </span>
+              </div>
 
-          <!-- Read-only badge -->
-          <div class="px-2 pb-2 pt-1" *ngIf="isReadOnly">
-            <div class="read-only-badge">
-              <i class="bi bi-lock-fill me-1"></i> Read-Only (Completed Stage)
+              <div class="card-body p-2">
+                <div class="row g-2">
+                  
+                  <div class="col-6">
+                    <label class="form-label-compact">Number of Cuts</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="numberOfCuts" [readOnly]="isReadOnly" placeholder="e.g. 2" min="0" />
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label-compact">Cut Thickness (mm)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="cutThickness" [readOnly]="isReadOnly" placeholder="e.g. 5" min="0" />
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label-compact">Water Jet (mins)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="waterJetCuttingMins" [readOnly]="isReadOnly" placeholder="Mins" min="0" />
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label-compact">EDM Cutting</label>
+                    <input type="text" class="form-control form-control-compact" formControlName="edmCutting" [readOnly]="isReadOnly" placeholder="Details" />
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label-compact">Gas Cutting</label>
+                    <input type="text" class="form-control form-control-compact" formControlName="gasCutting" [readOnly]="isReadOnly" placeholder="Details" />
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label-compact">Special Cutting</label>
+                    <input type="text" class="form-control form-control-compact" formControlName="specialCutting" [readOnly]="isReadOnly" placeholder="Details" />
+                  </div>
+
+                </div>
+
+                <!-- Live Summary Cost Card -->
+                <div class="cm-cost-card mt-2 p-2 rounded border bg-light-subtle">
+                  <div class="d-flex justify-content-between align-items-center fs-11 py-0.5">
+                    <span class="text-muted">Machining Charges:</span>
+                    <span class="fw-semibold text-dark">₹{{ getMachiningSubtotal(sample.id) | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center fs-11 py-0.5">
+                    <span class="text-muted">Cutting Charges:</span>
+                    <span class="fw-semibold text-dark">₹{{ getCuttingSubtotal(sample.id) | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center fs-11 py-0.5" *ngIf="getOtherSubtotal(sample.id) > 0">
+                    <span class="text-muted">Other Cutting:</span>
+                    <span class="fw-semibold text-dark">₹{{ getOtherSubtotal(sample.id) | number:'1.2-2' }}</span>
+                  </div>
+                  <hr class="my-1" />
+                  <div class="d-flex justify-content-between align-items-center fs-12 fw-bold text-danger">
+                    <span>Total Prep Cost:</span>
+                    <span>₹{{ getTotalPreparationCost(sample.id) | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+
+                <!-- Save button per sample -->
+                <div class="mt-2" *ngIf="!isReadOnly">
+                  <button type="button"
+                          class="btn-lims btn-lims-save w-100 py-1"
+                          [disabled]="isSaving[sample.id]"
+                          (click)="saveSampleCuttingPlan(sample.id)">
+                    <i class="bi bi-check-circle me-1" *ngIf="!isSaving[sample.id]"></i>
+                    <span *ngIf="isSaving[sample.id]">Saving Plan...</span>
+                    <span *ngIf="!isSaving[sample.id]">Save Preparation Plan</span>
+                  </button>
+                </div>
+
+              </div>
+
             </div>
           </div>
+
         </div>
 
       </ng-container>
     </div>
+
+  </div>
+
+  <!-- Global Stage Transition Action Bar -->
+  <div class="cm-global-action-bar card mt-3 p-2 bg-white shadow-sm border d-flex flex-row justify-content-between align-items-center" *ngIf="!isReadOnly">
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-light text-dark border">
+        <i class="bi bi-shield-check text-success me-1"></i> Stage 3: Sample Preparation
+      </span>
+      <span class="small text-muted">
+        Review all specimen machining allocations above before transitioning to Testing.
+      </span>
+    </div>
+
+    <button type="button"
+            class="btn-lims btn-lims-primary px-3 py-1.5 fs-12 fw-semibold"
+            [disabled]="isCompleting"
+            (click)="completePreparationAndProceed()">
+      <i class="bi bi-arrow-right-circle me-1" *ngIf="!isCompleting"></i>
+      <span *ngIf="isCompleting">Transitioning to Testing...</span>
+      <span *ngIf="!isCompleting">Complete Preparation & Proceed to Testing</span>
+    </button>
   </div>
 
 </div>

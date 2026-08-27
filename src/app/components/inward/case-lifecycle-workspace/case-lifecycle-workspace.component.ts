@@ -322,6 +322,32 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
     });
   }
 
+  onPrepCompleted(): void {
+    this.inwardService.getSampleInwardById(this.inwardId).subscribe({
+      next: (data: any) => {
+        this.caseInfo = data;
+        this.currentStageStatus = data?.inwardStatus || data?.status || 'UNDER_TESTING';
+
+        this.inwardService.getLifecycleSummary(this.inwardId).subscribe({
+          next: (summary: any) => {
+            this.lifecycleSummary = summary;
+            if (summary?.inwardStatus) {
+              this.currentStageStatus = summary.inwardStatus;
+            }
+            this.updateLifecycleStages(this.currentStageStatus);
+            this.activeStageId = 'testing';
+            this.activeInlineAction = 'testing';
+          },
+          error: () => {
+            this.updateLifecycleStages(this.currentStageStatus);
+            this.activeStageId = 'testing';
+            this.activeInlineAction = 'testing';
+          }
+        });
+      }
+    });
+  }
+
   selectStage(stageId: string): void {
     if (stageId === 'overview') {
       this.activeStageId = 'overview';

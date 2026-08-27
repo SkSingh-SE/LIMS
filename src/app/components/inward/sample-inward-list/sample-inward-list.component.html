@@ -54,11 +54,13 @@
                         <tr *ngFor="let item of listData; let i = index" class="text-sm">
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
+                                    <!-- Lifecycle workspace navigation (Commented Out)
                                     <a [routerLink]="['/sample/case', item.id]"
                                      class="icon-link"
                                         title="Open Case Workspace">
                                         <i class="bi bi-layers-fill text-danger" style="font-size:1rem;"></i>
                                     </a>
+                                    -->
                                     <a [routerLink]="['/sample/inward/details', item.id]"
                                     [state]="{ mode: 'view' }"
                                      class="icon-link"
@@ -77,11 +79,20 @@
                                 </div>
                             </td>
                             <td class="fw-semibold">
+                                <!-- Lifecycle workspace navigation (Commented Out)
                                 <a
                                     [routerLink]="['/sample/case', item.id]"
                                     class="text-danger text-decoration-none cursor-pointer fw-bold"
                                     [title]="'Open Case Workspace: ' + item.caseNo">
                                     <i class="bi bi-layers me-1" style="font-size:0.75rem;"></i>{{ item.caseNo }}
+                                </a>
+                                -->
+                                <a
+                                    [routerLink]="['/sample/inward/details', item.id]"
+                                    [state]="{ mode: 'view' }"
+                                    class="text-primary text-decoration-none cursor-pointer"
+                                    [title]="'View details for ' + item.caseNo">
+                                    {{ item.caseNo }}
                                 </a>
                             </td>
                             <td>

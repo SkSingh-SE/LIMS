@@ -85,7 +85,7 @@ export class ParameterUnitComponent implements OnInit {
     this.parameterUnitForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      conversionFactor: [''],
+      conversionFactor: [null, [Validators.required, Validators.min(0.000001)]],
       // Normalized equivalents (unlimited add/remove). Each row: { id, name, conversionFactor }.
       equivalents: this.fb.array([]),
     });
@@ -100,7 +100,7 @@ export class ParameterUnitComponent implements OnInit {
     return this.fb.group({
       id: [e?.id ?? 0],
       name: [e?.name ?? '', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
-      conversionFactor: [e?.conversionFactor ?? null, [Validators.min(0.000001)]],
+      conversionFactor: [e?.conversionFactor ?? null, [Validators.required, Validators.min(0.000001)]],
     });
   }
 
@@ -116,6 +116,7 @@ export class ParameterUnitComponent implements OnInit {
   private bindEquivalents(rows: any[]): void {
     this.equivalents.clear();
     (rows || [])
+      .filter(e => e.isActive !== false)
       .slice()
       .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
       .forEach(e => this.equivalents.push(this.createEquivalentGroup(e)));
@@ -283,29 +284,31 @@ export class ParameterUnitComponent implements OnInit {
   }
 
   openModal(type: string, id: number): void {
+    this.submitted = false;
     this.testValue = null;
-    this.parameterUnitForm.reset();
-    this.parameterUnitForm.enable();
+    this.initForm();
     this.parameterUnitId = 0;
-    if (id > 0) {
-      this.parameterUnitId = id;
-      this.getDetails();
-    }
+
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
       this.formTitle = 'Create Parameter Unit';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Edit Parameter Unit';
-      this.parameterUnitForm.enable();
+      if (id > 0) {
+        this.parameterUnitId = id;
+        this.getDetails();
+      }
     } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
       this.formTitle = 'View Parameter Unit';
-      this.parameterUnitForm.disable();
+      if (id > 0) {
+        this.parameterUnitId = id;
+        this.getDetails();
+      }
     }
     this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
@@ -318,8 +321,7 @@ export class ParameterUnitComponent implements OnInit {
   closeModal(): void {
     this.submitted = false;
     if (this.bsModal) this.bsModal.hide();
-    this.parameterUnitForm.reset();
-    this.parameterUnitForm.enable();
+    this.initForm();
     this.parameterUnitId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
@@ -329,20 +331,54 @@ export class ParameterUnitComponent implements OnInit {
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.parameterUnitForm);
     if (!this.parameterUnitForm.valid) {
-      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      const invalidFields: string[] = [];
+      if (this.parameterUnitForm.get('name')?.invalid) invalidFields.push('Unit Name');
+      if (this.parameterUnitForm.get('conversionFactor')?.invalid) invalidFields.push('Base Conversion Factor');
+      this.equivalents.controls.forEach((ctrl, idx) => {
+        if (ctrl.get('name')?.invalid) invalidFields.push(`Equivalent #${idx + 1} Name`);
+        if (ctrl.get('conversionFactor')?.invalid) invalidFields.push(`Equivalent #${idx + 1} Factor`);
+      });
+
+      const detail = invalidFields.length > 0 ? `: ${invalidFields.join(', ')}` : '';
+      this.toastService.show(`Please fix the validation errors${detail}.`, 'warning');
       return;
     }
-    let formData = this.parameterUnitForm.value;
+    const formData = this.parameterUnitForm.getRawValue();
+    if (formData.conversionFactor !== null && formData.conversionFactor !== undefined && formData.conversionFactor !== '') {
+      formData.conversionFactor = Number(formData.conversionFactor);
+    }
+    if (formData.equivalents && Array.isArray(formData.equivalents)) {
+      formData.equivalents = formData.equivalents.map((eq: any, index: number) => ({
+        id: eq.id || 0,
+        name: (eq.name || '').trim(),
+        conversionFactor: eq.conversionFactor !== null && eq.conversionFactor !== undefined && eq.conversionFactor !== '' ? Number(eq.conversionFactor) : null,
+        displayOrder: index + 1,
+        isActive: true,
+      }));
+    }
+
     if (this.isEditMode) {
       this.parameterUnitService.updateParameterUnit(formData).subscribe({
-        next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
-        error: (error) => { this.toastService.show(error.message, 'error'); },
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        },
       });
     } else {
       formData.id = 0;
       this.parameterUnitService.createParameterUnit(formData).subscribe({
-        next: (response) => { this.toastService.show(response.message, 'success'); this.closeModal(); this.fetchData(); },
-        error: (error) => { this.toastService.show(error.message, 'error'); },
+        next: (response) => {
+          this.toastService.show(response.message, 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (error) => {
+          this.toastService.show(error.message, 'error');
+        },
       });
     }
   }

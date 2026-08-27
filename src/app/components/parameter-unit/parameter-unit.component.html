@@ -48,9 +48,11 @@
                             <td class="fw-medium">{{ item.name }}</td>
                             <td>{{ item.conversionFactor }}</td>
                             <td>
-                                <span *ngIf="item.equivalents?.length > 0" class="badge bg-light text-dark border me-1">
-                                    {{ item.equivalents.length }} Units
-                                </span>
+                                <div *ngIf="item.equivalents && item.equivalents.length > 0" class="d-flex flex-wrap gap-1 align-items-center">
+                                    <span *ngFor="let eq of item.equivalents" class="badge bg-light text-dark border" [title]="'Factor: ' + (eq.conversionFactor ?? 'N/A')">
+                                        {{ eq.name }} <small class="text-muted" *ngIf="eq.conversionFactor">({{ eq.conversionFactor }})</small>
+                                    </span>
+                                </div>
                                 <span *ngIf="!item.equivalents || item.equivalents.length === 0" class="text-muted">—</span>
                             </td>                        </tr>
                     </tbody>
@@ -126,13 +128,15 @@
                                     [attr.disabled]="isViewMode ? true : null" />
                                 <app-field-error [control]="parameterUnitForm.get('name')" label="Name" [submitted]="submitted"/>
                             </div>
-                             <div class="col-md-6 mb-2">
-                                 <label class="form-label">Base Conversion Factor <span class="text-danger">*</span></label>
-                                 <input type="text" class="form-control form-control-sm" formControlName="conversionFactor"
-                                     placeholder="e.g. 1 (base), 0.001, 10000"
-                                     [attr.disabled]="isViewMode ? true : null" />
-                                 <small class="text-muted">Factor to convert to SI base unit</small>
-                             </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Base Conversion Factor <span class="text-danger">*</span></label>
+                                <input type="number" step="any" class="form-control form-control-sm" formControlName="conversionFactor"
+                                    placeholder="e.g. 1 (base), 0.001, 10000"
+                                    [ngClass]="{'is-invalid': isFieldInvalid('conversionFactor')}"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                                <app-field-error [control]="parameterUnitForm.get('conversionFactor')" label="Base Conversion Factor" [submitted]="submitted"/>
+                                <small class="text-muted">Factor to convert to SI base unit</small>
+                            </div>
                         </div>
                     </fieldset>
 
@@ -142,7 +146,7 @@
                              <i class="bi bi-arrow-left-right me-2"></i>Equivalent Units
                          </legend>
                          <div class="d-flex justify-content-end mb-2">
-                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addEquivalent()">
+                             <button *ngIf="!isViewMode" type="button" class="btn btn-lims btn-lims-add btn-sm" (click)="addEquivalent()">
                                  <i class="bi bi-plus-lg me-1"></i> Add Unit
                              </button>
                          </div>
@@ -153,26 +157,24 @@
                         <div formArrayName="equivalents">
                             <div *ngFor="let eq of equivalents.controls; let i = index" [formGroupName]="i" class="row align-items-start mb-2">
                                 <div class="col-md-5">
-                                    <label class="form-label">Equivalent Unit</label>
+                                    <label class="form-label">Equivalent Unit <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control form-control-sm" formControlName="name" placeholder="e.g. N/mm², ksi" maxlength="50"
-                                        [ngClass]="{ 'is-invalid': eq.get('name')?.touched && eq.get('name')?.invalid }" />
-                                    <div *ngIf="eq.get('name')?.touched && eq.get('name')?.invalid">
-                                        <span *ngIf="eq.get('name')?.hasError('required') || eq.get('name')?.hasError('whitespace')" class="text-danger text-sm">Unit name is required.</span>
-                                    </div>
+                                        [ngClass]="{ 'is-invalid': (eq.get('name')?.touched || eq.get('name')?.dirty || submitted) && eq.get('name')?.invalid }"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <app-field-error [control]="eq.get('name')" label="Unit Name" [submitted]="submitted"/>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Conversion Factor</label>
+                                    <label class="form-label">Conversion Factor <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control form-control-sm" formControlName="conversionFactor" placeholder="e.g. 1, 0.145" step="any"
-                                        [ngClass]="{ 'is-invalid': eq.get('conversionFactor')?.touched && eq.get('conversionFactor')?.invalid }" />
-                                    <div *ngIf="eq.get('conversionFactor')?.touched && eq.get('conversionFactor')?.invalid">
-                                        <span *ngIf="eq.get('conversionFactor')?.hasError('min')" class="text-danger text-sm">Must be greater than 0.</span>
-                                    </div>
+                                        [ngClass]="{ 'is-invalid': (eq.get('conversionFactor')?.touched || eq.get('conversionFactor')?.dirty || submitted) && eq.get('conversionFactor')?.invalid }"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <app-field-error [control]="eq.get('conversionFactor')" label="Conversion Factor" [submitted]="submitted"/>
                                 </div>
                                 <div class="col-md-3 d-flex align-items-center gap-2" style="margin-top: 1.7rem;">
                                     <div *ngIf="eq.get('name')?.value && eq.get('conversionFactor')?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
                                         <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ eq.get('conversionFactor')?.value }} {{ eq.get('name')?.value }}</small>
                                     </div>
-                                    <button *ngIf="!isViewMode" type="button" class="btn btn-remove btn-sm" (click)="removeEquivalent(i)" title="Remove"><i class="bi bi-trash"></i></button>
+                                    <button *ngIf="!isViewMode" type="button" class="btn btn-lims btn-lims-remove btn-sm" (click)="removeEquivalent(i)" title="Remove"><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
 
@@ -209,8 +211,8 @@
                 </div>
 
                 <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-cancel me-2" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save">
+                    <button type="button" class="btn btn-lims btn-lims-cancel me-2" (click)="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-lims btn-lims-save">
                         {{ isEditMode ? 'Update' : 'Save' }}
                     </button>
                 </div>

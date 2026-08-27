@@ -25,7 +25,7 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 12, title: 'Employee Master', route: '/employee', parentMenuID: 1, permissions: ['CanReadEmployee'], children: [], color: getRandomColor() },
         { id: 13, title: 'Designation Master', route: '/designation', parentMenuID: 1, permissions: ['CanReadDesignation'], children: [], color: getRandomColor() },
         { id: 14, title: 'Tax Master', route: '/tax', parentMenuID: 1, permissions: ['CanReadTax'], children: [], color: getRandomColor() },
-        { id: 15, title: 'Bank Master', route: '/bank', parentMenuID: 1, permissions: ['CanReadBank'], children: [], color: getRandomColor() },
+        // { id: 15, title: 'Bank Master', route: '/bank', parentMenuID: 1, permissions: ['CanReadBank'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
         { id: 16, title: 'Courier Master', route: '/courier', parentMenuID: 1, permissions: ['CanReadCourier'], children: [], color: getRandomColor() },
         { id: 17, title: 'TPI Master', route: '/tpi', parentMenuID: 1, permissions: ['CanReadTPI'], children: [], color: getRandomColor() },
         { id: 18, title: 'Supplier Master', route: '/supplier', parentMenuID: 1, permissions: ['CanReadSupplier'], children: [], color: getRandomColor() },
@@ -60,16 +60,16 @@ export function getAllMenuItems(): MenuItem[] {
                 { id: 27, title: 'Specimen Orientation', route: '/specimen-orientation', parentMenuID: 201, permissions: ['CanReadSpecimenOrientation'], children: [], color: getRandomColor() },
                 { id: 22, title: 'Dimensional Factor', route: '/dimesional-factor', parentMenuID: 201, permissions: ['CanReadDimensionalFactors'], children: [], color: getRandomColor() },
                 // { id: 29, title: 'Universal Code Type', route: '/universal-code-type', parentMenuID: 201, permissions: ['CanReadUniversalCode'], children: [], color: getRandomColor() },
-                { id: 220, title: 'Product Form', route: '/product-form', parentMenuID: 201, permissions: ['CanReadProductForm'], children: [], color: getRandomColor() },
+                // { id: 220, title: 'Product Form', route: '/product-form', parentMenuID: 201, permissions: ['CanReadProductForm'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
                 { id: 221, title: 'Product Size', route: '/product-size-master', parentMenuID: 201, permissions: ['CanReadProductSize'], children: [], color: getRandomColor() },
-                { id: 222, title: 'Product Condition Category', route: '/product-condition-category', parentMenuID: 201, permissions: ['CanReadProductConditionCategory'], children: [], color: getRandomColor() },
-                { id: 223, title: 'Specimen Orientation Category', route: '/specimen-orientation-category', parentMenuID: 201, permissions: ['CanReadSpecimenOrientationCategory'], children: [], color: getRandomColor() },
-                { id: 224, title: 'Property Type', route: '/property-type', parentMenuID: 201, permissions: ['CanReadPropertyType'], children: [], color: getRandomColor() },
-                { id: 225, title: 'Heat Treatment Category', route: '/heat-treatment-category', parentMenuID: 201, permissions: ['CanReadHeatTreatmentCategory'], children: [], color: getRandomColor() },
-                { id: 226, title: 'Cooling Medium', route: '/cooling-medium', parentMenuID: 201, permissions: ['CanReadCoolingMedium'], children: [], color: getRandomColor() },
-                { id: 227, title: 'Parameter Category', route: '/parameter-category', parentMenuID: 201, permissions: ['CanReadParameterCategory'], children: [], color: getRandomColor() },
-                { id: 228, title: 'Tolerance Master', route: '/tolerance-master', parentMenuID: 201, permissions: ['CanReadTolerance'], children: [], color: getRandomColor() },
-                { id: 229, title: 'Hardness Equivalence', route: '/hardness-equivalence', parentMenuID: 201, permissions: ['CanReadHardnessEquivalence'], children: [], color: getRandomColor() },
+                // { id: 222, title: 'Product Condition Category', route: '/product-condition-category', parentMenuID: 201, permissions: ['CanReadProductConditionCategory'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
+                // { id: 223, title: 'Specimen Orientation Category', route: '/specimen-orientation-category', parentMenuID: 201, permissions: ['CanReadSpecimenOrientationCategory'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
+                // { id: 224, title: 'Property Type', route: '/property-type', parentMenuID: 201, permissions: ['CanReadPropertyType'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
+                // { id: 225, title: 'Heat Treatment Category', route: '/heat-treatment-category', parentMenuID: 201, permissions: ['CanReadHeatTreatmentCategory'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
+                // { id: 226, title: 'Cooling Medium', route: '/cooling-medium', parentMenuID: 201, permissions: ['CanReadCoolingMedium'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
+                // { id: 227, title: 'Parameter Category', route: '/parameter-category', parentMenuID: 201, permissions: ['CanReadParameterCategory'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
+                // { id: 228, title: 'Tolerance Master', route: '/tolerance-master', parentMenuID: 201, permissions: ['CanReadTolerance'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
+                // { id: 229, title: 'Hardness Equivalence', route: '/hardness-equivalence', parentMenuID: 201, permissions: ['CanReadHardnessEquivalence'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
               ], color: getRandomColor()
             }
           ], color: getRandomColor()
@@ -121,7 +121,7 @@ export function getAllMenuItems(): MenuItem[] {
             { id: 130, title: 'Preparation Queue', route: '/sample/preparation', parentMenuID: 500, permissions: [], children: [], color: getRandomColor() },
             { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 500, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
             { id: 47, title: 'Machining Charge Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
-            { id: 48, title: 'Sample Preparation Master', route: '/sample-preparation-master', parentMenuID: 500, permissions: ['CanReadSamplePreparationMaster'], children: [], color: getRandomColor() },
+            // { id: 48, title: 'Sample Preparation Master', route: '/sample-preparation-master', parentMenuID: 500, permissions: ['CanReadSamplePreparationMaster'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
           ], color: getRandomColor()
         }
       ]
@@ -344,4 +344,138 @@ function getRandomColor(): string {
     color += letters[Math.floor(Math.random() * 16)];
   }
   return color;
+}
+
+/**
+ * ─── HIDDEN NAVBAR MENU ITEMS ARCHIVE ───
+ * These menu items were hidden from the active navbar menu (getAllMenuItems).
+ * They are preserved here with full routing, permission, and hierarchy details
+ * so they can be reviewed, referenced, or restored in the future.
+ */
+export interface HiddenMenuItemInfo {
+  id: number;
+  title: string;
+  route: string;
+  parentMenuID: number | null;
+  parentCategory: string;
+  permissions: string[];
+  hiddenDate: string;
+  reason: string;
+}
+
+export const HIDDEN_MENU_ITEMS: HiddenMenuItemInfo[] = [
+  {
+    id: 15,
+    title: 'Bank Master',
+    route: '/bank',
+    parentMenuID: 1,
+    parentCategory: 'Administration',
+    permissions: ['CanReadBank'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 220,
+    title: 'Product Form',
+    route: '/product-form',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadProductForm'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Accessible via linked masters / modal.'
+  },
+  {
+    id: 222,
+    title: 'Product Condition Category',
+    route: '/product-condition-category',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadProductConditionCategory'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 223,
+    title: 'Specimen Orientation Category',
+    route: '/specimen-orientation-category',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadSpecimenOrientationCategory'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 224,
+    title: 'Property Type',
+    route: '/property-type',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadPropertyType'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 225,
+    title: 'Heat Treatment Category',
+    route: '/heat-treatment-category',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadHeatTreatmentCategory'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 48,
+    title: 'Sample Preparation Master',
+    route: '/sample-preparation-master',
+    parentMenuID: 500,
+    parentCategory: 'Sample > Sample Preparation',
+    permissions: ['CanReadSamplePreparationMaster'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 226,
+    title: 'Cooling Medium',
+    route: '/cooling-medium',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadCoolingMedium'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 227,
+    title: 'Parameter Category',
+    route: '/parameter-category',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadParameterCategory'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 228,
+    title: 'Tolerance Master',
+    route: '/tolerance-master',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadTolerance'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  },
+  {
+    id: 229,
+    title: 'Hardness Equivalence',
+    route: '/hardness-equivalence',
+    parentMenuID: 201,
+    parentCategory: 'Specification > Material Specification > Linked Masters',
+    permissions: ['CanReadHardnessEquivalence'],
+    hiddenDate: '2026-08-27',
+    reason: 'Hidden from Navbar menu per requirement. Master form & route remain functional.'
+  }
+];
+
+export function getHiddenMenuItems(): HiddenMenuItemInfo[] {
+  return [...HIDDEN_MENU_ITEMS];
 }

@@ -1,8 +1,11 @@
 <div class="card shadow-lg m-2">
-    <div class="card-header card-form-header text-white text-center">
-        <label class="fw-medium">Supplier Form</label>
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+        <label class="text-md fw-medium ms-3">{{ isViewMode ? 'View Supplier' : (isEditMode ? 'Edit Supplier' : 'Supplier Form') }}</label>
+        <a routerLink="/supplier" class="btn btn-outline-light btn-sm me-3">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
     </div>
-    <div class="card-body ">
+    <div class="card-body">
         <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()">
             <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-3 g-2">
 
@@ -28,7 +31,7 @@
                 <!--Address-->
                 <div>
                     <label class="form-label">Address</label>
-                    <textarea class="form-control" formControlName="address" placeholder="Enter Address" ></textarea>
+                    <input type="text" class="form-control" formControlName="address" placeholder="Enter Address" maxlength="100" />
                 </div>
                 <!--Contact Person 1-->
                 <div>
@@ -72,7 +75,9 @@
                 <div>
                     <label class="form-label">Contact No 2</label>
                     <input type="text" class="form-control" formControlName="contactNo2"
-                        placeholder="Enter Contact No 2" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                        placeholder="Enter Contact No 2" maxlength="12" appNumberOnly
+                        (blur)="checkPhoneNumber($event)"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('contactNo2')?.touched && supplierForm.get('contactNo2')?.invalid }" />
                     <span *ngIf="supplierForm.get('contactNo2')?.hasError('pattern') && supplierForm.get('contactNo2')?.touched"
                         class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
@@ -98,9 +103,11 @@
                 <div>
                     <label class="form-label">Contact No 3</label>
                     <input type="text" class="form-control" formControlName="contactNo3"
-                        placeholder="Enter Contact No 3" maxlength="12" appNumberOnly (blur)="checkPhoneNumber($event)" />
+                        placeholder="Enter Contact No 3" maxlength="12" appNumberOnly
+                        (blur)="checkPhoneNumber($event)"
+                        [ngClass]="{ 'is-invalid': supplierForm.get('contactNo3')?.touched && supplierForm.get('contactNo3')?.invalid }" />
                     <span *ngIf="supplierForm.get('contactNo3')?.hasError('pattern') && supplierForm.get('contactNo3')?.touched"
-                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
+                        class="text-danger text-sm">Please enter a valid contact number.</span>
                 </div>
 
                 <!--Email Id 3-->
@@ -127,7 +134,7 @@
 
                 <!--Agreement File Path-->
                 <div>
-                    <label class="form-label">Agreement File <span class="text-danger">*</span></label>
+                    <label class="form-label">Agreement File </label>
                     <ng-container *ngIf="supplierForm.get('agreementFilePath')?.value || supplierForm.get('fileName')?.value; else uploadField">
                         <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                             <span class="text-truncate me-2" type="button"
@@ -143,33 +150,13 @@
                     </ng-container>
 
                     <ng-template #uploadField>
-                        <input class="form-control form-control-sm input-file" type="file"
+                        <input class="form-control input-file" type="file"
                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                             [disabled]="isViewMode" (change)="onFileChange($event)" />
                     </ng-template>
                     <div *ngIf="supplierForm.get('fileName')?.touched && supplierForm.get('fileName')?.invalid"
                         class="text-danger text-sm">Agreement File is required.</div>
                 </div>
-
-
-
-                <!-- <div>
-                    <div class="form-check">
-                        <label class="form-label">Supplier Approved</label>
-                        <input type="checkbox" class="form-check-input mt-1" formControlName="supplierApproved" />
-                    </div>
-
-                    <div class="form-check">
-                        <label class="form-label">Is Blacklisted</label>
-                        <input type="checkbox" class="form-check-input mt-1" formControlName="isBlacklisted" />
-                    </div>
-
-                </div>
-                <div *ngIf="supplierForm.get('isBlacklisted')?.value">
-                    <label class="form-label">Reason For Blacklisting</label>
-                    <textarea class="form-control" formControlName="reasonForBlacklisting"
-                        placeholder="Enter Reason For Blacklisting"></textarea>
-                </div> -->
 
                 <div>
                     <label class="form-label">Blacklist Date</label>
@@ -179,9 +166,12 @@
 
             </div>
             <div class="d-flex justify-content-end gap-2 mt-4">
-
-                <a [routerLink]="['/supplier']" class="btn btn-cancel">Cancel</a>
-                <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>
+                <a [routerLink]="['/supplier']" class="btn btn-cancel">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+                <button *ngIf="!isViewMode" type="submit" class="btn btn-save" [disabled]="supplierForm.invalid">
+                    <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+                </button>
             </div>
 
         </form>

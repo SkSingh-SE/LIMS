@@ -337,22 +337,6 @@ fieldset legend {
   color: #fff !important;
 }
 
-/* ─── File Upload ─── */
-input::file-selector-button {
-  color: #fff;
-  background-color: var(--primary-color, #da261c);
-  border: none;
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-input::file-selector-button:hover {
-  background-color: var(--primary-hover, #b91c1c);
-}
-
 .input-file {
   cursor: pointer !important;
 }

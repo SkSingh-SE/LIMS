@@ -1448,8 +1448,12 @@
         </div>
       </div>
       <div *ngIf="!isViewMode" class="form-action-bar">
-        <a [routerLink]="['/custom-material-specification']" class="btn btn-cancel">Cancel</a>
-        <button type="submit" class="btn btn-save">Save</button>
+        <a [routerLink]="['/custom-material-specification']" class="btn btn-cancel">
+          <i class="bi bi-x-circle"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-save">
+          <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+        </button>
       </div>
     </form>
   </div>
@@ -1500,9 +1504,11 @@
         </div>
       </div>
       <div class="custom-modal-footer">
-        <button type="button" class="btn btn-sm btn-cancel" (click)="cancelImport()">Cancel</button>
+        <button type="button" class="btn btn-sm btn-cancel" (click)="cancelImport()">
+          <i class="bi bi-x-circle"></i> Cancel
+        </button>
         <button type="button" class="btn btn-sm btn-save" (click)="commitImport()" [disabled]="!importHasImportable">
-          Import {{ importOkCount + importWarnCount }} line(s)
+          <i class="bi bi-file-earmark-arrow-down"></i> Import {{ importOkCount + importWarnCount }} line(s)
         </button>
       </div>
     </div>
@@ -1551,9 +1557,15 @@
           placeholder="e.g. IF(C > 56, Mg + 1, Mg)"></textarea>
       </div>
       <div class="custom-modal-footer">
-        <button type="button" class="btn btn-sm btn-cancel" (click)="closeEquationModal()">Cancel</button>
-        <button type="button" class="btn btn-sm btn-cancel text-danger" (click)="minEquationDraft = ''; maxEquationDraft = ''">Clear</button>
-        <button type="button" class="btn btn-sm btn-save" (click)="saveEquation()">Apply</button>
+        <button type="button" class="btn btn-sm btn-cancel" (click)="closeEquationModal()">
+          <i class="bi bi-x-circle"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-sm btn-cancel text-danger" (click)="minEquationDraft = ''; maxEquationDraft = ''">
+          <i class="bi bi-eraser"></i> Clear
+        </button>
+        <button type="button" class="btn btn-sm btn-save" (click)="saveEquation()">
+          <i class="bi bi-check-circle"></i> Apply
+        </button>
       </div>
     </div>
   </div>

@@ -481,11 +481,29 @@ export class MechanicalParameterComponent implements OnInit {
       unitConversionFactor: item?.conversionFactor ?? null
     });
   }
+  autoGenerateSymbol() {
+    const name = this.ParameterForm.get('name')?.value;
+    if (!name || !name.trim()) {
+      this.toastService.show('Please enter Parameter Name first', 'warning');
+      return;
+    }
+    const words = name.trim().split(/[\s\-_/()]+/).filter((w: string) => w.length > 0);
+    let symbol = '';
+    if (words.length > 1) {
+      symbol = words.map((w: string) => w[0].toUpperCase()).join('');
+    } else if (words.length === 1) {
+      symbol = words[0].length <= 4 ? words[0].toUpperCase() : words[0].substring(0, 4).toUpperCase();
+    }
+    this.ParameterForm.patchValue({ symbol });
+    this.ParameterForm.get('symbol')?.markAsDirty();
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
+
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');
   }
-  @HostListener('window:focus')
-  onWindowFocus(): void {}
 }
 
 

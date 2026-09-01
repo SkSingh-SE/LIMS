@@ -741,23 +741,23 @@
 <div *ngIf="!isViewMode" class="sticky-bottom-bar">
   <div class="d-flex justify-content-end align-items-center gap-2">
     <a routerLink="/employee" class="btn btn-cancel btn-sm">
-      <i class="bi bi-x-lg me-1"></i> Cancel
+      <i class="bi bi-x-circle"></i> Cancel
     </a>
 
     <!-- Tab 1: Basic Details Save -->
-    <button *ngIf="activeFormKey === 1" type="button" class="btn btn-save btn-sm px-3" (click)="submitForm()">
-      <i class="bi bi-check2-circle me-1"></i> {{ employeeId > 0 ? 'Update' : 'Save' }}
+    <button *ngIf="activeFormKey === 1" type="button" class="btn btn-save btn-sm" (click)="submitForm()">
+      <i class="bi bi-check-circle"></i> {{ employeeId > 0 ? 'Update' : 'Save' }}
     </button>
 
     <!-- Tab 2: Qualification Save -->
-    <button *ngIf="activeFormKey === 2 && qualificationArray.length > 0" type="button" class="btn btn-save btn-sm px-3"
+    <button *ngIf="activeFormKey === 2 && qualificationArray.length > 0" type="button" class="btn btn-save btn-sm"
       (click)="saveQualification()">
-      <i class="bi bi-check2-circle me-1"></i> Save Qualification
+      <i class="bi bi-check-circle"></i> Save Qualification
     </button>
 
     <!-- Tab 3: Documents Save -->
-    <button *ngIf="activeFormKey === 3" type="button" class="btn btn-save btn-sm px-3" (click)="saveDocuments()">
-      <i class="bi bi-check2-circle me-1"></i> Save Documents
+    <button *ngIf="activeFormKey === 3" type="button" class="btn btn-save btn-sm" (click)="saveDocuments()">
+      <i class="bi bi-check-circle"></i> Save Documents
     </button>
   </div>
 </div>

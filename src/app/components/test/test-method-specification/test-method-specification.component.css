@@ -1,21 +1,5 @@
-input::file-selector-button {
-  color: #fff;
-  background-color: var(--primary-color, #da261c);
-  border: none;
-  padding: 5px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  margin-right: 8px;
-}
-
-input::file-selector-button:hover {
-  background-color: var(--primary-hover, #b81f17);
-}
-
 .input-file {
   cursor: pointer !important;
-  /* line-height: 25px; */
   font-size: 0.8rem;
 }
 

@@ -51,32 +51,31 @@ export class OEMFormComponent implements CanComponentDeactivate, OnInit {
   initForm() {
     this.OEMForm = this.fb.group({
       id: [0],
-      name: ['', Validators.required],
-      contactPerson1: [''],
-      contactNo1: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
-      emailId1: ['', Validators.email],
-      contactPerson2: [''],
-      contactNo2: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
-      emailId2: ['', Validators.email],
-      contactPerson3: [''],
-      contactNo3: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
-      emailId3: ['', Validators.email],
-      address: [''],
-      presentStatus: [1], // 1: Enlisted, 2: Delisted
+      name: ['', [Validators.required, Validators.maxLength(100)]],
+      contactPerson1: ['', Validators.maxLength(100)],
+      contactNo1: ['', [Validators.maxLength(100), Validators.pattern(/^[0-9+ -]{7,20}$/)]],
+      emailId1: ['', [Validators.maxLength(100), Validators.email]],
+      contactPerson2: ['', Validators.maxLength(100)],
+      contactNo2: ['', [Validators.maxLength(100), Validators.pattern(/^[0-9+ -]{7,20}$/)]],
+      emailId2: ['', [Validators.maxLength(100), Validators.email]],
+      contactPerson3: ['', Validators.maxLength(100)],
+      contactNo3: ['', [Validators.maxLength(100), Validators.pattern(/^[0-9+ -]{7,20}$/)]],
+      emailId3: ['', [Validators.maxLength(100), Validators.email]],
+      address: ['', Validators.maxLength(100)],
       uploadReferenceID: [null],
       agreementFilePath: [''],
       fileName: [''],
-      equipmentApproved: [false],
+      supplierApproved: [false],
       isBlacklisted: [false],
-      reasonForBlacklisting: [''],
-      file: [File]
+      reasonForBlacklisting: ['', Validators.maxLength(255)],
+      file: [null]
     });
   }
   toggleBlacklistingReason() {
     this.OEMForm.get('isBlacklisted')?.valueChanges.subscribe(isBlacklisted => {
       const reasonControl = this.OEMForm.get('reasonForBlacklisting');
       if (isBlacklisted) {
-        reasonControl?.setValidators([Validators.required]);
+        reasonControl?.setValidators([Validators.required, Validators.maxLength(255)]);
       } else {
         reasonControl?.clearValidators();
         reasonControl?.setValue('');
@@ -102,28 +101,28 @@ export class OEMFormComponent implements CanComponentDeactivate, OnInit {
     if (this.OEMForm.valid) {
       const raw = this.OEMForm.getRawValue();
       const formData = new FormData();
-      formData.append('id', raw.id);
-      formData.append('name', raw.name);
-      formData.append('productType', raw.productType);
-      formData.append('contactPerson1', raw.contactPerson1 || '');
-      formData.append('contactPerson2', raw.contactPerson2 || '');
-      formData.append('contactPerson3', raw.contactPerson3 || '');
-      formData.append('contactNo1', raw.contactNo1 || '');
-      formData.append('contactNo2', raw.contactNo2 || '');
-      formData.append('contactNo3', raw.contactNo3 || '');
-      formData.append('emailId1', raw.emailId1 || '');
-      formData.append('emailId2', raw.emailId2 || '');
-      formData.append('emailId3', raw.emailId3 || '');
-      formData.append('address', raw.address || '');
-      formData.append('presentStatus', raw.presentStatus.toString());
-      formData.append('uploadReferenceID', raw.uploadReferenceID ?? '');
+      formData.append('id', (raw.id || 0).toString());
+      formData.append('name', (raw.name || '').trim());
+      formData.append('contactPerson1', (raw.contactPerson1 || '').trim());
+      formData.append('contactPerson2', (raw.contactPerson2 || '').trim());
+      formData.append('contactPerson3', (raw.contactPerson3 || '').trim());
+      formData.append('contactNo1', (raw.contactNo1 || '').trim());
+      formData.append('contactNo2', (raw.contactNo2 || '').trim());
+      formData.append('contactNo3', (raw.contactNo3 || '').trim());
+      formData.append('emailId1', (raw.emailId1 || '').trim());
+      formData.append('emailId2', (raw.emailId2 || '').trim());
+      formData.append('emailId3', (raw.emailId3 || '').trim());
+      formData.append('address', (raw.address || '').trim());
+      if (raw.uploadReferenceID) {
+        formData.append('uploadReferenceID', raw.uploadReferenceID.toString());
+      }
       formData.append('agreementFilePath', raw.agreementFilePath || '');
       formData.append('fileName', raw.fileName || '');
-      formData.append('equipmentApproved', raw.equipmentApproved.toString());
-      formData.append('isBlacklisted', raw.isBlacklisted.toString());
-      formData.append('reasonForBlacklisting', raw.reasonForBlacklisting || '');
+      formData.append('supplierApproved', (!!raw.supplierApproved).toString());
+      formData.append('isBlacklisted', (!!raw.isBlacklisted).toString());
+      formData.append('reasonForBlacklisting', (raw.reasonForBlacklisting || '').trim());
 
-      if (raw.file) {
+      if (raw.file instanceof File && raw.file.size > 0) {
         formData.append('file', raw.file, raw.file.name);
       }
 

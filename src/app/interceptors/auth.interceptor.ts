@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { catchError, finalize, switchMap, tap, throwError } from 'rxjs';
 import { LoaderService } from '../services/loader.service';
 import { ToastService } from '../services/toast.service';
+import { BranchService } from '../services/branch.service';
 
 let unauthorizedCount = 0; // Track consecutive 401 responses
 const unauthorizedLimit = 3;
@@ -29,7 +30,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const loaderService = inject(LoaderService);
   const toastService = inject(ToastService);
 
+  const branchService = inject(BranchService);
+
   let token = authService.getUserData()?.token; // Retrieve token from service
+  const selectedBranchCode = branchService.selectedBranch()?.code;
   const excludedUrls = ['/api/Auth/login', '/api/Auth/refresh-token', 'api/Auth/refresh-token', '/api/Auth/forgot'];
   const excludeLoaderUrl = [
     '/api/Auth/login',
@@ -92,8 +96,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   };
 
   const handleRequest = (accessToken: any) => {
+    const headers: { [name: string]: string } = {
+      Authorization: `Bearer ${accessToken}`
+    };
+    if (selectedBranchCode) {
+      headers['X-Branch-Code'] = selectedBranchCode;
+    }
+
     const modifiedReq = req.clone({
-      setHeaders: { Authorization: `Bearer ${accessToken}` }
+      setHeaders: headers
     });
 
     let reqId: string | null = null;
@@ -169,7 +180,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     reqId = loaderService.show();
   }
 
-  return next(req).pipe(
+  const outgoingReq = selectedBranchCode ? req.clone({ setHeaders: { 'X-Branch-Code': selectedBranchCode } }) : req;
+
+  return next(outgoingReq).pipe(
     tap(event => {
       if (event.type === HttpEventType.Response) {
         unauthorizedCount = 0;

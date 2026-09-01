@@ -34,8 +34,14 @@ export class DropdownPanelComponent {
   }
 
   onSelect(item: any, index: number): void {
+    if (item?.isHeader || item?.selectable === false) return;
     this.highlightedIndex = index;
     this.selectItem.emit(item);
+  }
+
+  onHover(item: any, index: number): void {
+    if (item?.isHeader || item?.selectable === false) return;
+    this.highlightedIndex = index;
   }
 
   onScrollEvent(event: any): void {
@@ -43,7 +49,9 @@ export class DropdownPanelComponent {
   }
 
   trackById(_index: number, item: any): any {
-    return item.id;
+    if (item.isHeader) return 'header-' + item.name;
+    if (item.equivalentId) return 'eq-' + item.equivalentId;
+    return 'base-' + item.id;
   }
 
   /** Public method — called by parent to scroll highlighted item into view */

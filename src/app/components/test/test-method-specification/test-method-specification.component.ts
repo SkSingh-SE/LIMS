@@ -424,35 +424,33 @@ export class TestMethodSpecificationComponent implements OnInit {
    * Example: "ASTM E8/E8M-1 : V1 2016"
    * Auto-generated based on active version, editable.
    */
+  /**
+   * Display Title = "{Org} - {Std} - {Part}"
+   * Example: "ASTM - E415"
+   * Auto-generated based on header fields, editable.
+   */
   buildDisplayTitle(): void {
     const org = (this.selectedStandardOrganization?.name || '').toString().trim();
     const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
     const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
-    const version = this.getActiveVersionLabel();
-    const year = this.getActiveVersionYear();
 
-    let parts: string[] = [org];
+    let parts: string[] = [];
+    if (org) parts.push(org);
     if (part) {
-      parts.push(`${std}-${part}`);
-    } else {
+      parts.push(`${std} - ${part}`);
+    } else if (std) {
       parts.push(std);
     }
-    parts = parts.filter(x => x);
-    if (parts.length && version) {
-      parts.push(`: ${version}`);
-    }
-    if (year) {
-      parts.push(year);
-    }
-    this.testSpecificationForm.get('displayTitle')?.setValue(parts.join(' '), { emitEvent: false });
+    const title = parts.join(' - ');
+    this.testSpecificationForm.get('displayTitle')?.setValue(title, { emitEvent: false });
   }
 
   onFileChange(event: any, index: number) {
     const file = event.target.files[0];
     if (file) {
-      const maxSize = 5 * 1024 * 1024;
+      const maxSize = 250 * 1024 * 1024; // 250 MB
       if (file.size > maxSize) {
-        this.toastService.show(`File size  should be less than 5 MB.`, 'warning');
+        this.toastService.show(`File size should be less than 250 MB.`, 'warning');
         event.target.value = '';
         return;
       }
@@ -486,26 +484,20 @@ export class TestMethodSpecificationComponent implements OnInit {
     this.versions.at(index).patchValue({ standardFile: '', standardFilePath: '', file: null, uploadReferenceID: null });
   }
 
-  /** Test Method Caption — display title jaisa hi format but year ke sath */
-  getCaption(year: any): string {
-    const org = this.selectedStandardOrganization?.name || '';
+  /** Test Method Caption — "{Org} - {Std} - {Part}" without Year / Version */
+  getCaption(groupOrYear?: any, index?: number): string {
+    const org = (this.selectedStandardOrganization?.name || '').toString().trim();
     const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
     const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
-    const version = this.getActiveVersionLabel();
-    let parts: string[] = [org];
+
+    let parts: string[] = [];
+    if (org) parts.push(org);
     if (part) {
       parts.push(`${std} - ${part}`);
-    } else {
+    } else if (std) {
       parts.push(std);
     }
-    parts = parts.filter(x => x);
-    if (parts.length && version) {
-      parts.push(`: ${version}`);
-    }
-    if (year) {
-      parts.push(year);
-    }
-    return parts.join(' ');
+    return parts.join(' - ');
   }
 
   onDisable() {

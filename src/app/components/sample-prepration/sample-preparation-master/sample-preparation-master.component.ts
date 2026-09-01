@@ -296,7 +296,7 @@ export class SamplePreparationMasterComponent implements OnInit {
       this.formGroup.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

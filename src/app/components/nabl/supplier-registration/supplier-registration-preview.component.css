@@ -11,8 +11,8 @@
   border: 1px solid transparent; transition: all 0.15s ease; white-space: nowrap; }
 .toolbar-btn.btn-outline-dark { background: #fff; border-color: #555; color: #333; }
 .toolbar-btn.btn-outline-dark:hover { background: #f5f5f5; border-color: #333; }
-.toolbar-btn.btn-primary-red { background: #DA261C; border-color: #DA261C; color: #fff; }
-.toolbar-btn.btn-primary-red:hover { background: #c0201a; border-color: #c0201a; }
+.toolbar-btn.btn-primary-red { background: var(--primary-color, #DA261C); border-color: var(--primary-color, #DA261C); color: #fff; }
+.toolbar-btn.btn-primary-red:hover { background: var(--primary-hover, #b91c1c); border-color: var(--primary-hover, #b91c1c); }
 .orientation-toggle { display: flex; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
 .orient-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
   font-size: 0.82rem; font-weight: 500; background: #f8f9fa; border: none; color: #555;

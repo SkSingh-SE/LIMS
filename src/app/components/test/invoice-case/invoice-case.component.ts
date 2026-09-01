@@ -29,12 +29,18 @@ export class InvoiceCaseComponent implements OnInit {
   labTestConfigs: any[] = [];
   subGroupName = '';
 
-  pricingTypeOptions = [
-    { value: 'Element', label: 'Parameter Count' },
-    { value: 'SizeLoad', label: 'Size + Load' },
-    { value: 'SizeAndLoad', label: 'Size + Load Range' },
-    { value: 'FlatRate', label: 'Flat Rate' },
-  ];
+  isChemicalTest = false;
+  subGroups: any[] = [];
+  selectedAnalysisTypeId: number | null = null;
+
+  getDefaultPricingTypeOptions(versionIndex: number): any[] {
+    const pricesCtrl = this.pricesOf(versionIndex);
+    if (!pricesCtrl) return [];
+    return pricesCtrl.controls
+      .map(ctrl => ctrl.get('name')?.value)
+      .filter(Boolean)
+      .map(name => ({ value: name, label: name }));
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -61,6 +67,7 @@ export class InvoiceCaseComponent implements OnInit {
   initForm(): void {
     this.invoiceCaseForm = this.fb.group({
       laboratoryTestID: [null, Validators.required],
+      analysisTypeID: [null],
       versions: this.fb.array([])
     });
   }
@@ -83,12 +90,31 @@ export class InvoiceCaseComponent implements OnInit {
     this.invoiceService.getInvoiceCaseById(invoiceCaseId).subscribe({
       next: (response) => {
         const labTestId = response?.laboratoryTestID;
+        const analysisTypeId = response?.analysisTypeID;
         if (!labTestId) {
           this.toastService.show('Invoice case has no linked Sub Group Test.', 'error');
           return;
         }
-        this.invoiceCaseForm.patchValue({ laboratoryTestID: labTestId });
-        this.loadLabTestConfigs(labTestId, true);
+        this.invoiceCaseForm.patchValue({
+          laboratoryTestID: labTestId,
+          analysisTypeID: analysisTypeId
+        });
+        this.selectedAnalysisTypeId = analysisTypeId || null;
+
+        // Fetch test details to load chemical state and subgroups
+        this.labTestService.getLaboratoryTestById(labTestId).subscribe({
+          next: (test) => {
+            this.isChemicalTest = test?.isChemicalTest || false;
+            this.subGroups = test?.subGroups || [];
+
+            this.loadLabTestConfigsAndVersions(labTestId, analysisTypeId, true);
+          },
+          error: (err) => {
+            this.toastService.show(err?.error?.message || 'Failed to check test details', 'error');
+            // Fallback load configs/versions anyway
+            this.loadLabTestConfigsAndVersions(labTestId, analysisTypeId, true);
+          }
+        });
       },
       error: (err) => this.toastService.show(err?.error?.message || 'Failed to load invoice case', 'error')
     });
@@ -143,7 +169,13 @@ export class InvoiceCaseComponent implements OnInit {
       invoiceCaseConfigID: [p?.invoiceCaseConfigID ?? null],
       name: [p?.name ?? ''],
       aliasName: [p?.aliasName ?? '', Validators.required],
-      price: [p?.price ?? 0, [Validators.required, Validators.min(0.01)]]
+      price: [p?.price ?? 0, [Validators.required, Validators.min(0)]],
+      elementPrices: [p?.elementPrices ?? null],
+      isOverride: [p?.isOverride ?? false],
+      overrideParameterIDs: [p?.overrideParameterIDs ?? null],
+      overrideParameterNames: [p?.overrideParameterNames ?? ''],
+      groupName: [p?.groupName ?? ''],
+      groupType: [p?.groupType ?? '']
     });
   }
 
@@ -166,8 +198,8 @@ export class InvoiceCaseComponent implements OnInit {
   }
 
   // ── Load existing versions for a lab test ──
-  loadVersions(labTestId: number): void {
-    this.invoiceService.getByLabTest(labTestId).subscribe({
+  loadVersions(labTestId: number, analysisTypeId: number | null): void {
+    this.invoiceService.getByLabTest(labTestId, analysisTypeId ?? undefined).subscribe({
       next: (response) => {
         this.versions.clear();
         // Deduplicate by financialYearId — keep the one with the latest effectiveFrom.
@@ -181,7 +213,27 @@ export class InvoiceCaseComponent implements OnInit {
           }
         });
         const deduped = Array.from(fyMap.values());
-        deduped.forEach((v: any) => this.versions.push(this.buildVersionGroup(v)));
+        deduped.forEach((v: any) => {
+          const existingPrices = v.prices ?? [];
+          const mergedPrices = this.labTestConfigs.map((meta: any) => {
+            const existingPrice = existingPrices.find((p: any) => p.invoiceCaseConfigID === meta.invoiceCaseConfigID);
+            return {
+              id: existingPrice?.id ?? 0,
+              invoiceCaseConfigID: meta.invoiceCaseConfigID,
+              name: meta.groupName ? `${meta.groupName} — ${meta.configName}` : meta.configName,
+              aliasName: existingPrice?.aliasName ?? meta.configName ?? '',
+              price: existingPrice?.price ?? 0,
+              elementPrices: existingPrice?.elementPrices ?? null,
+              isOverride: meta.isOverride ?? false,
+              overrideParameterIDs: meta.overrideParameterIDs ?? null,
+              overrideParameterNames: meta.overrideParameterNames ?? '',
+              groupName: meta.groupName ?? '',
+              groupType: meta.groupType ?? ''
+            };
+          });
+          v.prices = mergedPrices;
+          this.versions.push(this.buildVersionGroup(v));
+        });
 
         if (this.versions.length === 0) {
           this.addYear();
@@ -204,28 +256,69 @@ export class InvoiceCaseComponent implements OnInit {
 
   onLaboratorySelected(item: any): void {
     if (!item) {
-      this.invoiceCaseForm.patchValue({ laboratoryTestID: null });
+      this.invoiceCaseForm.patchValue({
+        laboratoryTestID: null,
+        analysisTypeID: null
+      });
       this.versions.clear();
       this.labTestConfigs = [];
       this.subGroupName = '';
+      this.isChemicalTest = false;
+      this.subGroups = [];
+      this.selectedAnalysisTypeId = null;
       return;
     }
-    this.invoiceCaseForm.patchValue({ laboratoryTestID: item.id });
-    this.loadLabTestConfigs(item.id, true);
+    this.invoiceCaseForm.patchValue({
+      laboratoryTestID: item.id,
+      analysisTypeID: null
+    });
+    this.selectedAnalysisTypeId = null;
+
+    // Fetch test details to check if isChemicalTest
+    this.labTestService.getLaboratoryTestById(item.id).subscribe({
+      next: (test) => {
+        this.isChemicalTest = test?.isChemicalTest || false;
+        this.subGroups = test?.subGroups || [];
+
+        if (this.isChemicalTest) {
+          // Chemical test -> clear versions, wait for user to select AnalysisType
+          this.versions.clear();
+          this.labTestConfigs = [];
+        } else {
+          // Non-chemical -> load configs and versions directly
+          this.loadLabTestConfigsAndVersions(item.id, null, true);
+        }
+      },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || 'Failed to check test details', 'error');
+        // Fallback load configs/versions directly
+        this.loadLabTestConfigsAndVersions(item.id, null, true);
+      }
+    });
+  }
+
+  selectAnalysisType(at: any): void {
+    if (this.isViewMode) return;
+    this.selectedAnalysisTypeId = at.id;
+    this.invoiceCaseForm.patchValue({ analysisTypeID: at.id });
+
+    const labTestId = this.invoiceCaseForm.get('laboratoryTestID')?.value;
+    if (labTestId) {
+      this.loadLabTestConfigsAndVersions(labTestId, at.id, true);
+    }
   }
 
   // Loads the lab test's invoice-case configs (the price-row template).
   // seedFirstYear=true → after configs load, also load existing versions / seed one.
-  private loadLabTestConfigs(labTestId: number, seedFirstYear: boolean): void {
-    this.labTestService.getLaboratoryTestById(labTestId).subscribe({
-      next: (response) => {
-        this.subGroupName = response?.subGroup ?? '';
-        this.labTestConfigs = response?.invoiceCases ?? [];
+  private loadLabTestConfigsAndVersions(labTestId: number, analysisTypeId: number | null, seedFirstYear: boolean): void {
+    this.labTestService.getPricingTemplate(labTestId, analysisTypeId ?? undefined).subscribe({
+      next: (rows: any[]) => {
+        this.labTestConfigs = rows;
         if (seedFirstYear) {
-          this.loadVersions(labTestId);
+          this.loadVersions(labTestId, analysisTypeId);
         }
       },
-      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load test configuration', 'error')
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load pricing template', 'error')
     });
   }
 
@@ -234,16 +327,30 @@ export class InvoiceCaseComponent implements OnInit {
     return this.labTestConfigs.map((c: any) => ({
       id: 0,
       invoiceCaseConfigID: c?.invoiceCaseConfigID,
-      name: `${this.subGroupName} - ${c?.invoiceCaseConfiguration?.name ?? ''}`,
-      aliasName: c?.invoiceCaseConfiguration?.name ?? '',
-      price: 0
+      name: c?.groupName ? `${c.groupName} — ${c.configName}` : c.configName,
+      aliasName: c?.configName ?? '',
+      price: 0,
+      elementPrices: null,
+      isOverride: c?.isOverride ?? false,
+      overrideParameterIDs: c?.overrideParameterIDs ?? null,
+      overrideParameterNames: c?.overrideParameterNames ?? '',
+      groupName: c?.groupName ?? '',
+      groupType: c?.groupType ?? ''
     }));
   }
 
   // ── Year version actions ──
   addYear(): void {
     const usedFyIds = new Set(this.versions.controls.map(v => v.get('financialYearId')?.value));
-    const pick = this.financialYears.find(fy => !usedFyIds.has(fy.id));
+    
+    // Pick current default financial year first if not already added
+    const currentFyId = this.defaultFinancialYearId;
+    let pick = this.financialYears.find(fy => fy.id === currentFyId && !usedFyIds.has(fy.id));
+    
+    if (!pick) {
+      pick = this.financialYears.find(fy => !usedFyIds.has(fy.id));
+    }
+    
     if (!pick) {
       this.toastService.show('All available financial years are already added.', 'warning');
       return;
@@ -285,6 +392,11 @@ export class InvoiceCaseComponent implements OnInit {
       return;
     }
 
+    if (this.isChemicalTest && !this.selectedAnalysisTypeId) {
+      this.toastService.show('Please select an Analysis Type before saving.', 'error');
+      return;
+    }
+
     // No two versions may share the same Effective From date
     const dates = this.versions.controls.map(v => v.get('effectiveFrom')?.value);
     if (new Set(dates).size !== dates.length) {
@@ -295,6 +407,7 @@ export class InvoiceCaseComponent implements OnInit {
     const raw = this.invoiceCaseForm.getRawValue();
     const payload = {
       laboratoryTestID: raw.laboratoryTestID,
+      analysisTypeID: this.selectedAnalysisTypeId,
       versions: raw.versions.map((v: any) => ({
         id: v.id,
         financialYearId: v.financialYearId,
@@ -305,7 +418,8 @@ export class InvoiceCaseComponent implements OnInit {
           invoiceCaseConfigID: p.invoiceCaseConfigID,
           name: p.name,
           aliasName: p.aliasName,
-          price: p.price
+          price: p.price,
+          elementPrices: p.elementPrices
         }))
       }))
     };
@@ -317,5 +431,114 @@ export class InvoiceCaseComponent implements OnInit {
       },
       error: (err) => this.toastService.show(err?.error?.message || 'Failed to save invoice case prices', 'error')
     });
+  }
+
+  isOverrideRow(versionIndex: number, priceIndex: number): boolean {
+    return !!this.pricesOf(versionIndex).at(priceIndex).get('isOverride')?.value;
+  }
+
+  getOverrideHint(versionIndex: number, priceIndex: number): string {
+    const names = this.pricesOf(versionIndex).at(priceIndex).get('overrideParameterNames')?.value;
+    if (!names) {
+      const ids = this.pricesOf(versionIndex).at(priceIndex).get('overrideParameterIDs')?.value;
+      if (!ids) {
+        return 'Wildcard — applies to all special/super elements not matched by a specific override';
+      }
+      return `Specific override for element IDs: ${ids}`;
+    }
+    return `Specific override for elements: ${names}`;
+  }
+
+  getOverrideText(versionIndex: number, priceIndex: number): string {
+    const names = this.pricesOf(versionIndex).at(priceIndex).get('overrideParameterNames')?.value;
+    if (names) {
+      return `Override (${names})`;
+    }
+    const ids = this.pricesOf(versionIndex).at(priceIndex).get('overrideParameterIDs')?.value;
+    if (ids) {
+      return `Override (IDs: ${ids})`;
+    }
+    return 'Override (All Elements)';
+  }
+
+  getOverrideParamIdsList(versionIndex: number, priceIndex: number): string[] {
+    const ids = this.pricesOf(versionIndex).at(priceIndex).get('overrideParameterIDs')?.value;
+    if (!ids) return [];
+    return ids.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+
+  isElementWiseMode(versionIndex: number, priceIndex: number): boolean {
+    const elementPrices = this.pricesOf(versionIndex).at(priceIndex).get('elementPrices')?.value;
+    return !!elementPrices;
+  }
+
+  toggleElementWiseMode(versionIndex: number, priceIndex: number): void {
+    const ctrl = this.pricesOf(versionIndex).at(priceIndex).get('elementPrices');
+    if (ctrl?.value) {
+      ctrl.setValue(null);
+    } else {
+      const ids = this.getOverrideParamIdsList(versionIndex, priceIndex);
+      const dict: { [key: string]: number } = {};
+      if (ids.length > 0) {
+        // Case B: specific parameters
+        ids.forEach(id => {
+          dict[id] = 0;
+        });
+      } else {
+        // Case A: normal, special, super
+        dict['normal'] = 0;
+        dict['special'] = 0;
+        dict['super'] = 0;
+      }
+      ctrl?.setValue(JSON.stringify(dict));
+    }
+  }
+
+  getElementWiseList(versionIndex: number, priceIndex: number): any[] {
+    const pricesCtrl = this.pricesOf(versionIndex).at(priceIndex);
+    const elementPricesStr = pricesCtrl.get('elementPrices')?.value;
+    if (!elementPricesStr) return [];
+    try {
+      const dict = JSON.parse(elementPricesStr);
+      const ids = this.getOverrideParamIdsList(versionIndex, priceIndex);
+      if (ids.length > 0) {
+        // Case B: specific elements
+        const namesStr = pricesCtrl.get('overrideParameterNames')?.value || '';
+        const names = namesStr.split(',').map((s: string) => s.trim()).filter(Boolean);
+        return ids.map((id, idx) => ({
+          id: id,
+          name: names[idx] || `Element #${id}`,
+          price: dict[id] ?? 0
+        }));
+      } else {
+        // Case A: wildcard/types
+        return [
+          { id: 'normal', name: 'Normal Element', price: dict['normal'] ?? 0 },
+          { id: 'special', name: 'Special Element', price: dict['special'] ?? 0 },
+          { id: 'super', name: 'Super Special Element', price: dict['super'] ?? 0 }
+        ];
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  updateElementPriceValue(versionIndex: number, priceIndex: number, elementKey: string, event: any): void {
+    const ctrl = this.pricesOf(versionIndex).at(priceIndex).get('elementPrices');
+    if (!ctrl) return;
+    const value = parseFloat(event.target.value) || 0;
+    try {
+      const dict = ctrl.value ? JSON.parse(ctrl.value) : {};
+      dict[elementKey] = value;
+      ctrl.setValue(JSON.stringify(dict));
+    } catch {
+      const dict: { [key: string]: number } = {};
+      dict[elementKey] = value;
+      ctrl.setValue(JSON.stringify(dict));
+    }
+  }
+
+  trackByElementId(index: number, item: any): string {
+    return item.id;
   }
 }

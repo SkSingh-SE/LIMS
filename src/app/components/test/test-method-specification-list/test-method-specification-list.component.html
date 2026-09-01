@@ -2,10 +2,27 @@
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">Test Method Specification List</label>
-      <a routerLink="/test-specification/create" class="btn btn-outline-light me-3">
-        <i class="bi bi-plus-lg"></i>
-        Add Test Method Specification
-      </a>
+
+      <div class="d-flex align-items-center gap-2">
+        <!-- Download Template Button -->
+        <button class="btn btn-outline-light btn-sm" (click)="downloadTemplate()" title="Download Excel template for import">
+          <i class="bi bi-file-earmark-arrow-down"></i>
+          Template
+        </button>
+        <!-- Import Excel Button -->
+        <button *hasPermission="'CanImportTestMethodSpecification'" class="btn btn-outline-light btn-sm" (click)="fileInput.click()" [disabled]="importBuilding">
+          <i class="bi bi-upload"></i>
+          {{ importBuilding ? 'Parsing...' : 'Import Excel' }}
+        </button>
+        <input #fileInput type="file" accept=".xlsx,.xls" class="d-none" (change)="onImportFileSelected($event)" />
+
+        <!-- Add Test Method Button -->
+        <a *hasPermission="'CanCreateTestMethodSpecification'" routerLink="/test-specification/create" class="btn btn-outline-light btn-sm">
+          
+          <i class="bi bi-plus-lg"></i>
+          Add Test Method Specification
+        </a>
+      </div>
     </div>
 
     <div class="card-body">
@@ -56,14 +73,13 @@
               <td class="text-center">
                 <div class="d-flex justify-content-center gap-3">
                   <!-- Flex for spacing -->
-                  <a [routerLink]="['/test-specification/details', supplier.id]" [state]="{ mode: 'view' }" class="icon-link" title="View">
+                  <a *hasPermission="'CanViewTestMethodSpecification'" [routerLink]="['/test-specification/details', supplier.id]" [state]="{ mode: 'view' }" class="icon-link" title="View">
                     <img src="/icons/view.svg" alt="View" class="icon-svg" />
                   </a>
-                  <a [routerLink]="['/test-specification/edit', supplier.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
+                  <a *hasPermission="'CanEditTestMethodSpecification'" [routerLink]="['/test-specification/edit', supplier.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
                     <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
                   </a>
-
-                  <a class="icon-link" title="Delete" (click)="deleteFn(supplier.id)">
+                  <a *hasPermission="'CanDeleteTestMethodSpecification'" class="icon-link" title="Delete" (click)="deleteFn(supplier.id)">
                     <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
                   </a>
                 </div>
@@ -75,7 +91,12 @@
               <td>{{ supplier.defaultVersion || '-' }}</td>
               <td>{{ supplier.defaultVersionYear || '-' }}</td>
               <td>{{ supplier.isDisabled ? "Yes" : "No" }}</td>
-              <td>{{ supplier.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (supplier.modifiedByName || supplier.createdByName || '-') + ' on ' + ((supplier.modifiedOn || supplier.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ supplier.modifiedByName || supplier.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">· {{ (supplier.modifiedOn || supplier.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -96,6 +117,79 @@
         (pageChange)="onPageChange($event)"
         (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
       </app-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Import Preview Modal (Grade-Import style) -->
+<div class="custom-modal-backdrop" *ngIf="importPreviewVisible" (click)="cancelImport()">
+  <div class="custom-modal-dialog import-preview-dialog" (click)="$event.stopPropagation()">
+    <div class="custom-modal-header">
+      <h6 class="mb-0">Import Preview — Test Method Specifications</h6>
+      <button type="button" class="btn-close" (click)="cancelImport()" [disabled]="importing"></button>
+    </div>
+    <div class="custom-modal-body">
+      <!-- Status filter buttons -->
+      <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+        <span class="text-muted small fw-semibold">Filter:</span>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'" (click)="onImportFilter('all')">All ({{ importPreviewRows.length }})</button>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'ok' ? 'btn-success' : 'btn-outline-success'" (click)="onImportFilter('ok')">New ({{ importOkCount }})</button>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'warning' ? 'btn-warning text-dark' : 'btn-outline-warning'" (click)="onImportFilter('warning')">Duplicate ({{ importWarnCount }})</button>
+        <button class="btn btn-sm" [ngClass]="importStatusFilter === 'error' ? 'btn-danger' : 'btn-outline-danger'" (click)="onImportFilter('error')">Error ({{ importErrorCount }})</button>
+        <span class="badge bg-info text-dark ms-1">{{ importPdfCount }} PDF</span>
+      </div>
+      <div class="table-responsive import-preview-table">
+        <table class="table table-sm table-bordered mb-0">
+          <thead>
+            <tr>
+              <th class="sortable-th" (click)="onImportSort('rowNumber')"># <i class="bi" [ngClass]="importSortIcon('rowNumber')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('standardOrganization')">Standard Organization <i class="bi" [ngClass]="importSortIcon('standardOrganization')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('testMethodStandard')">Test Method Standard <i class="bi" [ngClass]="importSortIcon('testMethodStandard')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('part')">Part / Sec <i class="bi" [ngClass]="importSortIcon('part')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('officialTitle')">Official Title <i class="bi" [ngClass]="importSortIcon('officialTitle')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('version')">Version <i class="bi" [ngClass]="importSortIcon('version')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('year')">Year <i class="bi" [ngClass]="importSortIcon('year')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('fileInUpdatedStdList')">File in Std List <i class="bi" [ngClass]="importSortIcon('fileInUpdatedStdList')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('pdfFound')">PDF <i class="bi" [ngClass]="importSortIcon('pdfFound')"></i></th>
+              <th class="sortable-th" (click)="onImportSort('status')">Status <i class="bi" [ngClass]="importSortIcon('status')"></i></th>
+              <th>Messages</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of importFilteredRows"
+                [ngClass]="{ 'table-danger': row.status === 'error', 'table-warning': row.status === 'warning' }">
+              <td class="text-center">{{ row.rowNumber }}</td>
+              <td>{{ row.standardOrganization }}</td>
+              <td>{{ row.testMethodStandard }}</td>
+              <td>{{ row.part }}</td>
+              <td>{{ row.officialTitle }}</td>
+              <td class="text-center">{{ row.version }}</td>
+              <td class="text-center">{{ row.year }}</td>
+              <td class="text-start small">{{ row.fileInUpdatedStdList || '—' }}</td>
+              <td class="text-center">
+                <span *ngIf="row.pdfFound" class="badge bg-info text-dark" title="{{ row.pdfFileName || row.fileInUpdatedStdList }}">PDF</span>
+                <span *ngIf="!row.pdfFound && row.fileInUpdatedStdList" class="badge bg-warning text-dark" title="{{ row.fileInUpdatedStdList }}">No PDF</span>
+                <span *ngIf="!row.pdfFound && !row.fileInUpdatedStdList && row.status !== 'error'" class="badge bg-secondary">—</span>
+                <span *ngIf="!row.pdfFound && !row.fileInUpdatedStdList && row.status === 'error'" class="text-muted">—</span>
+              </td>
+              <td class="text-center">
+                <span class="badge"
+                  [ngClass]="{ 'bg-success': row.status === 'ok', 'bg-warning text-dark': row.status === 'warning', 'bg-danger': row.status === 'error' }">
+                  {{ row.status | uppercase }}
+                </span>
+              </td>
+              <td class="text-danger small">{{ formatMessages(row.messages) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="custom-modal-footer">
+      <button type="button" class="btn btn-sm btn-cancel" (click)="cancelImport()" [disabled]="importing">Cancel</button>
+      <button type="button" class="btn btn-sm btn-save" (click)="commitImport()" [disabled]="importing || !importHasImportable">
+        <i class="bi bi-download"></i>
+        {{ importing ? 'Importing...' : 'Import ' + importOkCount + ' Record(s)' }}
+      </button>
     </div>
   </div>
 </div>

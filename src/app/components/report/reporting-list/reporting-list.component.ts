@@ -7,14 +7,13 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
 import { ToastService } from '../../../services/toast.service';
 import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
 import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
-import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-reporting-list',
   templateUrl: './reporting-list.component.html',
   styleUrls: ['./reporting-list.component.css'],
-  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective, PaginationComponent ]
+  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, PaginationComponent ]
 })
 export class ReportingListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;

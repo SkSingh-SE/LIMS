@@ -448,15 +448,21 @@
                         <!-- Value Input -->
                         <td [class.row-disabled]="isParameterCalculated(row.value)">
                           <ng-container *ngIf="row.value.parameterType === 'Qualitative'; else quantitativeInput">
-                            <select class="form-select form-select-sm" formControlName="value"
-                              (change)="onValueChanged(p, t, r)"
-                              [disabled]="isParameterCalculated(row.value) || isTestFinalized(plans[p].tests[t].status)">
-                              <option value="">-- Select --</option>
-                              <option value="Pass">Pass</option>
-                              <option value="Fail">Fail</option>
-                              <option value="Satisfactory">Satisfactory</option>
-                              <option value="Not Satisfactory">Not Satisfactory</option>
-                            </select>
+                            <ng-container *ngIf="isTestFinalized(plans[p].tests[t].status) || isParameterCalculated(row.value); else editableQualitative">
+                              <span class="form-control form-control-sm bg-light" style="border:none;">
+                                {{ row.value.value || '-' }}
+                              </span>
+                            </ng-container>
+                            <ng-template #editableQualitative>
+                              <select class="form-select form-select-sm" formControlName="value"
+                                (change)="onValueChanged(p, t, r)">
+                                <option value="">-- Select --</option>
+                                <option value="Pass">Pass</option>
+                                <option value="Fail">Fail</option>
+                                <option value="Satisfactory">Satisfactory</option>
+                                <option value="Not Satisfactory">Not Satisfactory</option>
+                              </select>
+                            </ng-template>
                           </ng-container>
                           <ng-template #quantitativeInput>
                             <ng-container *ngIf="isTestFinalized(plans[p].tests[t].status); else editableValue">

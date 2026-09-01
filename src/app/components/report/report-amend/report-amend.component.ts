@@ -38,7 +38,7 @@ export class ReportAmendComponent implements OnInit {
     this.amendForm = this.fb.group({
       id: [0],
       reportHeaderId: [this.reportHeaderId],
-      amendmentType: [this.amendmentType || 'CUSTOMER'], // Default to CUSTOMER if not determined
+      amendmentType: [{ value: this.amendmentType || 'CUSTOMER', disabled: this.isTypeDeterminedByBackend }], // Default to CUSTOMER if not determined
       reason: ['', [Validators.required, Validators.minLength(10)]],
       file: [null, Validators.required]
     });

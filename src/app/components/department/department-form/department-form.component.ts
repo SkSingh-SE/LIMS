@@ -35,7 +35,7 @@ export class DepartmentFormComponent implements CanComponentDeactivate, OnInit, 
     this.departmentForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      description: ['', [Validators.maxLength(500)]],
+      description: ['', [Validators.maxLength(3000)]],
       isChemical: [false],
     });
 
@@ -79,7 +79,7 @@ export class DepartmentFormComponent implements CanComponentDeactivate, OnInit, 
 
 
   openModal(): void {
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

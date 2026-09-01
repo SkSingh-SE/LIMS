@@ -1,0 +1,142 @@
+.login-wrapper {
+  background: url('/images/login_background.png') no-repeat center center;
+  background-size: cover;
+  background-attachment: fixed;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Semi-transparent overlay to ensure contrast over background */
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.65) 0%, rgba(30, 41, 59, 0.45) 100%);
+  pointer-events: none;
+}
+
+.login-wrapper > .container {
+  position: relative;
+  z-index: 1;
+}
+
+.login-card {
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Brand Showcase Side (Desktop / Tablet) */
+.brand-side {
+  background: linear-gradient(145deg, #da261c 0%, #b81d14 60%, #88120b 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-side::after {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.brand-logo-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.brand-logo {
+  max-width: 150px;
+  max-height: 55px;
+  object-fit: contain;
+}
+
+.brand-logo-mobile {
+  max-width: 130px;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+.feature-item {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 10px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  border-left: 2px solid #facc15;
+}
+
+.tracking-wider {
+  letter-spacing: 0.06em;
+}
+
+.border-white-10 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.extra-small {
+  font-size: 0.72rem;
+}
+
+.fs-7 {
+  font-size: 0.75rem;
+}
+
+/* Input Fields & Icons */
+.input-group .input-group-text {
+  border-color: #dee2e6;
+  font-size: 0.85rem;
+}
+
+.input-group .form-control {
+  font-size: 0.82rem;
+  min-height: 32px;
+  border-color: #dee2e6;
+}
+
+.input-group .form-control:focus {
+  border-color: var(--primary-color, #da261c);
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.18);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Form Check */
+.form-check-input:checked {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+}
+
+.form-check-input:focus {
+  border-color: var(--primary-color, #da261c);
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.18);
+}
+
+/* Mobile optimizations */
+@media (max-width: 767.98px) {
+  .login-card {
+    border-radius: 12px;
+  }
+
+  .login-wrapper {
+    padding: 1rem 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+}

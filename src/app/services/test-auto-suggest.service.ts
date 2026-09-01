@@ -40,14 +40,14 @@ export class TestAutoSuggestService {
     return this.http.get<any>(`${this.apiUrl}/by-specification/${specHeaderId}`);
   }
 
-  getByProductSpec(productSpecId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/by-product-spec/${productSpecId}`);
+  getByProductMaster(productMasterVersionId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/by-product-spec/${productMasterVersionId}`);
   }
 
-  getUnified(specHeaderId?: number, productSpecId?: number): Observable<any> {
+  getUnified(specHeaderId?: number, productMasterVersionId?: number): Observable<any> {
     let params: any = {};
     if (specHeaderId) params.specificationHeaderId = specHeaderId;
-    if (productSpecId) params.productSpecificationId = productSpecId;
+    if (productMasterVersionId) params.productSpecificationId = productMasterVersionId;
     return this.http.get<any>(`${this.apiUrl}/unified`, { params });
   }
 

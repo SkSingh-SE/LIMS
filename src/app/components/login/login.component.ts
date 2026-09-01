@@ -22,7 +22,15 @@ export class LoginComponent {
   isLoading = signal(false);
   errorMessage = signal('');
   submitted = false;
-  constructor(private fb: FormBuilder, private authService: AuthService, private router: Router, private signalR: SignalRService, private notificationStore: NotificationStoreService, private pushService: PushServiceService) {
+
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router,
+    private signalR: SignalRService,
+    private notificationStore: NotificationStoreService,
+    private pushService: PushServiceService
+  ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, emailPatternValidator()]],
       password: ['', [Validators.required, Validators.minLength(8)]]
@@ -42,8 +50,6 @@ export class LoginComponent {
     FormValidationHelper.markAllTouched(this.loginForm);
     if (this.loginForm.valid) {
       this.isLoading.set(true);
-      console.log('Login successful', this.loginForm.value);
-      // Implement authentication logic
 
       this.authService.login(this.loginForm.value).subscribe({
         next: (data) => {
@@ -61,11 +67,12 @@ export class LoginComponent {
           this.router.navigate(['/']); // Redirect to main dashboard
         },
         error: (err) => {
-          this.errorMessage.set(err?.errorMessage);
-          console.error('Login failed', err.message);
+          this.errorMessage.set(err?.errorMessage || err?.message || 'Login failed. Please check your credentials.');
+          console.error('Login failed', err);
           this.isLoading.set(false);
         }
       });
     }
   }
 }
+

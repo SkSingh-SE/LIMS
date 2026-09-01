@@ -12,45 +12,36 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { SymbolPickerComponent } from '../../../utility/components/symbol-picker/symbol-picker.component';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { FormulaBuilderComponent } from '../../../utility/components/formula-builder/formula-builder.component';
 
 @Component({
   selector: 'app-mechanical-parameter',
-  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, SymbolPickerComponent, PaginationComponent ],
+  standalone: true,
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, SymbolPickerComponent, PaginationComponent, FormulaBuilderComponent ],
   templateUrl: './mechanical-parameter.component.html',
   styleUrl: './mechanical-parameter.component.css'
 })
 export class MechanicalParameterComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
-  @ViewChild('formulaModal') formulaModal!: ElementRef;
   private bsModal!: Modal;
-  private formulaBsModal!: Modal;
 
+  showFormulaBuilder = false;
   allParameters: any[] = [];
-  tempFormula: string = '';
-  numericInput: string = '';
-  formulaTokens: { type: string; value: string; display: string }[] = [];
-  formulaPreview: string = '';
-  isFormulaValid = true;
-
-  // Smart formula
-  smartFormulaMode = false;
-  smartFormulaInput = '';
-  smartTokens: { token: string; type: 'param' | 'operator' | 'number' | 'unknown'; matched?: string; paramRef?: string }[] = [];
-  smartValid = false;
-  smartErrors: string[] = [];
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Parameter Name', filter: true },
+    { key: 'symbol', type: 'string', label: 'Symbol', filter: true },
     { key: 'unitName', type: 'string', label: 'Unit Name', filter: true },
-    { key: 'factor', type: 'string', label: 'Conversaion Factor', filter: true },
+    { key: 'parameterType', type: 'string', label: 'Parameter Type', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
+    symbol: 'string',
     unitName: 'string',
-    factor: 'string',
+    parameterType: 'string',
     modifiedOn: 'date',
   };
 
@@ -89,7 +80,7 @@ export class MechanicalParameterComponent implements OnInit {
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   parameterId: number = 0;
-  formTitle = 'Parameter Form';
+  formTitle = 'General Parameter Form';
 
   constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService, private parameterCategoryService: ParameterCategoryService, private specimenOrientationService: SpecimenOrientationService) {
     this.route.params.subscribe(params => {
@@ -112,20 +103,50 @@ export class MechanicalParameterComponent implements OnInit {
     this.ParameterForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      code: ['', Validators.required],
-      decimalPrecision: [1, [Validators.required, Validators.min(0), Validators.max(6)]],
-      conversionFactor: [1, [Validators.required, Validators.min(0.000001)]],
-      defaultTestMethodID: [null],
-      parameterCategoryID: [null],
+      symbol: [''],
+      inputType: ['Decimal', Validators.required],
+      decimalPrecision: [1],
       parameterUnitID: [null],
+      parameterUnitEquivalentID: [null],
+      unitConversionFactor: [null],
       note: [''],
       elementType: ['normal'],
-      parameterType: ['Mechanical', Validators.required],
+      parameterType: ['Reported', Validators.required],
       isCalculated: [false],
       formula: [''],
-      allowedOrientationIds: [[]],
-      allowedOrientations: this.fb.array([])
+      formulaDisplay: [''],
+      dropdownOptions: this.fb.array([])
     });
+  }
+
+  get dropdownOptions() {
+    return this.ParameterForm.get('dropdownOptions') as any;
+  }
+
+  addDropdownOption() {
+    this.dropdownOptions.push(this.fb.group({
+      id: [0],
+      displayText: ['', Validators.required],
+      value: ['', Validators.required],
+      displayOrder: [this.dropdownOptions.length + 1],
+      isDefault: [false]
+    }));
+  }
+
+  removeDropdownOption(index: number) {
+    this.dropdownOptions.removeAt(index);
+  }
+
+  onInputTypeChange() {
+    const inputType = this.ParameterForm.value.inputType;
+    if (inputType !== 'Decimal' && inputType !== 'Integer') {
+      this.ParameterForm.patchValue({ isCalculated: false, formula: '', formulaDisplay: '' });
+    }
+    if (inputType === 'Dropdown' || inputType === 'MultiSelect') {
+      if (this.dropdownOptions.length === 0) this.addDropdownOption();
+    } else {
+      this.dropdownOptions.clear();
+    }
   }
   fetchData() {
     this.parameterService.getAllMechanicalParameters(this.payload).subscribe({
@@ -159,14 +180,27 @@ export class MechanicalParameterComponent implements OnInit {
       next: (response) => {
         if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
+        const pType = response.parameterType === 'Mechanical' ? 'Reported'
+                    : response.parameterType === 'Observation' ? 'Observed'
+                    : (response.parameterType || 'Reported');
         this.ParameterForm.patchValue({
           ...response,
-          conversionFactor: response.parameterUnit?.conversaionFactor ?? response.conversionFactor ?? 1,
+          parameterType: pType,
         });
-        if (response.allowedOrientations?.length > 0) {
-          const ids = response.allowedOrientations.map((o: any) => o.specimenOrientationID);
-          this.ParameterForm.get('allowedOrientationIds')?.setValue(ids);
+        
+        this.dropdownOptions.clear();
+        if (response.dropdownOptions && response.dropdownOptions.length > 0) {
+          response.dropdownOptions.forEach((opt: any) => {
+            this.dropdownOptions.push(this.fb.group({
+              id: [opt.id],
+              displayText: [opt.displayText, Validators.required],
+              value: [opt.value, Validators.required],
+              displayOrder: [opt.displayOrder],
+              isDefault: [opt.isDefault]
+            }));
+          });
         }
+        
       },
       error: (error) => {
         this.toastService.show(error?.error?.message || 'Failed to load parameter details', 'error');
@@ -330,20 +364,20 @@ export class MechanicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'General Parameter Form';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'Edit General Parameter';
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Parameter';
+      this.formTitle = 'View General Parameter';
       this.ParameterForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 
@@ -365,9 +399,12 @@ export class MechanicalParameterComponent implements OnInit {
         this.toastService.show('Formula is required for calculated parameter', 'warning');
         return;
       }
+      const inputType = this.ParameterForm.value.inputType;
+      if ((inputType === 'Dropdown' || inputType === 'MultiSelect') && this.dropdownOptions.length === 0) {
+        this.toastService.show('At least one dropdown option is required.', 'warning');
+        return;
+      }
       let formData = this.ParameterForm.value;
-      const orientationIds = formData.allowedOrientationIds || [];
-      formData.allowedOrientations = orientationIds.map((id: number) => ({ specimenOrientationID: id }));
       if (this.isEditMode) {
         this.parameterService.updateParameter(formData).subscribe({
           next: (response) => {
@@ -408,240 +445,65 @@ export class MechanicalParameterComponent implements OnInit {
 
   onCalculatedToggle() {
     if (!this.ParameterForm.value.isCalculated) {
-      this.ParameterForm.patchValue({ formula: '' });
+      this.ParameterForm.patchValue({ formula: '', formulaDisplay: '' });
     }
   }
 
   openFormulaBuilder() {
-    this.tempFormula = this.ParameterForm.value.formula || '';
-    this.parseFormulaToTokens(this.tempFormula);
-    this.updateFormulaPreview();
-    this.validateParentheses();
-    this.formulaBsModal = new Modal(this.formulaModal.nativeElement);
-    this.formulaBsModal.show();
+    this.showFormulaBuilder = true;
   }
 
-  addParamToken(paramId: number, paramName: string): void {
-    this.formulaTokens.push({ type: 'param', value: `{P${paramId}}`, display: paramName });
-    this.rebuildFormula();
-  }
-
-  addOperatorToken(op: string): void {
-    const displayMap: Record<string, string> = { '+': '+', '-': '\u2212', '*': '\u00d7', '/': '\u00f7' };
-    this.formulaTokens.push({ type: 'operator', value: ` ${op} `, display: displayMap[op] || op });
-    this.rebuildFormula();
-  }
-
-  addParenToken(paren: string): void {
-    this.formulaTokens.push({ type: 'paren', value: paren, display: paren });
-    this.rebuildFormula();
-  }
-
-  addNumberToken(): void {
-    if (!this.numericInput || this.numericInput === '') return;
-    const numValue = parseFloat(this.numericInput);
-    if (isNaN(numValue)) {
-      this.toastService.show('Please enter a valid number', 'warning');
-      return;
-    }
-    this.formulaTokens.push({ type: 'number', value: ` ${this.numericInput}`, display: this.numericInput });
-    this.numericInput = '';
-    this.rebuildFormula();
-  }
-
-  removeToken(index: number): void {
-    this.formulaTokens.splice(index, 1);
-    this.rebuildFormula();
-  }
-
-  undoLastToken(): void {
-    this.formulaTokens.pop();
-    this.rebuildFormula();
-  }
-
-  private rebuildFormula(): void {
-    this.tempFormula = this.formulaTokens.map((t) => t.value).join('');
-    this.updateFormulaPreview();
-    this.validateParentheses();
-  }
-
-  private validateParentheses(): void {
-    let count = 0;
-    for (const token of this.formulaTokens) {
-      if (token.value === '(') count++;
-      if (token.value === ')') count--;
-      if (count < 0) {
-        this.isFormulaValid = false;
-        return;
-      }
-    }
-    this.isFormulaValid = count === 0;
-  }
-
-  private updateFormulaPreview(): void {
-    let preview = this.tempFormula;
-    this.allParameters.forEach((param) => {
-      const regex = new RegExp(`\\{P${param.id}\\}`, 'g');
-      preview = preview.replace(regex, param.name);
-    });
-    this.formulaPreview = preview;
-  }
-
-  private parseFormulaToTokens(formula: string): void {
-    this.formulaTokens = [];
-    if (!formula) return;
-    const regex = /(\{P\d+\})|([+\-*/])|([()])|(\d+\.?\d*)/g;
-    let match;
-    while ((match = regex.exec(formula)) !== null) {
-      if (match[1]) {
-        const paramId = parseInt(match[1].replace(/[{}P]/g, ''));
-        const param = this.allParameters.find((p: any) => p.id === paramId);
-        this.formulaTokens.push({ type: 'param', value: match[1], display: param ? param.name : `P${paramId}` });
-      } else if (match[2]) {
-        const displayMap: Record<string, string> = { '+': '+', '-': '\u2212', '*': '\u00d7', '/': '\u00f7' };
-        this.formulaTokens.push({ type: 'operator', value: ` ${match[2]} `, display: displayMap[match[2]] || match[2] });
-      } else if (match[3]) {
-        this.formulaTokens.push({ type: 'paren', value: match[3], display: match[3] });
-      } else if (match[4]) {
-        this.formulaTokens.push({ type: 'number', value: ` ${match[4]}`, display: match[4] });
-      }
-    }
-  }
-
-  saveFormula() {
+  onFormulaSaved(event: { formula: string; formulaDisplay: string }) {
     this.ParameterForm.patchValue({
-      formula: this.tempFormula,
+      formula: event.formula,
+      formulaDisplay: event.formulaDisplay
     });
-
-    this.closeFormulaModal();
+    this.showFormulaBuilder = false;
   }
 
-  closeFormulaModal() {
-    if (this.formulaBsModal) {
-      this.formulaBsModal.hide();
-    }
-  }
-
-  clearFormula() {
-    this.tempFormula = '';
-    this.formulaTokens = [];
-    this.isFormulaValid = true;
-    this.numericInput = '';
-    this.ParameterForm.patchValue({
-      formula: '',
-    });
-  }
-
-  // ── Smart Formula ──
-  toggleSmartMode(): void {
-    this.smartFormulaMode = !this.smartFormulaMode;
-    if (this.smartFormulaMode) {
-      let readable = this.tempFormula || '';
-      this.allParameters.forEach(p => {
-        readable = readable.replace(new RegExp(`\\{P${p.id}\\}`, 'g'), p.name);
-      });
-      this.smartFormulaInput = readable;
-      this.parseSmartInput();
-    }
-  }
-
-  parseSmartInput(): void {
-    const input = this.smartFormulaInput.trim();
-    this.smartTokens = [];
-    this.smartErrors = [];
-    this.smartValid = false;
-    if (!input) return;
-
-    const rawTokens = input.match(/([a-zA-Z_][a-zA-Z0-9_ ]*[a-zA-Z0-9_]|[a-zA-Z_][a-zA-Z0-9_]*|[0-9]*\.?[0-9]+|[+\-*/(),])/g) || [];
-    const operators = new Set(['+', '-', '*', '/', '(', ')', ',']);
-    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
-
-    for (const raw of rawTokens) {
-      if (operators.has(raw)) { this.smartTokens.push({ token: raw, type: 'operator' }); continue; }
-      if (/^[0-9]*\.?[0-9]+$/.test(raw)) { this.smartTokens.push({ token: raw, type: 'number' }); continue; }
-      if (constants[raw]) { this.smartTokens.push({ token: raw, type: 'number', matched: `= ${constants[raw]}` }); continue; }
-
-      // Match by name (case-insensitive)
-      const exact = this.allParameters.find((p: any) => p.name.toLowerCase() === raw.toLowerCase());
-      if (exact) { this.smartTokens.push({ token: raw, type: 'param', matched: exact.name, paramRef: `{P${exact.id}}` }); continue; }
-
-      const partial = this.allParameters.find((p: any) => p.name.toLowerCase().startsWith(raw.toLowerCase()));
-      if (partial) {
-        this.smartTokens.push({ token: raw, type: 'param', matched: `${partial.name}?`, paramRef: `{P${partial.id}}` });
-        this.smartErrors.push(`"${raw}" → did you mean "${partial.name}"?`);
-        continue;
-      }
-
-      this.smartTokens.push({ token: raw, type: 'unknown' });
-      this.smartErrors.push(`"${raw}" — no matching parameter`);
-    }
-
-    let depth = 0;
-    for (const t of this.smartTokens) {
-      if (t.token === '(') depth++;
-      if (t.token === ')') depth--;
-      if (depth < 0) { this.smartErrors.push('Unmatched ")"'); break; }
-    }
-    if (depth > 0) this.smartErrors.push(`${depth} unclosed bracket(s)`);
-
-    this.smartValid = this.smartErrors.length === 0 && this.smartTokens.length > 0;
-  }
-
-  applySmartFormula(): void {
-    if (!this.smartValid) return;
-    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
-    const parts = this.smartTokens.map(t => {
-      if (t.type === 'param' && t.paramRef) return t.paramRef;
-      if (t.type === 'number' && constants[t.token]) return constants[t.token];
-      if (t.type === 'operator') return t.token === '*' || t.token === '/' || t.token === '+' || t.token === '-' ? ` ${t.token} ` : t.token;
-      return t.token;
-    });
-    this.tempFormula = parts.join('').replace(/\s+/g, ' ').trim();
-    this.parseFormulaToTokens(this.tempFormula);
-    this.updateFormulaPreview();
-    this.validateParentheses();
-    this.smartFormulaMode = false;
-    this.saveFormula();
-  }
-
-  insertSmartParam(name: string): void {
-    this.smartFormulaInput = (this.smartFormulaInput + ' ' + name).trim();
-    this.parseSmartInput();
+  onFormulaCleared() {
+    this.ParameterForm.patchValue({ formula: '', formulaDisplay: '' });
+    this.showFormulaBuilder = false;
   }
 
   getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
     return this.parameterCategoryService.getParameterCategoryDropdown(searchTerm, pageNo, pageSize);
   };
 
-  getOrientationDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.specimenOrientationService.getSpecimenOrientationDropdown(searchTerm, pageNo, pageSize);
-  };
-
   getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+    return this.parameterUnitService.getGroupedParameterUnitDropdown(searchTerm, pageNo, pageSize);
   };
 
   onParameterUnitSelected(item: any) {
-    this.ParameterForm.patchValue({ parameterUnitID: item?.id ?? null });
+    this.ParameterForm.patchValue({
+      parameterUnitID: item?.id ?? null,
+      parameterUnitEquivalentID: item?.equivalentId ?? null,
+      unitConversionFactor: item?.conversionFactor ?? null
+    });
   }
+  autoGenerateSymbol() {
+    const name = this.ParameterForm.get('name')?.value;
+    if (!name || !name.trim()) {
+      this.toastService.show('Please enter Parameter Name first', 'warning');
+      return;
+    }
+    const words = name.trim().split(/[\s\-_/()]+/).filter((w: string) => w.length > 0);
+    let symbol = '';
+    if (words.length > 1) {
+      symbol = words.map((w: string) => w[0].toUpperCase()).join('');
+    } else if (words.length === 1) {
+      symbol = words[0].length <= 4 ? words[0].toUpperCase() : words[0].substring(0, 4).toUpperCase();
+    }
+    this.ParameterForm.patchValue({ symbol });
+    this.ParameterForm.get('symbol')?.markAsDirty();
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
 
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');
   }
-
-  onOrientationSelected(selectedItems: any[]): void {
-    const orientationsArray = this.ParameterForm.get('allowedOrientations') as FormArray;
-    orientationsArray.clear();
-    const ids = selectedItems.map((item: any) => item.id || item);
-    ids.forEach((id: number) => {
-      orientationsArray.push(this.fb.group({ specimenOrientationID: [id] }));
-    });
-    this.ParameterForm.get('allowedOrientationIds')?.setValue(ids);
-  }
-
-
-  @HostListener('window:focus')
-  onWindowFocus(): void {}
 }
 
 

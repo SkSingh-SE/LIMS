@@ -24,7 +24,7 @@ export class FormFieldErrorComponent {
   get showError(): boolean {
     if (this.groupError) return true;
     if (!this.control) return false;
-    return this.control.invalid && (this.control.touched || this.submitted);
+    return this.control.invalid && (this.control.touched || this.control.dirty || this.submitted);
   }
 
   get message(): string | null {

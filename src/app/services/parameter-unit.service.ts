@@ -37,6 +37,10 @@ export class ParameterUnitService {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
+    getGroupedParameterUnitDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/grouped-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+
     /**
      * Fetch equivalent units for a parameter's default unit (base + SimilarUnit1-7 matches).
      * Results are cached per unitId — repeated calls for the same unitId reuse the same

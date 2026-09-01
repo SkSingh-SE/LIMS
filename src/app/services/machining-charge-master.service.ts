@@ -40,3 +40,5 @@ export class MachiningChargeMasterService {
     return this.http.get<any>(`${this.apiUrl}/by-test?labTestId=${labTestId}&standardId=${standardId}`);
   }
 }
+
+export { MachiningChargeMasterService as SpecimenPreparationMasterService };

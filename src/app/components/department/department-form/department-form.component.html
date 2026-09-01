@@ -21,9 +21,12 @@
           </div>
           <div class="mb-3">
             <label for="description" class="form-label">Description</label>
-            <input type="text" id="description" class="form-control" formControlName="description"
-              placeholder="Enter Department Description"
-              [attr.disabled]="isViewMode ? true : null" />
+            <textarea id="description" class="form-control" formControlName="description"
+              placeholder="Enter Department Description" rows="3" maxlength="3000"
+              [attr.disabled]="isViewMode ? true : null"></textarea>
+            <div class="d-flex justify-content-end">
+              <small class="text-muted">{{ (departmentForm.get('description')?.value?.length || 0) + ' / 3000' }}</small>
+            </div>
           </div>
           <div class="mb-3 form-check">
             <input type="checkbox" id="isChemical" class="form-check-input" formControlName="isChemical"

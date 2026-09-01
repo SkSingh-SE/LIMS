@@ -30,6 +30,9 @@ export class SampleInwardService {
   getSampleInwardWithPlans(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/details-with-plan/${id}`);
   }
+  getLifecycleSummary(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/lifecycle-summary`);
+  }
   getCaseNumber(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/case-number`);
   }
@@ -81,6 +84,10 @@ export class SampleInwardService {
     return this.http.post<any>(`${this.planApiUrl}/reject-replan/${requestId}`, { remarks: remarks || '' });
   }
 
+  assignGrade(payload: { sampleID: number; specificationGradeID: number; notes?: string }): Observable<any> {
+    return this.http.post<any>(`${this.planApiUrl}/assign-grade`, payload);
+  }
+
   updatePaymentInfo(id: number, payload: { purchaseOrderId: number | null; advancePayment: number; billRequired: boolean; advancePIRequired: boolean; holdTestingUntilPIApproved: boolean }): Observable<any> {
     return this.http.patch<any>(`${this.apiUrl}/${id}/payment`, payload);
   }
@@ -89,11 +96,63 @@ export class SampleInwardService {
     return this.http.patch<any>(`${this.apiUrl}/update-prep/${sampleId}`, dto);
   }
 
+  completeSamplePreparation(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/complete-sample-preparation/${inwardId}`, {});
+  }
+
   cancelSample(sampleDetailId: number, reason: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/cancel-sample`, { sampleDetailId, reason });
   }
-
   deleteSample(sampleDetailId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/delete-sample/${sampleDetailId}`);
+  }
+
+  stopReport(inwardId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/stop-report/${inwardId}`, { reason });
+  }
+
+  unstopReport(inwardId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/unstop-report/${inwardId}`, {});
+  }
+
+  verifyAndLockReview(inwardId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verify-and-lock-review/${inwardId}`, { remarks: remarks || '' });
+  }
+
+  requestInwardReplan(inwardId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/request-replan`, { inwardId, reason });
+  }
+
+  approveInwardReplan(replanRequestId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/approve-replan`, { replanRequestId, remarks: remarks || '' });
+  }
+
+  // Decision Engine Cascade APIs
+  getProductMasterCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/product-master/${id}`);
+  }
+
+  getProductMasterSizeLimits(id: number, sizeId: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/product-master/${id}/size/${sizeId}`);
+  }
+
+  getMetalClassificationCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/metal-classification/${id}`);
+  }
+
+  getMaterialSpecCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/material-spec/${id}`);
+  }
+
+  getLabTestCascade(id: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/lab-test/${id}`);
+  }
+
+  getTechniqueAnalysisTypes(techniqueId: number, metalId: number): Observable<any> {
+    return this.http.get<any>(`${this.planApiUrl}/cascade/technique/${techniqueId}/metal/${metalId}`);
+  }
+
+  downloadInwardChallanPdf(inwardId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${inwardId}/print-challan`, { responseType: 'blob' });
   }
 }

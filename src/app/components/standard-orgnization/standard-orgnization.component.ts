@@ -24,12 +24,10 @@ export class StandardOrgnizationComponent implements OnInit {
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'numberType', type: 'string', label: 'Number Type', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
-    numberType: 'string',
     modifiedOn: 'date',
   };
 
@@ -79,13 +77,10 @@ export class StandardOrgnizationComponent implements OnInit {
     this.fetchData();
     this.initForm();
   }
-  numberTypeOptions = ['UNS', 'SteelNumber', 'None'];
-
   initForm() {
     this.StandardOrganizationForm = this.fb.group({
       id: [0],
-      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
-      numberType: ['None', [Validators.required, noWhitespaceValidator()]]
+      name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]]
     });
   }
   fetchData() {
@@ -291,7 +286,7 @@ export class StandardOrgnizationComponent implements OnInit {
       this.StandardOrganizationForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

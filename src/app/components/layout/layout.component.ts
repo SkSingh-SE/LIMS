@@ -6,6 +6,7 @@ import { GlobalLoaderComponent } from '../global-loader/global-loader.component'
 import { ToastComponent } from '../toast/toast.component';
 import { UnsavedChangesModalComponent } from '../../utility/components/unsaved-changes-modal/unsaved-changes-modal.component';
 import { FloatingSymbolPickerComponent } from '../../utility/components/floating-symbol-picker/floating-symbol-picker.component';
+import { LoaderService } from '../../services/loader.service';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -20,14 +21,18 @@ export class LayoutComponent implements OnInit, OnDestroy {
   isVisible: boolean = false;
   private routerSub!: Subscription;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private loaderService: LoaderService
+  ) {}
 
   ngOnInit(): void {
-    // Global cleanup: remove stuck modal backdrops on every route change
+    // Global cleanup: remove stuck modal backdrops and reset any lingering loader on route change
     this.routerSub = this.router.events
       .pipe(filter(event => event instanceof NavigationStart))
       .subscribe(() => {
         this.cleanupModals();
+        this.loaderService.forceHide();
       });
   }
 

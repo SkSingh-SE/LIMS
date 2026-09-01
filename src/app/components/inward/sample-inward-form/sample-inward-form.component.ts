@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, Input, OnInit , HostListener } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from "../../../utility/components/searchable-dropdown/searchable-dropdown.component";
 import { Observable } from 'rxjs';
@@ -36,6 +36,12 @@ import { FormValidationHelper } from '../../../utility/helper/form-validation.he
 })
 export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
+
+  // ─── Embedding support: used by CaseLifecycleWorkspaceComponent ───
+  @Input() embeddedInwardId: number = 0;
+  @Input() isEmbeddedMode: boolean = false;
+  @Input() embeddedActiveTab: string = 'info'; // 'info' | 'sample' | 'plan'
+  @Input() isEmbeddedReadOnly: boolean = false;
   // Constants
   caseNumber: string = 'DMSPL-000001';
   yearCode: string = new Date().getFullYear().toString().slice(-2);
@@ -78,6 +84,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   cancelTargetIndex = -1;
   cancelReason = '';
 
+  // Stop report state
+  isReportStopped = false;
+  stopReportReason = '';
+  showStopReportDialog = false;
+  stopReportReasonInput = '';
+
   private bufferedAdditionalDetails: Record<string, any[]> = {};
 
 
@@ -103,15 +115,25 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     private accountService: AccountService) { }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((params) => {
-      this.sampleId = Number(params.get('id'));
-    });
+    // If embedded by lifecycle workspace, use the provided inward ID
+    if (this.isEmbeddedMode && this.embeddedInwardId > 0) {
+      this.sampleId = this.embeddedInwardId;
+      if (this.isEmbeddedReadOnly) {
+        this.isViewMode = true;
+      } else {
+        this.isEditMode = true;
+      }
+    } else {
+      this.route.paramMap.subscribe((params) => {
+        this.sampleId = Number(params.get('id'));
+      });
 
-    const state = history.state as { mode?: string };
-    if (state?.mode === 'view') {
-      this.isViewMode = true;
-    } else if (state?.mode === 'edit') {
-      this.isEditMode = true;
+      const state = history.state as { mode?: string };
+      if (state?.mode === 'view') {
+        this.isViewMode = true;
+      } else if (state?.mode === 'edit') {
+        this.isEditMode = true;
+      }
     }
 
     this.initForm();
@@ -159,7 +181,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       reportingTo: this.fb.group({
         id: [0],
         customerID: [null],
-        contactPersonID: [null, Validators.required],
+        contactPersonID: [null],
         contactPersonName: [''],
         address: [''],
         pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
@@ -174,7 +196,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       billingTo: this.fb.group({
         id: [0],
         customerID: [null],
-        contactPersonID: [null, Validators.required],
+        contactPersonID: [null],
         contactPersonName: [''],
         address: [''],
         pinCode: ['', Validators.pattern(/^[0-9]{6}$/)],
@@ -186,6 +208,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         emailId: ['', Validators.email],
         type: ['billing']
       }),
+      reportingToCustomers: this.fb.array([]),
+      billingToCustomers: this.fb.array([]),
       sampleDetails: this.fb.array([], [
         Validators.required,
         this.minItemsValidator(1)  // At least 1 sample
@@ -372,10 +396,11 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           this.billingTo.patchValue({ customerID: null });
 
           if (Array.isArray(this.customerData?.contactPersons)) {
-            const defaultSelected = this.sampleId === 0;
+            const defaultSelected = false; // Note 3: By default all contacts unselected
 
-            this.customerData.contactPersons.forEach((contact: any) => {
+            this.customerData.contactPersons.forEach((contact: any, idx: number) => {
               contact.contactID = contact.id;
+              contact.isAccountant = contact.isAccountant !== undefined ? contact.isAccountant : (idx === 0);
               this.addContact(contact, defaultSelected);
               this.contactPersons.push(contact);
             });
@@ -384,7 +409,11 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           }
         } else {
           // Edit mode: just update the contactPersons list for dropdowns
-          this.contactPersons = this.customerData?.contactPersons?.map((c: any) => ({ ...c, contactID: c.id })) || [];
+          this.contactPersons = this.customerData?.contactPersons?.map((c: any, idx: number) => ({
+            ...c,
+            contactID: c.id,
+            isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+          })) || [];
           this.updateContactLists();
         }
 
@@ -395,9 +424,94 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         if (this.reportingToContactPerson.length > 0) {
           this.updateAddressHelper(this.reportingToContactPerson[0], 'reportingTo');
         }
+
+        // Sync Primary Customer to Card 0 for Reporting To & Billing To
+        this.updatePrimaryCustomerCards(data);
       },
       error: (error) => console.error('Error fetching customer details:', error)
     });
+  }
+
+  private updatePrimaryCustomerCards(data: any): void {
+    if (!data?.id) return;
+
+    const primaryPayload = {
+      id: data.id,
+      name: data.name,
+      address: data.address,
+      area: data.area,
+      city: data.city,
+      state: data.state,
+      pinCode: data.pinCode,
+      gstNo: data.gstNo,
+      contactPersons: data.contactPersons
+    };
+
+    const contacts = (data.contactPersons || []).map((c: any, idx: number) => ({
+      ...c,
+      contactID: c.id,
+      isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+    }));
+    this.customerContactsCache.set(data.id, contacts);
+
+    // Sync Reporting To Card 0
+    if (this.reportingToCustomerControls.length === 0) {
+      this.addReportingCustomerCard(primaryPayload);
+    } else {
+      const repCard = this.reportingToCustomerControls.at(0) as FormGroup;
+      const currentRepCustId = repCard.get('customerID')?.value;
+      if (!currentRepCustId || currentRepCustId === data.id) {
+        repCard.patchValue({
+          customerID: data.id,
+          customerName: data.name,
+          address: data.address,
+          area: data.area,
+          city: data.city,
+          state: data.state,
+          pinCode: data.pinCode,
+          gstNo: data.gstNo
+        });
+      }
+    }
+
+    // Sync Billing To Card 0
+    if (this.billingToCustomerControls.length === 0) {
+      this.addBillingCustomerCard(primaryPayload);
+    } else {
+      const billCard = this.billingToCustomerControls.at(0) as FormGroup;
+      const currentBillCustId = billCard.get('customerID')?.value;
+      if (!currentBillCustId || currentBillCustId === data.id) {
+        billCard.patchValue({
+          customerID: data.id,
+          customerName: data.name,
+          address: data.address,
+          area: data.area,
+          city: data.city,
+          state: data.state,
+          pinCode: data.pinCode,
+          gstNo: data.gstNo
+        });
+      }
+    }
+
+    // Auto-select primary/accountant contact for Card 0 if no contact selected yet
+    if (contacts.length > 0) {
+      const defaultContact = contacts.find((c: any) => c.isAccountant || c.designation === 'Accountant') || contacts[0];
+      const contactId = defaultContact?.id || defaultContact?.contactID;
+      if (contactId) {
+        const repCard0 = this.reportingToCustomerControls.at(0) as FormGroup;
+        const repSelected = repCard0.get('selectedContactIDs') as FormArray;
+        if (repSelected && repSelected.length === 0) {
+          repSelected.push(this.fb.control(contactId));
+        }
+
+        const billCard0 = this.billingToCustomerControls.at(0) as FormGroup;
+        const billSelected = billCard0.get('selectedContactIDs') as FormArray;
+        if (billSelected && billSelected.length === 0) {
+          billSelected.push(this.fb.control(contactId));
+        }
+      }
+    }
   }
 
   fetchDispatchModeDropdown(): void {
@@ -445,8 +559,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               this.fetchArea(customer?.areaID, this.sampleInwardForm);
             }
 
-            // Store current status for Plan tab control
+            // Store current status for Plan tab control and stop report flags
             this.currentInwardStatus = data.status || '';
+            this.isReportStopped = data.isReportStopped || false;
+            this.stopReportReason = data.stopReportReason || '';
 
             // Override with Inward Data
             this.sampleInwardForm.patchValue({
@@ -542,19 +658,104 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               this.updateContactLists();
             }
 
-            // Restore Reporting To & Billing To (with override customer support)
+            // Restore Reporting To & Billing To customer cards (with override customer support)
+            this.reportingToCustomerControls.clear();
+            this.billingToCustomerControls.clear();
+
             if (data.reportingTo) {
-              // Capture contact ID before SearchableDropdown [selectedItem] triggers onReportingToCustomerChange
-              if (data.reportingTo.customerID && data.reportingTo.customerID !== data.customerID) {
-                this.editRestoreContactIDs.reporting = data.reportingTo.contactPersonID;
+              const repCustId = data.reportingTo.customerID || data.customerID;
+              const repCardGroup = this.createCustomerCardGroup('reporting', {
+                id: repCustId,
+                name: data.reportingTo.customerName || data.customerName,
+                address: data.reportingTo.address,
+                area: data.reportingTo.area,
+                city: data.reportingTo.city,
+                state: data.reportingTo.state,
+                pinCode: data.reportingTo.pinCode,
+                country: data.reportingTo.country,
+                gstNo: data.reportingTo.gstNo || data.gstNo
+              });
+              this.reportingToCustomerControls.push(repCardGroup);
+
+              if (repCustId && !this.customerContactsCache.has(repCustId)) {
+                this.customerService.getCustomerById(repCustId).subscribe({
+                  next: (cData) => {
+                    const contacts = (cData.contactPersons || []).map((c: any, idx: number) => ({
+                      ...c,
+                      contactID: c.id,
+                      isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+                    }));
+                    this.customerContactsCache.set(cData.id, contacts);
+                  }
+                });
               }
-              this.sampleInwardForm.get('reportingTo')?.patchValue(data.reportingTo);
+            } else {
+              this.addReportingCustomerCard();
             }
+
             if (data.billingTo) {
-              if (data.billingTo.customerID && data.billingTo.customerID !== data.customerID) {
-                this.editRestoreContactIDs.billing = data.billingTo.contactPersonID;
+              const billCustId = data.billingTo.customerID || data.customerID;
+              const billCardGroup = this.createCustomerCardGroup('billing', {
+                id: billCustId,
+                name: data.billingTo.customerName || data.customerName,
+                address: data.billingTo.address,
+                area: data.billingTo.area,
+                city: data.billingTo.city,
+                state: data.billingTo.state,
+                pinCode: data.billingTo.pinCode,
+                country: data.billingTo.country,
+                gstNo: data.billingTo.gstNo || data.gstNo
+              });
+              this.billingToCustomerControls.push(billCardGroup);
+
+              if (billCustId && !this.customerContactsCache.has(billCustId)) {
+                this.customerService.getCustomerById(billCustId).subscribe({
+                  next: (cData) => {
+                    const contacts = (cData.contactPersons || []).map((c: any, idx: number) => ({
+                      ...c,
+                      contactID: c.id,
+                      isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+                    }));
+                    this.customerContactsCache.set(cData.id, contacts);
+                  }
+                });
               }
-              this.sampleInwardForm.get('billingTo')?.patchValue(data.billingTo);
+            } else {
+              this.addBillingCustomerCard();
+            }
+
+            // Restore selected contact IDs into Reporting To and Billing To cards
+            if (Array.isArray(data.contacts)) {
+              const repContacts = data.contacts.filter((c: any) => c.sendReport === true || c.sendReport === 'true' || c.sendReport === 1);
+              const billContacts = data.contacts.filter((c: any) => c.sendBill === true || c.sendBill === 'true' || c.sendBill === 1);
+
+              if (this.reportingToCustomerControls.length > 0) {
+                const repCard0 = this.reportingToCustomerControls.at(0) as FormGroup;
+                const repSelectedArr = repCard0.get('selectedContactIDs') as FormArray;
+                if (repSelectedArr) {
+                  repSelectedArr.clear();
+                  repContacts.forEach((c: any) => {
+                    const cId = c.contactID || c.id;
+                    if (cId && !repSelectedArr.controls.some(ctrl => ctrl.value === cId)) {
+                      repSelectedArr.push(this.fb.control(cId));
+                    }
+                  });
+                }
+              }
+
+              if (this.billingToCustomerControls.length > 0) {
+                const billCard0 = this.billingToCustomerControls.at(0) as FormGroup;
+                const billSelectedArr = billCard0.get('selectedContactIDs') as FormArray;
+                if (billSelectedArr) {
+                  billSelectedArr.clear();
+                  billContacts.forEach((c: any) => {
+                    const cId = c.contactID || c.id;
+                    if (cId && !billSelectedArr.controls.some(ctrl => ctrl.value === cId)) {
+                      billSelectedArr.push(this.fb.control(cId));
+                    }
+                  });
+                }
+              }
             }
 
             // Override Samples + Additional Details
@@ -873,6 +1074,311 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   // Contact Helpers
+  isAccountantContact(index: number): boolean {
+    if (index === 0) return true;
+    const ctrl = this.contactControls.at(index);
+    return ctrl?.get('isAccountant')?.value === true;
+  }
+
+  // Multi-Customer / Multi-Contact Cache & FormArrays
+  customerContactsCache = new Map<number, any[]>();
+
+  get reportingToCustomerControls(): FormArray {
+    return this.sampleInwardForm.get('reportingToCustomers') as FormArray;
+  }
+
+  get billingToCustomerControls(): FormArray {
+    return this.sampleInwardForm.get('billingToCustomers') as FormArray;
+  }
+
+  createCustomerCardGroup(type: 'reporting' | 'billing', customerData: any = null): FormGroup {
+    return this.fb.group({
+      id: [0],
+      customerID: [customerData?.id || null],
+      customerName: [customerData?.name || ''],
+      address: [customerData?.address || ''],
+      area: [customerData?.area || ''],
+      city: [customerData?.city || ''],
+      state: [customerData?.state || ''],
+      pinCode: [customerData?.pinCode || ''],
+      country: [customerData?.country || 'India'],
+      gstNo: [customerData?.gstNo || ''],
+      type: [type],
+      selectedContactIDs: this.fb.array([])
+    });
+  }
+
+  addReportingCustomerCard(customerData: any = null): void {
+    const card = this.createCustomerCardGroup('reporting', customerData);
+    this.reportingToCustomerControls.push(card);
+    if (customerData?.id && customerData?.contactPersons) {
+      const contacts = customerData.contactPersons?.map((c: any, idx: number) => ({
+        ...c,
+        contactID: c.id,
+        isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+      })) || [];
+      this.customerContactsCache.set(customerData.id, contacts);
+    }
+  }
+
+  getFormattedFullCustomerAddress(card: any): string {
+    if (!card) return '-';
+
+    const getVal = (key: string) => {
+      const cardVal = card.get(key)?.value;
+      if (cardVal && String(cardVal).trim().length > 0) return String(cardVal).trim();
+
+      const isPrimaryReporting = this.reportingToCustomerControls?.length > 0 && card === this.reportingToCustomerControls.at(0);
+      const isPrimaryBilling = this.billingToCustomerControls?.length > 0 && card === this.billingToCustomerControls.at(0);
+      if ((isPrimaryReporting || isPrimaryBilling) && (this.customerData || this.sampleInwardForm)) {
+        const mainVal = this.customerData?.[key] || this.sampleInwardForm?.get(key)?.value;
+        if (mainVal && String(mainVal).trim().length > 0) return String(mainVal).trim();
+      }
+      return '';
+    };
+
+    const address = getVal('address');
+    const area = getVal('area');
+    const city = getVal('city');
+    const state = getVal('state');
+    const pinCode = getVal('pinCode');
+    const country = getVal('country');
+
+    const addressParts = [address, area, city, state].filter(p => p.length > 0);
+    let fullAddr = addressParts.join(', ');
+
+    if (pinCode.length > 0) {
+      fullAddr += fullAddr ? ` - ${pinCode}` : pinCode;
+    }
+    if (country.length > 0 && country.toLowerCase() !== 'india') {
+      fullAddr += fullAddr ? `, ${country}` : country;
+    }
+
+    return fullAddr || '-';
+  }
+
+  removeReportingCustomerCard(index: number): void {
+    if (index > 0) {
+      this.reportingToCustomerControls.removeAt(index);
+    }
+  }
+
+  onReportingCustomerSelected(item: any, cardIndex: number): void {
+    const card = this.reportingToCustomerControls.at(cardIndex) as FormGroup;
+    const selectedArray = card?.get('selectedContactIDs') as FormArray;
+
+    if (!item?.id) {
+      card.patchValue({ customerID: null, customerName: '', address: '', area: '', city: '', state: '', pinCode: '', gstNo: '' });
+      selectedArray?.clear();
+      return;
+    }
+
+    // Check duplicate customer in Reporting To
+    const isDuplicate = this.reportingToCustomerControls.controls.some((c, idx) => idx !== cardIndex && c.get('customerID')?.value === item.id);
+    if (isDuplicate) {
+      this.toastService.show(`Customer "${item.name || 'Selected Customer'}" is already added in Reporting To list. Duplicate customers are not allowed.`, 'warning');
+      setTimeout(() => {
+        card.patchValue({ customerID: null, customerName: '', address: '', area: '', city: '', state: '', pinCode: '', gstNo: '' });
+        selectedArray?.clear();
+      }, 0);
+      return;
+    }
+
+    this.customerService.getCustomerById(item.id).subscribe({
+      next: (data) => {
+        card.patchValue({
+          customerID: data.id,
+          customerName: data.name,
+          address: data.address,
+          area: data.area,
+          city: data.city,
+          state: data.state,
+          pinCode: data.pinCode,
+          gstNo: data.gstNo
+        });
+        const contacts = data.contactPersons?.map((c: any, idx: number) => ({
+          ...c,
+          contactID: c.id,
+          isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+        })) || [];
+        this.customerContactsCache.set(data.id, contacts);
+      }
+    });
+  }
+
+  addBillingCustomerCard(customerData: any = null): void {
+    const card = this.createCustomerCardGroup('billing', customerData);
+    this.billingToCustomerControls.push(card);
+    if (customerData?.id && customerData?.contactPersons) {
+      const contacts = customerData.contactPersons?.map((c: any, idx: number) => ({
+        ...c,
+        contactID: c.id,
+        isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+      })) || [];
+      this.customerContactsCache.set(customerData.id, contacts);
+    }
+  }
+
+  removeBillingCustomerCard(index: number): void {
+    if (index > 0) {
+      this.billingToCustomerControls.removeAt(index);
+    }
+  }
+
+  onBillingCustomerSelected(item: any, cardIndex: number): void {
+    const card = this.billingToCustomerControls.at(cardIndex) as FormGroup;
+    const selectedArray = card?.get('selectedContactIDs') as FormArray;
+
+    if (!item?.id) {
+      card.patchValue({ customerID: null, customerName: '', address: '', area: '', city: '', state: '', pinCode: '', gstNo: '' });
+      selectedArray?.clear();
+      return;
+    }
+
+    // Check duplicate customer in Billing To
+    const isDuplicate = this.billingToCustomerControls.controls.some((c, idx) => idx !== cardIndex && c.get('customerID')?.value === item.id);
+    if (isDuplicate) {
+      this.toastService.show(`Customer "${item.name || 'Selected Customer'}" is already added in Billing To list. Duplicate customers are not allowed.`, 'warning');
+      setTimeout(() => {
+        card.patchValue({ customerID: null, customerName: '', address: '', area: '', city: '', state: '', pinCode: '', gstNo: '' });
+        selectedArray?.clear();
+      }, 0);
+      return;
+    }
+
+    this.customerService.getCustomerById(item.id).subscribe({
+      next: (data) => {
+        card.patchValue({
+          customerID: data.id,
+          customerName: data.name,
+          address: data.address,
+          area: data.area,
+          city: data.city,
+          state: data.state,
+          pinCode: data.pinCode,
+          gstNo: data.gstNo
+        });
+        const contacts = data.contactPersons?.map((c: any, idx: number) => ({
+          ...c,
+          contactID: c.id,
+          isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+        })) || [];
+        this.customerContactsCache.set(data.id, contacts);
+      }
+    });
+  }
+
+  hasCustomerSelected(type: 'reporting' | 'billing', cardIndex: number): boolean {
+    const controls = type === 'reporting' ? this.reportingToCustomerControls : this.billingToCustomerControls;
+    const card = controls?.at(cardIndex);
+    const customerId = card?.get('customerID')?.value || (cardIndex === 0 ? (this.customerData?.id || this.sampleInwardForm?.get('customerID')?.value) : null);
+    return !!customerId;
+  }
+
+  getCustomerContactsList(type: 'reporting' | 'billing', cardIndex: number): any[] {
+    const controls = type === 'reporting' ? this.reportingToCustomerControls : this.billingToCustomerControls;
+    const card = controls?.at(cardIndex);
+    const customerId = card?.get('customerID')?.value || (cardIndex === 0 ? (this.customerData?.id || this.sampleInwardForm?.get('customerID')?.value) : null);
+    let list: any[] = [];
+
+    if (!customerId) {
+      return [];
+    }
+
+    if (this.customerContactsCache.has(customerId)) {
+      list = this.customerContactsCache.get(customerId) || [];
+    } else if (cardIndex === 0 && (this.contactPersons && this.contactPersons.length > 0)) {
+      list = this.contactPersons;
+    } else {
+      list = [];
+    }
+
+    if (type === 'reporting') {
+      const reportingContacts = list.filter(c => c.sendReport === true || c.sendReport === 'true' || c.sendReport === 1 || c.isReporting === true);
+      return reportingContacts.length > 0 ? reportingContacts : list;
+    } else {
+      const billingContacts = list.filter(c => c.sendBill === true || c.sendBill === 'true' || c.sendBill === 1 || c.isBilling === true);
+      return billingContacts.length > 0 ? billingContacts : list;
+    }
+  }
+
+  isContactSelected(type: 'reporting' | 'billing', cardIndex: number, contactId: number): boolean {
+    const controls = type === 'reporting' ? this.reportingToCustomerControls : this.billingToCustomerControls;
+    const card = controls?.at(cardIndex);
+    const selectedArray = card?.get('selectedContactIDs') as FormArray;
+    return selectedArray?.controls.some(ctrl => ctrl.value === contactId) || false;
+  }
+
+  onContactToggle(type: 'reporting' | 'billing', cardIndex: number, contactId: number, event: any): void {
+    const controls = type === 'reporting' ? this.reportingToCustomerControls : this.billingToCustomerControls;
+    const card = controls?.at(cardIndex);
+    const selectedArray = card?.get('selectedContactIDs') as FormArray;
+    if (event.target.checked) {
+      if (!selectedArray.controls.some(ctrl => ctrl.value === contactId)) {
+        selectedArray.push(this.fb.control(contactId));
+      }
+    } else {
+      const idx = selectedArray.controls.findIndex(ctrl => ctrl.value === contactId);
+      if (idx !== -1) {
+        selectedArray.removeAt(idx);
+      }
+    }
+  }
+
+  get requiresSupportingDoc(): boolean {
+    const mainCustomer = this.sampleInwardForm?.get('customerID')?.value;
+    if (!mainCustomer) return false;
+
+    const hasReportingDiff = this.reportingToCustomerControls?.controls.some(card => {
+      const cid = card.get('customerID')?.value;
+      return cid && cid !== mainCustomer;
+    });
+
+    const hasBillingDiff = this.billingToCustomerControls?.controls.some(card => {
+      const cid = card.get('customerID')?.value;
+      return cid && cid !== mainCustomer;
+    });
+
+    const oldRep = this.reportingTo?.get('customerID')?.value;
+    const oldBill = this.billingTo?.get('customerID')?.value;
+
+    return hasReportingDiff || hasBillingDiff || (!!oldRep && oldRep !== mainCustomer) || (!!oldBill && oldBill !== mainCustomer);
+  }
+
+  openStopReportDialog(): void {
+    this.stopReportReasonInput = '';
+    this.showStopReportDialog = true;
+  }
+
+  confirmStopReport(): void {
+    if (!this.stopReportReasonInput?.trim()) return;
+    this.inwardService.stopReport(this.sampleId, this.stopReportReasonInput.trim()).subscribe({
+      next: () => {
+        this.isReportStopped = true;
+        this.stopReportReason = this.stopReportReasonInput.trim();
+        this.showStopReportDialog = false;
+        this.toastService.show('Report generation has been stopped.', 'success');
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to stop report.', 'error');
+      }
+    });
+  }
+
+  onUnstopReport(): void {
+    if (!window.confirm('Are you sure you want to remove the report stop?')) return;
+    this.inwardService.unstopReport(this.sampleId).subscribe({
+      next: () => {
+        this.isReportStopped = false;
+        this.stopReportReason = '';
+        this.toastService.show('Report stop has been removed.', 'success');
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to unstop report.', 'error');
+      }
+    });
+  }
+
   addContact(contact: any, selected: boolean = false): void {
     this.contactControls.push(this.fb.group({
       id: [contact.id || 0],
@@ -881,8 +1387,9 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       name: [contact?.name || ''],
       mobileNo: [contact?.mobileNo || ''],
       emailId: [contact?.emailId || ''],
-      sendBill: [contact?.sendBill || false],
-      sendReport: [contact?.sendReport || false]
+      sendBill: [{ value: contact?.sendBill || false, disabled: true }],
+      sendReport: [{ value: contact?.sendReport || false, disabled: true }],
+      isAccountant: [contact?.isAccountant || false]
     }));
   }
 
@@ -1201,6 +1708,57 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     return selectedOptions.includes(option);
   }
 
+  // ─── Tab 2 Sample Details Redesign Helpers ───
+  getTotalSampleQty(): number {
+    return this.sampleDetails.controls.reduce((sum, ctrl) => {
+      const qty = +ctrl.get('quantity')?.value || 1;
+      return sum + qty;
+    }, 0);
+  }
+
+  getSampleFilesCount(): number {
+    return this.sampleDetails.controls.filter(ctrl => {
+      return !!ctrl.get('sampleFilePath')?.value || !!ctrl.get('fileName')?.value;
+    }).length;
+  }
+
+  appendReceiptNote(templateText: string): void {
+    if (this.isViewMode) return;
+    const currentNote = this.sampleInwardForm.get('sampleReceiptNote')?.value || '';
+    if (currentNote.includes(templateText)) return;
+    const updatedNote = currentNote ? `${currentNote.trim()}, ${templateText}` : templateText;
+    this.sampleInwardForm.patchValue({ sampleReceiptNote: updatedNote });
+    this.sampleInwardForm.markAsDirty();
+  }
+
+  quickAddAdditionalRow(labelName: string): void {
+    if (this.isViewMode) return;
+    const exists = this.sampleAdditionalDetails.controls.some(ctrl => ctrl.get('label')?.value === labelName);
+    if (exists) {
+      this.toastService.show(`"${labelName}" row is already added below.`, 'info');
+      return;
+    }
+    this.addAdditionalSampleRow(labelName);
+  }
+
+  copyFirstValueToAll(rowIndex: number): void {
+    if (this.isViewMode) return;
+    const valuesArray = (this.sampleAdditionalDetails.at(rowIndex) as FormGroup).get('values') as FormArray;
+    if (!valuesArray || valuesArray.length <= 1) return;
+    const firstVal = valuesArray.at(0).value;
+    if (!firstVal) {
+      this.toastService.show('Please enter a value in Sample 1 column first.', 'warning');
+      return;
+    }
+    valuesArray.controls.forEach((ctrl, idx) => {
+      if (idx > 0) {
+        ctrl.setValue(firstVal);
+        ctrl.markAsDirty();
+      }
+    });
+    this.toastService.show(`Copied "${firstVal}" across all sample columns.`, 'success');
+  }
+
   // Dropdown Handlers
   getMetalClassification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.metalService.getMetalClassificationDropdown(term, page, pageSize);
@@ -1227,6 +1785,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       productConditionName: item?.name || '',
     });
   }
+
+
 
   // Specimen Orientation & Product Form — commented out per client requirement
   // getSpecimenOrientationDrop = (sampleIndex: number) => {
@@ -1329,6 +1889,52 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     }
 
     const value = this.sampleInwardForm.getRawValue();
+
+    // Validation: Duplicate customer check in Reporting To
+    const repCustomerIds = this.reportingToCustomerControls.controls
+      .map(c => c.get('customerID')?.value)
+      .filter(id => id !== null && id !== undefined && id !== '');
+    if (new Set(repCustomerIds).size !== repCustomerIds.length) {
+      this.toastService.show('Duplicate customer selected in Reporting To list. Each customer can only be added once.', 'warning');
+      return;
+    }
+
+    // Validation: Duplicate customer check in Billing To
+    const billCustomerIds = this.billingToCustomerControls.controls
+      .map(c => c.get('customerID')?.value)
+      .filter(id => id !== null && id !== undefined && id !== '');
+    if (new Set(billCustomerIds).size !== billCustomerIds.length) {
+      this.toastService.show('Duplicate customer selected in Billing To list. Each customer can only be added once.', 'warning');
+      return;
+    }
+
+    // Validation: At least one contact person must be selected for EACH Reporting To customer card
+    for (let rIdx = 0; rIdx < this.reportingToCustomerControls.length; rIdx++) {
+      const card = this.reportingToCustomerControls.at(rIdx) as FormGroup;
+      const selectedContacts = card.get('selectedContactIDs')?.value || [];
+      const customerName = card.get('customerName')?.value || (rIdx === 0 ? (this.customerData?.name || 'Customer 1') : `Customer ${rIdx + 1}`);
+      if (selectedContacts.length === 0) {
+        this.toastService.show(`Please select at least one contact person for Reporting To customer: ${customerName}`, 'warning');
+        return;
+      }
+    }
+
+    // Validation: At least one contact person must be selected for EACH Billing To customer card
+    for (let bIdx = 0; bIdx < this.billingToCustomerControls.length; bIdx++) {
+      const card = this.billingToCustomerControls.at(bIdx) as FormGroup;
+      const selectedContacts = card.get('selectedContactIDs')?.value || [];
+      const customerName = card.get('customerName')?.value || (bIdx === 0 ? (this.customerData?.name || 'Customer 1') : `Customer ${bIdx + 1}`);
+      if (selectedContacts.length === 0) {
+        this.toastService.show(`Please select at least one contact person for Billing To customer: ${customerName}`, 'warning');
+        return;
+      }
+    }
+
+    if (this.requiresSupportingDoc && !value.requestFileName && !this.uploadedFile) {
+      this.toastService.show('Supporting document is mandatory when Reporting To or Billing To customer differs from main customer.', 'warning');
+      return;
+    }
+
     const formData = new FormData();
 
     const appendFields = (fields: any) => {
@@ -1378,22 +1984,55 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       formData.append(`dispatchModes[${i}].id`, d.id || '0');
     });
 
-    // Contacts
-    value.contacts?.forEach((c: any, i: number) => {
-      formData.append(`contacts[${i}].id`, '0');
-      formData.append(`contacts[${i}].selected`, String(c.selected));
-      formData.append(`contacts[${i}].contactID`, String(c.contactID));
-      formData.append(`contacts[${i}].name`, c.name || '');
-      formData.append(`contacts[${i}].mobileNo`, c.mobileNo || '');
-      formData.append(`contacts[${i}].emailId`, c.emailId || '');
-      formData.append(`contacts[${i}].sendBill`, String(c.sendBill));
-      formData.append(`contacts[${i}].sendReport`, String(c.sendReport));
+    // Contacts: Gather actual selections from Reporting To and Billing To cards
+    const repSelectedIDs = new Set<number>();
+    this.reportingToCustomerControls.controls.forEach((card: any) => {
+      const ids = card.get('selectedContactIDs')?.value || [];
+      ids.forEach((id: any) => repSelectedIDs.add(Number(id)));
+    });
+
+    const billSelectedIDs = new Set<number>();
+    this.billingToCustomerControls.controls.forEach((card: any) => {
+      const ids = card.get('selectedContactIDs')?.value || [];
+      ids.forEach((id: any) => billSelectedIDs.add(Number(id)));
+    });
+
+    const allAvailableContactsMap = new Map<number, any>();
+    this.customerContactsCache.forEach((contactsList) => {
+      contactsList.forEach((c: any) => {
+        const cId = Number(c.contactID || c.id);
+        if (cId) allAvailableContactsMap.set(cId, c);
+      });
+    });
+    (this.contactPersons || []).forEach((c: any) => {
+      const cId = Number(c.contactID || c.id);
+      if (cId && !allAvailableContactsMap.has(cId)) {
+        allAvailableContactsMap.set(cId, c);
+      }
+    });
+
+    let contactIdx = 0;
+    allAvailableContactsMap.forEach((c, cId) => {
+      const isRep = repSelectedIDs.has(cId);
+      const isBill = billSelectedIDs.has(cId);
+      const isSelected = isRep || isBill;
+
+      formData.append(`contacts[${contactIdx}].id`, '0');
+      formData.append(`contacts[${contactIdx}].selected`, String(isSelected));
+      formData.append(`contacts[${contactIdx}].contactID`, String(cId));
+      formData.append(`contacts[${contactIdx}].name`, c.name || '');
+      formData.append(`contacts[${contactIdx}].mobileNo`, c.mobileNo || '');
+      formData.append(`contacts[${contactIdx}].emailId`, c.emailId || '');
+      formData.append(`contacts[${contactIdx}].sendBill`, String(isBill));
+      formData.append(`contacts[${contactIdx}].sendReport`, String(isRep));
+      contactIdx++;
     });
 
     // Reporting & Billing
-    ['reportingTo', 'billingTo'].forEach(section => {
-      const sec = value[section] || {};
-      // Map camelCase to PascalCase for backend
+    const firstRepCard = value.reportingToCustomers?.[0] || value.reportingTo || {};
+    const firstBillCard = value.billingToCustomers?.[0] || value.billingTo || {};
+
+    const populateAddressSection = (sec: any, sectionName: 'ReportingTo' | 'BillingTo') => {
       const fieldMapping: Record<string, string> = {
         'id': 'Id',
         'customerID': 'CustomerID',
@@ -1409,16 +2048,26 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         'emailId': 'EmailId',
         'type': 'Type'
       };
-
       Object.keys(sec).forEach(k => {
         const val = sec[k];
-        if (val !== undefined && val !== null) {
+        if (val !== undefined && val !== null && k !== 'selectedContactIDs') {
           const pascalKey = fieldMapping[k] || k.charAt(0).toUpperCase() + k.slice(1);
-          const sectionName = section === 'reportingTo' ? 'ReportingTo' : 'BillingTo';
           formData.append(`${sectionName}.${pascalKey}`, String(val));
         }
       });
-    });
+      // Ensure all address string and numeric properties exist so backend DTO model binding does not fail
+      ['ContactPersonName', 'Address', 'PinCode', 'Area', 'City', 'State', 'Country', 'MobileNo', 'EmailId'].forEach(pascalKey => {
+        if (!formData.has(`${sectionName}.${pascalKey}`)) {
+          formData.append(`${sectionName}.${pascalKey}`, '');
+        }
+      });
+      if (!formData.has(`${sectionName}.ContactPersonID`)) {
+        formData.append(`${sectionName}.ContactPersonID`, '0');
+      }
+    };
+
+    populateAddressSection(firstRepCard, 'ReportingTo');
+    populateAddressSection(firstBillCard, 'BillingTo');
 
     // Sample details
     value.sampleDetails?.forEach((s: any, i: number) => {

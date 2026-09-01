@@ -99,8 +99,9 @@ export class ProductSizeMasterComponent implements OnInit {
   }
 
   getUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+    return this.parameterUnitService.getGroupedParameterUnitDropdown(searchTerm, pageNo, pageSize);
   };
+  getParameterUnitDropdown = this.getUnitDropdown;
 
   fetchData() {
     this.productSizeService.getAllProductSizes(this.payload).subscribe({
@@ -283,7 +284,7 @@ export class ProductSizeMasterComponent implements OnInit {
       this.productSizeForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

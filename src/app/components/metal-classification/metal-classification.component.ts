@@ -80,6 +80,7 @@ export class MetalClassificationComponent implements OnInit {
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   formTitle = 'Metal Classification Form';
+  isCodeManuallyEdited: boolean = false;
 
   preSelectedItems = [2, 3];
 
@@ -94,7 +95,6 @@ export class MetalClassificationComponent implements OnInit {
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       code: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(50)]],
-      parentID: [null],
       hasChemicalParams: [false],
       hasMechanicalParams: [false],
       sortOrder: [1],
@@ -126,12 +126,26 @@ export class MetalClassificationComponent implements OnInit {
         if (this.metalClassificationId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.MetalClassificationForm.patchValue(response);
+        const paramIds: number[] = response?.parameters?.map((x: any) => x.parameterID ?? x.parameterId ?? x.ParameterID).filter((id: any) => id != null) ?? [];
         this.MetalClassificationForm.patchValue({
-          parameterIds: response?.parameters?.map((x:any) => x.parameterID) ?? []
+          parameterIds: paramIds
         });
+        const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
+        parameterArray.clear();
+        paramIds.forEach(id => {
+          parameterArray.push(
+            this.fb.group({
+              MetalClassificationID: [response.id ?? 0],
+              ParameterID: [id],
+            })
+          );
+        });
+        if (this.isViewMode) {
+          this.MetalClassificationForm.disable();
+        }
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        console.error('Error fetching metal classification data:', error);
       }
     });
   }
@@ -287,6 +301,7 @@ export class MetalClassificationComponent implements OnInit {
     this.initForm();
     this.parameterReloadKey++;
     this.metalClassificationId = 0;
+    this.isCodeManuallyEdited = (type === 'edit' || type === 'view');
     if (id > 0) {
       this.metalClassificationId = id;
       this.getDetails();
@@ -307,7 +322,7 @@ export class MetalClassificationComponent implements OnInit {
       this.MetalClassificationForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 
@@ -347,32 +362,55 @@ export class MetalClassificationComponent implements OnInit {
     const isMechanical = this.MetalClassificationForm.get('hasMechanicalParams')?.value;
     if (!isChemical && !isMechanical) {
       this.MetalClassificationForm.patchValue({ parameterIds: [] });
+      (this.MetalClassificationForm.get('parameters') as FormArray).clear();
     }
   }
 
   onParameterSelected(item: any[]) {
-    console.log("selected item", item);
-    const selectIds: number[] = [];
+    const selectIds: number[] = (item || [])
+      .map(x => x.id ?? x.ID ?? x.parameterID ?? x.ParameterID)
+      .filter((id: any) => id != null);
+    this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
+
     const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
     parameterArray.clear();
-    item.forEach((x) => {
-      selectIds.push(x.id);
+    selectIds.forEach((id) => {
       parameterArray.push(
         this.fb.group({
           MetalClassificationID: [this.MetalClassificationForm.get('id')?.value || 0],
-          ParameterID: [x.id],
+          ParameterID: [id],
         })
       );
-    })
-    this.MetalClassificationForm.patchValue({ parameterIds: selectIds });
+    });
   }
 
-  getParentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.metalclassificationService.getMetalClassificationDropdown(searchTerm, pageNo, pageSize);
-  };
+  onNameInput(): void {
+    const name = this.MetalClassificationForm.get('name')?.value;
+    if (!this.isCodeManuallyEdited || !this.MetalClassificationForm.get('code')?.value) {
+      const generatedCode = this.generateCodeFromName(name);
+      this.MetalClassificationForm.patchValue({ code: generatedCode });
+    }
+  }
 
-  openLinkedMaster(route: string): void {
-    window.open(route, '_blank');
+  autoGenerateCode(): void {
+    const name = this.MetalClassificationForm.get('name')?.value;
+    if (!name || !name.trim()) {
+      this.toastService.show('Please enter a Name first to generate Code.', 'warning');
+      return;
+    }
+    const generatedCode = this.generateCodeFromName(name);
+    this.MetalClassificationForm.patchValue({ code: generatedCode });
+  }
+
+  generateCodeFromName(name: string): string {
+    if (!name || !name.trim()) return '';
+    const words = name.trim().split(/[\s-]+/).filter(w => w.length > 0);
+    if (words.length > 1) {
+      return words.map(w => w[0]).join('').toUpperCase();
+    } else if (words.length === 1) {
+      return words[0].substring(0, 3).toUpperCase();
+    }
+    return '';
   }
 
   @HostListener('window:focus')
@@ -387,11 +425,22 @@ export class MetalClassificationComponent implements OnInit {
     }
     let formData = this.MetalClassificationForm.value;
     const hasParams = formData.hasChemicalParams || formData.hasMechanicalParams;
-    const parameterArray = this.MetalClassificationForm.get('parameters') as FormArray;
-    if (hasParams && parameterArray.length === 0) {
+    const selectedIds: number[] = this.MetalClassificationForm.get('parameterIds')?.value || [];
+
+    if (hasParams && selectedIds.length === 0) {
       this.toastService.show('Please select at least one parameter.', 'warning');
       return;
     }
+
+    if (hasParams && selectedIds.length > 0) {
+      formData.parameters = selectedIds.map((id: number) => ({
+        MetalClassificationID: formData.id || 0,
+        ParameterID: id,
+      }));
+    } else {
+      formData.parameters = [];
+    }
+
     if (this.isEditMode) {
       this.metalclassificationService.updateMetalClassification(formData).subscribe({
         next: (response) => {

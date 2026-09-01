@@ -40,8 +40,6 @@ import { MaterialSpecificationFormComponent } from './components/material-specif
 import { MaterialSpecificationListComponent } from './components/material-specification/material-specification-list/material-specification-list.component';
 import { CustomMaterialSpecificationListComponent } from './components/material-specification/custom-material-specification-list/custom-material-specification-list.component';
 import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
-import { ProductSpecificationComponent } from './components/product-specification/product-specification.component';
-import { CustomProductSpecificationComponent } from './components/product-specification/custom-product-specification/custom-product-specification.component';
 import { ToleranceMasterComponent } from './components/tolerance-master/tolerance-master.component';
 import { HardnessEquivalenceComponent } from './components/hardness-equivalence/hardness-equivalence.component';
 import { ParameterUnitComponent } from './components/parameter-unit/parameter-unit.component';
@@ -78,6 +76,7 @@ import { WorkflowListComponent } from './components/workflow/workflow-list/workf
 
 import { PlanListComponent } from './components/plan/plan-list/plan-list.component';
 import { ReviewOfRequestFormComponent } from './components/inward/review-of-request-form/review-of-request-form.component';
+import { CaseLifecycleWorkspaceComponent } from './components/inward/case-lifecycle-workspace/case-lifecycle-workspace.component';
 import { CuttingSamplesComponent } from './components/sample-prepration/cutting-samples/cutting-samples.component';
 import { TestResultComponent } from './components/TestResult/test-result/test-result.component';
 import { LongTermTrackingComponent } from './components/TestResult/long-term-tracking/long-term-tracking.component';
@@ -184,6 +183,7 @@ export const routes: Routes = [
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },
+            { path: 'analysis-technique', loadComponent: () => import('./components/analysis-technique/analysis-technique.component').then(m => m.AnalysisTechniqueComponent) },
             { path: 'tpi', component: TPIComponent },
             { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },
             { path: 'tpi-inspection/create', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-form/tpi-inspection-form.component').then(m => m.TpiInspectionFormComponent), canDeactivate: [unsavedChangesGuard] },
@@ -198,6 +198,10 @@ export const routes: Routes = [
             { path: 'product-condition-category', component: ProductConditionCategoryComponent },
             { path: 'property-type', component: PropertyTypeComponent },
             { path: 'product-condition', component: ProductConditionComponent },
+            { path: 'product-master', loadComponent: () => import('./components/product-master/product-master-list.component').then(m => m.ProductMasterListComponent) },
+            { path: 'product-master/create', loadComponent: () => import('./components/product-master/product-master-form.component').then(m => m.ProductMasterFormComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'product-master/edit/:id', loadComponent: () => import('./components/product-master/product-master-form.component').then(m => m.ProductMasterFormComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'product-master/details/:id', loadComponent: () => import('./components/product-master/product-master-form.component').then(m => m.ProductMasterFormComponent) },
             { path: 'specimen-orientation', component: SpecimenOrientationComponent },
             { path: 'chemical-parameter', component: ChemicalParameterComponent },
             { path: 'mechanical-parameter', component: MechanicalParameterComponent },
@@ -332,8 +336,6 @@ export const routes: Routes = [
             { path: 'custom-material-specification/create', component: CustomMaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'custom-material-specification/edit/:id', component: CustomMaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'custom-material-specification/details/:id', component: CustomMaterialSpecificationFormComponent },
-            { path: 'product-specification', component: ProductSpecificationComponent },
-            { path: 'custom-product-specification', component: CustomProductSpecificationComponent },
             { path: 'metal-classification', component: MetalClassificationComponent },
             { path: 'tolerance-master', component: ToleranceMasterComponent },
             { path: 'hardness-equivalence', component: HardnessEquivalenceComponent },
@@ -595,6 +597,7 @@ export const routes: Routes = [
 
             // Training Effectiveness Routes (F-10)
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
+            { path: 'specimen-preparation-master', loadComponent: () => import('./components/sample-prepration/machining-charge-master/machining-charge-master.component').then(m => m.MachiningChargeMasterComponent) },
             { path: 'machining-charge-master', loadComponent: () => import('./components/sample-prepration/machining-charge-master/machining-charge-master.component').then(m => m.MachiningChargeMasterComponent) },
             { path: 'sample-preparation-master', loadComponent: () => import('./components/sample-prepration/sample-preparation-master/sample-preparation-master.component').then(m => m.SamplePreparationMasterComponent) },
             { path: 'sample/prepration', component: CuttingSamplesComponent },
@@ -617,6 +620,7 @@ export const routes: Routes = [
             { path: 'sample/inward/create', component: SampleInwardFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'sample/inward/edit/:id', component: SampleInwardFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'sample/inward/details/:id', component: SampleInwardFormComponent },
+            { path: 'sample/case/:id', component: CaseLifecycleWorkspaceComponent },
             { path: 'profile', loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent) },
             { path: 'settings', component: SettingsComponent },
             { path: 'config', component: ConfigManagerComponent },
@@ -635,7 +639,7 @@ export const routes: Routes = [
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
-            { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            // { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
             { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },

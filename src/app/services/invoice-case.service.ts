@@ -35,8 +35,12 @@ export class InvoiceCaseService {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
-    getByLabTest(laboratoryTestId: number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/by-lab-test/${laboratoryTestId}`);
+    getByLabTest(laboratoryTestId: number, analysisTypeId?: number): Observable<any> {
+      let url = `${this.apiUrl}/by-lab-test/${laboratoryTestId}`;
+      if (analysisTypeId) {
+        url += `?analysisTypeId=${analysisTypeId}`;
+      }
+      return this.http.get<any>(url);
     }
 
     saveAll(payload: any): Observable<any> {

@@ -49,6 +49,10 @@ export class MaterialSpecificationService {
     return this.http.get<any>(`${this.apiUrl}/grade-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
+  getGradeDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+    return this.getMaterialSpecificationGradeDropdown(searchTerm, pageNumber, pageSize);
+  }
+
   getGradeDropdownByMetalId(searchTerm: string, pageNumber: number, pageSize: number, metalId: number = 0): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/grade-dropdown-metal-wise?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}&metalId=${metalId}`);
   }

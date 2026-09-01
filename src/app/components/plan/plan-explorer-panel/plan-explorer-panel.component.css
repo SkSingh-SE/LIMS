@@ -1,0 +1,142 @@
+/* ── Plan Explorer Modal Content CSS ── */
+.explorer-drawer {
+  width: 100%;
+  min-width: 100%;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+}
+
+.explorer-header {
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.explorer-body {
+  flex: 1;
+}
+
+.extra-small {
+  font-size: 0.74rem !important;
+}
+
+.min-w-0 {
+  min-width: 0 !important;
+}
+
+.explorer-pills .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  border-radius: 6px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.explorer-pills .nav-link.active {
+  background-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+}
+
+.grade-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 1.25rem !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden;
+}
+
+.grade-card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+}
+
+.grade-card.expanded {
+  border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 4px 16px rgba(218, 38, 28, 0.08) !important;
+}
+
+.grade-card-header {
+  padding: 0.75rem 1rem !important;
+  background-color: #ffffff;
+  transition: background-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+}
+
+.grade-card-header:hover {
+  background-color: #f8fafc;
+}
+
+.grade-card-body {
+  padding: 1.25rem 1.25rem 1.5rem !important;
+  background-color: #f8fafc;
+}
+
+.explorer-section-card {
+  padding: 1rem 1.15rem !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.test-item-row {
+  transition: all 0.15s ease;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px;
+  min-height: 36px;
+  padding: 0.4rem 0.75rem !important;
+}
+
+.test-item-row:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1 !important;
+}
+
+.chem-matrix-card {
+  margin-top: 1rem !important;
+  padding: 1rem 1.15rem !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.chem-element-chip {
+  padding: 0.35rem 0.65rem !important;
+  font-size: 0.73rem !important;
+  border-radius: 6px !important;
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+  transition: all 0.15s ease;
+}
+
+.chem-element-chip:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.btn-xs {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+}

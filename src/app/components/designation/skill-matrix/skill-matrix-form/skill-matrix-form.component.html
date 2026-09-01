@@ -22,7 +22,7 @@
             <div class="row gy-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <select class="form-select" formControlName="formatNo" [disabled]="isViewMode">
+                <select class="form-select" formControlName="formatNo">
                   <option value="" disabled>Select Form</option>
                   <option *ngFor="let form of formNumbers" [value]="form">{{ form }}</option>
                 </select>
@@ -37,19 +37,19 @@
               </div>
               <div class="col-md-2">
                 <label class="form-label">Issue No <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="issueNo" placeholder="e.g. 01" [disabled]="isViewMode" />
+                <input type="text" class="form-control" formControlName="issueNo" placeholder="e.g. 01" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" formControlName="date" [disabled]="isViewMode" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">Rev No <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" [disabled]="isViewMode" />
+                <input type="text" class="form-control" formControlName="revNo" placeholder="e.g. 00" />
               </div>
               <div class="col-md-12">
                 <label class="form-label">Decision <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="decision" placeholder="e.g. Approved" [disabled]="isViewMode" />
+                <input type="text" class="form-control" formControlName="decision" placeholder="e.g. Approved" />
               </div>
             </div>
           </div>
@@ -135,15 +135,15 @@
             <div class="row gy-3">
               <div class="col-md-4">
                 <label class="form-label">Prepared By (HR Manager)</label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" [disabled]="isViewMode" />
+                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" />
               </div>
               <div class="col-md-4">
                 <label class="form-label">Issued By (Quality Manager)</label>
-                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Name" [disabled]="isViewMode" />
+                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Name" />
               </div>
               <div class="col-md-4">
                 <label class="form-label">Reviewed & Approved By (Managing Director)</label>
-                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Name" [disabled]="isViewMode" />
+                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Name" />
               </div>
             </div>
           </div>

@@ -12,7 +12,7 @@
       <div #menuContainer class="menu-container">
         <div *ngFor="let menu of visibleMenuItems; let i = index" #menuItem class="menu-item header-font"
           (click)="openSubMenu(menu)" [ngClass]="{ active: activeMenu() === menu.title }">
-          <div class="d-flex gap-2 align-items-center">
+          <div class="d-flex align-items-center">
             <i class="bi" [class]="menu.icon"></i>
             <span class="">{{ menu.title }}</span>
           </div>
@@ -34,67 +34,103 @@
       <app-notification-bell></app-notification-bell>
       <!-- User Profile Dropdown -->
       <div class="me-2 user-dropdown-wrapper">
-        <button class="btn user-avatar-btn border-0 p-0 d-flex align-items-center gap-2" type="button" id="userDropdown"
+        <button class="btn user-avatar-btn border-0 d-flex align-items-center gap-2" type="button" id="userDropdown"
           data-bs-toggle="dropdown" aria-expanded="false">
           <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" />
           <div *ngIf="!profileImageUrl" class="user-initials-circle">{{ loggedInUserInitials }}</div>
-          <div class="user-name-display d-none d-lg-flex flex-column align-items-start">
+          <div class="user-name-display d-none d-lg-flex flex-column align-items-start text-start">
             <span class="user-display-name">{{ loggedInUserName }}</span>
             <span class="user-display-role">
               {{ loggedInUserRole }} <span class="role-branch-sep">·</span>
               <i class="bi bi-building"></i> {{ selectedBranch().name }}
             </span>
           </div>
-          <i class="bi bi-chevron-down text-white" style="font-size: 10px;"></i>
+          <i class="bi bi-chevron-down text-white user-chevron ms-1"></i>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end mt-2 p-0 shadow user-profile-menu" aria-labelledby="userDropdown">
-          <!-- Header -->
-          <li class="user-menu-header px-3 py-2">
-            <div class="d-flex align-items-center gap-2">
-              <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle-lg" alt="Profile" />
-              <div *ngIf="!profileImageUrl" class="user-initials-circle-lg">{{ loggedInUserInitials }}</div>
-              <div>
-                <div class="user-menu-name">{{ loggedInUserName }}</div>
-                <div class="user-menu-role">{{ loggedInUserRole }}</div>
+
+        <div class="dropdown-menu dropdown-menu-end mt-2 p-0 shadow-lg user-profile-menu" aria-labelledby="userDropdown">
+          <!-- Header: User Summary -->
+          <div class="user-menu-header p-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="position-relative flex-shrink-0">
+                <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle-lg" alt="Profile" />
+                <div *ngIf="!profileImageUrl" class="user-initials-circle-lg">{{ loggedInUserInitials }}</div>
+                <span class="status-indicator-dot online" title="Active Session"></span>
+              </div>
+              <div class="user-info-text min-w-0">
+                <div class="user-menu-name text-truncate" [title]="loggedInUserName">{{ loggedInUserName }}</div>
+                <div class="d-flex align-items-center gap-1.5 mt-1">
+                  <span class="badge user-role-badge">{{ loggedInUserRole || 'Staff' }}</span>
+                  <span *ngIf="loggedInIsAdmin" class="badge bg-warning text-dark extra-small py-0.5 px-1.5 rounded-pill">Admin</span>
+                </div>
+                <div *ngIf="loggedInEmail" class="user-menu-email text-muted extra-small text-truncate mt-1" [title]="loggedInEmail">
+                  <i class="bi bi-envelope me-1"></i>{{ loggedInEmail }}
+                </div>
               </div>
             </div>
-          </li>
-          <li><hr class="dropdown-divider my-1" /></li>
-          <!-- Branch Switcher (demo, UI-only) -->
-          <li class="branch-section-label px-3 pt-1 pb-1">
-            <i class="bi bi-diagram-3 me-2"></i>Switch Branch
-          </li>
-          <li class="px-1 pb-1" *ngFor="let branch of branches">
-            <a
-              class="dropdown-item rounded d-flex align-items-center justify-content-between"
-              style="cursor: pointer"
-              (click)="selectBranch(branch)"
-            >
-              <span class="d-flex flex-column">
-                <span class="branch-item-name">{{ branch.name }}</span>
-                <span class="branch-item-loc">{{ branch.location }}</span>
-              </span>
-              <i class="bi bi-check-lg text-success" *ngIf="branch.code === selectedBranch().code"></i>
+          </div>
+
+          <div class="user-menu-divider"></div>
+
+          <!-- Branch Switcher -->
+          <div class="px-3 pt-2 pb-1" *ngIf="branches && branches.length > 0">
+            <span class="text-muted extra-small fw-semibold text-uppercase d-flex align-items-center gap-1.5">
+              <i class="bi bi-diagram-3"></i> Switch Branch
+            </span>
+          </div>
+          <div class="user-menu-body px-1.5 pb-1" *ngIf="branches && branches.length > 0">
+            <a *ngFor="let branch of branches"
+              class="dropdown-item user-menu-item rounded-3 d-flex align-items-center justify-content-between py-1.5 px-2.5"
+              role="button"
+              (click)="selectBranch(branch)">
+              <div class="d-flex flex-column">
+                <span class="user-item-title">{{ branch.name }}</span>
+                <span class="user-item-desc text-muted extra-small">{{ branch.location }}</span>
+              </div>
+              <i class="bi bi-check-lg text-success fw-bold" *ngIf="branch.code === selectedBranch().code"></i>
             </a>
-          </li>
-          <li><hr class="dropdown-divider my-1" /></li>
-          <li class="px-1 pb-1">
-            <a class="dropdown-item rounded" style="cursor:pointer" (click)="openProfile()">
-              <i class="bi bi-person-circle me-2"></i>Profile
+          </div>
+
+          <div class="user-menu-divider"></div>
+
+          <!-- Action Items -->
+          <div class="user-menu-body p-1.5">
+            <a class="dropdown-item user-menu-item rounded-3 d-flex align-items-center gap-2.5 py-2 px-2.5" role="button" (click)="openProfile()">
+              <div class="user-menu-icon-box icon-profile">
+                <i class="bi bi-person-circle"></i>
+              </div>
+              <div class="d-flex flex-column">
+                <span class="user-item-title">Profile</span>
+                <span class="user-item-desc text-muted extra-small">View account & customize avatar</span>
+              </div>
             </a>
-            <a class="dropdown-item rounded" routerLink="/settings">
-              <i class="bi bi-gear me-2"></i>Settings
+
+            <a class="dropdown-item user-menu-item rounded-3 d-flex align-items-center gap-2.5 py-2 px-2.5" routerLink="/settings">
+              <div class="user-menu-icon-box icon-settings">
+                <i class="bi bi-gear-fill"></i>
+              </div>
+              <div class="d-flex flex-column">
+                <span class="user-item-title">Settings</span>
+                <span class="user-item-desc text-muted extra-small">Preferences & appearance</span>
+              </div>
             </a>
-          </li>
-          <li>
-            <hr class="dropdown-divider my-1" />
-          </li>
-          <li class="px-1 pb-1">
-            <a class="dropdown-item rounded text-danger cursor-pointer" role="button" (click)="logout()">
-              <i class="bi bi-box-arrow-right me-2"></i>Logout
+          </div>
+
+          <div class="user-menu-divider"></div>
+
+          <!-- Footer: Logout -->
+          <div class="user-menu-footer p-1.5">
+            <a class="dropdown-item user-menu-item user-menu-logout rounded-3 d-flex align-items-center gap-2.5 py-2 px-2.5 text-danger" role="button" (click)="logout()">
+              <div class="user-menu-icon-box icon-logout">
+                <i class="bi bi-box-arrow-right"></i>
+              </div>
+              <div class="d-flex flex-column">
+                <span class="user-item-title fw-semibold">Logout</span>
+                <span class="user-item-desc text-muted extra-small">Sign out of laboratory portal</span>
+              </div>
             </a>
-          </li>
-        </ul>
+          </div>
+        </div>
       </div>
     </div>
 

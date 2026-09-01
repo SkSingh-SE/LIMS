@@ -11,7 +11,7 @@
 }
 
 .rh-title-bar {
-  background: linear-gradient(90deg, #ff2c1f 0%, #da271c 100%);
+  background: linear-gradient(90deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%) !important;
   color: white;
   padding: 0.65rem 1.25rem;
   display: flex;

@@ -36,8 +36,9 @@ export class TestMethodSpecificationService {
     }
 
 
-    getTestMethodSpecificationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    getTestMethodSpecificationDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+      const term = searchTerm && searchTerm !== 'undefined' && searchTerm !== 'null' ? encodeURIComponent(searchTerm) : '';
+      return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
     getTestMethodSpecificationDropdownByStandard(standardId:number): Observable<any> {
@@ -58,6 +59,22 @@ export class TestMethodSpecificationService {
 
     getVersionsDropdown(specId: number, includeAll: boolean = false): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/${specId}/versions/dropdown?includeAll=${includeAll}`);
+    }
+
+    getTestMethodSpecificationVersionDropdown(searchTerm: string, pageNumber: number, pageSize: number, metalId: number = 0): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/versions/dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}&metalId=${metalId}`);
+    }
+
+    validateImport(items: any[]): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/validate-import`, { items });
+    }
+
+    bulkImport(items: any[]): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/bulk-import`, { items });
+    }
+
+    getStandardOrganizations(): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/standard-organizations`);
     }
 
 }

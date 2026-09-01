@@ -19,12 +19,14 @@ export class InvoiceCaseListComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'financialYear', type: 'string', label: 'Financial Year', filter: true },
     { key: 'laboratoryTest', type: 'string', label: 'Sub Group Test', filter: true },
+    { key: 'analysisTypeName', type: 'string', label: 'Analysis Type', filter: true },
     { key: 'tierCount', type: 'number', label: 'Tiers', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     financialYear: 'string',
     laboratoryTest: 'string',
+    analysisTypeName: 'string',
     tierCount: 'number',
     modifiedOn: 'date',
   };

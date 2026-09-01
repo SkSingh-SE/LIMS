@@ -89,7 +89,13 @@
                             <td>{{ data.contactNo1 }}</td>
                             <td>{{data.emailId1}}</td>
                             <td>{{data.address}}</td>
-                            <td>{{ data.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
+                            <td>
+                                <div class="cell-audit" [title]="'Modified by ' + (data.modifiedByName || data.createdByName || '-') + ' on ' + ((data.modifiedOn || data.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                                    <span class="cell-audit-name">{{ data.modifiedByName || data.createdByName || '-' }}</span>
+                                    <span class="cell-audit-time">· {{ (data.modifiedOn || data.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

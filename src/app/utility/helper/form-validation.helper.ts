@@ -4,7 +4,7 @@ export class FormValidationHelper {
   static isFieldInvalid(form: FormGroup, path: string, submitted = false): boolean {
     const control = form.get(path);
     if (!control || control.disabled) return false;
-    return control.invalid && (control.touched || submitted);
+    return control.invalid && (control.touched || control.dirty || submitted);
   }
 
   static getFieldError(control: AbstractControl | null, label = 'This field'): string | null {

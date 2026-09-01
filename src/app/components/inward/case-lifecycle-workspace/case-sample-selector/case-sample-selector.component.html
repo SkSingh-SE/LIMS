@@ -1,0 +1,127 @@
+<div class="sample-selector-card">
+  
+  <!-- Table Header Bar -->
+  <div class="sample-selector-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <span class="sample-selector-title">
+          <i class="bi bi-diagram-3-fill text-danger me-1.5"></i> Sample Lifecycle Progress Matrix
+        </span>
+        <span class="badge bg-secondary-subtle text-secondary border fs-8">{{ samples.length }} Samples</span>
+      </div>
+      <span class="text-muted fs-8">Click any action to jump straight into that stage workspace</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ MATRIX TABLE ═══════════════════════ -->
+  <div class="table-responsive">
+    <table class="table table-sm table-hover sample-selector-table mb-0">
+      <thead>
+        <tr>
+          <th style="min-width: 170px;">Sample / Material</th>
+          <th class="text-center" style="width: 100px;">1. Inward</th>
+          <th class="text-center" style="width: 130px;">2. Review & Plan</th>
+          <th class="text-center" style="width: 100px;">3. Prep</th>
+          <th class="text-center" style="width: 110px;">4. Testing</th>
+          <th class="text-center" style="width: 110px;">5. Reporting</th>
+          <th class="text-end" style="width: 130px;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sample of samples"
+            [class.row-selected]="sample.sampleId === selectedSampleId"
+            [class.row-cancelled]="sample.isCancelled">
+          
+          <!-- Sample No & Material Spec -->
+          <td>
+            <div class="d-flex align-items-center gap-1.5">
+              <i class="bi bi-box-seam text-danger" *ngIf="!sample.isCancelled"></i>
+              <i class="bi bi-x-circle text-danger" *ngIf="sample.isCancelled"></i>
+              <span class="fw-bold text-dark fs-7.5">{{ sample.sampleNo }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-1 mt-0.5">
+              <span class="text-dark fw-medium fs-8 text-truncate" style="max-width: 130px;" [title]="sample.productName">
+                {{ sample.productName || 'Sample' }}
+              </span>
+              <span class="badge bg-light text-secondary border fs-8.5" *ngIf="sample.gradeName" [title]="sample.gradeName">
+                {{ sample.gradeName }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Stage 1: Inward -->
+          <td class="text-center">
+            <span class="matrix-pill" [ngClass]="getInwardStageInfo(sample).class">
+              <i class="bi" [ngClass]="getInwardStageInfo(sample).icon"></i>
+              <span>{{ getInwardStageInfo(sample).label }}</span>
+            </span>
+          </td>
+
+          <!-- Stage 2: Review & Plan -->
+          <td class="text-center">
+            <span class="matrix-pill" [ngClass]="getReviewPlanStageInfo(sample).class">
+              <i class="bi" [ngClass]="getReviewPlanStageInfo(sample).icon"></i>
+              <span>{{ getReviewPlanStageInfo(sample).label }}</span>
+            </span>
+            <div class="d-flex justify-content-center gap-1 mt-0.5" *ngIf="sample.generalTestCount || sample.chemicalTestCount">
+              <span class="badge-mini bg-primary-subtle text-primary border" [title]="sample.generalTestCount + ' General Tests'">
+                <i class="bi bi-gear me-0.5"></i>{{ sample.generalTestCount }}
+              </span>
+              <span class="badge-mini bg-success-subtle text-success border" [title]="sample.chemicalTestCount + ' Chemical Tests'">
+                <i class="bi bi-flask me-0.5"></i>{{ sample.chemicalTestCount }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Stage 3: Preparation -->
+          <td class="text-center">
+            <span class="matrix-pill" [ngClass]="getPrepStageInfo(sample).class">
+              <i class="bi" [ngClass]="getPrepStageInfo(sample).icon"></i>
+              <span>{{ getPrepStageInfo(sample).label }}</span>
+            </span>
+          </td>
+
+          <!-- Stage 4: Testing -->
+          <td class="text-center">
+            <span class="matrix-pill" [ngClass]="getTestingStageInfo(sample).class">
+              <i class="bi" [ngClass]="getTestingStageInfo(sample).icon"></i>
+              <span>{{ getTestingStageInfo(sample).label }}</span>
+            </span>
+          </td>
+
+          <!-- Stage 5: Reporting -->
+          <td class="text-center">
+            <span class="matrix-pill" [ngClass]="getReportingStageInfo(sample).class">
+              <i class="bi" [ngClass]="getReportingStageInfo(sample).icon"></i>
+              <span>{{ getReportingStageInfo(sample).label }}</span>
+            </span>
+            <div class="text-muted fs-8.5 mt-0.5 text-truncate" *ngIf="sample.reportNo" [title]="sample.reportNo">
+              {{ sample.reportNo }}
+            </div>
+          </td>
+
+          <!-- Action Button -->
+          <td class="text-end">
+            <button
+              type="button"
+              class="btn-action-trigger"
+              [class.btn-action-active]="sample.sampleId === selectedSampleId"
+              [disabled]="sample.isCancelled"
+              (click)="onTriggerAction(sample.sampleId, getDirectAction(sample).action)">
+              <i class="bi" [ngClass]="getDirectAction(sample).icon"></i>
+              <span>{{ getDirectAction(sample).label }}</span>
+            </button>
+          </td>
+
+        </tr>
+
+        <tr *ngIf="!samples || samples.length === 0">
+          <td colspan="7" class="text-center py-4 text-muted fs-7">
+            <i class="bi bi-inbox me-1.5"></i> No sample details registered for this case.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

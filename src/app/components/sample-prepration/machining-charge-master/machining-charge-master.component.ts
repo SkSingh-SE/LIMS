@@ -30,7 +30,7 @@ export class MachiningChargeMasterComponent implements OnInit {
     { key: 'specimenSize', type: 'string', label: 'Specimen Size', filter: true },
     { key: 'specimenRawMaterialSize', type: 'string', label: 'Raw Material Size', filter: true },
     { key: 'laboratoryTestName', type: 'string', label: 'Laboratory Test', filter: true },
-    { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Standard', filter: true },
+    { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Specification', filter: true },
     // { key: 'currentPriceGeneralMetal', type: 'number', label: 'Normal Price (₹)', filter: false },
     // { key: 'currentPriceHardMetal', type: 'number', label: 'Hard Price (₹)', filter: false },
     { key: 'versionCount', type: 'number', label: 'Years', filter: false },
@@ -73,7 +73,7 @@ export class MachiningChargeMasterComponent implements OnInit {
   isEditMode = false;
   isViewMode = true;
   recordId = 0;
-  formTitle = 'Machining Charge Master Form';
+  formTitle = 'Specimen Preparation Master Form';
 
   selectedLabTestId = 0;
   selectedStandardId = 0;
@@ -355,21 +355,21 @@ export class MachiningChargeMasterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Machining Charge Master Form';
+      this.formTitle = 'Specimen Preparation Master Form';
       this.versions.push(this.createVersionGroup());
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Machining Charge Master Form';
+      this.formTitle = 'Specimen Preparation Master Form';
       this.getDetails();
     } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Machining Charge Master';
+      this.formTitle = 'View Specimen Preparation Master';
       this.getDetails();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 
@@ -382,11 +382,12 @@ export class MachiningChargeMasterComponent implements OnInit {
   }
 
   getLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+    return this.laboratoryTestService.getUnifiedTestMethodDropdown(term, page, pageSize);
   };
 
   onLaboratoryTestSelected(item: any): void {
-    this.form.patchValue({ laboratoryTestID: item?.id || null });
+    const labTestId = item?.id || item?.additionalValues?.['testId'] || item?.additionalValues?.['masterTestId'] || null;
+    this.form.patchValue({ laboratoryTestID: labTestId });
     this.selectedLabTestId = item?.id || 0;
   }
 
@@ -395,7 +396,8 @@ export class MachiningChargeMasterComponent implements OnInit {
   };
 
   onTestMethodSpecificationSelected(item: any): void {
-    this.form.patchValue({ testMethodStandardID: item?.id || null });
+    const specId = item?.additionalValues?.['testMethodSpecificationId'] || item?.id || null;
+    this.form.patchValue({ testMethodStandardID: specId });
     this.selectedStandardId = item?.id || 0;
   }
 

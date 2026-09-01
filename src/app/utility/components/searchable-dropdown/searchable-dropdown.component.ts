@@ -51,8 +51,8 @@ export class SearchableDropdownComponent {
         debounceTime(300),
         switchMap(term => {
           this.pageNo = 0;
-          this.dropdownData = [];
           this.loading = true;
+          this.syncLoadingToPanel();
           return this.fetchDataFn(term, this.pageNo, this.pageSize);
         })
       )
@@ -62,12 +62,14 @@ export class SearchableDropdownComponent {
           this.hasMore = (data as any[]).length === this.pageSize;
           this.pageNo++;
           this.loading = false;
-          this.highlightedIndex = this.dropdownData.length > 0 ? 0 : -1;
+          const firstSelectable = this.dropdownData.findIndex(x => x && !x.isHeader && x.selectable !== false);
+          this.highlightedIndex = firstSelectable >= 0 ? firstSelectable : (this.dropdownData.length > 0 ? 0 : -1);
           this.cdr.markForCheck();
           this.openDropdownPanel();
         },
         error: () => {
           this.loading = false;
+          this.syncLoadingToPanel();
           this.cdr.markForCheck();
         },
       });
@@ -76,40 +78,53 @@ export class SearchableDropdownComponent {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    const isFocused = typeof document !== 'undefined' && document.activeElement === this.inputRef?.nativeElement;
+
     if (changes['selectedItem']) {
       const val = changes['selectedItem'].currentValue;
       if (!val && val !== 0) {
-        this.selectedLabel = '';
-        this.searchTerm = '';
-        this.hasValidSelection = false;
+        if (!isFocused) {
+          this.selectedLabel = '';
+          this.searchTerm = '';
+          this.hasValidSelection = false;
+          this.dropdownData = [];
+          this.pageNo = 0;
+          this.hasMore = true;
+          this.closeDropdown();
+        }
+        this.cdr.markForCheck();
         return;
       }
-      const matched = this.dropdownData.find(x => +x.id === +(typeof val === 'object' ? val?.id : val));
-      if (matched) {
-        if (this.selectedLabel.length === 0) {
-          this.selectedLabel = matched.name;
-          this.hasValidSelection = true;
-          this.selectItem(matched);
-        }
-      } else if (typeof val === 'object' && val !== null && val.id !== undefined) {
+
+      const rawId = typeof val === 'object' && val !== null ? val.id : val;
+
+      if (typeof val === 'object' && val !== null && val.id !== undefined) {
         // Full object passed — use directly for rebind
-        this.selectedLabel = val.name ?? val.label ?? String(val.id);
+        this.selectedLabel = val.additionalValues?.['fullDisplayName'] || (val.name ?? val.label ?? String(val.id));
         this.hasValidSelection = true;
-        this.dropdownData = [val, ...this.dropdownData];
+        this.dropdownData = [val, ...this.dropdownData.filter(x => x && x.id !== val.id)];
         this.cdr.markForCheck();
-      } else {
+        return;
+      }
+
+      // Check if item is already in dropdownData (match by ID or by additionalValues master/subgroup ID)
+      const matched = this.dropdownData.find(x => x && !x.isHeader && x.selectable !== false && 
+        (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
+      if (matched) {
+        this.selectedLabel = matched.additionalValues?.['fullDisplayName'] || matched.name;
+        this.hasValidSelection = true;
+        this.cdr.markForCheck();
+      } else if (rawId && this.fetchDataFn) {
         // Only ID passed — search by ID string (backend supports numeric ID lookup)
-        const idToFind = typeof val === 'object' ? val?.id : val;
-        this.fetchDataFn(String(idToFind), 0, 20).subscribe({
+        this.fetchDataFn(String(rawId), 0, 20).subscribe({
           next: (data: any[]) => {
-            // Use loose equality to handle number/string mismatch
-            const found = data.find(x => +x.id === +idToFind);
+            const found = (data || []).find(x => x && !x.isHeader && x.selectable !== false && 
+              (+x.id === +rawId || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
             if (found) {
-              this.dropdownData = [found, ...this.dropdownData.filter(x => x.id !== found.id)];
-              this.selectedLabel = found.name;
+              this.dropdownData = [found, ...this.dropdownData.filter(x => x && x.id !== found.id)];
+              this.selectedLabel = found.additionalValues?.['fullDisplayName'] || found.name;
               this.hasValidSelection = true;
               this.cdr.markForCheck();
-              this.selectItem(found);
             }
           },
           error: () => {
@@ -119,11 +134,20 @@ export class SearchableDropdownComponent {
       }
     }
 
-    // Reload dropdown data when reloadKey changes
+    // When reloadKey changes (e.g. switching between different samples or table rows)
     if (changes['reloadKey'] && !changes['reloadKey'].firstChange) {
-      this.dropdownData = [];
-      this.pageNo = 0;
-      this.hasMore = true;
+      if (!isFocused) {
+        this.dropdownData = [];
+        this.pageNo = 0;
+        this.hasMore = true;
+        this.closeDropdown();
+        if (!this.selectedItem && this.selectedItem !== 0) {
+          this.selectedLabel = '';
+          this.searchTerm = '';
+          this.hasValidSelection = false;
+        }
+      }
+      this.cdr.markForCheck();
     }
   }
 
@@ -133,43 +157,39 @@ export class SearchableDropdownComponent {
     if (this.hasValidSelection) {
       this.hasValidSelection = false;
       this.selectedItem = null;
-      this.dropdownData = [];
       this.pageNo = 0;
       this.hasMore = true;
       this.itemSelected.emit(null);
-      this.cdr.markForCheck();
     }
-    // Debounce only when user is actively typing a search term
-    // Skip debounce on empty (backspace clear) — load immediately
-    if (!this.searchTerm) {
-      this.loadInitialData();
-    } else {
-      this.searchSubject.next(this.searchTerm);
-    }
+    this.openDropdownPanel();
+    this.searchSubject.next(this.searchTerm);
+    this.cdr.markForCheck();
   }
 
   onFocus(): void {
-    // Always load and open dropdown on focus
-    if (this.dropdownData.length > 0) {
-      this.openDropdownPanel();
-    } else {
+    if (this.isDisabled) return;
+    if (!this.dropdownData.length || !this.hasValidSelection) {
       this.loadInitialData();
+    } else {
+      this.openDropdownPanel();
     }
   }
 
-  /** Load data for first open / chevron click */
-  private loadInitialData(): void {
-    if (this.loading) return;
+  loadInitialData(): void {
+    if (!this.fetchDataFn) return;
     this.loading = true;
     this.pageNo = 0;
-    this.dropdownData = [];
-    this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe({
+    this.searchTerm = '';
+    this.syncLoadingToPanel();
+
+    this.fetchDataFn('', this.pageNo, this.pageSize).subscribe({
       next: (data: any[]) => {
-        this.dropdownData = data;
-        this.hasMore = data.length === this.pageSize;
+        this.dropdownData = data || [];
+        this.hasMore = (data || []).length === this.pageSize;
         this.pageNo++;
         this.loading = false;
-        this.highlightedIndex = data.length > 0 ? 0 : -1;
+        const firstSelectable = this.dropdownData.findIndex(x => x && !x.isHeader && x.selectable !== false);
+        this.highlightedIndex = firstSelectable >= 0 ? firstSelectable : (this.dropdownData.length > 0 ? 0 : -1);
         this.cdr.markForCheck();
         this.openDropdownPanel();
       },
@@ -186,45 +206,49 @@ export class SearchableDropdownComponent {
       this.closeDropdown();
       return;
     }
-    // Focus the input so keyboard works
     this.inputRef?.nativeElement?.focus();
-    if (this.dropdownData.length > 0) {
-      this.openDropdownPanel();
-    } else {
-      this.loadInitialData();
-    }
+    this.onFocus();
   }
 
   openDropdownPanel(): void {
-    if (!this.inputRef) return;
-    const inputRect = this.inputRef.nativeElement.getBoundingClientRect();
-    const inputWidth = Math.round(inputRect.width);
-
-    const positionStrategy = this.overlay
-      .position()
-      .flexibleConnectedTo(this.inputRef.nativeElement)
-      .withPositions([
-        { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-        { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
-      ])
-      .withFlexibleDimensions(false)
-      .withPush(false);
-
     if (!this.overlayRef) {
+      const positionStrategy = this.overlay
+        .position()
+        .flexibleConnectedTo(this.inputRef)
+        .withPositions([
+          {
+            originX: 'start',
+            originY: 'bottom',
+            overlayX: 'start',
+            overlayY: 'top',
+            offsetY: 4,
+          },
+          {
+            originX: 'start',
+            originY: 'top',
+            overlayX: 'start',
+            overlayY: 'bottom',
+            offsetY: -4,
+          },
+        ])
+        .withFlexibleDimensions(false)
+        .withPush(false);
+
+      const inputWidth = this.inputRef.nativeElement.getBoundingClientRect().width;
+
       this.overlayRef = this.overlay.create({
         positionStrategy,
-        scrollStrategy: this.overlay.scrollStrategies.reposition(),
         hasBackdrop: false,
-        width: inputWidth + 40,
-        panelClass: 'dropdown-panel',
+        width: Math.max(inputWidth, 240),
+        scrollStrategy: this.overlay.scrollStrategies.reposition(),
       });
     }
 
     if (!this.overlayRef.hasAttached()) {
-      const dropdownPortal = new ComponentPortal(DropdownPanelComponent, this.vcr);
-      this.dropdownComponentRef = this.overlayRef.attach(dropdownPortal);
+      const portal = new ComponentPortal(DropdownPanelComponent, this.vcr);
+      this.dropdownComponentRef = this.overlayRef.attach(portal);
       this.dropdownComponentRef.instance.items = this.dropdownData;
-      this.dropdownComponentRef.instance.selectedItemId = this.selectedItem;
+      this.dropdownComponentRef.instance.selectedItemId = this.selectedItem?.id ?? this.selectedItem;
       this.dropdownComponentRef.instance.highlightedIndex = this.highlightedIndex;
       this.dropdownComponentRef.instance.loading = this.loading;
 
@@ -238,20 +262,12 @@ export class SearchableDropdownComponent {
 
       setTimeout(() => {
         document.addEventListener('click', this.handleOutsideClick, true);
-        // Scroll to highlighted item on first open
-        if (this.highlightedIndex >= 0) {
-          this.dropdownComponentRef.instance.scrollToHighlightedItem();
-        }
       });
     } else {
       this.dropdownComponentRef.instance.items = this.dropdownData;
       this.dropdownComponentRef.instance.highlightedIndex = this.highlightedIndex;
       this.dropdownComponentRef.instance.loading = this.loading;
       this.dropdownComponentRef.changeDetectorRef.detectChanges();
-      // Scroll first item into view after search results load
-      if (this.highlightedIndex >= 0) {
-        this.dropdownComponentRef.instance.scrollToHighlightedItem();
-      }
     }
   }
 
@@ -268,9 +284,14 @@ export class SearchableDropdownComponent {
   };
 
   selectItem(item: any): void {
-    this.selectedLabel = item.name;
+    if (!item || item.isHeader || item.selectable === false) return;
+    this.selectedLabel = item.additionalValues?.['fullDisplayName'] || item.name;
     this.searchTerm = '';
     this.hasValidSelection = true;
+    this.selectedItem = item;
+    this.dropdownData = [];
+    this.pageNo = 0;
+    this.hasMore = true;
     this.itemSelected.emit(item);
     this.closeDropdown();
     this.cdr.markForCheck();
@@ -291,7 +312,6 @@ export class SearchableDropdownComponent {
   }
 
   onBlur(): void {
-    // If user typed text but never selected a valid item, revert
     if (!this.hasValidSelection && this.selectedLabel) {
       this.selectedLabel = '';
       this.searchTerm = '';
@@ -337,6 +357,20 @@ export class SearchableDropdownComponent {
     this.highlightedIndex = -1;
   }
 
+  private getNextSelectableIndex(currentIndex: number, direction: 1 | -1): number {
+    const len = this.dropdownData.length;
+    if (!len) return -1;
+    let nextIndex = currentIndex;
+    for (let i = 0; i < len; i++) {
+      nextIndex = (nextIndex + direction + len) % len;
+      const item = this.dropdownData[nextIndex];
+      if (item && !item.isHeader && item.selectable !== false) {
+        return nextIndex;
+      }
+    }
+    return currentIndex;
+  }
+
   handleKeydown(event: KeyboardEvent): void {
     const isOpen = this.overlayRef?.hasAttached();
     const itemsLength = this.dropdownData.length;
@@ -345,26 +379,28 @@ export class SearchableDropdownComponent {
       case 'ArrowDown':
         event.preventDefault();
         if (!isOpen) {
-          // Open dropdown on arrow down when closed
           this.onFocus();
           return;
         }
         if (!itemsLength) return;
-        this.highlightedIndex = (this.highlightedIndex + 1) % itemsLength;
+        this.highlightedIndex = this.getNextSelectableIndex(this.highlightedIndex, 1);
         this.syncHighlightToPanel();
         break;
 
       case 'ArrowUp':
         event.preventDefault();
         if (!isOpen || !itemsLength) return;
-        this.highlightedIndex = (this.highlightedIndex - 1 + itemsLength) % itemsLength;
+        this.highlightedIndex = this.getNextSelectableIndex(this.highlightedIndex, -1);
         this.syncHighlightToPanel();
         break;
 
       case 'Enter':
         event.preventDefault();
         if (isOpen && this.highlightedIndex >= 0 && this.highlightedIndex < itemsLength) {
-          this.selectItem(this.dropdownData[this.highlightedIndex]);
+          const item = this.dropdownData[this.highlightedIndex];
+          if (item && !item.isHeader && item.selectable !== false) {
+            this.selectItem(item);
+          }
         }
         break;
 
@@ -383,7 +419,6 @@ export class SearchableDropdownComponent {
     }
   }
 
-  /** Push highlight index to panel and trigger scroll + change detection */
   private syncHighlightToPanel(): void {
     if (!this.dropdownComponentRef) return;
     this.dropdownComponentRef.instance.highlightedIndex = this.highlightedIndex;

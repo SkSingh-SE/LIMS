@@ -28,6 +28,13 @@ if (-not (Test-Path $MSDeployPath)) {
 
 $SourcePath = Join-Path $PSScriptRoot "dist\lims\browser"
 
+# Ensure IIS web.config is present in deploy directory
+$WebConfigSrc = Join-Path $PSScriptRoot "public\web.config"
+$WebConfigDst = Join-Path $SourcePath "web.config"
+if (Test-Path $WebConfigSrc) {
+    Copy-Item $WebConfigSrc $WebConfigDst -Force
+}
+
 & $MSDeployPath -verb:sync `
     -source:contentPath="$SourcePath" `
     -dest:contentPath="dmspl91-001-site5",wmsvc="https://win6046.site4now.net:8172/MsDeploy.axd?site=dmspl91-001-site5",userName="dmspl91-001",password="$Password",authtype="Basic" `

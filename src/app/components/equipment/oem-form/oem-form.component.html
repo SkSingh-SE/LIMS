@@ -23,7 +23,7 @@
                 
                 <!--Agreement File Path-->
                 <div>
-                    <label class="form-label">Agreement File <span class="text-danger">*</span></label>
+                    <label class="form-label">Agreement File</label>
                     <ng-container *ngIf="OEMForm.get('agreementFilePath')?.value || OEMForm.get('fileName')?.value; else uploadField">
                         <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                             <span class="text-truncate me-2" type="button"
@@ -43,39 +43,32 @@
                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                             [disabled]="isViewMode" (change)="onFileChange($event)" />
                     </ng-template>
-                    <div *ngIf="OEMForm.get('fileName')?.touched && OEMForm.get('fileName')?.invalid"
-                        class="text-danger text-sm">Agreement File is required.</div>
                 </div>
                 <!--Contact Person 1-->
                 <div>
-                    <label class="form-label">Contact Person 1 <span class="text-danger">*</span></label>
+                    <label class="form-label">Contact Person 1</label>
                     <input type="text" class="form-control" formControlName="contactPerson1"
-                        placeholder="Enter Contact Person 1" maxlength="100"
-                        [ngClass]="{ 'is-invalid': OEMForm.get('contactPerson1')?.touched && OEMForm.get('contactPerson1')?.invalid }" />
-                    <div *ngIf="OEMForm.get('contactPerson1')?.touched && OEMForm.get('contactPerson1')?.invalid"
-                        class="text-danger text-sm">Contact Person 1 is required.</div>
+                        placeholder="Enter Contact Person 1" maxlength="100" />
                 </div>
                 <!--Contact No 1-->
                 <div>
-                    <label class="form-label">Contact No 1 <span class="text-danger">*</span></label>
+                    <label class="form-label">Contact No 1</label>
                     <input type="text" class="form-control" formControlName="contactNo1"
                         placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
                         (blur)="checkPhoneNumber($event)"
                         [ngClass]="{ 'is-invalid': OEMForm.get('contactNo1')?.touched && OEMForm.get('contactNo1')?.invalid }" />
-                    <span *ngIf="OEMForm.get('contactNo1')?.hasError('required') && OEMForm.get('contactNo1')?.touched"
-                        class="text-danger text-sm">Contact No 1 is required.</span>
-                    <span *ngIf="OEMForm.get('contactNo1')?.hasError('pattern') && !OEMForm.get('contactNo1')?.hasError('required') && OEMForm.get('contactNo1')?.touched"
+                    <span *ngIf="OEMForm.get('contactNo1')?.hasError('pattern') && OEMForm.get('contactNo1')?.touched"
                         class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 1-->
                 <div>
-                    <label class="form-label">Email Id 1 <span class="text-danger">*</span></label>
+                    <label class="form-label">Email Id 1</label>
                     <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
                         maxlength="100"
                         [ngClass]="{ 'is-invalid': OEMForm.get('emailId1')?.touched && OEMForm.get('emailId1')?.invalid }" />
                     <div *ngIf="OEMForm.get('emailId1')?.touched && OEMForm.get('emailId1')?.invalid"
-                        class="text-danger text-sm">Email Id 1 is required and must be a valid email address.</div>
+                        class="text-danger text-sm">Email Id 1 must be a valid email address.</div>
                 </div>
 
                 <!--Contact Person 2-->

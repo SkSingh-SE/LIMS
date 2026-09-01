@@ -1147,12 +1147,12 @@ export class LaboratoryTestComponent implements OnInit {
           if (isChemical) {
             return pType === 'chemical';
           } else {
-            return pType === 'mechanical' || pType !== 'chemical';
+            return pType !== 'chemical';
           }
         });
 
         if (filteredParams.length === 0) {
-          this.toastService.show(`No ${isChemical ? 'Chemical' : 'Mechanical'} parameters mapped in selected Metal Classification.`, 'info');
+          this.toastService.show(`No ${isChemical ? 'Chemical' : 'General'} parameters mapped in selected Metal Classification.`, 'info');
           return;
         }
 

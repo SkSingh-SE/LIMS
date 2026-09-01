@@ -91,7 +91,7 @@
                   class="form-control form-control-sm"
                   formControlName="name"
                   placeholder="Enter Standard Title"
-                  maxlength="100"
+                  maxlength="250"
                   [ngClass]="{ 'is-invalid': testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched }"
                 />
                 <span *ngIf="testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched" class="text-danger text-sm">
@@ -284,7 +284,7 @@
                     </ng-template>
                   </div>
 
-                  <div class="col-md-3" *ngIf="group.get('year')?.value">
+                  <div class="col-md-3">
                     <label class="form-label">Test Method Caption</label>
                     <div class="form-control form-control-sm bg-light border-0">{{ getCaption(group, i) }}</div>
                   </div>

@@ -80,7 +80,7 @@ export class MechanicalParameterComponent implements OnInit {
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   parameterId: number = 0;
-  formTitle = 'Parameter Form';
+  formTitle = 'General Parameter Form';
 
   constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService, private parameterCategoryService: ParameterCategoryService, private specimenOrientationService: SpecimenOrientationService) {
     this.route.params.subscribe(params => {
@@ -111,7 +111,7 @@ export class MechanicalParameterComponent implements OnInit {
       unitConversionFactor: [null],
       note: [''],
       elementType: ['normal'],
-      parameterType: ['Mechanical', Validators.required],
+      parameterType: ['Reported', Validators.required],
       isCalculated: [false],
       formula: [''],
       formulaDisplay: [''],
@@ -180,8 +180,12 @@ export class MechanicalParameterComponent implements OnInit {
       next: (response) => {
         if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
+        const pType = response.parameterType === 'Mechanical' ? 'Reported'
+                    : response.parameterType === 'Observation' ? 'Observed'
+                    : (response.parameterType || 'Reported');
         this.ParameterForm.patchValue({
           ...response,
+          parameterType: pType,
         });
         
         this.dropdownOptions.clear();
@@ -360,16 +364,16 @@ export class MechanicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'General Parameter Form';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'Edit General Parameter';
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Parameter';
+      this.formTitle = 'View General Parameter';
       this.ParameterForm.disable();
     }
 

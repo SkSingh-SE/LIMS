@@ -1,10 +1,10 @@
 <div class="container-fluid mt-4 d-flex flex-column align-items-center">
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">Mechanical Parameter List</label>
+      <label class="text-center text-md fw-medium ms-3">General Parameter List</label>
       <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
         <i class="bi bi-plus-lg"></i>
-        Create Mechanical Parameter
+        Create General Parameter
       </a>
     </div>
 
@@ -71,7 +71,7 @@
               <td>{{ item.symbol || '-' }}</td>
               <td>{{ item.unitName }}</td>
               <td>
-                <span class="badge bg-secondary">{{ item.parameterType || 'Mechanical' }}</span>
+                <span class="badge bg-secondary">{{ item.parameterType || 'Reported' }}</span>
               </td>
               <td>{{ item.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
             </tr>
@@ -287,11 +287,11 @@
             <label class="form-label">Parameter Type <span class="text-danger">*</span></label>
             <div class="d-flex gap-3">
               <div class="form-check">
-                <input type="radio" id="type-mech" class="form-check-input mt-1" formControlName="parameterType" value="Mechanical" [attr.disabled]="isViewMode ? true : null" />
-                <label for="type-mech" class="form-check-label">Mechanical</label>
+                <input type="radio" id="type-rep" class="form-check-input mt-1" formControlName="parameterType" value="Reported" [attr.disabled]="isViewMode ? true : null" />
+                <label for="type-rep" class="form-check-label">Reported</label>
               </div>
               <div class="form-check">
-                <input type="radio" id="type-obs" class="form-check-input mt-1" formControlName="parameterType" value="Observation" [attr.disabled]="isViewMode ? true : null" />
+                <input type="radio" id="type-obs" class="form-check-input mt-1" formControlName="parameterType" value="Observed" [attr.disabled]="isViewMode ? true : null" />
                 <label for="type-obs" class="form-check-label">Observed</label>
               </div>
             </div>
@@ -379,7 +379,7 @@
 
 <app-formula-builder
   [(visible)]="showFormulaBuilder"
-  [parameterType]="ParameterForm.get('parameterType')?.value || 'Mechanical'"
+  [parameterType]="ParameterForm.get('parameterType')?.value || 'Reported'"
   [currentFormula]="ParameterForm.value.formula"
   [currentFormulaDisplay]="ParameterForm.value.formulaDisplay"
   (formulaSaved)="onFormulaSaved($event)"

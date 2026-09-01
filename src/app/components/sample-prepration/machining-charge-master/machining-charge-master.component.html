@@ -235,8 +235,8 @@
                       <th style="min-width: 150px;">Financial Year <span class="text-danger">*</span></th>
                       <th style="min-width: 150px;">Effective From <span class="text-danger">*</span></th>
                       <th style="min-width: 130px;">Normal Machining (₹) <span class="text-danger">*</span></th>
-                      <th style="min-width: 130px;">Normal Cutting (₹) <span class="text-danger">*</span></th>
                       <th style="min-width: 130px;">Hard Machining (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Normal Cutting (₹) <span class="text-danger">*</span></th>
                       <th style="min-width: 130px;">Hard Cutting (₹) <span class="text-danger">*</span></th>
                       <th style="width: 40px;"></th>
                     </tr>
@@ -288,19 +288,6 @@
                       <td>
                         <input
                           type="text"
-                          formControlName="cuttingRateGeneralMetal"
-                          class="form-control form-control-sm text-end"
-                          appDecimalOnly
-                          [ngClass]="{ 'is-invalid': v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid }"
-                        />
-                        <div *ngIf="v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid">
-                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
-                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
-                        </div>
-                      </td>
-                      <td>
-                        <input
-                          type="text"
                           formControlName="priceHardMetal"
                           class="form-control form-control-sm text-end"
                           appDecimalOnly
@@ -309,6 +296,19 @@
                         <div *ngIf="v.get('priceHardMetal')?.touched && v.get('priceHardMetal')?.invalid">
                           <span *ngIf="v.get('priceHardMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
                           <span *ngIf="v.get('priceHardMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          formControlName="cuttingRateGeneralMetal"
+                          class="form-control form-control-sm text-end"
+                          appDecimalOnly
+                          [ngClass]="{ 'is-invalid': v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid }"
+                        />
+                        <div *ngIf="v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid">
+                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
                         </div>
                       </td>
                       <td>

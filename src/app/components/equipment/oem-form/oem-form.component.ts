@@ -52,9 +52,9 @@ export class OEMFormComponent implements CanComponentDeactivate, OnInit {
     this.OEMForm = this.fb.group({
       id: [0],
       name: ['', Validators.required],
-      contactPerson1: ['', Validators.required],
-      contactNo1: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]],
-      emailId1: ['', [Validators.required, Validators.email]],
+      contactPerson1: [''],
+      contactNo1: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
+      emailId1: ['', Validators.email],
       contactPerson2: [''],
       contactNo2: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
       emailId2: ['', Validators.email],
@@ -62,10 +62,10 @@ export class OEMFormComponent implements CanComponentDeactivate, OnInit {
       contactNo3: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
       emailId3: ['', Validators.email],
       address: [''],
-      presentStatus: [1, Validators.required], // 1: Enlisted, 2: Delisted
+      presentStatus: [1], // 1: Enlisted, 2: Delisted
       uploadReferenceID: [null],
       agreementFilePath: [''],
-      fileName: ['', Validators.required],
+      fileName: [''],
       equipmentApproved: [false],
       isBlacklisted: [false],
       reasonForBlacklisting: [''],

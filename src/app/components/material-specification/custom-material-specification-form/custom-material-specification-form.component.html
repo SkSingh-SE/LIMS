@@ -531,6 +531,7 @@
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
+                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="lowerLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
@@ -546,9 +547,14 @@
                                   formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
                               </div>
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                                <i class="bi bi-magic me-0.5"></i>
+                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
+                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="upperLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of upperLimitOptions" [value]="op.value">
@@ -563,6 +569,10 @@
                                          type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
                                   formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
+                              </div>
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                                <i class="bi bi-magic me-0.5"></i>
+                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
                               </div>
                             </td>
 
@@ -642,11 +652,14 @@
                               <input type="text" class="form-control form-control-sm wide-input" formControlName="testNote" placeholder="Test note" maxlength="500" />
                             </td>
                             <td class="text-center">
-                              <button type="button" class="btn btn-sm"
-                                [ngClass]="(group.get('minEquation')?.value || group.get('maxEquation')?.value) ? 'btn-primary' : 'btn-outline-primary'"
+                              <button type="button" class="btn-equation-fx"
+                                [class.has-equation]="group.get('minEquation')?.value || group.get('maxEquation')?.value"
+                                [class.has-master]="getParamMasterFormula(group)"
                                 (click)="openEquationModal(group, gi)" [disabled]="isViewMode"
-                                title="Min/Max limit equation">
-                                <i class="bi bi-calculator"></i> ƒx
+                                [title]="getParamMasterFormula(group) ? 'Formula Builder (Master: ' + getParamMasterFormula(group) + ')' : 'Formula Builder (Min/Max Equation)'">
+                                <span class="fx-symbol">ƒx</span>
+                                <i *ngIf="getParamMasterFormula(group) && !(group.get('minEquation')?.value || group.get('maxEquation')?.value)"
+                                   class="bi bi-lightning-fill fx-indicator-lightning" title="Master formula available"></i>
                               </button>
                             </td>
                             <td *ngIf="!isViewMode" class="text-center">
@@ -905,6 +918,7 @@
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
+                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="lowerLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
@@ -920,9 +934,14 @@
                                   formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
                               </div>
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                                <i class="bi bi-magic me-0.5"></i>
+                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
+                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="upperLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of upperLimitOptions" [value]="op.value">
@@ -937,6 +956,10 @@
                                          type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
                                   formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
+                              </div>
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                                <i class="bi bi-magic me-0.5"></i>
+                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
                               </div>
                             </td>
 
@@ -1016,11 +1039,14 @@
                               <input type="text" class="form-control form-control-sm wide-input" formControlName="testNote" placeholder="Test note" maxlength="500" />
                             </td>
                             <td class="text-center">
-                              <button type="button" class="btn btn-sm"
-                                [ngClass]="(group.get('minEquation')?.value || group.get('maxEquation')?.value) ? 'btn-primary' : 'btn-outline-primary'"
+                              <button type="button" class="btn-equation-fx"
+                                [class.has-equation]="group.get('minEquation')?.value || group.get('maxEquation')?.value"
+                                [class.has-master]="getParamMasterFormula(group)"
                                 (click)="openEquationModal(group, gi)" [disabled]="isViewMode"
-                                title="Min/Max limit equation">
-                                <i class="bi bi-calculator"></i> ƒx
+                                [title]="getParamMasterFormula(group) ? 'Formula Builder (Master: ' + getParamMasterFormula(group) + ')' : 'Formula Builder (Min/Max Equation)'">
+                                <span class="fx-symbol">ƒx</span>
+                                <i *ngIf="getParamMasterFormula(group) && !(group.get('minEquation')?.value || group.get('maxEquation')?.value)"
+                                   class="bi bi-lightning-fill fx-indicator-lightning" title="Master formula available"></i>
                               </button>
                             </td>
                             <td *ngIf="!isViewMode" class="text-center">
@@ -1272,6 +1298,7 @@
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
+                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="lowerLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
@@ -1287,9 +1314,14 @@
                                   formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
                               </div>
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                                <i class="bi bi-magic me-0.5"></i>
+                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
+                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="upperLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of upperLimitOptions" [value]="op.value">
@@ -1304,6 +1336,10 @@
                                          type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
                                   formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
+                              </div>
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                                <i class="bi bi-magic me-0.5"></i>
+                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
                               </div>
                             </td>
 
@@ -1477,8 +1513,8 @@
           <table class="table table-sm table-bordered mb-0">
             <thead>
               <tr>
-                <th>#</th><th>Status</th><th>Grade</th><th>Section</th><th>Parameter</th>
-                <th>Unit</th><th>Min</th><th>Max</th><th>Notes / Messages</th>
+                <th>#</th><th>Status</th><th>Grade</th><th>UNS</th><th>Section</th><th>Parameter</th>
+                <th>Unit</th><th>Min</th><th>Max</th><th>Lower Limit</th><th>Upper Limit</th><th>Formula (ƒx)</th><th>Notes / Messages</th>
               </tr>
             </thead>
             <tbody>
@@ -1492,12 +1528,47 @@
                   </span>
                 </td>
                 <td>{{ r.grade }}</td>
-                <td>{{ r.section }}</td>
-                <td>{{ r.parameterName }}</td>
+                <td><span class="badge bg-light text-dark border font-monospace" *ngIf="r.unsNo">{{ r.unsNo }}</span></td>
+                <td><span class="badge" [ngClass]="r.section === 'chemical' ? 'bg-info-subtle text-info border' : 'bg-primary-subtle text-primary border'">{{ r.section === 'mechanical' ? 'General' : 'Chemical' }}</span></td>
+                <td>
+                  {{ r.parameterName }}
+                  <span *ngIf="r.minEquation || r.maxEquation || r.equationFx" class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 font-monospace"
+                        [title]="r.equationFx || r.minEquation || r.maxEquation">
+                    <i class="bi bi-calculator me-0.5"></i>ƒx
+                  </span>
+                </td>
                 <td>{{ r.unitName }}</td>
-                <td>{{ r.minValue }}</td>
-                <td>{{ r.maxValue }}</td>
-                <td class="text-danger small">{{ r.messages.join(' ') }}</td>
+                <td>{{ r.minValue ?? '-' }}</td>
+                <td>{{ r.maxValue ?? '-' }}</td>
+                <td class="text-nowrap font-monospace small">
+                  <span *ngIf="r.lowerLimitValue || r.lowerLimitDecimalValue != null" class="badge bg-light text-dark border">
+                    {{ r.lowerLimitValue || '≥' }} {{ r.lowerLimitDecimalValue != null ? r.lowerLimitDecimalValue : '' }}
+                  </span>
+                  <span *ngIf="!r.lowerLimitValue && r.lowerLimitDecimalValue == null && r.minEquation" class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    {{ r.lowerLimitValue || '≥' }} ƒx
+                  </span>
+                  <span *ngIf="!r.lowerLimitValue && r.lowerLimitDecimalValue == null && !r.minEquation" class="text-muted">-</span>
+                </td>
+                <td class="text-nowrap font-monospace small">
+                  <span *ngIf="r.upperLimitValue || r.upperLimitDecimalValue != null" class="badge bg-light text-dark border">
+                    {{ r.upperLimitValue || '≤' }} {{ r.upperLimitDecimalValue != null ? r.upperLimitDecimalValue : '' }}
+                  </span>
+                  <span *ngIf="!r.upperLimitValue && r.upperLimitDecimalValue == null && r.maxEquation" class="badge bg-secondary-subtle text-dark border">
+                    {{ r.upperLimitValue || '≤' }} ƒx
+                  </span>
+                  <span *ngIf="!r.upperLimitValue && r.upperLimitDecimalValue == null && !r.maxEquation" class="text-muted">-</span>
+                </td>
+                <td>
+                  <span *ngIf="r.equationFx || r.minEquation || r.maxEquation" class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace text-wrap text-start"
+                        [title]="r.equationFx || r.minEquation || r.maxEquation">
+                    <i class="bi bi-calculator me-1"></i>{{ r.equationFx || (r.minEquation ? ((r.lowerLimitValue || '≥') + ' ' + r.minEquation) : ((r.upperLimitValue || '≤') + ' ' + r.maxEquation)) }}
+                  </span>
+                  <span *ngIf="!r.equationFx && !r.minEquation && !r.maxEquation" class="text-muted">-</span>
+                </td>
+                <td class="small" [ngClass]="{ 'text-danger': r.status === 'error', 'text-warning text-dark': r.status === 'warning' }">
+                  <div *ngIf="r.messages?.length">{{ r.messages.join(' | ') }}</div>
+                  <div *ngIf="r.notes" class="text-secondary">{{ r.notes }}</div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -1516,56 +1587,263 @@
 
   <!-- MS-D: Custom Equation editor modal -->
   <div class="custom-modal-backdrop" *ngIf="equationModalVisible" (click)="closeEquationModal()">
-    <div class="custom-modal-dialog" (click)="$event.stopPropagation()">
-      <div class="custom-modal-header">
-        <h6 class="mb-0">Min / Max Limit Equation</h6>
+    <div class="custom-modal-dialog equation-modal-dialog" (click)="$event.stopPropagation()">
+      <div class="custom-modal-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fs-6 fw-semibold">
+            <i class="bi bi-calculator me-1"></i>Formula Builder
+          </span>
+          <span *ngIf="equationModalLine" class="fw-semibold text-dark fs-6">
+            {{ equationModalLine.get('parameterName')?.value || 'Parameter' }}
+            <span *ngIf="equationModalLine.get('parameterSymbol')?.value" class="text-muted fw-normal ms-1">
+              ({{ equationModalLine.get('parameterSymbol')?.value }})
+            </span>
+          </span>
+        </div>
         <button type="button" class="btn-close" (click)="closeEquationModal()"></button>
       </div>
+
       <div class="custom-modal-body">
-        <div class="alert alert-light border small mb-2 py-2">
-          <div class="mb-1">Set Min/Max limit by calculation from other parameters. Click a field, then insert tokens.</div>
-          <div><strong>Tokens:</strong> <code>C</code> = measured value · <code>specMax(C)</code>/<code>specMin(C)</code> = that parameter's spec limit · <code>IF(cond, a, b)</code>, <code>MIN(...)</code>, <code>MAX(...)</code>.</div>
-          <div class="mt-1"><strong>Example</strong> — "per 0.01% C below its max, +0.06% Mn above its max, up to 1.65%":<br>
-            <code>MIN(1.65, specMax(Mn) + 6 * MAX(0, specMax(C) - C))</code>
+        <!-- Master Formula 1-Click Apply Banner -->
+        <div *ngIf="paramMasterFormula" class="d-flex justify-content-between align-items-center bg-white border border-primary-subtle rounded p-2 mb-2 shadow-xs">
+          <div class="d-flex align-items-center gap-2 text-truncate">
+            <span class="badge bg-primary text-white px-2 py-1 small fw-semibold">
+              <i class="bi bi-lightning-charge-fill me-0.5"></i>Master Formula Available
+            </span>
+            <code class="text-dark fw-bold fs-6 text-truncate" [title]="paramMasterFormula">{{ paramMasterFormula }}</code>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary py-0.5 px-2.5 fw-semibold flex-shrink-0"
+            (click)="applyMasterFormulaOneClick()" title="Apply master formula into equation in 1-click">
+            <i class="bi bi-magic me-1"></i>Apply Formula
+          </button>
+        </div>
+
+        <!-- Minimalist Helper & Calculator Toggle -->
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="small text-muted d-flex align-items-center gap-1">
+            <i class="bi bi-info-circle text-primary me-0.5"></i>
+            <span>Auto-detects symbol (<code>C</code>, <code>%C</code>) or name (<code>Carbon</code>). Min sets &ge;, Max sets &le;.</span>
+          </div>
+          <button type="button" class="btn btn-sm py-0.5 px-2"
+            [ngClass]="showCalculator ? 'btn-outline-danger' : 'btn-outline-secondary'"
+            (click)="toggleCalculator()">
+            <i class="bi bi-calculator me-1"></i>{{ showCalculator ? 'Hide Calculator' : 'Test Calculator' }}
+          </button>
+        </div>
+
+        <!-- Unified Quick-Insert Toolbar -->
+        <div class="formula-toolbar-container">
+          <div class="d-flex justify-content-between align-items-center mb-1.5 flex-wrap gap-1">
+            <span class="small fw-semibold text-muted">
+              <i class="bi bi-tags me-1"></i>Insert Parameter:
+            </span>
+            <input type="text" class="form-control form-control-sm w-auto equation-param-search py-0 px-2"
+              placeholder="Search parameter..." [(ngModel)]="equationParamSearch" [ngModelOptions]="{ standalone: true }">
+          </div>
+
+          <!-- Parameter Chips -->
+          <div class="formula-param-chips-strip mb-2">
+            <button type="button" class="btn formula-param-chip"
+              *ngFor="let chip of filteredEquationParamChips" (click)="insertEquationToken(chip.symbol || chip.name)"
+              [title]="'Name: ' + chip.name + (chip.symbol ? ' | Symbol: ' + chip.symbol : '')">
+              {{ chip.symbol || chip.name }}
+            </button>
+            <span *ngIf="!equationParamChips.length" class="text-muted small p-1">No parameters found.</span>
+            <span *ngIf="equationParamChips.length && !filteredEquationParamChips.length" class="text-muted small p-1">No matches.</span>
+          </div>
+
+          <!-- Operators & Functions (Clean Row) -->
+          <div class="d-flex align-items-center flex-wrap gap-1 pt-1 border-top">
+            <span class="small text-muted me-1 fw-medium">Operators:</span>
+            <button type="button" class="formula-op-btn" *ngFor="let op of equationOperators" (click)="insertEquationToken(op)">{{ op }}</button>
+            <div class="vr mx-1.5"></div>
+            <span class="small text-muted me-1 fw-medium">Functions:</span>
+            <button type="button" class="formula-fn-btn" *ngFor="let fn of equationFunctions" (click)="insertEquationToken(fn)">{{ fn }}</button>
           </div>
         </div>
-        <label class="form-label small fw-medium mb-1">Parameters</label>
-        <div class="d-flex flex-wrap gap-1 mb-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary"
-            *ngFor="let chip of equationParamChips" (click)="insertEquationToken(chip.symbol)"
-            [title]="chip.name">{{ chip.symbol }}</button>
-          <span *ngIf="!equationParamChips.length" class="text-muted small">No parameters with symbols in this grade yet.</span>
-        </div>
-        <label class="form-label small fw-medium mb-1">Operators</label>
-        <div class="d-flex flex-wrap gap-1 mb-3">
-          <button type="button" class="btn btn-sm btn-outline-secondary"
-            *ngFor="let op of equationOperators" (click)="insertEquationToken(op)">{{ op }}</button>
+
+        <!-- Live Calculator Simulator (Collapsible & Clean) -->
+        <div *ngIf="showCalculator && calcDetectedParams.length > 0" class="clean-calc-card">
+          <div class="d-flex justify-content-between align-items-center mb-1.5 flex-wrap gap-1">
+            <div class="d-flex align-items-center gap-1.5">
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-1.5 py-0.5 small fw-semibold">
+                <i class="bi bi-play-circle-fill me-1"></i>Live Calculator
+              </span>
+              <span class="small text-muted font-monospace">Target: {{ equationActiveField === 'min' ? 'Min' : 'Max' }} Formula</span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1.5 small" (click)="resetCalcDefaults()" title="Reset to default test values">
+                <i class="bi bi-arrow-counterclockwise"></i>
+              </button>
+              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-success btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('lower')">
+                Set Lower (&ge; {{ calcResult }})
+              </button>
+              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-primary btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('upper')">
+                Set Upper (&le; {{ calcResult }})
+              </button>
+            </div>
+          </div>
+
+          <!-- Parameter Inputs -->
+          <div class="d-flex flex-wrap gap-1.5 align-items-center mb-1.5">
+            <div *ngFor="let p of calcDetectedParams" class="clean-calc-chip-input">
+              <span>{{ p.symbol || p.name }}:</span>
+              <input type="number" step="0.001" [(ngModel)]="calcParamValues[p.key]"
+                [ngModelOptions]="{ standalone: true }" (input)="runLiveCalculation()" />
+            </div>
+          </div>
+
+          <!-- Live Result Strip -->
+          <div class="clean-calc-result-strip d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="small font-monospace text-truncate" [title]="calcStepPreview">
+              <span class="text-muted">Preview: </span><strong>{{ calcStepPreview || 'Enter values above...' }}</strong>
+            </div>
+            <div *ngIf="calcResult != null" class="badge bg-success fs-6 py-0.5 px-2 flex-shrink-0">
+              Result: {{ calcResult }}
+            </div>
+            <div *ngIf="calcError" class="badge bg-danger py-0.5 px-1.5 flex-shrink-0">
+              {{ calcError }}
+            </div>
+          </div>
         </div>
 
-        <label class="form-label small fw-medium mb-1">
-          Min Limit Equation <span *ngIf="equationActiveField === 'min'" class="badge bg-primary">active</span>
-        </label>
-        <textarea class="form-control form-control-sm mb-3" rows="2" [(ngModel)]="minEquationDraft"
-          [ngModelOptions]="{ standalone: true }" (focus)="equationActiveField = 'min'"
-          placeholder="e.g. Mg + 0.4 * (C - 56)"></textarea>
+        <!-- Min Limit Equation Card -->
+        <div class="formula-field-card" [class.is-active]="equationActiveField === 'min'" [class.is-invalid]="!minEquationValid && minEquationDraft.trim()">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="d-flex align-items-center gap-1.5">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5 small fw-semibold">&ge; Min Equation</span>
+              <span class="small text-muted">Auto-applies to Lower Limit (&ge;)</span>
+            </div>
+            <div>
+              <span *ngIf="minEquationDraft.trim() && minEquationValid" class="text-success small fw-semibold">
+                <i class="bi bi-check2-circle me-0.5"></i>Valid
+              </span>
+              <span *ngIf="minEquationDraft.trim() && !minEquationValid" class="text-danger small fw-semibold">
+                <i class="bi bi-exclamation-circle me-0.5"></i>Error
+              </span>
+            </div>
+          </div>
+          <textarea class="form-control formula-textarea-clean font-monospace w-100" rows="2" [(ngModel)]="minEquationDraft"
+            [ngModelOptions]="{ standalone: true }" (input)="onEquationInput('min')" (blur)="onEquationBlur('min')"
+            (focus)="equationActiveField = 'min'; updateCalculatorParameters()"
+            placeholder="e.g. CE = %C + %Mn / 6 + (%Cr + %Mo + %V) / 5 + (%Ni + %Cu) / 15"></textarea>
 
-        <label class="form-label small fw-medium mb-1">
-          Max Limit Equation <span *ngIf="equationActiveField === 'max'" class="badge bg-primary">active</span>
-        </label>
-        <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="maxEquationDraft"
-          [ngModelOptions]="{ standalone: true }" (focus)="equationActiveField = 'max'"
-          placeholder="e.g. IF(C > 56, Mg + 1, Mg)"></textarea>
+          <!-- Suggested Actual Formula Card (Unwanted Data Removed) -->
+          <div *ngIf="getSuggestedFormula('min') && hasUnwantedFormulaData('min')"
+               class="formula-suggestion-card mt-2 p-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <div class="suggestion-icon-badge">
+                <i class="bi bi-stars text-success"></i>
+              </div>
+              <div>
+                <div class="small fw-semibold text-success d-flex align-items-center gap-1">
+                  <span>Suggested Actual Formula (Unwanted data removed):</span>
+                </div>
+                <code class="suggestion-code">{{ getSuggestedFormula('min') }}</code>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+              <button type="button" class="btn btn-sm btn-success px-2.5 py-1 d-flex align-items-center gap-1 shadow-sm"
+                      (click)="applySuggestedFormula('min')"
+                      title="Remove % prefix and target assignment and apply to formula">
+                <i class="bi bi-check2-circle"></i>
+                <span class="fw-semibold">Validate & Apply (1-Click)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Token Breakdown -->
+          <div *ngIf="minEquationTokens.length > 0" class="d-flex flex-wrap align-items-center gap-1 mt-1 p-1 bg-light rounded border border-light-subtle">
+            <span *ngFor="let t of minEquationTokens">
+              <span *ngIf="t.type === 'param'" class="clean-token-chip token-param" [title]="t.matched || t.token">{{ t.token }}</span>
+              <span *ngIf="t.type === 'function'" class="clean-token-chip token-fn">{{ t.token }}()</span>
+              <span *ngIf="t.type === 'number'" class="clean-token-chip token-num">{{ t.token }}</span>
+              <span *ngIf="t.type === 'operator' || t.type === 'paren' || t.type === 'comma'" class="clean-token-chip token-op">{{ t.token }}</span>
+              <span *ngIf="t.type === 'unknown'" class="clean-token-chip token-err">{{ t.token }}</span>
+            </span>
+          </div>
+          <div *ngIf="minEquationErrors.length > 0" class="mt-1">
+            <div *ngFor="let err of minEquationErrors" class="text-danger small">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ err }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Max Limit Equation Card -->
+        <div class="formula-field-card" [class.is-active]="equationActiveField === 'max'" [class.is-invalid]="!maxEquationValid && maxEquationDraft.trim()">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="d-flex align-items-center gap-1.5">
+              <span class="badge bg-secondary-subtle text-dark border px-1.5 py-0.5 small fw-semibold">&le; Max Equation</span>
+              <span class="small text-muted">Auto-applies to Upper Limit (&le;)</span>
+            </div>
+            <div>
+              <span *ngIf="maxEquationDraft.trim() && maxEquationValid" class="text-success small fw-semibold">
+                <i class="bi bi-check2-circle me-0.5"></i>Valid
+              </span>
+              <span *ngIf="maxEquationDraft.trim() && !maxEquationValid" class="text-danger small fw-semibold">
+                <i class="bi bi-exclamation-circle me-0.5"></i>Error
+              </span>
+            </div>
+          </div>
+          <textarea class="form-control formula-textarea-clean font-monospace w-100" rows="2" [(ngModel)]="maxEquationDraft"
+            [ngModelOptions]="{ standalone: true }" (input)="onEquationInput('max')" (blur)="onEquationBlur('max')"
+            (focus)="equationActiveField = 'max'; updateCalculatorParameters()"
+            placeholder="e.g. IF(C > 0.05, 1.2, 0.8) OR specMax(Mn) + 6 * MAX(0, specMax(C) - C)"></textarea>
+
+          <!-- Suggested Actual Formula Card (Unwanted Data Removed) -->
+          <div *ngIf="getSuggestedFormula('max') && hasUnwantedFormulaData('max')"
+               class="formula-suggestion-card mt-2 p-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <div class="suggestion-icon-badge">
+                <i class="bi bi-stars text-success"></i>
+              </div>
+              <div>
+                <div class="small fw-semibold text-success d-flex align-items-center gap-1">
+                  <span>Suggested Actual Formula (Unwanted data removed):</span>
+                </div>
+                <code class="suggestion-code">{{ getSuggestedFormula('max') }}</code>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+              <button type="button" class="btn btn-sm btn-success px-2.5 py-1 d-flex align-items-center gap-1 shadow-sm"
+                      (click)="applySuggestedFormula('max')"
+                      title="Remove % prefix and target assignment and apply to formula">
+                <i class="bi bi-check2-circle"></i>
+                <span class="fw-semibold">Validate & Apply (1-Click)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Token Breakdown -->
+          <div *ngIf="maxEquationTokens.length > 0" class="d-flex flex-wrap align-items-center gap-1 mt-1 p-1 bg-light rounded border border-light-subtle">
+            <span *ngFor="let t of maxEquationTokens">
+              <span *ngIf="t.type === 'param'" class="clean-token-chip token-param" [title]="t.matched || t.token">{{ t.token }}</span>
+              <span *ngIf="t.type === 'function'" class="clean-token-chip token-fn">{{ t.token }}()</span>
+              <span *ngIf="t.type === 'number'" class="clean-token-chip token-num">{{ t.token }}</span>
+              <span *ngIf="t.type === 'operator' || t.type === 'paren' || t.type === 'comma'" class="clean-token-chip token-op">{{ t.token }}</span>
+              <span *ngIf="t.type === 'unknown'" class="clean-token-chip token-err">{{ t.token }}</span>
+            </span>
+          </div>
+          <div *ngIf="maxEquationErrors.length > 0" class="mt-1">
+            <div *ngFor="let err of maxEquationErrors" class="text-danger small">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ err }}
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="custom-modal-footer">
-        <button type="button" class="btn btn-sm btn-cancel" (click)="closeEquationModal()">
-          <i class="bi bi-x-circle"></i> Cancel
+
+      <div class="custom-modal-footer d-flex justify-content-between align-items-center">
+        <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearEquations()">
+          <i class="bi bi-eraser me-1"></i> Clear Both
         </button>
-        <button type="button" class="btn btn-sm btn-cancel text-danger" (click)="minEquationDraft = ''; maxEquationDraft = ''">
-          <i class="bi bi-eraser"></i> Clear
-        </button>
-        <button type="button" class="btn btn-sm btn-save" (click)="saveEquation()">
-          <i class="bi bi-check-circle"></i> Apply
-        </button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-cancel" (click)="closeEquationModal()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-sm btn-save" (click)="saveEquation()" [disabled]="!isEquationValidToSave">
+            <i class="bi bi-check-circle me-1"></i> Apply to Limits
+          </button>
+        </div>
       </div>
     </div>
   </div>

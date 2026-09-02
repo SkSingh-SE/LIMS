@@ -263,7 +263,11 @@
   border-top: 3px solid var(--primary-color);
 }
 :host .import-preview-dialog {
-  width: 1000px;
+  width: 95vw;
+  max-width: 1250px;
+}
+:host .equation-modal-dialog {
+  width: 820px;
 }
 :host .import-preview-table {
   max-height: 55vh;

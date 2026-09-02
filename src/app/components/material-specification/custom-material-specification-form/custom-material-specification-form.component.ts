@@ -34,6 +34,7 @@ import { noWhitespaceValidator } from '../../../utility/validators/custom-valida
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { buildSpecTemplate, parseSpecTemplate, ParsedSpecRow, SpecMasters } from '../spec-template-excel.helper';
+import { EquationToken } from '../material-specification-form/material-specification-form.component';
 
 @Component({
   selector: 'app-custom-material-specification-form',
@@ -76,14 +77,16 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
 
 
   lowerLimitOptions = [
-    { label: '>', value: '>' },
     { label: '≥', value: '≥' },
-    { label: '=', value: '=' }
+    { label: '>', value: '>' },
+    { label: '=', value: '=' },
+    { label: '≥', value: '>=' }
   ];
   upperLimitOptions = [
-    { label: '<', value: '<' },
     { label: '≤', value: '≤' },
-    { label: '=', value: '=' }
+    { label: '<', value: '<' },
+    { label: '=', value: '=' },
+    { label: '≤', value: '<=' }
   ];
 
   // store per-grade selected metal classification (UI-only state)
@@ -471,6 +474,9 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       minReportableLimit: [null],
       inputType: ['Decimal'],
       textValue: [''],
+      isCalculated: [false],
+      formula: [''],
+      formulaDisplay: [''],
       parameterDropdownOptions: [[]]
     }, { validators: this.minMaxValidator });
   }
@@ -501,50 +507,776 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   }
 
   // ── MS-D: custom equation editor ────────────────────────────────────────────
-  // Authors a conditional formula that computes min/max from OTHER parameters'
-  // runtime values. The stored expression is evaluated during test-result entry
-  // (the runtime evaluator is a separate test-phase task — this only authors it).
   equationModalVisible = false;
   equationModalLine: FormGroup | null = null;
+  equationCurrentGradeIndex = 0;
   minEquationDraft = '';
   maxEquationDraft = '';
   equationActiveField: 'min' | 'max' = 'min'; // which textarea chips/operators insert into
-  equationParamChips: Array<{ symbol: string; name: string }> = [];
-  equationOperators: string[] = ['+', '-', '*', '/', '(', ')', '>', '<', '>=', '<=', '==', ', ', 'IF(', 'MIN(', 'MAX(', 'specMax(', 'specMin('];
+  equationParamChips: Array<{ symbol: string; name: string; display: string; fromMaster?: boolean }> = [];
+  equationParamSearch = '';
+  equationOperators: string[] = ['+', '-', '*', '/', '(', ')', '>', '<', '>=', '<=', '==', '!=', ','];
+  equationFunctions: string[] = ['IF(', 'MIN(', 'MAX(', 'ROUND(', 'ABS(', 'POW(', 'specMax(', 'specMin('];
+
+  minEquationTokens: EquationToken[] = [];
+  minEquationErrors: string[] = [];
+  minEquationValid = true;
+  minCanonicalFormula = '';
+
+  maxEquationTokens: EquationToken[] = [];
+  maxEquationErrors: string[] = [];
+  maxEquationValid = true;
+  maxCanonicalFormula = '';
+
+  // ── Equation Limit Operator Symbols ──────────────────────────────────────
+  equationLowerOp = '≥';
+  equationUpperOp = '≤';
+
+  // ── Live Formula Simulator / Calculator State ──────────────────────────────
+  showCalculator = true;
+  calcParamValues: { [key: string]: number } = {};
+  calcDetectedParams: Array<{ symbol: string; name: string; key: string }> = [];
+  calcResult: number | null = null;
+  calcStepPreview = '';
+  calcError = '';
+
+  // ── Master Formula 1-Click State ───────────────────────────────────────────
+  paramIsCalculated = false;
+  paramMasterFormula = '';
+
+  get filteredEquationParamChips(): Array<{ symbol: string; name: string; display: string; fromMaster?: boolean }> {
+    if (!this.equationParamSearch?.trim()) return this.equationParamChips;
+    const s = this.equationParamSearch.toLowerCase().trim();
+    return this.equationParamChips.filter(c => 
+      c.name.toLowerCase().includes(s) || (c.symbol && c.symbol.toLowerCase().includes(s))
+    );
+  }
+
+  get isEquationValidToSave(): boolean {
+    const minTrim = this.minEquationDraft?.trim();
+    const maxTrim = this.maxEquationDraft?.trim();
+
+    if (!minTrim && !maxTrim) return true;
+    if (minTrim && (!this.minEquationValid || this.minEquationErrors.length > 0)) return false;
+    if (maxTrim && (!this.maxEquationValid || this.maxEquationErrors.length > 0)) return false;
+
+    return true;
+  }
 
   openEquationModal(group: AbstractControl, gradeIndex: number): void {
     this.equationModalLine = group as FormGroup;
+    this.equationCurrentGradeIndex = gradeIndex;
     this.minEquationDraft = group.get('minEquation')?.value || '';
     this.maxEquationDraft = group.get('maxEquation')?.value || '';
     this.equationActiveField = 'min';
-    // Available references = every other parameter in this grade (both tabs) that has a symbol.
-    const chips: Array<{ symbol: string; name: string }> = [];
-    (['chemical', 'mechanical'] as const).forEach(t => {
-      this.getSpecificationLinesByTab(gradeIndex, t).controls.forEach(c => {
-        const symbol = c.get('parameterSymbol')?.value;
-        const name = c.get('parameterName')?.value;
-        if (symbol && !chips.some(x => x.symbol === symbol)) chips.push({ symbol, name: name || symbol });
+    this.equationParamSearch = '';
+
+    // Initialize limit symbols from current line values or sensible defaults
+    const currentLower = group.get('lowerLimitValue')?.value;
+    this.equationLowerOp = (currentLower === '>' || currentLower === '=' || currentLower === '≥' || currentLower === '>=')
+      ? (currentLower === '>=' ? '≥' : currentLower)
+      : '≥';
+
+    const currentUpper = group.get('upperLimitValue')?.value;
+    this.equationUpperOp = (currentUpper === '<' || currentUpper === '=' || currentUpper === '≤' || currentUpper === '<=')
+      ? (currentUpper === '<=' ? '≤' : currentUpper)
+      : '≤';
+
+    // Check if the parameter has isCalculated or master formula
+    const paramId = group.get('parameterID')?.value;
+    let isCalc = group.get('isCalculated')?.value || false;
+    let formDisp = (group.get('formulaDisplay')?.value || '').trim();
+
+    if ((!isCalc || !formDisp) && paramId) {
+      const found = this.chemicalParametersCache.find(p => p.id === paramId) ||
+                    this.mechanicalParametersCache.find(p => p.id === paramId);
+      if (found) {
+        isCalc = found.additionalValues?.IsCalculated ?? found.isCalculated ?? false;
+        formDisp = (found.additionalValues?.FormulaDisplay || found.formulaDisplay || '').trim();
+      }
+    }
+
+    this.paramIsCalculated = isCalc;
+    this.paramMasterFormula = formDisp;
+
+    // 1. Available references: collect all parameters in this grade (both chemical & mechanical tabs)
+    const chips: Array<{ symbol: string; name: string; display: string; fromMaster?: boolean }> = [];
+    (['chemical', 'mechanical', 'other'] as const).forEach(t => {
+      this.getSpecificationLinesByTab(gradeIndex, t)?.controls?.forEach(c => {
+        let symbol = (c.get('parameterSymbol')?.value || '').trim();
+        let name = (c.get('parameterName')?.value || '').trim();
+        const paramId = c.get('parameterID')?.value;
+        if (!name && !symbol && paramId) {
+          const found = this.chemicalParametersCache.find(p => p.id === paramId) ||
+                        this.mechanicalParametersCache.find(p => p.id === paramId);
+          if (found) {
+            name = (found.name || found.text || '').trim();
+            symbol = (found.additionalValues?.Symbol || found.additionalValues?.symbol || '').trim();
+          }
+        }
+        if (name || symbol) {
+          const display = symbol ? `${name || symbol} (${symbol})` : name;
+          if (!chips.some(x => x.name.toLowerCase() === name.toLowerCase() && x.symbol.toLowerCase() === symbol.toLowerCase())) {
+            chips.push({ symbol, name, display, fromMaster: false });
+          }
+        }
       });
     });
+
+    // 2. Also include all master parameters so formula components like Cr, Mo, V, Ni, Cu are always recognized
+    const allMaster = [...(this.chemicalParametersCache || []), ...(this.mechanicalParametersCache || [])];
+    allMaster.forEach(p => {
+      const name = (p.name || p.text || '').trim();
+      const symbol = (p.additionalValues?.Symbol || p.additionalValues?.symbol || '').trim();
+      if (name || symbol) {
+        const display = symbol ? `${name || symbol} (${symbol})` : name;
+        if (!chips.some(x => (x.symbol && symbol && x.symbol.toLowerCase() === symbol.toLowerCase()) || 
+                             (x.name && name && x.name.toLowerCase() === name.toLowerCase()))) {
+          chips.push({ symbol, name, display, fromMaster: true });
+        }
+      }
+    });
     this.equationParamChips = chips;
+
+    // Validate current draft equations & update calculator
+    this.validateEquation('min');
+    this.validateEquation('max');
+    this.updateCalculatorParameters();
+
     this.equationModalVisible = true;
   }
-  insertEquationToken(token: string): void {
-    if (this.equationActiveField === 'max') this.maxEquationDraft = (this.maxEquationDraft || '') + token;
-    else this.minEquationDraft = (this.minEquationDraft || '') + token;
+
+  onEquationInput(field: 'min' | 'max'): void {
+    this.validateEquation(field);
+    this.updateCalculatorParameters();
   }
+
+  insertEquationToken(token: string): void {
+    if (this.equationActiveField === 'max') {
+      this.maxEquationDraft = (this.maxEquationDraft ? this.maxEquationDraft + ' ' : '') + token;
+      this.validateEquation('max');
+    } else {
+      this.minEquationDraft = (this.minEquationDraft ? this.minEquationDraft + ' ' : '') + token;
+      this.validateEquation('min');
+    }
+    this.updateCalculatorParameters();
+  }
+
+  validateEquation(field: 'min' | 'max'): void {
+    const rawInput = (field === 'min' ? this.minEquationDraft : this.maxEquationDraft) || '';
+    const { tokens, errors, isValid, canonicalFormula } = this.parseEquationString(rawInput);
+
+    if (field === 'min') {
+      this.minEquationTokens = tokens;
+      this.minEquationErrors = errors;
+      this.minEquationValid = isValid;
+      this.minCanonicalFormula = canonicalFormula || '';
+    } else {
+      this.maxEquationTokens = tokens;
+      this.maxEquationErrors = errors;
+      this.maxEquationValid = isValid;
+      this.maxCanonicalFormula = canonicalFormula || '';
+    }
+  }
+
+  onEquationBlur(field: 'min' | 'max'): void {
+    if (field === 'min' && this.minEquationValid && this.minCanonicalFormula) {
+      this.minEquationDraft = this.minCanonicalFormula;
+    } else if (field === 'max' && this.maxEquationValid && this.maxCanonicalFormula) {
+      this.maxEquationDraft = this.maxCanonicalFormula;
+    }
+    this.updateCalculatorParameters();
+  }
+
+  getCanonicalFormula(tokens: EquationToken[]): string {
+    const parts: string[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t.token && t.token.endsWith('=')) {
+        continue;
+      }
+      if (t.type === 'param') {
+        const cleanName = (t.symbol || t.name || t.token).replace(/^%/, '').trim();
+        parts.push(cleanName);
+      } else if (t.type === 'function') {
+        parts.push(t.token.toUpperCase());
+      } else {
+        parts.push(t.token);
+      }
+    }
+
+    let result = '';
+    for (let i = 0; i < parts.length; i++) {
+      const curr = parts[i];
+      const prev = i > 0 ? parts[i - 1] : '';
+
+      if (curr === '(') {
+        if (prev && ['IF', 'MIN', 'MAX', 'ROUND', 'ABS', 'POW', 'SPECMIN', 'SPECMAX'].includes(prev.toUpperCase())) {
+          result = result.trimEnd() + '(';
+        } else if (prev && !['+', '-', '*', '/', '(', '>=', '<=', '==', '!=', '>', '<', ','].includes(prev)) {
+          result = result.trimEnd() + ' (';
+        } else {
+          result += '(';
+        }
+      } else if (curr === ',') {
+        result = result.trimEnd() + ', ';
+      } else if (curr === ')') {
+        result = result.trimEnd() + ')';
+      } else if (['+', '-', '*', '/', '>=', '<=', '==', '!=', '>', '<'].includes(curr)) {
+        result = result.trimEnd() + ' ' + curr + ' ';
+      } else {
+        if (result.length > 0 && !result.endsWith(' ') && !result.endsWith('(')) {
+          result += ' ';
+        }
+        result += curr;
+      }
+    }
+    return result.replace(/\s+/g, ' ').trim();
+  }
+
+  parseEquationString(rawInput: string): { tokens: EquationToken[]; errors: string[]; isValid: boolean; targetVar?: string; canonicalFormula?: string } {
+    const tokens: EquationToken[] = [];
+    const errors: string[] = [];
+    let input = (rawInput || '').trim();
+
+    if (!input) {
+      return { tokens: [], errors: [], isValid: true };
+    }
+
+    // Check for target assignment e.g. "CE = %C + %Mn / 6 ..." or "%CE = ..."
+    let targetVar = '';
+    const assignMatch = input.match(/^%?([a-zA-Z0-9_+ -]+)\s*=\s*([^=].*)$/);
+    if (assignMatch && !['>=', '<=', '==', '!='].some(op => input.startsWith(op))) {
+      targetVar = assignMatch[1].trim();
+      tokens.push({
+        token: `${targetVar} =`,
+        type: 'operator',
+        matched: `Target: ${targetVar}`
+      });
+      input = assignMatch[2].trim();
+    }
+
+    const available = this.equationParamChips;
+
+    // Sort parameters by symbol and name length descending so longer phrases match first
+    const sortedParams = [...available].sort((a, b) => {
+      const maxLenA = Math.max((a.name || '').length, (a.symbol || '').length);
+      const maxLenB = Math.max((b.name || '').length, (b.symbol || '').length);
+      return maxLenB - maxLenA;
+    });
+
+    const knownFunctions = ['SPECMIN', 'SPECMAX', 'ROUND', 'MEAN', 'SUM', 'POW', 'ABS', 'MAX', 'MIN', 'IF'];
+    const twoCharOps = ['>=', '<=', '==', '!='];
+    const singleCharOps = ['+', '-', '*', '/', '>', '<'];
+
+    let idx = 0;
+    const len = input.length;
+
+    while (idx < len) {
+      // Skip whitespace
+      if (/\s/.test(input[idx])) {
+        idx++;
+        continue;
+      }
+
+      const remaining = input.slice(idx);
+
+      // Check 2-char operators: >=, <=, ==, !=
+      const twoOp = twoCharOps.find(op => remaining.startsWith(op));
+      if (twoOp) {
+        tokens.push({ token: twoOp, type: 'operator' });
+        idx += twoOp.length;
+        continue;
+      }
+
+      // Check single char operators & punctuation
+      const ch = input[idx];
+      if (singleCharOps.includes(ch)) {
+        tokens.push({ token: ch, type: 'operator' });
+        idx++;
+        continue;
+      }
+      if (ch === '(' || ch === ')') {
+        tokens.push({ token: ch, type: 'paren' });
+        idx++;
+        continue;
+      }
+      if (ch === ',') {
+        tokens.push({ token: ',', type: 'comma' });
+        idx++;
+        continue;
+      }
+
+      // Check numbers (e.g. 100, 0.45, .5)
+      const numMatch = remaining.match(/^[0-9]+(\.[0-9]+)?|^\.[0-9]+/);
+      if (numMatch && numMatch.index === 0) {
+        tokens.push({ token: numMatch[0], type: 'number' });
+        idx += numMatch[0].length;
+        continue;
+      }
+
+      // Check known functions
+      let matchedFn = false;
+      for (const fn of knownFunctions) {
+        const fnRegex = new RegExp(`^${fn}\\b`, 'i');
+        if (fnRegex.test(remaining)) {
+          tokens.push({ token: fn.toUpperCase(), type: 'function' });
+          idx += fn.length;
+          matchedFn = true;
+          break;
+        }
+      }
+      if (matchedFn) continue;
+
+      // Check parameters: DUAL MATCHING by Name OR Symbol, with optional '%' prefix (e.g. %C, %Mn)
+      let matchedParam = false;
+      const hasPercent = remaining.startsWith('%');
+      const testRemaining = hasPercent ? remaining.slice(1) : remaining;
+
+      for (const p of sortedParams) {
+        // 1. Check Symbol match (e.g. C, Mn, Cr)
+        if (p.symbol) {
+          const escapedSymbol = p.symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const symRegex = new RegExp(`^${escapedSymbol}(?=[^a-zA-Z0-9_]|$)`, 'i');
+          const m = testRemaining.match(symRegex);
+          if (m) {
+            const tokenStr = (hasPercent ? '%' : '') + p.symbol;
+            tokens.push({
+              token: tokenStr,
+              type: 'param',
+              matched: p.display,
+              matchedBy: 'symbol',
+              symbol: p.symbol,
+              name: p.name
+            });
+            idx += (hasPercent ? 1 : 0) + m[0].length;
+            matchedParam = true;
+            break;
+          }
+        }
+
+        // 2. Check Name match (e.g. Carbon, Manganese)
+        if (p.name) {
+          const escapedName = p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const nameRegex = new RegExp(`^${escapedName}(?=[^a-zA-Z0-9_]|$)`, 'i');
+          const m = testRemaining.match(nameRegex);
+          if (m) {
+            const tokenStr = (hasPercent ? '%' : '') + p.name;
+            tokens.push({
+              token: tokenStr,
+              type: 'param',
+              matched: p.display,
+              matchedBy: 'name',
+              symbol: p.symbol,
+              name: p.name
+            });
+            idx += (hasPercent ? 1 : 0) + m[0].length;
+            matchedParam = true;
+            break;
+          }
+        }
+      }
+      if (matchedParam) continue;
+
+      // Check Constants (e.g. PI)
+      if (/^pi\b/i.test(remaining)) {
+        tokens.push({ token: 'PI', type: 'number', matched: '= 3.14159' });
+        idx += 2;
+        continue;
+      }
+
+      // If we reach here, it is an unknown word or unexpected character
+      const wordMatch = remaining.match(/^%?[a-zA-Z_][a-zA-Z0-9_]*/);
+      if (wordMatch && wordMatch.index === 0) {
+        const unkWord = wordMatch[0];
+        tokens.push({ token: unkWord, type: 'unknown' });
+        idx += unkWord.length;
+
+        const cleanUnk = unkWord.replace(/^%/, '');
+        // Find closest match suggestion
+        const partial = available.find(p => 
+          (p.name && p.name.toLowerCase().startsWith(cleanUnk.toLowerCase())) || 
+          (p.symbol && p.symbol.toLowerCase().startsWith(cleanUnk.toLowerCase()))
+        );
+        const suggestion = partial ? ` (did you mean "${partial.name}${partial.symbol ? ' [' + partial.symbol + ']' : ''}"?)` : '';
+        errors.push(`"${unkWord}" — unrecognized parameter or function${suggestion}`);
+        continue;
+      }
+
+      // Unknown single character
+      const unkChar = input[idx];
+      errors.push(`Unexpected character "${unkChar}"`);
+      tokens.push({ token: unkChar, type: 'unknown' });
+      idx++;
+    }
+
+    // Structural validations:
+    // 1. Bracket matching
+    let bracketDepth = 0;
+    for (const t of tokens) {
+      if (t.token === '(') bracketDepth++;
+      if (t.token === ')') {
+        bracketDepth--;
+        if (bracketDepth < 0) {
+          errors.push('Unmatched closing bracket ")".');
+          break;
+        }
+      }
+    }
+    if (bracketDepth > 0) {
+      errors.push(`${bracketDepth} unclosed bracket(s).`);
+    }
+
+    // 2. Trailing operator check
+    const contentTokens = tokens.filter(t => !t.token.endsWith('='));
+    if (contentTokens.length > 0) {
+      const lastToken = contentTokens[contentTokens.length - 1];
+      if (lastToken.type === 'operator' || lastToken.token === '(' || lastToken.token === ',') {
+        errors.push(`Expression cannot end with an operator or opening bracket ("${lastToken.token}").`);
+      }
+    }
+
+    // 3. Consecutive operators
+    for (let i = 0; i < contentTokens.length - 1; i++) {
+      const curr = contentTokens[i];
+      const next = contentTokens[i + 1];
+      if (curr.type === 'operator' && next.type === 'operator' && curr.token !== '-' && next.token !== '-') {
+        errors.push(`Invalid consecutive operators "${curr.token} ${next.token}".`);
+      }
+    }
+
+    const canonicalFormula = errors.length === 0 ? this.getCanonicalFormula(tokens) : '';
+
+    return {
+      tokens,
+      errors,
+      isValid: errors.length === 0,
+      targetVar,
+      canonicalFormula
+    };
+  }
+
+  // ── Live Calculator Simulation Methods ──────────────────────────────────────
+  toggleCalculator(): void {
+    this.showCalculator = !this.showCalculator;
+  }
+
+  updateCalculatorParameters(): void {
+    const activeTokens = this.equationActiveField === 'max' ? this.maxEquationTokens : this.minEquationTokens;
+    const paramTokens = activeTokens.filter(t => t.type === 'param');
+
+    const uniqueList: Array<{ symbol: string; name: string; key: string }> = [];
+    paramTokens.forEach(pt => {
+      const cleanKey = (pt.symbol || pt.name || pt.token || '').replace(/^%/, '').trim();
+      if (cleanKey && !uniqueList.some(u => u.key.toLowerCase() === cleanKey.toLowerCase())) {
+        const chip = this.equationParamChips.find(c => 
+          (c.symbol && c.symbol.toLowerCase() === cleanKey.toLowerCase()) ||
+          (c.name && c.name.toLowerCase() === cleanKey.toLowerCase())
+        );
+        uniqueList.push({
+          symbol: chip?.symbol || cleanKey,
+          name: chip?.name || cleanKey,
+          key: cleanKey
+        });
+      }
+    });
+
+    this.calcDetectedParams = uniqueList;
+
+    // Prefill default realistic test values
+    uniqueList.forEach(p => {
+      if (this.calcParamValues[p.key] === undefined) {
+        const k = p.key.toUpperCase();
+        if (k === 'C') this.calcParamValues[p.key] = 0.18;
+        else if (k === 'MN') this.calcParamValues[p.key] = 0.85;
+        else if (k === 'CR') this.calcParamValues[p.key] = 0.20;
+        else if (k === 'MO') this.calcParamValues[p.key] = 0.05;
+        else if (k === 'V') this.calcParamValues[p.key] = 0.02;
+        else if (k === 'NI') this.calcParamValues[p.key] = 0.10;
+        else if (k === 'CU') this.calcParamValues[p.key] = 0.15;
+        else if (k === 'P') this.calcParamValues[p.key] = 0.025;
+        else if (k === 'S') this.calcParamValues[p.key] = 0.020;
+        else if (k === 'SI') this.calcParamValues[p.key] = 0.25;
+        else this.calcParamValues[p.key] = 0.05;
+      }
+    });
+
+    this.runLiveCalculation();
+  }
+
+  runLiveCalculation(): void {
+    const activeTokens = this.equationActiveField === 'max' ? this.maxEquationTokens : this.minEquationTokens;
+    if (!activeTokens.length) {
+      this.calcResult = null;
+      this.calcStepPreview = '';
+      this.calcError = '';
+      return;
+    }
+
+    let jsExpr = '';
+    let previewExpr = '';
+
+    for (const t of activeTokens) {
+      if (t.token && t.token.endsWith('=')) {
+        continue; // skip assignment e.g. "CE ="
+      }
+      if (t.type === 'param') {
+        const cleanKey = (t.symbol || t.name || t.token || '').replace(/^%/, '').trim();
+        const matchedKey = Object.keys(this.calcParamValues).find(k => k.toLowerCase() === cleanKey.toLowerCase());
+        const val = matchedKey !== undefined ? (Number(this.calcParamValues[matchedKey]) || 0) : 0;
+        jsExpr += ` ${val} `;
+        previewExpr += ` ${val} `;
+      } else if (t.type === 'number' || t.type === 'operator' || t.type === 'comma') {
+        jsExpr += ` ${t.token} `;
+        previewExpr += ` ${t.token} `;
+      } else if (t.type === 'paren') {
+        jsExpr += t.token;
+        previewExpr += t.token;
+      } else if (t.type === 'function') {
+        const fn = t.token.toUpperCase();
+        if (fn === 'MAX') { jsExpr += 'Math.max'; previewExpr += 'MAX'; }
+        else if (fn === 'MIN') { jsExpr += 'Math.min'; previewExpr += 'MIN'; }
+        else if (fn === 'ROUND') { jsExpr += 'Math.round'; previewExpr += 'ROUND'; }
+        else if (fn === 'ABS') { jsExpr += 'Math.abs'; previewExpr += 'ABS'; }
+        else if (fn === 'POW') { jsExpr += 'Math.pow'; previewExpr += 'POW'; }
+        else { jsExpr += fn; previewExpr += fn; }
+      }
+    }
+
+    try {
+      const fn = new Function(`return (${jsExpr});`);
+      const res = fn();
+      if (typeof res === 'number' && isFinite(res)) {
+        this.calcResult = Math.round(res * 10000) / 10000;
+        this.calcStepPreview = `${previewExpr.trim()} = ${this.calcResult}`;
+        this.calcError = '';
+      } else {
+        this.calcResult = null;
+        this.calcError = 'Invalid calculation';
+      }
+    } catch (err: any) {
+      this.calcResult = null;
+      this.calcError = err?.message || 'Calculation error';
+    }
+  }
+
+  copyCalcResultToLimit(limitType: 'lower' | 'upper'): void {
+    if (this.calcResult == null || !this.equationModalLine) return;
+    if (limitType === 'lower') {
+      this.equationModalLine.get('lowerLimitDecimalValue')?.setValue(this.calcResult);
+      this.equationModalLine.get('minValue')?.setValue(this.calcResult);
+      if (!this.equationModalLine.get('lowerLimitValue')?.value) {
+        this.equationModalLine.get('lowerLimitValue')?.setValue('>=');
+      }
+      this.toastService.show(`Copied ${this.calcResult} to Lower Limit (>=)`, 'success');
+    } else {
+      this.equationModalLine.get('upperLimitDecimalValue')?.setValue(this.calcResult);
+      this.equationModalLine.get('maxValue')?.setValue(this.calcResult);
+      if (!this.equationModalLine.get('upperLimitValue')?.value) {
+        this.equationModalLine.get('upperLimitValue')?.setValue('<=');
+      }
+      this.toastService.show(`Copied ${this.calcResult} to Upper Limit (<=)`, 'success');
+    }
+    this.equationModalLine.markAsDirty();
+  }
+
+  resetCalcDefaults(): void {
+    this.calcParamValues = {};
+    this.calcDetectedParams.forEach(p => {
+      const k = p.key.toUpperCase();
+      if (k === 'C') this.calcParamValues[p.key] = 0.18;
+      else if (k === 'MN') this.calcParamValues[p.key] = 0.85;
+      else if (k === 'CR') this.calcParamValues[p.key] = 0.20;
+      else if (k === 'MO') this.calcParamValues[p.key] = 0.05;
+      else if (k === 'V') this.calcParamValues[p.key] = 0.02;
+      else if (k === 'NI') this.calcParamValues[p.key] = 0.10;
+      else if (k === 'CU') this.calcParamValues[p.key] = 0.15;
+      else if (k === 'P') this.calcParamValues[p.key] = 0.025;
+      else if (k === 'S') this.calcParamValues[p.key] = 0.020;
+      else if (k === 'SI') this.calcParamValues[p.key] = 0.25;
+      else this.calcParamValues[p.key] = 0.05;
+    });
+    this.runLiveCalculation();
+  }
+
   saveEquation(): void {
-    this.equationModalLine?.get('minEquation')?.setValue(this.minEquationDraft?.trim() || null);
-    this.equationModalLine?.get('maxEquation')?.setValue(this.maxEquationDraft?.trim() || null);
+    if (!this.isEquationValidToSave) {
+      this.toastService.show('Please resolve formula errors before applying.', 'error');
+      return;
+    }
+
+    // Always sanitize unwanted data (% prefix, CE =, full names) into clean actual formula
+    const minEq = (this.minEquationValid && this.minCanonicalFormula) ? this.minCanonicalFormula : (this.minEquationDraft?.trim() || null);
+    const maxEq = (this.maxEquationValid && this.maxCanonicalFormula) ? this.maxCanonicalFormula : (this.maxEquationDraft?.trim() || null);
+
+    this.equationModalLine?.get('minEquation')?.setValue(minEq);
+    this.equationModalLine?.get('maxEquation')?.setValue(maxEq);
+
+    // Auto-apply to Lower Limit if Min Equation is provided
+    if (minEq) {
+      const currentLowerOp = this.equationModalLine?.get('lowerLimitValue')?.value;
+      if (!currentLowerOp) {
+        this.equationModalLine?.get('lowerLimitValue')?.setValue('>=');
+      }
+    }
+
+    // Auto-apply to Upper Limit if Max Equation is provided
+    if (maxEq) {
+      const currentUpperOp = this.equationModalLine?.get('upperLimitValue')?.value;
+      if (!currentUpperOp) {
+        this.equationModalLine?.get('upperLimitValue')?.setValue('<=');
+      }
+    }
+
     this.equationModalLine?.markAsDirty();
+    this.toastService.show('Actual formula applied to limits successfully!', 'success');
     this.closeEquationModal();
   }
+
+  hasUnwantedFormulaData(field: 'min' | 'max'): boolean {
+    const raw = (field === 'min' ? this.minEquationDraft : this.maxEquationDraft) || '';
+    const trimmed = raw.trim();
+    if (!trimmed) return false;
+
+    // Has % symbol
+    if (trimmed.includes('%')) return true;
+
+    // Has target assignment e.g. "CE = " or "Carbon Equivalent = "
+    if (/^%?[a-zA-Z0-9_.+ -]+\s*=\s*[^=]/.test(trimmed) && !['>=', '<=', '==', '!='].some(op => trimmed.startsWith(op))) {
+      return true;
+    }
+
+    // Has canonical formula that differs from trimmed input
+    const canonical = field === 'min' ? this.minCanonicalFormula : this.maxCanonicalFormula;
+    if (canonical && canonical !== trimmed) {
+      return true;
+    }
+
+    return false;
+  }
+
+  getSuggestedFormula(field: 'min' | 'max'): string {
+    return field === 'min' ? this.minCanonicalFormula : this.maxCanonicalFormula;
+  }
+
+  applySuggestedFormula(field: 'min' | 'max'): void {
+    const canonical = this.getSuggestedFormula(field);
+    if (!canonical) return;
+
+    if (field === 'min') {
+      this.minEquationDraft = canonical;
+      this.validateEquation('min');
+    } else {
+      this.maxEquationDraft = canonical;
+      this.validateEquation('max');
+    }
+
+    this.updateCalculatorParameters();
+    this.toastService.show(`Unwanted data removed! Actual formula applied: "${canonical}"`, 'success');
+  }
+
+  applySuggestedFormulaAndClose(field: 'min' | 'max'): void {
+    this.applySuggestedFormula(field);
+    this.saveEquation();
+  }
+
+  clearEquations(): void {
+    this.minEquationDraft = '';
+    this.maxEquationDraft = '';
+    this.validateEquation('min');
+    this.validateEquation('max');
+    this.updateCalculatorParameters();
+  }
+
   closeEquationModal(): void {
     this.equationModalVisible = false;
     this.equationModalLine = null;
     this.minEquationDraft = '';
     this.maxEquationDraft = '';
     this.equationParamChips = [];
+    this.equationParamSearch = '';
+    this.minEquationTokens = [];
+    this.minEquationErrors = [];
+    this.minEquationValid = true;
+    this.minCanonicalFormula = '';
+    this.maxEquationTokens = [];
+    this.maxEquationErrors = [];
+    this.maxEquationValid = true;
+    this.maxCanonicalFormula = '';
+    this.calcDetectedParams = [];
+    this.calcParamValues = {};
+    this.calcResult = null;
+    this.calcStepPreview = '';
+    this.calcError = '';
+    this.paramIsCalculated = false;
+    this.paramMasterFormula = '';
+  }
+
+  getParamMasterFormula(group: AbstractControl): string {
+    const stored = (group.get('formulaDisplay')?.value || '').trim();
+    if (stored) return stored;
+    const paramId = group.get('parameterID')?.value;
+    if (paramId) {
+      const found = this.chemicalParametersCache.find(p => p.id === paramId) ||
+                    this.mechanicalParametersCache.find(p => p.id === paramId);
+      if (found) {
+        const isCalc = found.additionalValues?.IsCalculated ?? found.isCalculated ?? false;
+        const formula = (found.additionalValues?.FormulaDisplay || found.formulaDisplay || '').trim();
+        if (isCalc && formula) return formula;
+      }
+    }
+    return '';
+  }
+
+  applyMasterFormulaOneClick(target: 'active' | 'min' | 'max' = 'active'): void {
+    if (!this.paramMasterFormula?.trim()) {
+      this.toastService.show('No master formula defined for this parameter.', 'warning');
+      return;
+    }
+
+    const raw = this.paramMasterFormula.trim();
+    const parsed = this.parseEquationString(raw);
+    const formula = (parsed.isValid && parsed.canonicalFormula) ? parsed.canonicalFormula : raw;
+
+    const fieldToSet = target === 'active' ? this.equationActiveField : target;
+
+    if (fieldToSet === 'max') {
+      this.maxEquationDraft = formula;
+      this.validateEquation('max');
+    } else {
+      this.minEquationDraft = formula;
+      this.validateEquation('min');
+    }
+
+    this.updateCalculatorParameters();
+    this.toastService.show(`Applied actual formula: "${formula}"`, 'success');
+  }
+
+  applyMasterFormulaToRow(group: AbstractControl, gradeIndex: number): void {
+    const rawFormula = this.getParamMasterFormula(group);
+    if (!rawFormula) {
+      this.toastService.show('No master formula found for this parameter.', 'warning');
+      return;
+    }
+
+    const parsed = this.parseEquationString(rawFormula);
+    const formDisp = (parsed.isValid && parsed.canonicalFormula) ? parsed.canonicalFormula : rawFormula;
+
+    const currentMax = group.get('maxEquation')?.value;
+    if (currentMax) {
+      group.get('maxEquation')?.setValue(formDisp);
+      if (!group.get('upperLimitValue')?.value) {
+        group.get('upperLimitValue')?.setValue('<=');
+      }
+    } else {
+      group.get('minEquation')?.setValue(formDisp);
+      if (!group.get('lowerLimitValue')?.value) {
+        group.get('lowerLimitValue')?.setValue('>=');
+      }
+    }
+
+    group.markAsDirty();
+    this.toastService.show(`Applied actual formula "${formDisp}" in 1-click!`, 'success');
   }
 
   onGridKeydown(event: KeyboardEvent, ri: number, col: 'min' | 'max', tab: string, gradeIndex: number): void {
@@ -605,7 +1337,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       next: async (m: any) => {
         const tag = (list: any[], section: string) => (list || []).map(x => ({ ...x, section }));
         const masters: SpecMasters = {
-          parameters: [...tag(m.chemical, 'chemical'), ...tag(m.mechanical, 'mechanical')],
+          parameters: [...tag(m.chemical, 'Chemical'), ...tag(m.mechanical, 'General')],
           units: m.units || [],
           laboratoryTests: m.laboratoryTests || [],
           testMethodSpecs: m.testMethodSpecs || [],
@@ -678,14 +1410,33 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       if (gIndex < 0) {
         this.addGrade(false);
         gIndex = this.grades.length - 1;
-        this.grades.at(gIndex).patchValue({ grade: gradeName, metalClassificationID: gradeRows[0].metalClassificationID });
+        const gradeUns = gradeRows[0].unsNo || '';
+        this.grades.at(gIndex).patchValue({
+          grade: gradeName,
+          metalClassificationID: gradeRows[0].metalClassificationID,
+          unsSteelNumber: gradeUns,
+        });
+        if (gradeUns) {
+          this.gradeIdentifierValues[gIndex] = { key: 'UNS No', value: gradeUns };
+        }
+      } else {
+        const gradeUns = gradeRows[0].unsNo || '';
+        if (gradeUns && !this.grades.at(gIndex).get('unsSteelNumber')?.value) {
+          this.grades.at(gIndex).patchValue({ unsSteelNumber: gradeUns });
+          if (!this.gradeIdentifierValues[gIndex]?.value) {
+            this.gradeIdentifierValues[gIndex] = { key: 'UNS No', value: gradeUns };
+          }
+        }
       }
+
       gradeRows.forEach(r => {
         const tab = r.section;
         const lines = this.getSpecificationLinesByTab(gIndex, tab);
         const dup = lines.controls.some(c => c.get('parameterID')?.value === r.parameterID);
         if (dup) { skipped++; return; }
         const group = this.createSpecificationLineFormGroup(tab);
+        const lowerOp = r.lowerLimitValue || (r.minEquation ? '≥' : '');
+        const upperOp = r.upperLimitValue || (r.maxEquation ? '≤' : '');
         group.patchValue({
           parameterID: r.parameterID,
           parameterName: r.parameterName,
@@ -696,12 +1447,12 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
           maxValue: r.maxValue,
           minTolerance: r.minTolerance,
           maxTolerance: r.maxTolerance,
-          lowerLimitValue: r.lowerLimitValue,
+          lowerLimitValue: lowerOp,
           lowerLimitDecimalValue: r.lowerLimitDecimalValue,
-          upperLimitValue: r.upperLimitValue,
+          upperLimitValue: upperOp,
           upperLimitDecimalValue: r.upperLimitDecimalValue,
-          minEquation: r.minEquation,
-          maxEquation: r.maxEquation,
+          minEquation: r.minEquation || '',
+          maxEquation: r.maxEquation || '',
           notes: r.notes,
           specimenOrientationID: r.specimenOrientationID,
           dimensionalFactorID: r.dimensionalFactorID,
@@ -1142,6 +1893,10 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       }
     }
 
+    const isCalculated = additional.IsCalculated ?? additional.isCalculated ?? false;
+    const formula = additional.Formula || additional.formula || '';
+    const formulaDisplay = additional.FormulaDisplay || additional.formulaDisplay || '';
+
     const patchPayload: any = {
       parameterID: item.id,
       decimalPrecision,
@@ -1149,6 +1904,9 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
       parameterName: item?.name || item?.text || '',
       minReportableLimit,
       inputType,
+      isCalculated,
+      formula,
+      formulaDisplay,
       parameterDropdownOptions: dropdownOptions
     };
 

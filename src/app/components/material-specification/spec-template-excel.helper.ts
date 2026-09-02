@@ -83,6 +83,65 @@ const SECTIONS = ['Chemical', 'General'];
 const VALIDATION_ROWS = 1000; // apply dropdown validation to rows 2..1001
 const TEMPLATE_SHEET = 'Template';
 
+// Common parameter name aliases to map international standards (e.g. ASTM/BS/EN) to LIMS masters
+const PARAM_ALIASES: Record<string, string> = {
+  // Chemistry spelling and symbol aliases
+  'sulphur': 'sulfur',
+  'aluminium': 'aluminum',
+  'phosphorous': 'phosphorus',
+  'columbium': 'niobium',
+  'cb': 'niobium',
+  'nb': 'niobium',
+  'mo': 'molybdenum',
+  'si': 'silicon',
+  'mn': 'manganese',
+  'cr': 'chromium',
+  'ni': 'nickel',
+  'cu': 'copper',
+  'fe': 'iron',
+  'c': 'carbon',
+  'p': 'phosphorus',
+  's': 'sulfur',
+  'v': 'vanadium',
+  'w': 'tungsten',
+  'ti': 'titanium',
+  'co': 'cobalt',
+  'al': 'aluminum',
+  'b': 'boron',
+  'n': 'nitrogen',
+  'o': 'oxygen',
+  'h': 'hydrogen',
+  'as': 'arsenic',
+  'sn': 'tin',
+  'pb': 'lead',
+  'sb': 'antimony',
+  'bi': 'bismuth',
+  'zr': 'zirconium',
+  'ta': 'tantalum',
+
+  // Mechanical / General test names & ASTM headings
+  'uts': 'ultimate tensile strength',
+  'tensile strength': 'ultimate tensile strength',
+  'ultimate tensile strength': 'ultimate tensile strength',
+  'ys': 'yield strength',
+  'yield stress': 'yield strength',
+  '0.2% proof stress': 'yield strength',
+  'proof stress': 'yield strength',
+  'elg': 'elongation',
+  'el': 'elongation',
+  'elongation': 'elongation',
+  'ra': 'reduction of area',
+  'reduction of area': 'reduction of area',
+  'bhn': 'hardness (brinell)',
+  'brinell hardness number': 'hardness (brinell)',
+  'brinell hardness': 'hardness (brinell)',
+  'hardness (brinell)': 'hardness (brinell)',
+  'hardness': 'hardness (brinell)',
+  'hrc': 'hardness (rockwell c)',
+  'hrb': 'hardness (rockwell b)',
+  'hv': 'hardness (vickers)',
+};
+
 // Master sheet config: { key in SpecMasters, sheet name (no spaces for formula refs), template column it feeds }
 const MASTER_SHEETS: Array<{ key: keyof SpecMasters; sheet: string; column: string }> = [
   { key: 'metalClassifications', sheet: 'MetalClass', column: 'Metal Classification' },
@@ -276,8 +335,19 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
   const template = wb.getWorksheet(TEMPLATE_SHEET);
   if (!template) throw new Error(`Sheet "${TEMPLATE_SHEET}" not found. Please use the downloaded template.`);
 
-  // Build Name→meta maps from liveMasters (if provided) and/or embedded master sheets.
-  const paramMap = new Map<string, { id: number | null; section: string; unitId: number | null; unitName: string; symbol: string; precision: number }>();
+  interface ParamMeta {
+    id: number | null;
+    name: string;
+    section: string;
+    unitId: number | null;
+    unitName: string;
+    symbol: string;
+    precision: number;
+  }
+
+  // Build Name→meta maps from liveMasters (if provided) or fallback to embedded master sheets.
+  const paramMap = new Map<string, ParamMeta>();
+  const symbolMap = new Map<string, ParamMeta>();
   const paramNames = new Set<string>();
   const paramSymbols = new Set<string>();
   const masterMap: Record<string, Map<string, number | null>> = {};
@@ -286,23 +356,38 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
     masterMap[m.sheet] = new Map<string, number | null>();
   }
 
-  // 1. Seed from liveMasters if available
+  // 1. Seed from liveMasters if available (the single source of truth for IDs)
   if (liveMasters) {
     for (const p of liveMasters.parameters || []) {
-      const name = (p.parameterName || (p as any).name || (p as any).text || '').toString().trim();
+      const name = (p.name ?? (p as any).Name ?? p.parameterName ?? (p as any).text ?? '').toString().trim();
       if (!name) continue;
       const lower = name.toLowerCase();
       paramNames.add(lower);
-      const sym = (p.parameterSymbol || (p as any).symbol || '').toString().trim();
-      if (sym) paramSymbols.add(sym.toLowerCase());
-      paramMap.set(lower, {
-        id: p.id ?? (p as any).value ?? null,
-        section: (p.section || '').toString().trim().toLowerCase(),
-        unitName: p.defaultUnitName || (p as any).unitName || '',
-        unitId: p.unitID || (p as any).unitId || null,
-        symbol: sym,
-        precision: Number(p.decimalPlaces ?? 2),
-      });
+
+      const add = (p as any).additionalValues || {};
+      const sym = (add.Symbol ?? add.symbol ?? p.parameterSymbol ?? (p as any).symbol ?? '').toString().trim();
+      if (sym) {
+        paramSymbols.add(sym.toLowerCase());
+      }
+
+      const rawId = p.id ?? (p as any).Id ?? (p as any).value;
+      const id = rawId != null && rawId !== '' ? Number(rawId) : null;
+      const rawUnitId = add.UnitID ?? add.unitID ?? p.unitID ?? (p as any).unitId;
+      const unitId = rawUnitId != null && rawUnitId !== '' ? Number(rawUnitId) : null;
+      const unitName = (add.Unit ?? add.unit ?? p.defaultUnitName ?? (p as any).unitName ?? '').toString().trim();
+      const precision = Number(add.DecimalPrecision ?? add.decimalPrecision ?? (p as any).decimalPlaces ?? 2);
+      const section = (p.section || add.ParameterType || add.parameterType || '').toString().trim().toLowerCase();
+
+      const meta: ParamMeta = { id, name, section, unitId, unitName, symbol: sym, precision };
+      paramMap.set(lower, meta);
+
+      const normName = lower.replace(/\s+/g, ' ');
+      if (!paramMap.has(normName)) paramMap.set(normName, meta);
+
+      if (sym) {
+        const lowerSym = sym.toLowerCase();
+        if (!symbolMap.has(lowerSym)) symbolMap.set(lowerSym, meta);
+      }
     }
 
     const reg = (sheet: string, items: any[], nameKeys: string[]) => {
@@ -312,10 +397,12 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
         for (const k of nameKeys) {
           if (item[k]) { name = item[k].toString().trim(); break; }
         }
-        if (!name && (item.name || item.text)) name = (item.name || item.text).toString().trim();
-        const id = item.id ?? item.value;
+        if (!name && (item.name || item.text || item.Name)) name = (item.name || item.text || item.Name).toString().trim();
+        const id = item.id ?? item.Id ?? item.value;
         if (name && id != null) {
           map.set(name.toLowerCase(), Number(id));
+          const norm = name.toLowerCase().replace(/\s+/g, ' ');
+          if (!map.has(norm)) map.set(norm, Number(id));
         }
       }
     };
@@ -331,44 +418,86 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
     reg('TestMethods', liveMasters.testMethodSpecs, ['testMethodName', 'testMethodSpecificationName']);
   }
 
-  // 2. Supplement / fallback with embedded workbook sheets
-  const pSheet = wb.getWorksheet('Parameters');
-  pSheet?.eachRow((row, i) => {
-    if (i === 1) return;
-    const name = (row.getCell(1).value ?? '').toString().trim();
-    if (!name) return;
-    const symbol = (row.getCell(6).value ?? '').toString().trim();
-    const lowerName = name.toLowerCase();
-    paramNames.add(lowerName);
-    if (symbol) paramSymbols.add(symbol.toLowerCase());
-
-    if (!paramMap.has(lowerName)) {
-      paramMap.set(lowerName, {
-        id: numOrNull(row.getCell(2).value),
-        section: (row.getCell(3).value ?? '').toString().trim().toLowerCase(),
-        unitName: (row.getCell(4).value ?? '').toString().trim(),
-        unitId: numOrNull(row.getCell(5).value),
-        symbol,
-        precision: Number(numOrNull(row.getCell(7).value) ?? 2),
-      });
-    }
-  });
-
-  for (const m of MASTER_SHEETS) {
-    const map = masterMap[m.sheet] || (masterMap[m.sheet] = new Map());
-    wb.getWorksheet(m.sheet)?.eachRow((row, i) => {
+  // 2. ONLY fallback to embedded workbook sheets if liveMasters was NOT provided at all
+  if (!liveMasters) {
+    const pSheet = wb.getWorksheet('Parameters');
+    pSheet?.eachRow((row, i) => {
       if (i === 1) return;
       const name = (row.getCell(1).value ?? '').toString().trim();
-      if (name && !map.has(name.toLowerCase())) {
-        map.set(name.toLowerCase(), numOrNull(row.getCell(2).value));
+      if (!name) return;
+      const symbol = (row.getCell(6).value ?? '').toString().trim();
+      const lowerName = name.toLowerCase();
+      paramNames.add(lowerName);
+      if (symbol) paramSymbols.add(symbol.toLowerCase());
+
+      if (!paramMap.has(lowerName)) {
+        const meta: ParamMeta = {
+          id: numOrNull(row.getCell(2).value),
+          name,
+          section: (row.getCell(3).value ?? '').toString().trim().toLowerCase(),
+          unitName: (row.getCell(4).value ?? '').toString().trim(),
+          unitId: numOrNull(row.getCell(5).value),
+          symbol,
+          precision: Number(numOrNull(row.getCell(7).value) ?? 2),
+        };
+        paramMap.set(lowerName, meta);
+        if (symbol && !symbolMap.has(symbol.toLowerCase())) {
+          symbolMap.set(symbol.toLowerCase(), meta);
+        }
       }
     });
+
+    for (const m of MASTER_SHEETS) {
+      const map = masterMap[m.sheet] || (masterMap[m.sheet] = new Map());
+      wb.getWorksheet(m.sheet)?.eachRow((row, i) => {
+        if (i === 1) return;
+        const name = (row.getCell(1).value ?? '').toString().trim();
+        if (name && !map.has(name.toLowerCase())) {
+          map.set(name.toLowerCase(), numOrNull(row.getCell(2).value));
+        }
+      });
+    }
   }
 
   const lookup = (sheet: string, name: string): number | null => {
     const n = (name || '').trim().toLowerCase();
     if (!n) return null;
-    return masterMap[sheet]?.has(n) ? masterMap[sheet].get(n)! : undefined as any;
+    const map = masterMap[sheet];
+    if (!map) return undefined as any;
+    if (map.has(n)) return map.get(n)!;
+    const norm = n.replace(/\s+/g, ' ');
+    if (map.has(norm)) return map.get(norm)!;
+    return undefined as any;
+  };
+
+  const resolveParameter = (rawName: string): ParamMeta | null => {
+    if (!rawName) return null;
+    const clean = rawName.trim().toLowerCase();
+    const normalized = clean.replace(/\s+/g, ' ');
+
+    // 1. Direct name match
+    if (paramMap.has(clean)) return paramMap.get(clean)!;
+    if (paramMap.has(normalized)) return paramMap.get(normalized)!;
+
+    // 2. Alias match (e.g. "sulphur" -> "sulfur", "bhn" -> "hardness (brinell)")
+    const alias = PARAM_ALIASES[clean] || PARAM_ALIASES[normalized];
+    if (alias) {
+      if (paramMap.has(alias)) return paramMap.get(alias)!;
+      const aliasNorm = alias.replace(/\s+/g, ' ');
+      if (paramMap.has(aliasNorm)) return paramMap.get(aliasNorm)!;
+    }
+
+    // 3. Symbol match (e.g. "Mo" -> Molybdenum, "C" -> Carbon)
+    if (symbolMap.has(clean)) return symbolMap.get(clean)!;
+
+    // 4. Fuzzy search across paramMap keys
+    for (const [k, v] of paramMap.entries()) {
+      if (k === clean || k === normalized || (v.symbol && v.symbol.toLowerCase() === clean)) {
+        return v;
+      }
+    }
+
+    return null;
   };
 
   // Dynamic header mapping with alias support (case-insensitive)
@@ -414,7 +543,7 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
       ? 'mechanical'
       : 'chemical';
 
-    const pmeta = paramMap.get(paramName.toLowerCase());
+    const pmeta = resolveParameter(paramName);
     if (!grade) fail('Grade is required.');
     if (!paramName) {
       fail('Parameter is required.');
@@ -482,15 +611,12 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
       if (val.isValid) {
         if (val.leadingOp === '<=' || val.leadingOp === '≤' || val.leadingOp === '<') {
           maxEq = val.formula;
-          if (!upperSym) upperSym = (val.leadingOp === '<' ? '<' : '≤');
         } else {
           minEq = val.formula;
-          if (!lowerSym) lowerSym = (val.leadingOp === '>' ? '>' : '≥');
         }
       } else {
         warn(`Formula "${eqFx}" for ${paramName} is invalid: ${val.error}`);
         minEq = eqFx;
-        if (!lowerSym) lowerSym = '≥';
       }
     } else {
       if (minEq) {
@@ -502,7 +628,6 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
           formulaValid = true;
           if (val.formula) minEq = val.formula;
         }
-        if (!lowerSym) lowerSym = '≥';
       }
       if (maxEq) {
         const val = validateSpecFormula(maxEq, paramNames, paramSymbols);
@@ -513,7 +638,6 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
           if (formulaValid !== false) formulaValid = true;
           if (val.formula) maxEq = val.formula;
         }
-        if (!upperSym) upperSym = '≤';
       }
     }
 
@@ -530,10 +654,10 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
       metalClassificationID: resolveMaster('MetalClass', 'Metal Classification', 'Metal Classification'),
       section,
       parameterID: pmeta?.id ?? null,
-      parameterName: paramName,
+      parameterName: pmeta?.name || paramName,
       parameterSymbol: pmeta?.symbol ?? '',
       decimalPrecision: pmeta?.precision ?? 2,
-      parameterUnitID: unitId ?? null,
+      parameterUnitID: unitId ?? pmeta?.unitId ?? null,
       unitName: unitName || pmeta?.unitName || '',
       minValue: minV,
       maxValue: maxV,

@@ -4750,40 +4750,101 @@ input[type="checkbox"]:checked {
   pointer-events: none;
 }
 
-/* ── Clean Inline Symbol Selector (Formula Builder) ──────── */
-.symbol-select-wrap {
+
+
+/* ── Excel Import Analysis Backdrop Loader ───────────────────────── */
+.import-analyzing-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.import-analyzing-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 320px;
+  max-width: 420px;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.import-analyzing-card .spinner-border {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--primary-color, #da261c) !important;
+  border-width: 0.25rem;
+}
+
+.import-analyzing-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.import-analyzing-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ── Excel Import Preview Filter Badges ──────────────────────────── */
+.import-filter-badge {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
+  gap: 4px;
 }
 
-.symbol-select-clean {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 1px 18px 1px 4px !important;
-  font-size: 0.8rem !important;
-  font-weight: 700 !important;
-  line-height: 1.2 !important;
-  height: 22px !important;
-  width: auto !important;
-  cursor: pointer;
-  border-radius: 4px;
-  background-position: right 2px center !important;
-  background-size: 10px 10px !important;
-  transition: background-color 0.15s ease, color 0.15s ease;
+.import-filter-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  opacity: 0.95;
 }
 
-.symbol-select-clean:hover {
-  background-color: rgba(0, 0, 0, 0.04) !important;
+.import-filter-badge:active {
+  transform: translateY(0);
 }
 
-.symbol-select-clean:focus {
-  outline: none !important;
-  box-shadow: none !important;
-  background-color: rgba(0, 0, 0, 0.05) !important;
+.import-filter-badge.active-filter {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px currentColor !important;
+  transform: translateY(-1px);
+  font-weight: 700;
+}
+
+.import-filter-badge-all {
+  background-color: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.import-filter-badge-all:hover {
+  background-color: #e2e8f0;
+}
+
+.import-filter-badge-all.active-filter {
+  background-color: #334155;
+  color: #ffffff;
+  border-color: #334155;
 }

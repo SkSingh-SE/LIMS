@@ -1060,22 +1060,14 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     }
   }
 
-  copyCalcResultToLimit(limitType: 'lower' | 'upper'): void {
+  copyCalcResultToLimit(limitType: 'min' | 'max' | 'lower' | 'upper'): void {
     if (this.calcResult == null || !this.equationModalLine) return;
-    if (limitType === 'lower') {
-      this.equationModalLine.get('lowerLimitDecimalValue')?.setValue(this.calcResult);
+    if (limitType === 'min' || limitType === 'lower') {
       this.equationModalLine.get('minValue')?.setValue(this.calcResult);
-      if (!this.equationModalLine.get('lowerLimitValue')?.value) {
-        this.equationModalLine.get('lowerLimitValue')?.setValue('>=');
-      }
-      this.toastService.show(`Copied ${this.calcResult} to Lower Limit (>=)`, 'success');
+      this.toastService.show(`Copied ${this.calcResult} to Min`, 'success');
     } else {
-      this.equationModalLine.get('upperLimitDecimalValue')?.setValue(this.calcResult);
       this.equationModalLine.get('maxValue')?.setValue(this.calcResult);
-      if (!this.equationModalLine.get('upperLimitValue')?.value) {
-        this.equationModalLine.get('upperLimitValue')?.setValue('<=');
-      }
-      this.toastService.show(`Copied ${this.calcResult} to Upper Limit (<=)`, 'success');
+      this.toastService.show(`Copied ${this.calcResult} to Max`, 'success');
     }
     this.equationModalLine.markAsDirty();
   }
@@ -1112,24 +1104,8 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     this.equationModalLine?.get('minEquation')?.setValue(minEq);
     this.equationModalLine?.get('maxEquation')?.setValue(maxEq);
 
-    // Auto-apply to Lower Limit if Min Equation is provided
-    if (minEq) {
-      const currentLowerOp = this.equationModalLine?.get('lowerLimitValue')?.value;
-      if (!currentLowerOp) {
-        this.equationModalLine?.get('lowerLimitValue')?.setValue('>=');
-      }
-    }
-
-    // Auto-apply to Upper Limit if Max Equation is provided
-    if (maxEq) {
-      const currentUpperOp = this.equationModalLine?.get('upperLimitValue')?.value;
-      if (!currentUpperOp) {
-        this.equationModalLine?.get('upperLimitValue')?.setValue('<=');
-      }
-    }
-
     this.equationModalLine?.markAsDirty();
-    this.toastService.show('Actual formula applied to limits successfully!', 'success');
+    this.toastService.show('Formula applied to Min / Max successfully!', 'success');
     this.closeEquationModal();
   }
 
@@ -1308,8 +1284,11 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
 
   // ── MS-F: multi-sheet .xlsx template (download) + import with preview ─────────
   importBuilding = false;
+  importAnalyzing = false;
+  importAnalyzingMsg = 'Analyzing Excel Template...';
   importPreviewVisible = false;
   importPreviewRows: ParsedSpecRow[] = [];
+  importFilter: 'all' | 'ok' | 'warning' | 'error' | 'missing' = 'all';
 
   get importOkCount(): number { return this.importPreviewRows.filter(r => r.status === 'ok').length; }
   get importWarnCount(): number { return this.importPreviewRows.filter(r => r.status === 'warning').length; }
@@ -1321,23 +1300,51 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     return this.importPreviewRows.filter(r => r.missingMasters && r.missingMasters.length > 0).length;
   }
 
-  /** Fetch every master list used by template download and import parser. */
+  get filteredImportPreviewRows(): ParsedSpecRow[] {
+    switch (this.importFilter) {
+      case 'ok': return this.importPreviewRows.filter(r => r.status === 'ok');
+      case 'warning': return this.importPreviewRows.filter(r => r.status === 'warning');
+      case 'error': return this.importPreviewRows.filter(r => r.status === 'error');
+      case 'missing': return this.importPreviewRows.filter(r => r.missingMasters && r.missingMasters.length > 0);
+      default: return this.importPreviewRows;
+    }
+  }
+
+  setImportFilter(filter: 'all' | 'ok' | 'warning' | 'error' | 'missing'): void {
+    this.importFilter = this.importFilter === filter ? 'all' : filter;
+  }
+
+  /** Fetch every master list used by template download and import parser (ensures full lists with pageNo = 0). */
   loadAllSpecMasters(): Observable<SpecMasters> {
-    const all = (fn: any) => fn('', 1, 5000);
+    const chem$ = this.chemicalParametersCache?.length
+      ? of(this.chemicalParametersCache)
+      : this.parameterService.getChemicalParameterDropdown('', 0, 5000);
+    const mech$ = this.mechanicalParametersCache?.length
+      ? of(this.mechanicalParametersCache)
+      : this.parameterService.getMechanicalParameterDropdown('', 0, 5000);
+
+    const all0 = (fn: any) => fn('', 0, 5000);
+
     return forkJoin({
-      chemical: all(this.getChemicalParameter),
-      mechanical: all(this.getMechanicalParameter),
-      units: all(this.getParameterUnitDropdownFn),
-      laboratoryTests: all(this.getAllLaboratoryTestFn),
-      testMethodSpecs: all(this.getTestMethodSpecification),
-      specimenOrientations: all(this.getSpecimenOrientationFn),
-      heatTreatments: all(this.getHeatTreatment),
-      dimensionalFactors: all(this.getDimensionalFactor),
-      productConditions: all(this.getProductCondition),
-      productSizes: all(this.getProductSize),
-      metalClassifications: all(this.getMetalClassification),
+      chemical: chem$,
+      mechanical: mech$,
+      units: all0(this.getParameterUnitDropdownFn),
+      laboratoryTests: all0(this.getAllLaboratoryTestFn),
+      testMethodSpecs: all0(this.getTestMethodSpecification),
+      specimenOrientations: all0(this.getSpecimenOrientationFn),
+      heatTreatments: all0(this.getHeatTreatment),
+      dimensionalFactors: all0(this.getDimensionalFactor),
+      productConditions: all0(this.getProductCondition),
+      productSizes: all0(this.getProductSize),
+      metalClassifications: all0(this.getMetalClassification),
     }).pipe(
       map((m: any) => {
+        if (m.chemical?.length && !this.chemicalParametersCache?.length) {
+          this.chemicalParametersCache = m.chemical;
+        }
+        if (m.mechanical?.length && !this.mechanicalParametersCache?.length) {
+          this.mechanicalParametersCache = m.mechanical;
+        }
         const tag = (list: any[], section: string) => (list || []).map(x => ({ ...x, section }));
         return {
           parameters: [...tag(m.chemical, 'Chemical'), ...tag(m.mechanical, 'General')],
@@ -1386,19 +1393,26 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+
+    this.importAnalyzing = true;
+    this.importAnalyzingMsg = 'Reading Excel file & loading master references...';
+
     const reader = new FileReader();
     reader.onload = () => {
       const buffer = reader.result as ArrayBuffer;
+      this.importAnalyzingMsg = 'Validating specification parameters, units, and formulas...';
       this.loadAllSpecMasters().subscribe({
         next: async (masters) => {
           try {
             const rows = await parseSpecTemplate(buffer, masters);
             if (!rows.length) { this.toastService.show('No data rows found in the Template sheet.', 'warning'); return; }
             this.importPreviewRows = rows;
+            this.importFilter = 'all';
             this.importPreviewVisible = true;
           } catch (e: any) {
             this.toastService.show(e?.message || 'Failed to read the Excel file.', 'error');
           } finally {
+            this.importAnalyzing = false;
             input.value = '';
           }
         },
@@ -1408,14 +1422,21 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
             const rows = await parseSpecTemplate(buffer);
             if (!rows.length) { this.toastService.show('No data rows found in the Template sheet.', 'warning'); return; }
             this.importPreviewRows = rows;
+            this.importFilter = 'all';
             this.importPreviewVisible = true;
           } catch (e: any) {
             this.toastService.show(e?.message || 'Failed to read the Excel file.', 'error');
           } finally {
+            this.importAnalyzing = false;
             input.value = '';
           }
         },
       });
+    };
+    reader.onerror = () => {
+      this.importAnalyzing = false;
+      input.value = '';
+      this.toastService.show('Failed to read file.', 'error');
     };
     reader.readAsArrayBuffer(file);
   }
@@ -1423,6 +1444,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   cancelImport(): void {
     this.importPreviewVisible = false;
     this.importPreviewRows = [];
+    this.importFilter = 'all';
   }
 
   /** Commit the previewed rows (skipping error rows) into the form, grouped by grade. */
@@ -1469,8 +1491,18 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
         const dup = lines.controls.some(c => c.get('parameterID')?.value === r.parameterID);
         if (dup) { skipped++; return; }
         const group = this.createSpecificationLineFormGroup(tab);
-        const lowerOp = r.lowerLimitValue || (r.minEquation ? '≥' : '');
-        const upperOp = r.upperLimitValue || (r.maxEquation ? '≤' : '');
+        const lowerOp = r.lowerLimitValue || '';
+        const upperOp = r.upperLimitValue || '';
+
+        const paramCache = this.chemicalParametersCache.find(p => Number(p.id ?? p.Id) === Number(r.parameterID)) ||
+                           this.mechanicalParametersCache.find(p => Number(p.id ?? p.Id) === Number(r.parameterID));
+        const additional = paramCache?.additionalValues || {};
+        const dropdownOptions = additional.DropdownOptions || additional.dropdownOptions || [];
+        const inputType = additional.InputType || additional.inputType || 'Decimal';
+        const isCalculated = additional.IsCalculated ?? additional.isCalculated ?? false;
+        const formula = additional.Formula || additional.formula || '';
+        const formulaDisplay = additional.FormulaDisplay || additional.formulaDisplay || '';
+
         group.patchValue({
           parameterID: r.parameterID,
           parameterName: r.parameterName,
@@ -1497,6 +1529,11 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
           testCondition: r.testCondition,
           testNote: r.testNote,
           laboratoryTestID: r.laboratoryTestID,
+          inputType,
+          isCalculated,
+          formula,
+          formulaDisplay,
+          parameterDropdownOptions: dropdownOptions,
         });
         // Test Method Spec matrix → pad to exactly 5 slots.
         const tmArray = group.get('testMethodMapping') as FormArray;
@@ -1824,10 +1861,10 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     return control as FormGroup;
   }
   loadParametersCache(): void {
-    this.parameterService.getChemicalParameterDropdown('', 1, 5000).subscribe({
+    this.parameterService.getChemicalParameterDropdown('', 0, 5000).subscribe({
       next: (data) => this.chemicalParametersCache = data || []
     });
-    this.parameterService.getMechanicalParameterDropdown('', 1, 5000).subscribe({
+    this.parameterService.getMechanicalParameterDropdown('', 0, 5000).subscribe({
       next: (data) => this.mechanicalParametersCache = data || []
     });
   }
@@ -1842,24 +1879,32 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   };
   getChemicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     const isIdSearch = term && !isNaN(Number(term)) && String(Number(term)) === term.trim();
+    if (isIdSearch && this.chemicalParametersCache.length) {
+      const found = this.chemicalParametersCache.filter(p => Number(p.id ?? p.Id) === Number(term));
+      if (found.length) return of(found);
+    }
     if (!this.chemicalParametersCache.length || isIdSearch) {
       return this.parameterService.getChemicalParameterDropdown(term, page, pageSize);
     }
     const filtered = this.chemicalParametersCache.filter(p =>
       (p.name || p.text || '').toLowerCase().includes((term || '').toLowerCase())
     );
-    const start = (page - 1) * pageSize;
+    const start = page > 0 ? (page - 1) * pageSize : 0;
     return of(filtered.slice(start, start + pageSize));
   };
   getMechanicalParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     const isIdSearch = term && !isNaN(Number(term)) && String(Number(term)) === term.trim();
+    if (isIdSearch && this.mechanicalParametersCache.length) {
+      const found = this.mechanicalParametersCache.filter(p => Number(p.id ?? p.Id) === Number(term));
+      if (found.length) return of(found);
+    }
     if (!this.mechanicalParametersCache.length || isIdSearch) {
       return this.parameterService.getMechanicalParameterDropdown(term, page, pageSize);
     }
     const filtered = this.mechanicalParametersCache.filter(p =>
       (p.name || p.text || '').toLowerCase().includes((term || '').toLowerCase())
     );
-    const start = (page - 1) * pageSize;
+    const start = page > 0 ? (page - 1) * pageSize : 0;
     return of(filtered.slice(start, start + pageSize));
   };
   updateRowControlsState(row: FormGroup): void {

@@ -397,66 +397,80 @@
                               </select>
                             </td>
                             <td>
-                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
-                                type="text" appDecimalOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValue"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'minValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
-                                type="text" appNumberOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValue"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'minValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
-                                class="form-select form-select-sm wide-input" formControlName="textValue">
-                                <option value="" disabled>Select value</option>
-                                <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
-                              </select>
-                              <select *ngIf="group.get('inputType')?.value === 'Boolean'"
-                                class="form-select form-select-sm wide-input" formControlName="textValue">
-                                <option value="" disabled>Select</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                              </select>
-                              <input *ngIf="group.get('inputType')?.value === 'Text'"
-                                type="text" class="form-control form-control-sm wide-input"
-                                formControlName="textValue" placeholder="Enter value" maxlength="200" />
+                              <div class="d-flex align-items-center gap-1">
+                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
+                                <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                  type="text" appDecimalOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="minValue"
+                                  placeholder="Enter min value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'minValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                  type="text" appNumberOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="minValue"
+                                  placeholder="Enter min value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'minValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
+                                  class="form-select form-select-sm wide-input" formControlName="textValue">
+                                  <option value="" disabled>Select value</option>
+                                  <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
+                                </select>
+                                <select *ngIf="group.get('inputType')?.value === 'Boolean'"
+                                  class="form-select form-select-sm wide-input" formControlName="textValue">
+                                  <option value="" disabled>Select</option>
+                                  <option value="Yes">Yes</option>
+                                  <option value="No">No</option>
+                                </select>
+                                <input *ngIf="group.get('inputType')?.value === 'Text'"
+                                  type="text" class="form-control form-control-sm wide-input"
+                                  formControlName="textValue" placeholder="Enter value" maxlength="200" />
+                              </div>
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip mt-1" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
-                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
-                                type="text" appDecimalOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValue"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'maxValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
-                                type="text" appNumberOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValue"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'maxValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
+                              <div class="d-flex align-items-center gap-1">
+                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-danger-subtle text-danger border border-danger flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
+                                <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                  type="text" appDecimalOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="maxValue"
+                                  placeholder="Enter max value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'maxValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                  type="text" appNumberOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="maxValue"
+                                  placeholder="Enter max value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'maxValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
+                              </div>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip mt-1" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
@@ -531,7 +545,6 @@
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
-                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="lowerLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
@@ -547,14 +560,9 @@
                                   formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
                               </div>
-                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip" [title]="'Min Formula: ' + group.get('minEquation')?.value">
-                                <i class="bi bi-magic me-0.5"></i>
-                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
-                              </div>
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
-                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="upperLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of upperLimitOptions" [value]="op.value">
@@ -569,10 +577,6 @@
                                          type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
                                   formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
-                              </div>
-                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
-                                <i class="bi bi-magic me-0.5"></i>
-                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
                               </div>
                             </td>
 
@@ -784,66 +788,80 @@
                               </select>
                             </td>
                             <td>
-                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
-                                type="text" appDecimalOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValue"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'minValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
-                                type="text" appNumberOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValue"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'minValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
-                                class="form-select form-select-sm wide-input" formControlName="textValue">
-                                <option value="" disabled>Select value</option>
-                                <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
-                              </select>
-                              <select *ngIf="group.get('inputType')?.value === 'Boolean'"
-                                class="form-select form-select-sm wide-input" formControlName="textValue">
-                                <option value="" disabled>Select</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                              </select>
-                              <input *ngIf="group.get('inputType')?.value === 'Text'"
-                                type="text" class="form-control form-control-sm wide-input"
-                                formControlName="textValue" placeholder="Enter value" maxlength="200" />
+                              <div class="d-flex align-items-center gap-1">
+                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
+                                <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                  type="text" appDecimalOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="minValue"
+                                  placeholder="Enter min value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'minValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                  type="text" appNumberOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="minValue"
+                                  placeholder="Enter min value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'minValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
+                                  class="form-select form-select-sm wide-input" formControlName="textValue">
+                                  <option value="" disabled>Select value</option>
+                                  <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
+                                </select>
+                                <select *ngIf="group.get('inputType')?.value === 'Boolean'"
+                                  class="form-select form-select-sm wide-input" formControlName="textValue">
+                                  <option value="" disabled>Select</option>
+                                  <option value="Yes">Yes</option>
+                                  <option value="No">No</option>
+                                </select>
+                                <input *ngIf="group.get('inputType')?.value === 'Text'"
+                                  type="text" class="form-control form-control-sm wide-input"
+                                  formControlName="textValue" placeholder="Enter value" maxlength="200" />
+                              </div>
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip mt-1" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
-                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
-                                type="text" appDecimalOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValue"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'maxValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
-                                type="text" appNumberOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValue"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                                [attr.step]="getStep(group)"
-                                (blur)="roundToPrecision(group, 'maxValue')"
-                                [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
-                              />
-                              <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
+                              <div class="d-flex align-items-center gap-1">
+                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-danger-subtle text-danger border border-danger flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
+                                <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                  type="text" appDecimalOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="maxValue"
+                                  placeholder="Enter max value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'maxValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                  type="text" appNumberOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="maxValue"
+                                  placeholder="Enter max value"
+                                  maxlength="10"
+                                  [attr.step]="getStep(group)"
+                                  (blur)="roundToPrecision(group, 'maxValue')"
+                                  [ngClass]="{'is-invalid': group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value}"
+                                />
+                                <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
+                              </div>
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip mt-1" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
@@ -918,7 +936,6 @@
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
-                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="lowerLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
@@ -934,14 +951,9 @@
                                   formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
                               </div>
-                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip" [title]="'Min Formula: ' + group.get('minEquation')?.value">
-                                <i class="bi bi-magic me-0.5"></i>
-                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
-                              </div>
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
-                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="upperLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of upperLimitOptions" [value]="op.value">
@@ -956,10 +968,6 @@
                                          type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
                                   formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
-                              </div>
-                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
-                                <i class="bi bi-magic me-0.5"></i>
-                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
                               </div>
                             </td>
 
@@ -1157,51 +1165,65 @@
                               </small>
                             </td>
                             <td>
-                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
-                                type="text" appDecimalOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValue"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                              />
-                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
-                                type="text" appNumberOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="minValue"
-                                placeholder="Enter min value"
-                                maxlength="10"
-                              />
-                              <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
-                                class="form-select form-select-sm wide-input" formControlName="textValue">
-                                <option value="" disabled>Select value</option>
-                                <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
-                              </select>
-                              <select *ngIf="group.get('inputType')?.value === 'Boolean'"
-                                class="form-select form-select-sm wide-input" formControlName="textValue">
-                                <option value="" disabled>Select</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                              </select>
-                              <input *ngIf="group.get('inputType')?.value === 'Text'"
-                                type="text" class="form-control form-control-sm wide-input"
-                                formControlName="textValue" placeholder="Enter value" maxlength="200" />
+                              <div class="d-flex align-items-center gap-1">
+                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
+                                <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                  type="text" appDecimalOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="minValue"
+                                  placeholder="Enter min value"
+                                  maxlength="10"
+                                />
+                                <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                  type="text" appNumberOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="minValue"
+                                  placeholder="Enter min value"
+                                  maxlength="10"
+                                />
+                                <select *ngIf="group.get('inputType')?.value === 'Dropdown'"
+                                  class="form-select form-select-sm wide-input" formControlName="textValue">
+                                  <option value="" disabled>Select value</option>
+                                  <option *ngFor="let opt of group.get('parameterDropdownOptions')?.value || []" [value]="opt.value ?? opt.Value ?? opt.displayText ?? opt.DisplayText ?? ''">{{ opt.displayText || opt.DisplayText || opt.value || opt.Value }}</option>
+                                </select>
+                                <select *ngIf="group.get('inputType')?.value === 'Boolean'"
+                                  class="form-select form-select-sm wide-input" formControlName="textValue">
+                                  <option value="" disabled>Select</option>
+                                  <option value="Yes">Yes</option>
+                                  <option value="No">No</option>
+                                </select>
+                                <input *ngIf="group.get('inputType')?.value === 'Text'"
+                                  type="text" class="form-control form-control-sm wide-input"
+                                  formControlName="textValue" placeholder="Enter value" maxlength="200" />
+                              </div>
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip mt-1" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
-                              <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
-                                type="text" appDecimalOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValue"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                              />
-                              <input *ngIf="group.get('inputType')?.value === 'Integer'"
-                                type="text" appNumberOnly
-                                class="form-control form-control-sm wide-input"
-                                formControlName="maxValue"
-                                placeholder="Enter max value"
-                                maxlength="10"
-                              />
-                              <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
+                              <div class="d-flex align-items-center gap-1">
+                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-danger-subtle text-danger border border-danger flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
+                                <input *ngIf="group.get('inputType')?.value === 'Decimal' || !group.get('inputType')?.value"
+                                  type="text" appDecimalOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="maxValue"
+                                  placeholder="Enter max value"
+                                  maxlength="10"
+                                />
+                                <input *ngIf="group.get('inputType')?.value === 'Integer'"
+                                  type="text" appNumberOnly
+                                  class="form-control form-control-sm wide-input"
+                                  formControlName="maxValue"
+                                  placeholder="Enter max value"
+                                  maxlength="10"
+                                />
+                                <span *ngIf="group.get('inputType')?.value === 'Dropdown' || group.get('inputType')?.value === 'Boolean' || group.get('inputType')?.value === 'Text'" class="text-muted small">&mdash;</span>
+                              </div>
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip mt-1" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
+                              </div>
                             </td>
                             <td>
                               <input class="form-control form-control-sm wide-input" formControlName="notes" placeholder="Enter note" />
@@ -1298,7 +1320,6 @@
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
-                                <span *ngIf="group.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Min Formula: ' + group.get('minEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="lowerLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of lowerLimitOptions" [value]="op.value">
@@ -1314,14 +1335,9 @@
                                   formControlName="lowerLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
                               </div>
-                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip" [title]="'Min Formula: ' + group.get('minEquation')?.value">
-                                <i class="bi bi-magic me-0.5"></i>
-                                <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
-                              </div>
                             </td>
                             <td>
                               <div class="d-flex gap-1 align-items-center">
-                                <span *ngIf="group.get('maxEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary flex-shrink-0 badge-fx" [title]="'Max Formula: ' + group.get('maxEquation')?.value">ƒx</span>
                                 <select class="form-control form-control-sm form-select form-select-sm flex-shrink-0" style="width: 64px" formControlName="upperLimitValue">
                                   <option value="">--</option>
                                   <option *ngFor="let op of upperLimitOptions" [value]="op.value">
@@ -1336,10 +1352,6 @@
                                          type="text" appNumberOnly  class="form-control form-control-sm flex-grow-1"
                                   formControlName="upperLimitDecimalValue" placeholder="Value" [attr.step]="getStep(group)"  />
                                 </ng-container>
-                              </div>
-                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
-                                <i class="bi bi-magic me-0.5"></i>
-                                <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
                               </div>
                             </td>
 
@@ -1495,6 +1507,17 @@
   </div>
   </div>
 
+  <!-- Import Analyzing Loader -->
+  <div *ngIf="importAnalyzing" class="import-analyzing-backdrop">
+    <div class="import-analyzing-card">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <h6 class="import-analyzing-title">{{ importAnalyzingMsg }}</h6>
+      <p class="import-analyzing-sub">Please wait while specification rows and master references are verified.</p>
+    </div>
+  </div>
+
   <!-- MS-F: Import preview / validation modal -->
   <div class="custom-modal-backdrop" *ngIf="importPreviewVisible" (click)="cancelImport()">
     <div class="custom-modal-dialog import-preview-dialog" (click)="$event.stopPropagation()">
@@ -1504,11 +1527,40 @@
       </div>
       <div class="custom-modal-body">
         <div class="d-flex align-items-center flex-wrap gap-2 mb-2 small">
-          <span class="badge bg-success">{{ importOkCount }} OK</span>
-          <span class="badge bg-warning text-dark">{{ importWarnCount }} Warning</span>
-          <span class="badge bg-danger">{{ importErrorCount }} Error</span>
-          <span *ngIf="importMissingMasterCount > 0" class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1">
-            <i class="bi bi-exclamation-triangle-fill"></i> {{ importMissingMasterCount }} with Missing Master(s)
+          <span class="import-filter-badge import-filter-badge-all"
+                [ngClass]="{ 'active-filter': importFilter === 'all' }"
+                (click)="setImportFilter('all')"
+                title="Click to view all rows">
+            <i class="bi bi-list-ul me-1"></i>All ({{ importPreviewRows.length }})
+          </span>
+          <span class="import-filter-badge badge bg-success"
+                [ngClass]="{ 'active-filter': importFilter === 'ok' }"
+                (click)="setImportFilter('ok')"
+                title="Click to filter OK rows only">
+            <i class="bi bi-check-circle me-1" *ngIf="importFilter === 'ok'"></i>{{ importOkCount }} OK
+          </span>
+          <span class="import-filter-badge badge bg-warning text-dark"
+                [ngClass]="{ 'active-filter': importFilter === 'warning' }"
+                (click)="setImportFilter('warning')"
+                title="Click to filter Warning rows only">
+            <i class="bi bi-exclamation-triangle me-1" *ngIf="importFilter === 'warning'"></i>{{ importWarnCount }} Warning
+          </span>
+          <span class="import-filter-badge badge bg-danger"
+                [ngClass]="{ 'active-filter': importFilter === 'error' }"
+                (click)="setImportFilter('error')"
+                title="Click to filter Error rows only">
+            <i class="bi bi-x-circle me-1" *ngIf="importFilter === 'error'"></i>{{ importErrorCount }} Error
+          </span>
+          <span *ngIf="importMissingMasterCount > 0"
+                class="import-filter-badge badge bg-danger-subtle text-danger border border-danger-subtle"
+                [ngClass]="{ 'active-filter': importFilter === 'missing' }"
+                (click)="setImportFilter('missing')"
+                title="Click to filter rows with missing master records">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ importMissingMasterCount }} with Missing Master(s)
+          </span>
+          <span *ngIf="importFilter !== 'all'" class="text-primary fw-semibold ms-2">
+            Showing {{ filteredImportPreviewRows.length }} of {{ importPreviewRows.length }} rows
+            <a href="javascript:void(0)" class="ms-1 text-decoration-underline" (click)="setImportFilter('all')">(Reset)</a>
           </span>
           <span class="text-muted ms-auto">Error rows will not be imported.</span>
         </div>
@@ -1521,7 +1573,13 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of importPreviewRows"
+              <tr *ngIf="filteredImportPreviewRows.length === 0">
+                <td colspan="13" class="text-center text-muted py-4">
+                  <i class="bi bi-funnel me-1"></i>No specification rows match the "<strong>{{ importFilter | uppercase }}</strong>" filter.
+                  <a href="javascript:void(0)" class="ms-2 text-primary text-decoration-underline" (click)="setImportFilter('all')">View all rows</a>
+                </td>
+              </tr>
+              <tr *ngFor="let r of filteredImportPreviewRows"
                   [ngClass]="{ 'table-danger': r.status === 'error', 'table-warning': r.status === 'warning' }">
                 <td>{{ r.rowNumber }}</td>
                 <td>
@@ -1544,30 +1602,38 @@
                   </span>
                 </td>
                 <td>{{ r.unitName }}</td>
-                <td>{{ r.minValue ?? '-' }}</td>
-                <td>{{ r.maxValue ?? '-' }}</td>
+                <td>
+                  <div *ngIf="r.minValue != null">{{ r.minValue }}</div>
+                  <div *ngIf="r.minEquation" class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace text-wrap text-start mt-0.5"
+                        [title]="'Min Formula: ' + r.minEquation">
+                    <i class="bi bi-calculator me-0.5"></i>ƒx: {{ r.minEquation }}
+                  </div>
+                  <span *ngIf="r.minValue == null && !r.minEquation" class="text-muted">-</span>
+                </td>
+                <td>
+                  <div *ngIf="r.maxValue != null">{{ r.maxValue }}</div>
+                  <div *ngIf="r.maxEquation" class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace text-wrap text-start mt-0.5"
+                        [title]="'Max Formula: ' + r.maxEquation">
+                    <i class="bi bi-calculator me-0.5"></i>ƒx: {{ r.maxEquation }}
+                  </div>
+                  <span *ngIf="r.maxValue == null && !r.maxEquation" class="text-muted">-</span>
+                </td>
                 <td class="text-nowrap font-monospace small">
                   <span *ngIf="r.lowerLimitValue || r.lowerLimitDecimalValue != null" class="badge bg-light text-dark border">
-                    {{ r.lowerLimitValue || '≥' }} {{ r.lowerLimitDecimalValue != null ? r.lowerLimitDecimalValue : '' }}
+                    {{ r.lowerLimitValue || '' }} {{ r.lowerLimitDecimalValue != null ? r.lowerLimitDecimalValue : '' }}
                   </span>
-                  <span *ngIf="!r.lowerLimitValue && r.lowerLimitDecimalValue == null && r.minEquation" class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                    {{ r.lowerLimitValue || '≥' }} ƒx
-                  </span>
-                  <span *ngIf="!r.lowerLimitValue && r.lowerLimitDecimalValue == null && !r.minEquation" class="text-muted">-</span>
+                  <span *ngIf="!r.lowerLimitValue && r.lowerLimitDecimalValue == null" class="text-muted">-</span>
                 </td>
                 <td class="text-nowrap font-monospace small">
                   <span *ngIf="r.upperLimitValue || r.upperLimitDecimalValue != null" class="badge bg-light text-dark border">
-                    {{ r.upperLimitValue || '≤' }} {{ r.upperLimitDecimalValue != null ? r.upperLimitDecimalValue : '' }}
+                    {{ r.upperLimitValue || '' }} {{ r.upperLimitDecimalValue != null ? r.upperLimitDecimalValue : '' }}
                   </span>
-                  <span *ngIf="!r.upperLimitValue && r.upperLimitDecimalValue == null && r.maxEquation" class="badge bg-secondary-subtle text-dark border">
-                    {{ r.upperLimitValue || '≤' }} ƒx
-                  </span>
-                  <span *ngIf="!r.upperLimitValue && r.upperLimitDecimalValue == null && !r.maxEquation" class="text-muted">-</span>
+                  <span *ngIf="!r.upperLimitValue && r.upperLimitDecimalValue == null" class="text-muted">-</span>
                 </td>
                 <td>
                   <span *ngIf="r.equationFx || r.minEquation || r.maxEquation" class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace text-wrap text-start"
                         [title]="r.equationFx || r.minEquation || r.maxEquation">
-                    <i class="bi bi-calculator me-1"></i>{{ r.equationFx || (r.minEquation ? ((r.lowerLimitValue || '≥') + ' ' + r.minEquation) : ((r.upperLimitValue || '≤') + ' ' + r.maxEquation)) }}
+                    <i class="bi bi-calculator me-1"></i>{{ r.equationFx || (r.minEquation ? ('Min: ' + r.minEquation) : ('Max: ' + r.maxEquation)) }}
                   </span>
                   <span *ngIf="!r.equationFx && !r.minEquation && !r.maxEquation" class="text-muted">-</span>
                 </td>
@@ -1695,11 +1761,11 @@
               <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1.5 small" (click)="resetCalcDefaults()" title="Reset to default test values">
                 <i class="bi bi-arrow-counterclockwise"></i>
               </button>
-              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-success btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('lower')">
-                Set Lower (&ge; {{ calcResult }})
+              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-success btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('min')">
+                Set Min ({{ calcResult }})
               </button>
-              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-primary btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('upper')">
-                Set Upper (&le; {{ calcResult }})
+              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-primary btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('max')">
+                Set Max ({{ calcResult }})
               </button>
             </div>
           </div>
@@ -1731,8 +1797,7 @@
         <div class="formula-field-card" [class.is-active]="equationActiveField === 'min'" [class.is-invalid]="!minEquationValid && minEquationDraft.trim()">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="d-flex align-items-center gap-1.5">
-              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5 small fw-semibold">&ge; Min Equation</span>
-              <span class="small text-muted">Auto-applies to Lower Limit (&ge;)</span>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5 small fw-semibold">Min Equation</span>
             </div>
             <div>
               <span *ngIf="minEquationDraft.trim() && minEquationValid" class="text-success small fw-semibold">
@@ -1793,8 +1858,7 @@
         <div class="formula-field-card" [class.is-active]="equationActiveField === 'max'" [class.is-invalid]="!maxEquationValid && maxEquationDraft.trim()">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="d-flex align-items-center gap-1.5">
-              <span class="badge bg-secondary-subtle text-dark border px-1.5 py-0.5 small fw-semibold">&le; Max Equation</span>
-              <span class="small text-muted">Auto-applies to Upper Limit (&le;)</span>
+              <span class="badge bg-secondary-subtle text-dark border px-1.5 py-0.5 small fw-semibold">Max Equation</span>
             </div>
             <div>
               <span *ngIf="maxEquationDraft.trim() && maxEquationValid" class="text-success small fw-semibold">

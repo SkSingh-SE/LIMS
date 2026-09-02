@@ -60,6 +60,7 @@ export interface ParsedSpecRow {
   testMethodSpecIDs: number[];
   status: 'ok' | 'warning' | 'error';
   messages: string[];
+  missingMasters?: Array<{ category: string; value: string; isRequired: boolean }>;
 }
 
 // Template column order — single source of truth for build + parse.
@@ -268,18 +269,69 @@ export function validateSpecFormula(
 }
 
 // ── PARSE ─────────────────────────────────────────────────────────────────────
-export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpecRow[]> {
+export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecMasters): Promise<ParsedSpecRow[]> {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
 
   const template = wb.getWorksheet(TEMPLATE_SHEET);
   if (!template) throw new Error(`Sheet "${TEMPLATE_SHEET}" not found. Please use the downloaded template.`);
 
-  // Build Name→meta maps from the embedded master sheets.
+  // Build Name→meta maps from liveMasters (if provided) and/or embedded master sheets.
   const paramMap = new Map<string, { id: number | null; section: string; unitId: number | null; unitName: string; symbol: string; precision: number }>();
   const paramNames = new Set<string>();
   const paramSymbols = new Set<string>();
+  const masterMap: Record<string, Map<string, number | null>> = {};
 
+  for (const m of MASTER_SHEETS) {
+    masterMap[m.sheet] = new Map<string, number | null>();
+  }
+
+  // 1. Seed from liveMasters if available
+  if (liveMasters) {
+    for (const p of liveMasters.parameters || []) {
+      const name = (p.parameterName || (p as any).name || (p as any).text || '').toString().trim();
+      if (!name) continue;
+      const lower = name.toLowerCase();
+      paramNames.add(lower);
+      const sym = (p.parameterSymbol || (p as any).symbol || '').toString().trim();
+      if (sym) paramSymbols.add(sym.toLowerCase());
+      paramMap.set(lower, {
+        id: p.id ?? (p as any).value ?? null,
+        section: (p.section || '').toString().trim().toLowerCase(),
+        unitName: p.defaultUnitName || (p as any).unitName || '',
+        unitId: p.unitID || (p as any).unitId || null,
+        symbol: sym,
+        precision: Number(p.decimalPlaces ?? 2),
+      });
+    }
+
+    const reg = (sheet: string, items: any[], nameKeys: string[]) => {
+      const map = masterMap[sheet] || (masterMap[sheet] = new Map());
+      for (const item of items || []) {
+        let name = '';
+        for (const k of nameKeys) {
+          if (item[k]) { name = item[k].toString().trim(); break; }
+        }
+        if (!name && (item.name || item.text)) name = (item.name || item.text).toString().trim();
+        const id = item.id ?? item.value;
+        if (name && id != null) {
+          map.set(name.toLowerCase(), Number(id));
+        }
+      }
+    };
+
+    reg('MetalClass', liveMasters.metalClassifications, ['classificationName', 'metalClassificationName']);
+    reg('Units', liveMasters.units, ['unitName', 'unit']);
+    reg('LabTests', liveMasters.laboratoryTests, ['testName', 'laboratoryTestName']);
+    reg('SpecimenOrient', liveMasters.specimenOrientations, ['specimenOrientationName', 'orientationName']);
+    reg('DimFactor', liveMasters.dimensionalFactors, ['dimensionalFactorName', 'factorName']);
+    reg('HeatTreat', liveMasters.heatTreatments, ['heatTreatmentName']);
+    reg('ProdCondition', liveMasters.productConditions, ['productConditionName', 'conditionName']);
+    reg('ProductSize', liveMasters.productSizes, ['sizeName', 'productSizeName']);
+    reg('TestMethods', liveMasters.testMethodSpecs, ['testMethodName', 'testMethodSpecificationName']);
+  }
+
+  // 2. Supplement / fallback with embedded workbook sheets
   const pSheet = wb.getWorksheet('Parameters');
   pSheet?.eachRow((row, i) => {
     if (i === 1) return;
@@ -290,26 +342,29 @@ export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpec
     paramNames.add(lowerName);
     if (symbol) paramSymbols.add(symbol.toLowerCase());
 
-    paramMap.set(lowerName, {
-      id: numOrNull(row.getCell(2).value),
-      section: (row.getCell(3).value ?? '').toString().trim().toLowerCase(),
-      unitName: (row.getCell(4).value ?? '').toString().trim(),
-      unitId: numOrNull(row.getCell(5).value),
-      symbol,
-      precision: Number(numOrNull(row.getCell(7).value) ?? 2),
-    });
+    if (!paramMap.has(lowerName)) {
+      paramMap.set(lowerName, {
+        id: numOrNull(row.getCell(2).value),
+        section: (row.getCell(3).value ?? '').toString().trim().toLowerCase(),
+        unitName: (row.getCell(4).value ?? '').toString().trim(),
+        unitId: numOrNull(row.getCell(5).value),
+        symbol,
+        precision: Number(numOrNull(row.getCell(7).value) ?? 2),
+      });
+    }
   });
 
-  const masterMap: Record<string, Map<string, number | null>> = {};
   for (const m of MASTER_SHEETS) {
-    const map = new Map<string, number | null>();
+    const map = masterMap[m.sheet] || (masterMap[m.sheet] = new Map());
     wb.getWorksheet(m.sheet)?.eachRow((row, i) => {
       if (i === 1) return;
       const name = (row.getCell(1).value ?? '').toString().trim();
-      if (name) map.set(name.toLowerCase(), numOrNull(row.getCell(2).value));
+      if (name && !map.has(name.toLowerCase())) {
+        map.set(name.toLowerCase(), numOrNull(row.getCell(2).value));
+      }
     });
-    masterMap[m.sheet] = map;
   }
+
   const lookup = (sheet: string, name: string): number | null => {
     const n = (name || '').trim().toLowerCase();
     if (!n) return null;
@@ -348,6 +403,7 @@ export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpec
     if (!grade && !paramName) return;
 
     const messages: string[] = [];
+    const missingMasters: Array<{ category: string; value: string; isRequired: boolean }> = [];
     let status: ParsedSpecRow['status'] = 'ok';
     const fail = (msg: string) => { messages.push(msg); status = 'error'; };
     const warn = (msg: string) => { messages.push(msg); if (status === 'ok') status = 'warning'; };
@@ -360,22 +416,29 @@ export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpec
 
     const pmeta = paramMap.get(paramName.toLowerCase());
     if (!grade) fail('Grade is required.');
-    if (!paramName) fail('Parameter is required.');
-    else if (!pmeta || pmeta.id == null) fail(`Parameter "${paramName}" not found in master list.`);
-    else if (pmeta.section && sectionRaw) {
+    if (!paramName) {
+      fail('Parameter is required.');
+    } else if (!pmeta || pmeta.id == null) {
+      fail(`Missing Master: Parameter "${paramName}" not found in master database.`);
+      missingMasters.push({ category: 'Parameter', value: paramName, isRequired: true });
+    } else if (pmeta.section && sectionRaw) {
       const isParamGeneral = pmeta.section.startsWith('mech') || pmeta.section.startsWith('gen');
       const isRowGeneral = section === 'mechanical';
       if (isParamGeneral !== isRowGeneral) {
-        warn(`Parameter "${paramName}" is a ${isParamGeneral ? 'General' : 'Chemical'} parameter but Section says "${cell('Section')}".`);
+        warn(`Parameter "${paramName}" is configured as ${isParamGeneral ? 'General' : 'Chemical'} in master, but Section says "${cell('Section')}".`);
       }
     }
 
-    // Resolve a master name → id; warn (not fail) when a non-empty name is unknown.
-    const resolve = (sheet: string, col: string): number | null => {
+    // Resolve a master name → id; record missing master if unknown.
+    const resolveMaster = (sheet: string, col: string, categoryLabel: string): number | null => {
       const name = cell(col);
       if (!name) return null;
       const id = lookup(sheet, name);
-      if (id === undefined) { warn(`${col} "${name}" not found in master list — skipped.`); return null; }
+      if (id === undefined) {
+        warn(`Missing Master: ${categoryLabel} "${name}" not found in master database.`);
+        missingMasters.push({ category: categoryLabel, value: name, isRequired: false });
+        return null;
+      }
       return id;
     };
 
@@ -391,11 +454,20 @@ export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpec
     if (upperSym && !UPPER_SYMBOLS.includes(upperSym)) warn(`Upper Limit Symbol "${upperSym}" is invalid (allowed: ${UPPER_SYMBOLS.join(' ')}).`);
 
     const unitName = cell('Unit');
-    let unitId: number | null = unitName ? lookup('Units', unitName) : (pmeta?.unitId ?? null);
-    if (unitName && unitId === undefined) { warn(`Unit "${unitName}" not found — using parameter default.`); unitId = pmeta?.unitId ?? null; }
+    let unitId: number | null = null;
+    if (unitName) {
+      unitId = lookup('Units', unitName);
+      if (unitId === undefined) {
+        warn(`Missing Master: Unit "${unitName}" not found in master database.`);
+        missingMasters.push({ category: 'Unit', value: unitName, isRequired: false });
+        unitId = pmeta?.unitId ?? null;
+      }
+    } else {
+      unitId = pmeta?.unitId ?? null;
+    }
 
     const tmIds = ['Test Method 1', 'Test Method 2', 'Test Method 3', 'Test Method 4', 'Test Method 5']
-      .map(c => resolve('TestMethods', c))
+      .map(c => resolveMaster('TestMethods', c, 'Test Method'))
       .filter((v): v is number => v != null);
 
     // Formula auto-apply and validation
@@ -455,7 +527,7 @@ export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpec
       rowNumber: i,
       grade,
       unsNo: unsNo || undefined,
-      metalClassificationID: resolve('MetalClass', 'Metal Classification'),
+      metalClassificationID: resolveMaster('MetalClass', 'Metal Classification', 'Metal Classification'),
       section,
       parameterID: pmeta?.id ?? null,
       parameterName: paramName,
@@ -476,18 +548,19 @@ export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpec
       equationFx: eqFx || (minEq ? `${lowerSym || '≥'} ${minEq}` : (maxEq ? `${upperSym || '≤'} ${maxEq}` : undefined)),
       formulaValid,
       notes: cell('Note'),
-      specimenOrientationID: resolve('SpecimenOrient', 'Specimen Orientation'),
-      dimensionalFactorID: resolve('DimFactor', 'Dimensional Factor'),
-      heatTreatmentID: resolve('HeatTreat', 'Heat Treatment'),
-      productConditionID1: resolve('ProdCondition', 'Product Condition 1'),
-      productConditionID2: resolve('ProdCondition', 'Product Condition 2'),
-      productSizeMasterID: resolve('ProductSize', 'Product Size'),
+      specimenOrientationID: resolveMaster('SpecimenOrient', 'Specimen Orientation', 'Specimen Orientation'),
+      dimensionalFactorID: resolveMaster('DimFactor', 'Dimensional Factor', 'Dimensional Factor'),
+      heatTreatmentID: resolveMaster('HeatTreat', 'Heat Treatment', 'Heat Treatment'),
+      productConditionID1: resolveMaster('ProdCondition', 'Product Condition 1', 'Product Condition'),
+      productConditionID2: resolveMaster('ProdCondition', 'Product Condition 2', 'Product Condition'),
+      productSizeMasterID: resolveMaster('ProductSize', 'Product Size', 'Product Size'),
       testCondition: cell('Test Condition'),
       testNote: cell('Test Note'),
-      laboratoryTestID: resolve('LabTests', 'Laboratory Test'),
+      laboratoryTestID: resolveMaster('LabTests', 'Laboratory Test', 'Laboratory Test'),
       testMethodSpecIDs: tmIds,
       status,
       messages,
+      missingMasters: missingMasters.length > 0 ? missingMasters : undefined,
     });
   });
 

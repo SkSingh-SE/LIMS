@@ -27,7 +27,7 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { ProductSizeMasterService } from '../../../services/product-size-master.service';
 import { ToastService } from '../../../services/toast.service';
-import { Observable, forkJoin, of } from 'rxjs';
+import { Observable, forkJoin, of, map } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
@@ -1355,13 +1355,14 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   get importWarnCount(): number { return this.importPreviewRows.filter(r => r.status === 'warning').length; }
   get importErrorCount(): number { return this.importPreviewRows.filter(r => r.status === 'error').length; }
   get importHasImportable(): boolean { return this.importPreviewRows.some(r => r.status !== 'error'); }
+  get importMissingMasterCount(): number {
+    return this.importPreviewRows.filter(r => r.missingMasters && r.missingMasters.length > 0).length;
+  }
 
-  /** Fetch every master list, then build and download the multi-sheet Excel template. */
-  downloadSpecTemplate(): void {
-    if (this.importBuilding) return;
-    this.importBuilding = true;
-    const all = (fn: any) => fn('', 0, 5000);
-    forkJoin({
+  /** Fetch every master list used by template download and import parser. */
+  loadAllSpecMasters(): Observable<SpecMasters> {
+    const all = (fn: any) => fn('', 1, 5000);
+    return forkJoin({
       chemical: all(this.getChemicalParameter),
       mechanical: all(this.getMechanicalParameter),
       units: all(this.getParameterUnitDropdownFn),
@@ -1373,10 +1374,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       productConditions: all(this.getProductCondition),
       productSizes: all(this.getProductSize),
       metalClassifications: all(this.getMetalClassification),
-    }).subscribe({
-      next: async (m: any) => {
+    }).pipe(
+      map((m: any) => {
         const tag = (list: any[], section: string) => (list || []).map(x => ({ ...x, section }));
-        const masters: SpecMasters = {
+        return {
           parameters: [...tag(m.chemical, 'Chemical'), ...tag(m.mechanical, 'General')],
           units: m.units || [],
           laboratoryTests: m.laboratoryTests || [],
@@ -1388,6 +1389,16 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
           productSizes: m.productSizes || [],
           metalClassifications: m.metalClassifications || [],
         };
+      })
+    );
+  }
+
+  /** Fetch every master list, then build and download the multi-sheet Excel template. */
+  downloadSpecTemplate(): void {
+    if (this.importBuilding) return;
+    this.importBuilding = true;
+    this.loadAllSpecMasters().subscribe({
+      next: async (masters: SpecMasters) => {
         try {
           const blob = await buildSpecTemplate(masters);
           const url = URL.createObjectURL(blob);
@@ -1402,7 +1413,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
           this.importBuilding = false;
         }
       },
-      error: () => { this.importBuilding = false; this.toastService.show('Failed to load master data for template.', 'error'); },
+      error: () => {
+        this.importBuilding = false;
+        this.toastService.show('Failed to load master data for template.', 'error');
+      },
     });
   }
 
@@ -1411,17 +1425,35 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     const file = input.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const rows = await parseSpecTemplate(reader.result as ArrayBuffer);
-        if (!rows.length) { this.toastService.show('No data rows found in the Template sheet.', 'warning'); return; }
-        this.importPreviewRows = rows;
-        this.importPreviewVisible = true;
-      } catch (e: any) {
-        this.toastService.show(e?.message || 'Failed to read the Excel file.', 'error');
-      } finally {
-        input.value = '';
-      }
+    reader.onload = () => {
+      const buffer = reader.result as ArrayBuffer;
+      this.loadAllSpecMasters().subscribe({
+        next: async (masters) => {
+          try {
+            const rows = await parseSpecTemplate(buffer, masters);
+            if (!rows.length) { this.toastService.show('No data rows found in the Template sheet.', 'warning'); return; }
+            this.importPreviewRows = rows;
+            this.importPreviewVisible = true;
+          } catch (e: any) {
+            this.toastService.show(e?.message || 'Failed to read the Excel file.', 'error');
+          } finally {
+            input.value = '';
+          }
+        },
+        error: async () => {
+          // Fallback to reading embedded sheets from workbook if master fetch fails
+          try {
+            const rows = await parseSpecTemplate(buffer);
+            if (!rows.length) { this.toastService.show('No data rows found in the Template sheet.', 'warning'); return; }
+            this.importPreviewRows = rows;
+            this.importPreviewVisible = true;
+          } catch (e: any) {
+            this.toastService.show(e?.message || 'Failed to read the Excel file.', 'error');
+          } finally {
+            input.value = '';
+          }
+        },
+      });
     };
     reader.readAsArrayBuffer(file);
   }

@@ -940,11 +940,14 @@
         <button type="button" class="btn-close" (click)="cancelImport()"></button>
       </div>
       <div class="custom-modal-body">
-        <div class="d-flex gap-3 mb-2 small">
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-2 small">
           <span class="badge bg-success">{{ importOkCount }} OK</span>
           <span class="badge bg-warning text-dark">{{ importWarnCount }} Warning</span>
           <span class="badge bg-danger">{{ importErrorCount }} Error</span>
-          <span class="text-muted">Error rows will not be imported.</span>
+          <span *ngIf="importMissingMasterCount > 0" class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1">
+            <i class="bi bi-exclamation-triangle-fill"></i> {{ importMissingMasterCount }} with Missing Master(s)
+          </span>
+          <span class="text-muted ms-auto">Error rows will not be imported.</span>
         </div>
         <div class="table-responsive import-preview-table">
           <table class="table table-sm table-bordered mb-0">
@@ -969,6 +972,9 @@
                 <td><span class="badge" [ngClass]="r.section === 'chemical' ? 'bg-info-subtle text-info border' : 'bg-primary-subtle text-primary border'">{{ r.section === 'mechanical' ? 'General' : 'Chemical' }}</span></td>
                 <td>
                   {{ r.parameterName }}
+                  <span *ngIf="!r.parameterID && r.status === 'error'" class="badge bg-danger text-white ms-1" title="Parameter not found in master database">
+                    <i class="bi bi-x-circle me-0.5"></i>Missing
+                  </span>
                   <span *ngIf="r.minEquation || r.maxEquation || r.equationFx" class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 font-monospace"
                         [title]="r.equationFx || r.minEquation || r.maxEquation">
                     <i class="bi bi-calculator me-0.5"></i>ƒx
@@ -1002,8 +1008,22 @@
                   </span>
                   <span *ngIf="!r.equationFx && !r.minEquation && !r.maxEquation" class="text-muted">-</span>
                 </td>
-                <td class="small" [ngClass]="{ 'text-danger': r.status === 'error', 'text-warning text-dark': r.status === 'warning' }">
-                  <div *ngIf="r.messages?.length">{{ r.messages.join(' | ') }}</div>
+                <td class="small">
+                  <!-- Missing Masters prominent badges -->
+                  <div *ngIf="r.missingMasters?.length" class="d-flex flex-column gap-1 mb-1">
+                    <div *ngFor="let m of r.missingMasters"
+                         class="badge d-inline-flex align-items-center gap-1 text-wrap text-start"
+                         [ngClass]="m.isRequired ? 'bg-danger text-white' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'">
+                      <i class="bi" [ngClass]="m.isRequired ? 'bi-x-circle-fill' : 'bi-exclamation-triangle-fill'"></i>
+                      <span>Missing {{ m.category }}: "<strong>{{ m.value }}</strong>"</span>
+                    </div>
+                  </div>
+                  <!-- Other messages (e.g. formula warnings, Min > Max, etc.) -->
+                  <ng-container *ngFor="let msg of r.messages">
+                    <div *ngIf="!msg.startsWith('Missing Master:')" [ngClass]="{ 'text-danger': r.status === 'error', 'text-warning text-dark': r.status === 'warning' }">
+                      {{ msg }}
+                    </div>
+                  </ng-container>
                   <div *ngIf="r.notes" class="text-secondary">{{ r.notes }}</div>
                 </td>
               </tr>

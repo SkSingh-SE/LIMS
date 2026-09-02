@@ -91,9 +91,9 @@
 }
 
 .spec-row td {
-  padding: 6px 8px;
+  padding: 3px 6px;
   border-bottom: 1px solid #eee;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .spec-row:last-child td {
@@ -554,6 +554,7 @@
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
 }
 /* Body cell backgrounds for sticky columns */
+.spec-row td { vertical-align: top; }
 .spec-row td.spec-col-num,
 .spec-row td.spec-col-param,
 .spec-row td.spec-col-action { background: #fff; }

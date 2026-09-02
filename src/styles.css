@@ -379,50 +379,8 @@ a.btn i.bi,
   color: var(--primary-color, #da261c);
 }
 
-.btn-nav-plus {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 31px;
-  width: 31px;
-  min-width: 31px;
-  border-radius: 4px;
-  border: 1px solid var(--primary-color, #da261c);
-  background: transparent;
-  color: var(--primary-color, #da261c);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
 
-.btn-nav-plus:hover {
-  background-color: var(--primary-50, rgba(218, 38, 28, 0.08));
-}
-
-/* Compact Table Audit Metadata Cell */
-.cell-audit {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-  font-size: 0.76rem;
-  line-height: 1.2;
-}
-
-.cell-audit-name {
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.cell-audit-time {
-  color: #64748b;
-  font-size: 0.72rem;
-}
-
-/* @media (max-width: 768px) {
-    body {
-        zoom: 0.9;
-      }
-  }
+/*
   @media (min-width: 1200px) {
     body {
         zoom: 1;
@@ -3972,6 +3930,14 @@ input[type="checkbox"]:checked {
   gap: 0.25rem;
 }
 
+.btn-nav-plus:hover,
+.btn-nav-icon:hover {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+  color: #ffffff;
+  box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
+}
+
 .badge-lims-lab-scope {
   background-color: #eff6ff !important;
   color: #1d4ed8 !important;
@@ -4045,37 +4011,6 @@ input[type="checkbox"]:checked {
   margin-right: 6px !important;
 }
 
-
-.btn-nav-icon,
-.btn-nav-plus,
-.btn-field-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  min-height: 22px;
-  padding: 0;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  color: var(--primary-color);
-  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.35));
-  background-color: var(--primary-50, rgba(218, 38, 28, 0.05));
-  transition: all 0.15s ease-in-out;
-  text-decoration: none;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.btn-nav-icon:hover,
-.btn-nav-plus:hover,
-.btn-field-add:hover {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: #ffffff;
-  box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
-}
 
 /* ── Compact Typography Helpers ── */
 .extra-small {
@@ -4216,6 +4151,142 @@ input[type="checkbox"]:checked {
   box-shadow: 0 1px 3px rgba(218, 38, 28, 0.25);
 }
 
+.applied-formula-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 1px;
+  margin-bottom: 0;
+  padding: 0 2px 0 4px;
+  height: 16px;
+  min-height: 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 3px;
+  font-size: 0.63rem;
+  font-family: var(--bs-font-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+.applied-formula-chip:hover {
+  background: #fef2f2;
+  border-color: var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+  box-shadow: 0 1px 2px rgba(218, 38, 28, 0.12);
+}
+.applied-formula-chip.calc-formula-chip {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+}
+.applied-formula-chip.calc-formula-chip:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.18);
+}
+.chip-tag-calc,
+.applied-formula-chip .chip-tag-calc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4f46e5;
+  color: #ffffff !important;
+  font-size: 0.52rem;
+  font-weight: 700;
+  padding: 0 3px;
+  height: 12px;
+  border-radius: 2px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  line-height: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease-in-out;
+}
+.chip-tag-calc:hover {
+  background-color: #4338ca;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
+}
+
+/* ─── Indigo Subtle Badge Theme (Parameter Calculation Formula) ─── */
+.bg-indigo-subtle {
+  background-color: #e0e7ff !important;
+}
+.text-indigo {
+  color: #4338ca !important;
+}
+.border-indigo-subtle {
+  border-color: #c7d2fe !important;
+}
+.applied-formula-chip.min-formula-chip {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+.applied-formula-chip.min-formula-chip:hover {
+  background: #dcfce7;
+  border-color: #22c55e;
+}
+.applied-formula-chip.max-formula-chip {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+}
+.applied-formula-chip.max-formula-chip:hover {
+  background: #ffe4e6;
+  border-color: #f43f5e;
+}
+.applied-formula-chip i {
+  font-size: 0.60rem;
+  line-height: 1;
+  color: var(--primary-color, #da261c);
+  flex-shrink: 0;
+}
+.applied-formula-chip.calc-formula-chip i {
+  color: #4f46e5;
+}
+.applied-formula-chip .formula-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.63rem;
+  line-height: 1;
+  letter-spacing: -0.2px;
+}
+.btn-chip-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  margin-left: 2px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 50%;
+  font-size: 0.70rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease-in-out;
+}
+.btn-chip-clear:hover {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+}
+
 .btn-lims.btn-lims-save:hover:not(:disabled),
 .btn-lims.btn-lims-primary:hover:not(:disabled) {
   background-color: #b81d14;
@@ -4287,6 +4358,41 @@ input[type="checkbox"]:checked {
   color: #ffffff;
 }
 
+.btn-nav-icon,
+.btn-nav-plus,
+.btn-field-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  max-width: 22px;
+  max-height: 22px;
+  padding: 0;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  color: var(--primary-color, #da261c);
+  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.35));
+  background-color: var(--primary-50, rgba(218, 38, 28, 0.05));
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.btn-nav-icon:hover,
+.btn-nav-plus:hover,
+.btn-field-add:hover {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+  color: #ffffff;
+  box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
+}
+
 .btn-lims-icon {
   width: 26px;
   height: 26px;
@@ -4313,26 +4419,6 @@ input[type="checkbox"]:checked {
 .btn-nav-link:hover {
   color: #b81d14;
   text-decoration: underline;
-}
-
-.btn-nav-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  color: var(--primary-color, #da261c);
-  border: 1px solid rgba(218, 38, 28, 0.2);
-  background: rgba(218, 38, 28, 0.04);
-  text-decoration: none;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.btn-nav-icon:hover {
-  background: var(--primary-color, #da261c);
-  color: #ffffff;
 }
 
 /* ════════════════════════════════════════════════════════════════

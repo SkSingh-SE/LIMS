@@ -510,13 +510,19 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   equationModalVisible = false;
   equationModalLine: FormGroup | null = null;
   equationCurrentGradeIndex = 0;
+  equationDraft = ''; // Parameter Calculation Formula (calculates actual result value)
   minEquationDraft = '';
   maxEquationDraft = '';
-  equationActiveField: 'min' | 'max' = 'min'; // which textarea chips/operators insert into
+  equationActiveField: 'calc' | 'min' | 'max' = 'calc'; // which textarea chips/operators insert into
   equationParamChips: Array<{ symbol: string; name: string; display: string; fromMaster?: boolean }> = [];
   equationParamSearch = '';
   equationOperators: string[] = ['+', '-', '*', '/', '(', ')', '>', '<', '>=', '<=', '==', '!=', ','];
   equationFunctions: string[] = ['IF(', 'MIN(', 'MAX(', 'ROUND(', 'ABS(', 'POW(', 'specMax(', 'specMin('];
+
+  calcEquationTokens: EquationToken[] = [];
+  calcEquationErrors: string[] = [];
+  calcEquationValid = true;
+  calcCanonicalFormula = '';
 
   minEquationTokens: EquationToken[] = [];
   minEquationErrors: string[] = [];
@@ -553,23 +559,39 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   }
 
   get isEquationValidToSave(): boolean {
+    const calcTrim = this.equationDraft?.trim();
     const minTrim = this.minEquationDraft?.trim();
     const maxTrim = this.maxEquationDraft?.trim();
 
-    if (!minTrim && !maxTrim) return true;
+    if (!calcTrim && !minTrim && !maxTrim) return true;
+    if (calcTrim && (!this.calcEquationValid || this.calcEquationErrors.length > 0)) return false;
     if (minTrim && (!this.minEquationValid || this.minEquationErrors.length > 0)) return false;
     if (maxTrim && (!this.maxEquationValid || this.maxEquationErrors.length > 0)) return false;
 
     return true;
   }
 
-  openEquationModal(group: AbstractControl, gradeIndex: number): void {
+  clearLineEquation(event: Event, lineGroup: AbstractControl, target: 'calc' | 'min' | 'max'): void {
+    event.stopPropagation();
+    if (target === 'calc') {
+      lineGroup.get('equation')?.setValue(null);
+      lineGroup.get('isCalculated')?.setValue(false);
+    } else if (target === 'min') {
+      lineGroup.get('minEquation')?.setValue(null);
+    } else if (target === 'max') {
+      lineGroup.get('maxEquation')?.setValue(null);
+    }
+    lineGroup.markAsDirty();
+  }
+
+  openEquationModal(group: AbstractControl, gradeIndex: number, defaultActiveField: 'calc' | 'min' | 'max' = 'calc'): void {
     this.equationModalLine = group as FormGroup;
     this.equationCurrentGradeIndex = gradeIndex;
+    this.equationDraft = group.get('equation')?.value || '';
     this.minEquationDraft = group.get('minEquation')?.value || '';
     this.maxEquationDraft = group.get('maxEquation')?.value || '';
-    this.equationActiveField = 'min';
     this.equationParamSearch = '';
+    this.equationActiveField = defaultActiveField;
 
     // Initialize limit symbols from current line values or sensible defaults
     const currentLower = group.get('lowerLimitValue')?.value;
@@ -598,6 +620,17 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
 
     this.paramIsCalculated = isCalc;
     this.paramMasterFormula = formDisp;
+
+    // Choose default active field
+    if (this.equationDraft || this.paramIsCalculated) {
+      this.equationActiveField = 'calc';
+    } else if (this.minEquationDraft) {
+      this.equationActiveField = 'min';
+    } else if (this.maxEquationDraft) {
+      this.equationActiveField = 'max';
+    } else {
+      this.equationActiveField = 'calc';
+    }
 
     // 1. Available references: collect all parameters in this grade (both chemical & mechanical tabs)
     const chips: Array<{ symbol: string; name: string; display: string; fromMaster?: boolean }> = [];
@@ -639,6 +672,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     this.equationParamChips = chips;
 
     // Validate current draft equations & update calculator
+    this.validateEquation('calc');
     this.validateEquation('min');
     this.validateEquation('max');
     this.updateCalculatorParameters();
@@ -646,13 +680,17 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     this.equationModalVisible = true;
   }
 
-  onEquationInput(field: 'min' | 'max'): void {
+  onEquationInput(field: 'calc' | 'min' | 'max'): void {
+    this.equationActiveField = field;
     this.validateEquation(field);
     this.updateCalculatorParameters();
   }
 
   insertEquationToken(token: string): void {
-    if (this.equationActiveField === 'max') {
+    if (this.equationActiveField === 'calc') {
+      this.equationDraft = (this.equationDraft ? this.equationDraft + ' ' : '') + token;
+      this.validateEquation('calc');
+    } else if (this.equationActiveField === 'max') {
       this.maxEquationDraft = (this.maxEquationDraft ? this.maxEquationDraft + ' ' : '') + token;
       this.validateEquation('max');
     } else {
@@ -662,11 +700,16 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     this.updateCalculatorParameters();
   }
 
-  validateEquation(field: 'min' | 'max'): void {
-    const rawInput = (field === 'min' ? this.minEquationDraft : this.maxEquationDraft) || '';
+  validateEquation(field: 'calc' | 'min' | 'max'): void {
+    const rawInput = (field === 'calc' ? this.equationDraft : (field === 'min' ? this.minEquationDraft : this.maxEquationDraft)) || '';
     const { tokens, errors, isValid, canonicalFormula } = this.parseEquationString(rawInput);
 
-    if (field === 'min') {
+    if (field === 'calc') {
+      this.calcEquationTokens = tokens;
+      this.calcEquationErrors = errors;
+      this.calcEquationValid = isValid;
+      this.calcCanonicalFormula = canonicalFormula || '';
+    } else if (field === 'min') {
       this.minEquationTokens = tokens;
       this.minEquationErrors = errors;
       this.minEquationValid = isValid;
@@ -679,8 +722,10 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     }
   }
 
-  onEquationBlur(field: 'min' | 'max'): void {
-    if (field === 'min' && this.minEquationValid && this.minCanonicalFormula) {
+  onEquationBlur(field: 'calc' | 'min' | 'max'): void {
+    if (field === 'calc' && this.calcEquationValid && this.calcCanonicalFormula) {
+      this.equationDraft = this.calcCanonicalFormula;
+    } else if (field === 'min' && this.minEquationValid && this.minCanonicalFormula) {
       this.minEquationDraft = this.minCanonicalFormula;
     } else if (field === 'max' && this.maxEquationValid && this.maxCanonicalFormula) {
       this.maxEquationDraft = this.maxCanonicalFormula;
@@ -962,7 +1007,9 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   }
 
   updateCalculatorParameters(): void {
-    const activeTokens = this.equationActiveField === 'max' ? this.maxEquationTokens : this.minEquationTokens;
+    const activeTokens = this.equationActiveField === 'calc'
+      ? this.calcEquationTokens
+      : (this.equationActiveField === 'max' ? this.maxEquationTokens : this.minEquationTokens);
     const paramTokens = activeTokens.filter(t => t.type === 'param');
 
     const uniqueList: Array<{ symbol: string; name: string; key: string }> = [];
@@ -1005,7 +1052,9 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   }
 
   runLiveCalculation(): void {
-    const activeTokens = this.equationActiveField === 'max' ? this.maxEquationTokens : this.minEquationTokens;
+    const activeTokens = this.equationActiveField === 'calc'
+      ? this.calcEquationTokens
+      : (this.equationActiveField === 'max' ? this.maxEquationTokens : this.minEquationTokens);
     if (!activeTokens.length) {
       this.calcResult = null;
       this.calcStepPreview = '';
@@ -1098,19 +1147,21 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     }
 
     // Always sanitize unwanted data (% prefix, CE =, full names) into clean actual formula
+    const calcEq = (this.calcEquationValid && this.calcCanonicalFormula) ? this.calcCanonicalFormula : (this.equationDraft?.trim() || null);
     const minEq = (this.minEquationValid && this.minCanonicalFormula) ? this.minCanonicalFormula : (this.minEquationDraft?.trim() || null);
     const maxEq = (this.maxEquationValid && this.maxCanonicalFormula) ? this.maxCanonicalFormula : (this.maxEquationDraft?.trim() || null);
 
+    this.equationModalLine?.get('equation')?.setValue(calcEq);
     this.equationModalLine?.get('minEquation')?.setValue(minEq);
     this.equationModalLine?.get('maxEquation')?.setValue(maxEq);
 
     this.equationModalLine?.markAsDirty();
-    this.toastService.show('Formula applied to Min / Max successfully!', 'success');
+    this.toastService.show('Formulas applied successfully!', 'success');
     this.closeEquationModal();
   }
 
-  hasUnwantedFormulaData(field: 'min' | 'max'): boolean {
-    const raw = (field === 'min' ? this.minEquationDraft : this.maxEquationDraft) || '';
+  hasUnwantedFormulaData(field: 'calc' | 'min' | 'max'): boolean {
+    const raw = (field === 'calc' ? this.equationDraft : (field === 'min' ? this.minEquationDraft : this.maxEquationDraft)) || '';
     const trimmed = raw.trim();
     if (!trimmed) return false;
 
@@ -1123,7 +1174,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     }
 
     // Has canonical formula that differs from trimmed input
-    const canonical = field === 'min' ? this.minCanonicalFormula : this.maxCanonicalFormula;
+    const canonical = this.getSuggestedFormula(field);
     if (canonical && canonical !== trimmed) {
       return true;
     }
@@ -1131,15 +1182,19 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     return false;
   }
 
-  getSuggestedFormula(field: 'min' | 'max'): string {
+  getSuggestedFormula(field: 'calc' | 'min' | 'max'): string {
+    if (field === 'calc') return this.calcCanonicalFormula || this.paramMasterFormula;
     return field === 'min' ? this.minCanonicalFormula : this.maxCanonicalFormula;
   }
 
-  applySuggestedFormula(field: 'min' | 'max'): void {
+  applySuggestedFormula(field: 'calc' | 'min' | 'max'): void {
     const canonical = this.getSuggestedFormula(field);
     if (!canonical) return;
 
-    if (field === 'min') {
+    if (field === 'calc') {
+      this.equationDraft = canonical;
+      this.validateEquation('calc');
+    } else if (field === 'min') {
       this.minEquationDraft = canonical;
       this.validateEquation('min');
     } else {
@@ -1151,33 +1206,62 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     this.toastService.show(`Unwanted data removed! Actual formula applied: "${canonical}"`, 'success');
   }
 
-  applySuggestedFormulaAndClose(field: 'min' | 'max'): void {
+  applySuggestedFormulaAndClose(field: 'calc' | 'min' | 'max'): void {
     this.applySuggestedFormula(field);
     this.saveEquation();
   }
 
-  clearEquations(): void {
-    this.minEquationDraft = '';
-    this.maxEquationDraft = '';
-    this.validateEquation('min');
-    this.validateEquation('max');
+  clearEquation(target: 'calc' | 'min' | 'max'): void {
+    if (target === 'calc') {
+      this.equationDraft = '';
+      this.calcEquationTokens = [];
+      this.calcEquationErrors = [];
+      this.calcEquationValid = true;
+      this.calcCanonicalFormula = '';
+    } else if (target === 'min') {
+      this.minEquationDraft = '';
+      this.minEquationTokens = [];
+      this.minEquationErrors = [];
+      this.minEquationValid = true;
+      this.minCanonicalFormula = '';
+    } else if (target === 'max') {
+      this.maxEquationDraft = '';
+      this.maxEquationTokens = [];
+      this.maxEquationErrors = [];
+      this.maxEquationValid = true;
+      this.maxCanonicalFormula = '';
+    }
+    this.validateEquation(target);
     this.updateCalculatorParameters();
+  }
+
+  clearAllEquations(): void {
+    this.clearEquation('calc');
+    this.clearEquation('min');
+    this.clearEquation('max');
+  }
+
+  clearEquations(): void {
+    this.clearAllEquations();
   }
 
   closeEquationModal(): void {
     this.equationModalVisible = false;
     this.equationModalLine = null;
+    this.equationDraft = '';
     this.minEquationDraft = '';
     this.maxEquationDraft = '';
+    this.equationActiveField = 'calc';
     this.equationParamChips = [];
     this.equationParamSearch = '';
+    this.calcEquationTokens = [];
+    this.calcEquationErrors = [];
+    this.calcCanonicalFormula = '';
     this.minEquationTokens = [];
     this.minEquationErrors = [];
-    this.minEquationValid = true;
     this.minCanonicalFormula = '';
     this.maxEquationTokens = [];
     this.maxEquationErrors = [];
-    this.maxEquationValid = true;
     this.maxCanonicalFormula = '';
     this.calcDetectedParams = [];
     this.calcParamValues = {};
@@ -1189,22 +1273,22 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   }
 
   getParamMasterFormula(group: AbstractControl): string {
-    const stored = (group.get('formulaDisplay')?.value || '').trim();
+    const stored = (group.get('formulaDisplay')?.value || group.get('formula')?.value || '').trim();
     if (stored) return stored;
     const paramId = group.get('parameterID')?.value;
     if (paramId) {
-      const found = this.chemicalParametersCache.find(p => p.id === paramId) ||
-                    this.mechanicalParametersCache.find(p => p.id === paramId);
+      const found = this.chemicalParametersCache.find(p => Number(p.id ?? p.Id) === Number(paramId)) ||
+                    this.mechanicalParametersCache.find(p => Number(p.id ?? p.Id) === Number(paramId));
       if (found) {
-        const isCalc = found.additionalValues?.IsCalculated ?? found.isCalculated ?? false;
-        const formula = (found.additionalValues?.FormulaDisplay || found.formulaDisplay || '').trim();
-        if (isCalc && formula) return formula;
+        const av = found.additionalValues || found.AdditionalValues || {};
+        const formula = (av.FormulaDisplay || av.formulaDisplay || found.formulaDisplay || found.FormulaDisplay || av.Formula || av.formula || found.formula || found.Formula || '').trim();
+        if (formula) return formula;
       }
     }
     return '';
   }
 
-  applyMasterFormulaOneClick(target: 'active' | 'min' | 'max' = 'active'): void {
+  applyMasterFormulaOneClick(target: 'active' | 'calc' | 'min' | 'max' = 'active'): void {
     if (!this.paramMasterFormula?.trim()) {
       this.toastService.show('No master formula defined for this parameter.', 'warning');
       return;
@@ -1216,16 +1300,21 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
 
     const fieldToSet = target === 'active' ? this.equationActiveField : target;
 
-    if (fieldToSet === 'max') {
+    if (fieldToSet === 'calc') {
+      this.equationDraft = formula;
+      this.validateEquation('calc');
+      this.toastService.show(`Master formula applied to Parameter Calculation: "${formula}"`, 'success');
+    } else if (fieldToSet === 'max') {
       this.maxEquationDraft = formula;
       this.validateEquation('max');
+      this.toastService.show(`Master formula applied to Max: "${formula}"`, 'success');
     } else {
       this.minEquationDraft = formula;
       this.validateEquation('min');
+      this.toastService.show(`Master formula applied to Min: "${formula}"`, 'success');
     }
 
     this.updateCalculatorParameters();
-    this.toastService.show(`Applied actual formula: "${formula}"`, 'success');
   }
 
   applyMasterFormulaToRow(group: AbstractControl, gradeIndex: number): void {
@@ -1238,21 +1327,9 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
     const parsed = this.parseEquationString(rawFormula);
     const formDisp = (parsed.isValid && parsed.canonicalFormula) ? parsed.canonicalFormula : rawFormula;
 
-    const currentMax = group.get('maxEquation')?.value;
-    if (currentMax) {
-      group.get('maxEquation')?.setValue(formDisp);
-      if (!group.get('upperLimitValue')?.value) {
-        group.get('upperLimitValue')?.setValue('<=');
-      }
-    } else {
-      group.get('minEquation')?.setValue(formDisp);
-      if (!group.get('lowerLimitValue')?.value) {
-        group.get('lowerLimitValue')?.setValue('>=');
-      }
-    }
-
+    group.get('equation')?.setValue(formDisp);
     group.markAsDirty();
-    this.toastService.show(`Applied actual formula "${formDisp}" in 1-click!`, 'success');
+    this.toastService.show(`Applied actual formula "${formDisp}" to Parameter Calculation!`, 'success');
   }
 
   onGridKeydown(event: KeyboardEvent, ri: number, col: 'min' | 'max', tab: string, gradeIndex: number): void {
@@ -1517,6 +1594,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
           lowerLimitDecimalValue: r.lowerLimitDecimalValue,
           upperLimitValue: upperOp,
           upperLimitDecimalValue: r.upperLimitDecimalValue,
+          equation: r.equation || '',
           minEquation: r.minEquation || '',
           maxEquation: r.maxEquation || '',
           notes: r.notes,
@@ -1748,6 +1826,7 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
               }
             });
           });
+    this.autoApplyMasterFormulasIfEmpty();
   }
 
   /** Custom spec: Display Title = "{Name} {SpecNo} : {Version}" (no standard organization). */
@@ -1862,11 +1941,22 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   }
   loadParametersCache(): void {
     this.parameterService.getChemicalParameterDropdown('', 0, 5000).subscribe({
-      next: (data) => this.chemicalParametersCache = data || []
+      next: (data) => {
+        this.chemicalParametersCache = data || [];
+        this.autoApplyMasterFormulasIfEmpty();
+      }
     });
     this.parameterService.getMechanicalParameterDropdown('', 0, 5000).subscribe({
-      next: (data) => this.mechanicalParametersCache = data || []
+      next: (data) => {
+        this.mechanicalParametersCache = data || [];
+        this.autoApplyMasterFormulasIfEmpty();
+      }
     });
+  }
+
+  autoApplyMasterFormulasIfEmpty(): void {
+    // Intentionally no-op: Existing specification lines retain their saved database equations.
+    // Master formulas are applied only when explicitly requested by user or on parameter selection for calculated parameters.
   }
 
   @HostListener('window:focus')
@@ -1991,6 +2081,13 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
 
     if (!isRebind) {
       patchPayload.textValue = defaultVal;
+      // Auto-apply parameter master default formula if defined and parameter is calculated
+      const defaultFormula = (formulaDisplay || formula || '').trim();
+      if (defaultFormula && isCalculated && !specificationLine.get('equation')?.value) {
+        const parsed = this.parseEquationString(defaultFormula);
+        patchPayload.equation = (parsed.isValid && parsed.canonicalFormula) ? parsed.canonicalFormula : defaultFormula;
+        patchPayload.isCalculated = true;
+      }
     }
 
     specificationLine.patchValue(patchPayload);

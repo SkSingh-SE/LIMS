@@ -222,30 +222,23 @@
 
                 <!-- Metal Classification per-grade -->
                 <div class="col-md-3">
-                  <div class="d-flex align-items-center gap-1">
-                    <div class="flex-grow-1">
-                      <app-searchable-dropdown [smallInput]="true"
-                        class="w-100"
-                        [placeholder]="'Search Metal Classification'"
-                        [labelName]="'Metal Classification'"
-                        [fetchDataFn]="getMetalClassification"
-                        (itemSelected)="onMetalClassificationSelected($event, gi)"
-                        [hideLabel]="false"
-                        [required]="false"
-                        [isDisabled]="isViewMode"
-                        [selectedItem]="grade.get('metalClassificationID')?.value"
-                      ></app-searchable-dropdown>
-                    </div>
-                    <button
-                      *ngIf="!isViewMode"
-                      type="button"
-                      class="btn btn-outline-primary btn-sm mt-4"
-                      title="Add New Metal Classification"
-                      (click)="openLinkedMaster('/metal-classification')"
-                    >
-                      <i class="bi bi-plus-lg"></i>
-                    </button>
+                  <div class="form-field-header">
+                    <label class="form-label">Metal Classification</label>
+                    <a *ngIf="!isViewMode" class="btn-nav-link" (click)="openLinkedMaster('/metal-classification')" title="Manage Metal Classification">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+                    </a>
                   </div>
+                  <app-searchable-dropdown [smallInput]="true"
+                    class="w-100"
+                    [placeholder]="'Search Metal Classification'"
+                    [labelName]="'Metal Classification'"
+                    [fetchDataFn]="getMetalClassification"
+                    (itemSelected)="onMetalClassificationSelected($event, gi)"
+                    [hideLabel]="true"
+                    [required]="false"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="grade.get('metalClassificationID')?.value"
+                  ></app-searchable-dropdown>
                 </div>
 
                 <!-- MS-B: per-grade identifier — only ONE identifier may be selected per grade -->
@@ -379,13 +372,23 @@
                                     [selectedItem]="group.get('parameterID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Parameter" (click)="openLinkedMaster('/chemical-parameter')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Parameter" (click)="openLinkedMaster('/chemical-parameter')"><i class="bi bi-box-arrow-up-right"></i></a>
                               </div>
                               <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
                                 Parameter is required
                               </small>
+                              <div *ngIf="group.get('equation')?.value" class="applied-formula-chip calc-formula-chip"
+                                   (click)="openEquationModal(group, gi, 'calc')"
+                                   [title]="'Parameter Calculation Formula: ' + group.get('equation')?.value + ' (Click to edit)'">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="chip-tag-calc me-1">CALC</span>
+                                <span class="formula-text">{{ group.get('equation')?.value }}</span>
+                                <button *ngIf="!isViewMode" type="button" class="btn-chip-clear"
+                                        (click)="clearLineEquation($event, group, 'calc')"
+                                        title="Clear Calculation Formula">
+                                  <i class="bi bi-x"></i>
+                                </button>
+                              </div>
                             </td>
                             <td>
                               <!-- Unit Dropdown - base + equivalents (binds equivalentId, null = base) -->
@@ -434,9 +437,16 @@
                                   type="text" class="form-control form-control-sm wide-input"
                                   formControlName="textValue" placeholder="Enter value" maxlength="200" />
                               </div>
-                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip mt-1" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip min-formula-chip"
+                                   (click)="openEquationModal(group, gi, 'min')"
+                                   [title]="'Min Formula: ' + group.get('minEquation')?.value + ' (Click to edit)'">
                                 <i class="bi bi-calculator me-0.5"></i>
                                 <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                                <button *ngIf="!isViewMode" type="button" class="btn-chip-clear"
+                                        (click)="clearLineEquation($event, group, 'min')"
+                                        title="Clear Min Formula">
+                                  <i class="bi bi-x"></i>
+                                </button>
                               </div>
                             </td>
                             <td>
@@ -467,9 +477,16 @@
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
-                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip mt-1" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip max-formula-chip"
+                                   (click)="openEquationModal(group, gi, 'max')"
+                                   [title]="'Max Formula: ' + group.get('maxEquation')?.value + ' (Click to edit)'">
                                 <i class="bi bi-calculator me-0.5"></i>
                                 <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
+                                <button *ngIf="!isViewMode" type="button" class="btn-chip-clear"
+                                        (click)="clearLineEquation($event, group, 'max')"
+                                        title="Clear Max Formula">
+                                  <i class="bi bi-x"></i>
+                                </button>
                               </div>
                             </td>
                             <td>
@@ -538,9 +555,9 @@
                                     [selectedItem]="group.get('dimensionalFactorID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimesional-factor')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Dimensional Factor" (click)="openLinkedMaster('/dimesional-factor')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td>
@@ -594,9 +611,9 @@
                                     [selectedItem]="group.get('heatTreatmentID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Heat Treatment" (click)="openLinkedMaster('/heat-treatment')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Heat Treatment" (click)="openLinkedMaster('/heat-treatment')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td class="wide-input">
@@ -613,9 +630,9 @@
                                     [selectedItem]="group.get('productConditionID1')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td class="wide-input">
@@ -632,9 +649,9 @@
                                     [selectedItem]="group.get('productConditionID2')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td class="wide-input">
@@ -770,13 +787,23 @@
                                     [selectedItem]="group.get('parameterID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Parameter" (click)="openLinkedMaster('/mechanical-parameter')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Parameter" (click)="openLinkedMaster('/mechanical-parameter')"><i class="bi bi-box-arrow-up-right"></i></a>
                               </div>
                               <small *ngIf="group.get('parameterID')?.touched && group.get('parameterID')?.hasError('required')" class="text-danger">
                                 Parameter is required
                               </small>
+                              <div *ngIf="group.get('equation')?.value" class="applied-formula-chip calc-formula-chip"
+                                   (click)="openEquationModal(group, gi, 'calc')"
+                                   [title]="'Parameter Calculation Formula: ' + group.get('equation')?.value + ' (Click to edit)'">
+                                <i class="bi bi-calculator me-0.5"></i>
+                                <span class="chip-tag-calc me-1">CALC</span>
+                                <span class="formula-text">{{ group.get('equation')?.value }}</span>
+                                <button *ngIf="!isViewMode" type="button" class="btn-chip-clear"
+                                        (click)="clearLineEquation($event, group, 'calc')"
+                                        title="Clear Calculation Formula">
+                                  <i class="bi bi-x"></i>
+                                </button>
+                              </div>
                             </td>
                             <td>
                               <!-- Unit Dropdown - base + equivalents (binds equivalentId, null = base) -->
@@ -825,9 +852,16 @@
                                   type="text" class="form-control form-control-sm wide-input"
                                   formControlName="textValue" placeholder="Enter value" maxlength="200" />
                               </div>
-                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip mt-1" [title]="'Min Formula: ' + group.get('minEquation')?.value">
+                              <div *ngIf="group.get('minEquation')?.value" class="applied-formula-chip min-formula-chip"
+                                   (click)="openEquationModal(group, gi, 'min')"
+                                   [title]="'Min Formula: ' + group.get('minEquation')?.value + ' (Click to edit)'">
                                 <i class="bi bi-calculator me-0.5"></i>
                                 <span class="formula-text">{{ group.get('minEquation')?.value }}</span>
+                                <button *ngIf="!isViewMode" type="button" class="btn-chip-clear"
+                                        (click)="clearLineEquation($event, group, 'min')"
+                                        title="Clear Min Formula">
+                                  <i class="bi bi-x"></i>
+                                </button>
                               </div>
                             </td>
                             <td>
@@ -858,9 +892,16 @@
                               <small *ngIf="group.get('minValue')?.value != null && group.get('maxValue')?.value != null && group.get('minValue')?.value > group.get('maxValue')?.value" class="text-danger">
                                 Max must be &ge; Min
                               </small>
-                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip mt-1" [title]="'Max Formula: ' + group.get('maxEquation')?.value">
+                              <div *ngIf="group.get('maxEquation')?.value" class="applied-formula-chip max-formula-chip"
+                                   (click)="openEquationModal(group, gi, 'max')"
+                                   [title]="'Max Formula: ' + group.get('maxEquation')?.value + ' (Click to edit)'">
                                 <i class="bi bi-calculator me-0.5"></i>
                                 <span class="formula-text">{{ group.get('maxEquation')?.value }}</span>
+                                <button *ngIf="!isViewMode" type="button" class="btn-chip-clear"
+                                        (click)="clearLineEquation($event, group, 'max')"
+                                        title="Clear Max Formula">
+                                  <i class="bi bi-x"></i>
+                                </button>
                               </div>
                             </td>
                             <td>
@@ -929,9 +970,9 @@
                                     [selectedItem]="group.get('dimensionalFactorID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Dimensional Factor" (click)="openLinkedMaster('/dimesional-factor')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Dimensional Factor" (click)="openLinkedMaster('/dimesional-factor')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td>
@@ -985,9 +1026,9 @@
                                     [selectedItem]="group.get('heatTreatmentID')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Heat Treatment" (click)="openLinkedMaster('/heat-treatment')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Heat Treatment" (click)="openLinkedMaster('/heat-treatment')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td class="wide-input">
@@ -1004,9 +1045,9 @@
                                     [selectedItem]="group.get('productConditionID1')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td class="wide-input">
@@ -1023,9 +1064,9 @@
                                     [selectedItem]="group.get('productConditionID2')?.value"
                                   ></app-searchable-dropdown>
                                 </div>
-                                <button *ngIf="!isViewMode" type="button" class="btn btn-outline-primary btn-sm" title="Add New Product Condition" (click)="openLinkedMaster('/product-condition')">
-                                  <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <a *ngIf="!isViewMode" class="btn-nav-icon" title="Manage Product Condition" (click)="openLinkedMaster('/product-condition')">
+                                  <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
                               </div>
                             </td>
                             <td class="wide-input">
@@ -1755,16 +1796,16 @@
               <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-1.5 py-0.5 small fw-semibold">
                 <i class="bi bi-play-circle-fill me-1"></i>Live Calculator
               </span>
-              <span class="small text-muted font-monospace">Target: {{ equationActiveField === 'min' ? 'Min' : 'Max' }} Formula</span>
+              <span class="small text-muted font-monospace">Target: {{ equationActiveField === 'calc' ? 'Calculation' : (equationActiveField === 'min' ? 'Min' : 'Max') }} Formula</span>
             </div>
             <div class="d-flex align-items-center gap-1">
               <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1.5 small" (click)="resetCalcDefaults()" title="Reset to default test values">
                 <i class="bi bi-arrow-counterclockwise"></i>
               </button>
-              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-success btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('min')">
+              <button *ngIf="calcResult != null && equationActiveField !== 'calc'" type="button" class="btn btn-outline-success btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('min')">
                 Set Min ({{ calcResult }})
               </button>
-              <button *ngIf="calcResult != null" type="button" class="btn btn-outline-primary btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('max')">
+              <button *ngIf="calcResult != null && equationActiveField !== 'calc'" type="button" class="btn btn-outline-primary btn-sm py-0 px-2 small" (click)="copyCalcResultToLimit('max')">
                 Set Max ({{ calcResult }})
               </button>
             </div>
@@ -1793,19 +1834,93 @@
           </div>
         </div>
 
+        <!-- Parameter Calculation Formula Card (Result Value) -->
+        <div class="formula-field-card" [class.is-active]="equationActiveField === 'calc'" [class.is-invalid]="!calcEquationValid && equationDraft.trim()">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="badge bg-indigo-subtle text-indigo border border-indigo-subtle px-1.5 py-0.5 small fw-semibold">
+                <i class="bi bi-calculator me-1"></i>Parameter Calculation Formula (Result Value)
+              </span>
+              <span class="small text-muted">Auto-calculates this parameter's actual value during test result entry</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+              <span *ngIf="equationDraft.trim() && calcEquationValid" class="text-success small fw-semibold text-nowrap d-inline-flex align-items-center">
+                <i class="bi bi-check2-circle me-1"></i>Valid
+              </span>
+              <span *ngIf="equationDraft.trim() && !calcEquationValid" class="text-danger small fw-semibold text-nowrap d-inline-flex align-items-center">
+                <i class="bi bi-exclamation-circle me-1"></i>Error
+              </span>
+              <button *ngIf="equationDraft.trim()" type="button" class="btn btn-sm btn-outline-danger py-0 px-1.5 d-inline-flex align-items-center gap-1 text-nowrap"
+                (click)="clearEquation('calc')" title="Clear Calculation Formula">
+                <i class="bi bi-eraser"></i>
+                <span class="small">Clear</span>
+              </button>
+            </div>
+          </div>
+          <textarea class="form-control formula-textarea-clean font-monospace w-100" rows="2" [(ngModel)]="equationDraft"
+            [ngModelOptions]="{ standalone: true }" (input)="onEquationInput('calc')" (blur)="onEquationBlur('calc')"
+            (focus)="equationActiveField = 'calc'; updateCalculatorParameters()"
+            placeholder="e.g. C + Mn / 6 + (Cr + Mo + V) / 5 + (Ni + Cu) / 15"></textarea>
+
+          <!-- Suggested Actual Formula Card (Unwanted Data Removed) -->
+          <div *ngIf="getSuggestedFormula('calc') && hasUnwantedFormulaData('calc')"
+               class="formula-suggestion-card mt-2 p-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <div class="suggestion-icon-badge">
+                <i class="bi bi-stars text-success"></i>
+              </div>
+              <div>
+                <div class="small fw-semibold text-success d-flex align-items-center gap-1">
+                  <span>Suggested Actual Formula (Unwanted data removed):</span>
+                </div>
+                <code class="suggestion-code">{{ getSuggestedFormula('calc') }}</code>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+              <button type="button" class="btn btn-sm btn-success px-2.5 py-1 d-flex align-items-center gap-1 shadow-sm"
+                      (click)="applySuggestedFormula('calc')"
+                      title="Remove % prefix and target assignment and apply to formula">
+                <i class="bi bi-check2-circle"></i>
+                <span class="fw-semibold">Validate & Apply (1-Click)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Token Breakdown -->
+          <div *ngIf="calcEquationTokens.length > 0" class="d-flex flex-wrap align-items-center gap-1 mt-1 p-1 bg-light rounded border border-light-subtle">
+            <span *ngFor="let t of calcEquationTokens">
+              <span *ngIf="t.type === 'param'" class="clean-token-chip token-param" [title]="t.matched || t.token">{{ t.token }}</span>
+              <span *ngIf="t.type === 'function'" class="clean-token-chip token-fn">{{ t.token }}()</span>
+              <span *ngIf="t.type === 'number'" class="clean-token-chip token-num">{{ t.token }}</span>
+              <span *ngIf="t.type === 'operator' || t.type === 'paren' || t.type === 'comma'" class="clean-token-chip token-op">{{ t.token }}</span>
+              <span *ngIf="t.type === 'unknown'" class="clean-token-chip token-err">{{ t.token }}</span>
+            </span>
+          </div>
+          <div *ngIf="calcEquationErrors.length > 0" class="mt-1">
+            <div *ngFor="let err of calcEquationErrors" class="text-danger small">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ err }}
+            </div>
+          </div>
+        </div>
+
         <!-- Min Limit Equation Card -->
         <div class="formula-field-card" [class.is-active]="equationActiveField === 'min'" [class.is-invalid]="!minEquationValid && minEquationDraft.trim()">
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="d-flex align-items-center gap-1.5">
               <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5 small fw-semibold">Min Equation</span>
             </div>
-            <div>
-              <span *ngIf="minEquationDraft.trim() && minEquationValid" class="text-success small fw-semibold">
-                <i class="bi bi-check2-circle me-0.5"></i>Valid
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+              <span *ngIf="minEquationDraft.trim() && minEquationValid" class="text-success small fw-semibold text-nowrap d-inline-flex align-items-center">
+                <i class="bi bi-check2-circle me-1"></i>Valid
               </span>
-              <span *ngIf="minEquationDraft.trim() && !minEquationValid" class="text-danger small fw-semibold">
-                <i class="bi bi-exclamation-circle me-0.5"></i>Error
+              <span *ngIf="minEquationDraft.trim() && !minEquationValid" class="text-danger small fw-semibold text-nowrap d-inline-flex align-items-center">
+                <i class="bi bi-exclamation-circle me-1"></i>Error
               </span>
+              <button *ngIf="minEquationDraft.trim()" type="button" class="btn btn-sm btn-outline-danger py-0 px-1.5 d-inline-flex align-items-center gap-1 text-nowrap"
+                (click)="clearEquation('min')" title="Clear Min Equation">
+                <i class="bi bi-eraser"></i>
+                <span class="small">Clear</span>
+              </button>
             </div>
           </div>
           <textarea class="form-control formula-textarea-clean font-monospace w-100" rows="2" [(ngModel)]="minEquationDraft"
@@ -1860,13 +1975,18 @@
             <div class="d-flex align-items-center gap-1.5">
               <span class="badge bg-secondary-subtle text-dark border px-1.5 py-0.5 small fw-semibold">Max Equation</span>
             </div>
-            <div>
-              <span *ngIf="maxEquationDraft.trim() && maxEquationValid" class="text-success small fw-semibold">
-                <i class="bi bi-check2-circle me-0.5"></i>Valid
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+              <span *ngIf="maxEquationDraft.trim() && maxEquationValid" class="text-success small fw-semibold text-nowrap d-inline-flex align-items-center">
+                <i class="bi bi-check2-circle me-1"></i>Valid
               </span>
-              <span *ngIf="maxEquationDraft.trim() && !maxEquationValid" class="text-danger small fw-semibold">
-                <i class="bi bi-exclamation-circle me-0.5"></i>Error
+              <span *ngIf="maxEquationDraft.trim() && !maxEquationValid" class="text-danger small fw-semibold text-nowrap d-inline-flex align-items-center">
+                <i class="bi bi-exclamation-circle me-1"></i>Error
               </span>
+              <button *ngIf="maxEquationDraft.trim()" type="button" class="btn btn-sm btn-outline-danger py-0 px-1.5 d-inline-flex align-items-center gap-1 text-nowrap"
+                (click)="clearEquation('max')" title="Clear Max Equation">
+                <i class="bi bi-eraser"></i>
+                <span class="small">Clear</span>
+              </button>
             </div>
           </div>
           <textarea class="form-control formula-textarea-clean font-monospace w-100" rows="2" [(ngModel)]="maxEquationDraft"
@@ -1917,8 +2037,8 @@
       </div>
 
       <div class="custom-modal-footer d-flex justify-content-between align-items-center">
-        <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearEquations()">
-          <i class="bi bi-eraser me-1"></i> Clear Both
+        <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearAllEquations()">
+          <i class="bi bi-eraser me-1"></i> Clear All
         </button>
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-sm btn-cancel" (click)="closeEquationModal()">

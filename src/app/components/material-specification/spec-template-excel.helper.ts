@@ -43,6 +43,7 @@ export interface ParsedSpecRow {
   lowerLimitDecimalValue: number | null;
   upperLimitValue: string;
   upperLimitDecimalValue: number | null;
+  equation?: string;
   minEquation: string;
   maxEquation: string;
   equationFx?: string;
@@ -322,7 +323,7 @@ export function validateSpecFormula(
   return {
     isValid: true,
     formula: str,
-    leadingOp: leadingOp || '>=',
+    leadingOp: leadingOp || '',
     targetVar,
   };
 }
@@ -602,30 +603,50 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
     // Formula auto-apply and validation
     let minEq = cell('Min Equation');
     let maxEq = cell('Max Equation');
-    const eqFx = cell('Equation (fx)', ['Equation', 'Formula', 'Equation(fx)', 'Eq (fx)']);
+    let eq = cell('Equation');
+    const eqFx = cell('Equation (fx)', ['Formula', 'Equation(fx)', 'Eq (fx)']);
     let formulaValid: boolean | undefined = undefined;
 
-    if (eqFx && !minEq && !maxEq) {
+    if (eqFx && !minEq && !maxEq && !eq) {
       const val = validateSpecFormula(eqFx, paramNames, paramSymbols);
       formulaValid = val.isValid;
       if (val.isValid) {
         if (val.leadingOp === '<=' || val.leadingOp === '≤' || val.leadingOp === '<') {
           maxEq = val.formula;
-        } else {
+        } else if (val.leadingOp === '>=' || val.leadingOp === '≥' || val.leadingOp === '>') {
           minEq = val.formula;
+        } else {
+          // Parameter Calculation Formula (pure formula or assignment without inequality e.g. "CE = C + Mn/6")
+          eq = val.formula;
         }
       } else {
         warn(`Formula "${eqFx}" for ${paramName} is invalid: ${val.error}`);
-        minEq = eqFx;
+        if (val.leadingOp === '<=' || val.leadingOp === '≤' || val.leadingOp === '<') {
+          maxEq = eqFx;
+        } else if (val.leadingOp === '>=' || val.leadingOp === '≥' || val.leadingOp === '>') {
+          minEq = eqFx;
+        } else {
+          eq = eqFx;
+        }
       }
     } else {
+      if (eq) {
+        const val = validateSpecFormula(eq, paramNames, paramSymbols);
+        if (!val.isValid) {
+          warn(`Equation "${eq}" is invalid: ${val.error}`);
+          formulaValid = false;
+        } else {
+          formulaValid = true;
+          if (val.formula) eq = val.formula;
+        }
+      }
       if (minEq) {
         const val = validateSpecFormula(minEq, paramNames, paramSymbols);
         if (!val.isValid) {
           warn(`Min Equation "${minEq}" is invalid: ${val.error}`);
           formulaValid = false;
         } else {
-          formulaValid = true;
+          if (formulaValid !== false) formulaValid = true;
           if (val.formula) minEq = val.formula;
         }
       }
@@ -667,9 +688,10 @@ export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecM
       lowerLimitDecimalValue: lowValIdx > 0 ? numOrNull(row.getCell(lowValIdx).value) : null,
       upperLimitValue: upperSym,
       upperLimitDecimalValue: upValIdx > 0 ? numOrNull(row.getCell(upValIdx).value) : null,
+      equation: eq,
       minEquation: minEq,
       maxEquation: maxEq,
-      equationFx: eqFx || (minEq ? `${lowerSym || '≥'} ${minEq}` : (maxEq ? `${upperSym || '≤'} ${maxEq}` : undefined)),
+      equationFx: eqFx || (eq ? eq : (minEq ? `${lowerSym || '≥'} ${minEq}` : (maxEq ? `${upperSym || '≤'} ${maxEq}` : undefined))),
       formulaValid,
       notes: cell('Note'),
       specimenOrientationID: resolveMaster('SpecimenOrient', 'Specimen Orientation', 'Specimen Orientation'),

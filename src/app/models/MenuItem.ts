@@ -53,7 +53,7 @@ export function getAllMenuItems(): MenuItem[] {
                 { id: 28, title: 'Standard Organization', route: '/standard-organization', parentMenuID: 201, permissions: ['CanReadStandardOrganization'], children: [], color: getRandomColor() },
                 { id: 30, title: 'Metal Classification', route: '/metal-classification', parentMenuID: 201, permissions: ['CanReadMetalClassification'], children: [], color: getRandomColor() },
                 { id: 24, title: 'Chemical Parameter', route: '/chemical-parameter', parentMenuID: 201, permissions: ['CanReadChemicalParameter'], children: [], color: getRandomColor() },
-                { id: 25, title: 'Mechanical Parameter', route: '/mechanical-parameter', parentMenuID: 201, permissions: ['CanReadMechanicalParameter'], children: [], color: getRandomColor() },
+                { id: 25, title: 'General Parameter', route: '/mechanical-parameter', parentMenuID: 201, permissions: ['CanReadMechanicalParameter'], children: [], color: getRandomColor() },
                 { id: 210, title: 'Parameter Unit', route: '/parameter-unit', parentMenuID: 201, permissions: ['CanReadParameterUnit'], children: [], color: getRandomColor() },
                 { id: 23, title: 'Heat Treatment', route: '/heat-treatment', parentMenuID: 201, permissions: ['CanReadHeatTreatment'], children: [], color: getRandomColor() },
                 { id: 26, title: 'Product Condition', route: '/product-condition', parentMenuID: 201, permissions: ['CanReadProductCondition'], children: [], color: getRandomColor() },

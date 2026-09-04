@@ -424,35 +424,33 @@ export class TestMethodSpecificationComponent implements OnInit {
    * Example: "ASTM E8/E8M-1 : V1 2016"
    * Auto-generated based on active version, editable.
    */
+  /**
+   * Display Title = "{Org} - {Std} - {Part}"
+   * Example: "ASTM - E415"
+   * Auto-generated based on header fields, editable.
+   */
   buildDisplayTitle(): void {
     const org = (this.selectedStandardOrganization?.name || '').toString().trim();
     const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
     const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
-    const version = this.getActiveVersionLabel();
-    const year = this.getActiveVersionYear();
 
-    let parts: string[] = [org];
+    let parts: string[] = [];
+    if (org) parts.push(org);
     if (part) {
-      parts.push(`${std}-${part}`);
-    } else {
+      parts.push(`${std} - ${part}`);
+    } else if (std) {
       parts.push(std);
     }
-    parts = parts.filter(x => x);
-    if (parts.length && version) {
-      parts.push(`: ${version}`);
-    }
-    if (year) {
-      parts.push(year);
-    }
-    this.testSpecificationForm.get('displayTitle')?.setValue(parts.join(' '), { emitEvent: false });
+    const title = parts.join(' - ');
+    this.testSpecificationForm.get('displayTitle')?.setValue(title, { emitEvent: false });
   }
 
   onFileChange(event: any, index: number) {
     const file = event.target.files[0];
     if (file) {
-      const maxSize = 5 * 1024 * 1024;
+      const maxSize = 100 * 1024 * 1024; // 100 MB
       if (file.size > maxSize) {
-        this.toastService.show(`File size  should be less than 5 MB.`, 'warning');
+        this.toastService.show(`File size should be less than 100 MB.`, 'warning');
         event.target.value = '';
         return;
       }
@@ -486,25 +484,17 @@ export class TestMethodSpecificationComponent implements OnInit {
     this.versions.at(index).patchValue({ standardFile: '', standardFilePath: '', file: null, uploadReferenceID: null });
   }
 
-  /** Test Method Caption — version-specific unique caption */
-  getCaption(groupOrYear: any, index?: number): string {
+  /** Test Method Caption — "{Org} - {Std} - {Version}" without Year */
+  getCaption(groupOrYear?: any, index?: number): string {
     const org = (this.selectedStandardOrganization?.name || '').toString().trim();
     const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
     const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
-    
+
     let version = '';
-    let year = '';
-    
-    if (groupOrYear && typeof groupOrYear === 'object' && groupOrYear.get) {
+    if (groupOrYear && typeof groupOrYear.get === 'function') {
       version = (groupOrYear.get('version')?.value || '').toString().trim();
-      year = (groupOrYear.get('year')?.value || '').toString().trim();
-    } else if (typeof index === 'number' && this.versions.at(index)) {
-      const g = this.versions.at(index);
-      version = (g.get('version')?.value || '').toString().trim();
-      year = (g.get('year')?.value || '').toString().trim();
-    } else {
-      version = this.getActiveVersionLabel();
-      year = (groupOrYear || '').toString().trim();
+    } else if (typeof groupOrYear === 'string') {
+      version = groupOrYear.trim();
     }
 
     let parts: string[] = [];
@@ -514,15 +504,10 @@ export class TestMethodSpecificationComponent implements OnInit {
     } else if (std) {
       parts.push(std);
     }
-    
-    let caption = parts.join(' ');
     if (version) {
-      caption += ` : ${version}`;
+      parts.push(version);
     }
-    if (year) {
-      caption += ` ${year}`;
-    }
-    return caption.trim();
+    return parts.join(' - ');
   }
 
   onDisable() {

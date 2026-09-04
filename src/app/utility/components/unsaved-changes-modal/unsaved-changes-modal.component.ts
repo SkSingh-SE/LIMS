@@ -23,10 +23,10 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
           </div>
           <div class="unsaved-actions">
             <button type="button" class="btn btn-stay" (click)="stay()">
-              <i class="bi bi-arrow-left-circle me-1"></i>Stay on Page
+              <i class="bi bi-arrow-left-circle"></i> Stay on Page
             </button>
             <button type="button" class="btn btn-leave" (click)="leave()">
-              Leave Anyway<i class="bi bi-box-arrow-right ms-1"></i>
+              <i class="bi bi-box-arrow-right"></i> Leave Anyway
             </button>
           </div>
         </div>
@@ -91,20 +91,35 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
 
     .unsaved-actions {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       padding: 16px 28px 24px;
       justify-content: center;
+    }
+
+    .btn-stay,
+    .btn-leave {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      font-size: 0.82rem !important;
+      font-weight: 500 !important;
+      padding: 6px 18px !important;
+      border-radius: 6px !important;
+      min-height: 32px !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+
+    .btn-stay i,
+    .btn-leave i {
+      font-size: 0.9rem !important;
+      display: inline-block !important;
     }
 
     .btn-stay {
       background-color: #f1f3f5;
       color: #495057;
       border: 1px solid #dee2e6;
-      font-weight: 500;
-      font-size: 0.875rem;
-      padding: 8px 20px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
     }
 
     .btn-stay:hover {
@@ -117,11 +132,6 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
       background: linear-gradient(135deg, var(--primary-gradient-start, #ff4b3a) 0%, var(--primary-color, #da261c) 100%);
       color: #fff;
       border: none;
-      font-weight: 500;
-      font-size: 0.875rem;
-      padding: 8px 20px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
       box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.3);
     }
 

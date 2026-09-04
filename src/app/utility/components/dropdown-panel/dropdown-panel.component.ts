@@ -29,7 +29,15 @@ export class DropdownPanelComponent {
 
   private setInitialHighlight(): void {
     if (!this.items?.length || !this.selectedItemId) return;
-    const index = this.items.findIndex(i => i.id === this.selectedItemId);
+    const isObj = typeof this.selectedItemId === 'object' && this.selectedItemId !== null;
+    const targetEqId = isObj ? this.selectedItemId.equivalentId : null;
+    const targetId = isObj ? this.selectedItemId.id : this.selectedItemId;
+
+    const index = this.items.findIndex(i => {
+      if (i.isHeader || i.selectable === false) return false;
+      if (targetEqId) return i.equivalentId === targetEqId;
+      return i.id === targetId && !i.equivalentId;
+    });
     this.highlightedIndex = index >= 0 ? index : 0;
   }
 

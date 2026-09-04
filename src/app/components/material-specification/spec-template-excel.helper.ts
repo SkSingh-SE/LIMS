@@ -11,7 +11,7 @@ import * as ExcelJS from 'exceljs';
  */
 
 export interface SpecMasters {
-  parameters: any[]; // combined chemical + mechanical, each tagged { section }
+  parameters: any[]; // combined chemical + mechanical/general, each tagged { section }
   units: any[];
   laboratoryTests: any[];
   testMethodSpecs: any[];
@@ -28,6 +28,7 @@ export interface ParsedSpecRow {
   grade: string;
   metalClassificationID: number | null;
   section: 'chemical' | 'mechanical';
+  unsNo?: string;
   parameterID: number | null;
   parameterName: string;
   parameterSymbol: string;
@@ -42,8 +43,11 @@ export interface ParsedSpecRow {
   lowerLimitDecimalValue: number | null;
   upperLimitValue: string;
   upperLimitDecimalValue: number | null;
+  equation?: string;
   minEquation: string;
   maxEquation: string;
+  equationFx?: string;
+  formulaValid?: boolean;
   notes: string;
   specimenOrientationID: number | null;
   dimensionalFactorID: number | null;
@@ -57,6 +61,7 @@ export interface ParsedSpecRow {
   testMethodSpecIDs: number[];
   status: 'ok' | 'warning' | 'error';
   messages: string[];
+  missingMasters?: Array<{ category: string; value: string; isRequired: boolean }>;
 }
 
 // Template column order — single source of truth for build + parse.
@@ -69,14 +74,74 @@ const COLUMNS = [
   'Product Condition 1', 'Product Condition 2', 'Product Size',
   'Test Condition', 'Test Note', 'Laboratory Test',
   'Test Method 1', 'Test Method 2', 'Test Method 3', 'Test Method 4', 'Test Method 5',
+  'UNS No', 'Equation (fx)',
 ] as const;
 
 // Lower limit = minimum bound (>, ≥, =); Upper limit = maximum bound (<, ≤, =). Kept distinct.
 const LOWER_SYMBOLS = ['>', '≥', '='];
 const UPPER_SYMBOLS = ['<', '≤', '='];
-const SECTIONS = ['Chemical', 'Mechanical'];
+const SECTIONS = ['Chemical', 'General'];
 const VALIDATION_ROWS = 1000; // apply dropdown validation to rows 2..1001
 const TEMPLATE_SHEET = 'Template';
+
+// Common parameter name aliases to map international standards (e.g. ASTM/BS/EN) to LIMS masters
+const PARAM_ALIASES: Record<string, string> = {
+  // Chemistry spelling and symbol aliases
+  'sulphur': 'sulfur',
+  'aluminium': 'aluminum',
+  'phosphorous': 'phosphorus',
+  'columbium': 'niobium',
+  'cb': 'niobium',
+  'nb': 'niobium',
+  'mo': 'molybdenum',
+  'si': 'silicon',
+  'mn': 'manganese',
+  'cr': 'chromium',
+  'ni': 'nickel',
+  'cu': 'copper',
+  'fe': 'iron',
+  'c': 'carbon',
+  'p': 'phosphorus',
+  's': 'sulfur',
+  'v': 'vanadium',
+  'w': 'tungsten',
+  'ti': 'titanium',
+  'co': 'cobalt',
+  'al': 'aluminum',
+  'b': 'boron',
+  'n': 'nitrogen',
+  'o': 'oxygen',
+  'h': 'hydrogen',
+  'as': 'arsenic',
+  'sn': 'tin',
+  'pb': 'lead',
+  'sb': 'antimony',
+  'bi': 'bismuth',
+  'zr': 'zirconium',
+  'ta': 'tantalum',
+
+  // Mechanical / General test names & ASTM headings
+  'uts': 'ultimate tensile strength',
+  'tensile strength': 'ultimate tensile strength',
+  'ultimate tensile strength': 'ultimate tensile strength',
+  'ys': 'yield strength',
+  'yield stress': 'yield strength',
+  '0.2% proof stress': 'yield strength',
+  'proof stress': 'yield strength',
+  'elg': 'elongation',
+  'el': 'elongation',
+  'elongation': 'elongation',
+  'ra': 'reduction of area',
+  'reduction of area': 'reduction of area',
+  'bhn': 'hardness (brinell)',
+  'brinell hardness number': 'hardness (brinell)',
+  'brinell hardness': 'hardness (brinell)',
+  'hardness (brinell)': 'hardness (brinell)',
+  'hardness': 'hardness (brinell)',
+  'hrc': 'hardness (rockwell c)',
+  'hrb': 'hardness (rockwell b)',
+  'hv': 'hardness (vickers)',
+};
 
 // Master sheet config: { key in SpecMasters, sheet name (no spaces for formula refs), template column it feeds }
 const MASTER_SHEETS: Array<{ key: keyof SpecMasters; sheet: string; column: string }> = [
@@ -120,8 +185,10 @@ export async function buildSpecTemplate(masters: SpecMasters): Promise<Blob> {
   styleHeader(paramSheet.getRow(1));
   (masters.parameters || []).forEach(p => {
     const add = p.additionalValues || {};
+    const sec = (p.section || '').toLowerCase();
+    const displaySec = (sec.startsWith('gen') || sec.startsWith('mech')) ? 'General' : 'Chemical';
     paramSheet.addRow([
-      colName(p), colId(p), p.section || '',
+      colName(p), colId(p), displaySec,
       add.Unit || add.unit || '', add.UnitID ?? add.unitID ?? '',
       add.Symbol || add.symbol || '', add.DecimalPrecision ?? add.decimalPrecision ?? 2,
     ]);
@@ -188,134 +255,458 @@ function autoWidth(ws: ExcelJS.Worksheet): void {
   });
 }
 
+export interface FormulaValidationResult {
+  isValid: boolean;
+  formula: string;
+  leadingOp?: string;
+  targetVar?: string;
+  error?: string;
+}
+
+export function validateSpecFormula(
+  rawInput: string,
+  paramNames: Set<string>,
+  paramSymbols: Set<string>
+): FormulaValidationResult {
+  if (!rawInput || !rawInput.trim()) return { isValid: true, formula: '' };
+  let str = rawInput.trim();
+
+  let leadingOp = '';
+  let targetVar = '';
+
+  // Match target assignment e.g. "Titanium >= 5*(C+N)" or "CE = C + Mn / 6"
+  const leadAssignMatch = str.match(/^([a-zA-Z0-9_% ]+?)\s*([≥≤]|>=|<=|>|<|=)\s*(.+)$/);
+  if (leadAssignMatch) {
+    targetVar = leadAssignMatch[1].trim();
+    leadingOp = leadAssignMatch[2].trim();
+    str = leadAssignMatch[3].trim();
+  } else {
+    const leadOpMatch = str.match(/^([≥≤]|>=|<=|>|<|=)\s*(.+)$/);
+    if (leadOpMatch) {
+      leadingOp = leadOpMatch[1].trim();
+      str = leadOpMatch[2].trim();
+    }
+  }
+
+  // Parentheses balance check
+  let depth = 0;
+  for (const ch of str) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    if (depth < 0) return { isValid: false, formula: str, error: 'Unbalanced closing parenthesis' };
+  }
+  if (depth !== 0) return { isValid: false, formula: str, error: 'Unbalanced opening parenthesis' };
+
+  // Check referenced identifiers
+  const idents = str.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+  const knownFuncs = ['IF', 'MIN', 'MAX', 'ROUND', 'ABS', 'POW', 'SPECMIN', 'SPECMAX', 'MEAN', 'SUM'];
+  const unknownIdents: string[] = [];
+
+  for (const id of idents) {
+    const upper = id.toUpperCase();
+    if (knownFuncs.includes(upper)) continue;
+    const lower = id.toLowerCase();
+    if (paramSymbols.has(lower) || paramNames.has(lower)) continue;
+    unknownIdents.push(id);
+  }
+
+  if (unknownIdents.length > 0) {
+    return {
+      isValid: false,
+      formula: str,
+      leadingOp,
+      targetVar,
+      error: 'Unknown parameter(s): ' + unknownIdents.join(', '),
+    };
+  }
+
+  return {
+    isValid: true,
+    formula: str,
+    leadingOp: leadingOp || '',
+    targetVar,
+  };
+}
+
 // ── PARSE ─────────────────────────────────────────────────────────────────────
-export async function parseSpecTemplate(buffer: ArrayBuffer): Promise<ParsedSpecRow[]> {
+export async function parseSpecTemplate(buffer: ArrayBuffer, liveMasters?: SpecMasters): Promise<ParsedSpecRow[]> {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
 
   const template = wb.getWorksheet(TEMPLATE_SHEET);
   if (!template) throw new Error(`Sheet "${TEMPLATE_SHEET}" not found. Please use the downloaded template.`);
 
-  // Build Name→meta maps from the embedded master sheets.
-  const paramMap = new Map<string, { id: number | null; section: string; unitId: number | null; unitName: string; symbol: string; precision: number }>();
-  const pSheet = wb.getWorksheet('Parameters');
-  pSheet?.eachRow((row, i) => {
-    if (i === 1) return;
-    const name = (row.getCell(1).value ?? '').toString().trim();
-    if (!name) return;
-    paramMap.set(name.toLowerCase(), {
-      id: numOrNull(row.getCell(2).value),
-      section: (row.getCell(3).value ?? '').toString().trim().toLowerCase(),
-      unitName: (row.getCell(4).value ?? '').toString().trim(),
-      unitId: numOrNull(row.getCell(5).value),
-      symbol: (row.getCell(6).value ?? '').toString().trim(),
-      precision: Number(numOrNull(row.getCell(7).value) ?? 2),
-    });
-  });
+  interface ParamMeta {
+    id: number | null;
+    name: string;
+    section: string;
+    unitId: number | null;
+    unitName: string;
+    symbol: string;
+    precision: number;
+  }
 
+  // Build Name→meta maps from liveMasters (if provided) or fallback to embedded master sheets.
+  const paramMap = new Map<string, ParamMeta>();
+  const symbolMap = new Map<string, ParamMeta>();
+  const paramNames = new Set<string>();
+  const paramSymbols = new Set<string>();
   const masterMap: Record<string, Map<string, number | null>> = {};
+
   for (const m of MASTER_SHEETS) {
-    const map = new Map<string, number | null>();
-    wb.getWorksheet(m.sheet)?.eachRow((row, i) => {
+    masterMap[m.sheet] = new Map<string, number | null>();
+  }
+
+  // 1. Seed from liveMasters if available (the single source of truth for IDs)
+  if (liveMasters) {
+    for (const p of liveMasters.parameters || []) {
+      const name = (p.name ?? (p as any).Name ?? p.parameterName ?? (p as any).text ?? '').toString().trim();
+      if (!name) continue;
+      const lower = name.toLowerCase();
+      paramNames.add(lower);
+
+      const add = (p as any).additionalValues || {};
+      const sym = (add.Symbol ?? add.symbol ?? p.parameterSymbol ?? (p as any).symbol ?? '').toString().trim();
+      if (sym) {
+        paramSymbols.add(sym.toLowerCase());
+      }
+
+      const rawId = p.id ?? (p as any).Id ?? (p as any).value;
+      const id = rawId != null && rawId !== '' ? Number(rawId) : null;
+      const rawUnitId = add.UnitID ?? add.unitID ?? p.unitID ?? (p as any).unitId;
+      const unitId = rawUnitId != null && rawUnitId !== '' ? Number(rawUnitId) : null;
+      const unitName = (add.Unit ?? add.unit ?? p.defaultUnitName ?? (p as any).unitName ?? '').toString().trim();
+      const precision = Number(add.DecimalPrecision ?? add.decimalPrecision ?? (p as any).decimalPlaces ?? 2);
+      const section = (p.section || add.ParameterType || add.parameterType || '').toString().trim().toLowerCase();
+
+      const meta: ParamMeta = { id, name, section, unitId, unitName, symbol: sym, precision };
+      paramMap.set(lower, meta);
+
+      const normName = lower.replace(/\s+/g, ' ');
+      if (!paramMap.has(normName)) paramMap.set(normName, meta);
+
+      if (sym) {
+        const lowerSym = sym.toLowerCase();
+        if (!symbolMap.has(lowerSym)) symbolMap.set(lowerSym, meta);
+      }
+    }
+
+    const reg = (sheet: string, items: any[], nameKeys: string[]) => {
+      const map = masterMap[sheet] || (masterMap[sheet] = new Map());
+      for (const item of items || []) {
+        let name = '';
+        for (const k of nameKeys) {
+          if (item[k]) { name = item[k].toString().trim(); break; }
+        }
+        if (!name && (item.name || item.text || item.Name)) name = (item.name || item.text || item.Name).toString().trim();
+        const id = item.id ?? item.Id ?? item.value;
+        if (name && id != null) {
+          map.set(name.toLowerCase(), Number(id));
+          const norm = name.toLowerCase().replace(/\s+/g, ' ');
+          if (!map.has(norm)) map.set(norm, Number(id));
+        }
+      }
+    };
+
+    reg('MetalClass', liveMasters.metalClassifications, ['classificationName', 'metalClassificationName']);
+    reg('Units', liveMasters.units, ['unitName', 'unit']);
+    reg('LabTests', liveMasters.laboratoryTests, ['testName', 'laboratoryTestName']);
+    reg('SpecimenOrient', liveMasters.specimenOrientations, ['specimenOrientationName', 'orientationName']);
+    reg('DimFactor', liveMasters.dimensionalFactors, ['dimensionalFactorName', 'factorName']);
+    reg('HeatTreat', liveMasters.heatTreatments, ['heatTreatmentName']);
+    reg('ProdCondition', liveMasters.productConditions, ['productConditionName', 'conditionName']);
+    reg('ProductSize', liveMasters.productSizes, ['sizeName', 'productSizeName']);
+    reg('TestMethods', liveMasters.testMethodSpecs, ['testMethodName', 'testMethodSpecificationName']);
+  }
+
+  // 2. ONLY fallback to embedded workbook sheets if liveMasters was NOT provided at all
+  if (!liveMasters) {
+    const pSheet = wb.getWorksheet('Parameters');
+    pSheet?.eachRow((row, i) => {
       if (i === 1) return;
       const name = (row.getCell(1).value ?? '').toString().trim();
-      if (name) map.set(name.toLowerCase(), numOrNull(row.getCell(2).value));
+      if (!name) return;
+      const symbol = (row.getCell(6).value ?? '').toString().trim();
+      const lowerName = name.toLowerCase();
+      paramNames.add(lowerName);
+      if (symbol) paramSymbols.add(symbol.toLowerCase());
+
+      if (!paramMap.has(lowerName)) {
+        const meta: ParamMeta = {
+          id: numOrNull(row.getCell(2).value),
+          name,
+          section: (row.getCell(3).value ?? '').toString().trim().toLowerCase(),
+          unitName: (row.getCell(4).value ?? '').toString().trim(),
+          unitId: numOrNull(row.getCell(5).value),
+          symbol,
+          precision: Number(numOrNull(row.getCell(7).value) ?? 2),
+        };
+        paramMap.set(lowerName, meta);
+        if (symbol && !symbolMap.has(symbol.toLowerCase())) {
+          symbolMap.set(symbol.toLowerCase(), meta);
+        }
+      }
     });
-    masterMap[m.sheet] = map;
+
+    for (const m of MASTER_SHEETS) {
+      const map = masterMap[m.sheet] || (masterMap[m.sheet] = new Map());
+      wb.getWorksheet(m.sheet)?.eachRow((row, i) => {
+        if (i === 1) return;
+        const name = (row.getCell(1).value ?? '').toString().trim();
+        if (name && !map.has(name.toLowerCase())) {
+          map.set(name.toLowerCase(), numOrNull(row.getCell(2).value));
+        }
+      });
+    }
   }
+
   const lookup = (sheet: string, name: string): number | null => {
     const n = (name || '').trim().toLowerCase();
     if (!n) return null;
-    return masterMap[sheet]?.has(n) ? masterMap[sheet].get(n)! : undefined as any;
+    const map = masterMap[sheet];
+    if (!map) return undefined as any;
+    if (map.has(n)) return map.get(n)!;
+    const norm = n.replace(/\s+/g, ' ');
+    if (map.has(norm)) return map.get(norm)!;
+    return undefined as any;
   };
 
-  const idx = (c: string) => COLUMNS.indexOf(c as any) + 1;
+  const resolveParameter = (rawName: string): ParamMeta | null => {
+    if (!rawName) return null;
+    const clean = rawName.trim().toLowerCase();
+    const normalized = clean.replace(/\s+/g, ' ');
+
+    // 1. Direct name match
+    if (paramMap.has(clean)) return paramMap.get(clean)!;
+    if (paramMap.has(normalized)) return paramMap.get(normalized)!;
+
+    // 2. Alias match (e.g. "sulphur" -> "sulfur", "bhn" -> "hardness (brinell)")
+    const alias = PARAM_ALIASES[clean] || PARAM_ALIASES[normalized];
+    if (alias) {
+      if (paramMap.has(alias)) return paramMap.get(alias)!;
+      const aliasNorm = alias.replace(/\s+/g, ' ');
+      if (paramMap.has(aliasNorm)) return paramMap.get(aliasNorm)!;
+    }
+
+    // 3. Symbol match (e.g. "Mo" -> Molybdenum, "C" -> Carbon)
+    if (symbolMap.has(clean)) return symbolMap.get(clean)!;
+
+    // 4. Fuzzy search across paramMap keys
+    for (const [k, v] of paramMap.entries()) {
+      if (k === clean || k === normalized || (v.symbol && v.symbol.toLowerCase() === clean)) {
+        return v;
+      }
+    }
+
+    return null;
+  };
+
+  // Dynamic header mapping with alias support (case-insensitive)
+  const colIndexMap = new Map<string, number>();
+  template.getRow(1).eachCell((cell, colNum) => {
+    const text = (cell.value ?? '').toString().trim().toLowerCase();
+    if (text) colIndexMap.set(text, colNum);
+  });
+
+  const getColIdx = (colName: string, aliases: string[] = []): number => {
+    const all = [colName, ...aliases];
+    for (const name of all) {
+      const idx = colIndexMap.get(name.toLowerCase());
+      if (idx != null) return idx;
+    }
+    const staticIdx = COLUMNS.indexOf(colName as any);
+    return staticIdx >= 0 ? staticIdx + 1 : -1;
+  };
+
   const out: ParsedSpecRow[] = [];
 
   template.eachRow((row, i) => {
     if (i === 1) return;
-    const cell = (c: string) => cellStr(row.getCell(idx(c)).value);
-    const grade = cell('Grade');
-    const paramName = cell('Parameter');
+    const cell = (c: string, aliases: string[] = []) => {
+      const colIdx = getColIdx(c, aliases);
+      return colIdx > 0 ? cellStr(row.getCell(colIdx).value) : '';
+    };
+
+    const grade = cell('Grade', ['Grade Name', 'Grade card']);
+    const paramName = cell('Parameter', ['Parameter Name', 'Param']);
     // Skip fully empty rows.
     if (!grade && !paramName) return;
 
     const messages: string[] = [];
+    const missingMasters: Array<{ category: string; value: string; isRequired: boolean }> = [];
     let status: ParsedSpecRow['status'] = 'ok';
     const fail = (msg: string) => { messages.push(msg); status = 'error'; };
     const warn = (msg: string) => { messages.push(msg); if (status === 'ok') status = 'warning'; };
 
+    // Support both 'general' and 'mechanical' seamlessly
     const sectionRaw = cell('Section').toLowerCase();
-    const section: 'chemical' | 'mechanical' = sectionRaw.startsWith('mech') ? 'mechanical' : 'chemical';
+    const section: 'chemical' | 'mechanical' = (sectionRaw.startsWith('gen') || sectionRaw.startsWith('mech'))
+      ? 'mechanical'
+      : 'chemical';
 
-    const pmeta = paramMap.get(paramName.toLowerCase());
+    const pmeta = resolveParameter(paramName);
     if (!grade) fail('Grade is required.');
-    if (!paramName) fail('Parameter is required.');
-    else if (!pmeta || pmeta.id == null) fail(`Parameter "${paramName}" not found in master list.`);
-    else if (pmeta.section && sectionRaw && !pmeta.section.startsWith(section.slice(0, 4))) {
-      warn(`Parameter "${paramName}" is a ${pmeta.section} parameter but Section says "${cell('Section')}".`);
+    if (!paramName) {
+      fail('Parameter is required.');
+    } else if (!pmeta || pmeta.id == null) {
+      fail(`Missing Master: Parameter "${paramName}" not found in master database.`);
+      missingMasters.push({ category: 'Parameter', value: paramName, isRequired: true });
+    } else if (pmeta.section && sectionRaw) {
+      const isParamGeneral = pmeta.section.startsWith('mech') || pmeta.section.startsWith('gen');
+      const isRowGeneral = section === 'mechanical';
+      if (isParamGeneral !== isRowGeneral) {
+        warn(`Parameter "${paramName}" is configured as ${isParamGeneral ? 'General' : 'Chemical'} in master, but Section says "${cell('Section')}".`);
+      }
     }
 
-    // Resolve a master name → id; warn (not fail) when a non-empty name is unknown.
-    const resolve = (sheet: string, col: string): number | null => {
+    // Resolve a master name → id; record missing master if unknown.
+    const resolveMaster = (sheet: string, col: string, categoryLabel: string): number | null => {
       const name = cell(col);
       if (!name) return null;
       const id = lookup(sheet, name);
-      if (id === undefined) { warn(`${col} "${name}" not found in master list — skipped.`); return null; }
+      if (id === undefined) {
+        warn(`Missing Master: ${categoryLabel} "${name}" not found in master database.`);
+        missingMasters.push({ category: categoryLabel, value: name, isRequired: false });
+        return null;
+      }
       return id;
     };
 
-    const minV = numOrNull(row.getCell(idx('Min')).value);
-    const maxV = numOrNull(row.getCell(idx('Max')).value);
+    const minIdx = getColIdx('Min');
+    const maxIdx = getColIdx('Max');
+    const minV = minIdx > 0 ? numOrNull(row.getCell(minIdx).value) : null;
+    const maxV = maxIdx > 0 ? numOrNull(row.getCell(maxIdx).value) : null;
     if (minV != null && maxV != null && minV > maxV) fail(`Min (${minV}) cannot be greater than Max (${maxV}).`);
 
-    const lowerSym = cell('Lower Limit Symbol');
-    const upperSym = cell('Upper Limit Symbol');
+    let lowerSym = cell('Lower Limit Symbol');
+    let upperSym = cell('Upper Limit Symbol');
     if (lowerSym && !LOWER_SYMBOLS.includes(lowerSym)) warn(`Lower Limit Symbol "${lowerSym}" is invalid (allowed: ${LOWER_SYMBOLS.join(' ')}).`);
     if (upperSym && !UPPER_SYMBOLS.includes(upperSym)) warn(`Upper Limit Symbol "${upperSym}" is invalid (allowed: ${UPPER_SYMBOLS.join(' ')}).`);
 
     const unitName = cell('Unit');
-    let unitId: number | null = unitName ? lookup('Units', unitName) : (pmeta?.unitId ?? null);
-    if (unitName && unitId === undefined) { warn(`Unit "${unitName}" not found — using parameter default.`); unitId = pmeta?.unitId ?? null; }
+    let unitId: number | null = null;
+    if (unitName) {
+      unitId = lookup('Units', unitName);
+      if (unitId === undefined) {
+        warn(`Missing Master: Unit "${unitName}" not found in master database.`);
+        missingMasters.push({ category: 'Unit', value: unitName, isRequired: false });
+        unitId = pmeta?.unitId ?? null;
+      }
+    } else {
+      unitId = pmeta?.unitId ?? null;
+    }
 
     const tmIds = ['Test Method 1', 'Test Method 2', 'Test Method 3', 'Test Method 4', 'Test Method 5']
-      .map(c => resolve('TestMethods', c))
+      .map(c => resolveMaster('TestMethods', c, 'Test Method'))
       .filter((v): v is number => v != null);
+
+    // Formula auto-apply and validation
+    let minEq = cell('Min Equation');
+    let maxEq = cell('Max Equation');
+    let eq = cell('Equation');
+    const eqFx = cell('Equation (fx)', ['Formula', 'Equation(fx)', 'Eq (fx)']);
+    let formulaValid: boolean | undefined = undefined;
+
+    if (eqFx && !minEq && !maxEq && !eq) {
+      const val = validateSpecFormula(eqFx, paramNames, paramSymbols);
+      formulaValid = val.isValid;
+      if (val.isValid) {
+        if (val.leadingOp === '<=' || val.leadingOp === '≤' || val.leadingOp === '<') {
+          maxEq = val.formula;
+        } else if (val.leadingOp === '>=' || val.leadingOp === '≥' || val.leadingOp === '>') {
+          minEq = val.formula;
+        } else {
+          // Parameter Calculation Formula (pure formula or assignment without inequality e.g. "CE = C + Mn/6")
+          eq = val.formula;
+        }
+      } else {
+        warn(`Formula "${eqFx}" for ${paramName} is invalid: ${val.error}`);
+        if (val.leadingOp === '<=' || val.leadingOp === '≤' || val.leadingOp === '<') {
+          maxEq = eqFx;
+        } else if (val.leadingOp === '>=' || val.leadingOp === '≥' || val.leadingOp === '>') {
+          minEq = eqFx;
+        } else {
+          eq = eqFx;
+        }
+      }
+    } else {
+      if (eq) {
+        const val = validateSpecFormula(eq, paramNames, paramSymbols);
+        if (!val.isValid) {
+          warn(`Equation "${eq}" is invalid: ${val.error}`);
+          formulaValid = false;
+        } else {
+          formulaValid = true;
+          if (val.formula) eq = val.formula;
+        }
+      }
+      if (minEq) {
+        const val = validateSpecFormula(minEq, paramNames, paramSymbols);
+        if (!val.isValid) {
+          warn(`Min Equation "${minEq}" is invalid: ${val.error}`);
+          formulaValid = false;
+        } else {
+          if (formulaValid !== false) formulaValid = true;
+          if (val.formula) minEq = val.formula;
+        }
+      }
+      if (maxEq) {
+        const val = validateSpecFormula(maxEq, paramNames, paramSymbols);
+        if (!val.isValid) {
+          warn(`Max Equation "${maxEq}" is invalid: ${val.error}`);
+          formulaValid = false;
+        } else {
+          if (formulaValid !== false) formulaValid = true;
+          if (val.formula) maxEq = val.formula;
+        }
+      }
+    }
+
+    const minTolIdx = getColIdx('Min Tolerance');
+    const maxTolIdx = getColIdx('Max Tolerance');
+    const lowValIdx = getColIdx('Lower Limit Value');
+    const upValIdx = getColIdx('Upper Limit Value');
+    const unsNo = cell('UNS No', ['UNS', 'UNS Number', 'UNS No.', 'UNS Code']);
 
     out.push({
       rowNumber: i,
       grade,
-      metalClassificationID: resolve('MetalClass', 'Metal Classification'),
+      unsNo: unsNo || undefined,
+      metalClassificationID: resolveMaster('MetalClass', 'Metal Classification', 'Metal Classification'),
       section,
       parameterID: pmeta?.id ?? null,
-      parameterName: paramName,
+      parameterName: pmeta?.name || paramName,
       parameterSymbol: pmeta?.symbol ?? '',
       decimalPrecision: pmeta?.precision ?? 2,
-      parameterUnitID: unitId ?? null,
+      parameterUnitID: unitId ?? pmeta?.unitId ?? null,
       unitName: unitName || pmeta?.unitName || '',
       minValue: minV,
       maxValue: maxV,
-      minTolerance: numOrNull(row.getCell(idx('Min Tolerance')).value),
-      maxTolerance: numOrNull(row.getCell(idx('Max Tolerance')).value),
+      minTolerance: minTolIdx > 0 ? numOrNull(row.getCell(minTolIdx).value) : null,
+      maxTolerance: maxTolIdx > 0 ? numOrNull(row.getCell(maxTolIdx).value) : null,
       lowerLimitValue: lowerSym,
-      lowerLimitDecimalValue: numOrNull(row.getCell(idx('Lower Limit Value')).value),
+      lowerLimitDecimalValue: lowValIdx > 0 ? numOrNull(row.getCell(lowValIdx).value) : null,
       upperLimitValue: upperSym,
-      upperLimitDecimalValue: numOrNull(row.getCell(idx('Upper Limit Value')).value),
-      minEquation: cell('Min Equation'),
-      maxEquation: cell('Max Equation'),
+      upperLimitDecimalValue: upValIdx > 0 ? numOrNull(row.getCell(upValIdx).value) : null,
+      equation: eq,
+      minEquation: minEq,
+      maxEquation: maxEq,
+      equationFx: eqFx || (eq ? eq : (minEq ? `${lowerSym || '≥'} ${minEq}` : (maxEq ? `${upperSym || '≤'} ${maxEq}` : undefined))),
+      formulaValid,
       notes: cell('Note'),
-      specimenOrientationID: resolve('SpecimenOrient', 'Specimen Orientation'),
-      dimensionalFactorID: resolve('DimFactor', 'Dimensional Factor'),
-      heatTreatmentID: resolve('HeatTreat', 'Heat Treatment'),
-      productConditionID1: resolve('ProdCondition', 'Product Condition 1'),
-      productConditionID2: resolve('ProdCondition', 'Product Condition 2'),
-      productSizeMasterID: resolve('ProductSize', 'Product Size'),
+      specimenOrientationID: resolveMaster('SpecimenOrient', 'Specimen Orientation', 'Specimen Orientation'),
+      dimensionalFactorID: resolveMaster('DimFactor', 'Dimensional Factor', 'Dimensional Factor'),
+      heatTreatmentID: resolveMaster('HeatTreat', 'Heat Treatment', 'Heat Treatment'),
+      productConditionID1: resolveMaster('ProdCondition', 'Product Condition 1', 'Product Condition'),
+      productConditionID2: resolveMaster('ProdCondition', 'Product Condition 2', 'Product Condition'),
+      productSizeMasterID: resolveMaster('ProductSize', 'Product Size', 'Product Size'),
       testCondition: cell('Test Condition'),
       testNote: cell('Test Note'),
-      laboratoryTestID: resolve('LabTests', 'Laboratory Test'),
+      laboratoryTestID: resolveMaster('LabTests', 'Laboratory Test', 'Laboratory Test'),
       testMethodSpecIDs: tmIds,
       status,
       messages,
+      missingMasters: missingMasters.length > 0 ? missingMasters : undefined,
     });
   });
 
@@ -338,3 +729,4 @@ function cellStr(v: ExcelJS.CellValue): string {
   }
   return v.toString().trim();
 }
+

@@ -1,6 +1,9 @@
 <div class="card shadow-lg m-2">
-  <div class="card-header card-form-header text-white text-center">
-    <label class="fw-medium">Equipment Form</label>
+  <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+    <label class="text-md fw-medium ms-3">{{ isViewMode ? 'View Equipment' : (isEditMode ? 'Edit Equipment' : 'Equipment Form') }}</label>
+    <a routerLink="/equipment" class="btn btn-outline-light btn-sm me-3">
+      <i class="bi bi-arrow-left"></i> Back to List
+    </a>
   </div>
 
   <div class="card-body">
@@ -525,8 +528,12 @@
         </div>
       </ng-container>
       <div class="d-flex justify-content-end gap-2 mt-4">
-        <a [routerLink]="['/equipment']" class="btn btn-cancel">Cancel</a>
-        <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">Save</button>
+        <a [routerLink]="['/equipment']" class="btn btn-cancel">
+          <i class="bi bi-x-circle"></i> Cancel
+        </a>
+        <button *ngIf="!isViewMode" type="submit" class="btn btn-save" [disabled]="equipmentForm.invalid">
+          <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+        </button>
       </div>
     </form>
   </div>
@@ -668,8 +675,12 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitMaintenanceForm()">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-save" (click)="submitMaintenanceForm()">
+          <i class="bi bi-check-circle"></i> Save
+        </button>
       </div>
     </div>
   </div>
@@ -711,8 +722,12 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitSOPAttachmentForm()">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-save" (click)="submitSOPAttachmentForm()">
+          <i class="bi bi-check-circle"></i> Save
+        </button>
       </div>
     </div>
   </div>
@@ -747,8 +762,12 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitSOPVideoForm()">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-save" (click)="submitSOPVideoForm()">
+          <i class="bi bi-check-circle"></i> Save
+        </button>
       </div>
     </div>
   </div>
@@ -818,8 +837,12 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-save" (click)="submitRefMaterialForm()">Save</button>
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-save" (click)="submitRefMaterialForm()">
+          <i class="bi bi-check-circle"></i> Save
+        </button>
       </div>
     </div>
   </div>

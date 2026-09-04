@@ -1,10 +1,5 @@
-input::file-selector-button {
-  color: #fff;
-  background-color: #ff2c1f !important;
-}
 .input-file {
   cursor: pointer !important;
-  line-height: 25px;
 }
 .nav-tabs .nav-link {
   color: #1a1a80;

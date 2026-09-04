@@ -76,6 +76,7 @@ export class ProductSizeMasterComponent implements OnInit {
   isViewMode: boolean = true;
   selectedId: number = 0;
   formTitle = 'Product Size Form';
+  selectedUnitDropdownItem: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -95,6 +96,7 @@ export class ProductSizeMasterComponent implements OnInit {
       minValue: [null],
       maxValue: [null],
       parameterUnitID: [null],
+      parameterUnitEquivalentID: [null],
     });
   }
 
@@ -102,6 +104,14 @@ export class ProductSizeMasterComponent implements OnInit {
     return this.parameterUnitService.getGroupedParameterUnitDropdown(searchTerm, pageNo, pageSize);
   };
   getParameterUnitDropdown = this.getUnitDropdown;
+
+  onUnitSelected(item: any): void {
+    this.selectedUnitDropdownItem = item;
+    this.productSizeForm.patchValue({
+      parameterUnitID: item?.id ?? null,
+      parameterUnitEquivalentID: item?.equivalentId ?? null,
+    });
+  }
 
   fetchData() {
     this.productSizeService.getAllProductSizes(this.payload).subscribe({
@@ -123,6 +133,15 @@ export class ProductSizeMasterComponent implements OnInit {
       next: (response) => {
         if (this.selectedId !== requestId) return; // discard stale response
         this.productSizeForm.patchValue(response);
+        if (response.parameterUnitID || response.parameterUnitEquivalentID) {
+          this.selectedUnitDropdownItem = {
+            id: response.parameterUnitID,
+            equivalentId: response.parameterUnitEquivalentID,
+            name: response.parameterUnitEquivalent?.name || response.parameterUnit?.name || response.unitName
+          };
+        } else {
+          this.selectedUnitDropdownItem = null;
+        }
       },
       error: (error) => {
         console.error('Error fetching product size data:', error);
@@ -261,7 +280,8 @@ export class ProductSizeMasterComponent implements OnInit {
   }
 
   openModal(type: string, id: number): void {
-    this.productSizeForm.reset({ id: 0, sizeType: '', minValue: null, maxValue: null, parameterUnitID: null });
+    this.selectedUnitDropdownItem = null;
+    this.productSizeForm.reset({ id: 0, sizeType: '', minValue: null, maxValue: null, parameterUnitID: null, parameterUnitEquivalentID: null });
     this.productSizeForm.enable();
     this.selectedId = 0;
     if (id > 0) {
@@ -297,7 +317,8 @@ export class ProductSizeMasterComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.productSizeForm.reset({ id: 0, parameterUnitID: null });
+    this.selectedUnitDropdownItem = null;
+    this.productSizeForm.reset({ id: 0, parameterUnitID: null, parameterUnitEquivalentID: null });
     this.productSizeForm.enable();
     this.selectedId = 0;
     this.isEditMode = false;

@@ -91,9 +91,9 @@
 }
 
 .spec-row td {
-  padding: 6px 8px;
+  padding: 3px 6px;
   border-bottom: 1px solid #eee;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .spec-row:last-child td {
@@ -263,7 +263,11 @@
   border-top: 3px solid var(--primary-color);
 }
 :host .import-preview-dialog {
-  width: 1000px;
+  width: 95vw;
+  max-width: 1250px;
+}
+:host .equation-modal-dialog {
+  width: 820px;
 }
 :host .import-preview-table {
   max-height: 55vh;

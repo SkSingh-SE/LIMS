@@ -65,8 +65,16 @@
               <td class="wide-input">{{ row.specimenRawMaterialSize || '-' }}</td>
               <td class="wide-input">{{ row.laboratoryTestName || '-' }}</td>
               <td class="wide-input">{{ row.testMethodSpecificationName || '-' }}</td>
-              <!-- <td class="text-end">{{ row.currentPriceGeneralMetal ?? '-' }}</td>
-              <td class="text-end">{{ row.currentPriceHardMetal ?? '-' }}</td> -->
+              <td class="text-center">{{ row.specimenQuantity ?? 1 }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="row.preparationRequired ? 'bg-success' : 'bg-secondary'">{{ row.preparationRequired ? 'Yes' : 'No' }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="row.cuttingRequired ? 'bg-primary' : 'bg-light text-muted'">{{ row.cuttingRequired ? 'Yes' : 'No' }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="row.machiningRequired ? 'bg-info text-dark' : 'bg-light text-muted'">{{ row.machiningRequired ? 'Yes' : 'No' }}</span>
+              </td>
               <td class="text-center">{{ row.versionCount }}</td>
             </tr>
           </tbody>
@@ -193,6 +201,100 @@
             </div>
           </div>
 
+          <!-- Specimen Quantity -->
+          <div>
+            <label for="specimenQuantity" class="form-label form-label-sm">
+              Specimen Quantity <span class="text-danger">*</span>
+            </label>
+            <input
+              id="specimenQuantity"
+              type="number"
+              min="1"
+              formControlName="specimenQuantity"
+              class="form-control form-control-sm"
+              placeholder="1"
+            />
+          </div>
+
+          <!-- Preparation Requirements Toggle Bar -->
+          <div class="col-12">
+            <fieldset class="fieldset-block p-2 mt-1">
+              <legend class="fieldset-legend d-flex align-items-center gap-1.5">
+                <i class="bi bi-toggles text-danger"></i> Preparation Requirements
+              </legend>
+              <div class="d-flex flex-wrap gap-4 py-1">
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                  <input
+                    id="masterPrepReq"
+                    class="form-check-input mt-0 cursor-pointer"
+                    type="checkbox"
+                    role="switch"
+                    formControlName="preparationRequired"
+                  />
+                  <label for="masterPrepReq" class="form-check-label text-sm fw-medium cursor-pointer">
+                    Preparation Required
+                  </label>
+                </div>
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                  <input
+                    id="masterCutReq"
+                    class="form-check-input mt-0 cursor-pointer"
+                    type="checkbox"
+                    role="switch"
+                    formControlName="cuttingRequired"
+                  />
+                  <label for="masterCutReq" class="form-check-label text-sm fw-medium cursor-pointer">
+                    Cutting Required
+                  </label>
+                </div>
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                  <input
+                    id="masterMachReq"
+                    class="form-check-input mt-0 cursor-pointer"
+                    type="checkbox"
+                    role="switch"
+                    formControlName="machiningRequired"
+                  />
+                  <label for="masterMachReq" class="form-check-label text-sm fw-medium cursor-pointer">
+                    Machining Required
+                  </label>
+                </div>
+                <div class="form-check form-switch d-flex align-items-center gap-2">
+                  <input
+                    id="masterOtherPrep"
+                    class="form-check-input mt-0 cursor-pointer"
+                    type="checkbox"
+                    role="switch"
+                    formControlName="otherPreparation"
+                  />
+                  <label for="masterOtherPrep" class="form-check-label text-sm fw-medium cursor-pointer">
+                    Other Preparation
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- Instructions -->
+          <div>
+            <label for="cuttingInstructions" class="form-label form-label-sm">Cutting Instructions</label>
+            <input
+              id="cuttingInstructions"
+              formControlName="cuttingInstructions"
+              class="form-control form-control-sm"
+              placeholder="e.g. Band saw cut with 2mm allowance"
+            />
+          </div>
+          <div>
+            <label for="machiningInstructions" class="form-label form-label-sm">Machining Instructions</label>
+            <input
+              id="machiningInstructions"
+              formControlName="machiningInstructions"
+              class="form-control form-control-sm"
+              placeholder="e.g. CNC lathe finish 0.8 Ra"
+            />
+          </div>
+
           <!-- Dimension Drawing -->
           <div>
             <label class="form-label form-label-sm">Dimension Drawing</label>
@@ -235,8 +337,8 @@
                       <th style="min-width: 150px;">Financial Year <span class="text-danger">*</span></th>
                       <th style="min-width: 150px;">Effective From <span class="text-danger">*</span></th>
                       <th style="min-width: 130px;">Normal Machining (₹) <span class="text-danger">*</span></th>
-                      <th style="min-width: 130px;">Normal Cutting (₹) <span class="text-danger">*</span></th>
                       <th style="min-width: 130px;">Hard Machining (₹) <span class="text-danger">*</span></th>
+                      <th style="min-width: 130px;">Normal Cutting (₹) <span class="text-danger">*</span></th>
                       <th style="min-width: 130px;">Hard Cutting (₹) <span class="text-danger">*</span></th>
                       <th style="width: 40px;"></th>
                     </tr>
@@ -288,19 +390,6 @@
                       <td>
                         <input
                           type="text"
-                          formControlName="cuttingRateGeneralMetal"
-                          class="form-control form-control-sm text-end"
-                          appDecimalOnly
-                          [ngClass]="{ 'is-invalid': v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid }"
-                        />
-                        <div *ngIf="v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid">
-                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
-                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
-                        </div>
-                      </td>
-                      <td>
-                        <input
-                          type="text"
                           formControlName="priceHardMetal"
                           class="form-control form-control-sm text-end"
                           appDecimalOnly
@@ -309,6 +398,19 @@
                         <div *ngIf="v.get('priceHardMetal')?.touched && v.get('priceHardMetal')?.invalid">
                           <span *ngIf="v.get('priceHardMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
                           <span *ngIf="v.get('priceHardMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          formControlName="cuttingRateGeneralMetal"
+                          class="form-control form-control-sm text-end"
+                          appDecimalOnly
+                          [ngClass]="{ 'is-invalid': v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid }"
+                        />
+                        <div *ngIf="v.get('cuttingRateGeneralMetal')?.touched && v.get('cuttingRateGeneralMetal')?.invalid">
+                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('required')" class="text-danger text-sm">Required.</span>
+                          <span *ngIf="v.get('cuttingRateGeneralMetal')?.hasError('min')" class="text-danger text-sm">Cannot be negative.</span>
                         </div>
                       </td>
                       <td>

@@ -1471,8 +1471,7 @@
     <button type="button" class="btn btn-lims btn-lims-cancel" (click)="onCancel()">
       <i class="bi bi-x-circle me-2"></i> Cancel
     </button>
-    <button *ngIf="canSavePlan()" type="button" class="btn btn-lims btn-lims-save px-4" (click)="onSave()"
-      [disabled]="!planForm.valid">
+    <button *ngIf="canSavePlan()" type="button" class="btn btn-lims btn-lims-save px-4" (click)="onSave()">
       <i class="bi bi-check-circle me-2"></i> Save Plan
     </button>
   </div>

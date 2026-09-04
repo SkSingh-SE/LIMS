@@ -27,24 +27,57 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   GLOBAL FORM LABELS & FIELD HEADERS STANDARDIZATION
+   Guarantees 100% horizontal baseline alignment for inputs
+═══════════════════════════════════════════════════════════ */
+.form-label {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.76rem !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-bottom: 0.25rem !important; /* 4px standard gap across all forms */
+  line-height: 1.25 !important;
+}
+
+.form-field-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  min-height: 20px !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.form-field-header .form-label {
+  margin-bottom: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
    MANDATORY GLOBAL ICON-TO-TEXT SPACING RULE (STRICT)
    All icons (<i>) placed beside text in buttons, nav tabs,
-   links, badges, and labels MUST maintain explicit spacing.
+   links, badges, and labels MUST maintain explicit 6px spacing.
 ═══════════════════════════════════════════════════════════ */
-.btn-lims i:not(:only-child),
-.btn i:not(:only-child),
-.nav-tab-btn i:not(:only-child),
-.tpi-toggle-btn i:not(:only-child),
-.btn-nav-link i:not(:only-child),
-.badge i:not(:only-child),
-button i:not(:only-child),
-a i:not(:only-child) {
+.btn i,
+.btn-lims i,
+.nav-tab-btn i,
+.tpi-toggle-btn i,
+.btn-nav-link i,
+.badge i,
+button i,
+a i {
   margin-right: 6px !important;
 }
 
-button i:only-child,
-a i:only-child,
-.btn-lims-icon i {
+/* Explicit icon-only buttons override (no right margin) */
+.btn-lims-icon i,
+.btn-icon i,
+.btn-nav-icon i,
+.btn-nav-plus i,
+.btn-field-add i,
+.btn-circle i,
+.btn-close i,
+.btn-remove.p-1 i,
+.btn-outline-danger.p-1 i,
+.icon-only i {
   margin-right: 0 !important;
 }
 
@@ -298,11 +331,56 @@ a.btn i.bi,
   font-weight: normal;
 }
 
-/* @media (max-width: 768px) {
-    body {
-        zoom: 0.9;
-      }
-  }
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL THEME BADGES & UTILITY ACTION BUTTONS STANDARD
+   ═══════════════════════════════════════════════════════════ */
+.badge-theme-primary,
+.badge-theme-reported {
+  background-color: var(--primary-50, rgba(218, 38, 28, 0.08)) !important;
+  color: var(--primary-color, #da261c) !important;
+  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.25)) !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.badge-theme-amber,
+.badge-theme-observed {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.btn-lims-auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #475569;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-lims-auto:hover {
+  background-color: var(--primary-50, rgba(218, 38, 28, 0.08));
+  border-color: var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+}
+
+
+/*
   @media (min-width: 1200px) {
     body {
         zoom: 1;
@@ -1347,119 +1425,227 @@ select:focus option:checked {
 
 /* ════════════════════════════════════════════════════════════════
    STANDARDIZED ACTION BUTTONS — use these for all form actions
-   .btn-save    → Save / Submit (theme primary)
-   .btn-cancel  → Cancel / Back (slate secondary)
-   .btn-remove  → Delete / Remove row (danger outline)
-   .btn-add     → Add row / Add item (primary solid)
+   .btn-save / .btn-lims-save      → Save / Submit (theme primary)
+   .btn-cancel / .btn-lims-cancel  → Cancel / Back (slate secondary)
+   .btn-remove / .btn-lims-remove  → Delete / Remove row (danger outline)
+   .btn-add / .btn-lims-add        → Add row / Add item (primary solid)
 ════════════════════════════════════════════════════════════════ */
-.btn-save {
+.btn-save,
+.btn-lims.btn-lims-save,
+.btn-lims-save,
+.btn-lims-primary {
   background-color: var(--primary-color, #da261c) !important;
-  border-color: var(--primary-color, #da261c) !important;
+  border: 1px solid var(--primary-color, #da261c) !important;
   color: #ffffff !important;
-  font-weight: 500;
+  font-weight: 500 !important;
   min-width: 90px;
+  height: 32px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
   box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.28) !important;
   transition: all 0.2s ease-in-out !important;
 }
 .btn-save:hover:not(:disabled),
-.btn-save:focus:not(:disabled) {
+.btn-save:focus:not(:disabled),
+.btn-lims.btn-lims-save:hover:not(:disabled),
+.btn-lims-save:hover:not(:disabled),
+.btn-lims-primary:hover:not(:disabled) {
   background-color: var(--primary-hover, #b91c1c) !important;
   border-color: var(--primary-hover, #b91c1c) !important;
   color: #ffffff !important;
   transform: translateY(-1.5px) !important;
   box-shadow: 0 4px 14px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.38) !important;
 }
-.btn-save:active:not(:disabled) {
+.btn-save:active:not(:disabled),
+.btn-lims.btn-lims-save:active:not(:disabled),
+.btn-lims-save:active:not(:disabled) {
   transform: translateY(0) !important;
   box-shadow: 0 2px 4px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.2) !important;
 }
 .btn-save:disabled,
-.btn-save.disabled {
+.btn-save.disabled,
+.btn-lims-save:disabled,
+.btn-lims-save.disabled {
   background-color: #cbd5e1 !important;
   border-color: #cbd5e1 !important;
   color: #94a3b8 !important;
   opacity: 0.65;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-.btn-cancel {
+.btn-cancel,
+.btn-lims.btn-lims-cancel,
+.btn-lims-cancel,
+.btn-lims-secondary {
   background-color: #f8fafc !important;
   border: 1px solid #cbd5e1 !important;
   color: #475569 !important;
-  font-weight: 500;
+  font-weight: 500 !important;
   min-width: 90px;
+  height: 32px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
   transition: all 0.2s ease-in-out !important;
 }
 .btn-cancel:hover:not(:disabled),
-.btn-cancel:focus:not(:disabled) {
+.btn-cancel:focus:not(:disabled),
+.btn-lims.btn-lims-cancel:hover:not(:disabled),
+.btn-lims-cancel:hover:not(:disabled),
+.btn-lims-secondary:hover:not(:disabled) {
   background-color: #334155 !important;
   border-color: #334155 !important;
   color: #ffffff !important;
   transform: translateY(-1.5px) !important;
   box-shadow: 0 4px 10px rgba(51, 65, 85, 0.25) !important;
 }
-.btn-cancel:active:not(:disabled) {
+.btn-cancel:active:not(:disabled),
+.btn-lims.btn-lims-cancel:active:not(:disabled),
+.btn-lims-cancel:active:not(:disabled) {
   background-color: #1e293b !important;
   border-color: #1e293b !important;
   transform: translateY(0) !important;
 }
 
-/* ── .btn-remove — Delete / Remove (danger outline) ── */
-.btn-remove {
-  color: var(--danger-main);
-  border: 1px solid var(--danger-main);
-  background-color: transparent;
-  font-weight: 500;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-.btn-remove:hover,
-.btn-remove:focus {
-  background-color: var(--danger-main);
-  border-color: var(--danger-main);
-  color: #fff;
-  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.2);
-}
-.btn-remove:active {
-  background-color: #c82333;
-  border-color: #c82333;
-  color: #fff;
+.btn-save i,
+.btn-cancel i,
+.btn-lims-save i,
+.btn-lims-cancel i,
+.btn-add i,
+.btn-lims-add i,
+.btn-stay i,
+.btn-leave i {
+  margin-right: 6px !important;
+  display: inline-block !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* ── .btn-add — Add row / Add item (solid, clearly visible theme button) ── */
-.btn-add {
-  color: #fff !important;
-  background-color: var(--primary-color) !important;
-  border: 1px solid var(--primary-color) !important;
-  font-weight: 600;
-  border-radius: 6px;
-  padding: 0.4rem 1rem;
-  font-size: var(--font-sm);
-  transition: all 0.2s ease;
-  gap: 0.4rem;
-  display: inline-flex;
-  align-items: center;
-  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.28);
+/* Micro-animations: Icon rotation on hover */
+.btn-save:hover:not(:disabled) i,
+.btn-lims.btn-lims-save:hover:not(:disabled) i,
+.btn-lims-save:hover:not(:disabled) i {
+  transform: rotate(20deg) scale(1.15) !important;
 }
-.btn-add i {
-  font-size: var(--font-md);
+
+.btn-cancel:hover:not(:disabled) i,
+.btn-lims.btn-lims-cancel:hover:not(:disabled) i,
+.btn-lims-cancel:hover:not(:disabled) i {
+  transform: rotate(90deg) scale(1.15) !important;
+}
+
+/* ── .btn-remove — Delete / Remove (danger outline) ── */
+.btn-remove,
+.btn-lims.btn-lims-remove,
+.btn-lims-remove,
+.btn-lims-delete {
+  color: var(--danger-main, #dc2626) !important;
+  border: 1px solid var(--danger-main, #dc2626) !important;
+  background-color: transparent !important;
+  font-weight: 500 !important;
+  font-size: 0.78rem !important;
+  border-radius: 6px !important;
+  padding: 3px 10px !important;
+  min-height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  transition: all 0.2s ease !important;
+}
+.btn-remove:hover,
+.btn-remove:focus,
+.btn-lims.btn-lims-remove:hover,
+.btn-lims-remove:hover {
+  background-color: var(--danger-main, #dc2626) !important;
+  border-color: var(--danger-main, #dc2626) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
+}
+.btn-remove:active {
+  background-color: #b91c1c !important;
+  border-color: #b91c1c !important;
+  color: #fff !important;
+}
+
+/* ── .btn-add — Add row / Add item (Soft Theme Dashed Standard) ── */
+.btn-add,
+.btn-lims.btn-lims-add,
+.btn-lims-add {
+  color: var(--primary-color, #da261c) !important;
+  background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.06) !important;
+  border: 1px dashed var(--primary-color, #da261c) !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  padding: 4px 12px !important;
+  font-size: 0.78rem !important;
+  min-height: 28px !important;
+  transition: all 0.2s ease !important;
+  gap: 5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+.btn-add.btn-sm,
+.btn-lims-add.btn-sm,
+.btn-sm.btn-add {
+  padding: 2px 8px !important;
+  font-size: 0.74rem !important;
+  min-height: 26px !important;
+}
+.btn-add i,
+.btn-lims-add i {
+  font-size: 0.82rem;
   transition: transform 0.2s ease;
 }
-.btn-add:hover,
-.btn-add:focus {
-  background-color: var(--primary-hover) !important;
-  border-color: var(--primary-hover) !important;
+.btn-add:hover:not(:disabled),
+.btn-add:focus:not(:disabled),
+.btn-lims.btn-lims-add:hover:not(:disabled),
+.btn-lims-add:hover:not(:disabled) {
+  background-color: var(--primary-color, #da261c) !important;
+  border: 1px solid var(--primary-color, #da261c) !important;
   color: #fff !important;
-  box-shadow: 0 4px 14px rgba(var(--bs-primary-rgb), 0.38);
-  transform: translateY(-1.5px);
-}
-.btn-add:hover i {
-  transform: rotate(90deg);
+  box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.3) !important;
+  transform: translateY(-1px) !important;
 }
 .btn-add:active {
-  background-color: var(--primary-hover) !important;
+  background-color: var(--primary-hover, #b91c1c) !important;
   color: #fff !important;
   transform: translateY(0);
-  box-shadow: 0 1px 3px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+/* ── Compact Table Header & Cell Icon Action Buttons ── */
+th .btn.btn-add,
+th .btn-add,
+th .btn-sm,
+td .btn.btn-remove,
+td .btn-remove,
+td .btn-outline-danger,
+td .btn-sm.p-1,
+th .btn-sm.p-1 {
+  width: 26px !important;
+  min-width: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+th .btn i,
+td .btn i,
+th .btn-add i,
+td .btn-remove i {
+  margin-right: 0 !important;
+  font-size: 0.85rem !important;
 }
 
 /* ── .btn-add-row — Standalone "Add" below a table/section ── */
@@ -2522,46 +2708,78 @@ textarea.form-control {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   FILE INPUT
+   FILE INPUT & UPLOAD BUTTON (Global Theme Standard)
+   Clean, integrated left-segmented button with vertical divider
 ════════════════════════════════════════════════════════════════ */
-.form-control[type="file"] {
-  padding: 5px 10px;
-  cursor: pointer;
-  line-height: 1.7;
+.form-control[type="file"],
+input[type="file"].form-control {
+  overflow: hidden !important;
+  padding: 0.25rem 0.6rem !important;
+  font-size: var(--font-sm, 0.78rem) !important;
+  line-height: 1.5 !important;
+  cursor: pointer !important;
+  min-height: 31px !important;
+  height: 31px !important;
 }
 
-.form-control[type="file"]::-webkit-file-upload-button {
-  background: var(--primary-50);
-  color: var(--primary-color);
-  border: 1px solid var(--primary-200);
-  border-radius: var(--radius-sm);
-  padding: 3px 12px;
-  font-size: var(--font-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  margin-right: 12px;
-}
-.form-control[type="file"]::-webkit-file-upload-button:hover {
-  background: var(--primary-100);
-  border-color: var(--primary-300);
+.form-control-sm[type="file"] {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0.18rem 0.5rem !important;
+  font-size: 0.75rem !important;
 }
 
-/* Firefox / standard */
-.form-control[type="file"]::file-selector-button {
-  background: var(--primary-50);
-  color: var(--primary-color);
-  border: 1px solid var(--primary-200);
-  border-radius: var(--radius-sm);
-  padding: 3px 12px;
-  font-size: var(--font-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  margin-right: 12px;
+/* Integrated segmented button for WebKit (Chrome, Edge, Safari) */
+.form-control[type="file"]::-webkit-file-upload-button,
+input[type="file"].form-control::-webkit-file-upload-button {
+  padding: 0.25rem 0.75rem !important;
+  margin: -0.25rem -0.6rem !important;
+  -webkit-margin-end: 0.6rem !important;
+  margin-inline-end: 0.6rem !important;
+  color: var(--primary-color, #da261c) !important;
+  background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.08) !important;
+  border-color: #dee2e6 !important;
+  border-style: solid !important;
+  border-width: 0 !important;
+  border-right-width: 1px !important;
+  border-radius: 0 !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  font-family: 'Poppins', sans-serif !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
 }
-.form-control[type="file"]::file-selector-button:hover {
-  background: var(--primary-100);
+
+.form-control[type="file"]:hover::-webkit-file-upload-button,
+input[type="file"].form-control:hover::-webkit-file-upload-button {
+  background-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+}
+
+/* Integrated segmented button for Firefox / Standards */
+.form-control[type="file"]::file-selector-button,
+input[type="file"].form-control::file-selector-button {
+  padding: 0.25rem 0.75rem !important;
+  margin: -0.25rem -0.6rem !important;
+  margin-inline-end: 0.6rem !important;
+  color: var(--primary-color, #da261c) !important;
+  background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.08) !important;
+  border-color: #dee2e6 !important;
+  border-style: solid !important;
+  border-width: 0 !important;
+  border-inline-end-width: 1px !important;
+  border-radius: 0 !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  font-family: 'Poppins', sans-serif !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.form-control[type="file"]:hover::file-selector-button,
+input[type="file"].form-control:hover::file-selector-button {
+  background-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -3712,6 +3930,14 @@ input[type="checkbox"]:checked {
   gap: 0.25rem;
 }
 
+.btn-nav-plus:hover,
+.btn-nav-icon:hover {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+  color: #ffffff;
+  box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
+}
+
 .badge-lims-lab-scope {
   background-color: #eff6ff !important;
   color: #1d4ed8 !important;
@@ -3785,37 +4011,6 @@ input[type="checkbox"]:checked {
   margin-right: 6px !important;
 }
 
-
-.btn-nav-icon,
-.btn-nav-plus,
-.btn-field-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  min-height: 22px;
-  padding: 0;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  color: var(--primary-color);
-  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.35));
-  background-color: var(--primary-50, rgba(218, 38, 28, 0.05));
-  transition: all 0.15s ease-in-out;
-  text-decoration: none;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.btn-nav-icon:hover,
-.btn-nav-plus:hover,
-.btn-field-add:hover {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: #ffffff;
-  box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
-}
 
 /* ── Compact Typography Helpers ── */
 .extra-small {
@@ -3956,6 +4151,142 @@ input[type="checkbox"]:checked {
   box-shadow: 0 1px 3px rgba(218, 38, 28, 0.25);
 }
 
+.applied-formula-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 1px;
+  margin-bottom: 0;
+  padding: 0 2px 0 4px;
+  height: 16px;
+  min-height: 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 3px;
+  font-size: 0.63rem;
+  font-family: var(--bs-font-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+.applied-formula-chip:hover {
+  background: #fef2f2;
+  border-color: var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+  box-shadow: 0 1px 2px rgba(218, 38, 28, 0.12);
+}
+.applied-formula-chip.calc-formula-chip {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+}
+.applied-formula-chip.calc-formula-chip:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.18);
+}
+.chip-tag-calc,
+.applied-formula-chip .chip-tag-calc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4f46e5;
+  color: #ffffff !important;
+  font-size: 0.52rem;
+  font-weight: 700;
+  padding: 0 3px;
+  height: 12px;
+  border-radius: 2px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  line-height: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease-in-out;
+}
+.chip-tag-calc:hover {
+  background-color: #4338ca;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
+}
+
+/* ─── Indigo Subtle Badge Theme (Parameter Calculation Formula) ─── */
+.bg-indigo-subtle {
+  background-color: #e0e7ff !important;
+}
+.text-indigo {
+  color: #4338ca !important;
+}
+.border-indigo-subtle {
+  border-color: #c7d2fe !important;
+}
+.applied-formula-chip.min-formula-chip {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+.applied-formula-chip.min-formula-chip:hover {
+  background: #dcfce7;
+  border-color: #22c55e;
+}
+.applied-formula-chip.max-formula-chip {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+}
+.applied-formula-chip.max-formula-chip:hover {
+  background: #ffe4e6;
+  border-color: #f43f5e;
+}
+.applied-formula-chip i {
+  font-size: 0.60rem;
+  line-height: 1;
+  color: var(--primary-color, #da261c);
+  flex-shrink: 0;
+}
+.applied-formula-chip.calc-formula-chip i {
+  color: #4f46e5;
+}
+.applied-formula-chip .formula-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.63rem;
+  line-height: 1;
+  letter-spacing: -0.2px;
+}
+.btn-chip-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  margin-left: 2px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 50%;
+  font-size: 0.70rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease-in-out;
+}
+.btn-chip-clear:hover {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+}
+
 .btn-lims.btn-lims-save:hover:not(:disabled),
 .btn-lims.btn-lims-primary:hover:not(:disabled) {
   background-color: #b81d14;
@@ -4027,6 +4358,41 @@ input[type="checkbox"]:checked {
   color: #ffffff;
 }
 
+.btn-nav-icon,
+.btn-nav-plus,
+.btn-field-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  max-width: 22px;
+  max-height: 22px;
+  padding: 0;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  color: var(--primary-color, #da261c);
+  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.35));
+  background-color: var(--primary-50, rgba(218, 38, 28, 0.05));
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.btn-nav-icon:hover,
+.btn-nav-plus:hover,
+.btn-field-add:hover {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+  color: #ffffff;
+  box-shadow: 0 1px 4px var(--primary-200, rgba(218, 38, 28, 0.25));
+}
+
 .btn-lims-icon {
   width: 26px;
   height: 26px;
@@ -4055,23 +4421,516 @@ input[type="checkbox"]:checked {
   text-decoration: underline;
 }
 
-.btn-nav-icon {
+/* ════════════════════════════════════════════════════════════════
+   SPECIFICATION EQUATION & FORMULA BUILDER UTILITIES
+   ════════════════════════════════════════════════════════════════ */
+.badge-fx {
+  font-size: 0.68rem;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.equation-modal-dialog {
+  width: 860px !important;
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  margin: auto !important;
+  border-radius: 10px !important;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.equation-modal-dialog .custom-modal-header {
+  padding: 0.65rem 1.1rem !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  flex-shrink: 0 !important;
+}
+
+.equation-modal-dialog .custom-modal-body {
+  overflow-y: auto !important;
+  max-height: calc(90vh - 110px) !important;
+  padding: 0.75rem 1.1rem !important;
+  background: #f8fafc !important;
+}
+
+.equation-modal-dialog .custom-modal-footer {
+  padding: 0.55rem 1.1rem !important;
+  flex-shrink: 0 !important;
+  background: #ffffff !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+/* ── Sleek Unified Quick-Insert Toolbar ── */
+.formula-toolbar-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.65rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.formula-param-chips-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 60px;
+  overflow-y: auto;
+  padding: 1px;
+}
+
+.formula-param-chip {
+  font-size: 0.72rem !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  font-weight: 500 !important;
+  transition: all 0.12s ease !important;
+  line-height: 1.2 !important;
+  cursor: pointer;
+}
+.formula-param-chip:hover {
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: var(--primary-color, #da261c) !important;
+}
+
+.formula-op-btn {
+  font-size: 0.75rem !important;
+  width: 25px !important;
+  height: 25px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  transition: all 0.12s ease !important;
+  cursor: pointer;
+}
+.formula-op-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+.formula-fn-btn {
+  font-size: 0.72rem !important;
+  height: 25px !important;
+  padding: 0 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: 4px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+  font-weight: 500 !important;
+  transition: all 0.12s ease !important;
+  cursor: pointer;
+}
+.formula-fn-btn:hover {
+  background: #ffffff !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: var(--primary-color, #da261c) !important;
+}
+
+/* ── Sleek Field Card ── */
+.formula-field-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  margin-bottom: 0.55rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+.formula-field-card.is-active {
+  border-color: #da261c !important;
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.09) !important;
+}
+.formula-field-card.is-invalid {
+  border-color: #ef4444 !important;
+}
+
+.formula-textarea-clean {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 5px !important;
+  font-size: 0.82rem !important;
+  padding: 0.35rem 0.55rem !important;
+  background: #ffffff !important;
+  resize: none !important;
+  transition: border-color 0.15s ease !important;
+}
+.formula-textarea-clean:focus {
+  border-color: #da261c !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* ── Sleek Token Pills ── */
+.clean-token-chip {
+  font-size: 0.68rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.token-param { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.token-fn { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.token-num { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+.token-op { background: transparent; color: #64748b; font-weight: 600; padding: 1px 2px; }
+.token-err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* ── Sleek Live Calculator Simulator ── */
+.clean-calc-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  margin-bottom: 0.55rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.clean-calc-chip-input {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.clean-calc-chip-input span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #334155;
+}
+.clean-calc-chip-input input {
+  width: 58px;
+  height: 22px !important;
+  min-height: 22px !important;
+  font-size: 0.78rem !important;
+  padding: 1px 4px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 3px !important;
+  background: #ffffff !important;
+}
+
+.clean-calc-result-strip {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 5px;
+  padding: 0.35rem 0.65rem;
+}
+
+/* Applied Formula Display Below Input Box */
+.applied-formula-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  padding: 1px 4px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-family: var(--bs-font-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+}
+.applied-formula-chip i {
+  font-size: 0.68rem;
+  color: var(--primary-color, #da261c);
+  flex-shrink: 0;
+}
+.applied-formula-chip .formula-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.applied-formula-chip:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: var(--primary-color, #da261c);
+}
+
+/* Clean Formula Suggestion Card */
+.formula-suggestion-card {
+  background: #f0fdf4 !important;
+  border: 1px solid #86efac !important;
+  border-left: 4px solid #16a34a !important;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.suggestion-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.suggestion-code {
+  font-family: var(--bs-font-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
+  font-size: 0.82rem !important;
+  color: #15803d !important;
+  background: #ffffff !important;
+  border: 1px solid #bbf7d0 !important;
+  border-radius: 4px;
+  padding: 2px 6px;
+  display: inline-block;
+  margin-top: 2px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+
+
+
+/* -- Master Formula Banner (Formula Builder Modal) -------------------- */
+.master-formula-banner {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.12);
+}
+.master-formula-banner-header .badge { font-size: 0.72rem; letter-spacing: 0.02em; }
+.master-formula-code {
+  font-family: var(--bs-font-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 5px;
+  padding: 4px 10px;
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.btn-master-apply-min {
+  font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 5px;
+  background: rgba(37,99,235,0.08); color: #2563eb; border: 1px solid rgba(37,99,235,0.25);
+  transition: all 0.15s ease; white-space: nowrap;
+}
+.btn-master-apply-min:hover { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 2px 6px rgba(37,99,235,0.3); }
+.btn-master-apply-max {
+  font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 5px;
+  background: rgba(13,148,136,0.08); color: #0d9488; border: 1px solid rgba(13,148,136,0.25);
+  transition: all 0.15s ease; white-space: nowrap;
+}
+.btn-master-apply-max:hover { background:#0d9488; color:#fff; border-color:#0d9488; box-shadow:0 2px 6px rgba(13,148,136,0.3); }
+.btn-master-apply-active {
+  font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 5px;
+  background: rgba(245,158,11,0.10); color: #b45309; border: 1px solid rgba(245,158,11,0.35);
+  transition: all 0.15s ease; white-space: nowrap;
+}
+.btn-master-apply-active:hover { background:#f59e0b; color:#fff; border-color:#f59e0b; box-shadow:0 2px 6px rgba(245,158,11,0.3); }
+
+/* ── Equation / Formula Trigger Button (Specification Tables) ── */
+.btn-equation-fx {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  gap: 3px;
+  min-width: 32px;
+  height: 24px;
+  padding: 0 6px;
   border-radius: 4px;
-  color: var(--primary-color, #da261c);
-  border: 1px solid rgba(218, 38, 28, 0.2);
-  background: rgba(218, 38, 28, 0.04);
-  text-decoration: none;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
+  line-height: 1;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
   cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+  vertical-align: middle;
 }
 
-.btn-nav-icon:hover {
-  background: var(--primary-color, #da261c);
+.btn-equation-fx .fx-symbol {
+  font-family: 'Cambria Math', 'Times New Roman', Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: -0.3px;
+}
+
+/* Default Hover (no equation configured) */
+.btn-equation-fx:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: var(--primary-color, #da261c);
+  box-shadow: 0 1px 3px rgba(218, 38, 28, 0.15);
+}
+
+/* Has Master Formula available to apply */
+.btn-equation-fx.has-master {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.btn-equation-fx.has-master:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.25);
+}
+
+.btn-equation-fx .fx-indicator-lightning {
+  font-size: 0.68rem;
+  color: #f59e0b;
+  margin-left: 1px;
+}
+
+/* Has active Equation configured / applied */
+.btn-equation-fx.has-equation {
+  background: var(--primary-color, #da261c) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(218, 38, 28, 0.25);
+}
+
+.btn-equation-fx.has-equation .fx-symbol {
+  color: #ffffff !important;
+}
+
+.btn-equation-fx.has-equation .fx-indicator-lightning {
+  color: #fef08a !important;
+}
+
+.btn-equation-fx.has-equation:hover:not(:disabled) {
+  background: var(--primary-hover, #b81d14) !important;
+  border-color: var(--primary-hover, #b81d14) !important;
+  color: #ffffff !important;
+}
+
+.btn-equation-fx:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+
+/* ── Excel Import Analysis Backdrop Loader ───────────────────────── */
+.import-analyzing-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.import-analyzing-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 320px;
+  max-width: 420px;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.import-analyzing-card .spinner-border {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--primary-color, #da261c) !important;
+  border-width: 0.25rem;
+}
+
+.import-analyzing-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.import-analyzing-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ── Excel Import Preview Filter Badges ──────────────────────────── */
+.import-filter-badge {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.import-filter-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  opacity: 0.95;
+}
+
+.import-filter-badge:active {
+  transform: translateY(0);
+}
+
+.import-filter-badge.active-filter {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px currentColor !important;
+  transform: translateY(-1px);
+  font-weight: 700;
+}
+
+.import-filter-badge-all {
+  background-color: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.import-filter-badge-all:hover {
+  background-color: #e2e8f0;
+}
+
+.import-filter-badge-all.active-filter {
+  background-color: #334155;
   color: #ffffff;
+  border-color: #334155;
 }
-

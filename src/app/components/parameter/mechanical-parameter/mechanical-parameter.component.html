@@ -1,10 +1,10 @@
 <div class="container-fluid mt-4 d-flex flex-column align-items-center">
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">Mechanical Parameter List</label>
-      <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
+      <label class="text-center text-md fw-medium ms-3">General Parameter List</label>
+      <a class="btn btn-outline-light me-3 d-flex align-items-center gap-1" (click)="openModal('create', 0)">
         <i class="bi bi-plus-lg"></i>
-        Create Mechanical Parameter
+        Create General Parameter
       </a>
     </div>
 
@@ -69,11 +69,22 @@
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
               <td>{{ item.name }}</td>
               <td>{{ item.symbol || '-' }}</td>
-              <td>{{ item.unitName }}</td>
+              <td>{{ item.unitName || '-' }}</td>
               <td>
-                <span class="badge bg-secondary">{{ item.parameterType || 'Mechanical' }}</span>
+                <span
+                  class="badge"
+                  [ngClass]="(item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'badge-theme-observed' : 'badge-theme-reported'"
+                >
+                  <i class="bi" [ngClass]="(item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'bi-eye me-1' : 'bi-file-earmark-check me-1'"></i>
+                  {{ (item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'Observed' : (item.parameterType || 'Reported') }}
+                </span>
               </td>
-              <td>{{ item.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (item.modifiedByName || item.createdByName || '-') + ' on ' + ((item.modifiedOn || item.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ item.modifiedByName || item.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">· {{ (item.modifiedOn || item.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -99,64 +110,70 @@
 </div>
 
 <!-- Filter Modal -->
+<!-- Filter Modal -->
 <div #filterModal class="filter-modal">
-  <div class="card py-2 px-3 shadow position-relative">
-    <!-- Close Button in the Top-Right Corner -->
-    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
-
-    <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-
-    <select class="form-select mb-2" [(ngModel)]="filterType">
-      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
-      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
-      <option value="Equal">Equal</option>
-      <option value="NotEqual">Not Equal</option>
-      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
-      <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
-    </select>
-
-    <input
-      *ngIf="filterColumnTypes[filterColumn!] === 'string'"
-      type="text"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-      placeholder="Enter value"
-      (keydown.enter)="applyFilter()"
-    />
-    <input
-      *ngIf="filterColumnTypes[filterColumn] === 'number'"
-      type="number"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-      placeholder="Enter number"
-      (keydown.enter)="applyFilter()"
-    />
-    <input
-      *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'"
-      type="date"
-      class="form-control mb-2"
-      [(ngModel)]="filterValue"
-    />
-    <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-      <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+  <div class="card shadow" style="width: 250px;">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center p-2">
+      <span class="fs-6">{{ filterColumnTitle }}</span>
+      <button class="btn-close btn-close-white" (click)="closeFilterModal()"></button>
     </div>
-
-    <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+    <div class="card-body p-2">
+      <div class="mb-2">
+        <label class="form-label mb-1">Condition</label>
+        <select class="form-select form-select-sm" [(ngModel)]="filterType">
+          <option *ngIf="filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'string'" value="Equal">Equals</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'string'" value="StartsWith">Starts With</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'string'" value="EndsWith">Ends With</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'number'" value="Equal">Equal</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'number'" value="GreaterThan">Greater Than</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'number'" value="LessThan">Less Than</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'number'" value="Between">Between</option>
+          <option *ngIf="filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
+        </select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label mb-1">Value</label>
+        <input
+          *ngIf="filterColumnTypes[filterColumn] !== 'date'"
+          type="text"
+          class="form-control form-control-sm"
+          [(ngModel)]="filterValue"
+          placeholder="Enter value"
+        />
+        <input
+          *ngIf="filterColumnTypes[filterColumn] === 'date'"
+          type="date"
+          class="form-control form-control-sm"
+          [(ngModel)]="filterValue"
+        />
+      </div>
+      <div *ngIf="filterType === 'Between'" class="mb-2">
+        <label class="form-label mb-1">To Value</label>
+        <input
+          *ngIf="filterColumnTypes[filterColumn] !== 'date'"
+          type="text"
+          class="form-control form-control-sm"
+          [(ngModel)]="filterValue2"
+          placeholder="Enter second value"
+        />
+        <input
+          *ngIf="filterColumnTypes[filterColumn] === 'date'"
+          type="date"
+          class="form-control form-control-sm"
+          [(ngModel)]="filterValue2"
+        />
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-secondary btn-sm" (click)="closeFilterModal()">Cancel</button>
+        <button class="btn btn-primary-red btn-sm" (click)="applyFilter()">Apply</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Modal for Add/Edit/Update Customer -->
-<div
-  id="customerTypeModal"
-  class="modal fade modal-fade modal-lg"
-  #modalRef
-  tabindex="-1"
-  data-bs-backdrop="static" data-bs-keyboard="false"
-  aria-labelledby="customerTypeModalLabel"
-  aria-modal="true"
-  role="dialog"
->
+<!-- Modal for Create/Edit/View -->
+<div class="modal fade" id="customerTypeModal" #modalRef tabindex="-1" aria-labelledby="customerTypeModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
@@ -166,9 +183,9 @@
         <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="ParameterForm" (ngSubmit)="onSubmit()">
-        <div class="modal-body row row-cols-2">
+        <div class="modal-body row g-2">
           <!-- Name Field -->
-          <div class="mb-1">
+          <div class="col-md-6 mb-1">
             <label for="name" class="form-label">
               Name
               <span class="text-danger">*</span>
@@ -195,30 +212,33 @@
               Name is required.
             </span>
           </div>
+
           <!-- Symbol Field -->
-          <div class="mb-1">
-            <label for="symbol" class="form-label">
-              Symbol / Code
-            </label>
+          <div class="col-md-6 mb-1">
+            <label for="symbol" class="form-label">Symbol / Code</label>
             <div class="d-flex align-items-center gap-1">
               <input
                 type="text"
                 id="symbol"
-                #symbolInput
                 class="form-control flex-grow-1"
                 formControlName="symbol"
                 placeholder="Enter Symbol / Code"
                 [attr.disabled]="isViewMode ? true : null"
               />
-              <app-symbol-picker
+              <button
                 *ngIf="!isViewMode"
-                [disabled]="isViewMode"
-                [targetInput]="symbolInput"
-              ></app-symbol-picker>
+                type="button"
+                class="btn-lims-auto"
+                (click)="autoGenerateSymbol()"
+                title="Auto generate symbol from Parameter Name"
+              >
+                <i class="bi bi-magic me-1"></i>Auto
+              </button>
             </div>
           </div>
+
           <!-- Input Type -->
-          <div class="mb-1">
+          <div class="col-md-6 mb-1">
             <label for="inputType" class="form-label">Input Type <span class="text-danger">*</span></label>
             <select
               id="inputType"
@@ -236,7 +256,7 @@
           </div>
 
           <!-- Decimal Precision -->
-          <div class="mb-1" *ngIf="ParameterForm.get('inputType')?.value === 'Decimal'">
+          <div class="col-md-6 mb-1" *ngIf="ParameterForm.get('inputType')?.value === 'Decimal'">
             <label for="decimalPrecision" class="form-label">Decimal Precision <span class="text-danger">*</span></label>
             <select id="decimalPrecision" class="form-select" formControlName="decimalPrecision"
               [ngClass]="{'is-invalid': ParameterForm.get('decimalPrecision')?.touched && ParameterForm.get('decimalPrecision')?.invalid}"
@@ -256,77 +276,80 @@
           </div>
 
           <!--Parameter Unit Selection (optional — some parameters like HRC, grain size have no unit)-->
-          <div class="mb-1" *ngIf="ParameterForm.get('inputType')?.value === 'Decimal' || ParameterForm.get('inputType')?.value === 'Integer'">
-            <div class="d-flex align-items-start gap-1">
-              <div class="flex-grow-1">
-                <app-searchable-dropdown
-                  [placeholder]="'Search Unit'"
-                  [labelName]="'Parameter Unit'"
-                  [fetchDataFn]="getParameterUnitDropdown"
-                  (itemSelected)="onParameterUnitSelected($event)"
-                  [hideLabel]="false"
-                  [required]="false"
-                  [isDisabled]="isViewMode"
-                  [selectedItem]="ParameterForm.get('parameterUnitID')?.value"
-                ></app-searchable-dropdown>
-              </div>
-              <button
+          <div class="col-md-6 mb-1" *ngIf="ParameterForm.get('inputType')?.value === 'Decimal' || ParameterForm.get('inputType')?.value === 'Integer'">
+            <div class="form-field-header">
+              <label class="form-label">Parameter Unit</label>
+              <a
                 *ngIf="!isViewMode"
-                type="button"
-                class="btn btn-outline-primary btn-sm mt-1"
-                title="Add New Unit"
+                class="btn-nav-link"
                 (click)="openLinkedMaster('/parameter-unit')"
+                title="Manage Parameter Units"
               >
-                <i class="bi bi-plus-lg"></i>
-              </button>
+                <i class="bi bi-box-arrow-up-right me-1"></i>Manage Unit
+              </a>
             </div>
+            <app-searchable-dropdown
+              [placeholder]="'Search Unit'"
+              [fetchDataFn]="getParameterUnitDropdown"
+              (itemSelected)="onParameterUnitSelected($event)"
+              [hideLabel]="true"
+              [required]="false"
+              [isDisabled]="isViewMode"
+              [selectedItem]="ParameterForm.get('parameterUnitID')?.value"
+            ></app-searchable-dropdown>
           </div>
 
           <!-- Parameter Type -->
-          <div class="mb-1">
+          <div class="col-md-6 mb-1">
             <label class="form-label">Parameter Type <span class="text-danger">*</span></label>
-            <div class="d-flex gap-3">
+            <div class="d-flex gap-3 pt-1">
               <div class="form-check">
-                <input type="radio" id="type-mech" class="form-check-input mt-1" formControlName="parameterType" value="Mechanical" [attr.disabled]="isViewMode ? true : null" />
-                <label for="type-mech" class="form-check-label">Mechanical</label>
+                <input type="radio" id="type-rep" class="form-check-input" formControlName="parameterType" value="Reported" [attr.disabled]="isViewMode ? true : null" />
+                <label for="type-rep" class="form-check-label">Reported</label>
               </div>
               <div class="form-check">
-                <input type="radio" id="type-obs" class="form-check-input mt-1" formControlName="parameterType" value="Observation" [attr.disabled]="isViewMode ? true : null" />
+                <input type="radio" id="type-obs" class="form-check-input" formControlName="parameterType" value="Observed" [attr.disabled]="isViewMode ? true : null" />
                 <label for="type-obs" class="form-check-label">Observed</label>
               </div>
             </div>
           </div>
 
           <!--Note-->
-          <div class="mb-1">
+          <div class="col-12 mb-1">
             <label for="note" class="form-label">Note</label>
             <textarea
               id="note"
               class="form-control"
               formControlName="note"
               placeholder="Enter Note"
+              rows="2"
               [ngClass]="{ 'is-invalid': ParameterForm.get('note')?.touched && ParameterForm.get('note')?.invalid }"
               [attr.disabled]="isViewMode ? true : null"
             ></textarea>
           </div>
+
           <!-- Is Calculated -->
-          <div class="form-check mt-2" *ngIf="ParameterForm.get('inputType')?.value === 'Decimal' || ParameterForm.get('inputType')?.value === 'Integer'">
-            <input
-              class="form-check-input mt-1"
-              type="checkbox"
-              formControlName="isCalculated"
-              id="isCalculated"
-              (change)="onCalculatedToggle()"
-            />
-            <label class="form-check-label" for="isCalculated">Is Calculated Parameter</label>
+          <div class="col-12 my-2" *ngIf="ParameterForm.get('inputType')?.value === 'Decimal' || ParameterForm.get('inputType')?.value === 'Integer'">
+            <div class="form-check d-flex align-items-center gap-2 p-0 m-0">
+              <input
+                class="form-check-input m-0"
+                type="checkbox"
+                formControlName="isCalculated"
+                id="isCalculated"
+                (change)="onCalculatedToggle()"
+              />
+              <label class="form-check-label fw-medium cursor-pointer" for="isCalculated">Is Calculated Parameter</label>
+            </div>
           </div>
 
           <!-- Formula Builder -->
-          <div *ngIf="ParameterForm.value.isCalculated" class="mt-2 col-12">
+          <div *ngIf="ParameterForm.value.isCalculated" class="col-12 my-1">
             <label class="form-label">Formula</label>
             <div class="input-group">
               <input type="text" class="form-control" formControlName="formulaDisplay" placeholder="{Carbon} + {Manganese}" readonly />
-              <button type="button" class="btn btn-add" (click)="openFormulaBuilder()">Build Formula</button>
+              <button type="button" class="btn btn-add btn-sm" (click)="openFormulaBuilder()">
+                <i class="bi bi-gear me-1"></i>Build Formula
+              </button>
             </div>
           </div>
 
@@ -334,8 +357,8 @@
           <div class="col-12 mt-2" *ngIf="ParameterForm.get('inputType')?.value === 'Dropdown' || ParameterForm.get('inputType')?.value === 'MultiSelect'">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <label class="form-label fw-bold mb-0">Dropdown Options</label>
-              <button type="button" class="btn btn-sm btn-outline-primary" (click)="addDropdownOption()" *ngIf="!isViewMode">
-                <i class="bi bi-plus"></i> Add Option
+              <button type="button" class="btn btn-add btn-sm" (click)="addDropdownOption()" *ngIf="!isViewMode">
+                <i class="bi bi-plus-circle me-1"></i>Add Option
               </button>
             </div>
             <div formArrayName="dropdownOptions">
@@ -356,7 +379,7 @@
                   </div>
                 </div>
                 <div class="col-auto" *ngIf="!isViewMode">
-                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeDropdownOption(i)">
+                  <button type="button" class="btn btn-remove btn-sm p-1" (click)="removeDropdownOption(i)" title="Remove Option">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -367,9 +390,11 @@
 
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-cancel" (click)="closeModal()">
+            <i class="bi bi-x-circle"></i> Cancel
+          </button>
           <button type="submit" class="btn btn-save" [disabled]="ParameterForm.invalid">
-            {{ isEditMode ? "Update" : "Save" }}
+            <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>
       </form>
@@ -379,7 +404,7 @@
 
 <app-formula-builder
   [(visible)]="showFormulaBuilder"
-  [parameterType]="ParameterForm.get('parameterType')?.value || 'Mechanical'"
+  [parameterType]="ParameterForm.get('parameterType')?.value || 'Reported'"
   [currentFormula]="ParameterForm.value.formula"
   [currentFormulaDisplay]="ParameterForm.value.formulaDisplay"
   (formulaSaved)="onFormulaSaved($event)"

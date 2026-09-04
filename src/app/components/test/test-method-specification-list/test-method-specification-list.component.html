@@ -91,7 +91,12 @@
               <td>{{ supplier.defaultVersion || '-' }}</td>
               <td>{{ supplier.defaultVersionYear || '-' }}</td>
               <td>{{ supplier.isDisabled ? "Yes" : "No" }}</td>
-              <td>{{ supplier.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (supplier.modifiedByName || supplier.createdByName || '-') + ' on ' + ((supplier.modifiedOn || supplier.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ supplier.modifiedByName || supplier.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">· {{ (supplier.modifiedOn || supplier.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>

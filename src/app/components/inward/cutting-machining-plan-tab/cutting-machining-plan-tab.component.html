@@ -133,17 +133,28 @@
                         <span class="text-muted fs-11" *ngIf="!testCtrl.get('drawingFilePath')?.value">-</span>
                       </td>
 
-                      <!-- Checkboxes: Requires Cutting & No Testing -->
+                      <!-- Checkboxes: Requires Cutting, Machining & No Testing -->
                       <td class="text-center">
-                        <div class="d-flex justify-content-center align-items-center gap-2">
+                        <div class="d-flex justify-content-center align-items-center gap-1.5 flex-wrap">
                           <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer" title="Requires Cutting">
                             <input type="checkbox" class="form-check-input" formControlName="requiresCutting" [attr.disabled]="isReadOnly ? true : null" />
                             <span>Cut</span>
+                          </label>
+                          <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer" title="Requires Machining">
+                            <input type="checkbox" class="form-check-input" formControlName="requiresMachining" [attr.disabled]="isReadOnly ? true : null" />
+                            <span>Mach</span>
                           </label>
                           <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer text-danger" title="Specimen Only (No Testing Required)">
                             <input type="checkbox" class="form-check-input" formControlName="noTesting" [attr.disabled]="isReadOnly ? true : null" />
                             <span>No Test</span>
                           </label>
+                        </div>
+                        <div class="mt-1" *ngIf="testCtrl.get('status')?.value">
+                          <span class="badge fs-10" [ngClass]="{
+                            'bg-success-subtle text-success border border-success': testCtrl.get('status')?.value === 'Completed' || testCtrl.get('status')?.value === 'QCVerified',
+                            'bg-warning-subtle text-warning-emphasis border border-warning': testCtrl.get('status')?.value === 'CuttingCompleted' || testCtrl.get('status')?.value === 'MachiningCompleted' || testCtrl.get('status')?.value === 'InProgress',
+                            'bg-secondary-subtle text-secondary': testCtrl.get('status')?.value === 'Pending'
+                          }">{{ testCtrl.get('status')?.value }}</span>
                         </div>
                       </td>
 
@@ -177,24 +188,39 @@
                     <input type="number" class="form-control form-control-compact" formControlName="cutThickness" [readOnly]="isReadOnly" placeholder="e.g. 5" min="0" />
                   </div>
 
-                  <div class="col-6">
-                    <label class="form-label-compact">Water Jet (mins)</label>
-                    <input type="number" class="form-control form-control-compact" formControlName="waterJetCuttingMins" [readOnly]="isReadOnly" placeholder="Mins" min="0" />
+                  <div class="col-12">
+                    <label class="form-label-compact">Water Jet Cutting (mins &#64; ₹10/min)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="waterJetCuttingMins" [readOnly]="isReadOnly" placeholder="e.g. 15" min="0" />
                   </div>
 
-                  <div class="col-6">
+                  <!-- EDM Cutting Details & Charge -->
+                  <div class="col-7">
                     <label class="form-label-compact">EDM Cutting</label>
                     <input type="text" class="form-control form-control-compact" formControlName="edmCutting" [readOnly]="isReadOnly" placeholder="Details" />
                   </div>
+                  <div class="col-5">
+                    <label class="form-label-compact">EDM (₹)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="edmCuttingCharge" [readOnly]="isReadOnly" placeholder="0.00" min="0" />
+                  </div>
 
-                  <div class="col-6">
+                  <!-- Gas Cutting Details & Charge -->
+                  <div class="col-7">
                     <label class="form-label-compact">Gas Cutting</label>
                     <input type="text" class="form-control form-control-compact" formControlName="gasCutting" [readOnly]="isReadOnly" placeholder="Details" />
                   </div>
+                  <div class="col-5">
+                    <label class="form-label-compact">Gas (₹)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="gasCuttingCharge" [readOnly]="isReadOnly" placeholder="0.00" min="0" />
+                  </div>
 
-                  <div class="col-6">
+                  <!-- Special Cutting Details & Charge -->
+                  <div class="col-7">
                     <label class="form-label-compact">Special Cutting</label>
                     <input type="text" class="form-control form-control-compact" formControlName="specialCutting" [readOnly]="isReadOnly" placeholder="Details" />
+                  </div>
+                  <div class="col-5">
+                    <label class="form-label-compact">Special (₹)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="specialCuttingCharge" [readOnly]="isReadOnly" placeholder="0.00" min="0" />
                   </div>
 
                 </div>

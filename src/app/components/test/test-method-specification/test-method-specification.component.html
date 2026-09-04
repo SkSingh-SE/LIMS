@@ -91,7 +91,7 @@
                   class="form-control form-control-sm"
                   formControlName="name"
                   placeholder="Enter Standard Title"
-                  maxlength="100"
+                  maxlength="250"
                   [ngClass]="{ 'is-invalid': testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched }"
                 />
                 <span *ngIf="testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched" class="text-danger text-sm">
@@ -148,11 +148,11 @@
             <button
               *ngIf="!isViewMode && showaddVersionButton()"
               type="button"
-              class="btn btn-save btn-sm"
+              class="btn btn-add btn-sm"
               (click)="$event.stopPropagation(); addVersion(true)"
               [disabled]="testSpecificationForm.get('isDisabled')?.value"
             >
-              <i class="bi bi-plus-circle-dotted"></i> Add New Version
+              <i class="bi bi-plus-circle"></i> Add New Version
             </button>
           </div>
           <div *ngIf="openSections['versions']" class="section-body">
@@ -284,7 +284,7 @@
                     </ng-template>
                   </div>
 
-                  <div class="col-md-3" *ngIf="group.get('year')?.value">
+                  <div class="col-md-3">
                     <label class="form-label">Test Method Caption</label>
                     <div class="form-control form-control-sm bg-light border-0">{{ getCaption(group, i) }}</div>
                   </div>
@@ -402,14 +402,16 @@
 
         <!-- Action bar -->
         <div class="form-action-bar">
-          <a class="btn btn-cancel" routerLink="/test-specification">Cancel</a>
+          <a class="btn btn-cancel" routerLink="/test-specification">
+            <i class="bi bi-x-circle"></i> Cancel
+          </a>
           <button
             *ngIf="!isViewMode"
             [disabled]="testSpecificationForm.invalid || testSpecificationForm.get('isDisabled')?.value"
             type="submit"
-            class="btn btn-save px-3"
+            class="btn btn-save"
           >
-            Save
+            <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>
       </form>

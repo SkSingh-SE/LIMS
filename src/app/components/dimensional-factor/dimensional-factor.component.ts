@@ -84,6 +84,7 @@ export class DimensionalFactorComponent implements OnInit {
   dimensionalFactorId: number = 0;
   formTitle = 'Dimensional Factor Form';
   modalReloadKey = 0;
+  selectedUnitDropdownItem: any = null;
   toleranceTypes = [
     { name: 'Bilateral', value: 'Bilateral' },
     { name: 'Unilateral', value: 'Unilateral' },
@@ -113,6 +114,7 @@ export class DimensionalFactorComponent implements OnInit {
       code: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
       name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       parameterUnitID: [null],
+      parameterUnitEquivalentID: [null],
       instrument: [''],
       toleranceType: ['Bilateral'],
       defaultTestMethodID: [null],
@@ -144,6 +146,15 @@ export class DimensionalFactorComponent implements OnInit {
         if (this.dimensionalFactorId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
         this.DimensionalFactorForm.patchValue(response);
+        if (response.parameterUnitID || response.parameterUnitEquivalentID) {
+          this.selectedUnitDropdownItem = {
+            id: response.parameterUnitID,
+            equivalentId: response.parameterUnitEquivalentID,
+            name: response.parameterUnitEquivalent?.name || response.parameterUnit?.name || response.unitName
+          };
+        } else {
+          this.selectedUnitDropdownItem = null;
+        }
         this.DimensionalFactorForm.patchValue({
           applicableFormIds: response?.applicableForms?.map((x: any) => x.productFormID ?? x.id) ?? [],
         });
@@ -303,8 +314,9 @@ export class DimensionalFactorComponent implements OnInit {
   openModal(type: string, id: number): void {
     // Force dropdown reset by setting sentinel value before reinitializing form
     if (this.DimensionalFactorForm) {
-      this.DimensionalFactorForm.patchValue({ parameterUnitID: -1, defaultTestMethodID: -1, applicableFormIds: [-1] });
+      this.DimensionalFactorForm.patchValue({ parameterUnitID: -1, parameterUnitEquivalentID: -1, defaultTestMethodID: -1, applicableFormIds: [-1] });
     }
+    this.selectedUnitDropdownItem = null;
     this.initForm();
     this.dimensionalFactorId = 0;
     if (id > 0) {
@@ -339,11 +351,20 @@ export class DimensionalFactorComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
+    this.selectedUnitDropdownItem = null;
     this.initForm();
     this.dimensionalFactorId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
     this.submitted = false;
+  }
+
+  onUnitSelected(item: any): void {
+    this.selectedUnitDropdownItem = item;
+    this.DimensionalFactorForm.patchValue({
+      parameterUnitID: item?.id ?? null,
+      parameterUnitEquivalentID: item?.equivalentId ?? null,
+    });
   }
 
   // Dropdown functions

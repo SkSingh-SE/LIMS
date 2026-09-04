@@ -80,7 +80,7 @@ export class MechanicalParameterComponent implements OnInit {
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   parameterId: number = 0;
-  formTitle = 'Parameter Form';
+  formTitle = 'General Parameter Form';
 
   constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private parameterService: ParameterService, private toastService: ToastService, private parameterUnitService: ParameterUnitService, private parameterCategoryService: ParameterCategoryService, private specimenOrientationService: SpecimenOrientationService) {
     this.route.params.subscribe(params => {
@@ -111,7 +111,7 @@ export class MechanicalParameterComponent implements OnInit {
       unitConversionFactor: [null],
       note: [''],
       elementType: ['normal'],
-      parameterType: ['Mechanical', Validators.required],
+      parameterType: ['Reported', Validators.required],
       isCalculated: [false],
       formula: [''],
       formulaDisplay: [''],
@@ -180,8 +180,12 @@ export class MechanicalParameterComponent implements OnInit {
       next: (response) => {
         if (this.parameterId !== requestId) return; // discard stale response
         this.customerTypeObject = response;
+        const pType = response.parameterType === 'Mechanical' ? 'Reported'
+                    : response.parameterType === 'Observation' ? 'Observed'
+                    : (response.parameterType || 'Reported');
         this.ParameterForm.patchValue({
           ...response,
+          parameterType: pType,
         });
         
         this.dropdownOptions.clear();
@@ -360,16 +364,16 @@ export class MechanicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'General Parameter Form';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'Edit General Parameter';
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Parameter';
+      this.formTitle = 'View General Parameter';
       this.ParameterForm.disable();
     }
 
@@ -477,11 +481,29 @@ export class MechanicalParameterComponent implements OnInit {
       unitConversionFactor: item?.conversionFactor ?? null
     });
   }
+  autoGenerateSymbol() {
+    const name = this.ParameterForm.get('name')?.value;
+    if (!name || !name.trim()) {
+      this.toastService.show('Please enter Parameter Name first', 'warning');
+      return;
+    }
+    const words = name.trim().split(/[\s\-_/()]+/).filter((w: string) => w.length > 0);
+    let symbol = '';
+    if (words.length > 1) {
+      symbol = words.map((w: string) => w[0].toUpperCase()).join('');
+    } else if (words.length === 1) {
+      symbol = words[0].length <= 4 ? words[0].toUpperCase() : words[0].substring(0, 4).toUpperCase();
+    }
+    this.ParameterForm.patchValue({ symbol });
+    this.ParameterForm.get('symbol')?.markAsDirty();
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {}
+
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');
   }
-  @HostListener('window:focus')
-  onWindowFocus(): void {}
 }
 
 

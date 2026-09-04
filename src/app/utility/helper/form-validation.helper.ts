@@ -27,6 +27,10 @@ export class FormValidationHelper {
     if (e['max'])                 return `Maximum value is ${e['max'].max}`;
     if (e['minValue'])            return `Minimum value is ${e['minValue'].min}`;
     if (e['maxValue'])            return `Maximum value is ${e['maxValue'].max}`;
+    if (e['minOrMaxRequired'])    return 'Either Min or Max is required';
+    if (e['maxLessThanMin'])      return 'Max must be >= Min Value';
+    if (e['minGreaterThanMax'])   return 'Min must be <= Max Value';
+    if (e['customMessage'])       return e['customMessage'];
     if (e['pattern'])             return `Invalid format`;
     return 'Invalid value';
   }

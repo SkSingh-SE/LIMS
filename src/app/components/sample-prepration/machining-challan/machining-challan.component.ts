@@ -20,6 +20,7 @@ export class MachiningChallanComponent implements OnInit {
 
   // ── Sample selection ──
   selectedSampleId: number | null = null;
+  selectedSamplePrep: any = null;
 
   // ── Machining data ──
   loading = false;
@@ -62,6 +63,7 @@ export class MachiningChallanComponent implements OnInit {
           id: s.id,
           name: s.sampleNo + (s.details ? ' - ' + s.details : ''),
           sampleNo: s.sampleNo,
+          rawSample: s
         }));
       },
       error: (err: any) => {
@@ -82,10 +84,12 @@ export class MachiningChallanComponent implements OnInit {
   onSampleSelected(item: any): void {
     if (!item) {
       this.selectedSampleId = null;
+      this.selectedSamplePrep = null;
       this.machiningItems = [];
       return;
     }
     this.selectedSampleId = item.id;
+    this.selectedSamplePrep = item.rawSample?.preparationDetails || null;
     this.loadItems();
   }
 
@@ -95,6 +99,7 @@ export class MachiningChallanComponent implements OnInit {
     this.selectedInwardId = null;
     this.availableSamples = [];
     this.selectedSampleId = null;
+    this.selectedSamplePrep = null;
     this.machiningItems = [];
   }
 

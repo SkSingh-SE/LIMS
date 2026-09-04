@@ -4256,7 +4256,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
 
     this.machiningChargeMasterService.getByTest(testId, stdId).subscribe({
       next: (configs: any[]) => {
-        const hasConfig = configs && configs.length > 0;
+        const hasConfig = configs && configs.length > 0 && configs.some((c: any) => c.preparationRequired !== false);
         this.specimenPrepConfigCache[cacheKey] = hasConfig;
         if (hasConfig) {
           methodRow.patchValue({ preparationRequired: true });

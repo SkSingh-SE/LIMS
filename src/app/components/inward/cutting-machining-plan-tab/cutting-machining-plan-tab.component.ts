@@ -9,6 +9,9 @@ import { SearchableDropdownComponent } from '../../../utility/components/searcha
 import { environment } from '../../../../environments/environment';
 
 export interface PlannedTestPrepItem {
+  id?: number | null;
+  plannedTestMethodID: number;
+  plannedTestType: string;
   testId: number;
   testName: string;
   standardId: number;
@@ -25,8 +28,13 @@ export interface PlannedTestPrepItem {
   cuttingRateHardMetal?: number;
   resolvedMachiningRate?: number;
   resolvedCuttingRate?: number;
+  cuttingTotal?: number;
+  machiningTotal?: number;
   requiresCutting: boolean;
+  requiresMachining: boolean;
   noTesting: boolean;
+  remarks?: string;
+  status?: string;
 }
 
 @Component({
@@ -72,8 +80,12 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
   loadSampleDetailsWithPlans(): void {
     this.inwardService.getSampleInwardWithPlans(this.inwardId).subscribe({
       next: (data: any) => {
+        const allPlans = data?.sampleTestPlans || [];
         this.samples = data?.sampleDetails || data?.samples || [];
         this.samples.forEach((sample: any) => {
+          if (!sample.testPlans || sample.testPlans.length === 0) {
+            sample.testPlans = allPlans.filter((tp: any) => tp.sampleID === sample.id || tp.sampleNo === sample.sampleNo);
+          }
           this.extractAndBuildSamplePrep(sample);
         });
         this.cdr.markForCheck();
@@ -82,8 +94,12 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
         // Fallback to getSampleInwardById if details-with-plan fails
         this.inwardService.getSampleInwardById(this.inwardId).subscribe({
           next: (data: any) => {
+            const allPlans = data?.sampleTestPlans || [];
             this.samples = data?.sampleDetails || data?.samples || [];
             this.samples.forEach((sample: any) => {
+              if (!sample.testPlans || sample.testPlans.length === 0) {
+                sample.testPlans = allPlans.filter((tp: any) => tp.sampleID === sample.id || tp.sampleNo === sample.sampleNo);
+              }
               this.extractAndBuildSamplePrep(sample);
             });
             this.cdr.markForCheck();
@@ -102,6 +118,8 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
   extractAndBuildSamplePrep(sample: any): void {
     const isHard = this.isHardMetal(sample);
     const prepItems: PlannedTestPrepItem[] = [];
+    const savedPrep = sample.preparationDetails || {};
+    const savedTests: any[] = savedPrep.tests || [];
 
     // Extract test methods requiring preparation from testPlans
     if (sample.testPlans && Array.isArray(sample.testPlans)) {
@@ -112,14 +130,28 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
             if (gt.methods && Array.isArray(gt.methods)) {
               gt.methods.forEach((m: any) => {
                 if (!m.cancel && (m.preparationRequired || m.isPreparationRequired)) {
+                  const saved = savedTests.find((st: any) => (m.id && st.plannedTestMethodID === m.id) || st.testId === (m.testMethodID || gt.laboratoryTestSubGroupID));
                   prepItems.push({
+                    id: saved?.id || null,
+                    plannedTestMethodID: m.id || 0,
+                    plannedTestType: 'General',
                     testId: m.testMethodID || gt.laboratoryTestSubGroupID || 0,
                     testName: m.testMethodName || m.laboratoryTestName || gt.subGroupName || 'General Test',
                     standardId: m.standardID || gt.specification1 || 0,
                     standardName: m.standardName || '',
-                    quantity: +(m.quantity || 1),
-                    requiresCutting: true,
-                    noTesting: false
+                    quantity: +(saved?.quantity || m.quantity || 1),
+                    specimenPreparationMasterID: saved?.specimenPreparationMasterID || null,
+                    specimenSize: saved?.specimenSize || '',
+                    specimenRawMaterialSize: saved?.specimenRawMaterialSize || '',
+                    drawingFilePath: saved?.drawingFilePath || '',
+                    fileName: saved?.fileName || '',
+                    resolvedMachiningRate: saved?.machiningRate || 0,
+                    resolvedCuttingRate: saved?.cuttingRate || 0,
+                    requiresCutting: saved ? (saved.requiresCutting ?? true) : true,
+                    requiresMachining: saved ? (saved.requiresMachining ?? true) : true,
+                    noTesting: saved ? (saved.noTesting ?? false) : false,
+                    remarks: saved?.remarks || '',
+                    status: saved?.status || 'Pending'
                   });
                 }
               });
@@ -133,14 +165,28 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
             if (ct.methods && Array.isArray(ct.methods)) {
               ct.methods.forEach((m: any) => {
                 if (!m.cancel && (m.preparationRequired || m.isPreparationRequired)) {
+                  const saved = savedTests.find((st: any) => (m.id && st.plannedTestMethodID === m.id) || st.testId === (m.testMethodID || ct.laboratoryTestAnalysisTypeID));
                   prepItems.push({
+                    id: saved?.id || null,
+                    plannedTestMethodID: m.id || 0,
+                    plannedTestType: 'Chemical',
                     testId: m.testMethodID || ct.laboratoryTestAnalysisTypeID || 0,
                     testName: m.testMethodName || ct.analysisTypeName || 'Chemical Test',
                     standardId: m.standardID || ct.specification1 || 0,
                     standardName: m.standardName || '',
-                    quantity: +(m.quantity || 1),
-                    requiresCutting: true,
-                    noTesting: false
+                    quantity: +(saved?.quantity || m.quantity || 1),
+                    specimenPreparationMasterID: saved?.specimenPreparationMasterID || null,
+                    specimenSize: saved?.specimenSize || '',
+                    specimenRawMaterialSize: saved?.specimenRawMaterialSize || '',
+                    drawingFilePath: saved?.drawingFilePath || '',
+                    fileName: saved?.fileName || '',
+                    resolvedMachiningRate: saved?.machiningRate || 0,
+                    resolvedCuttingRate: saved?.cuttingRate || 0,
+                    requiresCutting: saved ? (saved.requiresCutting ?? true) : true,
+                    requiresMachining: saved ? (saved.requiresMachining ?? true) : true,
+                    noTesting: saved ? (saved.noTesting ?? false) : false,
+                    remarks: saved?.remarks || '',
+                    status: saved?.status || 'Pending'
                   });
                 }
               });
@@ -154,14 +200,28 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     if (prepItems.length === 0 && sample.tests && Array.isArray(sample.tests)) {
       sample.tests.forEach((t: any) => {
         if (t.requiresCutting || t.preparationRequired) {
+          const saved = savedTests.find((st: any) => st.testId === (t.testId || t.id));
           prepItems.push({
+            id: saved?.id || null,
+            plannedTestMethodID: t.plannedTestMethodID || 0,
+            plannedTestType: t.plannedTestType || 'General',
             testId: t.testId || t.id || 0,
             testName: t.testName || t.name || 'Test Method',
             standardId: t.standardId || t.standardID || 0,
             standardName: t.standardName || '',
-            quantity: +(t.quantity || 1),
-            requiresCutting: t.requiresCutting ?? true,
-            noTesting: t.noTesting ?? false
+            quantity: +(saved?.quantity || t.quantity || 1),
+            specimenPreparationMasterID: saved?.specimenPreparationMasterID || null,
+            specimenSize: saved?.specimenSize || '',
+            specimenRawMaterialSize: saved?.specimenRawMaterialSize || '',
+            drawingFilePath: saved?.drawingFilePath || '',
+            fileName: saved?.fileName || '',
+            resolvedMachiningRate: saved?.machiningRate || 0,
+            resolvedCuttingRate: saved?.cuttingRate || 0,
+            requiresCutting: saved ? (saved.requiresCutting ?? true) : (t.requiresCutting ?? true),
+            requiresMachining: saved ? (saved.requiresMachining ?? true) : true,
+            noTesting: saved ? (saved.noTesting ?? false) : (t.noTesting ?? false),
+            remarks: saved?.remarks || '',
+            status: saved?.status || 'Pending'
           });
         }
       });
@@ -173,6 +233,9 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     const testsArray = this.fb.array(
       prepItems.map((item, index) => {
         const group = this.fb.group({
+          id: [item.id || null],
+          plannedTestMethodID: [item.plannedTestMethodID],
+          plannedTestType: [item.plannedTestType],
           testId: [item.testId],
           testName: [item.testName],
           standardId: [item.standardId],
@@ -182,10 +245,14 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
           specimenSize: [item.specimenSize || ''],
           specimenRawMaterialSize: [item.specimenRawMaterialSize || ''],
           drawingFilePath: [item.drawingFilePath || ''],
+          fileName: [item.fileName || ''],
           machiningRate: [item.resolvedMachiningRate || 0],
           cuttingRate: [item.resolvedCuttingRate || 0],
           requiresCutting: [item.requiresCutting],
-          noTesting: [item.noTesting]
+          requiresMachining: [item.requiresMachining],
+          noTesting: [item.noTesting],
+          remarks: [item.remarks || ''],
+          status: [item.status || 'Pending']
         });
 
         // Load Specimen Preparation Master configurations for this test & standard
@@ -196,12 +263,15 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
 
     const form = this.fb.group({
       sampleId: [sample.id],
-      numberOfCuts: [sample.numberOfCuts || null],
-      cutThickness: [sample.cutThickness || null],
-      waterJetCuttingMins: [sample.waterJetCuttingMins || null],
-      edmCutting: [sample.edmCutting || ''],
-      gasCutting: [sample.gasCutting || ''],
-      specialCutting: [sample.specialCutting || ''],
+      numberOfCuts: [savedPrep.numberOfCuts ?? sample.numberOfCuts ?? null],
+      cutThickness: [savedPrep.cutThickness ?? sample.cutThickness ?? null],
+      waterJetCuttingMins: [savedPrep.waterJetCuttingMins ?? sample.waterJetCuttingMins ?? null],
+      edmCutting: [savedPrep.edmCutting ?? sample.edmCutting ?? ''],
+      edmCuttingCharge: [savedPrep.edmCuttingCharge ?? 0],
+      gasCutting: [savedPrep.gasCutting ?? sample.gasCutting ?? ''],
+      gasCuttingCharge: [savedPrep.gasCuttingCharge ?? 0],
+      specialCutting: [savedPrep.specialCutting ?? sample.specialCutting ?? ''],
+      specialCuttingCharge: [savedPrep.specialCuttingCharge ?? 0],
       tests: testsArray
     });
 
@@ -247,8 +317,7 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
         name: selected.specimenSize ? `${selected.specimenSize} (Raw: ${selected.specimenRawMaterialSize || 'Std'})` : 'Default Specimen Size'
       };
 
-      const mRate = isHard ? (selected.priceHardMetal ?? selected.priceGeneralMetal ?? 0) : (selected.priceGeneralMetal ?? 0);
-      const cRate = isHard ? (selected.cuttingRateHardMetal ?? selected.cuttingRateGeneralMetal ?? 0) : (selected.cuttingRateGeneralMetal ?? 0);
+      const { mRate, cRate } = this.resolveRates(selected, isHard);
 
       testGroup.patchValue({
         specimenPreparationMasterID: selected.id,
@@ -271,6 +340,20 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
       }
       this.cdr.markForCheck();
     }
+  }
+
+  private resolveRates(raw: any, isHard: boolean): { mRate: number; cRate: number } {
+    if (!raw) return { mRate: 0, cRate: 0 };
+    const ver = raw.versions && raw.versions.length > 0
+      ? [...raw.versions].sort((a: any, b: any) => new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime())[0]
+      : null;
+    const mRate = isHard
+      ? (ver?.priceHardMetal ?? raw.currentPriceHardMetal ?? raw.priceHardMetal ?? ver?.priceGeneralMetal ?? raw.currentPriceGeneralMetal ?? raw.priceGeneralMetal ?? 0)
+      : (ver?.priceGeneralMetal ?? raw.currentPriceGeneralMetal ?? raw.priceGeneralMetal ?? 0);
+    const cRate = isHard
+      ? (ver?.cuttingRateHardMetal ?? raw.cuttingRateHardMetal ?? ver?.cuttingRateGeneralMetal ?? raw.cuttingRateGeneralMetal ?? 0)
+      : (ver?.cuttingRateGeneralMetal ?? raw.cuttingRateGeneralMetal ?? 0);
+    return { mRate: +mRate || 0, cRate: +cRate || 0 };
   }
 
   getSpecimenDropdownFn = (sampleId: number, testIndex: number) => {
@@ -305,14 +388,16 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     const raw = item?.rawObj;
 
     if (raw) {
-      const mRate = isHard ? (raw.priceHardMetal ?? raw.priceGeneralMetal ?? 0) : (raw.priceGeneralMetal ?? 0);
-      const cRate = isHard ? (raw.cuttingRateHardMetal ?? raw.cuttingRateGeneralMetal ?? 0) : (raw.cuttingRateGeneralMetal ?? 0);
+      const { mRate, cRate } = this.resolveRates(raw, isHard);
 
       testGroup.patchValue({
         specimenPreparationMasterID: raw.id,
         specimenSize: raw.specimenSize || '',
         specimenRawMaterialSize: raw.specimenRawMaterialSize || '',
         drawingFilePath: raw.drawingFilePath || '',
+        quantity: raw.specimenQuantity && raw.specimenQuantity > 0 ? raw.specimenQuantity : testGroup.get('quantity')?.value,
+        requiresCutting: raw.cuttingRequired !== undefined ? raw.cuttingRequired : testGroup.get('requiresCutting')?.value,
+        requiresMachining: raw.machiningRequired !== undefined ? raw.machiningRequired : testGroup.get('requiresMachining')?.value,
         machiningRate: mRate,
         cuttingRate: cRate
       });
@@ -326,6 +411,9 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
         prepItem.fileName = raw.fileName;
         prepItem.resolvedMachiningRate = mRate;
         prepItem.resolvedCuttingRate = cRate;
+        if (raw.specimenQuantity) prepItem.quantity = raw.specimenQuantity;
+        if (raw.cuttingRequired !== undefined) prepItem.requiresCutting = raw.cuttingRequired;
+        if (raw.machiningRequired !== undefined) prepItem.requiresMachining = raw.machiningRequired;
       }
     } else {
       testGroup.patchValue({
@@ -356,6 +444,7 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     const tests = this.getTests(sampleId);
     if (!tests) return 0;
     return tests.controls.reduce((sum, ctrl) => {
+      if (!ctrl.get('requiresMachining')?.value) return sum;
       const qty = +(ctrl.get('quantity')?.value || 1);
       const rate = +(ctrl.get('machiningRate')?.value || 0);
       return sum + (qty * rate);
@@ -370,6 +459,7 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     let maxCuttingRate = 0;
     if (tests && tests.length > 0) {
       tests.controls.forEach(ctrl => {
+        if (!ctrl.get('requiresCutting')?.value) return;
         const rate = +(ctrl.get('cuttingRate')?.value || 0);
         if (rate > maxCuttingRate) maxCuttingRate = rate;
       });
@@ -381,7 +471,10 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     const form = this.sampleForms[sampleId];
     if (!form) return 0;
     const waterJetMins = +(form.get('waterJetCuttingMins')?.value || 0);
-    return waterJetMins * 10; // Nominal ₹10/min rate calculation if entered
+    const edm = +(form.get('edmCuttingCharge')?.value || 0);
+    const gas = +(form.get('gasCuttingCharge')?.value || 0);
+    const special = +(form.get('specialCuttingCharge')?.value || 0);
+    return (waterJetMins * 10) + edm + gas + special;
   }
 
   getTotalPreparationCost(sampleId: number): number {
@@ -407,8 +500,11 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
       cutThickness: formValue.cutThickness,
       waterJetCuttingMins: formValue.waterJetCuttingMins,
       edmCutting: formValue.edmCutting,
+      edmCuttingCharge: formValue.edmCuttingCharge,
       gasCutting: formValue.gasCutting,
+      gasCuttingCharge: formValue.gasCuttingCharge,
       specialCutting: formValue.specialCutting,
+      specialCuttingCharge: formValue.specialCuttingCharge,
       machiningChargesTotal: this.getMachiningSubtotal(sampleId),
       cuttingChargesTotal: this.getCuttingSubtotal(sampleId),
       otherChargesTotal: this.getOtherSubtotal(sampleId),
@@ -444,8 +540,11 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
           cutThickness: formValue.cutThickness,
           waterJetCuttingMins: formValue.waterJetCuttingMins,
           edmCutting: formValue.edmCutting,
+          edmCuttingCharge: formValue.edmCuttingCharge,
           gasCutting: formValue.gasCutting,
+          gasCuttingCharge: formValue.gasCuttingCharge,
           specialCutting: formValue.specialCutting,
+          specialCuttingCharge: formValue.specialCuttingCharge,
           machiningChargesTotal: this.getMachiningSubtotal(sample.id),
           cuttingChargesTotal: this.getCuttingSubtotal(sample.id),
           otherChargesTotal: this.getOtherSubtotal(sample.id),

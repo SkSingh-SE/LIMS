@@ -46,6 +46,48 @@
       <!-- Machining Charges Content -->
       <div *ngIf="!loading && selectedSampleId">
 
+        <!-- Specimen Preparation Master Planned Items -->
+        <div class="card mb-3 border-0 bg-light-subtle" *ngIf="selectedSamplePrep?.tests?.length">
+          <div class="card-header bg-transparent py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
+            <span class="fw-semibold text-danger small d-flex align-items-center gap-1">
+              <i class="bi bi-tools text-danger"></i> Planned Specimen Preparation Requirements
+            </span>
+            <span class="badge bg-secondary-subtle text-secondary small">
+              {{ selectedSamplePrep.tests.length }} Planned Item(s)
+            </span>
+          </div>
+          <div class="table-responsive p-0">
+            <table class="table table-sm table-bordered table-hover mb-0 align-middle">
+              <thead class="table-light small">
+                <tr>
+                  <th>Test / Method</th>
+                  <th>Specimen Size</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-center">Machining (&#8377;)</th>
+                  <th class="text-center">Cutting (&#8377;)</th>
+                  <th class="text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let ti of selectedSamplePrep.tests" class="fs-12">
+                  <td class="fw-semibold">{{ ti.testName || 'Test Method' }}</td>
+                  <td>{{ ti.specimenSize || 'Standard' }}</td>
+                  <td class="text-center">{{ ti.quantity || 1 }}</td>
+                  <td class="text-center">{{ ti.machiningTotal ? (ti.machiningTotal | number:'1.2-2') : '-' }}</td>
+                  <td class="text-center">{{ ti.cuttingTotal ? (ti.cuttingTotal | number:'1.2-2') : '-' }}</td>
+                  <td class="text-center">
+                    <span class="badge fs-10" [ngClass]="{
+                      'bg-success-subtle text-success border border-success': ti.status === 'Completed' || ti.status === 'QCVerified',
+                      'bg-warning-subtle text-warning-emphasis border border-warning': ti.status === 'CuttingCompleted' || ti.status === 'MachiningCompleted' || ti.status === 'InProgress',
+                      'bg-secondary-subtle text-secondary': ti.status === 'Pending'
+                    }">{{ ti.status || 'Pending' }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Charges Table -->
         <div class="table-responsive">
           <table class="table bordered-table align-middle w-100 mb-3">

@@ -31,8 +31,10 @@ export class MachiningChargeMasterComponent implements OnInit {
     { key: 'specimenRawMaterialSize', type: 'string', label: 'Raw Material Size', filter: true },
     { key: 'laboratoryTestName', type: 'string', label: 'Laboratory Test', filter: true },
     { key: 'testMethodSpecificationName', type: 'string', label: 'Test Method Specification', filter: true },
-    // { key: 'currentPriceGeneralMetal', type: 'number', label: 'Normal Price (₹)', filter: false },
-    // { key: 'currentPriceHardMetal', type: 'number', label: 'Hard Price (₹)', filter: false },
+    { key: 'specimenQuantity', type: 'number', label: 'Qty', filter: false },
+    { key: 'preparationRequired', type: 'bool', label: 'Prep Req.', filter: false },
+    { key: 'cuttingRequired', type: 'bool', label: 'Cutting', filter: false },
+    { key: 'machiningRequired', type: 'bool', label: 'Machining', filter: false },
     { key: 'versionCount', type: 'number', label: 'Years', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
@@ -105,6 +107,13 @@ export class MachiningChargeMasterComponent implements OnInit {
       testMethodStandardID: [null, Validators.required],
       specimenRawMaterialSize: [''],
       specimenSize: ['', Validators.required],
+      specimenQuantity: [1, [Validators.required, Validators.min(1)]],
+      preparationRequired: [true],
+      cuttingRequired: [true],
+      machiningRequired: [true],
+      otherPreparation: [false],
+      cuttingInstructions: [''],
+      machiningInstructions: [''],
       remark: [''],
       fileName: [''],
       uploadReferenceID: [null],
@@ -224,6 +233,13 @@ export class MachiningChargeMasterComponent implements OnInit {
           testMethodStandardID: response.testMethodStandardID,
           specimenRawMaterialSize: response.specimenRawMaterialSize,
           specimenSize: response.specimenSize,
+          specimenQuantity: response.specimenQuantity ?? 1,
+          preparationRequired: response.preparationRequired ?? true,
+          cuttingRequired: response.cuttingRequired ?? true,
+          machiningRequired: response.machiningRequired ?? true,
+          otherPreparation: response.otherPreparation ?? false,
+          cuttingInstructions: response.cuttingInstructions || '',
+          machiningInstructions: response.machiningInstructions || '',
           remark: response.remark,
           fileName: response.fileName,
           uploadReferenceID: response.uploadReferenceID
@@ -472,6 +488,13 @@ export class MachiningChargeMasterComponent implements OnInit {
     fd.append('testMethodStandardID', String(raw.testMethodStandardID));
     fd.append('specimenRawMaterialSize', raw.specimenRawMaterialSize || '');
     fd.append('specimenSize', raw.specimenSize || '');
+    fd.append('specimenQuantity', String(raw.specimenQuantity ?? 1));
+    fd.append('preparationRequired', String(!!raw.preparationRequired));
+    fd.append('cuttingRequired', String(!!raw.cuttingRequired));
+    fd.append('machiningRequired', String(!!raw.machiningRequired));
+    fd.append('otherPreparation', String(!!raw.otherPreparation));
+    fd.append('cuttingInstructions', raw.cuttingInstructions || '');
+    fd.append('machiningInstructions', raw.machiningInstructions || '');
     fd.append('remark', raw.remark || '');
     fd.append('fileName', raw.fileName || '');
     fd.append('uploadReferenceID', raw.uploadReferenceID != null ? String(raw.uploadReferenceID) : '');

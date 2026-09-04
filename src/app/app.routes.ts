@@ -606,7 +606,7 @@ export const routes: Routes = [
             // { path: 'sample/cutting/create/:id', component: CuttingSampleFormComponent , canDeactivate: [unsavedChangesGuard]},
             // { path: 'sample/cutting/edit/:id', component: CuttingSampleFormComponent , canDeactivate: [unsavedChangesGuard]},
             // { path: 'sample/cutting/details/:id', component: CuttingSampleFormComponent },
-            // { path: 'sample/machining', component: MachiningChallanComponent },
+            { path: 'sample/machining', component: MachiningChallanComponent },
             { path: 'sample/preparation', loadComponent: () => import('./components/sample-prepration/sample-preparation-list/sample-preparation-list.component').then(m => m.SamplePreparationListComponent) },
             { path: 'sample/preparation/create/:id', loadComponent: () => import('./components/sample-prepration/sample-preparation-form/sample-preparation-form.component').then(m => m.SamplePreparationFormComponent) },
             { path: 'sample/preparation/edit/:id', loadComponent: () => import('./components/sample-prepration/sample-preparation-form/sample-preparation-form.component').then(m => m.SamplePreparationFormComponent) },

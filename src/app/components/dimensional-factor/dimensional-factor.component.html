@@ -183,8 +183,8 @@
                                 <div class="flex-grow-1">
                                     <app-searchable-dropdown
                                         [fetchDataFn]="getUnitDropdown"
-                                        [selectedItem]="DimensionalFactorForm.get('parameterUnitID')?.value"
-                                        (itemSelected)="DimensionalFactorForm.get('parameterUnitID')?.setValue($event?.id || null)"
+                                        [selectedItem]="selectedUnitDropdownItem"
+                                        (itemSelected)="onUnitSelected($event)"
                                         [placeholder]="'Select Unit'"
                                         [labelName]="'Unit'"
                                         [isDisabled]="isViewMode">

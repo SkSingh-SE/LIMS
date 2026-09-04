@@ -190,8 +190,8 @@
                     <div class="mb-1">
                         <app-searchable-dropdown
                             [fetchDataFn]="getUnitDropdown"
-                            [selectedItem]="productSizeForm.get('parameterUnitID')?.value"
-                            (itemSelected)="productSizeForm.get('parameterUnitID')?.setValue($event?.id || null)"
+                            [selectedItem]="selectedUnitDropdownItem"
+                            (itemSelected)="onUnitSelected($event)"
                             [placeholder]="'Select Unit'"
                             [labelName]="'Unit'"
                             [isDisabled]="isViewMode">

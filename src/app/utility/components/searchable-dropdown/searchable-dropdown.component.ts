@@ -102,7 +102,7 @@ export class SearchableDropdownComponent {
         // Full object passed — use directly for rebind
         this.selectedLabel = val.additionalValues?.['fullDisplayName'] || (val.name ?? val.label ?? String(val.id));
         this.hasValidSelection = true;
-        this.dropdownData = [val, ...this.dropdownData.filter(x => x && x.id !== val.id)];
+        this.dropdownData = [val, ...this.dropdownData.filter(x => x && (val.equivalentId ? x.equivalentId !== val.equivalentId : x.id !== val.id))];
         this.cdr.markForCheck();
         return;
       }
@@ -248,7 +248,7 @@ export class SearchableDropdownComponent {
       const portal = new ComponentPortal(DropdownPanelComponent, this.vcr);
       this.dropdownComponentRef = this.overlayRef.attach(portal);
       this.dropdownComponentRef.instance.items = this.dropdownData;
-      this.dropdownComponentRef.instance.selectedItemId = this.selectedItem?.id ?? this.selectedItem;
+      this.dropdownComponentRef.instance.selectedItemId = this.selectedItem;
       this.dropdownComponentRef.instance.highlightedIndex = this.highlightedIndex;
       this.dropdownComponentRef.instance.loading = this.loading;
 

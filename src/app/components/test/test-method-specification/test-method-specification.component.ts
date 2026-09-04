@@ -448,9 +448,9 @@ export class TestMethodSpecificationComponent implements OnInit {
   onFileChange(event: any, index: number) {
     const file = event.target.files[0];
     if (file) {
-      const maxSize = 250 * 1024 * 1024; // 250 MB
+      const maxSize = 100 * 1024 * 1024; // 100 MB
       if (file.size > maxSize) {
-        this.toastService.show(`File size should be less than 250 MB.`, 'warning');
+        this.toastService.show(`File size should be less than 100 MB.`, 'warning');
         event.target.value = '';
         return;
       }
@@ -484,11 +484,18 @@ export class TestMethodSpecificationComponent implements OnInit {
     this.versions.at(index).patchValue({ standardFile: '', standardFilePath: '', file: null, uploadReferenceID: null });
   }
 
-  /** Test Method Caption — "{Org} - {Std} - {Part}" without Year / Version */
+  /** Test Method Caption — "{Org} - {Std} - {Version}" without Year */
   getCaption(groupOrYear?: any, index?: number): string {
     const org = (this.selectedStandardOrganization?.name || '').toString().trim();
     const std = (this.testSpecificationForm.get('testMethodStandard')?.value || '').toString().trim();
     const part = (this.testSpecificationForm.get('part')?.value || '').toString().trim();
+
+    let version = '';
+    if (groupOrYear && typeof groupOrYear.get === 'function') {
+      version = (groupOrYear.get('version')?.value || '').toString().trim();
+    } else if (typeof groupOrYear === 'string') {
+      version = groupOrYear.trim();
+    }
 
     let parts: string[] = [];
     if (org) parts.push(org);
@@ -496,6 +503,9 @@ export class TestMethodSpecificationComponent implements OnInit {
       parts.push(`${std} - ${part}`);
     } else if (std) {
       parts.push(std);
+    }
+    if (version) {
+      parts.push(version);
     }
     return parts.join(' - ');
   }

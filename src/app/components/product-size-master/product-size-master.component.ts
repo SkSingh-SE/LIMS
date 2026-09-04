@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { CommonModule } from '@angular/common';
@@ -97,6 +97,8 @@ export class ProductSizeMasterComponent implements OnInit {
       maxValue: [null],
       parameterUnitID: [null],
       parameterUnitEquivalentID: [null],
+    }, {
+      validators: [this.validateMinMax]
     });
   }
 
@@ -318,11 +320,69 @@ export class ProductSizeMasterComponent implements OnInit {
       this.bsModal.hide();
     }
     this.selectedUnitDropdownItem = null;
-    this.productSizeForm.reset({ id: 0, parameterUnitID: null, parameterUnitEquivalentID: null });
+    this.productSizeForm.reset({ id: 0, sizeType: '', minValue: null, maxValue: null, parameterUnitID: null, parameterUnitEquivalentID: null });
     this.productSizeForm.enable();
     this.selectedId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
+  }
+
+  private sanitizeDecimal(val: any): number | null {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (trimmed === '') return null;
+      const num = Number(trimmed);
+      return isNaN(num) ? null : num;
+    }
+    return typeof val === 'number' && !isNaN(val) ? val : null;
+  }
+
+  validateMinMax = (control: AbstractControl): ValidationErrors | null => {
+    const group = control as FormGroup;
+    const minCtrl = group.get('minValue');
+    const maxCtrl = group.get('maxValue');
+    if (!minCtrl || !maxCtrl) return null;
+
+    const min = this.sanitizeDecimal(minCtrl.value);
+    const max = this.sanitizeDecimal(maxCtrl.value);
+
+    const hasMin = min !== null;
+    const hasMax = max !== null;
+
+    // Rule 1: Min or Max is required (at least one must be provided)
+    if (!hasMin && !hasMax) {
+      this.setControlError(minCtrl, 'minOrMaxRequired', true);
+      this.setControlError(maxCtrl, 'minOrMaxRequired', true);
+      return { minOrMaxRequired: true };
+    } else {
+      this.removeControlError(minCtrl, 'minOrMaxRequired');
+      this.removeControlError(maxCtrl, 'minOrMaxRequired');
+    }
+
+    // Rule 2: If both are provided, min cannot be > max
+    if (hasMin && hasMax && min > max) {
+      this.setControlError(maxCtrl, 'maxLessThanMin', true);
+      return { minGreaterThanMax: true };
+    } else {
+      this.removeControlError(maxCtrl, 'maxLessThanMin');
+    }
+
+    return null;
+  };
+
+  private setControlError(ctrl: AbstractControl, key: string, value: any): void {
+    const current = ctrl.errors || {};
+    if (!current[key]) {
+      ctrl.setErrors({ ...current, [key]: value }, { emitEvent: false });
+    }
+  }
+
+  private removeControlError(ctrl: AbstractControl, key: string): void {
+    if (ctrl.errors && ctrl.errors[key]) {
+      const { [key]: _, ...rest } = ctrl.errors;
+      ctrl.setErrors(Object.keys(rest).length ? rest : null, { emitEvent: false });
+    }
   }
 
   onSubmit(): void {
@@ -332,7 +392,24 @@ export class ProductSizeMasterComponent implements OnInit {
       this.toastService.show('Please fix the validation errors before submitting.', 'warning');
       return;
     }
-    const formData = this.productSizeForm.value;
+
+    const rawValue = this.productSizeForm.value;
+    const min = this.sanitizeDecimal(rawValue.minValue);
+    const max = this.sanitizeDecimal(rawValue.maxValue);
+
+    if (min !== null && max !== null && min > max) {
+      this.toastService.show('Min Value cannot be greater than Max Value.', 'warning');
+      return;
+    }
+
+    const formData = {
+      ...rawValue,
+      minValue: min,
+      maxValue: max,
+      parameterUnitID: rawValue.parameterUnitID ? Number(rawValue.parameterUnitID) : null,
+      parameterUnitEquivalentID: rawValue.parameterUnitEquivalentID ? Number(rawValue.parameterUnitEquivalentID) : null,
+    };
+
     if (this.isEditMode) {
       this.productSizeService.updateProductSize(formData).subscribe({
         next: (response) => {

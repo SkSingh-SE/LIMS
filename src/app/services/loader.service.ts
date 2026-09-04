@@ -5,15 +5,19 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root'
 })
 export class LoaderService {
-  private activeRequests = new Set<string>();
+  private activeRequests = new Map<string, number>();
   private loading = new BehaviorSubject<boolean>(false);
   public loading$ = this.loading.asObservable();
   private watchdogTimer: any = null;
-  private readonly MAX_LOADER_TIMEOUT_MS = 6000; // 6 seconds safety watchdog
 
-  show(reqId?: string): string {
+  // Default safety watchdog: 10 minutes (600,000 ms) so normal APIs/reports/calculations complete
+  public static readonly DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+  // Upload safety watchdog: 30 minutes (1,800,000 ms) for large files (up to 250 MB)
+  public static readonly UPLOAD_TIMEOUT_MS = 30 * 60 * 1000;
+
+  show(reqId?: string, timeoutMs: number = LoaderService.DEFAULT_TIMEOUT_MS): string {
     const id = reqId || this.generateId();
-    this.activeRequests.add(id);
+    this.activeRequests.set(id, timeoutMs);
 
     if (this.activeRequests.size > 0 && !this.loading.value) {
       this.loading.next(true);
@@ -27,7 +31,7 @@ export class LoaderService {
     if (reqId) {
       this.activeRequests.delete(reqId);
     } else if (this.activeRequests.size > 0) {
-      const first = this.activeRequests.values().next().value;
+      const first = this.activeRequests.keys().next().value;
       if (first) this.activeRequests.delete(first);
     }
 
@@ -51,12 +55,18 @@ export class LoaderService {
 
   private resetWatchdog(): void {
     this.clearWatchdog();
+    if (this.activeRequests.size === 0) return;
+
+    // Use maximum timeout among active requests
+    const timeouts = Array.from(this.activeRequests.values());
+    const maxTimeout = timeouts.length > 0 ? Math.max(...timeouts) : LoaderService.DEFAULT_TIMEOUT_MS;
+
     this.watchdogTimer = setTimeout(() => {
       if (this.activeRequests.size > 0 || this.loading.value) {
-        console.warn('[LoaderService] Safety watchdog triggered: Clearing stuck loader after timeout.');
+        console.warn(`[LoaderService] Safety watchdog triggered: Clearing stuck loader after ${maxTimeout / 1000}s.`);
         this.forceHide();
       }
-    }, this.MAX_LOADER_TIMEOUT_MS);
+    }, maxTimeout);
   }
 
   private clearWatchdog(): void {

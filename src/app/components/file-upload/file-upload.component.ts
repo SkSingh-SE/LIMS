@@ -19,7 +19,7 @@ export class FileUploadComponent {
   uploadComplete: boolean = false;
   uploadError: string | null = null;
   allowedFormats: string[] = ['pdf', 'png', 'jpg', 'jpeg', 'docx']; // Allowed file formats
-  maxSizeInMB: number = 5; // Max file size in MB
+  maxSizeInMB: number = 250; // Max file size in MB
 
   fileTypes = Object.keys(FileType)
   .filter(key => isNaN(Number(key))) 

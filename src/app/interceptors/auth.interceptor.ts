@@ -32,14 +32,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   let token = authService.getUserData()?.token; // Retrieve token from service
   const excludedUrls = ['/api/Auth/login', '/api/Auth/refresh-token', 'api/Auth/refresh-token', '/api/Auth/forgot'];
   const excludeLoaderUrl = [
-    '/api/Auth/login',
-    '/api/Auth/forgot',
-    '/api/Auth/refresh-token',
-    'api/Auth/refresh-token',
-    '/api/GstValidator',
-    '/api/ParameterUnitMaster/equivalents',
+    '/api/auth/login',
+    '/api/auth/forgot',
+    '/api/auth/refresh-token',
+    '/api/gstvalidator',
+    '/api/parameterunitmaster/equivalents',
     '/hubs/',
-    '/api/Notification/'
+    '/api/notification'
   ];
 
   const urlLower = req.url.toLowerCase();
@@ -48,8 +47,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                              urlLower.includes('search') ||
                              urlLower.includes('lookup');
 
-  const shouldExcludeAuth = excludedUrls.some(url => req.url.includes(url));
-  const shouldExcludeLoader = isDropdownOrLookup || excludeLoaderUrl.some(url => req.url.includes(url));
+  const shouldExcludeAuth = excludedUrls.some(url => urlLower.includes(url.toLowerCase()));
+  const shouldExcludeLoader = isDropdownOrLookup || excludeLoaderUrl.some(url => urlLower.includes(url.toLowerCase()));
+
+  const isFileUpload = (typeof FormData !== 'undefined' && req.body instanceof FormData) ||
+                       urlLower.includes('upload') ||
+                       urlLower.includes('/files');
+  const requestTimeoutMs = isFileUpload ? LoaderService.UPLOAD_TIMEOUT_MS : LoaderService.DEFAULT_TIMEOUT_MS;
 
   const getErrorMessage = (error: HttpErrorResponse): string => {
     if (error.status === 0) {
@@ -98,7 +102,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
     let reqId: string | null = null;
     if (!shouldExcludeLoader) {
-      reqId = loaderService.show();
+      reqId = loaderService.show(undefined, requestTimeoutMs);
     }
 
     return next(modifiedReq).pipe(
@@ -166,7 +170,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // No token or excluded — show loader for non-excluded URLs
   let reqId: string | null = null;
   if (!shouldExcludeLoader) {
-    reqId = loaderService.show();
+    reqId = loaderService.show(undefined, requestTimeoutMs);
   }
 
   return next(req).pipe(

@@ -448,9 +448,9 @@ export class TestMethodSpecificationComponent implements OnInit {
   onFileChange(event: any, index: number) {
     const file = event.target.files[0];
     if (file) {
-      const maxSize = 100 * 1024 * 1024; // 100 MB
+      const maxSize = 250 * 1024 * 1024; // 250 MB
       if (file.size > maxSize) {
-        this.toastService.show(`File size should be less than 100 MB.`, 'warning');
+        this.toastService.show(`File size should be less than 250 MB.`, 'warning');
         event.target.value = '';
         return;
       }

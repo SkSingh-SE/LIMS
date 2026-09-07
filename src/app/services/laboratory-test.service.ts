@@ -2,6 +2,13 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {
+  LaboratoryTestListDto,
+  LaboratoryTestDetailDto,
+  LaboratoryTestCreateDto,
+  LaboratoryTestUpdateDto,
+  LaboratoryTestDropdownDto
+} from '../models/laboratory-test.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +18,59 @@ export class LaboratoryTestService {
   private apiUrl = environment.apiUrl + "/LaboratoryTest";
 
   constructor(private http: HttpClient) {}
+
+  // ── Screen 13: Universal Test Definition Methods ──
+
+  getPagedUniversalTests(
+    filter: any,
+    disciplineId?: number | null,
+    departmentId?: number | null,
+    isActive?: boolean | null
+  ): Observable<{ items: LaboratoryTestListDto[]; totalRecords: number; pageNumber: number; pageSize: number }> {
+    let url = `${this.apiUrl}/paged`;
+    const params: string[] = [];
+    if (disciplineId !== undefined && disciplineId !== null) params.push(`disciplineId=${disciplineId}`);
+    if (departmentId !== undefined && departmentId !== null) params.push(`departmentId=${departmentId}`);
+    if (isActive !== undefined && isActive !== null) params.push(`isActive=${isActive}`);
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    return this.http.post<any>(url, filter);
+  }
+
+  getUniversalTestDetails(id: number): Observable<LaboratoryTestDetailDto> {
+    return this.http.get<LaboratoryTestDetailDto>(`${this.apiUrl}/details/${id}`);
+  }
+
+  createUniversalTest(payload: LaboratoryTestCreateDto): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/create`, payload);
+  }
+
+  updateUniversalTest(payload: LaboratoryTestUpdateDto): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update`, payload);
+  }
+
+  toggleTestStatus(id: number): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/toggle-status/${id}`, {});
+  }
+
+  deleteUniversalTest(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
+  }
+
+  getUniversalDropdown(disciplineId?: number): Observable<LaboratoryTestDropdownDto[]> {
+    let url = `${this.apiUrl}/universal-dropdown`;
+    if (disciplineId) url += `?disciplineId=${disciplineId}`;
+    return this.http.get<LaboratoryTestDropdownDto[]>(url);
+  }
+
+  checkCodeUnique(code: string, excludeId?: number): Observable<{ isUnique: boolean }> {
+    let url = `${this.apiUrl}/check-code-unique?code=${encodeURIComponent(code)}`;
+    if (excludeId) url += `&excludeId=${excludeId}`;
+    return this.http.get<{ isUnique: boolean }>(url);
+  }
+
+  // ── Legacy / Cross-module Methods ──
 
   getAllLaboratoryTests(filter: any): Observable<any> {
     return this.http.post<any>(this.apiUrl + "/list", filter);

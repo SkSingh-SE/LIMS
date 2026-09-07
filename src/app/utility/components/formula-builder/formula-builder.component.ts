@@ -102,18 +102,14 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
 
   async loadParameters() {
     try {
-      // Load all parameters for the given type to build the list
-      const payload = {
-        pageNumber: 1,
-        pageSize: 1000,
-        searchTerm: ''
-      };
-
       let res;
       if (this.parameterType === 'Chemical') {
         res = await firstValueFrom(this.parameterService.getChemicalParameterDropdown('', 0, 1000));
-      } else {
+      } else if (this.parameterType === 'Mechanical') {
         res = await firstValueFrom(this.parameterService.getMechanicalParameterDropdown('', 0, 1000));
+      } else {
+        // Universal / All / Reported / Observed
+        res = await firstValueFrom(this.parameterService.getParameterDropdown('', 0, 2000));
       }
       
       this.availableParameters = res || [];
@@ -127,30 +123,53 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
   filterParams() {
     const s = this.searchTerm.toLowerCase();
     this.filteredParameters = this.availableParameters.filter(p => 
-      p.name?.toLowerCase().includes(s) || p.displayText?.toLowerCase().includes(s)
+      (p.name || '').toLowerCase().includes(s) || 
+      (p.displayText || '').toLowerCase().includes(s) ||
+      (p.additionalValues?.Code || p.code || '').toLowerCase().includes(s)
     );
+  }
+
+  getParameterToken(param: any): string {
+    const code = (param.additionalValues?.Code || param.code || '').trim();
+    if (code) return `{${code}}`;
+    const symbol = (param.additionalValues?.Symbol || param.symbol || '').trim();
+    if (symbol) return `{${symbol}}`;
+    const pureName = (param.additionalValues?.PureName || param.name || param.displayText || '').trim();
+    if (pureName) return `{${pureName.replace(/[\s-]+/g, '_').toUpperCase()}}`;
+    return `{PARAM_${param.id || param.value}}`;
+  }
+
+  normalizeFormula(formula: string): string {
+    if (!formula) return '';
+    return formula.replace(/\{P(\d+)\}/gi, (match, idStr) => {
+      const id = parseInt(idStr, 10);
+      const found = this.availableParameters.find((p: any) => (p.id || p.value) === id);
+      if (found) {
+        return this.getParameterToken(found);
+      }
+      return match;
+    });
   }
 
   parseInitialFormula() {
     this.tokens = [];
     if (!this.currentFormula) return;
     
-    // For now, if editing an existing formula, we'll just show it as a single generic block 
-    // unless we write a full parser. A simple fallback is to add it as a single token.
-    // In a full implementation, you would lex the string back into tokens.
+    const normalized = this.normalizeFormula(this.currentFormula);
     this.tokens.push({
       type: 'function',
-      value: this.currentFormula,
-      display: this.currentFormulaDisplay || this.currentFormula
+      value: normalized,
+      display: this.currentFormulaDisplay || normalized
     });
   }
 
   addParameterToken(param: any) {
     const id = param.id || param.value;
-    const name = param.name || param.displayText;
+    const name = param.additionalValues?.PureName || param.name || param.displayText;
+    const tokenVal = this.getParameterToken(param);
     this.tokens.push({
       type: 'param',
-      value: `{P${id}}`, 
+      value: tokenVal, 
       display: name,
       paramId: id,
       paramName: name
@@ -245,17 +264,25 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
       if (constants[raw]) { this.smartTokens.push({ token: raw, type: 'number', matched: `= ${constants[raw]}` }); continue; }
       if (functionNames.has(raw.toUpperCase())) { this.smartTokens.push({ token: raw.toUpperCase(), type: 'function' }); continue; }
 
-      const exact = this.availableParameters.find((p: any) => (p.name || p.displayText).toLowerCase() === raw.toLowerCase());
+      const exact = this.availableParameters.find((p: any) => 
+        (p.name || p.displayText || '').toLowerCase() === raw.toLowerCase() ||
+        (p.additionalValues?.Code || p.code || '').toLowerCase() === raw.toLowerCase()
+      );
       if (exact) { 
-        this.smartTokens.push({ token: raw, type: 'param', matched: exact.name || exact.displayText, paramRef: `{P${exact.id || exact.value}}` }); 
+        const ref = this.getParameterToken(exact);
+        this.smartTokens.push({ token: raw, type: 'param', matched: exact.additionalValues?.PureName || exact.name || exact.displayText, paramRef: ref }); 
         continue; 
       }
 
-      const partial = this.availableParameters.find((p: any) => (p.name || p.displayText).toLowerCase().startsWith(raw.toLowerCase()));
+      const partial = this.availableParameters.find((p: any) => 
+        (p.name || p.displayText || '').toLowerCase().startsWith(raw.toLowerCase()) ||
+        (p.additionalValues?.Code || p.code || '').toLowerCase().startsWith(raw.toLowerCase())
+      );
       if (partial) {
-        this.smartTokens.push({ token: raw, type: 'param', matched: `${partial.name || partial.displayText}?`, paramRef: `{P${partial.id || partial.value}}` });
-        this.smartErrors.push(`"${raw}" → did you mean "${partial.name || partial.displayText}"?`);
-        continue;
+        const ref = this.getParameterToken(partial);
+        this.smartTokens.push({ token: raw, type: 'param', matched: `${partial.additionalValues?.PureName || partial.name || partial.displayText}?`, paramRef: ref });
+        this.smartErrors.push(`"${raw}" → did you mean "${partial.additionalValues?.PureName || partial.name || partial.displayText}"?`);
+        continue; 
       }
 
       this.smartTokens.push({ token: raw, type: 'unknown' });

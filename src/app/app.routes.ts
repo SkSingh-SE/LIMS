@@ -32,6 +32,7 @@ import { ProductConditionComponent } from './components/product-condition/produc
 import { SpecimenOrientationComponent } from './components/specimen-orientation/specimen-orientation.component';
 import { ChemicalParameterComponent } from './components/parameter/chemical-parameter/chemical-parameter.component';
 import { MechanicalParameterComponent } from './components/parameter/mechanical-parameter/mechanical-parameter.component';
+import { ParameterListComponent } from './components/parameter/parameter-list/parameter-list.component';
 import { StandardOrgnizationComponent } from './components/standard-orgnization/standard-orgnization.component';
 import { UniversalCodeTypeComponent } from './components/universal-code-type/universal-code-type.component';
 import { InvoiceCaseComponent } from './components/test/invoice-case/invoice-case.component';
@@ -43,6 +44,7 @@ import { CustomMaterialSpecificationFormComponent } from './components/material-
 import { ToleranceMasterComponent } from './components/tolerance-master/tolerance-master.component';
 import { HardnessEquivalenceComponent } from './components/hardness-equivalence/hardness-equivalence.component';
 import { ParameterUnitComponent } from './components/parameter-unit/parameter-unit.component';
+import { ConditionMasterComponent } from './components/condition-master/condition-master.component';
 import { SupplierListComponent } from './components/supplier/supplier-list/supplier-list.component';
 import { SupplierFormComponent } from './components/supplier/supplier-form/supplier-form.component';
 import { LaboratoryTestListComponent } from './components/test/laboratory-test-list/laboratory-test-list.component';
@@ -155,8 +157,7 @@ export const routes: Routes = [
         component: LayoutComponent,
         canActivate: [authGuard],
         children: [
-            // { path: '', component: MainDashboardComponent }, // Default route - main dashboard
-            { path: '', loadComponent: () => import('./components/dashboard-branch-mockup/dashboard-branch-mockup.component').then(m => m.DashboardBranchMockupComponent) },
+            { path: '', component: MainDashboardComponent }, // Default route - main dashboard
             { path: 'designation', component: ListDesignationComponent },
             { path: 'designation/create', component: DesignationFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'designation/edit/:id', component: DesignationFormComponent, canDeactivate: [unsavedChangesGuard] },
@@ -180,10 +181,16 @@ export const routes: Routes = [
             { path: 'test/create', component: LaboratoryTestComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'test/edit/:id', component: LaboratoryTestComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'test/details/:id', component: LaboratoryTestComponent },
+            { path: 'discipline', loadComponent: () => import('./components/discipline/discipline-list.component').then(m => m.DisciplineListComponent) },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },
             { path: 'analysis-technique', loadComponent: () => import('./components/analysis-technique/analysis-technique.component').then(m => m.AnalysisTechniqueComponent) },
+            { path: 'test-method', loadComponent: () => import('./components/test-method/test-method-list.component').then(m => m.TestMethodListComponent) },
+            { path: 'test-method-version', loadComponent: () => import('./components/test-method-version/test-method-version-list.component').then(m => m.TestMethodVersionListComponent) },
+            { path: 'specification', loadComponent: () => import('./components/specification/specification-list/specification-list.component').then(m => m.SpecificationListComponent) },
+            { path: 'specification-version', loadComponent: () => import('./components/specification-version/specification-version-list/specification-version-list.component').then(m => m.SpecificationVersionListComponent) },
+            { path: 'specification-requirement', loadComponent: () => import('./components/specification-requirement/specification-requirement.component').then(m => m.SpecificationRequirementComponent) },
             { path: 'tpi', component: TPIComponent },
             { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },
             { path: 'tpi-inspection/create', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-form/tpi-inspection-form.component').then(m => m.TpiInspectionFormComponent), canDeactivate: [unsavedChangesGuard] },
@@ -205,6 +212,7 @@ export const routes: Routes = [
             { path: 'specimen-orientation', component: SpecimenOrientationComponent },
             { path: 'chemical-parameter', component: ChemicalParameterComponent },
             { path: 'mechanical-parameter', component: MechanicalParameterComponent },
+            { path: 'parameter', component: ParameterListComponent },
             { path: 'job-description', component: JobDescriptionListComponent },
             { path: 'job-description/create', component: JobDescriptionFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'job-description/edit/:id', component: JobDescriptionFormComponent, canDeactivate: [unsavedChangesGuard] },
@@ -340,6 +348,7 @@ export const routes: Routes = [
             { path: 'tolerance-master', component: ToleranceMasterComponent },
             { path: 'hardness-equivalence', component: HardnessEquivalenceComponent },
             { path: 'parameter-unit', component: ParameterUnitComponent },
+            { path: 'condition-master', component: ConditionMasterComponent },
             { path: 'supplier', component: SupplierListComponent },
             { path: 'supplier/create', component: SupplierFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'supplier/edit/:id', component: SupplierFormComponent, canDeactivate: [unsavedChangesGuard] },
@@ -613,6 +622,7 @@ export const routes: Routes = [
             { path: 'sample/preparation/edit/:id', loadComponent: () => import('./components/sample-prepration/sample-preparation-form/sample-preparation-form.component').then(m => m.SamplePreparationFormComponent) },
             { path: 'sample/preparation/details/:id', loadComponent: () => import('./components/sample-prepration/sample-preparation-form/sample-preparation-form.component').then(m => m.SamplePreparationFormComponent) },
             { path: 'sample/plan', component: PlanListComponent },
+            { path: 'sample/plan/universal/:id', loadComponent: () => import('./components/plan/universal-plan-workspace/universal-plan-workspace.component').then(m => m.UniversalPlanWorkspaceComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'sample/plan/edit/:id', component: PlanFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'sample/review', component: ReviewOfRequestComponent },
             { path: 'sample/review/:id', component: ReviewOfRequestFormComponent },
@@ -623,6 +633,8 @@ export const routes: Routes = [
             { path: 'sample/case/:id', component: CaseLifecycleWorkspaceComponent },
             { path: 'profile', loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent) },
             { path: 'settings', component: SettingsComponent },
+            { path: 'organization', loadComponent: () => import('./components/organization/organization-list/organization-list.component').then(m => m.OrganizationListComponent) },
+            { path: 'organization/:orgId/branches', loadComponent: () => import('./components/organization/branch-list/branch-list.component').then(m => m.BranchListComponent) },
             { path: 'config', component: ConfigManagerComponent },
             { path: 'menu', component: MenuManagementListComponent },
             { path: 'menu-permission', component: MenuPermissionComponent },
@@ -639,11 +651,13 @@ export const routes: Routes = [
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
-            // { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'testing/queue', component: TestResultComponent },
+            { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
             { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
             { path: 'test-result', component: TestResultComponent },
+            { path: 'universal-test-execution', loadComponent: () => import('./components/universal-test-execution/universal-test-execution.component').then(m => m.UniversalTestExecutionComponent) },
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },
@@ -668,6 +682,9 @@ export const routes: Routes = [
             // NABL Dashboard & Audit
             { path: 'nabl/dashboard', loadComponent: () => import('./components/nabl/nabl-dashboard/nabl-dashboard.component').then(m => m.NablDashboardComponent) },
             { path: 'nabl/audit-print', loadComponent: () => import('./components/nabl/nabl-audit-print/nabl-audit-print.component').then(m => m.NablAuditPrintComponent) },
+            
+            // Universal Test Execution
+            { path: 'universal-test-execution', loadComponent: () => import('./components/universal-test-execution/universal-test-execution.component').then(m => m.UniversalTestExecutionComponent) }
         ]
     },
     { path: 'payment/:token', component: PaymentComponent },

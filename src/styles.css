@@ -68,6 +68,7 @@ a i {
 }
 
 /* Explicit icon-only buttons override (no right margin) */
+.btn-tbl-action i,
 .btn-lims-icon i,
 .btn-icon i,
 .btn-nav-icon i,
@@ -77,8 +78,13 @@ a i {
 .btn-close i,
 .btn-remove.p-1 i,
 .btn-outline-danger.p-1 i,
-.icon-only i {
+.icon-only i,
+.action-transfer-btn i,
+.action-btn i,
+.btn-transfer i,
+.icon-avatar-box i {
   margin-right: 0 !important;
+  margin-left: 0 !important;
 }
 
 .content-container {
@@ -3844,6 +3850,7 @@ td button:has(> i.bi:only-child),
 td button:has(> .bi:only-child),
 td a.btn:has(> i.bi:only-child),
 td a.btn:has(> .bi:only-child),
+td .btn-tbl-action,
 td .btn-lims-icon,
 td .spec-delete-btn,
 td .btn-delete-row,
@@ -3869,6 +3876,7 @@ td .btn:has(> i.bi:only-child) i,
 td .btn:has(> .bi:only-child) .bi,
 td button:has(> i.bi:only-child) i,
 td button:has(> .bi:only-child) .bi,
+td .btn-tbl-action i,
 td .btn-lims-icon i,
 td .spec-delete-btn i {
   display: flex !important;
@@ -4287,15 +4295,245 @@ input[type="checkbox"]:checked {
   color: #ffffff;
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+   PREMIUM STANDARDIZED TABLE ROW ACTION BUTTONS (.btn-tbl-action / .btn-lims-icon)
+   Modern, ultra-compact, high-contrast, accessible action button quartet:
+   1. View Details  (.btn-tbl-view / .btn-view)     → Sky Blue
+   2. Edit Record   (.btn-tbl-edit / .btn-edit)     → Indigo
+   3. Toggle Status (.btn-tbl-status / .btn-toggle) → Emerald (Active) / Amber (Inactive)
+   4. Delete Record (.btn-tbl-delete / .btn-delete) → Crimson / Rose
+   ═════════════════════════════════════════════════════════════════════════ */
+.btn-tbl-action,
 .btn-lims-icon {
-  width: 26px;
-  height: 26px;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
   padding: 0 !important;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  border: 1px solid transparent !important;
+  background-color: transparent !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  line-height: 1 !important;
+  font-size: 0.84rem !important;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-sizing: border-box !important;
+  user-select: none;
+}
+
+.btn-tbl-action:hover:not(:disabled),
+.btn-lims-icon:hover:not(:disabled) {
+  transform: translateY(-1.5px) !important;
+}
+
+.btn-tbl-action:active:not(:disabled),
+.btn-lims-icon:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+
+.btn-tbl-action:disabled,
+.btn-tbl-action.disabled,
+.btn-lims-icon:disabled,
+.btn-lims-icon.disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.btn-tbl-action i,
+.btn-lims-icon i {
+  margin: 0 !important;
+  line-height: 1 !important;
+  transition: transform 0.18s ease !important;
+}
+
+.btn-tbl-action:hover:not(:disabled) i,
+.btn-lims-icon:hover:not(:disabled) i {
+  transform: scale(1.1) !important;
+}
+
+/* 1. View Button (Sky Blue) */
+.btn-tbl-action.btn-tbl-view,
+.btn-lims-icon.btn-view {
+  background-color: rgba(2, 132, 199, 0.08) !important;
+  border-color: rgba(2, 132, 199, 0.28) !important;
+  color: #0284c7 !important;
+}
+.btn-tbl-action.btn-tbl-view:hover:not(:disabled),
+.btn-lims-icon.btn-view:hover:not(:disabled) {
+  background-color: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35) !important;
+}
+
+/* 2. Edit Button (Indigo) */
+.btn-tbl-action.btn-tbl-edit,
+.btn-lims-icon.btn-edit {
+  background-color: rgba(79, 70, 229, 0.08) !important;
+  border-color: rgba(79, 70, 229, 0.28) !important;
+  color: #4f46e5 !important;
+}
+.btn-tbl-action.btn-tbl-edit:hover:not(:disabled),
+.btn-lims-icon.btn-edit:hover:not(:disabled) {
+  background-color: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.35) !important;
+}
+
+/* 3. Status Toggle Button (Emerald for Active, Amber for Inactive/Draft) */
+.btn-tbl-action.btn-tbl-status,
+.btn-lims-icon.btn-toggle {
+  background-color: rgba(100, 116, 139, 0.08) !important;
+  border-color: rgba(100, 116, 139, 0.25) !important;
+  color: #64748b !important;
+}
+
+.btn-tbl-action.btn-tbl-status.status-active,
+.btn-lims-icon.btn-toggle.status-active,
+.btn-lims-icon.btn-toggle:has(.bi-toggle-on),
+.btn-lims-icon.btn-toggle:has(.bi-toggle2-on),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle2-on),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle-on) {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.32) !important;
+  color: #059669 !important;
+}
+.btn-tbl-action.btn-tbl-status.status-active:hover:not(:disabled),
+.btn-lims-icon.btn-toggle.status-active:hover:not(:disabled),
+.btn-lims-icon.btn-toggle:has(.bi-toggle-on):hover:not(:disabled),
+.btn-lims-icon.btn-toggle:has(.bi-toggle2-on):hover:not(:disabled),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle2-on):hover:not(:disabled),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle-on):hover:not(:disabled) {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(5, 150, 105, 0.35) !important;
+}
+
+.btn-tbl-action.btn-tbl-status.status-inactive,
+.btn-lims-icon.btn-toggle.status-inactive,
+.btn-lims-icon.btn-toggle:has(.bi-toggle-off),
+.btn-lims-icon.btn-toggle:has(.bi-toggle2-off),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle2-off),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle-off) {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.32) !important;
+  color: #d97706 !important;
+}
+.btn-tbl-action.btn-tbl-status.status-inactive:hover:not(:disabled),
+.btn-lims-icon.btn-toggle.status-inactive:hover:not(:disabled),
+.btn-lims-icon.btn-toggle:has(.bi-toggle-off):hover:not(:disabled),
+.btn-lims-icon.btn-toggle:has(.bi-toggle2-off):hover:not(:disabled),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle2-off):hover:not(:disabled),
+.btn-tbl-action.btn-tbl-status:has(.bi-toggle-off):hover:not(:disabled) {
+  background-color: #d97706 !important;
+  border-color: #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(217, 119, 6, 0.35) !important;
+}
+
+/* 4. Delete Button (Crimson / Rose) */
+.btn-tbl-action.btn-tbl-delete,
+.btn-lims-icon.btn-delete {
+  background-color: rgba(225, 29, 72, 0.08) !important;
+  border-color: rgba(225, 29, 72, 0.28) !important;
+  color: #e11d48 !important;
+}
+.btn-tbl-action.btn-tbl-delete:hover:not(:disabled),
+.btn-lims-icon.btn-delete:hover:not(:disabled) {
+  background-color: #e11d48 !important;
+  border-color: #e11d48 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(225, 29, 72, 0.35) !important;
+}
+
+/* 5. Versions Navigation Button (Teal) */
+.btn-tbl-action.btn-tbl-versions,
+.btn-lims-icon.btn-versions {
+  background-color: rgba(13, 148, 136, 0.08) !important;
+  border-color: rgba(13, 148, 136, 0.28) !important;
+  color: #0d9488 !important;
+}
+.btn-tbl-action.btn-tbl-versions:hover:not(:disabled),
+.btn-lims-icon.btn-versions:hover:not(:disabled) {
+  background-color: #0d9488 !important;
+  border-color: #0d9488 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(13, 148, 136, 0.35) !important;
+}
+
+/* 6. Parameters / Requirements Button (Purple) */
+.btn-tbl-action.btn-tbl-params,
+.btn-lims-icon.btn-params {
+  background-color: rgba(147, 51, 234, 0.08) !important;
+  border-color: rgba(147, 51, 234, 0.28) !important;
+  color: #9333ea !important;
+}
+.btn-tbl-action.btn-tbl-params:hover:not(:disabled),
+.btn-lims-icon.btn-params:hover:not(:disabled) {
+  background-color: #9333ea !important;
+  border-color: #9333ea !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(147, 51, 234, 0.35) !important;
+}
+
+/* 7. Default / Star Button (Amber Gold) */
+.btn-tbl-action.btn-tbl-default,
+.btn-lims-icon.btn-default {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.32) !important;
+  color: #d97706 !important;
+}
+.btn-tbl-action.btn-tbl-default:hover:not(:disabled),
+.btn-lims-icon.btn-default:hover:not(:disabled) {
+  background-color: #d97706 !important;
+  border-color: #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(217, 119, 6, 0.35) !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   STANDARDIZED HIGH-DENSITY COMPACT TABLE SYSTEM (.lims-compact-table)
+   Gold standard table styling conforming to Screen 13 (/test)
+   ═════════════════════════════════════════════════════════════════════════ */
+.lims-compact-table {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.78rem !important;
+}
+
+.lims-compact-table th {
+  padding: 0.35rem 0.5rem !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.02em !important;
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+
+.lims-compact-table td {
+  padding: 0.3rem 0.5rem !important;
+  vertical-align: middle !important;
+  font-size: 0.78rem !important;
+}
+
+.col-sn {
+  width: 45px !important;
+  min-width: 45px !important;
+}
+
+.col-actions {
+  width: 136px !important;
+  min-width: 136px !important;
 }
 
 .btn-nav-link {
@@ -4335,3 +4573,268 @@ input[type="checkbox"]:checked {
   color: #ffffff;
 }
 
+/* ==========================================================================
+   GLOBAL MODAL / POPUP VIEWPORT & AUTO-SCROLL STANDARDS (MANDATORY)
+   If height / width exceeds screen, auto-scroll vertically and horizontally.
+   ========================================================================== */
+.modal-dialog {
+  max-width: 95vw;
+  margin: 1.5rem auto;
+}
+
+.modal-dialog.modal-dialog-scrollable {
+  max-height: calc(100vh - 3rem);
+}
+
+.modal-dialog.modal-dialog-scrollable .modal-content {
+  max-height: calc(100vh - 3rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-dialog.modal-dialog-scrollable .modal-body {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+/* Fail-safe: ensure ANY modal content stays within viewport */
+.modal-content {
+  max-height: calc(100vh - 2.5rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  flex-shrink: 0;
+}
+
+.modal-footer {
+  flex-shrink: 0;
+}
+
+.modal-body {
+  flex: 1 1 auto;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto !important;
+}
+
+/* Custom modal overlays (e.g. Formula Builder, Confirmations) */
+.custom-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.custom-modal-dialog {
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  max-width: 95vw;
+}
+
+.custom-modal-content {
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.custom-modal-header {
+  flex-shrink: 0;
+}
+
+.custom-modal-footer {
+  flex-shrink: 0;
+}
+
+.custom-modal-body {
+  flex: 1 1 auto;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+/* Standard Bootstrap Modals Auto-scrolling & Viewport Sizing Guarantee */
+.modal-dialog {
+  max-height: calc(100vh - 2rem);
+}
+
+.modal-dialog-scrollable .modal-content {
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-dialog-scrollable .modal-content > form,
+.modal-dialog-scrollable .modal-body form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.modal-dialog-scrollable .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  max-height: calc(100vh - 140px);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL CUSTOM BOOTSTRAP ICON EXTENSION: BI-FLASK & BI-FLASK-FILL
+   Authentic Laboratory Erlenmeyer Flask Icon for Test & Chemistry
+   ═══════════════════════════════════════════════════════════ */
+.bi-flask,
+.bi-flask-fill {
+  display: inline-block;
+  vertical-align: -0.125em;
+  line-height: 1;
+}
+
+.bi-flask::before {
+  content: "" !important;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M8.5 2v3.382l3.774 6.793A2 2 0 0 1 10.528 15H5.472a2 2 0 0 1-1.746-2.825L7.5 5.382V2h-1a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-1zM5.472 14h5.056a1 1 0 0 0 .873-1.412L8.5 7.382V6h-1v1.382L4.599 12.588A1 1 0 0 0 5.472 14z'/%3E%3Cpath d='M5.7 10h4.6l.8 1.5a1 1 0 0 1-.87 1.5H5.77a1 1 0 0 1-.87-1.5l.8-1.5z'/%3E%3C/svg%3E") no-repeat 50% 50%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M8.5 2v3.382l3.774 6.793A2 2 0 0 1 10.528 15H5.472a2 2 0 0 1-1.746-2.825L7.5 5.382V2h-1a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-1zM5.472 14h5.056a1 1 0 0 0 .873-1.412L8.5 7.382V6h-1v1.382L4.599 12.588A1 1 0 0 0 5.472 14z'/%3E%3Cpath d='M5.7 10h4.6l.8 1.5a1 1 0 0 1-.87 1.5H5.77a1 1 0 0 1-.87-1.5l.8-1.5z'/%3E%3C/svg%3E") no-repeat 50% 50%;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.bi-flask-fill::before {
+  content: "" !important;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M8.5 2v3.382l3.774 6.793A2 2 0 0 1 10.528 15H5.472a2 2 0 0 1-1.746-2.825L7.5 5.382V2h-1a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-1z'/%3E%3C/svg%3E") no-repeat 50% 50%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M8.5 2v3.382l3.774 6.793A2 2 0 0 1 10.528 15H5.472a2 2 0 0 1-1.746-2.825L7.5 5.382V2h-1a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-1z'/%3E%3C/svg%3E") no-repeat 50% 50%;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL SAMPLE SELECTOR PILL & LIST-GROUP CONTRAST STANDARDS
+════════════════════════════════════════════════════════════════ */
+
+/* Multi-Sample Visual Selector Pill Button (Screen 10 / Screen 14) */
+.sample-pill-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 50rem;
+  border: 1.5px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #1e293b; /* Slate-800: high contrast */
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.sample-pill-btn i {
+  font-size: 0.8rem;
+  color: #64748b;
+  transition: color 0.18s ease;
+}
+
+.sample-pill-btn .sample-pill-title {
+  color: inherit;
+  font-weight: 500;
+}
+
+.sample-pill-btn .sample-test-badge {
+  background-color: #e2e8f0;
+  color: #1e293b;
+  font-size: 0.68rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 50rem;
+  font-weight: 600;
+  transition: all 0.18s ease;
+}
+
+/* Inactive Hover State — Clear, crisp, NO white-on-white */
+.sample-pill-btn:hover:not(.active) {
+  background-color: var(--primary-50, #fef2f2) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: var(--primary-color, #da261c) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(218, 38, 28, 0.15);
+}
+
+.sample-pill-btn:hover:not(.active) i {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.sample-pill-btn:hover:not(.active) .sample-pill-title {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.sample-pill-btn:hover:not(.active) .sample-test-badge {
+  background-color: rgba(218, 38, 28, 0.12);
+  color: var(--primary-color, #da261c);
+}
+
+/* Active / Selected State — Solid Brand Red with pure white text */
+.sample-pill-btn.active {
+  background: linear-gradient(135deg, var(--primary-color, #da261c) 0%, var(--primary-hover, #b81d14) 100%) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(218, 38, 28, 0.3);
+  transform: translateY(-1px);
+}
+
+.sample-pill-btn.active i {
+  color: #ffffff !important;
+}
+
+.sample-pill-btn.active .sample-pill-title {
+  color: #ffffff !important;
+}
+
+.sample-pill-btn.active .sample-test-badge {
+  background-color: #ffffff;
+  color: var(--primary-color, #da261c);
+}
+
+/* Active Hover State — Maintains contrast */
+.sample-pill-btn.active:hover {
+  background: var(--primary-hover, #b81d14) !important;
+  border-color: var(--primary-hover, #b81d14) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.35);
+}
+
+.sample-pill-btn.active:hover i,
+.sample-pill-btn.active:hover .sample-pill-title {
+  color: #ffffff !important;
+}
+
+.sample-pill-btn.active:hover .sample-test-badge {
+  background-color: #ffffff;
+  color: var(--primary-hover, #b81d14);
+}
+
+/* Global List Group Item Hover Contrast */
+.list-group-item-action:hover {
+  background-color: var(--primary-50, #fef2f2) !important;
+  color: var(--neutral-900, #0f172a);
+}

@@ -9,16 +9,17 @@ import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { FormsModule } from '@angular/forms';
+import { UniversalTestExecutionService } from '../../../services/universal-test-execution.service';
 
 @Component({
   selector: 'app-test-result-entry-form',
   templateUrl: './test-result-entry-form.component.html',
   styleUrls: ['./test-result-entry-form.component.css'],
-  imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent, DecimalOnlyDirective, TestStatusBadgeComponent, FormsModule],
+  imports: [ReactiveFormsModule, CommonModule, RouterModule, SearchableDropdownComponent, DecimalOnlyDirective, TestStatusBadgeComponent, FormsModule],
 })
 export class TestResultEntryFormComponent implements OnInit {
 
@@ -154,12 +155,18 @@ export class TestResultEntryFormComponent implements OnInit {
   methodParameters: any[] = [];
   loadingMethodParams = false;
 
+  // Universal Test Execution Integration State
+  universalExecutionsMap: Record<number, any> = {};
+  universalResultsMap: Record<number, any> = {};
+  universalLoadingMap: Record<number, boolean> = {};
+
   constructor(
     private fb: FormBuilder,
     private testResultService: TestResultService,
     private parameterService: ParameterService,
     private equipmentService: EquipmentService,
     private testMethodService: TestMethodSpecificationService,
+    private universalService: UniversalTestExecutionService,
     private toastService: ToastService,
     private route: ActivatedRoute,
     private router: Router
@@ -281,20 +288,25 @@ export class TestResultEntryFormComponent implements OnInit {
 
         // Patch values into form
         this.patchFormValues(data);
-        // Fetch images for all test headers so thumbnails are available in UI
+        // Fetch images for all legacy test headers so thumbnails are available in UI
         try {
           const headerSet = new Set<number>();
           (this.plans || []).forEach((plan: any) => {
+            if (plan.type === 'Universal' || plan.engineType === 'Universal') return;
             (plan.tests || []).forEach((t: any) => {
-              if (t && (t.headerId || t.headerId === 0)) headerSet.add(t.headerId);
+              if (t && !t.isUniversal && t.headerId && t.headerId > 0) {
+                headerSet.add(t.headerId);
+              }
             });
           });
           headerSet.forEach(hId => {
-            this.fetchTestImages(hId);
-            this.fetchPriceSummary(hId);
-            this.loadNablScopeCheck(hId);
-            this.loadUncertainty(hId);
-            this.loadOrientationCheck(hId);
+            if (hId && hId > 0) {
+              this.fetchTestImages(hId);
+              this.fetchPriceSummary(hId);
+              this.loadNablScopeCheck(hId);
+              this.loadUncertainty(hId);
+              this.loadOrientationCheck(hId);
+            }
           });
         } catch (e) {
           console.warn('Failed to fetch initial test images', e);
@@ -503,6 +515,42 @@ export class TestResultEntryFormComponent implements OnInit {
 
         this.plans.push(chemPlan);
       });
+
+      // Map Universal Tests
+      (plan.universalTests || []).forEach((uTest: any) => {
+        const uGroupId = uTest.universalTestGroupId || uTest.id;
+        if (uGroupId) {
+          this.loadUniversalExecution(uGroupId);
+        }
+
+        const uPlan: any = {
+          type: 'Universal',
+          engineType: 'Universal',
+          specification: uTest.methodName || 'Universal Test Method',
+          grade: '',
+          headerId: null,
+          universalTestGroupId: uGroupId,
+          latestExecutionId: uTest.latestExecutionId,
+          executionStatus: uTest.executionStatus,
+          tests: [
+            {
+              id: `univ-${uGroupId}`,
+              headerId: null,
+              engineType: 'Universal',
+              universalTestGroupId: uGroupId,
+              latestExecutionId: uTest.latestExecutionId,
+              executionStatus: uTest.executionStatus,
+              name: uTest.testName || 'Universal Test',
+              reportNo: '',
+              status: uTest.status || 'Pending',
+              isUniversal: true,
+              parameters: []
+            }
+          ]
+        };
+
+        this.plans.push(uPlan);
+      });
     });
 
     // Store timing/environment info per header and fetch environment data
@@ -529,9 +577,9 @@ export class TestResultEntryFormComponent implements OnInit {
       });
     });
 
-    // Fallback to dummy if no plans
+    // If no plans, leave plans empty so the user can see actual sample info with a no-plan warning
     if (this.plans.length === 0) {
-      this.loadDummyData();
+      console.warn('[TestResultEntry] No plans configured for this sample');
     }
   }
 
@@ -1764,7 +1812,7 @@ export class TestResultEntryFormComponent implements OnInit {
 
   /** Fetch images from API for a header and store in map */
   fetchTestImages(headerId: number): void {
-    if (!headerId && headerId !== 0) return;
+    if (!headerId || headerId <= 0) return;
     this.testResultService.getTestImages(headerId).subscribe({
       next: (imgs) => {
         this.testImagesMap[headerId] = imgs || [];
@@ -2235,6 +2283,7 @@ export class TestResultEntryFormComponent implements OnInit {
   // Phase 1: NABL Scope Check
   // ================================================================
   loadNablScopeCheck(headerId: number): void {
+    if (!headerId || headerId <= 0) return;
     this.testResultService.getNablScopeCheck(headerId).subscribe({
       next: (results) => {
         this.nablScopeMap[headerId] = results;
@@ -2278,6 +2327,7 @@ export class TestResultEntryFormComponent implements OnInit {
   // Orientation Mismatch Check
   // ================================================================
   loadOrientationCheck(headerId: number): void {
+    if (!headerId || headerId <= 0) return;
     this.testResultService.checkOrientationMismatch(headerId).subscribe({
       next: (result) => {
         this.orientationWarnings[headerId] = result;
@@ -2300,6 +2350,7 @@ export class TestResultEntryFormComponent implements OnInit {
   // Phase 2: Uncertainty
   // ================================================================
   loadUncertainty(headerId: number): void {
+    if (!headerId || headerId <= 0) return;
     this.testResultService.getUncertainty(headerId).subscribe({
       next: (results) => {
         this.uncertaintyMap[headerId] = results;
@@ -2783,6 +2834,51 @@ export class TestResultEntryFormComponent implements OnInit {
   onFormulaInputChange(event: Event): void {
     const input = event.target as HTMLTextAreaElement;
     this.formulaCursorPos = input.selectionStart || 0;
+  }
+
+  // ================================================================
+  // Universal Test Execution Helpers
+  // ================================================================
+
+  loadUniversalExecution(groupId: number): void {
+    if (!groupId) return;
+    this.universalLoadingMap[groupId] = true;
+    this.universalService.getExecutionByGroup(groupId).subscribe({
+      next: (exec) => {
+        this.universalLoadingMap[groupId] = false;
+        this.universalExecutionsMap[groupId] = exec;
+        if (exec && exec.id) {
+          this.universalService.getResultsOverview(exec.id).subscribe({
+            next: (overview) => {
+              this.universalResultsMap[groupId] = overview;
+            },
+            error: (err) => console.warn('[Universal] Could not load results overview for execution ' + exec.id, err)
+          });
+        }
+      },
+      error: (err) => {
+        this.universalLoadingMap[groupId] = false;
+        console.warn('[Universal] Could not load universal execution for group ' + groupId, err);
+      }
+    });
+  }
+
+  downloadReport(sampleId?: number): void {
+    const id = sampleId || this.sampleId;
+    if (!id) return;
+    window.open(`${this.baseUrl}/api/reports/sample/${id}/pdf`, '_blank');
+  }
+
+  isCurrentPlanUniversal(): boolean {
+    const currentPlan = this.plans[this.activePlanIndex];
+    return currentPlan?.type === 'Universal' || currentPlan?.engineType === 'Universal';
+  }
+
+  hasLegacySaveableTests(): boolean {
+    return (this.plans || []).some(plan =>
+      plan.type !== 'Universal' && plan.engineType !== 'Universal' &&
+      (plan.tests || []).some((t: any) => !this.isTestFinalized(t.status))
+    );
   }
 
 }

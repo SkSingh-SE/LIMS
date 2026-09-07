@@ -1,3 +1,56 @@
+.th-size {
+  width: 130px;
+}
+
+.th-ver {
+  width: 85px;
+}
+
+.th-vers {
+  width: 85px;
+}
+
+.th-specs {
+  width: 170px;
+}
+
+.th-status {
+  width: 85px;
+}
+
+.version-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+}
+
+.applicability-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  display: inline-block;
+  margin: 1px 2px;
+}
+
+.spec-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  display: inline-block;
+  margin: 1px 2px;
+}
+
 .cursor-pointer {
   cursor: pointer;
+  user-select: none;
+}
+
+.hover-primary:hover {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.text-xs {
+  font-size: 0.72rem;
+}
+
+.max-w-300 {
+  max-width: 300px;
 }

@@ -1,555 +1,375 @@
 <div class="user-management-container">
-  <!-- Internal Tabs -->
-  <ul class="nav nav-pills mb-3 border-bottom pb-2 gap-2" role="tablist">
-    <li class="nav-item" *ngFor="let tab of tabs">
-      <button
-        class="nav-link d-flex align-items-center gap-2"
-        [class.active]="activeTab() === tab.id"
-        [class.bg-white]="activeTab() !== tab.id"
-        [class.text-dark]="activeTab() !== tab.id"
-        [class.shadow-sm]="activeTab() !== tab.id"
-        (click)="setActiveTab(tab.id)"
-        type="button"
-      >
-        <i class="bi" [ngClass]="tab.icon"></i>
-        {{ tab.label }}
-      </button>
-    </li>
-  </ul>
+  <!-- Internal Tabs Navigation -->
+  <div class="user-subnav-wrapper mb-3 pb-2 border-bottom">
+    <ul class="nav nav-pills user-nav-pills gap-2" role="tablist">
+      <li class="nav-item" *ngFor="let tab of tabs">
+        <button
+          class="nav-link user-pill-btn d-flex align-items-center"
+          [class.active]="activeTab() === tab.id"
+          (click)="setActiveTab(tab.id)"
+          type="button"
+        >
+          <i class="bi me-2" [ngClass]="tab.icon"></i>
+          <span>{{ tab.label }}</span>
+        </button>
+      </li>
+    </ul>
+  </div>
 
-  <div class="tab-content pt-2">
-    <!-- Loading Indicator -->
-    <div *ngIf="false" class="d-flex justify-content-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
-
+  <div class="tab-content">
     <!-- Forms for Tabs 1, 2, 3 -->
-    <form [formGroup]="userForm" *ngIf="activeTab() !== 4">
-      <!-- Tab 1: Login Details -->
+    <form [formGroup]="userForm" *ngIf="activeTab() !== 4 && activeTab() !== 5">
+      <!-- ═══════════════════ Tab 1: Login Details ═══════════════════ -->
       <div *ngIf="activeTab() === 1" class="animation-fade-in">
         <div class="row g-3">
-          <!-- Account Identity Card -->
+          <!-- Account Identity Fieldset -->
           <div class="col-12">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light border-bottom">
-                <h6 class="mb-0 fw-bold text-dark">
-                  <i class="bi bi-person-badge me-2 text-danger"></i>
-                  Account Identity
-                </h6>
-              </div>
-              <div class="card-body">
+            <fieldset class="section-fieldset-card mb-3">
+              <legend>
+                <i class="bi bi-person-badge me-2"></i> Account Identity & Profile
+              </legend>
+              <div class="fieldset-inner-body p-3">
                 <div class="row g-3">
-                  <!-- Left Column -->
+                  <!-- Username -->
+                  <div class="col-md-4">
+                    <div class="form-field-header">
+                      <label class="form-label">Username</label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-light border-end-0">
+                        <i class="bi bi-person text-secondary"></i>
+                      </span>
+                      <input type="text" class="form-control form-control-sm border-start-0 bg-light" formControlName="userName" readonly />
+                    </div>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">Username cannot be modified once provisioned.</small>
+                  </div>
+
+                  <!-- Email Address -->
+                  <div class="col-md-4">
+                    <div class="form-field-header">
+                      <label class="form-label">Email Address</label>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text bg-light border-end-0">
+                        <i class="bi bi-envelope text-secondary"></i>
+                      </span>
+                      <input type="email" class="form-control form-control-sm border-start-0 bg-light" formControlName="email" readonly />
+                    </div>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">Registered enterprise notification email.</small>
+                  </div>
+
+                  <!-- Account Status -->
+                  <div class="col-md-4">
+                    <div class="form-field-header">
+                      <label class="form-label">Account Status</label>
+                    </div>
+                    <div class="pt-0.5">
+                      <span [ngClass]="getAccountStatusClass()" class="badge px-3 py-2 d-inline-flex align-items-center">
+                        <i class="bi bi-circle-fill me-2" style="font-size: 0.45rem"></i>
+                        {{ user?.accountStatus || userForm.get("accountStatus")?.value || "Active" }}
+                      </span>
+                    </div>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">Current authentication eligibility state.</small>
+                  </div>
+
+                  <!-- Last Login Box -->
                   <div class="col-md-6">
-                    <div class="mb-3">
-                      <label class="form-label text-muted small fw-bold">USERNAME</label>
-                      <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0">
-                          <i class="bi bi-person text-muted"></i>
-                        </span>
-                        <input type="text" class="form-control border-start-0 bg-light" formControlName="userName" readonly />
-                      </div>
-                      <small class="text-muted">Username cannot be changed once created.</small>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label text-muted small fw-bold">EMAIL ADDRESS</label>
-                      <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0">
-                          <i class="bi bi-envelope text-muted"></i>
-                        </span>
-                        <input type="email" class="form-control border-start-0 bg-light" formControlName="email" readonly />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label class="form-label text-muted small fw-bold">ACCOUNT STATUS</label>
-                      <div>
-                        <span [ngClass]="getAccountStatusClass()" class="px-3 py-2 fs-6">
-                          <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem"></i>
-                          {{ user?.accountStatus || userForm.get("accountStatus")?.value || "Unknown" }}
-                        </span>
+                    <div class="info-card-box p-3 border rounded">
+                      <div class="d-flex align-items-center">
+                        <div class="icon-avatar-box bg-primary-subtle text-primary me-3">
+                          <i class="bi bi-clock-history fs-5"></i>
+                        </div>
+                        <div>
+                          <span class="text-muted small fw-medium d-block">LAST SUCCESSFUL LOGIN</span>
+                          <div class="fw-semibold text-dark fs-6">{{ getFormattedLastLogin() }}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Right Column -->
+                  <!-- Failed Attempts Box -->
                   <div class="col-md-6">
-                    <div class="mb-3">
-                      <label class="form-label text-muted small fw-bold">LAST LOGIN</label>
-                      <div class="p-3 bg-light rounded border">
-                        <div class="d-flex align-items-center">
-                          <i class="bi bi-clock-history text-primary me-2 fs-5"></i>
-                          <div>
-                            <div class="fw-bold text-dark">{{ getFormattedLastLogin() }}</div>
-                            <small class="text-muted">Last successful login</small>
-                          </div>
+                    <div class="info-card-box p-3 border rounded d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <div class="icon-avatar-box bg-warning-subtle text-warning me-3">
+                          <i class="bi bi-shield-exclamation fs-5"></i>
+                        </div>
+                        <div>
+                          <span class="text-muted small fw-medium d-block">FAILED LOGIN ATTEMPTS</span>
+                          <div class="fw-semibold text-dark fs-6">Security lock counter</div>
                         </div>
                       </div>
-                    </div>
-
-                    <div>
-                      <label class="form-label text-muted small fw-bold">FAILED LOGIN ATTEMPTS</label>
-                      <div class="p-3 bg-light rounded border">
-                        <div class="d-flex align-items-center justify-content-between">
-                          <div class="d-flex align-items-center">
-                            <i class="bi bi-shield-exclamation text-warning me-2 fs-5"></i>
-                            <span class="text-dark">Failed Attempts</span>
-                          </div>
-                          <span [ngClass]="getFailedAttemptsClass()" class="px-3 py-1">
-                            {{ user?.failedLoginAttempts ?? userForm.get("failedLoginAttempts")?.value ?? 0 }}
-                          </span>
-                        </div>
-                      </div>
+                      <span [ngClass]="getFailedAttemptsClass()" class="badge px-3 py-1.5 fs-6">
+                        {{ user?.failedLoginAttempts ?? userForm.get("failedLoginAttempts")?.value ?? 0 }}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </fieldset>
           </div>
 
-          <!-- Actions Card -->
+          <!-- Account Actions Fieldset -->
           <div class="col-12">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light border-bottom">
-                <h6 class="mb-0 fw-bold text-dark">
-                  <i class="bi bi-gear me-2 text-danger"></i>
-                  Account Actions
-                </h6>
-              </div>
-              <div class="card-body">
+            <fieldset class="section-fieldset-card mb-3">
+              <legend>
+                <i class="bi bi-gear me-2"></i> Account Credentials & Access Control
+              </legend>
+              <div class="fieldset-inner-body p-3">
                 <div class="row g-3 align-items-center">
+                  <!-- New Password -->
                   <div class="col-md-6">
-                    <label class="form-label text-muted small fw-bold">NEW PASSWORD</label>
-
-                    <div class="input-group">
+                    <div class="form-field-header">
+                      <label class="form-label">Set New Password</label>
+                    </div>
+                    <div class="input-group input-group-sm">
                       <input
                         [type]="showPassword ? 'text' : 'password'"
-                        class="form-control"
+                        class="form-control form-control-sm"
                         formControlName="password"
                         placeholder="Enter new password..."
                         [ngClass]="{ 'is-invalid': isFieldInvalid('password', submitted) }"
                       />
-                      <div *ngIf="isFieldInvalid('password', submitted)">
-                        <span *ngIf="userForm.get('password')?.hasError('required')" class="text-danger text-sm">Password is required.</span>
-                        <span *ngIf="userForm.get('password')?.hasError('minlength')" class="text-danger text-sm">Min 8 characters.</span>
-                      </div>
-
-                      <button type="button" class="btn btn-add" (click)="togglePasswordVisibility()" [disabled]="isViewMode">
+                      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="togglePasswordVisibility()" [disabled]="isViewMode">
                         <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                       </button>
                     </div>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">Leave blank to keep existing password intact.</small>
 
-                    <small class="text-muted d-block mt-1">Leave blank to keep current password</small>
-
-                    <button type="button" class="btn btn-primary w-100 mt-2" [disabled]="isViewMode" (click)="resetPassword()">
-                      <i class="bi bi-key me-2"></i>
-                      Reset Password
-                    </button>
+                    <div class="mt-2">
+                      <button type="button" class="btn-lims btn-lims-edit btn-sm w-100" [disabled]="isViewMode" (click)="resetPassword()">
+                        <i class="bi bi-key me-2"></i> Reset User Password
+                      </button>
+                    </div>
                   </div>
 
+                  <!-- Login Access Switch Box -->
                   <div class="col-md-6">
-                    <div class="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
-                      <div>
-                        <div class="fw-bold text-dark">Login Access</div>
-                        <small class="text-muted">Enable or disable user login</small>
+                    <div class="info-card-box p-3 border rounded d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <div class="icon-avatar-box bg-danger-subtle text-danger me-3">
+                          <i class="bi bi-person-lock fs-5"></i>
+                        </div>
+                        <div>
+                          <div class="fw-semibold text-dark">Portal Login Access</div>
+                          <small class="text-muted">Enable or disable authentication for this user</small>
+                        </div>
                       </div>
-                      <div class="form-switch switch-primary">
+                      <div class="form-check form-switch m-0">
                         <input
                           class="form-check-input"
                           type="checkbox"
                           role="switch"
                           id="loginEnabled"
                           formControlName="isLoginEnabled"
-                          style="width: 3rem; height: 1.5rem"
                         />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </fieldset>
           </div>
         </div>
       </div>
 
-      <!-- Tab 2: Access Control -->
+      <!-- ═══════════════════ Tab 2: Access Control ═══════════════════ -->
       <div *ngIf="activeTab() === 2" class="animation-fade-in">
-        <div class="row g-3">
-          <!-- System Access Card -->
-          <div class="col-12">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light border-bottom">
-                <h6 class="mb-0 fw-bold text-dark">
-                  <i class="bi bi-shield-check me-2 text-danger"></i>
-                  System Access
-                </h6>
-              </div>
-              <div class="card-body">
-                <div class="row g-3">
-                  <!-- Remote Login Toggle -->
-                  <div class="col-md-12">
-                    <div class="d-flex align-items-center justify-content-between p-3 border rounded bg-light">
-                      <div class="d-flex align-items-center">
-                        <i class="bi bi-globe text-primary fs-4 me-3"></i>
-                        <div>
-                          <div class="fw-bold text-dark">Allow Remote Login</div>
-                          <small class="text-muted">Access from external networks</small>
-                        </div>
-                      </div>
-                      <div class="form-switch switch-primary">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="remoteLogin"
-                          formControlName="allowRemoteLogin"
-                          style="width: 3rem; height: 1.5rem"
-                        />
-                      </div>
+        <fieldset class="section-fieldset-card mb-3">
+          <legend>
+            <i class="bi bi-shield-check me-2"></i> System Access & Network Control
+          </legend>
+          <div class="fieldset-inner-body p-3">
+            <div class="row g-3">
+              <!-- Remote Login Toggle Box -->
+              <div class="col-12">
+                <div class="info-card-box p-3 border rounded d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-avatar-box bg-primary-subtle text-primary me-3">
+                      <i class="bi bi-globe fs-4"></i>
+                    </div>
+                    <div>
+                      <div class="fw-semibold text-dark fs-6">Allow Remote Network Login</div>
+                      <small class="text-muted">Permit user authentication from public networks outside laboratory LAN</small>
                     </div>
                   </div>
-
-                  <!-- IP Restriction -->
-                  <div class="col-md-12">
-                    <label class="form-label text-muted small fw-bold">IP RESTRICTION (OPTIONAL)</label>
-
-                    <textarea
-                      class="form-control"
-                      rows="2"
-                      formControlName="ipRestriction"
-                      maxlength="100"
-                      placeholder="e.g. 192.168.1.100, 10.0.0.50"
-                    ></textarea>
-
-                    <small class="text-muted d-block">Leave empty to allow access from any IP address</small>
-
-                    <small
-                      class="text-danger d-block mt-1"
-                      *ngIf="userForm.get('ipRestriction')?.errors?.['invalidIpRestriction'] && (userForm.get('ipRestriction')?.touched || submitted)"
-                    >
-                      Enter valid IPv4 addresses (comma-separated). CIDR notation is supported.
-                    </small>
-                  </div>
-
-                  <!-- Working Hours -->
-                  <div class="col-md-12">
-                    <div class="card border-0 shadow-sm">
-                      <div class="card-body p-3">
-                        <div class="d-flex align-items-start gap-3">
-                          <i class="bi bi-clock text-primary fs-4 mt-1"></i>
-
-                          <div class="flex-grow-1">
-                            <label class="form-label fw-bold text-dark mb-1">Working Hours Restriction</label>
-
-                            <p class="text-muted small mb-3">
-                              Define the allowed login time window for this user. Leave empty to allow access at any time.
-                            </p>
-
-                                <div class="d-flex align-items-end gap-3 mb-3 flex-wrap">
-                                  <div style="width: 140px">
-                                    <label class="form-label small fw-bold mb-1">Start Time</label>
-                                    <input
-                                      type="time"
-                                      class="form-control"
-                                      formControlName="startTime"
-                                      placeholder="Type here e.g., 09:00"
-                                      aria-label="Start time"
-                                      [ngClass]="{ 'is-invalid': isFieldInvalid('startTime', submitted) }"
-                                    />
-                                    <small class="text-muted">e.g., 09:00</small>
-                                  </div>
-
-                                  <div style="width: 140px">
-                                    <label class="form-label small fw-bold mb-1">End Time</label>
-                                    <input
-                                      type="time"
-                                      class="form-control"
-                                      formControlName="endTime"
-                                      placeholder="Type here e.g., 18:00"
-                                      aria-label="End time"
-                                      [ngClass]="{ 'is-invalid': isFieldInvalid('endTime', submitted) }"
-                                    />
-                                    <small class="text-muted">e.g., 18:00</small>
-                                  </div>
-
-                                  <div *ngIf="isFieldInvalid('endTime', submitted)" class="text-danger small">
-                                    End time must be after start time.
-                                  </div>
-                                </div>
-
-                            <div class="mt-2">
-                              <small class="text-muted">Example: 09:00–18:00</small>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Role is auto-derived from Designation — removed manual role management -->
-        </div>
-      </div>
-
-      <!-- Tab 3: Session & Security -->
-      <div *ngIf="activeTab() === 3" class="animation-fade-in">
-        <div class="row g-3">
-          <!-- Session Settings Card -->
-          <div class="col-12">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light border-bottom">
-                <h6 class="mb-0 fw-bold text-dark">
-                  <i class="bi bi-hourglass-split me-2 text-danger"></i>
-                  Session Settings
-                </h6>
-              </div>
-              <div class="card-body">
-                <div class="row g-3">
-                  <!-- Session Timeout -->
-                  <div class="col-md-6">
-                    <label class="form-label text-muted small fw-bold">SESSION TIMEOUT</label>
-                    <select class="form-select" formControlName="sessionTimeout"
-                      [ngClass]="{ 'is-invalid': isFieldInvalid('sessionTimeout', submitted) }">
-                      <option [value]="0">Default Session</option>
-                      <option [value]="15">15 Minutes</option>
-                      <option [value]="30">30 Minutes</option>
-                      <option [value]="60">60 Minutes</option>
-                      <option [value]="120">120 Minutes</option>
-                    </select>
-                    <small class="text-muted">Auto logout after inactivity</small>
-                    <div *ngIf="isFieldInvalid('sessionTimeout', submitted)">
-                      <span *ngIf="userForm.get('sessionTimeout')?.hasError('min')" class="text-danger text-sm">Value cannot be negative.</span>
-                    </div>
-                  </div>
-
-                  <!-- Force Password Change -->
-                  <div class="col-md-6">
-                    <label class="form-label text-muted small fw-bold">PASSWORD POLICY</label>
-                    <div class="d-flex align-items-center p-3 border rounded bg-light">
-                      <div class="flex-grow-1">
-                        <div class="fw-bold text-dark small">Force Change on Login</div>
-                      </div>
-                      <div class="form-switch switch-primary">
-                        <input
-                          class="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="forcePass"
-                          formControlName="forcePasswordChange"
-                          style="width: 2.5rem; height: 1.25rem"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Two-Factor Authentication Card -->
-          <div class="col-12">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-light border-bottom">
-                <div class="d-flex justify-content-between align-items-center">
-                  <h6 class="mb-0 fw-bold text-dark">
-                    <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
-                    Two-Factor Authentication (2FA)
-                  </h6>
-                  <div class="form-switch switch-primary">
+                  <div class="form-check form-switch m-0">
                     <input
                       class="form-check-input"
                       type="checkbox"
                       role="switch"
-                      id="2faToggle"
-                      [checked]="is2FAEnabled()"
-                      (change)="toggle2FA()"
-                      [disabled]="isViewMode"
-                      style="width: 3rem; height: 1.5rem"
+                      id="remoteLogin"
+                      formControlName="allowRemoteLogin"
                     />
-                    <label class="form-check-label ms-2 fw-bold" [class.text-success]="is2FAEnabled()" [class.text-muted]="!is2FAEnabled()">
-                      {{ is2FAEnabled() ? "ON" : "OFF" }}
-                    </label>
                   </div>
                 </div>
               </div>
-              <div class="card-body">
-                <p class="text-muted small mb-3">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Add an extra layer of security to your account.
-                  <span class="badge bg-warning text-dark ms-1">Mandatory for Admin & Signing Authority</span>
-                </p>
 
-                <!-- 2FA Status Display -->
-                <div *ngIf="is2FAEnabled() && otpStep === 3" class="alert alert-success border-success d-flex align-items-center">
-                  <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+              <!-- IP Restriction -->
+              <div class="col-12">
+                <div class="form-field-header">
+                  <label class="form-label">Allowed IP Whitelist (Optional)</label>
+                </div>
+                <textarea
+                  class="form-control form-control-sm"
+                  rows="2"
+                  formControlName="ipRestriction"
+                  maxlength="100"
+                  placeholder="e.g. 192.168.1.100, 10.0.0.50, 172.16.0.0/24"
+                ></textarea>
+                <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">Leave empty to allow access from any IP address. Supports comma-separated IPv4 and CIDR subnet blocks.</small>
+              </div>
+
+              <!-- Working Hours Restriction Box -->
+              <div class="col-12">
+                <div class="info-card-box p-3 border rounded">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="icon-avatar-box bg-primary-subtle text-primary me-3" style="width: 36px; height: 36px;">
+                      <i class="bi bi-clock fs-6"></i>
+                    </div>
+                    <div>
+                      <span class="fw-semibold text-dark fs-6">Working Hours Authentication Window</span>
+                    </div>
+                  </div>
+                  <p class="text-muted small mb-3 ps-1" style="font-size: 0.74rem;">
+                    Define the allowed login time schedule for this user. Leave empty to permit 24/7 round-the-clock laboratory access.
+                  </p>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="form-field-header">
+                        <label class="form-label">Shift Start Time</label>
+                      </div>
+                      <input type="time" class="form-control form-control-sm" formControlName="workingHoursStart" />
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-field-header">
+                        <label class="form-label">Shift End Time</label>
+                      </div>
+                      <input type="time" class="form-control form-control-sm" formControlName="workingHoursEnd" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- ═══════════════════ Tab 3: Session & Security ═══════════════════ -->
+      <div *ngIf="activeTab() === 3" class="animation-fade-in">
+        <fieldset class="section-fieldset-card mb-3">
+          <legend>
+            <i class="bi bi-shield-lock me-2"></i> Session & Security Configuration
+          </legend>
+          <div class="fieldset-inner-body p-3">
+            <div class="row g-3">
+              <!-- Session Timeout Card -->
+              <div class="col-md-6">
+                <div class="info-card-box p-3 border rounded h-100">
+                  <div class="d-flex align-items-center mb-2.5">
+                    <div class="icon-avatar-box bg-secondary-subtle text-secondary me-3" style="width: 36px; height: 36px;">
+                      <i class="bi bi-hourglass-split fs-6"></i>
+                    </div>
+                    <div>
+                      <label class="form-label mb-0 fw-semibold text-dark">Session Inactivity Timeout</label>
+                    </div>
+                  </div>
+                  <div class="input-group input-group-sm mt-2">
+                    <input
+                      type="number"
+                      class="form-control form-control-sm"
+                      formControlName="sessionTimeout"
+                      min="5"
+                      max="1440"
+                      placeholder="30"
+                    />
+                    <span class="input-group-text bg-light">Minutes</span>
+                  </div>
+                  <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">Default standard: 30 minutes idle timeout</small>
+                </div>
+              </div>
+
+              <!-- Two-Factor Authentication Card -->
+              <div class="col-md-6">
+                <div class="info-card-box p-3 border rounded h-100 d-flex flex-column justify-content-between">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                      <div class="icon-avatar-box bg-danger-subtle text-danger me-3" style="width: 36px; height: 36px;">
+                        <i class="bi bi-shield-lock fs-6"></i>
+                      </div>
+                      <div>
+                        <div class="fw-semibold text-dark">Two-Factor Authentication</div>
+                        <small class="text-muted">Require 2FA OTP verification</small>
+                      </div>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        id="twoFactorEnabled"
+                        formControlName="twoFactorEnabled"
+                      />
+                    </div>
+                  </div>
+                  <small class="text-muted d-block mt-2" style="font-size: 0.7rem;">Applies OTP challenge upon credentials entry</small>
+                </div>
+              </div>
+
+              <!-- Auto-Lock Security Policy -->
+              <div class="col-md-6">
+                <div class="info-card-box p-3 border rounded d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-avatar-box bg-danger-subtle text-danger me-3">
+                      <i class="bi bi-lock fs-5"></i>
+                    </div>
+                    <div>
+                      <span class="text-muted small fw-medium d-block">AUTO-LOCK SECURITY THRESHOLD</span>
+                      <div class="fw-semibold text-dark fs-6">{{ user?.autoLockAfterAttempts ?? "5" }} Failed Attempts</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Unlock Method Policy -->
+              <div class="col-md-6">
+                <div class="info-card-box p-3 border rounded d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-avatar-box bg-success-subtle text-success me-3">
+                      <i class="bi bi-key fs-5"></i>
+                    </div>
+                    <div>
+                      <span class="text-muted small fw-medium d-block">ACCOUNT UNLOCK METHOD</span>
+                      <div class="fw-semibold text-dark fs-6">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1">
+                          {{ user?.unlockMethod || "Admin Intervention" }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Security Awareness Notice -->
+              <div class="col-12">
+                <div class="p-3 border rounded bg-light d-flex align-items-start" style="border-left: 4px solid var(--primary-color, #da261c) !important;">
+                  <i class="bi bi-info-circle text-danger fs-5 me-3 mt-0.5"></i>
                   <div>
-                    <strong>2FA Enabled</strong>
-                    <div class="small">Method: {{ otpMethod | titlecase }}</div>
-                  </div>
-                </div>
-
-                <!-- 2FA Setup Steps -->
-                <div *ngIf="is2FAEnabled() && otpStep > 0 && otpStep < 3" class="mt-3">
-                  <!-- Step 1: Method Selection -->
-                  <div *ngIf="otpStep === 1">
-                    <h6 class="fw-bold mb-3">Select Authentication Method:</h6>
-                    <div class="row g-3">
-                      <div class="col-md-4">
-                        <div
-                          class="card border-2 cursor-pointer"
-                          [class.border-danger]="otpMethod === 'email'"
-                          [class.bg-light]="otpMethod === 'email'"
-                          (click)="selectOtpMethod('email')"
-                        >
-                          <div class="card-body text-center">
-                            <i class="bi bi-envelope fs-1 text-primary mb-2 d-block"></i>
-                            <div class="fw-bold">Email OTP</div>
-                            <small class="text-muted">Receive code via email</small>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-4">
-                        <div
-                          class="card border-2 cursor-pointer"
-                          [class.border-danger]="otpMethod === 'sms'"
-                          [class.bg-light]="otpMethod === 'sms'"
-                          (click)="selectOtpMethod('sms')"
-                        >
-                          <div class="card-body text-center">
-                            <i class="bi bi-chat-dots fs-1 text-success mb-2 d-block"></i>
-                            <div class="fw-bold">SMS OTP</div>
-                            <small class="text-muted">Receive code via SMS</small>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-4">
-                        <div class="card border-2 opacity-50">
-                          <div class="card-body text-center">
-                            <i class="bi bi-phone fs-1 text-muted mb-2 d-block"></i>
-                            <div class="fw-bold">Authenticator App</div>
-                            <small class="text-muted">
-                              <span class="badge bg-secondary">Coming Soon</span>
-                            </small>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Step 2: Verify OTP -->
-                  <div *ngIf="otpStep === 2">
-                    <h6 class="fw-bold mb-3">Verify {{ otpMethod | titlecase }}:</h6>
-                    <div class="row g-3">
-                      <div class="col-md-6">
-                        <div class="input-group">
-                          <input
-                            type="text"
-                            class="form-control"
-                            placeholder="Enter OTP"
-                            maxlength="6"
-                            [(ngModel)]="otpCode"
-                            [ngModelOptions]="{ standalone: true }"
-                          />
-                          <button class="btn btn-danger" type="button" (click)="verifyOtp()">
-                            <i class="bi bi-check-circle me-1"></i>
-                            Verify
-                          </button>
-                        </div>
-                        <small class="text-muted">Integration Pending. Enter any 4+ chars.</small>
-                      </div>
-                      <div class="col-md-6 d-flex align-items-center gap-2">
-                        <button class="btn btn-link text-decoration-none" (click)="resendOtp()" [disabled]="resendCooldown > 0">
-                          <i class="bi bi-arrow-clockwise me-1"></i>
-                          Resend OTP
-                          <span *ngIf="resendCooldown > 0">({{ resendCooldown }}s)</span>
-                        </button>
-                        <span class="text-muted">|</span>
-                        <button class="btn btn-link text-decoration-none text-secondary" (click)="otpStep = 1">
-                          <i class="bi bi-arrow-left me-1"></i>
-                          Change Method
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 2FA Disabled State -->
-                <div *ngIf="!is2FAEnabled()" class="text-center py-4">
-                  <i class="bi bi-shield-x text-muted" style="font-size: 3rem"></i>
-                  <p class="text-muted mt-2">Two-factor authentication is currently disabled</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Account Lock Policy Card (Read-Only) -->
-          <div class="col-12">
-            <div class="card border-0 shadow-sm border-warning">
-              <div class="card-header bg-warning bg-opacity-10 border-bottom border-warning">
-                <h6 class="mb-0 fw-bold text-dark">
-                  <i class="bi bi-shield-exclamation me-2 text-warning"></i>
-                  Account Lock Policy
-                </h6>
-              </div>
-              <div class="card-body">
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <div class="p-3 border rounded bg-light">
-                      <label class="form-label text-muted small fw-bold mb-2">AUTO LOCK AFTER</label>
-                      <div class="d-flex align-items-center">
-                        <i class="bi bi-lock text-danger fs-4 me-3"></i>
-                        <div>
-                          <div class="fw-bold text-dark fs-5">{{ user?.autoLockAfterAttempts ?? "—" }} Failed Attempts</div>
-                          <small class="text-muted">System-wide security policy</small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-md-6">
-                    <div class="p-3 border rounded bg-light">
-                      <label class="form-label text-muted small fw-bold mb-2">UNLOCK METHOD</label>
-                      <div class="d-flex align-items-center">
-                        <i class="bi bi-key text-success fs-4 me-3"></i>
-                        <div>
-                          <span class="badge bg-success fs-6 px-3 py-2">
-                            {{ user?.unlockMethod || "—" }}
-                          </span>
-                          <div class="small text-muted mt-1">Account unlock requires admin intervention</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-12">
-                    <div class="alert alert-light border mb-0">
-                      <h6 class="alert-heading small fw-bold">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Session Awareness
-                      </h6>
-                      <p class="mb-0 small text-muted">
-                        Changing sensitive roles, permissions, or security settings (like 2FA) will force a logout for the user to ensure
-                        security compliance.
-                      </p>
-                    </div>
+                    <span class="fw-semibold text-dark small d-block">Security Compliance Notice</span>
+                    <small class="text-muted" style="font-size: 0.72rem;">
+                      Modifying sensitive credentials, 2FA status, or active branch security permissions will immediately synchronize with the user's active session.
+                    </small>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </fieldset>
       </div>
     </form>
 
-    <!-- Tab 4: User Permission -->
+    <!-- ═══════════════════ Tab 4: User Permission ═══════════════════ -->
     <div *ngIf="activeTab() === 4" class="animation-fade-in">
-      <!-- Embed UserPermissionComponent with fixed user logic -->
       <app-user-permission
         [targetUserId]="employeeId ? employeeId.toString() : ''"
         [allowUserSelection]="false"
@@ -558,10 +378,386 @@
       ></app-user-permission>
     </div>
 
+    <!-- ═══════════════════ Tab 5: Branch Access & Permissions ═══════════════════ -->
+    <div *ngIf="activeTab() === 5" class="animation-fade-in">
+      <!-- Tab Header Banner -->
+      <div class="tab-header-banner mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between">
+        <div>
+          <h5 class="mb-0 fw-bold text-dark d-flex align-items-center" style="font-size: 0.92rem;">
+            <i class="bi bi-buildings text-danger me-2"></i> BRANCH ACCESS & PERMISSIONS
+          </h5>
+          <small class="text-muted" style="font-size: 0.72rem;">
+            Control where this user can work and what actions they are authorized to perform.
+          </small>
+        </div>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1" style="font-size: 0.68rem; font-weight: 600;">
+          <i class="bi bi-shield-check me-1"></i> ISO 17025 Multi-Branch Security
+        </span>
+      </div>
+
+      <!-- ════════════ SECTION A: USER SCOPE SUMMARY (Compact Informational Strip) ════════════ -->
+      <div class="scope-summary-card mb-3 p-3 bg-white border rounded shadow-sm">
+        <div class="row g-3 text-start">
+          <!-- Organization -->
+          <div class="col-6 col-md-3">
+            <span class="summary-label text-muted d-block">ORGANIZATION</span>
+            <div class="summary-value fw-bold text-dark d-flex align-items-center mt-1">
+              <i class="bi bi-building text-secondary me-1.5" style="font-size: 0.85rem;"></i>
+              <span>{{ organizationName }}</span>
+            </div>
+          </div>
+
+          <!-- Assigned Branches -->
+          <div class="col-6 col-md-3 border-start-md">
+            <span class="summary-label text-muted d-block">ASSIGNED BRANCHES</span>
+            <div class="summary-value fw-bold text-dark d-flex align-items-center mt-1">
+              <i class="bi bi-diagram-3 text-secondary me-1.5" style="font-size: 0.85rem;"></i>
+              <span>{{ assignedBranches.length }} {{ assignedBranches.length === 1 ? 'Branch' : 'Branches' }}</span>
+            </div>
+          </div>
+
+          <!-- Default Branch -->
+          <div class="col-6 col-md-3 border-start-md">
+            <span class="summary-label text-muted d-block">DEFAULT BRANCH</span>
+            <div class="summary-value fw-bold text-dark d-flex align-items-center mt-1">
+              <i class="bi bi-geo-alt-fill text-danger me-1.5" style="font-size: 0.85rem;"></i>
+              <span class="text-truncate">{{ defaultBranchName }}</span>
+            </div>
+          </div>
+
+          <!-- View Scope -->
+          <div class="col-6 col-md-3 border-start-md">
+            <span class="summary-label text-muted d-block">VIEW SCOPE</span>
+            <div class="summary-value fw-bold mt-1 d-flex flex-column">
+              <div class="d-flex align-items-center" [class.text-primary]="canViewAllBranches" [class.text-dark]="!canViewAllBranches">
+                <i class="bi me-1.5" [ngClass]="canViewAllBranches ? 'bi-globe-americas text-primary' : 'bi-lock text-secondary'" style="font-size: 0.85rem;"></i>
+                <span>{{ canViewAllBranches ? 'All Active Branches' : 'Assigned Branches' }}</span>
+              </div>
+              <small class="text-muted fw-normal mt-0.5" style="font-size: 0.65rem;" *ngIf="canViewAllBranches">
+                View-only across organization branches
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════ SECTION B: OPERATING SCOPE (Configuration Card) ════════════ -->
+      <fieldset class="section-fieldset-card mb-3">
+        <legend>
+          <i class="bi bi-sliders me-2"></i> Operating Scope
+        </legend>
+        <div class="fieldset-inner-body p-3">
+          <div class="row g-3 align-items-center">
+            <!-- Default Branch Field -->
+            <div class="col-md-6">
+              <div class="form-field-header">
+                <label class="form-label">Default Branch</label>
+                <span class="text-muted small" style="font-size: 0.7rem;">Default operating branch</span>
+              </div>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light border-end-0 text-danger">
+                  <i class="bi bi-geo-alt"></i>
+                </span>
+                <select
+                  class="form-select form-select-sm border-start-0 fw-medium"
+                  [(ngModel)]="defaultBranchId"
+                  (ngModelChange)="onDefaultBranchSelect($event)"
+                  [disabled]="isViewMode || assignedBranches.length === 0"
+                >
+                  <option [ngValue]="null" disabled>-- Select Default Branch --</option>
+                  <option *ngFor="let b of assignedBranches" [ngValue]="b.branchId">
+                    {{ b.branchName }} {{ b.isHeadOffice ? '(Head Office)' : '' }}
+                  </option>
+                </select>
+              </div>
+              <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">
+                Active operating context automatically selected upon login.
+              </small>
+            </div>
+
+            <!-- Can View All Branches Toggle Box -->
+            <div class="col-md-6">
+              <div class="info-card-box p-2.5 border rounded">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <div class="d-flex align-items-center">
+                    <div class="icon-avatar-box bg-secondary-subtle text-secondary me-2.5" style="width: 32px; height: 32px;">
+                      <i class="bi bi-eye fs-6"></i>
+                    </div>
+                    <div>
+                      <label class="form-label mb-0 fw-semibold text-dark" for="canViewAllBranchesSwitch" style="cursor: pointer;">
+                        Can View All Branches
+                      </label>
+                    </div>
+                  </div>
+                  <div class="form-check form-switch m-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="canViewAllBranchesSwitch"
+                      [(ngModel)]="canViewAllBranches"
+                      [disabled]="isViewMode"
+                    />
+                  </div>
+                </div>
+
+                <p class="text-muted small mb-1 ps-0.5" style="font-size: 0.71rem; line-height: 1.35;">
+                  Allows read-only visibility across active branches. Branch-level Create, Edit, Execute, Approve and Delete permissions remain independently controlled.
+                </p>
+
+                <div class="p-1.5 bg-light rounded border-start border-2 border-secondary" style="font-size: 0.67rem; color: #475569;">
+                  <i class="bi bi-info-circle text-secondary me-1"></i>
+                  This does not grant Create, Edit, Execute, Approve or Delete permissions in branches where the user has no corresponding branch permission.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ════════════ SECTION C: BRANCH PERMISSIONS MATRIX ════════════ -->
+      <fieldset class="section-fieldset-card mb-3">
+        <legend class="d-flex align-items-center justify-content-between w-100 pe-2">
+          <div>
+            <span class="d-inline-flex align-items-center">
+              <i class="bi bi-shield-lock me-2"></i> Branch Permissions
+            </span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="stat-badge-pill py-0.5 px-2.5" style="font-size: 0.72rem;">
+              <i class="bi bi-buildings text-danger me-1"></i>
+              <strong>{{ assignedBranches.length }}</strong> Assigned
+            </span>
+          </div>
+        </legend>
+
+        <div class="fieldset-inner-body p-3">
+          <!-- Subtext and Toolbar Row -->
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div class="text-muted small" style="font-size: 0.74rem;">
+              Define the branches this user can access and the actions they may perform in each branch.
+            </div>
+
+            <!-- Compact Add Branch Toolbar -->
+            <div class="d-flex align-items-center gap-2" *ngIf="!isViewMode">
+              <select
+                class="form-select form-select-sm"
+                style="min-width: 230px; font-size: 0.78rem;"
+                [(ngModel)]="selectedBranchToAdd"
+                [disabled]="filteredAvailableBranches.length === 0"
+                aria-label="Select branch to add"
+              >
+                <option [ngValue]="null">
+                  {{ filteredAvailableBranches.length > 0 ? '-- Select branch to add --' : 'All Branches Assigned' }}
+                </option>
+                <option *ngFor="let ab of filteredAvailableBranches" [ngValue]="ab.id">
+                  {{ ab.name }} {{ ab.isHeadOffice ? '(Head Office)' : '' }}
+                </option>
+              </select>
+              <button
+                class="btn-lims btn-lims-add btn-sm"
+                type="button"
+                (click)="onAddBranch()"
+                [disabled]="!selectedBranchToAdd"
+              >
+                <i class="bi bi-plus-circle me-1"></i> Add Branch
+              </button>
+            </div>
+          </div>
+
+          <!-- Permission Matrix Table -->
+          <div class="table-responsive border rounded mb-3">
+            <table class="table table-hover table-bordered table-sm align-middle mb-0 text-center branch-matrix-table">
+              <thead class="table-header-styled">
+                <tr>
+                  <th class="text-start ps-3 sticky-branch-col" style="min-width: 220px;">Branch Identity</th>
+                  <th style="width: 70px;" title="Set as default operating branch upon login">Default</th>
+                  <th class="perm-col-header" style="width: 65px;" title="View branch data">View</th>
+                  <th class="perm-col-header" style="width: 65px;" title="Create new records">Create</th>
+                  <th class="perm-col-header" style="width: 65px;" title="Modify existing records">Edit</th>
+                  <th class="perm-col-header" style="width: 75px;" title="Perform test execution">Execute</th>
+                  <th class="perm-col-header" style="width: 75px;" title="Approve results/reports">Approve</th>
+                  <th class="perm-col-header" style="width: 65px;" title="Delete or soft-delete records where permitted">Delete</th>
+                  <th style="width: 60px;" *ngIf="!isViewMode">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Empty State -->
+                <tr *ngIf="assignedBranches.length === 0">
+                  <td [attr.colspan]="isViewMode ? 8 : 9" class="text-center py-4 text-muted bg-light">
+                    <i class="bi bi-buildings fs-3 d-block mb-1 text-secondary"></i>
+                    <span class="fw-semibold d-block text-dark">No branch access assigned</span>
+                    <small class="text-muted d-block mt-0.5" *ngIf="!canViewAllBranches">
+                      This user currently has no branch access. Add an active branch above to allow branch-level operation.
+                    </small>
+                    <small class="text-muted d-block mt-0.5 text-primary" *ngIf="canViewAllBranches">
+                      Organization-wide viewing is enabled, but no branch is assigned for operating transactions.
+                    </small>
+                  </td>
+                </tr>
+
+                <!-- Assigned Branch Rows -->
+                <tr *ngFor="let b of assignedBranches; let i = index" [class.table-active-branch]="b.branchId === defaultBranchId">
+                  <!-- Branch Details (Sticky) -->
+                  <td class="text-start ps-3 sticky-branch-col">
+                    <div class="d-flex align-items-center">
+                      <i class="bi bi-building text-danger fs-6 me-2"></i>
+                      <div>
+                        <span class="fw-semibold text-dark d-block" style="font-size: 0.79rem;">
+                          {{ b.branchName }}
+                          <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" *ngIf="b.isHeadOffice" style="font-size: 0.62rem;">Head Office</span>
+                        </span>
+                        <small class="text-muted" style="font-size: 0.68rem;" *ngIf="b.branchCode">{{ b.branchCode }}</small>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Default Radio -->
+                  <td>
+                    <input
+                      type="radio"
+                      name="defaultBranchRadio"
+                      class="form-check-input matrix-radio"
+                      [checked]="b.isDefault || b.branchId === defaultBranchId"
+                      (change)="onDefaultBranchSelect(b.branchId)"
+                      [disabled]="isViewMode"
+                      [attr.aria-label]="'Set ' + b.branchName + ' as default'"
+                      title="Set as default operating branch"
+                    />
+                  </td>
+
+                  <!-- CanView -->
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input matrix-check"
+                      [(ngModel)]="b.canView"
+                      [disabled]="isViewMode"
+                      [attr.aria-label]="'View permission for ' + b.branchName"
+                      title="View branch data"
+                    />
+                  </td>
+
+                  <!-- CanCreate -->
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input matrix-check"
+                      [(ngModel)]="b.canCreate"
+                      [disabled]="isViewMode"
+                      [attr.aria-label]="'Create permission for ' + b.branchName"
+                      title="Create new records"
+                    />
+                  </td>
+
+                  <!-- CanEdit -->
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input matrix-check"
+                      [(ngModel)]="b.canEdit"
+                      [disabled]="isViewMode"
+                      [attr.aria-label]="'Edit permission for ' + b.branchName"
+                      title="Modify existing records"
+                    />
+                  </td>
+
+                  <!-- CanExecute -->
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input matrix-check"
+                      [(ngModel)]="b.canExecute"
+                      [disabled]="isViewMode"
+                      [attr.aria-label]="'Execute permission for ' + b.branchName"
+                      title="Perform test execution"
+                    />
+                  </td>
+
+                  <!-- CanApprove -->
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input matrix-check"
+                      [(ngModel)]="b.canApprove"
+                      [disabled]="isViewMode"
+                      [attr.aria-label]="'Approve permission for ' + b.branchName"
+                      title="Approve results/reports"
+                    />
+                  </td>
+
+                  <!-- CanDelete -->
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input matrix-check"
+                      [(ngModel)]="b.canDelete"
+                      [disabled]="isViewMode"
+                      [attr.aria-label]="'Delete permission for ' + b.branchName"
+                      title="Delete or soft-delete records where permitted"
+                    />
+                  </td>
+
+                  <!-- Remove Action -->
+                  <td *ngIf="!isViewMode">
+                    <button
+                      class="btn-lims btn-lims-remove btn-sm p-1"
+                      type="button"
+                      (click)="onRemoveBranch(i)"
+                      aria-label="Remove branch access"
+                      title="Remove branch access"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ════════════ SECTION D: DIRTY STATE & SAVE FOOTER BAR ════════════ -->
+          <div class="matrix-footer-bar p-3 bg-light border rounded d-flex justify-content-between align-items-center" *ngIf="!isViewMode">
+            <div class="d-flex align-items-center">
+              <i class="bi me-2 fs-5" [ngClass]="isTab5Dirty() ? 'bi-exclamation-circle text-warning' : 'bi-check2-circle text-success'"></i>
+              <div>
+                <span class="fw-semibold text-dark small d-block" *ngIf="isTab5Dirty()">Unsaved changes</span>
+                <span class="text-muted small" style="font-size: 0.73rem;" *ngIf="isTab5Dirty()">
+                  Branch access or permissions have been modified.
+                </span>
+                <span class="text-muted small" style="font-size: 0.73rem;" *ngIf="!isTab5Dirty()">
+                  All branch permissions are synchronized with SQL Server.
+                </span>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <button
+                class="btn-lims btn-lims-cancel btn-sm"
+                type="button"
+                (click)="resetBranchAccess()"
+                [disabled]="!isTab5Dirty() || isBranchAccessSaving"
+              >
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Cancel
+              </button>
+              <button
+                class="btn-lims btn-lims-save btn-save"
+                type="button"
+                (click)="saveBranchAccess()"
+                [disabled]="!isTab5Dirty() || isBranchAccessSaving"
+              >
+                <i class="bi me-1" [ngClass]="isBranchAccessSaving ? 'bi-hourglass-split' : 'bi-check-circle'"></i>
+                {{ isBranchAccessSaving ? 'Saving Changes...' : 'Save Changes' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
     <!-- Action Buttons (for Tabs 1-3) -->
-    <div class="mt-4 border-top pt-3 d-flex justify-content-end" *ngIf="activeTab() !== 4 && !isViewMode">
-      <button class="btn btn-add" (click)="saveUserManagement()" [disabled]="submitted && userForm.invalid">
-        <i class="bi bi-save me-1"></i>
+    <div class="mt-3 border-top pt-2.5 d-flex justify-content-end" *ngIf="activeTab() !== 4 && activeTab() !== 5 && !isViewMode">
+      <button class="btn-lims btn-lims-save" (click)="saveUserManagement()" [disabled]="submitted && userForm.invalid">
+        <i class="bi bi-check-circle me-1"></i>
         Save User Settings
       </button>
     </div>

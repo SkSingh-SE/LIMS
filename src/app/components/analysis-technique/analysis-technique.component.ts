@@ -1,95 +1,103 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Modal } from 'bootstrap';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { Modal } from 'bootstrap';
 import { AnalysisTechniqueService } from '../../services/analysis-technique.service';
 import { ToastService } from '../../services/toast.service';
 import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
+import { BreadcrumbComponent } from '../../utility/components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-analysis-technique',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    FormFieldErrorComponent,
+    PaginationComponent,
+    BreadcrumbComponent
+  ],
   templateUrl: './analysis-technique.component.html',
   styleUrl: './analysis-technique.component.css',
 })
 export class AnalysisTechniqueComponent implements OnInit {
-  @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
-  columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Technique', filter: true },
-    { key: 'code', type: 'string', label: 'Code', filter: true },
-    { key: 'aliasNames', type: 'string', label: 'Aliases', filter: true },
-    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
-  ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    name: 'string',
-    code: 'string',
-    aliasNames: 'string',
-    modifiedOn: 'date',
-  };
+  // Filter state
+  filterCode: string = '';
+  filterName: string = '';
+  filterStatus: string = ''; // '' = All, 'true' = Active, 'false' = Inactive
 
-  filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
-  filterType: string = 'Contains';
-  filterValue: string = '';
-  filterValue2: string = '';
-  isFilterOpen = false;
+  // Grid state
   techniqueList: any[] = [];
-
-  pageNumber = 1;
-  pageSize = 10;
-  totalItems = 0;
-  pageSizes = [10, 25, 50, 100, 200, 500];
-
-  sortByColumn: string = 'name';
+  pageNumber: number = 1;
+  pageSize: number = 10;
+  totalItems: number = 0;
+  pageSizes: number[] = [10, 25, 50, 100];
+  sortByColumn: string = 'code';
   sortOrder: string = 'asc';
-  searchTerm: string = '';
 
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null,
-  };
-
+  // Modal / Form state
   techniqueForm!: FormGroup;
-  submitted = false;
+  submitted: boolean = false;
   isEditMode: boolean = false;
-  isViewMode: boolean = true;
+  isViewMode: boolean = false;
   selectedId: number = 0;
-  formTitle = 'Analysis Technique Form';
+  formTitle: string = 'Add Analysis Technique';
 
   constructor(
     private fb: FormBuilder,
-    private router: Router,
-    private route: ActivatedRoute,
     private techniqueService: AnalysisTechniqueService,
     private toastService: ToastService
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.initForm();
     this.fetchData();
+  }
+
+  initForm(): void {
     this.techniqueForm = this.fb.group({
       id: [0],
+      code: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      code: ['', [Validators.maxLength(40)]],
       aliasNames: ['', [Validators.maxLength(500)]],
       description: ['', [Validators.maxLength(1000)]],
+      isActive: [true]
     });
   }
 
-  fetchData() {
-    this.techniqueService.getAllAnalysisTechniques(this.payload).subscribe({
+  fetchData(): void {
+    const filters: any[] = [];
+
+    if (this.filterCode.trim()) {
+      filters.push({ column: 'code', type: 'Contains', value: this.filterCode.trim() });
+    }
+
+    if (this.filterName.trim()) {
+      filters.push({ column: 'name', type: 'Contains', value: this.filterName.trim() });
+    }
+
+    if (this.filterStatus !== '') {
+      filters.push({ column: 'isActive', type: 'Equal', value: this.filterStatus === 'true' });
+    }
+
+    const payload = {
+      PageNumber: this.pageNumber,
+      PageSize: this.pageSize,
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder,
+      filter: filters.length > 0 ? filters : null
+    };
+
+    this.techniqueService.getAllAnalysisTechniques(payload).subscribe({
       next: (response) => {
         this.techniqueList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
@@ -98,224 +106,185 @@ export class AnalysisTechniqueComponent implements OnInit {
       },
       error: () => {
         this.techniqueList = [];
-      },
+        this.totalItems = 0;
+      }
     });
   }
 
-  loadTechniqueData(): void {
-    const requestId = this.selectedId;
-    this.techniqueService.getAnalysisTechniqueById(requestId).subscribe({
-      next: (response) => {
-        if (this.selectedId !== requestId) return; // discard stale response
-        this.techniqueForm.patchValue(response);
-      },
-      error: (error) => {
-        console.error('Error fetching analysis technique data:', error);
-      },
-    });
+  onSearch(): void {
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
-  applySorting(column: string) {
+  onReset(): void {
+    this.filterCode = '';
+    this.filterName = '';
+    this.filterStatus = '';
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  applySorting(column: string): void {
     if (this.sortByColumn === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
     this.fetchData();
   }
 
-  openFilterModal(column: string, event: MouseEvent) {
-    this.filterColumn = column;
-    this.columns.forEach((col) => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
-      }
-    });
-    this.filterValue = '';
-    this.filterValue2 = '';
-
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
-    }
-
-    this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
-    if (this.filterModal) {
-      const modal = this.filterModal.nativeElement;
-      modal.style.display = 'block';
-      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
-      modal.style.left = `${rect.left + window.scrollX}px`;
-
-      requestAnimationFrame(() => {
-        const modalRect = modal.getBoundingClientRect();
-        if (modalRect.right > window.innerWidth) {
-          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-        }
-        if (modalRect.bottom > window.innerHeight) {
-          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-        }
-      });
-    }
-  }
-
-  applyFilter() {
-    if (!this.filterColumn || this.filterValue === '') return;
-
-    const existingFilterIndex = this.filters.findIndex((f) => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
-    } else {
-      this.filters.push(filterData);
-    }
-
-    this.fetchData();
-    this.closeFilterModal();
-  }
-
-  resetFilter(column: string) {
-    this.filters = this.filters.filter((filter) => filter.column !== column);
-    this.payload.filter = this.filters;
-    this.fetchData();
-  }
-
-  closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
-    }
-  }
-
-  onPageChange(page: number) {
+  onPageChange(page: number): void {
     this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
     this.fetchData();
   }
 
-  changePageSize(event: Event) {
+  changePageSize(event: Event): void {
     this.pageSize = Number((event.target as HTMLSelectElement).value);
     this.pageNumber = 1;
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
     this.fetchData();
   }
 
-  onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
+  onPageSizeChange(newSize: number): void {
+    this.pageSize = newSize;
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
-  hasFilter(column: string): boolean {
-    return this.filters?.some((f) => f.column === column) ?? false;
+  onCodeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input) return;
+    // Unified normalization: uppercase, spaces to underscore, allowed chars only [A-Z0-9_]
+    const normalized = input.value.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+    this.techniqueForm.get('code')?.setValue(normalized, { emitEvent: false });
   }
 
-  deleteTechnique(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.techniqueService.deleteAnalysisTechnique(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error?.error?.message || error?.message || 'Failed to delete analysis technique.', 'error');
-        },
-      });
-    }
-  }
-
-  openModal(type: string, id: number): void {
-    this.techniqueForm.reset({ id: 0, name: '', code: '', aliasNames: '', description: '' });
+  openModal(type: string, id: number = 0): void {
+    this.submitted = false;
+    this.selectedId = id;
+    this.techniqueForm.reset({ id: 0, code: '', name: '', aliasNames: '', description: '', isActive: true });
     this.techniqueForm.enable();
-    this.selectedId = 0;
-    if (id > 0) {
-      this.selectedId = id;
-      this.loadTechniqueData();
-    }
+
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Analysis Technique Form';
+      this.formTitle = 'Add Analysis Technique';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Analysis Technique Form';
-      this.techniqueForm.enable();
+      this.formTitle = 'Edit Analysis Technique';
+      this.loadTechniqueData(id);
     } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Analysis Technique';
+      this.formTitle = 'View Analysis Technique Details';
       this.techniqueForm.disable();
+      this.loadTechniqueData(id);
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
-    this.bsModal.show();
+    if (!this.bsModal && this.modalElement) {
+      this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
+    }
+    this.bsModal?.show();
   }
 
-  isFieldInvalid(path: string): boolean {
-    return FormValidationHelper.isFieldInvalid(this.techniqueForm, path, this.submitted);
+  loadTechniqueData(id: number): void {
+    this.techniqueService.getAnalysisTechniqueById(id).subscribe({
+      next: (data) => {
+        if (this.selectedId !== id) return;
+        this.techniqueForm.patchValue({
+          id: data.id,
+          code: data.code,
+          name: data.name,
+          aliasNames: data.aliasNames,
+          description: data.description,
+          isActive: data.isActive
+        });
+      },
+      error: () => {
+        this.toastService.show('Failed to load technique details.', 'error');
+      }
+    });
   }
 
   closeModal(): void {
     this.submitted = false;
-    if (this.bsModal) {
-      this.bsModal.hide();
-    }
-    this.techniqueForm.reset({ id: 0 });
+    this.bsModal?.hide();
+    this.techniqueForm.reset({ id: 0, code: '', name: '', aliasNames: '', description: '', isActive: true });
     this.techniqueForm.enable();
     this.selectedId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
   }
 
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.techniqueForm, path, this.submitted);
+  }
+
   onSubmit(): void {
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.techniqueForm);
+
     if (!this.techniqueForm.valid) {
       this.toastService.show('Please fix the validation errors before submitting.', 'warning');
       return;
     }
-    const formData = this.techniqueForm.value;
+
+    const formVal = this.techniqueForm.getRawValue();
+
     if (this.isEditMode) {
-      this.techniqueService.updateAnalysisTechnique(formData).subscribe({
+      const updateDto = {
+        id: formVal.id,
+        code: formVal.code?.trim().toUpperCase(),
+        name: formVal.name?.trim(),
+        aliasNames: formVal.aliasNames?.trim() || null,
+        description: formVal.description?.trim() || null,
+        isActive: formVal.isActive ?? true
+      };
+
+      this.techniqueService.updateAnalysisTechnique(updateDto).subscribe({
         next: (response) => {
-          this.toastService.show(response.message, 'success');
+          this.toastService.show(response?.message || 'Analysis Technique updated successfully.', 'success');
           this.closeModal();
           this.fetchData();
         },
-        error: () => {},
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.message || 'Failed to update analysis technique.', 'error');
+        }
       });
     } else {
-      formData.id = 0;
-      this.techniqueService.createAnalysisTechnique(formData).subscribe({
+      const createDto = {
+        code: formVal.code?.trim().toUpperCase(),
+        name: formVal.name?.trim(),
+        aliasNames: formVal.aliasNames?.trim() || null,
+        description: formVal.description?.trim() || null,
+        isActive: true
+      };
+
+      this.techniqueService.createAnalysisTechnique(createDto).subscribe({
         next: (response) => {
-          this.toastService.show(response.message, 'success');
+          this.toastService.show(response?.message || 'Analysis Technique created successfully.', 'success');
           this.closeModal();
           this.fetchData();
         },
-        error: () => {},
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.message || 'Failed to create analysis technique.', 'error');
+        }
       });
     }
+  }
+
+  toggleStatus(item: any): void {
+    if (!item?.id) return;
+    const action = item.isActive ? 'deactivate' : 'activate';
+    this.techniqueService.toggleStatus(item.id).subscribe({
+      next: (response) => {
+        this.toastService.show(response?.message || `Technique ${action}d successfully.`, 'success');
+        this.fetchData();
+      },
+      error: (error) => {
+        this.toastService.show(error?.error?.message || error?.message || `Failed to ${action} technique.`, 'error');
+      }
+    });
   }
 }

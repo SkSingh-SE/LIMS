@@ -1,244 +1,422 @@
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { Modal } from 'bootstrap';
 import { DepartmentService } from '../../../services/department.service';
+import { DisciplineService } from '../../../services/discipline.service';
 import { ToastService } from '../../../services/toast.service';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-department-list',
-  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    FormFieldErrorComponent,
+    PaginationComponent,
+    BreadcrumbComponent
+  ],
   templateUrl: './department-list.component.html',
   styleUrl: './department-list.component.css'
 })
 export class DepartmentListComponent implements OnInit {
-  @ViewChild('filterModal') filterModal!: ElementRef;
+  @ViewChild('modalRef') modalElement!: ElementRef;
+  private bsModal!: Modal;
 
-  columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'isChemical', type: 'string', label: 'Type', filter: false },
-    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
-    { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
-  ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    name: 'string',
-    description: 'string',
-    createdBy: 'string',
-    modifiedOn: 'date',
-  };
+  // Lookups
+  branches: any[] = [];
+  allDisciplines: any[] = [];
+  filterDisciplines: any[] = [];
+  modalDisciplines: any[] = [];
 
-  filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
-  filterType: string = 'Contains';
-  filterValue: string = '';
-  filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
-  isFilterOpen = false;
-  departmentForm: FormGroup;
+  // Filter state
+  filterBranch: string = '';
+  filterDiscipline: string = '';
+  filterCode: string = '';
+  filterName: string = '';
+  filterStatus: string = ''; // '' = All, 'true' = Active, 'false' = Inactive
+
+  // Grid state
   departmentList: any[] = [];
-  filteredDepartmentList: any[] = [];
+  pageNumber: number = 1;
+  pageSize: number = 10;
+  totalItems: number = 0;
+  pageSizes: number[] = [10, 25, 50, 100];
+  sortByColumn: string = 'branchName';
+  sortOrder: string = 'asc';
 
-  pageNumber = 1;
-  pageSize = 10;
-  totalItems = 0;
-  pageSizes = [10, 25, 50, 100, 200, 500];
+  // Modal / Form state
+  departmentForm!: FormGroup;
+  submitted: boolean = false;
+  isEditMode: boolean = false;
+  isViewMode: boolean = false;
+  selectedId: number = 0;
+  formTitle: string = 'Add Department';
+  loadingBranchDisciplines: boolean = false;
 
-  sortByColumn: string = 'modifiedOn';
-  sortOrder: string = 'desc';
-  searchTerm: string = '';
+  constructor(
+    private fb: FormBuilder,
+    private departmentService: DepartmentService,
+    private disciplineService: DisciplineService,
+    private toastService: ToastService
+  ) {}
 
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null
-  };
-
-  constructor(private fb: FormBuilder, private departmentService: DepartmentService, private toastService: ToastService) {
-    this.departmentForm = this.fb.group({
-      searchTerm: '',
-      sortByColumn: '',
-      sortOrder: '',
-      filters: this.fb.group({})
-    });
-  }
-
-  getDesignationValue(designation: any, key: string): any {
-    return designation[key];
-  }
-
-  ngOnInit() {
+  ngOnInit(): void {
+    this.initForm();
+    this.loadLookups();
     this.fetchData();
   }
 
-  fetchData() {
-
-    this.departmentService.getAllDepartments(this.payload).subscribe(
-      (response) => {
-        this.departmentList = response?.items || [];
-        this.totalItems = response?.totalRecords || 0;
-        this.pageSize = response?.pageSize || 10;
-        this.pageNumber = response?.pageNumber || 1;
-        this.filteredDepartmentList = this.departmentList;
-      },
-      (error) => {
-        console.error('Error fetching designations:', error);
-        this.departmentList = this.filteredDepartmentList = [];
-      }
-
-    );
+  private initForm(): void {
+    this.departmentForm = this.fb.group({
+      id: [0],
+      branchId: [null, [Validators.required]],
+      disciplineId: [null, [Validators.required]],
+      code: ['', [Validators.required, Validators.maxLength(20), noWhitespaceValidator()]],
+      name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
+      description: ['', [Validators.maxLength(3000)]],
+      isChemical: [false],
+      isActive: [true]
+    });
   }
 
-  applySorting(column: string) {
+  private loadLookups(): void {
+    // Load authorized branches
+    this.departmentService.getAuthorizedBranches().subscribe({
+      next: (branches: any[]) => {
+        this.branches = branches || [];
+      },
+      error: () => {
+        this.branches = [];
+      }
+    });
+
+    // Load general disciplines for filter dropdown
+    this.disciplineService.getDisciplineDropdown('', 0, 100).subscribe({
+      next: (disciplines: any[]) => {
+        this.allDisciplines = disciplines || [];
+        this.filterDisciplines = [...this.allDisciplines];
+      },
+      error: () => {
+        this.allDisciplines = [];
+        this.filterDisciplines = [];
+      }
+    });
+  }
+
+  onBranchFilterChange(): void {
+    if (this.filterBranch) {
+      const bId = Number(this.filterBranch);
+      this.departmentService.getBranchDisciplines(bId).subscribe({
+        next: (disciplines: any[]) => {
+          this.filterDisciplines = disciplines || [];
+          // If current filterDiscipline is not supported by this branch, reset it
+          if (this.filterDiscipline && !this.filterDisciplines.some(d => d.id == this.filterDiscipline)) {
+            this.filterDiscipline = '';
+          }
+          this.onSearch();
+        },
+        error: () => {
+          this.filterDisciplines = [];
+          this.filterDiscipline = '';
+          this.onSearch();
+        }
+      });
+    } else {
+      this.filterDisciplines = [...this.allDisciplines];
+      this.onSearch();
+    }
+  }
+
+  onModalBranchChange(): void {
+    const branchId = this.departmentForm.get('branchId')?.value;
+    if (branchId) {
+      this.loadingBranchDisciplines = true;
+      this.departmentService.getBranchDisciplines(Number(branchId)).subscribe({
+        next: (disciplines: any[]) => {
+          this.modalDisciplines = disciplines || [];
+          this.loadingBranchDisciplines = false;
+
+          const currentDisciplineId = this.departmentForm.get('disciplineId')?.value;
+          if (currentDisciplineId && !this.modalDisciplines.some(d => d.id == currentDisciplineId)) {
+            this.departmentForm.patchValue({ disciplineId: null });
+          }
+        },
+        error: () => {
+          this.modalDisciplines = [];
+          this.loadingBranchDisciplines = false;
+          this.departmentForm.patchValue({ disciplineId: null });
+        }
+      });
+    } else {
+      this.modalDisciplines = [];
+      this.departmentForm.patchValue({ disciplineId: null });
+    }
+  }
+
+  fetchData(): void {
+    const filters: any[] = [];
+
+    if (this.filterBranch) {
+      filters.push({
+        column: 'BranchID',
+        type: 'Equal',
+        value: this.filterBranch
+      });
+    }
+
+    if (this.filterDiscipline) {
+      filters.push({
+        column: 'DisciplineID',
+        type: 'Equal',
+        value: this.filterDiscipline
+      });
+    }
+
+    if (this.filterCode.trim()) {
+      filters.push({
+        column: 'Code',
+        type: 'Contains',
+        value: this.filterCode.trim()
+      });
+    }
+
+    if (this.filterName.trim()) {
+      filters.push({
+        column: 'Name',
+        type: 'Contains',
+        value: this.filterName.trim()
+      });
+    }
+
+    if (this.filterStatus !== '') {
+      filters.push({
+        column: 'IsActive',
+        type: 'Equal',
+        value: this.filterStatus
+      });
+    }
+
+    const payload = {
+      PageNumber: this.pageNumber,
+      PageSize: this.pageSize,
+      searchTerm: '',
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder,
+      Filter: filters.length > 0 ? filters : null
+    };
+
+    this.departmentService.getAllDepartments(payload).subscribe({
+      next: (res: any) => {
+        this.departmentList = res?.items || [];
+        this.totalItems = res?.totalRecords || 0;
+        this.pageNumber = res?.pageNumber || 1;
+        this.pageSize = res?.pageSize || 10;
+      },
+      error: (err: any) => {
+        this.departmentList = [];
+        this.totalItems = 0;
+        this.toastService.show(err?.error?.message || 'Failed to fetch departments', 'error');
+      }
+    });
+  }
+
+  onSearch(): void {
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  onReset(): void {
+    this.filterBranch = '';
+    this.filterDiscipline = '';
+    this.filterDisciplines = [...this.allDisciplines];
+    this.filterCode = '';
+    this.filterName = '';
+    this.filterStatus = '';
+    this.pageNumber = 1;
+    this.sortByColumn = 'branchName';
+    this.sortOrder = 'asc';
+    this.fetchData();
+  }
+
+  onSort(column: string): void {
     if (this.sortByColumn === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
     this.fetchData();
   }
 
-  openFilterModal(column: string, event: MouseEvent) {
-    this.filterColumn = column;
-    this.columns.forEach(col => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
-      }
-    })
-    this.filterValue = '';
-    this.filterValue2 = '';
-
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
-    }
-
-    this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
-    if (this.filterModal) {
-      const modal = this.filterModal.nativeElement;
-      modal.style.display = 'block';
-      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
-      modal.style.left = `${rect.left + window.scrollX}px`;
-
-      // Clamp to viewport so the popup doesn't overflow
-      requestAnimationFrame(() => {
-        const modalRect = modal.getBoundingClientRect();
-        if (modalRect.right > window.innerWidth) {
-          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-        }
-        if (modalRect.bottom > window.innerHeight) {
-          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-        }
-      });
-    }
-  }
-
-  applyFilter() {
-    if (!this.filterColumn || this.filterValue === '') return;
-
-    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
-    } else {
-      this.filters.push(filterData);
-    }
-
-    this.payload.filter = this.filters;
-    this.fetchData();
-    this.closeFilterModal();
-  }
-
-  resetFilter(column: string) {
-    this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
-    this.fetchData();
-  }
-
-  closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
-    }
-  }
-
-  onPageChange(page: number) {
+  onPageChange(page: number): void {
     this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
     this.fetchData();
   }
 
-  changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+    this.pageNumber = 1;
     this.fetchData();
   }
 
-  onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
-  }
+  openModal(mode: 'create' | 'edit' | 'view', item?: any): void {
+    this.submitted = false;
+    this.isViewMode = mode === 'view';
+    this.isEditMode = mode === 'edit';
 
-  get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
-  }
-  getStartRecord(): number {
-    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
-  }
+    if (mode === 'create') {
+      this.formTitle = 'Add Department';
+      this.selectedId = 0;
+      this.departmentForm.enable();
+      this.departmentForm.reset({
+        id: 0,
+        branchId: this.branches.length > 0 ? this.branches[0].id : null,
+        disciplineId: null,
+        code: '',
+        name: '',
+        description: '',
+        isChemical: false,
+        isActive: true
+      });
+      // Load branch-supported disciplines for initial branch
+      if (this.branches.length > 0) {
+        this.onModalBranchChange();
+      } else {
+        this.modalDisciplines = [];
+      }
+      this.showBsModal();
+    } else {
+      this.selectedId = item?.id || item?.ID;
+      this.formTitle = mode === 'edit' ? 'Edit Department' : 'Department Details';
 
-  getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
-  }
+      this.departmentService.getDepartmentById(this.selectedId).subscribe({
+        next: (data: any) => {
+          const branchId = data.branchID || data.BranchID;
+          const disciplineId = data.disciplineID || data.DisciplineID;
 
+          // Load branch-supported disciplines for this branch
+          this.departmentService.getBranchDisciplines(branchId).subscribe({
+            next: (disciplines: any[]) => {
+              this.modalDisciplines = disciplines || [];
 
-  hasFilter(column: string): boolean {
-    return this.filters?.some(f => f.column === column) ?? false;
-  }
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find(col => col.key === columnKey);
-    return column ? column.type : undefined;
-  }
+              this.departmentForm.patchValue({
+                id: data.id || data.ID,
+                branchId: branchId,
+                disciplineId: disciplineId,
+                code: data.code || data.Code || '',
+                name: data.name || data.Name || '',
+                description: data.description || data.Description || '',
+                isChemical: !!(data.isChemical || data.IsChemical),
+                isActive: data.isActive !== undefined ? data.isActive : data.IsActive
+              });
 
-  deleteDepartment(id: number) {
-    const confirmed = window.confirm('Are you sure you want to delete this department?');
-    if (confirmed) {
-      this.departmentService.deleteDepartment(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
+              if (this.isViewMode) {
+                this.departmentForm.disable();
+              } else {
+                this.departmentForm.enable();
+              }
+
+              this.showBsModal();
+            },
+            error: () => {
+              this.modalDisciplines = [];
+              this.showBsModal();
+            }
+          });
         },
-        error: () => {
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to load department details', 'error');
         }
       });
     }
   }
 
+  private showBsModal(): void {
+    if (!this.bsModal) {
+      this.bsModal = new Modal(this.modalElement.nativeElement, { backdrop: 'static', keyboard: false });
+    }
+    this.bsModal.show();
+  }
+
+  closeModal(): void {
+    if (this.bsModal) {
+      this.bsModal.hide();
+    }
+    this.submitted = false;
+  }
+
+  onSubmit(): void {
+    this.submitted = true;
+    if (this.departmentForm.invalid) {
+      return;
+    }
+
+    const formVal = this.departmentForm.getRawValue();
+
+    if (this.isEditMode) {
+      const payload = {
+        id: this.selectedId,
+        branchID: Number(formVal.branchId),
+        disciplineID: Number(formVal.disciplineId),
+        code: formVal.code?.trim().toUpperCase(),
+        name: formVal.name?.trim(),
+        description: formVal.description?.trim() || null,
+        isChemical: !!formVal.isChemical,
+        isActive: formVal.isActive
+      };
+
+      this.departmentService.updateDepartment(payload).subscribe({
+        next: (res: any) => {
+          this.toastService.show(res?.message || 'Department updated successfully', 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to update department', 'error');
+        }
+      });
+    } else {
+      const payload = {
+        branchID: Number(formVal.branchId),
+        disciplineID: Number(formVal.disciplineId),
+        code: formVal.code?.trim().toUpperCase(),
+        name: formVal.name?.trim(),
+        description: formVal.description?.trim() || null,
+        isChemical: !!formVal.isChemical,
+        isActive: formVal.isActive
+      };
+
+      this.departmentService.createDepartment(payload).subscribe({
+        next: (res: any) => {
+          this.toastService.show(res?.message || 'Department created successfully', 'success');
+          this.closeModal();
+          this.fetchData();
+        },
+        error: (err: any) => {
+          this.toastService.show(err?.error?.message || 'Failed to create department', 'error');
+        }
+      });
+    }
+  }
+
+  onToggleStatus(item: any): void {
+    const id = item.id || item.ID;
+    this.departmentService.toggleDepartmentStatus(id).subscribe({
+      next: (res: any) => {
+        item.isActive = res.isActive;
+        this.toastService.show(res?.message || 'Status updated successfully', 'success');
+      },
+      error: (err: any) => {
+        this.toastService.show(err?.error?.message || 'Failed to update status', 'error');
+      }
+    });
+  }
 }

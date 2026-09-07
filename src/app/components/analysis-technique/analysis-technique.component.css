@@ -1,71 +1,25 @@
-.table thead th {
-    cursor: pointer;
-  }
+/* Analysis Technique Component Specific Styles */
 
-  .table thead th:hover {
-    background-color: #f8f9fa;
-  }
+.alias-chip {
+  font-size: 0.74rem;
+  padding: 0.15rem 0.4rem;
+  background-color: #f8fafc;
+  border-color: #cbd5e1 !important;
+}
 
-  .card .card-header {
-    padding: 0.5rem 0.5rem !important;
-    height: 47px !important;
-  }
+.lims-fieldset {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  background-color: #ffffff;
+}
 
+.lims-fieldset legend {
+  font-size: 0.82rem;
+  padding: 0 0.4rem;
+  margin-bottom: 0.4rem;
+}
 
-  .filter-modal {
-    position: absolute;
-    display: none;
-    z-index: 1000;
-  }
-  .sorting-icon-up {
-    font-size: 18px;
-    line-height: 12px;
-    cursor: pointer;
-    padding: 0;
-    margin-bottom: -3px;
-  }
-  .sorting-icon-down {
-    font-size: 18px;
-    line-height: 12px;
-    cursor: pointer;
-    padding: 0;
-    margin-top: -3px;
-  }
-  .bordered-table thead tr th{
-    padding: 6px 8px !important;
-  }
-  .bordered-table tbody tr td{
-    padding: 6px 8px !important;
-  }
-  .btn.btn-sm {
-    padding: 0.2rem 0.5rem !important;
-  }
-  .custom-search {
-    height: 36px;
-  }
-
-  .custom-search input,
-  .custom-search .input-group-text {
-    height: 100%;
-  }
-  .icon-svg {
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    transition: transform 0.2s ease-in-out;
-  }
-
-  .icon-svg:hover {
-    transform: scale(1.1);
-  }
-
-  .icon-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .table-responsive {
-    overflow-x: auto;
-    max-width: 100%;
-  }
+.cursor-pointer {
+  cursor: pointer;
+}

@@ -1,0 +1,373 @@
+<div class="container-fluid p-2">
+  <!-- Breadcrumb Navigation Bar -->
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <!-- Card Header with Title and Add Action Button -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-layers fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Test Method Version Master</h6>
+          <small class="text-muted text-xs">Lifecycle versions, editions, and parameter associations</small>
+        </div>
+      </div>
+      <button type="button" class="btn-lims btn-lims-save" (click)="openAddModal()">
+        <i class="bi bi-plus-circle me-1"></i> Add Version
+      </button>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <select class="form-select form-select-sm" [(ngModel)]="filterMethodId" (change)="onSearch()">
+            <option [ngValue]="null">All Test Methods</option>
+            <option *ngFor="let m of testMethodList" [ngValue]="m.id">
+              {{ m.code }} — {{ m.name }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="filterVersion" placeholder="Version (e.g. 2021)" (keyup.enter)="onSearch()">
+        </div>
+        <div class="col-md-1">
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="filterYear" placeholder="Year" (keyup.enter)="onSearch()">
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="onSearch()">
+            <option value="">All Statuses</option>
+            <option value="0">Draft</option>
+            <option value="1">Active</option>
+            <option value="2">Superseded</option>
+            <option value="3">Withdrawn</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="filterIsDefault" (change)="onSearch()">
+            <option value="">All (Default / Non-Default)</option>
+            <option value="true">Default Only</option>
+            <option value="false">Non-Default Only</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="onSort('methodcode')">
+                Method Code <i class="bi ms-1" [ngClass]="getSortIcon('methodcode')"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('methodname')">
+                Method Name <i class="bi ms-1" [ngClass]="getSortIcon('methodname')"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('version')">
+                Version / Edition <i class="bi ms-1" [ngClass]="getSortIcon('version')"></i>
+              </th>
+              <th class="cursor-pointer text-center" (click)="onSort('year')">
+                Year <i class="bi ms-1" [ngClass]="getSortIcon('year')"></i>
+              </th>
+              <th class="cursor-pointer text-center" (click)="onSort('effectivedate')">
+                Effective Date <i class="bi ms-1" [ngClass]="getSortIcon('effectivedate')"></i>
+              </th>
+              <th class="cursor-pointer text-center" (click)="onSort('reviewdate')">
+                Review Date <i class="bi ms-1" [ngClass]="getSortIcon('reviewdate')"></i>
+              </th>
+              <th class="text-center">Params</th>
+              <th class="cursor-pointer text-center" (click)="onSort('isdefault')">
+                Default <i class="bi ms-1" [ngClass]="getSortIcon('isdefault')"></i>
+              </th>
+              <th class="cursor-pointer text-center col-status" (click)="onSort('status')">
+                Status <i class="bi ms-1" [ngClass]="getSortIcon('status')"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of versionList; let i = index">
+              <td class="text-center text-muted font-monospace small">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="text-center col-actions">
+                <div class="d-flex gap-1 justify-content-center align-items-center">
+                  <button type="button" class="btn-tbl-action btn-tbl-view" (click)="openViewModal(item)" title="View Details">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" (click)="openEditModal(item)" title="Edit Version">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button *ngIf="item.status === 1 && !item.isDefault" type="button" class="btn-tbl-action btn-tbl-default" (click)="setDefault(item)" title="Set as Default Version">
+                    <i class="bi bi-star-fill"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-params" (click)="openParamModal(item)" title="Map Parameters">
+                    <i class="bi bi-sliders"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace fw-semibold">{{ item.testMethodCode }}</span>
+                <span *ngIf="!item.isParentActive" class="badge bg-danger-subtle text-danger ms-1" title="Parent Method is Inactive">Inactive Method</span>
+              </td>
+              <td class="fw-semibold text-dark text-truncate max-w-200" [title]="item.testMethodName">{{ item.testMethodName }}</td>
+              <td>
+                <span class="version-badge">{{ item.version }}</span>
+              </td>
+              <td class="text-center">{{ item.year || '—' }}</td>
+              <td class="text-center">{{ item.effectiveDate ? (item.effectiveDate | date:'yyyy-MM-dd') : '—' }}</td>
+              <td class="text-center">{{ item.reviewDate ? (item.reviewDate | date:'yyyy-MM-dd') : '—' }}</td>
+              <td class="text-center">
+                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1.5 param-count-btn" (click)="openParamModal(item)" title="Manage mapped parameters">
+                  <i class="bi bi-sliders me-1"></i>{{ item.parametersCount }}
+                </button>
+              </td>
+              <td class="text-center">
+                <span *ngIf="item.isDefault" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" title="Default Edition">
+                  <i class="bi bi-star-fill text-warning me-1"></i>Default
+                </span>
+                <span *ngIf="!item.isDefault" class="text-muted">—</span>
+              </td>
+              <td class="text-center">
+                <span [ngClass]="getStatusBadgeClass(item.status)">{{ getStatusLabel(item.status) }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="versionList.length === 0">
+              <td colspan="11" class="text-center py-4 text-muted">
+                <i class="bi bi-layers text-secondary fs-3 d-block mb-1"></i>
+                No Test Method Versions found. Click <strong>+ Add Version</strong> to create one.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [totalItems]="totalItems"
+        [pageSize]="pageSize"
+        [currentPage]="pageNumber"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+  <!-- Add / Edit / View Version Modal -->
+  <div class="modal fade" #versionModalRef tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header py-2 bg-light border-bottom">
+          <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-layers text-danger"></i>
+            <span>{{ formTitle }}</span>
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form [formGroup]="versionForm" (ngSubmit)="saveVersion()">
+          <div class="modal-body p-3">
+            <!-- Fieldset 1: Method & Version Identity -->
+            <fieldset class="border rounded p-2 mb-3">
+              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+                <i class="bi bi-bookmark me-1"></i> Method & Version Identity
+              </legend>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label mb-1">Parent Test Method <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" formControlName="testMethodSpecificationID" [class.is-invalid]="submitted && versionForm.get('testMethodSpecificationID')?.invalid">
+                    <option [ngValue]="null">Select Test Method</option>
+                    <option *ngFor="let m of testMethodList" [ngValue]="m.id">
+                      {{ m.code }} — {{ m.name }}
+                    </option>
+                  </select>
+                  <app-field-error [control]="versionForm.get('testMethodSpecificationID')" [submitted]="submitted" label="Parent Test Method"></app-field-error>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1">Version / Edition <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control form-control-sm" formControlName="version" placeholder="e.g. 2021 or Part 1:2018" [class.is-invalid]="submitted && versionForm.get('version')?.invalid">
+                  <app-field-error [control]="versionForm.get('version')" [submitted]="submitted" label="Version"></app-field-error>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1">Publication Year</label>
+                  <input type="text" class="form-control form-control-sm" formControlName="year" placeholder="e.g. 2024">
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Fieldset 2: Lifecycle & Effective Dates -->
+            <fieldset class="border rounded p-2 mb-3">
+              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+                <i class="bi bi-calendar-check me-1"></i> Lifecycle & Dates
+              </legend>
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label mb-1">Lifecycle Status <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" formControlName="status">
+                    <option [ngValue]="0">Draft</option>
+                    <option [ngValue]="1">Active</option>
+                    <option [ngValue]="2">Superseded</option>
+                    <option [ngValue]="3">Withdrawn</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1">Effective Date</label>
+                  <input type="date" class="form-control form-control-sm" formControlName="effectiveDate">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1">Periodic Review Date (ISO 17025)</label>
+                  <input type="date" class="form-control form-control-sm" formControlName="reviewDate">
+                </div>
+                <div class="col-md-3" *ngIf="versionForm.get('status')?.value === 2">
+                  <label class="form-label mb-1">Superseded Date</label>
+                  <input type="date" class="form-control form-control-sm" formControlName="supersededDate">
+                </div>
+              </div>
+              <div class="row g-2 mt-2">
+                <div class="col-12">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="isDefaultCheck" formControlName="isDefault">
+                    <label class="form-check-label fw-semibold text-dark" for="isDefaultCheck">
+                      Set as Default Edition for this Test Method (auto-selected in Sample Planning)
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Fieldset 3: Revision Summary & SOP Attachment -->
+            <fieldset class="border rounded p-2">
+              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Revision Notes & Document
+              </legend>
+              <div class="row g-2">
+                <div class="col-12">
+                  <label class="form-label mb-1">Change Reason / Revision Summary</label>
+                  <textarea class="form-control form-control-sm" formControlName="changeReason" rows="2" placeholder="Describe the technical amendments or standard edition revisions..."></textarea>
+                </div>
+                <div class="col-12" *ngIf="!isViewMode">
+                  <label class="form-label mb-1">Standard / SOP Document (PDF, max 25MB)</label>
+                  <input type="file" #fileInputRef class="form-control form-control-sm" (change)="onFileChange($event)" accept=".pdf,application/pdf">
+                  <small *ngIf="currentDocumentName" class="text-muted d-block mt-1">
+                    Current document: <span class="fw-semibold text-dark">{{ currentDocumentName }}</span>
+                  </small>
+                </div>
+                <div class="col-12" *ngIf="isViewMode && currentDocumentName">
+                  <label class="form-label mb-1">Attached Document</label>
+                  <div>
+                    <span class="badge bg-light text-dark border p-2">
+                      <i class="bi bi-file-earmark-pdf text-danger me-1"></i>{{ currentDocumentName }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="modal-footer py-2 bg-light border-top">
+            <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle me-1"></i> Close
+            </button>
+            <button *ngIf="!isViewMode" type="submit" class="btn btn-lims btn-lims-save btn-sm">
+              <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update Version' : 'Save Version' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Parameters Modal -->
+  <div class="modal fade" #paramModalRef tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header py-2 bg-light border-bottom">
+          <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-sliders text-danger"></i>
+            <span>Map Parameters — {{ selectedVersionForParams?.testMethodCode }} (Version: {{ selectedVersionForParams?.version }})</span>
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-3">
+          <div class="alert alert-light border py-1.5 px-2 mb-2 d-flex align-items-center justify-content-between">
+            <span class="text-muted small">
+              <i class="bi bi-info-circle text-primary me-1"></i> Map the parameters reported under this standard edition. Units are displayed authoritatively from Parameter Master.
+            </span>
+            <button type="button" class="btn btn-lims btn-lims-add btn-sm" (click)="addParamRow()">
+              <i class="bi bi-plus-circle me-1"></i> Add Parameter Row
+            </button>
+          </div>
+
+          <div class="table-responsive border rounded bg-white">
+            <table class="table table-sm table-hover mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th class="col-hash text-center">#</th>
+                  <th class="w-35">Parameter <span class="text-danger">*</span></th>
+                  <th class="w-15 text-center">Unit</th>
+                  <th class="w-15 text-center">Sort Order <span class="text-danger">*</span></th>
+                  <th class="w-30">Testing Condition / Comment</th>
+                  <th class="col-actions text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of paramRows; let idx = index">
+                  <td class="text-center text-muted fw-semibold">{{ idx + 1 }}</td>
+                  <td>
+                    <select class="form-select form-select-sm" [ngModel]="p.parameterID" (ngModelChange)="onParamSelected(p, $event)">
+                      <option [ngValue]="0">Select Parameter</option>
+                      <option *ngFor="let param of availableParameters" [ngValue]="param.id || param.ID">
+                        {{ param.additionalValues?.Code ? (param.additionalValues.Code + ' — ') : '' }}{{ param.name || param.Name }}
+                      </option>
+                    </select>
+                  </td>
+                  <td class="text-center">
+                    <span *ngIf="p.unitSymbol" class="unit-badge">{{ p.unitSymbol }}</span>
+                    <span *ngIf="!p.unitSymbol" class="text-muted">—</span>
+                  </td>
+                  <td class="text-center">
+                    <input type="number" class="form-control form-control-sm text-center" [(ngModel)]="p.sortOrder" min="1">
+                  </td>
+                  <td>
+                    <input type="text" class="form-control form-control-sm" [(ngModel)]="p.comment" placeholder="e.g. GL = 5.65√A or room temperature">
+                  </td>
+                  <td class="text-center">
+                    <button type="button" class="btn-lims-icon btn-remove" (click)="removeParamRow(idx)" title="Remove parameter">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="paramRows.length === 0">
+                  <td colspan="6" class="text-center py-4 text-muted">
+                    <i class="bi bi-sliders text-secondary fs-4 d-block mb-1"></i>
+                    No parameters mapped to this version yet. Click <strong>+ Add Parameter Row</strong> to map parameters.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer py-2 bg-light border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
+          <button type="button" class="btn btn-lims btn-lims-save btn-sm" (click)="saveParameters()" [disabled]="isSavingParams">
+            <i class="bi bi-check-circle me-1"></i> {{ isSavingParams ? 'Saving...' : 'Save Parameters' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

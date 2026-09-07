@@ -25,11 +25,10 @@
                 <table class="table bordered-table align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
-                            <th>
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">#</span>
-                                </div>
+                            <th class="align-middle text-center col-sn" style="width: 50px;">
+                                <span class="dt-column-order">#</span>
                             </th>
+                            <th class="align-middle text-center col-actions" style="width: 130px; min-width: 130px;">Actions</th>
                             <th>
                                 <div class="d-flex align-items-center">
                                     <span class="dt-column-order">Period</span>
@@ -86,7 +85,8 @@
                     <tbody>
                         <tr *ngFor="let record of records; let i = index" class="text-sm">
 
-                            <td class="text-center">
+                            <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td class="text-center col-actions">
                                 <div class="d-flex justify-content-center gap-3">
                                     <a [routerLink]="['/intermediate-check/details', record.id]"
                                         [state]="{ mode: 'view' }" class="icon-link" title="View">
@@ -101,7 +101,6 @@
                                     </a>
                                 </div>
                             </td>
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ getMonthName(record.checkMonth) }} {{ record.checkYear }}</td>
                             <td>{{ record.equipmentName }}</td>
                             <td>{{ record.equipmentNo }}</td>

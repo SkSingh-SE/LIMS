@@ -207,3 +207,102 @@
   .env-panel .row > div { flex:0 0 50%; max-width:50%; }
   .info-grid { grid-template-columns:repeat(3,1fr); }
 }
+
+/* ─── Compact Sample Metadata Strip ─── */
+.sample-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  padding: 0.5rem 0.85rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.76rem;
+  color: #334155;
+}
+.meta-label {
+  font-weight: 600;
+  color: #64748b;
+  margin-right: 0.35rem;
+}
+.meta-value {
+  font-weight: 600;
+  color: #1e293b;
+}
+.customer-badge {
+  max-width: 220px;
+}
+.max-w-200 {
+  max-width: 200px;
+}
+.font-size-12 {
+  font-size: 12px;
+}
+
+/* ─── Universal Test Execution Workspace Styles ─── */
+.universal-card-body {
+  background: #ffffff;
+}
+.universal-context-bar {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+}
+.universal-result-table {
+  font-size: 0.78rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.universal-result-table th {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #cbd5e1;
+}
+.universal-result-table td {
+  padding: 0.35rem 0.6rem;
+  vertical-align: middle;
+}
+.universal-result-table tr.row-ok {
+  background-color: rgba(22, 163, 74, 0.03);
+}
+.universal-result-table tr.row-error {
+  background-color: rgba(220, 38, 38, 0.04);
+}
+.badge-pass {
+  background-color: #16a34a;
+  color: #ffffff;
+  font-weight: 500;
+}
+.badge-fail {
+  background-color: #dc2626;
+  color: #ffffff;
+  font-weight: 500;
+}
+.badge-pending {
+  background-color: #64748b;
+  color: #ffffff;
+  font-weight: 500;
+}
+.col-w-idx { width: 42px; }
+.col-w-code { width: 130px; }
+.col-w-unit { width: 75px; }
+.col-w-spec { width: 140px; }
+.col-w-val { width: 140px; }
+.col-w-status { width: 110px; }
+.fs-7 { font-size: 0.85rem; }
+

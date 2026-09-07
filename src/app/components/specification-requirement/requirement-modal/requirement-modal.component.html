@@ -1,0 +1,685 @@
+<div class="modal-backdrop-custom" *ngIf="visible">
+  <div class="modal-dialog-custom">
+    <div class="modal-content-custom">
+
+      <!-- Modal Header -->
+      <div class="modal-header-custom d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <span class="modal-title fw-bold text-dark fs-6 d-flex align-items-center">
+            <i class="bi bi-card-checklist text-danger me-2 fs-5"></i>
+            <span>{{ isViewMode ? 'View Requirement' : (requirementId > 0 ? 'Edit Requirement' : 'Add Test Requirement') }}</span>
+          </span>
+          <span class="badge bg-secondary text-uppercase fw-normal ms-2">{{ gradeName }}</span>
+          <span class="badge bg-light text-dark border ms-1">{{ versionName }}</span>
+          <span *ngIf="isLocked" class="badge bg-warning text-dark border ms-1">
+            <i class="bi bi-lock-fill me-1"></i> Read Only (Immutable)
+          </span>
+        </div>
+        <button type="button" class="btn-close-custom" (click)="onCancel()" title="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Locked Warning Banner -->
+      <div *ngIf="isLocked" class="alert-locked-banner px-3 py-1.5 d-flex align-items-center gap-2">
+        <i class="bi bi-shield-lock-fill text-warning fs-5"></i>
+        <span class="fs-7 text-dark">
+          This specification version is <strong>Locked</strong>. Requirements cannot be altered. Create a new <strong>Draft</strong> revision using Copy-on-Revision to make changes.
+        </span>
+      </div>
+
+      <!-- Navigation Tabs (7 Sections) -->
+      <div class="modal-nav-tabs px-3 border-bottom bg-light">
+        <ul class="nav nav-tabs border-0 flex-nowrap overflow-x-auto">
+          <li class="nav-item">
+            <button class="nav-link py-1.5 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'definition'" (click)="activeTab = 'definition'">
+              <i class="bi bi-hash me-1.5"></i> 1. Definition
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link py-1.5 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'limits'" (click)="activeTab = 'limits'">
+              <i class="bi bi-sliders me-1.5"></i> 2. Limits & Tolerances
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link py-1.5 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'equations'" (click)="activeTab = 'equations'">
+              <i class="bi bi-calculator me-1.5"></i> 3. Equations
+              <span *ngIf="form.get('equation')?.value || form.get('minEquation')?.value || form.get('maxEquation')?.value" class="badge rounded-pill bg-success ms-1 fs-8">Configured</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link py-1.5 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'conditions'" (click)="activeTab = 'conditions'">
+              <i class="bi bi-funnel me-1.5"></i> 4. Applicability & Conditions
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link py-1.5 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'testmethods'" (click)="activeTab = 'testmethods'">
+              <i class="bi bi-clipboard2-pulse me-1.5"></i> 5. Test Methods
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link py-1.5 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'instructions'" (click)="activeTab = 'instructions'">
+              <i class="bi bi-chat-left-text me-1.5"></i> 6. Instructions & Reporting
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link py-1.5 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'evaluation'" (click)="activeTab = 'evaluation'">
+              <i class="bi bi-check2-all me-1.5"></i> 7. Summary & Preview
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body-custom p-3">
+        <form [formGroup]="form">
+
+          <!-- TAB 1: DEFINITION -->
+          <div *ngIf="activeTab === 'definition'" class="tab-pane-content">
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-tag-fill me-1"></i> Core Parameter & Universal Definition
+              </legend>
+
+              <div class="row g-2">
+                <!-- Parameter Selector -->
+                <div class="col-md-6">
+                  <div class="form-field-header">
+                    <label class="form-label mb-1 fs-7 fw-semibold">
+                      Parameter <span class="text-danger">*</span>
+                    </label>
+                  </div>
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getParameterDropdown"
+                    [smallInput]="true"
+                    [hideLabel]="true"
+                    [selectedItem]="selectedParameter"
+                    placeholder="Search Parameter by Name/Code/Symbol..."
+                    (itemSelected)="onParameterSelected($event)">
+                  </app-searchable-dropdown>
+                  <div *ngIf="submitted && form.get('parameterID')?.invalid" class="text-danger fs-8 mt-1">
+                    Parameter is required.
+                  </div>
+                </div>
+
+                <!-- Parameter Unit (Read-Only / Inherited from Parameter Master) -->
+                <div class="col-md-6">
+                  <div class="form-field-header">
+                    <label class="form-label mb-1 fs-7 fw-semibold">Parameter Unit</label>
+                    <span class="badge bg-light text-muted border fs-8">
+                      <i class="bi bi-link-45deg me-0.5"></i>Inherited from Parameter Master
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm bg-light text-dark fw-semibold"
+                    [value]="inheritedUnitDisplay || (selectedParameter ? 'Unitless' : 'Select Parameter First')"
+                    readonly
+                    title="Unit is strictly owned by Parameter Master and cannot be overridden at requirement level">
+                </div>
+
+                <!-- Input Type (Read-Only / Inherited from Parameter Master) -->
+                <div class="col-md-6">
+                  <div class="form-field-header">
+                    <label class="form-label mb-1 fs-7 fw-semibold">Input Type</label>
+                    <span class="badge bg-light text-muted border fs-8">
+                      <i class="bi bi-link-45deg me-0.5"></i>Inherited from Parameter Master
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm bg-light text-dark fw-semibold"
+                    [value]="inheritedInputTypeDisplay || (selectedParameter ? 'Not Configured' : 'Select Parameter First')"
+                    readonly
+                    title="Input Type is strictly owned by Parameter Master and cannot be overridden at requirement level">
+                </div>
+
+                <!-- Legacy Classification Metadata (Read-Only) -->
+                <div class="col-md-6" *ngIf="inheritedLegacyType">
+                  <div class="form-field-header">
+                    <label class="form-label mb-1 fs-7 text-muted">
+                      Legacy Classification
+                    </label>
+                    <span class="badge bg-light text-muted border fs-8">Metadata Only</span>
+                  </div>
+                  <div class="form-control form-control-sm bg-light text-secondary">
+                    {{ inheritedLegacyType | titlecase }}
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="alert alert-info py-2 px-3 fs-8 mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-info-circle-fill text-info fs-6"></i>
+              <span>SpecificationLine represents the universal test requirement. Legacy type is maintained for backwards compatibility only.</span>
+            </div>
+          </div>
+
+          <!-- TAB 2: LIMITS & TOLERANCES -->
+          <div *ngIf="activeTab === 'limits'" class="tab-pane-content">
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-arrows-expand me-1"></i> Numeric Range Limits (Standard Min - Max)
+              </legend>
+
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Min Value (Lower Bound)</label>
+                  <input type="number" step="any" class="form-control form-control-sm" formControlName="minValue" placeholder="e.g. 0.040">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Max Value (Upper Bound)</label>
+                  <input type="number" step="any" class="form-control form-control-sm" formControlName="maxValue" placeholder="e.g. 0.080">
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-primary d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-regex me-1"></i> Relational Limits with Inequality Symbols
+              </legend>
+
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Lower Bound Symbol & Value</label>
+                  <div class="input-group input-group-sm">
+                    <select class="form-select form-select-sm limit-sym-select" formControlName="lowerLimitValue">
+                      <option value="">(None)</option>
+                      <option value=">">&gt;</option>
+                      <option value=">=">&gt;=</option>
+                      <option value="=">=</option>
+                    </select>
+                    <input type="number" step="any" class="form-control form-control-sm" formControlName="lowerLimitDecimalValue" placeholder="Lower decimal">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Upper Bound Symbol & Value</label>
+                  <div class="input-group input-group-sm">
+                    <select class="form-select form-select-sm limit-sym-select" formControlName="upperLimitValue">
+                      <option value="">(None)</option>
+                      <option value="<">&lt;</option>
+                      <option value="<=">&lt;=</option>
+                      <option value="=">=</option>
+                    </select>
+                    <input type="number" step="any" class="form-control form-control-sm" formControlName="upperLimitDecimalValue" placeholder="Upper decimal">
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-secondary d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-plus-slash-minus me-1"></i> Manufacturing & Acceptance Tolerances
+              </legend>
+
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Negative / Min Tolerance (-)</label>
+                  <input type="number" step="any" class="form-control form-control-sm" formControlName="minTolerance" placeholder="e.g. 0.005">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Positive / Max Tolerance (+)</label>
+                  <input type="number" step="any" class="form-control form-control-sm" formControlName="maxTolerance" placeholder="e.g. 0.005">
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Real-time Preview -->
+            <div class="p-2 border rounded bg-light d-flex align-items-center justify-content-between">
+              <span class="fs-7 fw-semibold text-muted">Configured Limits Preview:</span>
+              <span class="badge bg-danger fs-7 px-2.5 py-1">{{ getLiveLimitSummary() }}</span>
+            </div>
+          </div>
+
+          <!-- TAB 3: EQUATIONS -->
+          <div *ngIf="activeTab === 'equations'" class="tab-pane-content">
+            <!-- Section 3.1: Actual Parameter Calculation Equation -->
+            <fieldset class="border rounded p-2.5 mb-2.5 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-cpu me-1"></i> Parameter Calculation Equation (Runtime Observation Formula)
+              </legend>
+
+              <!-- Master Formula Detected Alert -->
+              <div *ngIf="masterFormula || masterFormulaDisplay" class="alert alert-info py-1.5 px-2.5 fs-8 mb-2.5 d-flex align-items-center justify-content-between flex-wrap gap-1">
+                <div class="d-flex align-items-center flex-wrap gap-1">
+                  <i class="bi bi-info-circle-fill text-primary"></i>
+                  <strong>Master Formula Available:</strong>
+                  <span class="badge bg-white text-dark border font-monospace">{{ masterFormulaDisplay || masterFormula }}</span>
+                  <span *ngIf="masterFormulaDisplay && masterFormula && masterFormulaDisplay !== masterFormula" class="text-muted font-monospace">({{ masterFormula }})</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 fs-8" (click)="applyMasterFormula()" [disabled]="isLocked || isViewMode" title="Copy Parameter Master formula into requirement equation">
+                  <i class="bi bi-magic me-1"></i> Apply Master Formula
+                </button>
+              </div>
+
+              <!-- Parameter Calculation Equation -->
+              <div class="mb-1">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label mb-0 fs-7 fw-semibold">Calculation Equation</label>
+                  <span *ngIf="form.get('equation')?.value && (masterFormula || masterFormulaDisplay)" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fs-8">
+                    <i class="bi bi-lightning-fill me-1"></i>Custom Equation (Overrides Master)
+                  </span>
+                  <span *ngIf="form.get('equation')?.value && !masterFormula && !masterFormulaDisplay" class="badge bg-success-subtle text-success border border-success-subtle fs-8">
+                    <i class="bi bi-check-circle me-1"></i>Equation Configured
+                  </span>
+                  <span *ngIf="!form.get('equation')?.value && (masterFormula || masterFormulaDisplay)" class="badge bg-info-subtle text-info-emphasis border border-info-subtle fs-8">
+                    <i class="bi bi-info-circle me-1"></i>Master Formula (Inherited)
+                  </span>
+                </div>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control font-monospace" formControlName="equation" [placeholder]="masterFormula ? 'Inherited: ' + (masterFormulaDisplay || masterFormula) + ' (Type here to override)' : 'e.g. ({BHN} + {HV} + {HRC}) / 2 or {C} + {MN} / 6'">
+                  <button type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder('equation')" [disabled]="isLocked || isViewMode" title="Open Interactive Formula Builder">
+                    <i class="bi bi-tools me-1"></i> Build Formula
+                  </button>
+                  <button *ngIf="form.get('equation')?.value && !isLocked && !isViewMode" type="button" class="btn btn-outline-secondary" (click)="clearFormula('equation')" title="Clear Equation">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </div>
+                <div class="form-text fs-8 text-muted" *ngIf="!form.get('equation')?.value && (masterFormula || masterFormulaDisplay)">
+                  <i class="bi bi-info-circle text-info me-1"></i>No custom equation defined. Parameter Master formula <code>{{ masterFormulaDisplay || masterFormula }}</code> will be used at runtime.
+                </div>
+                <div class="form-text fs-8 text-muted" *ngIf="form.get('equation')?.value">
+                  Used by FormulaEvaluator during Test Execution to compute this parameter's test value from other observation results.
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Section 3.2: Dynamic Governing Limits Equations -->
+            <fieldset class="border rounded p-2.5 mb-2.5 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-sliders me-1"></i> Dynamic Governing Limits Equations (Compliance Rules)
+              </legend>
+
+              <!-- Min Equation -->
+              <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label mb-0 fs-7 fw-semibold">Min Equation Expression <small class="text-muted fw-normal">(Dynamic Lower Limit)</small></label>
+                  <span *ngIf="form.get('minEquation')?.value" class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8">Dynamic Min</span>
+                </div>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control font-monospace" formControlName="minEquation" placeholder="e.g. 2 * C + Mn / 6">
+                  <button type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder('minEquation')" [disabled]="isLocked || isViewMode" title="Open Interactive Formula Builder">
+                    <i class="bi bi-tools me-1"></i> Build Formula
+                  </button>
+                  <button *ngIf="form.get('minEquation')?.value && !isLocked && !isViewMode" type="button" class="btn btn-outline-secondary" (click)="clearFormula('minEquation')" title="Clear Min Equation">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </div>
+                <div class="form-text fs-8 text-muted">Evaluated at test execution to dynamically compute MinValueEquation.</div>
+              </div>
+
+              <!-- Max Equation -->
+              <div class="mb-1">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label mb-0 fs-7 fw-semibold">Max Equation Expression <small class="text-muted fw-normal">(Dynamic Upper Limit)</small></label>
+                  <span *ngIf="form.get('maxEquation')?.value" class="badge bg-danger-subtle text-danger border border-danger-subtle fs-8">Dynamic Max</span>
+                </div>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control font-monospace" formControlName="maxEquation" placeholder="e.g. C + (Mn + Si)/6 + (Cr + Mo + V)/5">
+                  <button type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder('maxEquation')" [disabled]="isLocked || isViewMode" title="Open Interactive Formula Builder">
+                    <i class="bi bi-tools me-1"></i> Build Formula
+                  </button>
+                  <button *ngIf="form.get('maxEquation')?.value && !isLocked && !isViewMode" type="button" class="btn btn-outline-secondary" (click)="clearFormula('maxEquation')" title="Clear Max Equation">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </div>
+                <div class="form-text fs-8 text-muted">Produces dynamic MaxValueEquation during compliance evaluation.</div>
+              </div>
+            </fieldset>
+
+            <div class="alert alert-secondary py-2 px-3 fs-8 mb-0">
+              <i class="bi bi-lightbulb-fill text-warning me-1"></i>
+              <strong>Equation Syntax:</strong> Use standard arithmetic (+, -, *, /, parentheses) and readable parameter tokens (e.g. <code>&#123;CARBON&#125;</code>, <code>&#123;BHN&#125;</code>, <code>&#123;HV&#125;</code>, <code>&#123;YS&#125;</code>). Functions like <code>ABS()</code>, <code>ROUND()</code>, <code>MIN()</code>, <code>MAX()</code> are fully supported.
+            </div>
+          </div>
+
+          <!-- TAB 4: APPLICABILITY & CONDITIONS -->
+          <div *ngIf="activeTab === 'conditions'" class="tab-pane-content">
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-boxes me-1"></i> Product Dimension & Treatment Applicability
+              </legend>
+
+              <div class="row g-2">
+                <!-- Size Band -->
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Product Size Band</label>
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getSizeDropdown"
+                    [smallInput]="true"
+                    [hideLabel]="true"
+                    [selectedItem]="selectedSize"
+                    placeholder="Select Size Band (e.g. <= 16mm Dia)..."
+                    (itemSelected)="onSizeSelected($event)">
+                  </app-searchable-dropdown>
+                </div>
+
+                <!-- Heat Treatment -->
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Heat Treatment Condition</label>
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getHeatTreatmentDropdown"
+                    [smallInput]="true"
+                    [hideLabel]="true"
+                    [selectedItem]="selectedHeatTreatment"
+                    placeholder="Select Heat Treatment (e.g. Annealed, Q&T)..."
+                    (itemSelected)="onHeatTreatmentSelected($event)">
+                  </app-searchable-dropdown>
+                </div>
+
+                <!-- Specimen Orientation -->
+                <div class="col-md-6">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Specimen Orientation</label>
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getOrientationDropdown"
+                    [smallInput]="true"
+                    [hideLabel]="true"
+                    [selectedItem]="selectedOrientation"
+                    placeholder="Select Orientation (e.g. Longitudinal, Transverse)..."
+                    (itemSelected)="onOrientationSelected($event)">
+                  </app-searchable-dropdown>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Dynamic Relational Conditions Table -->
+            <fieldset class="border rounded p-2.5 mb-0 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-0 fs-7">
+                    <i class="bi bi-sliders me-1"></i> Technical & Environmental Test Conditions
+                  </legend>
+                  <a class="btn-nav-link" (click)="openLinkedMaster('/condition-master')">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Manage Conditions
+                  </a>
+                </div>
+                <button *ngIf="!isLocked && !isViewMode" type="button" class="btn-lims btn-lims-add py-0 px-2 fs-8 d-flex align-items-center" (click)="addConditionRow()">
+                  <i class="bi bi-plus-circle me-1"></i> Add Condition Row
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0 custom-condition-table">
+                  <thead class="table-light fs-8">
+                    <tr>
+                      <th class="col-dim">Condition / Dimension</th>
+                      <th class="col-op">Operator</th>
+                      <th class="col-val">Target / Min Value</th>
+                      <th class="col-val">Max Value (if Between)</th>
+                      <th *ngIf="!isLocked && !isViewMode" class="col-act text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="conditions">
+                    <tr *ngFor="let cond of conditionsArray.controls; let i = index" [formGroupName]="i">
+                      <td>
+                        <select
+                          class="form-select form-select-sm fs-8"
+                          formControlName="testConditionDimensionID"
+                          (change)="onConditionDimensionChanged(i, $any($event.target).value)"
+                        >
+                          <option *ngFor="let d of conditionDimensions" [value]="d.id">
+                            {{ d.name }} {{ d.unit ? '(' + d.unit + ')' : '' }} [{{ d.category || 'General' }}]
+                          </option>
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm fs-8" formControlName="operator">
+                          <option *ngFor="let op of getAllowedOperatorsForDimension(cond.get('testConditionDimensionID')?.value)" [value]="op">
+                            {{ op }}
+                          </option>
+                        </select>
+                      </td>
+                      <td>
+                        <!-- If discrete selection list available, render select dropdown -->
+                        <select
+                          *ngIf="getDiscreteValuesForDimension(cond.get('testConditionDimensionID')?.value).length > 0"
+                          class="form-select form-select-sm fs-8"
+                          formControlName="value1"
+                        >
+                          <option value="">Select Option</option>
+                          <option *ngFor="let opt of getDiscreteValuesForDimension(cond.get('testConditionDimensionID')?.value)" [value]="opt">
+                            {{ opt }}
+                          </option>
+                        </select>
+                        <!-- Otherwise standard text input -->
+                        <input
+                          *ngIf="getDiscreteValuesForDimension(cond.get('testConditionDimensionID')?.value).length === 0"
+                          type="text"
+                          class="form-control form-control-sm fs-8"
+                          formControlName="value1"
+                          placeholder="Target / Min"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm fs-8"
+                          formControlName="value2"
+                          placeholder="Max Value"
+                          [disabled]="cond.get('operator')?.value !== 'BETWEEN'"
+                        />
+                      </td>
+                      <td *ngIf="!isLocked && !isViewMode" class="text-center">
+                        <button type="button" class="btn-lims-icon" (click)="removeConditionRow(i)" title="Remove">
+                          <i class="bi bi-trash text-danger"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="conditionsArray.length === 0">
+                      <td [attr.colspan]="isLocked || isViewMode ? 4 : 5" class="text-center text-muted fs-8 py-2">
+                        No custom conditions. Requirement applies to standard testing dimensions.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- TAB 5: TEST METHOD APPLICABILITY -->
+          <div *ngIf="activeTab === 'testmethods'" class="tab-pane-content">
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-hospital me-1"></i> Laboratory Test & Testing Department
+              </legend>
+
+              <div class="row g-2">
+                <div class="col-md-12">
+                  <label class="form-label mb-1 fs-7 fw-semibold">Default Laboratory Test</label>
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getLabTestDropdown"
+                    [smallInput]="true"
+                    [hideLabel]="true"
+                    [selectedItem]="selectedLabTest"
+                    placeholder="Select Laboratory Test (e.g. Tensile Test, OES Chemical Analysis)..."
+                    (itemSelected)="onLabTestSelected($event)">
+                  </app-searchable-dropdown>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Test Method Specifications Mapping -->
+            <fieldset class="border rounded p-2.5 mb-0 bg-white">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <legend class="w-auto fw-semibold text-primary d-flex align-items-center gap-1.5 px-2 mb-0 fs-7">
+                  <i class="bi bi-journal-bookmark-fill me-1"></i> Applicable Test Method Standards (ASTM / ISO / IS)
+                </legend>
+                <button *ngIf="!isLocked && !isViewMode" type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fs-8 d-flex align-items-center" (click)="addTestMethodRow()">
+                  <i class="bi bi-plus-circle me-1"></i> Add Test Method
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0 custom-condition-table">
+                  <thead class="table-light fs-8">
+                    <tr>
+                      <th>Test Method Specification</th>
+                      <th class="col-num">No. of Specimen</th>
+                      <th class="col-ord">Order</th>
+                      <th *ngIf="!isLocked && !isViewMode" class="col-act text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="testMethods">
+                    <tr *ngFor="let tm of testMethodsArray.controls; let i = index" [formGroupName]="i">
+                      <td>
+                        <app-searchable-dropdown
+                          [fetchDataFn]="getTestMethodDropdown"
+                          [smallInput]="true"
+                          [hideLabel]="true"
+                          [selectedItem]="{ id: tm.get('testMethodSpecificationID')?.value, name: tm.get('testMethodSpecificationName')?.value }"
+                          placeholder="Search Test Method Standard (e.g. ASTM A370, IS 1608)..."
+                          (itemSelected)="onTestMethodSpecificationSelected(tm, $event)">
+                        </app-searchable-dropdown>
+                      </td>
+                      <td>
+                        <input type="number" min="1" class="form-control form-control-sm fs-8" formControlName="numberOfTestSpecimen">
+                      </td>
+                      <td>
+                        <input type="number" min="1" class="form-control form-control-sm fs-8" formControlName="displayOrder">
+                      </td>
+                      <td *ngIf="!isLocked && !isViewMode" class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger p-0 px-1.5 fs-8" (click)="removeTestMethodRow(i)" title="Remove">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="testMethodsArray.length === 0">
+                      <td [attr.colspan]="isLocked || isViewMode ? 3 : 4" class="text-center text-muted fs-8 py-2">
+                        No specific test methods mapped. Uses default method for the parameter.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- TAB 6: INSTRUCTIONS & REPORTING -->
+          <div *ngIf="activeTab === 'instructions'" class="tab-pane-content">
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-journal-text me-1"></i> Testing Instructions & Qualitative Conditions
+              </legend>
+
+              <div class="mb-2">
+                <label class="form-label mb-1 fs-7 fw-semibold">Test Condition / Acceptance Rule Text</label>
+                <textarea class="form-control form-control-sm fs-7" rows="3" formControlName="testCondition" placeholder="e.g. The specimen shall show no evidence of cracking, flaking, or surface disintegration when viewed under 10x magnification."></textarea>
+                <div class="form-text fs-8 text-muted">Used for qualitative inspection, pass/fail acceptance, or conditional remarks.</div>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label mb-1 fs-7 fw-semibold">Reporting Test Note / Footnote</label>
+                <textarea class="form-control form-control-sm fs-7" rows="2" formControlName="testNote" placeholder="e.g. Note: Tested at room temperature (23 ± 2°C) as per Annex B."></textarea>
+                <div class="form-text fs-8 text-muted">Printed on certificate and lab report under test observations.</div>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- TAB 7: SUMMARY & PREVIEW (READ-ONLY) -->
+          <div *ngIf="activeTab === 'evaluation'" class="tab-pane-content">
+            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 mb-2 fs-7">
+                <i class="bi bi-eye-fill me-1"></i> Consolidated Specification Requirement Preview
+              </legend>
+
+              <div class="evaluation-summary-card p-3 border rounded bg-light">
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <span class="text-muted fs-8 d-block">Parameter:</span>
+                    <span class="fw-bold fs-7 text-dark">{{ selectedParameter?.name || 'Not Selected' }}</span>
+                    <span *ngIf="selectedParameter?.symbol" class="badge bg-secondary ms-1 fs-8">({{ selectedParameter?.symbol }})</span>
+                  </div>
+                  <div class="col-md-4">
+                    <span class="text-muted fs-8 d-block">Unit:</span>
+                    <span class="fw-semibold fs-7 text-dark">{{ inheritedUnitDisplay || (selectedUnit?.name || 'Unitless') }}</span>
+                  </div>
+                  <div class="col-md-4">
+                    <span class="text-muted fs-8 d-block">Input Type:</span>
+                    <span class="fw-semibold fs-7 text-dark">{{ inheritedInputTypeDisplay || form.get('inputType')?.value || '-' }}</span>
+                  </div>
+                  <div class="col-md-6">
+                    <span class="text-muted fs-8 d-block">Governing Limits & Tolerances:</span>
+                    <span class="fw-bold text-danger fs-7 font-monospace">{{ getLiveLimitSummary() }}</span>
+                    <span *ngIf="form.get('minTolerance')?.value || form.get('maxTolerance')?.value" class="fs-8 text-muted ms-1">
+                      (Tol: -{{ form.get('minTolerance')?.value || 0 }} / +{{ form.get('maxTolerance')?.value || 0 }})
+                    </span>
+                  </div>
+                  <div class="col-md-6">
+                    <span class="text-muted fs-8 d-block">Calculation Equations:</span>
+                    <div class="fs-8">
+                      <div *ngIf="form.get('equation')?.value">
+                        <strong>Result:</strong> <code>{{ form.get('equation')?.value }}</code>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1 fs-8" *ngIf="masterFormula || masterFormulaDisplay">Custom Override</span>
+                      </div>
+                      <div *ngIf="!form.get('equation')?.value && (masterFormula || masterFormulaDisplay)">
+                        <strong>Result:</strong> <code class="text-secondary">{{ masterFormulaDisplay || masterFormula }}</code>
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle ms-1 fs-8">Master Formula (Inherited)</span>
+                      </div>
+                      <div *ngIf="form.get('minEquation')?.value"><strong>Min Eq:</strong> <code>{{ form.get('minEquation')?.value }}</code></div>
+                      <div *ngIf="form.get('maxEquation')?.value"><strong>Max Eq:</strong> <code>{{ form.get('maxEquation')?.value }}</code></div>
+                      <div *ngIf="!form.get('equation')?.value && !form.get('minEquation')?.value && !form.get('maxEquation')?.value && !masterFormula && !masterFormulaDisplay" class="text-muted">Direct Measurement (No equations configured)</div>
+                    </div>
+                  </div>
+                  <div class="col-md-12 mt-1">
+                    <span class="text-muted fs-8 d-block">Applicability & Conditions:</span>
+                    <span class="fs-8 text-dark">
+                      {{ selectedSize ? 'Size: ' + selectedSize.displayName : 'All Sizes' }} |
+                      {{ selectedHeatTreatment ? 'HT: ' + selectedHeatTreatment.name : 'All Treatments' }} |
+                      {{ selectedOrientation ? 'Orientation: ' + selectedOrientation.name : 'All Orientations' }} |
+                      {{ conditionsArray.length > 0 ? conditionsArray.length + ' Custom Dimensional Conditions' : 'Standard Dimensions' }}
+                    </span>
+                  </div>
+                  <div class="col-md-12 mt-1" *ngIf="testMethodsArray.length > 0">
+                    <span class="text-muted fs-8 d-block">Applicable Test Methods:</span>
+                    <span class="fs-8 text-dark">
+                      {{ testMethodsArray.length }} Method Standard(s) mapped
+                    </span>
+                  </div>
+                  <div class="col-md-12 mt-1" *ngIf="form.get('testCondition')?.value || form.get('testNote')?.value">
+                    <span class="text-muted fs-8 d-block">Instructions & Notes:</span>
+                    <div *ngIf="form.get('testCondition')?.value" class="fs-8 text-secondary"><strong>Condition:</strong> {{ form.get('testCondition')?.value }}</div>
+                    <div *ngIf="form.get('testNote')?.value" class="fs-8 text-muted"><strong>Note:</strong> {{ form.get('testNote')?.value }}</div>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Modal Footer (Sticky Action Bar) -->
+      <div class="modal-footer-custom d-flex align-items-center justify-content-between px-3 py-2 border-top bg-light">
+        <div class="d-flex align-items-center gap-1">
+          <button *ngIf="activeTab !== 'definition'" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-7" (click)="navigateTab(-1)">
+            <i class="bi bi-chevron-left me-1"></i> Previous
+          </button>
+          <button *ngIf="activeTab !== 'evaluation'" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-7" (click)="navigateTab(1)">
+            Next <i class="bi bi-chevron-right ms-1"></i>
+          </button>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
+          <button *ngIf="!isLocked && !isViewMode" type="button" class="btn-lims btn-lims-save" (click)="onSubmit()">
+            <i class="bi bi-check-circle me-1"></i> {{ requirementId > 0 ? 'Update Requirement' : 'Save Requirement' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Formula Builder Modal Component -->
+<app-formula-builder
+  [(visible)]="showFormulaBuilder"
+  [parameterType]="formulaBuilderParamType"
+  [currentFormula]="currentFormulaValue"
+  [currentFormulaDisplay]="currentFormulaValue"
+  (formulaSaved)="onFormulaSaved($event)"
+  (formulaCleared)="onFormulaCleared()">
+</app-formula-builder>

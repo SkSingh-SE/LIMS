@@ -1,0 +1,57 @@
+/* Test Method Version List Component Styles */
+
+.version-badge {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.unit-badge {
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.param-count-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.max-w-200 {
+  max-width: 200px;
+}
+
+.w-35 {
+  width: 35%;
+}
+
+.w-15 {
+  width: 15%;
+}
+
+.w-30 {
+  width: 30%;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+fieldset legend {
+  float: none;
+  width: auto;
+  padding: 0 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1;
+}

@@ -1,47 +1,83 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
 
 export interface BranchInfo {
+  id: number;
   code: string;
   name: string;
-  location: string;
+  address?: string;
+  isHeadOffice?: boolean;
+  isDefault?: boolean;
+  canView?: boolean;
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canExecute?: boolean;
+  canApprove?: boolean;
+  canDelete?: boolean;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class BranchService {
-  private readonly storageKey = 'selectedBranchCode';
-  
-  // Available branches
-  readonly branches: BranchInfo[] = [
-    { code: 'ALL', name: 'All Branches', location: 'Global' },
-    { code: 'BLR', name: 'Bengaluru Lab', location: 'Karnataka' },
-    { code: 'PUN', name: 'Pune Lab', location: 'Maharashtra' },
-    { code: 'CHN', name: 'Chennai Lab', location: 'Tamil Nadu' },
-    { code: 'DEL', name: 'Delhi NCR Lab', location: 'New Delhi' },
-    { code: 'AMD', name: 'Ahmedabad Lab', location: 'Gujarat' },
-  ];
+  private readonly storageKey = 'selectedBranchId';
+  private readonly http = inject(HttpClient);
 
-  // Signal for currently selected branch
-  readonly selectedBranch = signal<BranchInfo>(this.getInitialBranch());
+  // Dynamic user-authorized branches
+  readonly branches = signal<BranchInfo[]>([]);
 
-  constructor() { }
+  // Signal for currently active operating branch
+  readonly selectedBranch = signal<BranchInfo | null>(null);
 
-  private getInitialBranch(): BranchInfo {
-    const code = localStorage.getItem(this.storageKey);
-    const match = this.branches.find(b => b.code === code);
-    return match || this.branches[0];
+  constructor() {
+    this.restoreFromStorage();
   }
 
-  setBranch(branchCode: string): void {
-    const match = this.branches.find(b => b.code === branchCode);
-    if (match) {
-      this.selectedBranch.set(match);
-      localStorage.setItem(this.storageKey, match.code);
+  loadUserBranches(): Observable<BranchInfo[]> {
+    return this.http.get<BranchInfo[]>('/api/Branch/user-branches').pipe(
+      tap(branchList => {
+        this.branches.set(branchList);
+        const storedId = localStorage.getItem(this.storageKey);
+        let activeBranch: BranchInfo | undefined;
+        if (storedId) {
+          activeBranch = branchList.find(b => b.id.toString() === storedId);
+        }
+        if (!activeBranch) {
+          activeBranch = branchList.find(b => b.isDefault) || branchList[0];
+        }
+        if (activeBranch) {
+          this.setBranch(activeBranch);
+        }
+      })
+    );
+  }
+
+  setBranch(branch: BranchInfo): void {
+    this.selectedBranch.set(branch);
+    if (branch && branch.id) {
+      localStorage.setItem(this.storageKey, branch.id.toString());
     }
   }
 
-  getBranch(): BranchInfo {
+  setBranchById(branchId: number): void {
+    const match = this.branches().find(b => b.id === branchId);
+    if (match) {
+      this.setBranch(match);
+    }
+  }
+
+  getBranch(): BranchInfo | null {
     return this.selectedBranch();
+  }
+
+  private restoreFromStorage(): void {
+    const storedId = localStorage.getItem(this.storageKey);
+    if (storedId) {
+      const match = this.branches().find(b => b.id.toString() === storedId);
+      if (match) {
+        this.selectedBranch.set(match);
+      }
+    }
   }
 }

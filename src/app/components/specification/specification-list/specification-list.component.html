@@ -1,0 +1,566 @@
+<div class="container-fluid p-2">
+  <!-- Breadcrumb -->
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card shadow-sm border-0">
+    <!-- Header -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-card-checklist text-danger fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Specification Master</h6>
+          <small class="text-muted text-xs">Manage governing specifications, standards, issuing bodies, and versions</small>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create')">
+          <i class="bi bi-plus-circle me-1"></i> Add Specification
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Toolbar -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-2">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm font-monospace text-uppercase"
+              placeholder="Code (ASTM_A240)..."
+              [(ngModel)]="filterCode"
+              (keyup.enter)="onSearch()"
+            />
+          </div>
+        </div>
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search specification name..."
+            [(ngModel)]="filterName"
+            (keyup.enter)="onSearch()"
+          />
+        </div>
+        <div class="col-md-2">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Standard (IS 1786 / ASTM)..."
+            [(ngModel)]="filterStandard"
+            (keyup.enter)="onSearch()"
+          />
+        </div>
+        <div class="col-md-2">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="filterOrgId"
+            (change)="onSearch()"
+          >
+            <option [ngValue]="null">All Organizations</option>
+            <option *ngFor="let org of organizationList" [ngValue]="org.id">
+              {{ org.name }} ({{ org.code }})
+            </option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="filterStatus"
+            (change)="onSearch()"
+          >
+            <option value="">All Statuses</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-filter me-1"></i> Apply
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Body -->
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th class="cursor-pointer text-center col-sn" (click)="applySorting('id')">
+                #
+                <i class="bi" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'id' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'id' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="applySorting('code')">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Specification Code</span>
+                  <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'code' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'code' && sortOrder === 'desc'}"></i>
+                </div>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('name')">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Specification Name</span>
+                  <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'name' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'name' && sortOrder === 'desc'}"></i>
+                </div>
+              </th>
+              <th>Standard / Reference</th>
+              <th>Issuing Organization</th>
+              <th class="text-center">Versions</th>
+              <th class="cursor-pointer text-center" (click)="applySorting('isactive')">
+                <div class="d-flex align-items-center justify-content-center">
+                  <span>Status</span>
+                  <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'isactive' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'isactive' && sortOrder === 'desc'}"></i>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of specificationList; let i = index">
+              <td class="text-center text-muted col-sn">
+                {{ (pageNumber - 1) * pageSize + i + 1 }}
+              </td>
+              <td class="text-center col-actions">
+                <div class="d-flex gap-1 justify-content-center">
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-view"
+                    title="View Details"
+                    (click)="$event.stopPropagation(); openModal('view', item.id)"
+                  >
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-edit"
+                    title="Edit Specification"
+                    (click)="$event.stopPropagation(); openModal('edit', item.id)"
+                  >
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-versions"
+                    title="Manage Versions"
+                    (click)="$event.stopPropagation(); navigateToVersions(item)"
+                  >
+                    <i class="bi bi-layers"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-params"
+                    title="Manage Requirements"
+                    (click)="$event.stopPropagation(); navigateToRequirements(item)"
+                  >
+                    <i class="bi bi-sliders"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Active — Click to Deactivate' : 'Inactive — Click to Activate'"
+                    (click)="$event.stopPropagation(); toggleStatus(item)"
+                  >
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace">{{ item.code || '—' }}</span>
+              </td>
+              <td class="fw-semibold text-dark">
+                {{ item.name }}
+                <div class="text-muted text-xs text-truncate max-w-desc" *ngIf="item.description">
+                  {{ item.description }}
+                </div>
+              </td>
+              <td>
+                <span class="text-secondary font-monospace text-xs fw-medium" *ngIf="item.standardReference">
+                  {{ item.standardReference }}
+                </span>
+                <span class="text-muted text-xs" *ngIf="!item.standardReference">—</span>
+              </td>
+              <td>
+                <span class="badge bg-light text-secondary border org-chip" *ngIf="item.standardOrganizationName">
+                  <i class="bi bi-building me-1"></i>{{ item.standardOrganizationName }}
+                </span>
+                <span class="text-muted text-xs" *ngIf="!item.standardOrganizationName">—</span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-secondary-subtle text-secondary border font-monospace">
+                  {{ item.versionCount }}
+                </span>
+              </td>
+              <td class="text-center">
+                <span
+                  class="badge px-2 py-1"
+                  [ngClass]="item.isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'"
+                >
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="specificationList.length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary"></i>
+                <div>No specifications found.</div>
+                <small class="text-xs">Try adjusting your search criteria or click "Add Specification" to create one.</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      >
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Add/Edit Specification -->
+<div
+  id="specificationModal"
+  class="modal fade modal-fade"
+  #modalRef
+  tabindex="-1"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  aria-labelledby="specificationModalLabel"
+  aria-modal="true"
+  role="dialog"
+>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <h5 class="modal-title fw-medium d-flex align-items-center" id="specificationModalLabel">
+          <i class="bi bi-card-checklist me-2"></i>{{ formTitle }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          aria-label="Close"
+          (click)="closeModal()"
+        ></button>
+      </div>
+
+      <form [formGroup]="specificationForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body p-3">
+          <fieldset class="lims-fieldset mb-3">
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center">
+              <i class="bi bi-tag me-1"></i>Specification Master Identity
+            </legend>
+
+            <div class="row g-2">
+              <!-- Code -->
+              <div class="col-md-5">
+                <label class="form-label">
+                  Specification Code <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="specCodeInput"
+                  class="form-control form-control-sm font-monospace text-uppercase"
+                  formControlName="code"
+                  placeholder="e.g. ASTM_A240"
+                  maxlength="100"
+                  (input)="onCodeInput($event)"
+                  [ngClass]="{'is-invalid': isFieldInvalid('code')}"
+                />
+                <app-field-error
+                  [control]="specificationForm.get('code')"
+                  label="Specification Code"
+                  [submitted]="submitted"
+                />
+                <small class="text-muted d-block text-xxs mt-0.5">
+                  Permanent identifier. Spaces auto-convert to underscore (e.g. ASTM A240 ➔ ASTM_A240).
+                </small>
+              </div>
+
+              <!-- Name -->
+              <div class="col-md-7">
+                <label class="form-label">
+                  Specification Name <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="specNameInput"
+                  class="form-control form-control-sm"
+                  formControlName="name"
+                  placeholder="e.g. Standard Specification for Chromium and Chromium-Nickel Stainless Steel"
+                  maxlength="100"
+                  [ngClass]="{'is-invalid': isFieldInvalid('name')}"
+                />
+                <app-field-error
+                  [control]="specificationForm.get('name')"
+                  label="Specification Name"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Standard / Reference -->
+              <div class="col-md-6">
+                <label class="form-label">Standard / Reference</label>
+                <input
+                  type="text"
+                  id="specStandardRefInput"
+                  class="form-control form-control-sm"
+                  formControlName="standardReference"
+                  placeholder="e.g. ASTM A240 / A240M"
+                  maxlength="300"
+                  [ngClass]="{'is-invalid': isFieldInvalid('standardReference')}"
+                />
+                <app-field-error
+                  [control]="specificationForm.get('standardReference')"
+                  label="Standard / Reference"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Issuing Organization -->
+              <div class="col-md-6">
+                <div class="form-field-header">
+                  <label class="form-label">Issuing Organization</label>
+                </div>
+                <select
+                  id="specOrgSelect"
+                  class="form-select form-select-sm"
+                  formControlName="standardOrganizationID"
+                  [ngClass]="{'is-invalid': isFieldInvalid('standardOrganizationID')}"
+                >
+                  <option [ngValue]="null">-- Select Issuing Organization (Optional) --</option>
+                  <option *ngFor="let org of organizationList" [ngValue]="org.id">
+                    {{ org.name }} ({{ org.code }})
+                  </option>
+                </select>
+                <app-field-error
+                  [control]="specificationForm.get('standardOrganizationID')"
+                  label="Issuing Organization"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea
+                  id="specDescriptionInput"
+                  rows="3"
+                  class="form-control form-control-sm"
+                  formControlName="description"
+                  placeholder="Scope, technical application, or scientific notes..."
+                  maxlength="1000"
+                  [ngClass]="{'is-invalid': isFieldInvalid('description')}"
+                ></textarea>
+                <app-field-error
+                  [control]="specificationForm.get('description')"
+                  label="Description"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Status (Active) -->
+              <div class="col-12 mt-2">
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="specActiveCheck"
+                    formControlName="isActive"
+                  />
+                  <label class="form-check-label fw-semibold text-dark" for="specActiveCheck">
+                    Active Specification Master
+                  </label>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer py-2 px-3 border-top">
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i>Cancel
+          </button>
+          <button type="submit" class="btn-lims btn-lims-save">
+            <i class="bi bi-check-circle me-1"></i>{{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for View Specification Details & Audit -->
+<div
+  id="specificationViewModal"
+  class="modal fade modal-fade"
+  #viewModalRef
+  tabindex="-1"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  aria-labelledby="specificationViewModalLabel"
+  aria-modal="true"
+  role="dialog"
+>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <h5 class="modal-title fw-medium d-flex align-items-center" id="specificationViewModalLabel">
+          <i class="bi bi-eye me-2"></i>Specification Master Details
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          aria-label="Close"
+          (click)="closeViewModal()"
+        ></button>
+      </div>
+
+      <div class="modal-body p-3" *ngIf="viewData">
+        <!-- Identity Summary -->
+        <fieldset class="lims-fieldset mb-3">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center">
+            <i class="bi bi-tag me-1"></i>Specification Master Identity
+          </legend>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label text-muted small mb-0">Specification Code</label>
+              <div class="font-monospace fw-bold fs-6 text-primary">{{ viewData.code || '—' }}</div>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label text-muted small mb-0">Specification Name</label>
+              <div class="fw-semibold text-dark fs-6">{{ viewData.name }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-0">Standard / Reference</label>
+              <div class="fw-medium text-secondary">{{ viewData.standardReference || '—' }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-0">Issuing Organization</label>
+              <div class="fw-medium text-dark">
+                <span class="badge bg-light text-dark border" *ngIf="viewData.standardOrganizationName">
+                  <i class="bi bi-building me-1 text-secondary"></i>{{ viewData.standardOrganizationName }} ({{ viewData.standardOrganizationCode }})
+                </span>
+                <span *ngIf="!viewData.standardOrganizationName">—</span>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label text-muted small mb-0">Description / Scope</label>
+              <div class="text-dark bg-light p-2 rounded border small">
+                {{ viewData.description || 'No description provided.' }}
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label text-muted small mb-0">Status</label>
+              <div>
+                <span class="badge" [ngClass]="viewData.isActive ? 'bg-success' : 'bg-danger'">
+                  {{ viewData.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-muted small mb-0">Active Version</label>
+              <div>
+                <span class="badge bg-primary-subtle text-primary border font-monospace" *ngIf="viewData.activeVersionName">
+                  <i class="bi bi-check-circle me-1"></i>{{ viewData.activeVersionName }}
+                </span>
+                <span class="text-muted small" *ngIf="!viewData.activeVersionName">None</span>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label text-muted small mb-0">Versions (Draft / Superseded)</label>
+              <div class="d-flex gap-1 align-items-center">
+                <span class="badge bg-secondary-subtle text-secondary border font-monospace">
+                  {{ viewData.draftVersionCount || 0 }} Draft
+                </span>
+                <span class="badge bg-light text-muted border font-monospace">
+                  {{ viewData.supersededVersionCount || 0 }} Superseded
+                </span>
+                <span class="badge bg-light text-dark border font-monospace">
+                  {{ viewData.versionCount || 0 }} Total
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-0">Applicability / Grades</label>
+              <div>
+                <span class="badge bg-secondary-subtle text-dark border font-monospace">
+                  <i class="bi bi-tags me-1"></i>{{ viewData.gradeCount || 0 }} Grade(s) Configured
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-0">Active Requirements</label>
+              <div>
+                <span class="badge bg-info-subtle text-info-emphasis border font-monospace">
+                  <i class="bi bi-card-checklist me-1"></i>{{ viewData.activeRequirementCount || 0 }} Parameter Limit(s)
+                </span>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Audit Information -->
+        <fieldset class="lims-fieldset">
+          <legend class="w-auto fw-semibold text-secondary d-flex align-items-center">
+            <i class="bi bi-shield-check me-1"></i>Audit & Compliance Information
+          </legend>
+          <div class="row g-2 small">
+            <div class="col-md-4">
+              <span class="text-muted">Tenant / Company Code:</span>
+              <div class="fw-bold font-monospace">{{ viewData.companyCode || 'LIMS' }}</div>
+            </div>
+            <div class="col-md-4">
+              <span class="text-muted">Created By:</span>
+              <div class="fw-medium">{{ viewData.createdBy || 'System' }}</div>
+            </div>
+            <div class="col-md-4">
+              <span class="text-muted">Created On:</span>
+              <div class="fw-medium">{{ viewData.createdOn | date:'medium' }}</div>
+            </div>
+            <div class="col-md-4" *ngIf="viewData.modifiedBy">
+              <span class="text-muted">Last Modified By:</span>
+              <div class="fw-medium">{{ viewData.modifiedBy }}</div>
+            </div>
+            <div class="col-md-4" *ngIf="viewData.modifiedOn">
+              <span class="text-muted">Last Modified On:</span>
+              <div class="fw-medium">{{ viewData.modifiedOn | date:'medium' }}</div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="modal-footer py-2 px-3 border-top d-flex justify-content-between">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn-lims btn-lims-copy" (click)="navigateToVersions(viewData)">
+            <i class="bi bi-layers me-1"></i>Manage Versions
+          </button>
+          <button type="button" class="btn-lims btn-lims-next" (click)="navigateToRequirements(viewData)">
+            <i class="bi bi-sliders me-1"></i>Manage Requirements
+          </button>
+        </div>
+        <button type="button" class="btn-lims btn-lims-cancel" (click)="closeViewModal()">
+          <i class="bi bi-x-circle me-1"></i>Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -61,10 +61,11 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   private distributeScheduled = false;
   private resizeObserver: ResizeObserver | null = null;
   private routerSub: any = null;
+  private itemWidthMap = new Map<number | string, number>();
 
   // ── Multi-branch via Service ──────
-  branches!: BranchInfo[];
-  selectedBranch!: any;
+  branches = computed(() => this.branchService.branches());
+  selectedBranch = computed(() => this.branchService.selectedBranch());
 
   loggedInUserName: string = '';
   loggedInUserRole: string = '';
@@ -164,6 +165,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
       if (userData.employeeId) {
         this.getUserMenu(userData.employeeId);
       }
+      this.branchService.loadUserBranches().subscribe({ error: () => {} });
     }
   }
 
@@ -274,30 +276,31 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   ngAfterViewInit() {
     this.updateNavbarHeight();
 
-    this.menuItemEls.changes.subscribe(() => {
-      this.distributeMenuItems();
-    });
+    if (this.menuContainer?.nativeElement?.parentElement) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.distributeMenuItems();
+      });
+      this.resizeObserver.observe(this.menuContainer.nativeElement.parentElement);
+    }
 
-    this.resizeObserver = new ResizeObserver(() => {
+    setTimeout(() => {
       this.distributeMenuItems();
-    });
-
-    this.resizeObserver.observe(this.menuContainer.nativeElement);
+      this.updateNavbarHeight();
+    }, 100);
   }
-
 
   ngAfterViewChecked() {
     this.updateNavbarHeight();
   }
 
   updateNavbarHeight() {
-    requestAnimationFrame(() => {
-      if (this.navbar?.nativeElement) {
-        this.navbarHeight = this.navbar.nativeElement.offsetHeight;
-        document.documentElement.style.setProperty('--nav-height', `${this.navbarHeight + 5}px`);
-        this.cdr.detectChanges();
+    if (this.navbar?.nativeElement) {
+      const currentHeight = this.navbar.nativeElement.offsetHeight;
+      if (currentHeight > 0 && currentHeight !== this.navbarHeight) {
+        this.navbarHeight = currentHeight;
+        document.documentElement.style.setProperty('--nav-height', `${currentHeight + 5}px`);
       }
-    });
+    }
   }
 
 
@@ -413,24 +416,60 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
       return [];
     }
 
+    const allowedTitles = new Set<string>();
+    const allowedRoutes = new Set<string>();
+    const walkApi = (items: MenuItem[]) => {
+      for (const it of items) {
+        if (it.title) allowedTitles.add(it.title.trim().toLowerCase());
+        if (it.route) allowedRoutes.add(it.route.trim().toLowerCase());
+        if (it.children && it.children.length > 0) walkApi(it.children);
+      }
+    };
+    walkApi(apiMenus);
+
+    const filterNode = (item: MenuItem): MenuItem | null => {
+      // If leaf item
+      if (!item.children || item.children.length === 0) {
+        const titleMatch = allowedTitles.has((item.title || '').trim().toLowerCase());
+        const routeMatch = item.route ? allowedRoutes.has(item.route.trim().toLowerCase()) : false;
+        if (titleMatch || routeMatch || (!item.permissions || item.permissions.length === 0)) {
+          return { ...item };
+        }
+        return null;
+      }
+
+      // If branch item, filter children recursively
+      const keptChildren: MenuItem[] = [];
+      for (const child of item.children) {
+        const kept = filterNode(child);
+        if (kept) {
+          keptChildren.push(kept);
+        }
+      }
+
+      if (keptChildren.length > 0) {
+        return { ...item, children: keptChildren };
+      }
+      if (item.route && (allowedRoutes.has(item.route.trim().toLowerCase()) || allowedTitles.has((item.title || '').trim().toLowerCase()))) {
+        return { ...item, children: [] };
+      }
+      return null;
+    };
+
     const filtered: MenuItem[] = [];
     for (const hard of this.menuItems) {
       const matchTop = this.findApiItemByTitle(apiMenus, hard.title);
-      if (!matchTop) {
+      if (!matchTop && allowedTitles.size > 0) {
+        // Also check if any descendant of hard is allowed
+        const kept = filterNode(hard);
+        if (kept && kept.children && kept.children.length > 0) {
+          filtered.push(kept);
+        }
         continue;
       }
-
-      const filteredChildren: MenuItem[] = [];
-      for (const child of hard.children || []) {
-        const apiChild = matchTop.children?.find(c => (c.title || '').trim().toLowerCase() === child.title.trim().toLowerCase());
-        if (apiChild && ((apiChild.permissions && apiChild.permissions.length > 0) || (apiChild.children && apiChild.children.length > 0))) {
-          filteredChildren.push({ ...child, permissions: apiChild.permissions || [], children: apiChild.children || [] });
-        }
-      }
-      if ((hard.route && hard.route.length) || filteredChildren.length > 0) {
-        filtered.push({ ...hard, children: filteredChildren });
-      } else {
-
+      const kept = filterNode(hard);
+      if (kept) {
+        filtered.push(kept);
       }
     }
 
@@ -441,24 +480,40 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   // Menu distribution & resize
   // -----------------------------
   private distributeMenuItems() {
-    if (!this.menuContainer || !this.menuItemEls) return;
+    if (!this.menuContainer?.nativeElement || !this.menuItems?.length) return;
+
+    if (this.distributeScheduled) return;
+    this.distributeScheduled = true;
 
     requestAnimationFrame(() => {
-      // nav-menu-cell is the 1fr grid column — browser already subtracted logo + navRight.
-      // parentElement of menuContainer = nav-menu-cell = exact available width. No subtraction needed.
-      const availableWidth = (this.menuContainer.nativeElement.parentElement?.getBoundingClientRect().width || 0) - 16;
+      this.distributeScheduled = false;
 
-      const menuEls = this.menuItemEls.toArray();
+      // nav-menu-cell is the 1fr grid column — parentElement gives available width.
+      const parentEl = this.menuContainer?.nativeElement?.parentElement;
+      const availableWidth = (parentEl?.getBoundingClientRect().width || 0) - 16;
+      if (availableWidth <= 0) return;
+
+      // Cache measured widths of any currently rendered items in DOM
+      if (this.menuItemEls) {
+        const menuEls = this.menuItemEls.toArray();
+        this.visibleMenuItems.forEach((item, index) => {
+          const el = menuEls[index]?.nativeElement;
+          if (el) {
+            const w = el.getBoundingClientRect().width;
+            if (w > 0) {
+              this.itemWidthMap.set(item.id ?? item.title, w);
+            }
+          }
+        });
+      }
 
       let usedWidth = 0;
       const visible: MenuItem[] = [];
       const overflow: MenuItem[] = [];
 
-      this.menuItems.forEach((item, index) => {
-        const el = menuEls[index]?.nativeElement;
-        const width = el
-          ? el.getBoundingClientRect().width
-          : Math.max(100, item.title.length * 10 + 40);
+      this.menuItems.forEach((item) => {
+        const key = item.id ?? item.title;
+        const width = this.itemWidthMap.get(key) || Math.max(110, item.title.length * 10 + 44);
 
         if (usedWidth + width <= availableWidth || visible.length === 0) {
           visible.push(item);
@@ -468,22 +523,28 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
         }
       });
 
-      // CRITICAL: Ensure no items are dropped
+      // Ensure no items are dropped
       const totalAssigned = visible.length + overflow.length;
       if (totalAssigned < this.menuItems.length) {
-        // Force all remaining items to overflow
         const missingItems = this.menuItems.slice(totalAssigned);
         overflow.push(...missingItems);
       }
 
-      this.visibleMenuItems = visible;
-      this.menu2Items = overflow;
+      // Check if visible items or overflow actually changed to avoid infinite layout oscillations
+      const hasChanged = visible.length !== this.visibleMenuItems.length ||
+        overflow.length !== this.menu2Items.length ||
+        visible.some((v, idx) => (v.id ?? v.title) !== (this.visibleMenuItems[idx]?.id ?? this.visibleMenuItems[idx]?.title));
 
-      if (this.menu2Items.length === 0) {
-        this.isMenu2Open.set(false);
+      if (hasChanged) {
+        this.visibleMenuItems = visible;
+        this.menu2Items = overflow;
+
+        if (this.menu2Items.length === 0) {
+          this.isMenu2Open.set(false);
+        }
+
+        this.cdr.markForCheck();
       }
-
-      this.cdr.markForCheck();
     });
   }
 
@@ -572,8 +633,8 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
   // ── Multi-branch handlers ─────────────────
   selectBranch(branch: BranchInfo): void {
-    if (branch.code === this.selectedBranch().code) return;
-    this.branchService.setBranch(branch.code);
+    if (this.selectedBranch()?.id === branch.id) return;
+    this.branchService.setBranch(branch);
     this.toastService.show(`Switched to ${branch.name}`, 'success');
   }
 

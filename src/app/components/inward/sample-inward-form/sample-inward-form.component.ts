@@ -15,14 +15,14 @@ import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { CustomerPOService } from '../../../services/customer-po.service';
 import { AccountService } from '../../../services/account.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
+import { DisciplineService } from '../../../services/discipline.service';
 import { ProductFormService } from '../../../services/product-form.service';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 import { InwardStatus } from '../../../utility/status_flow/enums/inward-status.enum';
-import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
@@ -30,7 +30,7 @@ import { FormValidationHelper } from '../../../utility/helper/form-validation.he
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent, TestStatusBadgeComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, TestStatusBadgeComponent, RouterModule],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -76,8 +76,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   isEditMode: boolean = false;
   sampleId: number = 0;
   currentInwardStatus: InwardStatus | string = '';
-  planTabLoaded: boolean = false;
-  private planLastSampleCount = 0;
+  activeSampleIndex: number = 0;
 
   // Cancel sample dialog state
   showCancelDialog = false;
@@ -109,6 +108,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     private router: Router,
     private prodCondService: ProductConditionService,
     private specimenOrientationService: SpecimenOrientationService,
+    private disciplineService: DisciplineService,
     private productFormService: ProductFormService,
     private unsavedChangesService: UnsavedChangesService,
     private customerPOService: CustomerPOService,
@@ -1410,6 +1410,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       id: [existingSample?.id || 0],
       sampleNo: [sampleNo],
       details: [existingSample?.details || '', Validators.required],
+      disciplineID: [existingSample?.disciplineID || null],
+      disciplineName: [existingSample?.disciplineName || ''],
       metalClassificationID: [existingSample?.metalClassificationID || ''],
       metalClassificationName: [existingSample?.metalClassificationName || ''],
       productConditionID: [existingSample?.productConditionID || ''],
@@ -1519,6 +1521,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         id: 0,
         sampleNo: '',
         details: data.details,
+        disciplineID: data.disciplineID,
+        disciplineName: data.disciplineName,
         metalClassificationID: data.metalClassificationID,
         metalClassificationName: data.metalClassificationName,
         productConditionID: data.productConditionID,
@@ -1537,6 +1541,17 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         length: data.length,
       });
     }
+  }
+
+  getDisciplineDrop = (term: string, page: number, pageSize: number) =>
+    this.disciplineService.getDisciplineDropdown(term, page, pageSize);
+
+  onDisciplineSelected(item: any, sampleIndex: number): void {
+    const sample = this.sampleDetails.at(sampleIndex) as FormGroup;
+    sample.patchValue({
+      disciplineID: item?.id ?? null,
+      disciplineName: item?.name ?? ''
+    });
   }
 
   removeSample(index: number): void {
@@ -1622,23 +1637,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     return !editableStatuses.has(status as SampleStatus) && !nonCancellableStatuses.has(status as SampleStatus);
   }
 
-  switchToPlanTab(): void {
-    if (this.sampleInwardForm.dirty) {
-      this.toastService.show('Please save your changes before viewing the plan.', 'warning');
-      return;
-    }
-
-    const activeSampleCount = this.sampleDetails.controls.filter(
-      s => !s.get('isCancelled')?.value
-    ).length;
-
-    const needsReload = !this.planTabLoaded || activeSampleCount !== this.planLastSampleCount;
-
-    if (needsReload) {
-      this.planTabLoaded = false;
-      this.planLastSampleCount = activeSampleCount;
-      setTimeout(() => (this.planTabLoaded = true), 0);
-    }
+  setActiveSample(idx: number): void {
+    this.activeSampleIndex = idx;
   }
 
   openCancelDialog(index: number): void {
@@ -1668,7 +1668,6 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         });
         sample.disable();
         this.showCancelDialog = false;
-        this.planLastSampleCount = 0; // force plan tab to reload — cancelled sample must be excluded
         this.toastService.show('Sample cancelled successfully.', 'success');
       },
       error: (err: any) => {
@@ -1880,7 +1879,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   // Submission
-  onSubmit(includePlans: boolean = false): void {
+  onSubmit(navigateToPlan: boolean = false): void {
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.sampleInwardForm);
     if (!this.sampleInwardForm.valid) {
@@ -2074,6 +2073,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       formData.append(`sampleDetails[${i}].id`, '0');
       formData.append(`sampleDetails[${i}].sampleNo`, s.sampleNo || '');
       formData.append(`sampleDetails[${i}].details`, s.details || '');
+      formData.append(`sampleDetails[${i}].disciplineID`, s.disciplineID != null ? String(s.disciplineID) : '');
+      formData.append(`sampleDetails[${i}].disciplineName`, s.disciplineName || '');
       formData.append(`sampleDetails[${i}].metalClassificationID`, s.metalClassificationID || '');
       formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
       formData.append(`sampleDetails[${i}].specimenOrientationID`, s.specimenOrientationID || '');
@@ -2116,6 +2117,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     }
 
     const isNew = !(value.id && value.id > 0);
+
+    // Append collection time & date before sending
+    const now = new Date();
+    formData.append('collectionTime', this.getCurrentTime());
+    formData.append('collectionDate', now.toISOString().split('T')[0]);
+
     const request$ = isNew
       ? this.inwardService.createSampleInward(formData)
       : this.inwardService.updateSampleInward(formData);
@@ -2124,17 +2131,37 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       next: (response: any) => {
         this.saved = true;
         this.toastService.show('Sample Inward saved successfully!', 'success');
-        // Show credit limit warning (advisory — inward is already saved)
         if (response?.creditWarning) {
           this.toastService.show(response.creditWarning, 'warning');
         }
-        if (isNew && response?.id) {
-          // Navigate to edit mode so Plan tab becomes visible
+
+        const inwardId = isNew ? response?.id : value.id;
+
+        if (navigateToPlan) {
+          // Explicit SampleID resolution: navigate to Universal Planning for active sample
+          this.inwardService.getSampleInwardById(inwardId).subscribe({
+            next: (details: any) => {
+              const activeSampleNo = this.sampleDetails.at(this.activeSampleIndex)?.get('sampleNo')?.value;
+              const targetSample = details?.sampleDetails?.find((s: any) => s.sampleNo === activeSampleNo)
+                || details?.sampleDetails?.find((s: any) => !s.isCancelled)
+                || details?.sampleDetails?.[0];
+              const targetSampleId = targetSample?.id;
+              if (targetSampleId) {
+                this.router.navigate(['/sample/plan/universal', inwardId], {
+                  queryParams: { sampleId: targetSampleId }
+                });
+              } else {
+                this.router.navigate(['/sample/plan/universal', inwardId]);
+              }
+            },
+            error: () => {
+              this.router.navigate(['/sample/plan/universal', inwardId]);
+            }
+          });
+        } else if (isNew && response?.id) {
           this.router.navigate(['/sample/inward/edit', response.id], { state: { mode: 'edit' } });
         } else {
-          // Already in edit mode, reload to refresh data
           this.sampleId = value.id;
-          this.planLastSampleCount = 0; // force plan tab to reload after next save
           this.fetchSampleInwardDetails(this.sampleId);
           this.sampleInwardForm.markAsPristine();
         }
@@ -2144,11 +2171,22 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         this.toastService.show('Error saving sample inward. Please try again.', 'error');
       }
     });
+  }
 
-    // In onSubmit(), BEFORE sending:
-    const now = new Date();
-    formData.append('collectionTime', this.getCurrentTime());
-    formData.append('collectionDate', now.toISOString().split('T')[0]);
+  saveAndPlanTests(): void {
+    this.onSubmit(true);
+  }
+
+  navigateToUniversalPlan(): void {
+    if (!this.sampleId) return;
+    const activeSampleId = this.sampleDetails.at(this.activeSampleIndex)?.get('id')?.value;
+    if (activeSampleId && activeSampleId > 0) {
+      this.router.navigate(['/sample/plan/universal', this.sampleId], {
+        queryParams: { sampleId: activeSampleId }
+      });
+    } else {
+      this.router.navigate(['/sample/plan/universal', this.sampleId]);
+    }
   }
 
   savePaymentInfo(): void {

@@ -57,4 +57,15 @@ export class ParameterService {
     return this.http.post<any>(`${this.apiUrl}/formula/validate`, { formula });
   }
 
+  getAllParameters(filter: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/list`, filter);
+  }
+
+  getParameterTypesMetadata(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/types`);
+  }
+
+  toggleStatus(id: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/toggle-status/${id}`, {});
+  }
 }

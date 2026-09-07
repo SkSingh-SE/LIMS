@@ -31,8 +31,16 @@ export class ProductMasterService {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
 
+  toggleStatus(id: number): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/toggle-status/${id}`, {});
+  }
+
   getDropdown(searchTerm: string, pageNumber: number = 0, pageSize: number = 20, metalId: number = 0): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}&metalId=${metalId}`);
+  }
+
+  getGradeApplicability(gradeId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/grade-applicability/${gradeId}`);
   }
 
   getGradeParameters(gradeId: number): Observable<any> {

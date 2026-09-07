@@ -13,10 +13,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { ipRestrictionValidator } from '../../../utility/validators/ip-restriction.validator';
 
-
 @Component({
   selector: 'app-employee-user-management',
-
   imports: [CommonModule, ReactiveFormsModule, FormsModule, UserPermissionComponent, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule],
   templateUrl: './employee-user-management.component.html',
   styleUrl: './employee-user-management.component.css'
@@ -33,7 +31,8 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     { id: 1, label: 'Login Details', icon: 'bi-person-badge' },
     { id: 2, label: 'Access Control', icon: 'bi-shield-lock' },
     { id: 3, label: 'Session & Security', icon: 'bi-hourglass-split' },
-    { id: 4, label: 'User Permission', icon: 'bi-vector-pen' }
+    { id: 4, label: 'User Permission', icon: 'bi-vector-pen' },
+    { id: 5, label: 'Branch Access & Permissions', icon: 'bi-buildings' }
   ];
 
   showPassword = false;
@@ -51,6 +50,21 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
   isOtpVerified = false;
   resendCooldown = 0;
   resendTimer?: any;
+
+  // Branch Access & Permissions (Tab 5)
+  branchAccess: any = null;
+  assignedBranches: any[] = [];
+  availableBranches: any[] = [];
+  filteredAvailableBranches: any[] = [];
+  selectedBranchToAdd: any = null;
+  canViewAllBranches: boolean = false;
+  defaultBranchId: number | null = null;
+  organizationName: string = 'Devine Laboratory';
+  isBranchAccessLoading: boolean = false;
+  isBranchAccessSaving: boolean = false;
+
+  // Dirty tracking for Tab 5
+  private originalBranchSnapshot: string = '';
 
   // Real user data loaded from backend
   user: any = null;
@@ -104,16 +118,12 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     });
   }
 
-
-
   loadUserDetails() {
-    // Load real user data from backend endpoint
     this.userService.getUserByEmployeeId(this.employeeId).subscribe({
       next: (data) => {
         this.user = data || {};
         this.currentRole = this.user?.currentRole || '';
 
-        // Map response to reactive form controls
         this.userForm.patchValue({
           userName: this.user.userName || '',
           email: this.user.email || '',
@@ -129,7 +139,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
           forcePasswordChange: this.user.forcePasswordChange ?? false
         });
 
-        // Parse working hours into single start/end
         const parsed = this.parseWorkingHours(this.user.workingHours);
         if (parsed && parsed.length) {
           const first = parsed[0];
@@ -138,6 +147,8 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
         if (this.isViewMode) this.userForm.disable();
 
+        // Also load branch access data
+        this.loadBranchAccess();
       },
       error: (err) => {
         console.error('Error loading user details:', err);
@@ -148,6 +159,191 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
   setActiveTab(tabId: number) {
     this.activeTab.set(tabId);
+    if (tabId === 5 && !this.branchAccess) {
+      this.loadBranchAccess();
+    }
+  }
+
+  loadBranchAccess() {
+    if (!this.employeeId) return;
+    this.isBranchAccessLoading = true;
+    this.userService.getBranchAccess(this.employeeId).subscribe({
+      next: (data) => {
+        this.branchAccess = data || {};
+        this.organizationName = data.organizationName || 'Devine Laboratory';
+        this.defaultBranchId = data.defaultBranchId || null;
+        this.canViewAllBranches = data.canViewAllBranches ?? false;
+        this.assignedBranches = (data.assignedBranches || []).map((b: any) => ({ ...b }));
+        this.availableBranches = data.availableBranches || [];
+        this.updateAvailableBranchesDropdown();
+        this.takeBranchSnapshot();
+        this.isBranchAccessLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading branch access:', err);
+        this.isBranchAccessLoading = false;
+      }
+    });
+  }
+
+  private takeBranchSnapshot() {
+    this.originalBranchSnapshot = JSON.stringify({
+      defaultBranchId: this.defaultBranchId,
+      canViewAllBranches: this.canViewAllBranches,
+      assignedBranches: this.assignedBranches.map(b => ({
+        branchId: b.branchId,
+        isDefault: b.isDefault || (b.branchId === this.defaultBranchId),
+        canView: b.canView,
+        canCreate: b.canCreate,
+        canEdit: b.canEdit,
+        canExecute: b.canExecute,
+        canApprove: b.canApprove,
+        canDelete: b.canDelete
+      }))
+    });
+  }
+
+  isTab5Dirty(): boolean {
+    if (!this.originalBranchSnapshot) return false;
+    const currentSnapshot = JSON.stringify({
+      defaultBranchId: this.defaultBranchId,
+      canViewAllBranches: this.canViewAllBranches,
+      assignedBranches: this.assignedBranches.map(b => ({
+        branchId: b.branchId,
+        isDefault: b.isDefault || (b.branchId === this.defaultBranchId),
+        canView: b.canView,
+        canCreate: b.canCreate,
+        canEdit: b.canEdit,
+        canExecute: b.canExecute,
+        canApprove: b.canApprove,
+        canDelete: b.canDelete
+      }))
+    });
+    return currentSnapshot !== this.originalBranchSnapshot;
+  }
+
+  resetBranchAccess() {
+    if (!this.originalBranchSnapshot) return;
+    try {
+      const original = JSON.parse(this.originalBranchSnapshot);
+      this.defaultBranchId = original.defaultBranchId;
+      this.canViewAllBranches = original.canViewAllBranches;
+      this.assignedBranches = (this.branchAccess?.assignedBranches || []).map((b: any) => ({ ...b }));
+      this.updateAvailableBranchesDropdown();
+      this.toastService.show('Branch changes reset to last saved state.', 'info');
+    } catch (e) {
+      this.loadBranchAccess();
+    }
+  }
+
+  get defaultBranchName(): string {
+    const found = this.assignedBranches.find(b => b.branchId === this.defaultBranchId);
+    if (!found) return 'None Selected';
+    return `${found.branchName}${found.isHeadOffice ? ' (Head Office)' : ''}`;
+  }
+
+  updateAvailableBranchesDropdown() {
+    const assignedIds = new Set(this.assignedBranches.map(b => b.branchId));
+    this.filteredAvailableBranches = (this.availableBranches || []).filter(b => !assignedIds.has(b.id));
+    this.selectedBranchToAdd = null;
+  }
+
+  onDefaultBranchSelect(branchId: number) {
+    this.defaultBranchId = Number(branchId);
+    this.assignedBranches.forEach(b => {
+      b.isDefault = (b.branchId === this.defaultBranchId);
+    });
+  }
+
+  onAddBranch() {
+    if (!this.selectedBranchToAdd) {
+      this.toastService.show('Please select a branch to add.', 'warning');
+      return;
+    }
+    const branchIdNum = Number(this.selectedBranchToAdd);
+    const branchMeta = this.availableBranches.find(b => b.id === branchIdNum);
+    if (!branchMeta) return;
+
+    const isFirst = this.assignedBranches.length === 0;
+    const newBranch = {
+      id: 0,
+      branchId: branchMeta.id,
+      branchCode: branchMeta.code || '',
+      branchName: branchMeta.name,
+      isHeadOffice: branchMeta.isHeadOffice ?? false,
+      isDefault: isFirst,
+      canView: true,
+      canCreate: true,
+      canEdit: true,
+      canExecute: true,
+      canApprove: false,
+      canDelete: false,
+      isActive: true
+    };
+
+    if (isFirst) {
+      this.defaultBranchId = branchMeta.id;
+    }
+
+    this.assignedBranches.push(newBranch);
+    this.updateAvailableBranchesDropdown();
+    this.toastService.show(`Added ${branchMeta.name} to assigned branches.`, 'info');
+  }
+
+  onRemoveBranch(index: number) {
+    const removed = this.assignedBranches[index];
+    const isRemovingDefault = removed.isDefault || (removed.branchId === this.defaultBranchId);
+
+    this.assignedBranches.splice(index, 1);
+
+    if (isRemovingDefault && this.assignedBranches.length > 0) {
+      this.assignedBranches[0].isDefault = true;
+      this.defaultBranchId = this.assignedBranches[0].branchId;
+      this.toastService.show(`Default branch reassigned to ${this.assignedBranches[0].branchName}.`, 'warning');
+    } else if (this.assignedBranches.length === 0) {
+      this.defaultBranchId = null;
+    }
+
+    this.updateAvailableBranchesDropdown();
+  }
+
+  saveBranchAccess() {
+    if (!this.employeeId) return;
+    if (this.assignedBranches.length > 0 && !this.defaultBranchId) {
+      this.assignedBranches[0].isDefault = true;
+      this.defaultBranchId = this.assignedBranches[0].branchId;
+    }
+
+    const payload = {
+      organizationId: this.branchAccess?.organizationId,
+      canViewAllBranches: this.canViewAllBranches,
+      defaultBranchId: this.defaultBranchId,
+      branches: this.assignedBranches.map(b => ({
+        branchId: b.branchId,
+        isDefault: b.isDefault || (b.branchId === this.defaultBranchId),
+        canView: b.canView,
+        canCreate: b.canCreate,
+        canEdit: b.canEdit,
+        canExecute: b.canExecute,
+        canApprove: b.canApprove,
+        canDelete: b.canDelete
+      }))
+    };
+
+    this.isBranchAccessSaving = true;
+    this.userService.updateBranchAccess(this.employeeId, payload).subscribe({
+      next: (res) => {
+        this.toastService.show(res?.message || 'Branch access and permissions updated successfully.', 'success');
+        this.isBranchAccessSaving = false;
+        this.loadBranchAccess();
+      },
+      error: (err) => {
+        console.error('Error saving branch access:', err);
+        const errMsg = err?.error?.message || err?.error || 'Failed to update branch access.';
+        this.toastService.show(errMsg, 'error');
+        this.isBranchAccessSaving = false;
+      }
+    });
   }
 
   saveUserManagement() {
@@ -159,15 +355,14 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
       return;
     }
     const rawValues = this.userForm.getRawValue();
-    // Build a whitelisted payload (exclude password, role, account status, 2FA fields)
     const payload: any = {
       employeeId: this.employeeId,
-      isLoginEnabled: !!rawValues.isLoginEnabled, // first tab
-      allowRemoteLogin: !!rawValues.allowRemoteLogin, // second tab
-      ipRestriction: rawValues.ipRestriction || null, // second tab
-      workingHours: this.buildWorkingHours(), // second tab
-      sessionTimeout: rawValues.sessionTimeout, // third tab
-      forcePasswordChange: !!rawValues.forcePasswordChange // third tab
+      isLoginEnabled: !!rawValues.isLoginEnabled,
+      allowRemoteLogin: !!rawValues.allowRemoteLogin,
+      ipRestriction: rawValues.ipRestriction || null,
+      workingHours: this.buildWorkingHours(),
+      sessionTimeout: rawValues.sessionTimeout,
+      forcePasswordChange: !!rawValues.forcePasswordChange
     };
 
     this.userService.updateUserByEmployeeId(this.employeeId, payload).subscribe({
@@ -182,19 +377,16 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     });
   }
 
-
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
-  // Helper for Reset Password (optional button action)
+
   resetPassword() {
-    // Implement specific logic if there's a dedicated API, or just use the save with new password
     const newPass = this.userForm.get('password')?.value;
     if (!newPass) {
       this.toastService.show('Enter a new password to reset.', 'warning');
       return;
     }
-    // Event-based API call (immediate)
     this.userService.resetPassword(this.employeeId, newPass).subscribe({
       next: () => {
         this.toastService.show('Password reset successfully.', 'success');
@@ -211,6 +403,7 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
   getRoles = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.roleService.getRoleDropdown(term, page, pageSize);
   }
+
   onRoleSelected(item: any) {
     if (this.currentRole === item.name) {
       this.toastService.show('Selected role is the same as the current role.', 'warning');
@@ -220,6 +413,7 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
       this.selectedRole = item.name;
     }
   }
+
   onRequestRoleChange() {
     if (this.isViewMode) return;
     const newRole = this.userForm.get('newRole')?.value;
@@ -230,7 +424,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    // Mock event emit or API call
     console.log('Role change requested:', { newRole, reason, effectiveFrom: this.userForm.get('roleEffectiveFrom')?.value });
     this.toastService.show('Role change request submitted for approval.', 'info');
     this.isRoleChanging = false;
@@ -239,30 +432,26 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
   // 2FA Helpers
   toggle2FA() {
     if (this.isViewMode) return;
-    // If turning ON, start flow but do NOT set enabled until OTP verification
     if (!this.is2FAEnabled()) {
-      this.otpStep = 1; // method selection
+      this.otpStep = 1;
       this.isOtpVerified = false;
       this.is2FAEnabled.set(true);
     } else {
-      // Turning OFF (UI only) — do not persist via Save API
       this.is2FAEnabled.set(false);
       this.otpStep = 0;
       this.otpMethod = 'email';
       this.isOtpVerified = false;
-      this.toastService.show('Two-factor authentication disabled locally. Backend update not persisted here.', 'info');
+      this.toastService.show('Two-factor authentication disabled locally.', 'info');
     }
   }
 
   selectOtpMethod(method: 'email' | 'sms') {
     if (this.isViewMode) return;
-
     this.otpMethod = method;
-    // Event-based: send OTP immediately
     this.userService.sendOtp(this.employeeId, method).subscribe({
       next: () => {
         this.toastService.show(`OTP sent to your ${method === 'email' ? 'email' : 'mobile'}`, 'info');
-        this.otpStep = 2; // go to verify
+        this.otpStep = 2;
         this.startResendCooldown();
       },
       error: () => {
@@ -286,7 +475,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
   startResendCooldown() {
     this.resendCooldown = 60;
-
     this.resendTimer = setInterval(() => {
       this.resendCooldown--;
       if (this.resendCooldown <= 0) {
@@ -295,18 +483,16 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     }, 1000);
   }
 
-
   verifyOtp() {
     if (!this.otpCode || this.otpCode.length < 4) {
       this.toastService.show('Please enter a valid OTP', 'warning');
       return;
     }
-    // Event-based verification — only after successful verification set 2FA enabled in UI
     this.userService.verifyOtp(this.employeeId, this.otpCode).subscribe({
       next: () => {
         this.is2FAEnabled.set(true);
         this.isOtpVerified = true;
-        this.otpStep = 3; // confirmed
+        this.otpStep = 3;
         this.toastService.show('2FA verified and enabled successfully', 'success');
       },
       error: () => {
@@ -370,7 +556,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
       const ctrl = controls[key];
       if (ctrl && ctrl.invalid && !ctrl.disabled) return false;
     }
-    // Cross-field validation for tab 1 (end time)
     if (tabId === 1) {
       const start = controls['startTime']?.value;
       const end = controls['endTime']?.value;
@@ -410,7 +595,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
     return touched ? ctrl.touched && ctrl.invalid : ctrl.invalid;
   }
 
-  // Single range builder
   private buildWorkingHours(): string | null {
     const start = this.userForm.get('startTime')?.value;
     const end = this.userForm.get('endTime')?.value;
@@ -420,7 +604,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
   private parseWorkingHours(value: string | undefined | null): Array<{ start: string, end: string }> {
     if (!value) return [];
-    // support single or comma-separated; take first as primary
     return value.split(',').map(part => {
       const [s, e] = part.split('-');
       return { start: (s || '').trim(), end: (e || '').trim() };
@@ -428,7 +611,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Validate single start/end pair
     const startCtrl = this.userForm.get('startTime');
     const endCtrl = this.userForm.get('endTime');
     if (!startCtrl || !endCtrl) return;
@@ -447,8 +629,6 @@ export class EmployeeUserManagementComponent implements OnInit, AfterViewInit {
 
     startCtrl.valueChanges.subscribe(() => validate());
     endCtrl.valueChanges.subscribe(() => validate());
-    // initial validate
     validate();
   }
-
 }

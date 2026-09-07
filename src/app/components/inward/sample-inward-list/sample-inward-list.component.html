@@ -74,6 +74,12 @@
                                       [attr.aria-disabled]="!canEditInward(item)">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
+                                    <a [routerLink]="['/sample/plan/universal', item.id]"
+                                       [queryParams]="item.firstSampleID ? { sampleId: item.firstSampleID } : {}"
+                                       class="icon-link"
+                                       title="Universal Test Planning (Screen 14)">
+                                        <i class="bi bi-diagram-3-fill text-danger fs-6"></i>
+                                    </a>
                                 </div>
                             </td>
                             <td class="fw-semibold">

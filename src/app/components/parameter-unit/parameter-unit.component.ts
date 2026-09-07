@@ -1,74 +1,60 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { ParameterUnitService } from '../../services/parameter-unit.service';
 import { ToastService } from '../../services/toast.service';
 import { noWhitespaceValidator } from '../../utility/validators/custom-validators';
-import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
+import { BreadcrumbComponent } from '../../utility/components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-parameter-unit',
-  imports: [ CommonModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent ],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    FormFieldErrorComponent,
+    PaginationComponent,
+    BreadcrumbComponent
+  ],
   templateUrl: './parameter-unit.component.html',
-  styleUrl: './parameter-unit.component.css',
+  styleUrl: './parameter-unit.component.css'
 })
 export class ParameterUnitComponent implements OnInit {
-  @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
-  columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Unit Name', filter: true },
-    { key: 'conversionFactor', type: 'string', label: 'Base Factor', filter: true },
-    { key: 'equivalents', type: 'string', label: 'Equivalent Units', filter: false },
-  ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    name: 'string',
-    conversionFactor: 'string',
-  };
+  // Lookups
+  quantityTypes: string[] = [];
 
-  filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
-  filterType: string = 'Contains';
-  filterValue: string = '';
-  filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
-  isFilterOpen = false;
-  parameterUnitList: any[] = [];
+  // Filter state
+  filterCode: string = '';
+  filterName: string = '';
+  filterSymbol: string = '';
+  filterQuantityType: string = '';
+  filterStatus: string = ''; // '' = All, 'true' = Active, 'false' = Inactive
 
-  pageNumber = 1;
-  pageSize = 10;
-  totalItems = 0;
-  pageSizes = [10, 25, 50, 100, 200, 500];
+  // Grid state
+  unitList: any[] = [];
+  pageNumber: number = 1;
+  pageSize: number = 10;
+  totalItems: number = 0;
+  pageSizes: number[] = [10, 25, 50, 100];
+  sortByColumn: string = 'code';
+  sortOrder: string = 'asc';
 
-  sortByColumn: string = 'modifiedOn';
-  sortOrder: string = 'desc';
-  searchTerm: string = '';
-  isLoading = signal(false);
-
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null,
-  };
-
-  parameterUnitForm!: FormGroup;
-  submitted = false;
+  // Modal / Form state
+  unitForm!: FormGroup;
+  submitted: boolean = false;
   isEditMode: boolean = false;
-  isViewMode: boolean = true;
-  parameterUnitId: number = 0;
-  formTitle = 'Parameter Unit Form';
-
-  // Intelligence features
-  testValue: number | null = null;
+  isViewMode: boolean = false;
+  selectedId: number = 0;
+  formTitle: string = 'Add Parameter Unit';
 
   constructor(
     private fb: FormBuilder,
@@ -76,31 +62,35 @@ export class ParameterUnitComponent implements OnInit {
     private toastService: ToastService
   ) {}
 
-  ngOnInit() {
-    this.fetchData();
+  ngOnInit(): void {
     this.initForm();
+    this.loadQuantityTypes();
+    this.fetchData();
   }
 
-  initForm() {
-    this.parameterUnitForm = this.fb.group({
+  initForm(): void {
+    this.unitForm = this.fb.group({
       id: [0],
+      code: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      conversionFactor: [null, [Validators.required, Validators.min(0.000001)]],
-      // Normalized equivalents (unlimited add/remove). Each row: { id, name, conversionFactor }.
-      equivalents: this.fb.array([]),
+      symbol: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
+      quantityType: [''],
+      conversionFactor: [1.0, [Validators.min(0.000001)]],
+      description: ['', [Validators.maxLength(500)]],
+      isActive: [true],
+      equivalents: this.fb.array([])
     });
   }
 
-  /** Equivalents FormArray accessor. */
   get equivalents(): FormArray {
-    return this.parameterUnitForm.get('equivalents') as FormArray;
+    return this.unitForm.get('equivalents') as FormArray;
   }
 
   createEquivalentGroup(e?: any): FormGroup {
     return this.fb.group({
       id: [e?.id ?? 0],
       name: [e?.name ?? '', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
-      conversionFactor: [e?.conversionFactor ?? null, [Validators.required, Validators.min(0.000001)]],
+      conversionFactor: [e?.conversionFactor ?? 1.0, [Validators.required, Validators.min(0.000001)]]
     });
   }
 
@@ -112,7 +102,6 @@ export class ParameterUnitComponent implements OnInit {
     this.equivalents.removeAt(index);
   }
 
-  /** Rebuild the equivalents FormArray from a saved unit's child rows. */
   private bindEquivalents(rows: any[]): void {
     this.equivalents.clear();
     (rows || [])
@@ -122,264 +111,235 @@ export class ParameterUnitComponent implements OnInit {
       .forEach(e => this.equivalents.push(this.createEquivalentGroup(e)));
   }
 
-  getConvertedValue(index: number): string {
-    if (this.testValue === null || this.testValue === undefined) return '—';
-    const factor = this.equivalents.at(index)?.get('conversionFactor')?.value;
-    if (!factor) return '—';
-    const result = this.testValue * factor;
-    return Number.isInteger(result) ? result.toString() : result.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+  loadQuantityTypes(): void {
+    this.parameterUnitService.getQuantityTypes().subscribe({
+      next: (types) => {
+        this.quantityTypes = types || [];
+      },
+      error: () => {
+        this.quantityTypes = [
+          'Length', 'Mass', 'Force', 'Pressure', 'Temperature',
+          'Voltage', 'Current', 'Resistance', 'Density', 'Concentration',
+          'Percentage', 'Time', 'Area', 'Volume', 'Dimensionless',
+          'Energy', 'Hardness', 'Other'
+        ];
+      }
+    });
   }
 
-  fetchData() {
-    this.parameterUnitService.getAllParameterUnits(this.payload).subscribe({
+  buildFilters(): any[] {
+    const filters: any[] = [];
+    if (this.filterCode.trim()) {
+      filters.push({ column: 'code', type: 'Contains', value: this.filterCode.trim() });
+    }
+    if (this.filterName.trim()) {
+      filters.push({ column: 'name', type: 'Contains', value: this.filterName.trim() });
+    }
+    if (this.filterSymbol.trim()) {
+      filters.push({ column: 'symbol', type: 'Contains', value: this.filterSymbol.trim() });
+    }
+    if (this.filterQuantityType) {
+      filters.push({ column: 'quantityType', type: 'Equal', value: this.filterQuantityType });
+    }
+    if (this.filterStatus !== '') {
+      filters.push({ column: 'isActive', type: 'Equal', value: this.filterStatus === 'true' });
+    }
+    return filters;
+  }
+
+  fetchData(): void {
+    const payload = {
+      pageNumber: this.pageNumber,
+      pageSize: this.pageSize,
+      searchTerm: '',
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder,
+      filter: this.buildFilters()
+    };
+
+    this.parameterUnitService.getAllParameterUnits(payload).subscribe({
       next: (response) => {
-        this.parameterUnitList = response?.items || [];
+        this.unitList = response?.items || [];
         this.totalItems = response?.totalRecords || 0;
-        this.pageSize = response?.pageSize || 10;
-        this.pageNumber = response?.pageNumber || 1;
-        this.isLoading.set(false);
       },
-      error: (error) => {
-        this.toastService.show(error.message, 'error');
-        this.parameterUnitList = [];
-        this.isLoading.set(false);
-      },
+      error: (err) => {
+        this.toastService.show(err.message || 'Failed to load parameter units.', 'error');
+        this.unitList = [];
+        this.totalItems = 0;
+      }
     });
   }
 
-  getDetails(): void {
-    const requestId = this.parameterUnitId;
-    this.parameterUnitService.getParameterUnitById(requestId).subscribe({
-      next: (response) => {
-        if (this.parameterUnitId !== requestId) return; // discard stale response
-        this.parameterUnitForm.patchValue(response);
-        this.bindEquivalents(response.equivalents);
-        if (this.isViewMode) this.parameterUnitForm.disable();
-      },
-      error: (error) => {
-        console.error('Error fetching parameter unit data:', error);
-      },
-    });
+  onSearch(): void {
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
-  applySorting(column: string) {
+  onReset(): void {
+    this.filterCode = '';
+    this.filterName = '';
+    this.filterSymbol = '';
+    this.filterQuantityType = '';
+    this.filterStatus = '';
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  applySorting(column: string): void {
     if (this.sortByColumn === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
     this.fetchData();
   }
 
-  openFilterModal(column: string, event: MouseEvent) {
-    this.filterColumn = column;
-    this.columns.forEach((col) => { if (col.key === column) this.filterColumnTitle = col.label; });
-    this.filterValue = '';
-    this.filterValue2 = '';
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string': this.filterType = 'Contains'; break;
-      case 'number': this.filterType = 'Equal'; break;
-      case 'date': this.filterType = 'Between'; break;
-      default: this.filterType = 'Contains';
-    }
-    this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    if (this.filterModal) {
-      const modal = this.filterModal.nativeElement;
-      modal.style.display = 'block';
-      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
-      modal.style.left = `${rect.left + window.scrollX}px`;
-
-      // Clamp to viewport so the popup doesn't overflow
-      requestAnimationFrame(() => {
-        const modalRect = modal.getBoundingClientRect();
-        if (modalRect.right > window.innerWidth) {
-          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-        }
-        if (modalRect.bottom > window.innerHeight) {
-          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-        }
-      });
-    }
-  }
-
-  applyFilter() {
-    if (!this.filterColumn || this.filterValue === '') return;
-    const existingFilterIndex = this.filters.findIndex((f) => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-    if (existingFilterIndex > -1) this.filters[existingFilterIndex] = filterData;
-    else this.filters.push(filterData);
-    this.fetchData();
-    this.closeFilterModal();
-  }
-
-  resetFilter(column: string) {
-    this.filters = this.filters.filter((filter) => filter.column !== column);
-    this.payload.filter = this.filters;
-    this.fetchData();
-  }
-
-  closeFilterModal() {
-    if (this.filterModal) this.filterModal.nativeElement.style.display = 'none';
-  }
-
-  onPageChange(page: number) {
+  onPageChange(page: number): void {
     this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
     this.fetchData();
   }
 
-  changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
     this.pageNumber = 1;
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
     this.fetchData();
   }
 
-  onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
-  }
-
-  get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
-  }
-
-  getStartRecord(): number {
-    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
-  }
-
-  getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
-  }
-
-  hasFilter(column: string): boolean {
-    return this.filters?.some((f) => f.column === column) ?? false;
-  }
-
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find((col) => col.key === columnKey);
-    return column ? column.type : undefined;
-  }
-
-  deleteFn(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.parameterUnitService.deleteParameterUnit(id).subscribe({
-        next: (response) => { this.fetchData(); this.toastService.show(response.message, 'success'); },
-        error: (error) => { this.toastService.show(error.message, 'error'); },
-      });
-    }
-  }
-
-  openModal(type: string, id: number): void {
+  openModal(mode: 'create' | 'edit' | 'view', id: number = 0): void {
     this.submitted = false;
-    this.testValue = null;
+    this.selectedId = id;
     this.initForm();
-    this.parameterUnitId = 0;
 
-    if (type === 'create') {
+    if (mode === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Create Parameter Unit';
-    } else if (type === 'edit') {
+      this.formTitle = 'Add Parameter Unit';
+      this.showModal();
+    } else if (mode === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
       this.formTitle = 'Edit Parameter Unit';
-      if (id > 0) {
-        this.parameterUnitId = id;
-        this.getDetails();
-      }
-    } else if (type === 'view') {
-      this.isViewMode = true;
+      this.loadDetails(id);
+    } else if (mode === 'view') {
       this.isEditMode = false;
+      this.isViewMode = true;
       this.formTitle = 'View Parameter Unit';
-      if (id > 0) {
-        this.parameterUnitId = id;
-        this.getDetails();
-      }
+      this.loadDetails(id);
     }
-    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
-    this.bsModal.show();
   }
 
-  isFieldInvalid(path: string): boolean {
-    return FormValidationHelper.isFieldInvalid(this.parameterUnitForm, path, this.submitted);
+  loadDetails(id: number): void {
+    this.parameterUnitService.getParameterUnitById(id).subscribe({
+      next: (data) => {
+        this.unitForm.patchValue({
+          id: data.id,
+          code: data.code,
+          name: data.name,
+          symbol: data.symbol,
+          quantityType: data.quantityType || '',
+          conversionFactor: data.conversionFactor ?? 1.0,
+          description: data.description || '',
+          isActive: data.isActive
+        });
+        this.bindEquivalents(data.equivalents);
+
+        if (this.isViewMode) {
+          this.unitForm.disable();
+        } else {
+          this.unitForm.enable();
+        }
+        this.showModal();
+      },
+      error: (err) => {
+        this.toastService.show(err.message || 'Failed to load parameter unit details.', 'error');
+      }
+    });
+  }
+
+  private showModal(): void {
+    if (!this.bsModal) {
+      this.bsModal = new Modal(this.modalElement.nativeElement, { backdrop: 'static', keyboard: false });
+    }
+    this.bsModal.show();
   }
 
   closeModal(): void {
     this.submitted = false;
-    if (this.bsModal) this.bsModal.hide();
+    if (this.bsModal) {
+      this.bsModal.hide();
+    }
     this.initForm();
-    this.parameterUnitId = 0;
+    this.selectedId = 0;
     this.isEditMode = false;
     this.isViewMode = false;
   }
 
   onSubmit(): void {
     this.submitted = true;
-    FormValidationHelper.markAllTouched(this.parameterUnitForm);
-    if (!this.parameterUnitForm.valid) {
-      const invalidFields: string[] = [];
-      if (this.parameterUnitForm.get('name')?.invalid) invalidFields.push('Unit Name');
-      if (this.parameterUnitForm.get('conversionFactor')?.invalid) invalidFields.push('Base Conversion Factor');
-      this.equivalents.controls.forEach((ctrl, idx) => {
-        if (ctrl.get('name')?.invalid) invalidFields.push(`Equivalent #${idx + 1} Name`);
-        if (ctrl.get('conversionFactor')?.invalid) invalidFields.push(`Equivalent #${idx + 1} Factor`);
-      });
-
-      const detail = invalidFields.length > 0 ? `: ${invalidFields.join(', ')}` : '';
-      this.toastService.show(`Please fix the validation errors${detail}.`, 'warning');
+    if (this.unitForm.invalid) {
+      this.toastService.show('Please fill in all required fields correctly.', 'warning');
       return;
     }
-    const formData = this.parameterUnitForm.getRawValue();
-    if (formData.conversionFactor !== null && formData.conversionFactor !== undefined && formData.conversionFactor !== '') {
-      formData.conversionFactor = Number(formData.conversionFactor);
-    }
-    if (formData.equivalents && Array.isArray(formData.equivalents)) {
-      formData.equivalents = formData.equivalents.map((eq: any, index: number) => ({
+
+    const raw = this.unitForm.getRawValue();
+    const payload = {
+      id: this.isEditMode ? this.selectedId : 0,
+      code: (raw.code || '').trim().toUpperCase(),
+      name: (raw.name || '').trim(),
+      symbol: (raw.symbol || '').trim(),
+      quantityType: raw.quantityType || null,
+      conversionFactor: raw.conversionFactor !== null && raw.conversionFactor !== undefined && raw.conversionFactor !== '' ? Number(raw.conversionFactor) : 1.0,
+      description: (raw.description || '').trim() || null,
+      isActive: raw.isActive !== false,
+      equivalents: (raw.equivalents || []).map((eq: any, index: number) => ({
         id: eq.id || 0,
+        baseParameterUnitID: this.isEditMode ? this.selectedId : 0,
         name: (eq.name || '').trim(),
-        conversionFactor: eq.conversionFactor !== null && eq.conversionFactor !== undefined && eq.conversionFactor !== '' ? Number(eq.conversionFactor) : null,
+        conversionFactor: eq.conversionFactor ? Number(eq.conversionFactor) : 1.0,
         displayOrder: index + 1,
-        isActive: true,
-      }));
-    }
+        isActive: true
+      }))
+    };
 
     if (this.isEditMode) {
-      this.parameterUnitService.updateParameterUnit(formData).subscribe({
-        next: (response) => {
-          this.toastService.show(response.message, 'success');
+      this.parameterUnitService.updateParameterUnit(payload).subscribe({
+        next: (res) => {
+          this.toastService.show(res?.message || 'Parameter Unit updated successfully.', 'success');
           this.closeModal();
           this.fetchData();
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        },
+        error: (err) => {
+          this.toastService.show(err.message || 'Failed to update parameter unit.', 'error');
+        }
       });
     } else {
-      formData.id = 0;
-      this.parameterUnitService.createParameterUnit(formData).subscribe({
-        next: (response) => {
-          this.toastService.show(response.message, 'success');
+      this.parameterUnitService.createParameterUnit(payload).subscribe({
+        next: (res) => {
+          this.toastService.show(res?.message || 'Parameter Unit created successfully.', 'success');
           this.closeModal();
           this.fetchData();
         },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        },
+        error: (err) => {
+          this.toastService.show(err.message || 'Failed to create parameter unit.', 'error');
+        }
       });
     }
+  }
+
+  toggleStatus(item: any): void {
+    const action = item.isActive ? 'deactivate' : 'activate';
+    const confirmed = confirm(`Are you sure you want to ${action} unit '${item.name}' (${item.code})?`);
+    if (!confirmed) return;
+
+    this.parameterUnitService.toggleStatus(item.id).subscribe({
+      next: (res) => {
+        this.toastService.show(res?.message || `Parameter Unit ${action}d successfully.`, 'success');
+        this.fetchData();
+      },
+      error: (err) => {
+        this.toastService.show(err.message || `Failed to ${action} parameter unit.`, 'error');
+      }
+    });
   }
 }

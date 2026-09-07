@@ -1,0 +1,23 @@
+/* Parameter Master Component Specific Styles */
+
+.bg-purple {
+  background-color: #7c3aed !important;
+}
+
+.lims-fieldset {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem 0.75rem;
+  background-color: #fafbfd;
+}
+
+.lims-fieldset legend {
+  font-size: 0.8rem;
+  padding: 0 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}

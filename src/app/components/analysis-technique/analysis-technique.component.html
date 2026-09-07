@@ -1,198 +1,321 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-    <div class="card basic-data-table w-100">
-        <div
-            class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Analysis Technique List</label>
-            <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i> Create Analysis Technique
-            </a>
+<div class="container-fluid p-2">
+  <!-- Breadcrumb Navigation Bar -->
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <!-- Card Header with Title and Add Action Button -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-funnel fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Analysis Technique Master</h6>
+          <small class="text-muted text-xs">Analytical methods and testing techniques configuration</small>
         </div>
-
-        <div class="card-body">
-
-            <!-- Search -->
-            <div class="d-flex justify-content-end mb-2">
-                <div class="w-25 input-group custom-search">
-                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
-                        (keydown.enter)="onSearch()">
-                    <div class="input-group-text pe-auto" (click)="onSearch()">
-                        <i class="bi bi-search"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div *ngIf="techniqueList.length > 0 || filters.length > 0" class="table-responsive ">
-                <table class="table bordered-table  align-middle w-100">
-                    <thead class="table-light">
-                        <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-                            <th *ngFor="let column of columns; let i = index">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal(column.key, $event)"><i
-                                            class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let item of techniqueList; let i = index" class="text-sm">
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-3">
-                                    <a (click)="openModal('view',item.id)" class="icon-link" title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
-                                    </a>
-                                    <a (click)="openModal('edit',item.id)" class="icon-link" title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-                                    </a>
-                                    <a (click)="deleteTechnique(item.id)" class="icon-link" title="Delete">
-                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                                    </a>
-                                </div>
-                            </td>
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.code || '-' }}</td>
-                            <td>{{ item.aliasNames || '-' }}</td>
-                            <td>{{ item.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div *ngIf="techniqueList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
-                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                    <div class="fw-semibold">No records found</div>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <app-pagination
-              [currentPage]="pageNumber"
-              [pageSize]="pageSize"
-              [totalItems]="totalItems"
-              [pageSizes]="pageSizes"
-              (pageChange)="onPageChange($event)"
-              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
-            </app-pagination>
-
-        </div>
+      </div>
+      <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create')">
+        <i class="bi bi-plus-circle me-1"></i> Add Technique
+      </button>
     </div>
-</div>
 
-<!-- Filter Modal -->
-<div #filterModal class="filter-modal">
-    <div class="card py-2 px-3 shadow position-relative">
-        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
-            (click)="closeFilterModal()"></button>
-
-        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-
-        <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains
-            </option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
-            <option value="Equal">Equal</option>
-            <option value="NotEqual">Not Equal</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater
-                Than</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than
-            </option>
-        </select>
-
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
-            class="form-control mb-2" [(ngModel)]="filterValue" />
-        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+    <!-- Filter Toolbar -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm font-monospace text-uppercase"
+              placeholder="Search code..."
+              [(ngModel)]="filterCode"
+              (keyup.enter)="onSearch()"
+            />
+          </div>
         </div>
-
-        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+        <div class="col-md-4">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search technique name..."
+            [(ngModel)]="filterName"
+            (keyup.enter)="onSearch()"
+          />
+        </div>
+        <div class="col-md-2">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="filterStatus"
+            (change)="onSearch()"
+          >
+            <option value="">All Statuses</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
     </div>
+
+    <!-- Data Grid Card -->
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="cursor-pointer text-center col-sn" (click)="applySorting('id')">
+                #
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'id' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'id' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="applySorting('code')">
+                Code
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'code' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'code' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('name')">
+                Technique Name
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'name' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'name' && sortOrder === 'desc'}"></i>
+              </th>
+              <th>Aliases</th>
+              <th>Description</th>
+              <th class="cursor-pointer text-center col-status" (click)="applySorting('isActive')">
+                Status
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'isActive' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'isActive' && sortOrder === 'desc'}"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="techniqueList.length === 0">
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-6 d-block mb-1"></i>
+                No analysis techniques found.
+              </td>
+            </tr>
+            <tr *ngFor="let item of techniqueList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted font-monospace small">
+                {{ (pageNumber - 1) * pageSize + i + 1 }}
+              </td>
+              <td class="text-center col-actions">
+                <div class="d-flex gap-1 justify-content-center align-items-center">
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-view"
+                    title="View Details"
+                    (click)="openModal('view', item.id)"
+                  >
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-edit"
+                    title="Edit Technique"
+                    (click)="openModal('edit', item.id)"
+                  >
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Technique' : 'Activate Technique'"
+                    (click)="toggleStatus(item)"
+                  >
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace fw-semibold">{{ item.code }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ item.name }}</td>
+              <td>
+                <span class="badge bg-light text-secondary border alias-chip" *ngIf="item.aliasNames">{{ item.aliasNames }}</span>
+                <span class="text-muted small" *ngIf="!item.aliasNames">—</span>
+              </td>
+              <td>
+                <span class="text-muted small" *ngIf="item.description">{{ item.description }}</span>
+                <span class="text-muted small" *ngIf="!item.description">—</span>
+              </td>
+              <td class="text-center">
+                <span
+                  class="badge"
+                  [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'"
+                >
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Pagination -->
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      >
+      </app-pagination>
+    </div>
+  </div>
 </div>
 
 <!-- Modal for Add/Edit/View Analysis Technique -->
-<div id="analysisTechniqueModel" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
-    data-bs-keyboard="false" aria-labelledby="analysisTechniqueModelLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header card-form-header text-white">
-                <label class="modal-title fw-medium" id="analysisTechniqueModelLabel">
-                    {{formTitle}}
+<div
+  id="analysisTechniqueModal"
+  class="modal fade modal-fade"
+  #modalRef
+  tabindex="-1"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  aria-labelledby="analysisTechniqueModalLabel"
+  aria-modal="true"
+  role="dialog"
+>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <h5 class="modal-title fw-medium d-flex align-items-center" id="analysisTechniqueModalLabel">
+          <i class="bi bi-funnel me-2"></i>{{ formTitle }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          aria-label="Close"
+          (click)="closeModal()"
+        ></button>
+      </div>
+
+      <form [formGroup]="techniqueForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body p-3">
+          <fieldset class="lims-fieldset mb-3">
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center">
+              <i class="bi bi-tag me-1"></i>Technique Information
+            </legend>
+
+            <div class="row g-2">
+              <!-- Code -->
+              <div class="col-md-4">
+                <label class="form-label">
+                  Technique Code <span class="text-danger">*</span>
                 </label>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close"
-                    (click)="closeModal()"></button>
+                <input
+                  type="text"
+                  id="techniqueCodeInput"
+                  class="form-control form-control-sm font-monospace text-uppercase"
+                  formControlName="code"
+                  placeholder="e.g. GRAV_METRIC"
+                  maxlength="50"
+                  (input)="onCodeInput($event)"
+                  [ngClass]="{'is-invalid': isFieldInvalid('code')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                />
+                <app-field-error
+                  [control]="techniqueForm.get('code')"
+                  label="Technique Code"
+                  [submitted]="submitted"
+                />
+                <small class="text-muted d-block text-xxs mt-0.5">
+                  Spaces automatically convert to underscore (e.g. GRAV METRIC ➔ GRAV_METRIC).
+                </small>
+              </div>
+
+              <!-- Name -->
+              <div class="col-md-8">
+                <label class="form-label">
+                  Technique Name <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="techniqueNameInput"
+                  class="form-control form-control-sm"
+                  formControlName="name"
+                  placeholder="e.g. Gravimetric Analysis"
+                  maxlength="100"
+                  [ngClass]="{'is-invalid': isFieldInvalid('name')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                />
+                <app-field-error
+                  [control]="techniqueForm.get('name')"
+                  label="Technique Name"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Aliases -->
+              <div class="col-12">
+                <label class="form-label">
+                  Aliases <small class="text-muted">(comma-separated alternative scientific names)</small>
+                </label>
+                <input
+                  type="text"
+                  id="techniqueAliasesInput"
+                  class="form-control form-control-sm"
+                  formControlName="aliasNames"
+                  placeholder="e.g. Loss on Ignition, Gravimetry"
+                  maxlength="500"
+                  [ngClass]="{'is-invalid': isFieldInvalid('aliasNames')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                />
+                <app-field-error
+                  [control]="techniqueForm.get('aliasNames')"
+                  label="Aliases"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea
+                  id="techniqueDescriptionInput"
+                  rows="2"
+                  class="form-control form-control-sm"
+                  formControlName="description"
+                  placeholder="Scientific purpose / typical discipline use..."
+                  maxlength="1000"
+                  [ngClass]="{'is-invalid': isFieldInvalid('description')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                ></textarea>
+                <app-field-error
+                  [control]="techniqueForm.get('description')"
+                  label="Description"
+                  [submitted]="submitted"
+                />
+              </div>
             </div>
-            <form [formGroup]="techniqueForm" (ngSubmit)="onSubmit()">
-                <div class="modal-body">
-                    <div class="row">
-                        <!-- Name -->
-                        <div class="mb-1 col-8">
-                            <label for="name" class="form-label">Technique Name <span class="text-danger">*</span></label>
-                            <input type="text" id="name" class="form-control" formControlName="name"
-                                placeholder="e.g. OES" maxlength="100"
-                                [ngClass]="{'is-invalid': isFieldInvalid('name')}"
-                                [attr.disabled]="isViewMode ? true : null" />
-                            <app-field-error [control]="techniqueForm.get('name')" label="Technique Name" [submitted]="submitted"/>
-                        </div>
-
-                        <!-- Code -->
-                        <div class="mb-1 col-4">
-                            <label for="code" class="form-label">Code</label>
-                            <input type="text" id="code" class="form-control" formControlName="code"
-                                placeholder="e.g. OES" maxlength="40"
-                                [ngClass]="{'is-invalid': isFieldInvalid('code')}"
-                                [attr.disabled]="isViewMode ? true : null" />
-                            <app-field-error [control]="techniqueForm.get('code')" label="Code" [submitted]="submitted"/>
-                        </div>
-                    </div>
-
-                    <!-- Aliases -->
-                    <div class="mb-1">
-                        <label for="aliasNames" class="form-label">Aliases <small class="text-muted">(comma-separated)</small></label>
-                        <input type="text" id="aliasNames" class="form-control" formControlName="aliasNames"
-                            placeholder="e.g. Spectro Test, Metal Analysis" maxlength="500"
-                            [ngClass]="{'is-invalid': isFieldInvalid('aliasNames')}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <app-field-error [control]="techniqueForm.get('aliasNames')" label="Aliases" [submitted]="submitted"/>
-                    </div>
-
-                    <!-- Description -->
-                    <div class="mb-1">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea id="description" rows="2" class="form-control" formControlName="description"
-                            placeholder="Purpose / typical use" maxlength="1000"
-                            [ngClass]="{'is-invalid': isFieldInvalid('description')}"
-                            [attr.disabled]="isViewMode ? true : null"></textarea>
-                        <app-field-error [control]="techniqueForm.get('description')" label="Description" [submitted]="submitted"/>
-                    </div>
-
-
-                </div>
-
-                <!-- Modal Footer -->
-                <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save">
-                        {{ isEditMode ? 'Update' : 'Save' }}
-                    </button>
-                </div>
-            </form>
+          </fieldset>
         </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer py-2 px-3 border-top">
+          <ng-container *ngIf="isViewMode">
+            <button type="button" class="btn-lims btn-lims-cancel" (click)="closeModal()">
+              <i class="bi bi-x-circle me-1"></i>Close
+            </button>
+          </ng-container>
+          <ng-container *ngIf="!isViewMode">
+            <button type="button" class="btn-lims btn-lims-cancel" (click)="closeModal()">
+              <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+            <button type="submit" class="btn-lims btn-lims-save">
+              <i class="bi bi-check-circle me-1"></i>{{ isEditMode ? 'Update' : 'Save' }}
+            </button>
+          </ng-container>
+        </div>
+      </form>
     </div>
+  </div>
 </div>

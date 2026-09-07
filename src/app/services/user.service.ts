@@ -50,6 +50,18 @@ export class UserService {
     return this.http.get<any>(`${this.apiUrl}/getUserDropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
+  getBranchAccess(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/branch-access/${userId}`);
+  }
+
+  updateBranchAccess(userId: number, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/branch-access/${userId}`, payload);
+  }
+
+  setDefaultBranch(userId: number, branchId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/set-default-branch`, { userId, branchId });
+  }
+
   // Permission related methods
   private pApiUrl = environment.apiUrl + "/UserPermission";
 

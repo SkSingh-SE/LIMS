@@ -9,7 +9,7 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { ParameterService } from '../../../services/parameter.service';
 import { ToastService } from '../../../services/toast.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
@@ -34,7 +34,7 @@ import { MachiningChargeMasterService } from '../../../services/machining-charge
   selector: 'app-plan-form',
   templateUrl: './plan-form.component.html',
   styleUrls: ['./plan-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SearchableDropdownComponent, PlanExplorerPanelComponent]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent, PlanExplorerPanelComponent]
 })
 export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
@@ -58,7 +58,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   yearCode = new Date().getFullYear().toString().slice(-2);
   getChemicalTestTypeDrop = (term: string, page: number, pageSize: number) =>
     this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize);
-  activeTabs: { [key: string]: 'general' | 'chemical' } = {};
+  activeTabs: { [key: string]: 'general' | 'chemical' | 'universal' } = {};
   tpiAgencyDetails: { [sampleIdx: number]: { emailId: string; contactNo: string } } = {};
   productSizeSelectedMap: { [sampleIdx: number]: any } = {};
   // ── Explorer Modal Drag & Position State ──
@@ -1305,8 +1305,198 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       id: [0],
       sampleNo: [sampleNo],
       generalTests: this.fb.array([generalTestGroup]),
-      chemicalTests: this.fb.array([])
+      chemicalTests: this.fb.array([]),
+      universalTestGroups: this.fb.array([])
     });
+  }
+
+  createUniversalTestGroup(testId: number | null = null, specId: number | null = null): FormGroup {
+    return this.fb.group({
+      id: [0],
+      sampleTestPlanID: [0],
+      laboratoryTestID: [testId, Validators.required],
+      laboratoryTestName: [''],
+      departmentID: [null],
+      departmentName: [''],
+      testMethodSpecificationID: [specId],
+      testMethodSpecificationVersionID: [null],
+      testMethodName: [''],
+      testMethodVersion: [''],
+      specificationHeaderID: [null],
+      specificationGradeID: [null],
+      specificationName: [''],
+      specificationGradeName: [''],
+      status: ['Pending'],
+      testExecutionID: [null],
+      executionStatus: ['']
+    });
+  }
+
+  getUniversalTestGroups(sampleIdx: number, planIdx: number): FormArray {
+    const plans = this.getTestPlans(sampleIdx);
+    if (!plans || plans.length <= planIdx) return this.fb.array([]);
+    const plan = plans.at(planIdx) as FormGroup;
+    let arr = plan.get('universalTestGroups') as FormArray;
+    if (!arr) {
+      arr = this.fb.array([]);
+      plan.addControl('universalTestGroups', arr);
+    }
+    return arr;
+  }
+
+  addUniversalTestGroup(sampleIdx: number, planIdx: number): void {
+    const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+    arr.push(this.createUniversalTestGroup());
+    this.planForm.markAsDirty();
+    this.cdr.markForCheck();
+  }
+
+  removeUniversalTestGroup(sampleIdx: number, planIdx: number, index: number): void {
+    if (this.isViewMode) return;
+    const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+    arr.removeAt(index);
+    this.planForm.markAsDirty();
+    this.cdr.markForCheck();
+  }
+
+  universalMethodVersions: { [key: string]: any[] } = {};
+  universalSpecGrades: { [key: string]: any[] } = {};
+
+  getUniversalMethodVersions(sampleIdx: number, planIdx: number, utgIdx: number): any[] {
+    const key = `${sampleIdx}_${planIdx}_${utgIdx}`;
+    return this.universalMethodVersions[key] || [];
+  }
+
+  getUniversalSpecGrades(sampleIdx: number, planIdx: number, utgIdx: number): any[] {
+    const key = `${sampleIdx}_${planIdx}_${utgIdx}`;
+    return this.universalSpecGrades[key] || [];
+  }
+
+  getUniversalLabTestDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.laboratoryTestService.getLaboratoryTestDropdown(term, page, pageSize);
+
+  getUniversalMethodDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
+
+  getUniversalSpecHeaderDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.materialSpecificationService.getMaterialSpecificationDropdown(term, page, pageSize);
+
+  onUniversalLabTestSelected(item: any, sampleIdx: number, planIdx: number, utgIdx: number): void {
+    const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+    const row = arr.at(utgIdx) as FormGroup;
+    if (row) {
+      row.patchValue({
+        laboratoryTestID: item?.id ?? null,
+        laboratoryTestName: item?.name ?? ''
+      });
+      if (item?.id) {
+        this.laboratoryTestService.getLaboratoryTestById(item.id).subscribe({
+          next: (test: any) => {
+            if (test) {
+              row.patchValue({
+                departmentID: test.labDepartmentID ?? null,
+                departmentName: test.labDepartment?.name ?? ''
+              });
+              this.cdr.markForCheck();
+            }
+          }
+        });
+      }
+      this.planForm.markAsDirty();
+      this.cdr.markForCheck();
+    }
+  }
+
+  onUniversalMethodSelected(item: any, sampleIdx: number, planIdx: number, utgIdx: number): void {
+    const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+    const row = arr.at(utgIdx) as FormGroup;
+    if (row) {
+      row.patchValue({
+        testMethodSpecificationID: item?.id ?? null,
+        testMethodName: item?.name ?? '',
+        testMethodSpecificationVersionID: null,
+        testMethodVersion: ''
+      });
+      if (item?.id) {
+        const key = `${sampleIdx}_${planIdx}_${utgIdx}`;
+        this.testMethodSpecificationService.getVersionsDropdown(item.id).subscribe({
+          next: (versions: any[]) => {
+            this.universalMethodVersions[key] = versions || [];
+            const defaultVer = versions?.find((v: any) => v.isDefault) || versions?.[0];
+            if (defaultVer) {
+              row.patchValue({
+                testMethodSpecificationVersionID: defaultVer.id,
+                testMethodVersion: defaultVer.version || defaultVer.name
+              });
+            }
+            this.cdr.markForCheck();
+          }
+        });
+      }
+      this.planForm.markAsDirty();
+      this.cdr.markForCheck();
+    }
+  }
+
+  onUniversalVersionChanged(event: any, sampleIdx: number, planIdx: number, utgIdx: number): void {
+    const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+    const row = arr.at(utgIdx) as FormGroup;
+    const val = row.get('testMethodSpecificationVersionID')?.value;
+    const versions = this.getUniversalMethodVersions(sampleIdx, planIdx, utgIdx);
+    const selected = versions.find((v: any) => v.id == val);
+    if (selected) {
+      row.patchValue({
+        testMethodVersion: selected.version || selected.name
+      });
+    }
+    this.planForm.markAsDirty();
+    this.cdr.markForCheck();
+  }
+
+  onUniversalSpecSelected(item: any, sampleIdx: number, planIdx: number, utgIdx: number): void {
+    const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+    const row = arr.at(utgIdx) as FormGroup;
+    if (row) {
+      row.patchValue({
+        specificationHeaderID: item?.id ?? null,
+        specificationName: item?.name ?? '',
+        specificationGradeID: null,
+        specificationGradeName: ''
+      });
+      if (item?.id) {
+        const key = `${sampleIdx}_${planIdx}_${utgIdx}`;
+        this.materialSpecificationService.getMaterialSpecificationById(item.id).subscribe({
+          next: (spec: any) => {
+            const grades = spec?.grades || [];
+            this.universalSpecGrades[key] = grades;
+            if (grades.length === 1) {
+              row.patchValue({
+                specificationGradeID: grades[0].id,
+                specificationGradeName: grades[0].grade
+              });
+            }
+            this.cdr.markForCheck();
+          }
+        });
+      }
+      this.planForm.markAsDirty();
+      this.cdr.markForCheck();
+    }
+  }
+
+  onUniversalGradeChanged(event: any, sampleIdx: number, planIdx: number, utgIdx: number): void {
+    const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+    const row = arr.at(utgIdx) as FormGroup;
+    const val = row.get('specificationGradeID')?.value;
+    const grades = this.getUniversalSpecGrades(sampleIdx, planIdx, utgIdx);
+    const selected = grades.find((g: any) => g.id == val);
+    if (selected) {
+      row.patchValue({
+        specificationGradeName: selected.grade || selected.name
+      });
+    }
+    this.planForm.markAsDirty();
+    this.cdr.markForCheck();
   }
 
   createGeneralTestGroup(): FormGroup {
@@ -1408,6 +1598,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
         if ((ct.get('testTypeIds')?.value?.length ?? 0) > 0) return true;
         if ((elements?.length ?? 0) > 0) return true;
       }
+
+      const universalTests = plan.get('universalTestGroups') as FormArray;
+      if (universalTests?.controls.some(u => !!u.get('laboratoryTestID')?.value)) return true;
     }
     return false;
   }
@@ -3368,7 +3561,52 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
           });
 
 
-          this.setDefaultTab(sampleIdx, planIdx, tp);
+          const universalTestsArr = (tp.universalTestGroups || []).map((utg: any, utgIdx: number) => {
+            const key = `${sampleIdx}_${planIdx}_${utgIdx}`;
+            if (utg.testMethodSpecificationID) {
+              this.testMethodSpecificationService.getVersionsDropdown(utg.testMethodSpecificationID).subscribe({
+                next: (versions: any[]) => {
+                  this.universalMethodVersions[key] = versions || [];
+                  this.cdr.markForCheck();
+                }
+              });
+            }
+            if (utg.specificationHeaderID) {
+              this.materialSpecificationService.getMaterialSpecificationById(utg.specificationHeaderID).subscribe({
+                next: (spec: any) => {
+                  this.universalSpecGrades[key] = spec?.grades || [];
+                  this.cdr.markForCheck();
+                }
+              });
+            }
+
+            return this.fb.group({
+              id: [utg.id || 0],
+              sampleTestPlanID: [tp.id || 0],
+              laboratoryTestID: [utg.laboratoryTestID || null, Validators.required],
+              laboratoryTestName: [utg.laboratoryTestName || ''],
+              departmentID: [utg.departmentID || null],
+              departmentName: [utg.departmentName || ''],
+              testMethodSpecificationID: [utg.testMethodSpecificationID || null],
+              testMethodSpecificationVersionID: [utg.testMethodSpecificationVersionID || null],
+              testMethodName: [utg.testMethodName || ''],
+              testMethodVersion: [utg.testMethodVersion || ''],
+              specificationHeaderID: [utg.specificationHeaderID || null],
+              specificationGradeID: [utg.specificationGradeID || null],
+              specificationName: [utg.specificationName || ''],
+              specificationGradeName: [utg.specificationGradeName || ''],
+              status: [utg.status || 'Pending'],
+              testExecutionID: [utg.testExecutionID || null],
+              executionStatus: [utg.executionStatus || '']
+            });
+          });
+
+          if ((tp.universalTestGroups || []).length > 0) {
+            this.setActiveTab(sampleIdx, planIdx, 'universal');
+          } else {
+            this.setDefaultTab(sampleIdx, planIdx, tp);
+          }
+
           return this.fb.group({
             id: [tp.id || 0],
             sampleNo: [tp.sampleNo],
@@ -3380,7 +3618,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
             approvedByName: [tp.approvedByName ?? ''],
             approvedAt: [tp.approvedAt ?? null],
             generalTests: this.fb.array(generalTestsArr),
-            chemicalTests: this.fb.array(chemicalTestsArr)
+            chemicalTests: this.fb.array(chemicalTestsArr),
+            universalTestGroups: this.fb.array(universalTestsArr)
           });
         });
 
@@ -3396,6 +3635,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
         inwardID: [sample.inwardID ?? 0],
         sampleNo: [sample.sampleNo],
         details: [sample.details],
+        disciplineID: [sample.disciplineID ?? null],
+        disciplineName: [sample.disciplineName ?? ''],
         metalClassificationID: [sample.metalClassificationID],
         metalClassificationName: [sample.metalClassificationName ?? ''],
         productMasterID: [sample.productMasterID ?? null],
@@ -3614,6 +3855,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
         id: s.id || 0,
         sampleNo: s.sampleNo || '',
         details: s.details || '',
+        disciplineID: s.disciplineID || null,
+        disciplineName: s.disciplineName || '',
         productConditionID: s.productConditionID || null,
         productMasterID: s.productMasterID || null,
         productSizeMasterID: s.productSizeID || null,
@@ -3731,7 +3974,19 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 selected: e.selected !== undefined ? !!e.selected : true
               }))
             };
-          })
+          }),
+          universalTestGroups: (tp.universalTestGroups || []).map((u: any) => ({
+            id: u.id || 0,
+            sampleTestPlanID: tp.id || 0,
+            laboratoryTestID: u.laboratoryTestID || 0,
+            laboratoryTestName: u.laboratoryTestName || '',
+            testMethodSpecificationID: u.testMethodSpecificationID || null,
+            testMethodSpecificationVersionID: u.testMethodSpecificationVersionID || null,
+            testMethodName: u.testMethodName || '',
+            specificationHeaderID: u.specificationHeaderID || null,
+            specificationGradeID: u.specificationGradeID || null,
+            status: u.status || 'Pending'
+          }))
         }))
       }))
     };
@@ -4183,23 +4438,37 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     const key = `${sampleIdx}-${planIdx}`;
     const active = this.activeTabs[key];
     if (!active) {
+      const sample = this.getSampleGroupSafely(sampleIdx);
+      const discId = sample?.get('disciplineID')?.value;
+      const discName = (sample?.get('disciplineName')?.value || '').toLowerCase();
+      if (discId === 6 || discName.includes('soil') || discName.includes('universal')) {
+        this.activeTabs[key] = 'universal';
+        return tab === 'universal';
+      }
       this.activeTabs[key] = 'general';
       return tab === 'general';
     }
     return active === tab;
   }
 
-  setActiveTab(sampleIdx: number, planIdx: number, tab: 'general' | 'chemical') {
+  setActiveTab(sampleIdx: number, planIdx: number, tab: 'general' | 'chemical' | 'universal') {
     this.activeTabs[`${sampleIdx}-${planIdx}`] = tab;
 
     if (!this.isViewMode) {
-      const type = tab === 'general' ? 'generalTests' : 'chemicalTests';
-      const arr = this.getTestArray(sampleIdx, planIdx, type);
-      if (arr && arr.length === 0) {
-        this.addTestBlock(sampleIdx, planIdx, type);
-        // For General Test: also add one blank method row inside the new group
-        if (tab === 'general') {
-          this.addMethodRow(sampleIdx, planIdx);
+      if (tab === 'universal') {
+        const arr = this.getUniversalTestGroups(sampleIdx, planIdx);
+        if (arr && arr.length === 0) {
+          this.addUniversalTestGroup(sampleIdx, planIdx);
+        }
+      } else {
+        const type = tab === 'general' ? 'generalTests' : 'chemicalTests';
+        const arr = this.getTestArray(sampleIdx, planIdx, type);
+        if (arr && arr.length === 0) {
+          this.addTestBlock(sampleIdx, planIdx, type);
+          // For General Test: also add one blank method row inside the new group
+          if (tab === 'general') {
+            this.addMethodRow(sampleIdx, planIdx);
+          }
         }
       }
     }

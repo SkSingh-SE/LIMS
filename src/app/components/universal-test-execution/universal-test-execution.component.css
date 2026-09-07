@@ -1,0 +1,455 @@
+/* ================================================================= */
+/* UNIVERSAL TEST EXECUTION ENGINE WORKSPACE STYLES                  */
+/* Standards: ISO 17025 Compliant LIMS Design System (AGENTS.md)     */
+/* ================================================================= */
+
+:host {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  color: #1e293b;
+  background-color: #f8fafc;
+}
+
+.universal-workspace-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  padding-bottom: 50px; /* Space for sticky action footer */
+}
+
+.universal-workspace-root.is-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1050;
+  overflow-y: auto;
+}
+
+/* ----------------------------------------------------------------- */
+/* TOP MASTER HEADER                                                 */
+/* ----------------------------------------------------------------- */
+.ute-master-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ute-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ute-header-title-box {
+  display: flex;
+  align-items: center;
+}
+
+.ute-workspace-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1e293b;
+  letter-spacing: 0.2px;
+}
+
+.ute-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ute-context-badge {
+  font-size: 0.74rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ute-execution-pill {
+  font-size: 0.74rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ute-run-selector {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+}
+
+.ute-run-select {
+  width: 80px;
+  height: 26px;
+  padding: 1px 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-color: #cbd5e1;
+}
+
+.ute-status-badge {
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  letter-spacing: 0.3px;
+}
+
+.ute-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ----------------------------------------------------------------- */
+/* SUB-HEADER: TITLE & BREADCRUMB & CONTEXT BANNER                   */
+/* ----------------------------------------------------------------- */
+.ute-sub-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 4px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ute-breadcrumb {
+  font-size: 0.73rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
+
+.ute-frozen-indicator {
+  font-size: 0.72rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ----------------------------------------------------------------- */
+/* TOP 7 WORKSPACE STEPPER TABS                                      */
+/* ----------------------------------------------------------------- */
+.ute-tabs-stepper {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.ute-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 7px 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
+  border-bottom: 2.5px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ute-tab-btn:hover {
+  color: var(--primary-color, #da261c);
+  background: #f8fafc;
+}
+
+.ute-tab-btn.active {
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+  border-bottom-color: var(--primary-color, #da261c);
+  background: #ffffff;
+}
+
+.ute-tab-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.ute-tab-btn.active .ute-tab-num {
+  background: var(--primary-color, #da261c);
+  color: #ffffff;
+}
+
+/* ----------------------------------------------------------------- */
+/* WORKSPACE CONTENT AREA                                            */
+/* ----------------------------------------------------------------- */
+.ute-main-layout {
+  flex: 1;
+  padding: 8px 12px;
+}
+
+.ute-workspace-content {
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ----------------------------------------------------------------- */
+/* CARDS & PANELS                                                    */
+/* ----------------------------------------------------------------- */
+.ute-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.ute-panel-title {
+  color: var(--primary-color, #da261c);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ----------------------------------------------------------------- */
+/* CATEGORIES LIST (COL 1)                                           */
+/* ----------------------------------------------------------------- */
+.ute-category-list .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  color: #334155;
+  transition: all 0.12s ease;
+}
+
+.ute-category-list .list-group-item:hover {
+  background-color: #f8fafc;
+  color: var(--primary-color, #da261c);
+}
+
+.ute-category-list .list-group-item.active {
+  background-color: #fef2f2;
+  color: var(--primary-color, #da261c);
+  border-left: 3px solid var(--primary-color, #da261c);
+  font-weight: 600;
+}
+
+.ute-cat-title {
+  font-size: 0.76rem;
+}
+
+.category-desc {
+  font-size: 0.68rem;
+  color: #64748b !important;
+}
+
+/* ----------------------------------------------------------------- */
+/* TABLES (STANDARDIZED LIMS DATA TABLES)                            */
+/* ----------------------------------------------------------------- */
+.ute-table {
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 0;
+}
+
+.ute-table thead th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.71rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 5px 8px;
+  vertical-align: middle;
+}
+
+.ute-table tbody td {
+  font-size: 0.76rem;
+  padding: 4px 8px;
+  vertical-align: middle;
+  border-color: #f1f5f9;
+}
+
+.ute-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Column width helpers */
+.col-w-idx { width: 35px; }
+.col-w-action { width: 70px; }
+.col-w-reading { width: 70px; }
+.col-w-filename { max-width: 120px; }
+.ute-report-sheet { max-width: 800px; }
+.ute-modal-backdrop { background: rgba(0, 0, 0, 0.5); }
+
+/* ----------------------------------------------------------------- */
+/* STANDARDIZED BADGES                                               */
+/* ----------------------------------------------------------------- */
+.badge-code {
+  font-family: monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+}
+
+.badge-type-input {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-type-calc {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-status-pass {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-status-fail {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.badge-scope {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* ----------------------------------------------------------------- */
+/* KEYPAD & FORMULA BUILDER                                          */
+/* ----------------------------------------------------------------- */
+.ute-keypad-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.ute-keypad-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  min-width: 32px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ute-formula-preview-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.74rem;
+}
+
+/* ----------------------------------------------------------------- */
+/* TIMELINE STEPPER                                                  */
+/* ----------------------------------------------------------------- */
+.ute-timeline-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ute-tline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ute-tline-icon {
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.ute-tline-content {
+  line-height: 1.25;
+}
+
+/* ----------------------------------------------------------------- */
+/* TAB 2 SPECIMEN ENTRY CARD                                         */
+/* ----------------------------------------------------------------- */
+.ute-specimen-card {
+  border-color: #e2e8f0 !important;
+}
+
+/* ----------------------------------------------------------------- */
+/* STICKY BOTTOM ACTION BAR (LIMS STANDARD)                          */
+/* ----------------------------------------------------------------- */
+.ute-sticky-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: #ffffff;
+  border-top: 2px solid var(--primary-color, #da261c);
+  padding: 0 16px;
+  z-index: 1040;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

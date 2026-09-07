@@ -1,0 +1,372 @@
+<div class="container-fluid p-2">
+  <!-- Breadcrumb Navigation Bar -->
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <!-- Card Header with Title and Add Action Button -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-ruled fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Test Method Master</h6>
+          <small class="text-muted text-xs">Standard test methods, reference standards and techniques</small>
+        </div>
+      </div>
+      <button class="btn-lims btn-lims-save" (click)="openModal('create')">
+        <i class="bi bi-plus-circle me-1"></i> Add Test Method
+      </button>
+    </div>
+
+    <!-- Filter Toolbar -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm font-monospace text-uppercase"
+              placeholder="Search code (ASTM_E415)..."
+              [(ngModel)]="filterCode"
+              (keyup.enter)="onSearch()"
+            />
+          </div>
+        </div>
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search method name..."
+            [(ngModel)]="filterName"
+            (keyup.enter)="onSearch()"
+          />
+        </div>
+        <div class="col-md-2">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="filterTechniqueId"
+            (change)="onSearch()"
+          >
+            <option [ngValue]="null">All Techniques</option>
+            <option *ngFor="let tech of techniqueList" [ngValue]="tech.id">
+              {{ tech.name }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="filterStatus"
+            (change)="onSearch()"
+          >
+            <option value="">All Statuses</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="cursor-pointer text-center col-sn" (click)="applySorting('id')">
+                #
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'id' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'id' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="applySorting('code')">
+                Method Code
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'code' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'code' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('name')">
+                Test Method Name
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'name' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'name' && sortOrder === 'desc'}"></i>
+              </th>
+              <th>Analysis Technique</th>
+              <th>Standard / Reference</th>
+              <th class="cursor-pointer text-center col-status" (click)="applySorting('isActive')">
+                Status
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'isactive' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'isactive' && sortOrder === 'desc'}"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="testMethodList.length === 0">
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-6 d-block mb-1"></i>
+                No test methods found.
+              </td>
+            </tr>
+            <tr *ngFor="let item of testMethodList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted font-monospace small">
+                {{ (pageNumber - 1) * pageSize + i + 1 }}
+              </td>
+              <td class="text-center col-actions">
+                <div class="d-flex gap-1 justify-content-center align-items-center">
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-view"
+                    title="View Details"
+                    (click)="openModal('view', item.id)"
+                  >
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-edit"
+                    title="Edit Test Method"
+                    (click)="openModal('edit', item.id)"
+                  >
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Test Method' : 'Activate Test Method'"
+                    (click)="toggleStatus(item)"
+                  >
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace fw-semibold">{{ item.code }}</span>
+              </td>
+              <td class="fw-semibold text-dark">
+                {{ item.name }}
+                <div class="text-muted small text-truncate max-w-desc" *ngIf="item.description">
+                  {{ item.description }}
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-secondary border technique-chip" *ngIf="item.analysisTechniqueName">
+                  <i class="bi bi-funnel me-1"></i>{{ item.analysisTechniqueName }}
+                </span>
+                <span class="text-muted small" *ngIf="!item.analysisTechniqueName">—</span>
+              </td>
+              <td>
+                <span class="text-secondary font-monospace small fw-medium" *ngIf="item.standardReference">
+                  {{ item.standardReference }}
+                </span>
+                <span class="text-muted small" *ngIf="!item.standardReference">—</span>
+              </td>
+              <td class="text-center">
+                <span
+                  class="badge"
+                  [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'"
+                >
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Pagination -->
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      >
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Add/Edit/View Test Method -->
+<div
+  id="testMethodModal"
+  class="modal fade modal-fade"
+  #modalRef
+  tabindex="-1"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  aria-labelledby="testMethodModalLabel"
+  aria-modal="true"
+  role="dialog"
+>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <h5 class="modal-title fw-medium d-flex align-items-center" id="testMethodModalLabel">
+          <i class="bi bi-file-earmark-ruled me-2"></i>{{ formTitle }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          aria-label="Close"
+          (click)="closeModal()"
+        ></button>
+      </div>
+
+      <form [formGroup]="testMethodForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body p-3">
+          <fieldset class="lims-fieldset mb-3">
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center">
+              <i class="bi bi-tag me-1"></i>Method Identity & Technical Definition
+            </legend>
+
+            <div class="row g-2">
+              <!-- Code -->
+              <div class="col-md-4">
+                <label class="form-label">
+                  Method Code <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="testMethodCodeInput"
+                  class="form-control form-control-sm font-monospace text-uppercase"
+                  formControlName="code"
+                  placeholder="e.g. ASTM_E415"
+                  maxlength="50"
+                  (input)="onCodeInput($event)"
+                  [ngClass]="{'is-invalid': isFieldInvalid('code')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                />
+                <app-field-error
+                  [control]="testMethodForm.get('code')"
+                  label="Method Code"
+                  [submitted]="submitted"
+                />
+                <small class="text-muted d-block text-xxs mt-0.5">
+                  Spaces automatically convert to underscore (e.g. ASTM E415 ➔ ASTM_E415).
+                </small>
+              </div>
+
+              <!-- Name -->
+              <div class="col-md-8">
+                <label class="form-label">
+                  Test Method Name <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="testMethodNameInput"
+                  class="form-control form-control-sm"
+                  formControlName="name"
+                  placeholder="e.g. Spark Atomic Emission Spectrometry"
+                  maxlength="200"
+                  [ngClass]="{'is-invalid': isFieldInvalid('name')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                />
+                <app-field-error
+                  [control]="testMethodForm.get('name')"
+                  label="Test Method Name"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Standard / Reference -->
+              <div class="col-md-6">
+                <label class="form-label">Standard / Reference</label>
+                <input
+                  type="text"
+                  id="testMethodStandardInput"
+                  class="form-control form-control-sm"
+                  formControlName="standardReference"
+                  placeholder="e.g. ASTM E415 / IS 1608"
+                  maxlength="200"
+                  [ngClass]="{'is-invalid': isFieldInvalid('standardReference')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                />
+                <app-field-error
+                  [control]="testMethodForm.get('standardReference')"
+                  label="Standard / Reference"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Analysis Technique -->
+              <div class="col-md-6">
+                <div class="form-field-header">
+                  <label class="form-label">Analysis Technique</label>
+                  <a
+                    *ngIf="!isViewMode"
+                    class="btn-nav-link"
+                    routerLink="/analysis-technique"
+                    target="_blank"
+                    title="Manage Analysis Techniques in new tab"
+                  >
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Techniques
+                  </a>
+                </div>
+                <select
+                  id="testMethodTechniqueSelect"
+                  class="form-select form-select-sm"
+                  formControlName="analysisTechniqueID"
+                  [attr.disabled]="isViewMode ? true : null"
+                >
+                  <option [ngValue]="null">-- Select Technique (Optional) --</option>
+                  <option *ngFor="let tech of techniqueList" [ngValue]="tech.id">
+                    {{ tech.name }}
+                  </option>
+                </select>
+                <app-field-error
+                  [control]="testMethodForm.get('analysisTechniqueID')"
+                  label="Analysis Technique"
+                  [submitted]="submitted"
+                />
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea
+                  id="testMethodDescriptionInput"
+                  rows="2"
+                  class="form-control form-control-sm"
+                  formControlName="description"
+                  placeholder="Scope, application, or technical notes..."
+                  maxlength="1000"
+                  [ngClass]="{'is-invalid': isFieldInvalid('description')}"
+                  [attr.disabled]="isViewMode ? true : null"
+                ></textarea>
+                <app-field-error
+                  [control]="testMethodForm.get('description')"
+                  label="Description"
+                  [submitted]="submitted"
+                />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer py-2 px-3 border-top">
+          <ng-container *ngIf="isViewMode">
+            <button type="button" class="btn-lims btn-lims-cancel" (click)="closeModal()">
+              <i class="bi bi-x-circle me-1"></i>Close
+            </button>
+          </ng-container>
+          <ng-container *ngIf="!isViewMode">
+            <button type="button" class="btn-lims btn-lims-cancel" (click)="closeModal()">
+              <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+            <button type="submit" class="btn-lims btn-lims-save">
+              <i class="bi bi-check-circle me-1"></i>{{ isEditMode ? 'Update' : 'Save' }}
+            </button>
+          </ng-container>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

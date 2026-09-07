@@ -27,8 +27,8 @@ export class AnalysisTechniqueService {
     return this.http.put<any>(`${this.apiUrl}/update`, payload);
   }
 
-  deleteAnalysisTechnique(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
+  toggleStatus(id: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/toggle-status/${id}`, {});
   }
 
   getAnalysisTechniqueDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {

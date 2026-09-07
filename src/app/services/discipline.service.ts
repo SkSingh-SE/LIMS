@@ -32,6 +32,10 @@ export class DisciplineService {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }
 
+    toggleDisciplineStatus(id: number): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/toggle-status/${id}`, {});
+    }
+
     getDisciplineDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }

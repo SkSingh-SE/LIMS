@@ -17,12 +17,6 @@
           </button>
         </li>
         <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
-          <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
-                  (click)="switchToPlanTab()">
-            <i class="bi bi-clipboard-check me-1.5"></i> Plan
-          </button>
-        </li>
-        <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
           <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
             <i class="bi bi-credit-card me-1.5"></i> Payment Info
           </button>
@@ -53,6 +47,9 @@
           </button>
         </ng-container>
 
+        <button *ngIf="sampleId > 0" type="button" class="btn-lims btn-lims-next" (click)="navigateToUniversalPlan()" title="Open Universal Test Planning (Screen 14)">
+          <i class="bi bi-diagram-3 me-1"></i> Plan Tests
+        </button>
         <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn-lims btn-lims-print" (click)="printJobCard()">
           <i class="bi bi-printer"></i> Print Job Card
         </button>
@@ -526,6 +523,7 @@
             <table class="table table-hover align-middle mb-2 w-100 table-auto-layout">
               <colgroup>
                 <col class="col-w-150" />   <!-- Sample No -->
+                <col class="col-w-180" />   <!-- Discipline -->
                 <col />                      <!-- Sample Identification & Description — flexible main column -->
                 <col class="col-w-140" />    <!-- Qty -->
                 <col class="col-w-260" />    <!-- Image / Photo Attachment -->
@@ -534,6 +532,7 @@
               <thead>
                 <tr class="sample-table-header">
                   <th class="text-center text-nowrap py-2">Sample No</th>
+                  <th class="text-nowrap py-2">Discipline</th>
                   <th class="text-nowrap py-2">Sample Identification & Description <span class="text-danger">*</span></th>
                   <th class="text-center text-nowrap py-2">Qty</th>
                   <th class="text-nowrap py-2">Image / Photo Attachment</th>
@@ -553,6 +552,17 @@
                           [title]="'Cancellation reason: ' + sample.get('cancellationReason')?.value">
                       Cancelled
                     </span>
+                  </td>
+                  <td class="align-middle">
+                    <app-searchable-dropdown
+                      [placeholder]="'Select Discipline'"
+                      [fetchDataFn]="getDisciplineDrop"
+                      [selectedItem]="sample.get('disciplineID')?.value"
+                      [hideLabel]="true"
+                      [smallInput]="true"
+                      [isDisabled]="isViewMode || !!sample.get('isCancelled')?.value"
+                      (itemSelected)="onDisciplineSelected($event, i)">
+                    </app-searchable-dropdown>
                   </td>
                   <td class="align-middle">
                     <input class="form-control form-control-sm border-secondary-subtle" formControlName="details" placeholder="Enter Sample Description, Heat No, Grade..."
@@ -838,16 +848,16 @@
           <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
             <i class="bi bi-x-circle"></i> Cancel
           </button>
-          <button type="button" class="btn-lims btn-lims-save px-4" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
-            <i class="bi bi-check-circle"></i> Save
+          <button type="button" class="btn-lims btn-lims-save px-3" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
+            <i class="bi bi-check-circle"></i> Save Draft
+          </button>
+          <button type="button" class="btn-lims btn-lims-next px-3" (click)="saveAndPlanTests()" [disabled]="!sampleInwardForm.valid">
+            <i class="bi bi-diagram-3 me-1"></i> Save & Plan Tests
+          </button>
+          <button *ngIf="sampleId > 0" type="button" class="btn-lims btn-lims-primary px-3" (click)="navigateToUniversalPlan()">
+            <i class="bi bi-arrow-right-circle me-1"></i> Plan Tests
           </button>
         </div>
-      </div>
-
-
-      <!-- TAB 3: PLAN (visible only after save, lazy-loaded on tab click) -->
-      <div *ngIf="sampleId > 0" class="tab-pane fade" id="plan" role="tabpanel" aria-labelledby="plan-tab">
-        <app-plan-form *ngIf="planTabLoaded" [inwardID]="sampleId" [mode]="'plan'"></app-plan-form>
       </div>
 
       <!-- TAB 4: PAYMENT INFO (visible only after inward is saved) -->

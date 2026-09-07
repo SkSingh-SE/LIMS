@@ -44,3 +44,6 @@ test-results/.last-run.json
 /test-results
 /e2e
 /playwright-report
+*.png
+e2e_ui_test.js
+verify_ui.js

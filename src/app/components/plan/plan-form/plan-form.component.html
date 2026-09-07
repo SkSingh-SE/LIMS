@@ -479,6 +479,13 @@
                         <i class="bi bi-droplet me-2"></i> Chemical Test
                       </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link" [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'universal') }"
+                        (click)="setActiveTab(activeSampleIdx, planIdx, 'universal')"
+                        id="universal-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
+                        <i class="bi bi-diagram-3 me-2"></i> Universal Test
+                      </button>
+                    </li>
                   </ul>
                   <div class="tab-content">
                     <!-- General Test Tab -->
@@ -1078,6 +1085,139 @@
                           (click)="addTestBlock(activeSampleIdx, planIdx, 'chemicalTests')">
                           <i class="bi bi-plus-circle me-2"></i>Add Chemical Test
                         </button>
+                      </div>
+                    </div>
+
+                    <!-- Universal Test Tab -->
+                    <div class="tab-pane fade" id="universal-{{ activeSampleIdx }}-{{ planIdx }}" role="tabpanel"
+                      [ngClass]="{ 'show active': isActiveTab(activeSampleIdx, planIdx, 'universal') }">
+                      <div class="p-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span class="text-xs-75 text-muted fw-semibold">
+                            <i class="bi bi-diagram-3 me-1 text-danger"></i> Configured Universal Tests (Soil Mechanics, Geotechnical, etc.)
+                          </span>
+                          <button *ngIf="!isViewMode && !isPlanApproved(testPlan)"
+                                  type="button"
+                                  class="btn-lims btn-lims-add"
+                                  (click)="addUniversalTestGroup(activeSampleIdx, planIdx)">
+                            <i class="bi bi-plus-circle me-1"></i> Add Universal Test
+                          </button>
+                        </div>
+
+                        <div *ngIf="getUniversalTestGroups(activeSampleIdx, planIdx).length === 0" class="alert alert-light border text-center py-3 text-muted text-xs-78">
+                          No Universal Tests planned yet. Click "Add Universal Test" to add a test.
+                        </div>
+
+                        <div *ngIf="getUniversalTestGroups(activeSampleIdx, planIdx).length > 0" class="table-responsive">
+                          <table class="table table-sm table-bordered table-compact align-middle mb-2">
+                            <thead class="table-light">
+                              <tr class="text-nowrap text-muted small">
+                                <th class="fw-medium text-center" style="width: 40px;">#</th>
+                                <th class="fw-medium text-center" style="min-width: 170px;">Laboratory Test <span class="text-danger">*</span></th>
+                                <th class="fw-medium text-center" style="min-width: 170px;">Method / Standard</th>
+                                <th class="fw-medium text-center" style="min-width: 110px;">Method Edition</th>
+                                <th class="fw-medium text-center" style="min-width: 160px;">Specification</th>
+                                <th class="fw-medium text-center" style="min-width: 130px;">Grade (Optional)</th>
+                                <th class="fw-medium text-center" style="min-width: 120px;">Department</th>
+                                <th class="fw-medium text-center" style="width: 110px;">Status</th>
+                                <th *ngIf="!isViewMode && !isPlanApproved(testPlan)" class="fw-medium text-center" style="width: 50px;">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let utgCtrl of getUniversalTestGroups(activeSampleIdx, planIdx).controls; let utgIdx = index"
+                                  [formGroup]="$any(utgCtrl)">
+                                <td class="text-center text-muted fw-semibold text-xs-75">{{ utgIdx + 1 }}</td>
+                                <td>
+                                  <app-searchable-dropdown
+                                    [placeholder]="'Select Laboratory Test'"
+                                    [fetchDataFn]="getUniversalLabTestDrop"
+                                    [selectedItem]="utgCtrl.get('laboratoryTestID')?.value"
+                                    [hideLabel]="true"
+                                    [smallInput]="true"
+                                    [isDisabled]="isViewMode || isPlanApproved(testPlan)"
+                                    (itemSelected)="onUniversalLabTestSelected($event, activeSampleIdx, planIdx, utgIdx)">
+                                  </app-searchable-dropdown>
+                                </td>
+                                <td>
+                                  <app-searchable-dropdown
+                                    [placeholder]="'Select Method / Standard'"
+                                    [fetchDataFn]="getUniversalMethodDrop"
+                                    [selectedItem]="utgCtrl.get('testMethodSpecificationID')?.value"
+                                    [hideLabel]="true"
+                                    [smallInput]="true"
+                                    [isDisabled]="isViewMode || isPlanApproved(testPlan)"
+                                    (itemSelected)="onUniversalMethodSelected($event, activeSampleIdx, planIdx, utgIdx)">
+                                  </app-searchable-dropdown>
+                                </td>
+                                <td>
+                                  <select class="form-select form-select-sm text-xs-78"
+                                          formControlName="testMethodSpecificationVersionID"
+                                          [attr.disabled]="(isViewMode || isPlanApproved(testPlan)) ? '' : null"
+                                          (change)="onUniversalVersionChanged($event, activeSampleIdx, planIdx, utgIdx)">
+                                    <option [ngValue]="null">Default / Any</option>
+                                    <option *ngFor="let v of getUniversalMethodVersions(activeSampleIdx, planIdx, utgIdx)" [ngValue]="v.id">
+                                      {{ v.version || v.name }}
+                                    </option>
+                                  </select>
+                                </td>
+                                <td>
+                                  <app-searchable-dropdown
+                                    [placeholder]="'Select Specification'"
+                                    [fetchDataFn]="getUniversalSpecHeaderDrop"
+                                    [selectedItem]="utgCtrl.get('specificationHeaderID')?.value"
+                                    [hideLabel]="true"
+                                    [smallInput]="true"
+                                    [isDisabled]="isViewMode || isPlanApproved(testPlan)"
+                                    (itemSelected)="onUniversalSpecSelected($event, activeSampleIdx, planIdx, utgIdx)">
+                                  </app-searchable-dropdown>
+                                </td>
+                                <td>
+                                  <select class="form-select form-select-sm text-xs-78"
+                                          formControlName="specificationGradeID"
+                                          [attr.disabled]="(isViewMode || isPlanApproved(testPlan)) ? '' : null"
+                                          (change)="onUniversalGradeChanged($event, activeSampleIdx, planIdx, utgIdx)">
+                                    <option [ngValue]="null">None / Standard</option>
+                                    <option *ngFor="let g of getUniversalSpecGrades(activeSampleIdx, planIdx, utgIdx)" [ngValue]="g.id">
+                                      {{ g.grade || g.name }}
+                                    </option>
+                                  </select>
+                                </td>
+                                <td class="text-center">
+                                  <span *ngIf="utgCtrl.get('departmentName')?.value" class="badge bg-light text-dark border text-xs-75">
+                                    <i class="bi bi-building me-1 text-primary"></i>{{ utgCtrl.get('departmentName')?.value }}
+                                  </span>
+                                  <span *ngIf="!utgCtrl.get('departmentName')?.value" class="text-muted text-xs-70">—</span>
+                                </td>
+                                <td class="text-center">
+                                  <span class="badge"
+                                        [ngClass]="{
+                                          'bg-secondary': utgCtrl.get('status')?.value === 'Pending',
+                                          'bg-primary': utgCtrl.get('status')?.value === 'InProgress',
+                                          'bg-info text-dark': utgCtrl.get('status')?.value === 'Completed',
+                                          'bg-warning text-dark': utgCtrl.get('status')?.value === 'Verified',
+                                          'bg-success': utgCtrl.get('status')?.value === 'Approved'
+                                        }">
+                                    {{ utgCtrl.get('status')?.value || 'Pending' }}
+                                  </span>
+                                  <a *ngIf="utgCtrl.get('id')?.value > 0"
+                                     [routerLink]="['/universal-test-execution']"
+                                     [queryParams]="{ utgId: utgCtrl.get('id')?.value }"
+                                     class="btn btn-sm btn-outline-primary ms-1 py-0 px-1 text-xs-70"
+                                     title="Open Execution">
+                                    <i class="bi bi-play-circle"></i>
+                                  </a>
+                                </td>
+                                <td *ngIf="!isViewMode && !isPlanApproved(testPlan)" class="text-center">
+                                  <button type="button" class="btn-lims btn-lims-remove btn-lims-icon"
+                                          title="Remove Test"
+                                          (click)="removeUniversalTestGroup(activeSampleIdx, planIdx, utgIdx)">
+                                    <i class="bi bi-trash"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>

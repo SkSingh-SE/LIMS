@@ -1,0 +1,52 @@
+.modal-backdrop {
+  opacity: 0.5;
+}
+
+.discipline-disclaimer {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  border-radius: 4px;
+}
+
+.assigned-table-container {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+.form-label-sm {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.badge-toggle-btn {
+  border: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+}
+
+.badge-accredited {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-accredited:hover {
+  background-color: #d1fae5;
+}
+
+.badge-non-accredited {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.badge-non-accredited:hover {
+  background-color: #e2e8f0;
+}

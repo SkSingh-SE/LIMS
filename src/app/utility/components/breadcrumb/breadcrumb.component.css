@@ -1,0 +1,82 @@
+.lims-breadcrumb-wrapper {
+  display: flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 0.2rem;
+  line-height: 1.2;
+}
+
+.lims-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 500;
+  list-style: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  row-gap: 0.15rem;
+}
+
+.lims-breadcrumb .breadcrumb-item {
+  color: #64748b;
+}
+
+/* Custom separator chevron */
+.lims-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+  content: "›";
+  float: left;
+  padding-right: 0.45rem;
+  padding-left: 0.45rem;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Clickable parent breadcrumb */
+.breadcrumb-link {
+  color: #475569;
+  text-decoration: none;
+  border-radius: 3px;
+  padding: 0.05rem 0.2rem;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.breadcrumb-link:hover {
+  color: var(--primary-color, #da261c);
+  background-color: rgba(218, 38, 28, 0.06);
+  text-decoration: none;
+}
+
+.breadcrumb-link:focus-visible {
+  outline: 2px solid var(--primary-color, #da261c);
+  outline-offset: 1px;
+}
+
+/* Non-clickable grouping node */
+.breadcrumb-group {
+  color: #64748b;
+  font-weight: 500;
+  padding: 0.05rem 0.1rem;
+  user-select: none;
+}
+
+/* Active current page leaf */
+.breadcrumb-active {
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+  padding: 0.05rem 0.1rem;
+}
+
+/* Responsive wrap behavior */
+@media (max-width: 768px) {
+  .lims-breadcrumb {
+    font-size: 0.7rem;
+  }
+  .lims-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+    padding-right: 0.3rem;
+    padding-left: 0.3rem;
+  }
+}

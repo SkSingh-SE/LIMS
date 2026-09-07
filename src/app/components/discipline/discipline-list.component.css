@@ -1,0 +1,9 @@
+/* Discipline Master Component Specific Styles */
+
+.max-w-desc {
+  max-width: 320px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}

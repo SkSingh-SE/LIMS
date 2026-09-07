@@ -5,11 +5,11 @@
   <!-- ================================================================ -->
   <div class="page-header-bar">
     <h4>
-      <i class="bi bi-clipboard2-pulse me-2"></i>Test Result Entry
+      <i class="bi bi-clipboard2-pulse me-2"></i>Test Result Workspace
     </h4>
     <div class="header-meta">
-      <span class="badge">{{ inward?.caseNo }}</span>
-      <span class="badge" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" [title]="inward?.customerName">{{ inward?.customerName }}</span>
+      <span class="badge case-badge">{{ inward?.caseNo }}</span>
+      <span class="badge customer-badge text-truncate" [title]="inward?.customerName">{{ inward?.customerName }}</span>
       <app-test-status-badge *ngIf="sample?.sampleStatus" [status]="sample.sampleStatus"></app-test-status-badge>
       <button class="btn btn-sm btn-outline-light ms-2" type="button" (click)="cancel()">
         <i class="bi bi-arrow-left me-1"></i>Back to List
@@ -18,59 +18,70 @@
   </div>
 
   <!-- ================================================================ -->
-  <!-- INFO CARDS GRID                                                  -->
+  <!-- COMPACT SAMPLE METADATA STRIP                                     -->
   <!-- ================================================================ -->
-  <div class="info-grid">
-    <div class="info-card">
-      <div class="info-label">Sample ID</div>
-      <div class="info-value">{{ sample?.sampleNo }}</div>
+  <div class="sample-meta-strip">
+    <div class="meta-item">
+      <i class="bi bi-upc-scan text-danger me-1"></i>
+      <span class="meta-label">Sample ID:</span>
+      <span class="meta-value">{{ sample?.sampleNo }}</span>
     </div>
-    <div class="info-card">
-      <div class="info-label">Client</div>
-      <div class="info-value">{{ inward?.customerName }}</div>
+    <div class="meta-item">
+      <i class="bi bi-person text-primary me-1"></i>
+      <span class="meta-label">Client:</span>
+      <span class="meta-value">{{ inward?.customerName }}</span>
     </div>
-    <div class="info-card">
-      <div class="info-label">Material</div>
-      <div class="info-value">{{ sample?.material }}</div>
+    <div class="meta-item">
+      <i class="bi bi-layers text-success me-1"></i>
+      <span class="meta-label">Material:</span>
+      <span class="meta-value" [title]="sample?.material">{{ sample?.material }}</span>
     </div>
-    <div class="info-card">
-      <div class="info-label">Classification</div>
-      <div class="info-value">{{ sample?.metalClassification }}</div>
+    <div class="meta-item" *ngIf="sample?.metalClassification && sample.metalClassification !== '-'">
+      <i class="bi bi-diagram-2 text-info me-1"></i>
+      <span class="meta-label">Classification:</span>
+      <span class="meta-value">{{ sample?.metalClassification }}</span>
     </div>
-    <div class="info-card">
-      <div class="info-label">Condition</div>
-      <div class="info-value">{{ sample?.productCondition || '-' }}</div>
+    <div class="meta-item" *ngIf="sample?.productCondition && sample.productCondition !== '-'">
+      <i class="bi bi-shield-check text-warning me-1"></i>
+      <span class="meta-label">Condition:</span>
+      <span class="meta-value">{{ sample?.productCondition }}</span>
     </div>
-    <div class="info-card" *ngIf="sample?.productForm">
-      <div class="info-label">Product Form</div>
-      <div class="info-value">{{ sample.productForm }}</div>
+    <div class="meta-item" *ngIf="sample?.productForm && sample.productForm !== '-'">
+      <i class="bi bi-box me-1 text-secondary"></i>
+      <span class="meta-label">Form:</span>
+      <span class="meta-value">{{ sample.productForm }}</span>
     </div>
-    <div class="info-card" *ngIf="sample?.specimenOrientation">
-      <div class="info-label">Orientation</div>
-      <div class="info-value">{{ sample.specimenOrientation }}</div>
+    <div class="meta-item" *ngIf="sample?.specimenOrientation && sample.specimenOrientation !== '-'">
+      <i class="bi bi-compass me-1 text-primary"></i>
+      <span class="meta-label">Orientation:</span>
+      <span class="meta-value">{{ sample.specimenOrientation }}</span>
     </div>
-    <div class="info-card" *ngIf="sample?.heatTreatment">
-      <div class="info-label">Heat Treatment</div>
-      <div class="info-value">{{ sample.heatTreatment }}</div>
+    <div class="meta-item" *ngIf="sample?.heatTreatment && sample.heatTreatment !== '-'">
+      <i class="bi bi-fire me-1 text-danger"></i>
+      <span class="meta-label">Heat Treatment:</span>
+      <span class="meta-value">{{ sample.heatTreatment }}</span>
     </div>
-    <div class="info-card">
-      <div class="info-label">Batch No</div>
-      <div class="info-value">{{ sample?.batchNo || '-' }}</div>
+    <div class="meta-item" *ngIf="sample?.batchNo && sample.batchNo !== '-'">
+      <i class="bi bi-tag me-1 text-dark"></i>
+      <span class="meta-label">Batch:</span>
+      <span class="meta-value">{{ sample?.batchNo }}</span>
     </div>
-    <div class="info-card">
-      <div class="info-label">Remarks</div>
-      <div class="info-value" [title]="sample?.remarks">{{ sample?.remarks || '-' }}</div>
+    <div class="meta-item" *ngIf="sample?.remarks && sample.remarks !== '-'" [title]="sample?.remarks">
+      <i class="bi bi-chat-left-text text-muted me-1"></i>
+      <span class="meta-label">Remarks:</span>
+      <span class="meta-value text-truncate max-w-200">{{ sample?.remarks }}</span>
     </div>
-    <div class="info-card" *ngIf="sample?.thickness || sample?.diameter || sample?.width || sample?.length">
-      <div class="info-label">Dimensions</div>
-      <div class="info-value">
-        <span *ngIf="sample?.thickness">T:{{sample.thickness}}mm </span>
-        <span *ngIf="sample?.diameter">D:{{sample.diameter}}mm </span>
-        <span *ngIf="sample?.width">W:{{sample.width}}mm </span>
-        <span *ngIf="sample?.length">L:{{sample.length}}mm </span>
-        <span *ngIf="sample?.crossSectionArea">CSA:{{sample.crossSectionArea}}mm² </span>
-        <span *ngIf="sample?.gaugeLength">GL:{{sample.gaugeLength}}mm</span>
-      </div>
+    <div class="meta-item" *ngIf="sample?.thickness || sample?.diameter || sample?.width || sample?.length">
+      <i class="bi bi-rulers text-secondary me-1"></i>
+      <span class="meta-label">Dimensions:</span>
+      <span class="meta-value">
+        <span *ngIf="sample?.thickness" class="badge bg-light text-dark border me-1">T:{{sample.thickness}}mm</span>
+        <span *ngIf="sample?.diameter" class="badge bg-light text-dark border me-1">D:{{sample.diameter}}mm</span>
+        <span *ngIf="sample?.width" class="badge bg-light text-dark border me-1">W:{{sample.width}}mm</span>
+        <span *ngIf="sample?.length" class="badge bg-light text-dark border me-1">L:{{sample.length}}mm</span>
+        <span *ngIf="sample?.crossSectionArea" class="badge bg-light text-dark border me-1">CSA:{{sample.crossSectionArea}}mm²</span>
+        <span *ngIf="sample?.gaugeLength" class="badge bg-light text-dark border">GL:{{sample.gaugeLength}}mm</span>
+      </span>
     </div>
   </div>
 
@@ -119,8 +130,17 @@
     <div [formGroup]="resultForm">
       <div formArrayName="plans">
 
+        <!-- Empty State: No Test Plans -->
+        <div *ngIf="plans.length === 0" class="alert alert-warning d-flex align-items-center gap-2 p-3 my-2 border rounded">
+          <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+          <div>
+            <strong class="d-block">No Test Plans Configured for this Sample</strong>
+            <span class="small text-muted">Please configure the test plan in Sample Planning to assign tests and specifications.</span>
+          </div>
+        </div>
+
         <!-- Plan Sub-Tabs -->
-        <ul class="plan-tabs">
+        <ul class="plan-tabs" *ngIf="plans.length > 0">
           <li *ngFor="let plan of plansFA.controls; let p = index">
             <button
               class="plan-tab-link"
@@ -150,8 +170,48 @@
                 [ngClass]="getTestCardClass(plans[p].tests[t].status)"
                 [formGroupName]="t">
 
-                <!-- Test Card Header -->
-                <div class="test-card-header">
+                <!-- Universal Test Card Header -->
+                <div *ngIf="plans[p].type === 'Universal'" class="test-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="badge bg-danger text-white px-2 py-1">
+                      <i class="bi bi-diagram-3 me-1"></i> Universal Test
+                    </span>
+                    <span class="fw-semibold fs-6 text-white">{{ plans[p].tests[t].name }}</span>
+                    <app-test-status-badge [status]="plans[p].tests[t].status"></app-test-status-badge>
+                    <span class="badge bg-light text-dark border" *ngIf="universalExecutionsMap[plans[p].universalTestGroupId]?.executionNo">
+                      Run #{{ universalExecutionsMap[plans[p].universalTestGroupId]?.executionNo }}
+                    </span>
+                  </div>
+
+                  <!-- Quick Action Buttons -->
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a [routerLink]="['/universal-test-execution']"
+                       [queryParams]="{ utgId: plans[p].universalTestGroupId }"
+                       class="btn-lims btn-lims-save btn-sm text-decoration-none">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>
+                      <span>{{ plans[p].latestExecutionId ? 'Open Execution Workspace' : 'Start Universal Test' }}</span>
+                    </a>
+
+                    <button *ngIf="plans[p].tests[t].status === 'Approved' || plans[p].executionStatus === 'Approved'"
+                            type="button"
+                            (click)="downloadReport(sample?.id)"
+                            class="btn-lims btn-lims-print btn-sm">
+                      <i class="bi bi-file-earmark-pdf me-1"></i>
+                      <span>Download Certificate</span>
+                    </button>
+
+                    <a *ngIf="plans[p].tests[t].status === 'Approved' || plans[p].executionStatus === 'Approved'"
+                       [routerLink]="['/universal-test-execution']"
+                       [queryParams]="{ utgId: plans[p].universalTestGroupId, mode: 'retest' }"
+                       class="btn-lims btn-lims-secondary btn-sm text-decoration-none">
+                      <i class="bi bi-arrow-repeat me-1"></i>
+                      <span>Retest / New Run</span>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Legacy Test Card Header -->
+                <div *ngIf="plans[p].type !== 'Universal'" class="test-card-header">
                   <div class="d-flex flex-column">
                     <span class="fw-semibold">{{ plans[p].tests[t].name }}</span>
                     <div class="d-flex align-items-center gap-2 small text-muted">
@@ -164,14 +224,14 @@
 
                   <!-- NABL Scope Summary Banner -->
                   <div *ngIf="hasOutOfScopeParams(plans[p].tests[t].headerId)"
-                    class="alert alert-danger py-1 px-2 mb-1 d-flex align-items-center gap-2" style="font-size: 12px;">
+                    class="alert alert-danger py-1 px-2 mb-1 d-flex align-items-center gap-2 font-size-12">
                     <i class="bi bi-shield-exclamation"></i>
                     <span>
                       <strong>NABL Scope:</strong>
                       {{ getNablScopeSummary(plans[p].tests[t].headerId).outOfScopeCount }} parameter(s) are outside NABL accreditation scope.
                       Report will NOT carry NABL endorsement for these tests.
                     </span>
-                    <label class="form-check-label ms-auto d-flex align-items-center gap-1" style="white-space: nowrap;">
+                    <label class="form-check-label ms-auto d-flex align-items-center gap-1 text-nowrap">
                       <input type="checkbox" class="form-check-input"
                         [(ngModel)]="nablScopeAcknowledged[plans[p].tests[t].headerId]"
                         [ngModelOptions]="{standalone: true}">
@@ -179,7 +239,7 @@
                     </label>
                   </div>
                   <div *ngIf="hasAnyInScope(plans[p].tests[t].headerId) && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
-                    class="alert alert-success py-1 px-2 mb-1 d-flex align-items-center gap-1" style="font-size: 12px;">
+                    class="alert alert-success py-1 px-2 mb-1 d-flex align-items-center gap-1 font-size-12">
                     <i class="bi bi-shield-check"></i>
                     <span>All parameters are within NABL accreditation scope
                       <span *ngIf="getNablScopeSummary(plans[p].tests[t].headerId).notAccreditedCount > 0" class="text-muted">
@@ -188,19 +248,19 @@
                     </span>
                   </div>
                   <div *ngIf="(nablScopeMap[plans[p].tests[t].headerId] || []).length > 0 && !hasAnyInScope(plans[p].tests[t].headerId) && !hasOutOfScopeParams(plans[p].tests[t].headerId)"
-                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-1" style="font-size: 12px;">
+                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-1 font-size-12">
                     <i class="bi bi-shield-x"></i>
                     <span>No parameters are under NABL accreditation scope for this test. Create scope entry in ISO Scope form.</span>
                   </div>
 
                   <!-- Orientation Mismatch Warning Banner -->
                   <div *ngIf="hasOrientationMismatches(plans[p].tests[t].headerId)"
-                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2" style="font-size: 12px;">
+                    class="alert alert-warning py-1 px-2 mb-1 d-flex align-items-center gap-2 font-size-12">
                     <i class="bi bi-exclamation-triangle-fill"></i>
                     <span><strong>Orientation Mismatch:</strong> Specimen orientation does not match specification requirement for
                       {{ orientationWarnings[plans[p].tests[t].headerId]?.warnings?.length }} parameter(s).
                     </span>
-                    <label class="form-check-label ms-auto d-flex align-items-center gap-1" style="white-space: nowrap;">
+                    <label class="form-check-label ms-auto d-flex align-items-center gap-1 text-nowrap">
                       <input type="checkbox" class="form-check-input"
                         [(ngModel)]="orientationDeviationAcknowledged[plans[p].tests[t].headerId]"
                         [ngModelOptions]="{standalone: true}">
@@ -287,6 +347,125 @@
                   </div>
                 </div>
 
+                <!-- ================================================================ -->
+                <!-- UNIVERSAL TEST EXECUTION HUB CARD BODY                           -->
+                <!-- ================================================================ -->
+                <div *ngIf="plans[p].type === 'Universal'" class="card-body p-3 universal-card-body">
+                  <!-- Execution Meta Context Strip -->
+                  <div class="universal-context-bar d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 p-2 bg-light border rounded">
+                    <div class="d-flex align-items-center gap-3 flex-wrap small">
+                      <span>
+                        <i class="bi bi-journal-bookmark text-danger me-1"></i>
+                        <strong>Method:</strong> {{ plans[p].specification }}
+                      </span>
+                      <span *ngIf="universalExecutionsMap[plans[p].universalTestGroupId]?.configSnapshot?.specificationTitle">
+                        <i class="bi bi-file-text text-primary me-1"></i>
+                        <strong>Standard:</strong> {{ universalExecutionsMap[plans[p].universalTestGroupId]?.configSnapshot?.specificationTitle }}
+                      </span>
+                      <span>
+                        <i class="bi bi-geo-alt text-secondary me-1"></i>
+                        <strong>Lab:</strong> {{ universalExecutionsMap[plans[p].universalTestGroupId]?.branchName || 'Devine Laboratory' }}
+                      </span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge bg-white text-dark border">
+                        <i class="bi bi-lock-fill text-warning me-1"></i> Snapshot Frozen
+                      </span>
+                      <span class="badge bg-white text-dark border" *ngIf="plans[p].latestExecutionId">
+                        Run ID: #{{ plans[p].latestExecutionId }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Parameter Results Matrix -->
+                  <div *ngIf="universalResultsMap[plans[p].universalTestGroupId]?.parameters?.length > 0">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <h6 class="fw-semibold text-dark mb-0 d-flex align-items-center gap-1.5">
+                        <i class="bi bi-table text-danger me-1"></i> Execution Results Overview
+                      </h6>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge" [ngClass]="universalResultsMap[plans[p].universalTestGroupId].overallDecision === 'Pass' ? 'badge-pass' : 'badge-fail'">
+                          <i class="bi me-1" [ngClass]="universalResultsMap[plans[p].universalTestGroupId].overallDecision === 'Pass' ? 'bi-check-circle-fill' : 'bi-x-octagon-fill'"></i>
+                          Overall: {{ universalResultsMap[plans[p].universalTestGroupId].overallDecision || 'Pass' }}
+                        </span>
+                        <span class="small text-muted">
+                          ({{ universalResultsMap[plans[p].universalTestGroupId].passedCount || 0 }} Passed, {{ universalResultsMap[plans[p].universalTestGroupId].failedCount || 0 }} Failed)
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="table-responsive">
+                      <table class="table table-sm table-bordered align-middle universal-result-table mb-2">
+                        <thead>
+                          <tr>
+                            <th class="col-w-idx text-center">#</th>
+                            <th>Parameter Name</th>
+                            <th class="col-w-code">Code</th>
+                            <th class="col-w-unit text-center">Unit</th>
+                            <th class="col-w-spec text-center">Specification Limits</th>
+                            <th class="col-w-val text-center">Observed / Calculated Value</th>
+                            <th class="col-w-status text-center">Compliance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let param of universalResultsMap[plans[p].universalTestGroupId].parameters; let r = index"
+                              [ngClass]="param.status === 'Pass' ? 'row-ok' : (param.status === 'Fail' ? 'row-error' : '')">
+                            <td class="text-center text-muted small">{{ r + 1 }}</td>
+                            <td class="fw-semibold">
+                              {{ param.parameterName }}
+                              <span *ngIf="param.parameterCode === 'SOIL_PI'" class="badge bg-light text-primary border ms-1 font-monospace small" title="Calculated via DAG formula">
+                                Formula: &#123;SOIL_LL&#125; - &#123;SOIL_PL&#125;
+                              </span>
+                            </td>
+                            <td><span class="badge bg-secondary font-monospace">{{ param.parameterCode }}</span></td>
+                            <td class="text-center text-muted">{{ param.unit || '%' }}</td>
+                            <td class="text-center fw-medium text-secondary">{{ param.specRange || '-' }}</td>
+                            <td class="text-center fw-bold fs-7" [ngClass]="param.status === 'Pass' ? 'text-success' : (param.status === 'Fail' ? 'text-danger' : '')">
+                              {{ param.finalValue || param.averageValue || '-' }}
+                            </td>
+                            <td class="text-center">
+                              <span class="badge" [ngClass]="param.status === 'Pass' ? 'badge-pass' : (param.status === 'Fail' ? 'badge-fail' : 'badge-pending')">
+                                <i class="bi me-1" [ngClass]="param.status === 'Pass' ? 'bi-check-circle-fill' : (param.status === 'Fail' ? 'bi-x-circle-fill' : 'bi-clock')"></i>
+                                {{ param.status || 'Pending' }}
+                              </span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <!-- Sign-Off Summary Note -->
+                    <div *ngIf="universalExecutionsMap[plans[p].universalTestGroupId]?.reviewRemarks" class="alert alert-light border d-flex align-items-center gap-2 py-1 px-3 mb-2 small">
+                      <i class="bi bi-chat-quote-fill text-primary fs-6"></i>
+                      <span><strong>Review Remarks:</strong> {{ universalExecutionsMap[plans[p].universalTestGroupId].reviewRemarks }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Empty/Pending State -->
+                  <div *ngIf="!universalResultsMap[plans[p].universalTestGroupId]?.parameters?.length" class="text-center py-4 bg-light rounded border my-2">
+                    <i class="bi bi-cpu fs-2 text-primary d-block mb-2"></i>
+                    <h6 class="fw-semibold text-dark mb-1">Universal ISO 17025 Test Ready for Execution</h6>
+                    <p class="text-muted small mb-3">This test is configured under the Universal Test Execution Platform with dynamic parameters and multi-specimen observation engine.</p>
+                    <a [routerLink]="['/universal-test-execution']" [queryParams]="{ utgId: plans[p].universalTestGroupId }" class="btn-lims btn-lims-save text-decoration-none">
+                      <i class="bi bi-play-circle-fill me-1"></i> Launch Execution Workspace
+                    </a>
+                  </div>
+
+                  <!-- Workspace Deep Link Footer -->
+                  <div class="d-flex align-items-center justify-content-between text-muted small mt-2 pt-2 border-top">
+                    <span>
+                      <i class="bi bi-info-circle me-1"></i>
+                      Multi-specimen raw readings, calculation DAG formula traces, uncertainty evaluation and ISO 17025 sign-offs are managed in the Universal Workspace.
+                    </span>
+                    <a [routerLink]="['/universal-test-execution']" [queryParams]="{ utgId: plans[p].universalTestGroupId }" class="text-danger fw-semibold text-decoration-none d-inline-flex align-items-center gap-1">
+                      <span>Workspace Details</span>
+                      <i class="bi bi-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+
+                <ng-container *ngIf="plans[p].type !== 'Universal'">
                 <!-- Environment & Equipment Panel (collapsible) -->
                 <div class="env-panel">
                   <button
@@ -841,6 +1020,7 @@
                   </div>
 
                 </div>
+                </ng-container>
               </div>
             </div>
           </div>
@@ -848,17 +1028,17 @@
       </div>
     </div>
 
-    <!-- Action Bar (hidden when all tests are finalized) -->
-    <div class="action-bar" *ngIf="!isViewMode && canSaveAnyTest()">
-      <button class="btn btn-secondary action-btn" type="button" (click)="cancel()">Cancel</button>
-      <button class="btn action-btn action-btn-primary" type="button" (click)="saveResults()">
+    <!-- Action Bar (hidden when all tests are finalized or current plan is Universal) -->
+    <div class="action-bar" *ngIf="!isViewMode && canSaveAnyTest() && !isCurrentPlanUniversal()">
+      <button class="btn-lims btn-lims-cancel action-btn" type="button" (click)="cancel()">Cancel</button>
+      <button class="btn-lims btn-lims-save action-btn" type="button" (click)="saveResults()">
         <i class="bi bi-check-circle me-1"></i>Save Results
       </button>
     </div>
 
-    <!-- Submit for Report Review — shown only when tests are verified and report not yet submitted/reviewed/approved -->
-    <div class="action-bar" *ngIf="canSubmitForReportReview()">
-      <button class="btn btn-primary action-btn"
+    <!-- Submit for Report Review — shown only when legacy tests are verified and report not yet submitted/reviewed/approved -->
+    <div class="action-bar" *ngIf="canSubmitForReportReview() && !isCurrentPlanUniversal()">
+      <button class="btn-lims btn-lims-primary action-btn"
               type="button"
               [disabled]="isSubmittingReport"
               (click)="submitForReportReview()">

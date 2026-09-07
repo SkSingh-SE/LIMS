@@ -1,5 +1,5 @@
 <div *ngIf="visible" class="custom-modal-backdrop">
-  <div class="custom-modal-dialog" style="max-width: 900px;">
+  <div class="custom-modal-dialog">
     <div class="custom-modal-content">
       <div class="custom-modal-header d-flex justify-content-between align-items-center">
         <h5 class="m-0 text-white">Build Formula ({{ parameterType }})</h5>
@@ -31,13 +31,17 @@
                 <input type="text" class="form-control form-control-sm" placeholder="Search parameters..."
                   [(ngModel)]="searchTerm" (input)="filterParams()">
               </div>
-              <div class="card-body p-2" style="max-height: 350px; overflow-y: auto;">
+              <div class="card-body p-2 param-list-scroll">
                 <div class="list-group list-group-flush">
                   <button *ngFor="let param of filteredParameters" type="button"
-                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-3 border-0 rounded mb-1"
-                    style="background: #f8f9fa;" (click)="addParameterToken(param)">
-                    <span class="small text-truncate" [title]="param.name || param.displayText">{{ param.name ||
-                      param.displayText }}</span>
+                    class="list-group-item list-group-item-action param-item-btn d-flex justify-content-between align-items-center py-2 px-2 border-0 rounded mb-1"
+                    (click)="addParameterToken(param)">
+                    <div class="d-flex flex-column text-truncate me-2">
+                      <span class="small text-truncate fw-medium" [title]="param.name || param.displayText">{{ param.name || param.displayText }}</span>
+                      <span *ngIf="param.additionalValues?.Code || param.code" class="badge bg-light text-secondary border align-self-start font-monospace mt-0.5 param-code-badge">
+                        {{ param.additionalValues?.Code || param.code }}
+                      </span>
+                    </div>
                     <i class="bi bi-plus-circle-fill text-primary"></i>
                   </button>
                   <div *ngIf="filteredParameters.length === 0" class="text-center text-muted small p-3">

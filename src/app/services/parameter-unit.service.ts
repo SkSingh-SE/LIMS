@@ -41,6 +41,14 @@ export class ParameterUnitService {
       return this.http.get<any>(`${this.apiUrl}/grouped-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
     }
 
+    toggleStatus(id: number): Observable<any> {
+      return this.http.post<any>(`${this.apiUrl}/toggle-status/${id}`, {});
+    }
+
+    getQuantityTypes(): Observable<string[]> {
+      return this.http.get<string[]>(`${this.apiUrl}/quantity-types`);
+    }
+
     /**
      * Fetch equivalent units for a parameter's default unit (base + SimilarUnit1-7 matches).
      * Results are cached per unitId — repeated calls for the same unitId reuse the same

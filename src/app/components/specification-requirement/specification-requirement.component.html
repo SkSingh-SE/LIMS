@@ -1,0 +1,437 @@
+<div class="spec-req-container p-2.5">
+  <app-breadcrumb></app-breadcrumb>
+
+  <!-- Page Header & Cascade Selector Card -->
+  <div class="card border shadow-sm mb-2.5 bg-white">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="header-icon-box d-flex align-items-center justify-content-center">
+          <i class="bi bi-sliders2-vertical text-danger fs-5"></i>
+        </div>
+        <div>
+          <h5 class="mb-0 fw-bold fs-6 text-dark d-flex align-items-center">
+            Specification Requirement Configuration
+            <span class="badge bg-light text-secondary border ms-2 fs-8 fw-normal">Universal Test Requirements</span>
+          </h5>
+          <span class="fs-8 text-muted">Configure authoritative parameter limits, conditions, and test methods per Specification Version & Grade.</span>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button *ngIf="selectedSpec" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToVersionMaster()">
+          <i class="bi bi-box-arrow-up-right me-1"></i> Manage Versions
+        </button>
+      </div>
+    </div>
+
+    <!-- Cascading Context Selector Bar -->
+    <div class="card-body p-2.5 bg-light">
+      <div class="row g-2 align-items-end">
+
+        <!-- 1. Specification Selector -->
+        <div class="col-md-5">
+          <label class="form-label mb-1 fs-7 fw-semibold d-flex align-items-center">
+            <i class="bi bi-journal-bookmark text-danger me-1"></i> 1. Specification Master <span class="text-danger">*</span>
+          </label>
+          <app-searchable-dropdown
+            [fetchDataFn]="getSpecDropdown"
+            [smallInput]="true"
+            [hideLabel]="true"
+            [selectedItem]="selectedSpec"
+            placeholder="Search & Select Specification..."
+            (itemSelected)="onSpecificationSelected($event)">
+          </app-searchable-dropdown>
+        </div>
+
+        <!-- 2. Specification Version Selector -->
+        <div class="col-md-3">
+          <label class="form-label mb-1 fs-7 fw-semibold d-flex align-items-center">
+            <i class="bi bi-layers text-primary me-1"></i> 2. Specification Version <span class="text-danger">*</span>
+          </label>
+          <select
+            class="form-select form-select-sm fs-7"
+            [disabled]="!selectedSpec || versions.length === 0"
+            [ngModel]="selectedVersionId"
+            (ngModelChange)="onVersionChange($event)">
+            <option [ngValue]="null" disabled>-- Select Version --</option>
+            <option *ngFor="let v of versions" [value]="v.id">
+              {{ v.version }} {{ v.year ? '(' + v.year + ')' : '' }} {{ v.isDefault ? '★ [Default]' : '' }} - [{{ v.status === 0 ? 'Draft' : (v.status === 1 ? 'Active' : 'Superseded') }}]
+            </option>
+          </select>
+        </div>
+
+        <!-- 3. Applicability / Grade Selector -->
+        <div class="col-md-4">
+          <label class="form-label mb-1 fs-7 fw-semibold d-flex align-items-center">
+            <i class="bi bi-shield-check text-success me-1"></i> 3. Applicability / Grade <span class="text-danger">*</span>
+          </label>
+          <select
+            class="form-select form-select-sm fs-7"
+            [disabled]="!selectedSpec || grades.length === 0"
+            [ngModel]="selectedGradeId"
+            (ngModelChange)="onGradeChange($event)">
+            <option [ngValue]="null" disabled>-- Select Applicability / Grade --</option>
+            <option *ngFor="let g of grades" [value]="g.id">
+              {{ g.grade }} {{ g.metalClassification?.name ? '• ' + g.metalClassification.name : '' }}
+            </option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Context & Lifecycle Status Banner -->
+  <div *ngIf="context" class="card border shadow-sm mb-2.5 context-banner">
+    <div class="card-body p-2.5 d-flex flex-wrap align-items-center justify-content-between gap-2">
+
+      <!-- Context Info Pills -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="context-pill">
+          <span class="pill-label">Specification</span>
+          <span class="pill-value fw-bold text-dark">{{ context.specificationName }}</span>
+          <span *ngIf="context.specificationCode" class="badge bg-light text-secondary border ms-1 fs-8">
+            {{ context.specificationCode }}
+          </span>
+        </div>
+
+        <div class="context-pill">
+          <span class="pill-label">Version Edition</span>
+          <span class="pill-value fw-bold">{{ context.versionNumber }} {{ context.year ? '(' + context.year + ')' : '' }}</span>
+          <span [class]="'badge ms-1.5 ' + getStatusBadgeClass(context.versionStatus)">
+            <i *ngIf="context.versionStatus === 'Draft'" class="bi bi-pencil-fill me-1"></i>
+            <i *ngIf="context.versionStatus === 'Active'" class="bi bi-check-circle-fill me-1"></i>
+            <i *ngIf="context.versionStatus === 'Superseded'" class="bi bi-archive-fill me-1"></i>
+            {{ getStatusLabel(context.versionStatus) }}
+          </span>
+          <span *ngIf="context.isDefaultVersion" class="badge bg-danger ms-1 fs-8">Default</span>
+        </div>
+
+        <div class="context-pill">
+          <span class="pill-label">Applicability / Grade</span>
+          <span class="pill-value fw-bold text-dark">{{ context.gradeName }}</span>
+          <span *ngIf="context.metalClassificationName" class="badge bg-light text-muted border ms-1 fs-8">
+            {{ context.metalClassificationName }}
+          </span>
+        </div>
+
+        <div class="context-pill">
+          <span class="pill-label">Requirements</span>
+          <span class="badge bg-dark fs-7 px-2 py-1">{{ context.totalRequirementsCount }} Lines</span>
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="d-flex align-items-center gap-1.5">
+
+        <!-- DRAFT ACTIONS -->
+        <ng-container *ngIf="context.isEditable">
+          <button type="button" class="btn-lims btn-lims-add" (click)="openAddRequirement()">
+            <i class="bi bi-plus-circle me-1"></i> Add Requirement
+          </button>
+          <button type="button" class="btn-lims btn-lims-copy" (click)="openCopyModal()" title="Copy requirement lines from another version into this draft">
+            <i class="bi bi-copy me-1"></i> Copy from Version
+          </button>
+          <button type="button" class="btn-lims btn-lims-save" (click)="openActivateModal()" title="Activate version and supersede current active edition">
+            <i class="bi bi-check-circle me-1"></i> Activate Version
+          </button>
+        </ng-container>
+
+        <!-- LOCKED (ACTIVE / SUPERSEDED) ACTIONS -->
+        <ng-container *ngIf="!context.isEditable">
+          <div class="locked-badge-pill d-flex align-items-center gap-1.5 px-2.5 py-1 rounded">
+            <i class="bi bi-lock-fill text-warning fs-6"></i>
+            <span class="fs-8 fw-semibold text-dark">Locked & Immutable</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2.5 fs-7 d-flex align-items-center" (click)="navigateToVersionMaster()" title="Create new Draft version to edit">
+            <i class="bi bi-plus-circle me-1"></i> Create New Revision
+          </button>
+        </ng-container>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Requirements Table Card -->
+  <div *ngIf="selectedSpec && selectedVersionId && selectedGradeId" class="card border shadow-sm bg-white">
+
+    <!-- Table Toolbar: Search & Legacy Filter -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="d-flex align-items-center gap-2 flex-grow-1 max-w-md">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light text-muted border-end-0">
+            <i class="bi bi-search"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control form-control-sm border-start-0"
+            placeholder="Search parameter, code, symbol, limits, conditions..."
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="applyFilters()">
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="fs-8 fw-semibold text-muted">Showing {{ filteredRequirements.length }} of {{ requirements.length }} Requirements</span>
+      </div>
+    </div>
+
+    <!-- Requirements Data Table -->
+    <div class="table-responsive">
+      <table class="table table-sm table-hover table-bordered align-middle mb-0 requirements-table">
+        <thead class="table-light">
+          <tr>
+            <th class="col-num text-center">#</th>
+            <th class="col-param">Parameter</th>
+            <th class="col-unit">Unit</th>
+            <th class="col-limits">Governing Limits & Tolerances</th>
+            <th class="col-eq">Equations</th>
+            <th class="col-cond">Applicability & Conditions</th>
+            <th class="col-methods">Test Method Standards</th>
+            <th class="col-notes">Instructions & Notes</th>
+            <th class="col-actions text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredRequirements; let i = index" [class.table-warning-subtle]="!!(item.equation || item.minEquation || item.maxEquation)">
+            <td class="text-center text-muted fs-8 fw-semibold">{{ i + 1 }}</td>
+
+            <!-- Parameter -->
+            <td>
+              <div class="d-flex align-items-center gap-1.5">
+                <span class="fw-bold text-dark fs-7">{{ item.parameterName }}</span>
+                <span *ngIf="item.parameterSymbol" class="badge bg-light text-dark border fs-8">
+                  {{ item.parameterSymbol }}
+                </span>
+                <span *ngIf="item.parameterCode" class="badge bg-light text-muted border fs-8">
+                  {{ item.parameterCode }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Unit -->
+            <td class="fs-7 text-dark fw-semibold">
+              {{ item.parameterUnitName || '-' }}
+            </td>
+
+            <!-- Limits & Tolerances -->
+            <td>
+              <div class="d-flex flex-column">
+                <span class="fw-bold text-danger fs-7 font-monospace">{{ item.formattedLimits }}</span>
+                <span *ngIf="item.minTolerance || item.maxTolerance" class="fs-8 text-muted">
+                  Tol: -{{ item.minTolerance || 0 }} / +{{ item.maxTolerance || 0 }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Equations -->
+            <td>
+              <div *ngIf="item.equation || item.minEquation || item.maxEquation" class="d-flex flex-column gap-1">
+                <span *ngIf="item.equation" class="fs-8 text-success font-monospace" title="Parameter Calculation Equation">
+                  <strong>Calc:</strong> {{ formatEquation(item.equation) }}
+                </span>
+                <span *ngIf="item.minEquation" class="fs-8 text-primary font-monospace" title="Min Equation">
+                  <strong>Min:</strong> {{ formatEquation(item.minEquation) }}
+                </span>
+                <span *ngIf="item.maxEquation" class="fs-8 text-danger font-monospace" title="Max Equation">
+                  <strong>Max:</strong> {{ formatEquation(item.maxEquation) }}
+                </span>
+              </div>
+              <span *ngIf="!item.equation && !item.minEquation && !item.maxEquation" class="text-muted fs-8">-</span>
+            </td>
+
+            <!-- Applicability & Conditions -->
+            <td>
+              <span class="fs-8 text-dark d-block">
+                {{ item.conditionsSummary }}
+              </span>
+              <span *ngIf="item.specimenOrientationName" class="badge bg-light text-muted border mt-0.5 fs-8">
+                Orient: {{ item.specimenOrientationName }}
+              </span>
+            </td>
+
+            <!-- Test Methods -->
+            <td>
+              <span class="fs-8 text-dark fw-semibold d-block">
+                {{ item.testMethodsSummary }}
+              </span>
+            </td>
+
+            <!-- Instructions & Notes -->
+            <td>
+              <span *ngIf="item.testCondition" class="fs-8 text-dark d-block text-truncate max-w-sm" [title]="item.testCondition">
+                {{ item.testCondition }}
+              </span>
+              <span *ngIf="item.testNote" class="fs-8 text-muted d-block text-truncate max-w-sm" [title]="item.testNote">
+                <i class="bi bi-info-circle me-1"></i>{{ item.testNote }}
+              </span>
+              <span *ngIf="!item.testCondition && !item.testNote" class="text-muted fs-8">-</span>
+            </td>
+
+            <!-- Actions -->
+            <td class="text-center">
+              <div class="d-flex align-items-center justify-content-center gap-1">
+                <!-- If Draft: Edit & Delete -->
+                <ng-container *ngIf="!item.isLocked && context?.isEditable">
+                  <button type="button" class="btn-lims-icon btn-lims-edit" (click)="openEditRequirement(item)" title="Edit Requirement">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button type="button" class="btn-lims-icon btn-lims-remove" (click)="deleteRequirement(item)" title="Delete Requirement">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </ng-container>
+
+                <!-- If Locked: View -->
+                <ng-container *ngIf="item.isLocked || !context?.isEditable">
+                  <button type="button" class="btn-lims-icon btn-outline-secondary" (click)="openViewRequirement(item)" title="View Requirement Details">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </ng-container>
+              </div>
+            </td>
+
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="filteredRequirements.length === 0">
+            <td colspan="9" class="text-center py-4 bg-light">
+              <div class="empty-state-box d-flex flex-column align-items-center justify-content-center">
+                <i class="bi bi-clipboard-x text-muted fs-2 mb-1"></i>
+                <h6 class="fw-bold text-dark fs-7 mb-1">No Requirements Found</h6>
+                <p class="text-muted fs-8 mb-2">
+                  {{ context?.isEditable ? 'Add requirement lines to this draft version or copy them from another version.' : 'No requirement lines configured for this version and grade.' }}
+                </p>
+                <div *ngIf="context?.isEditable" class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn-lims btn-lims-add" (click)="openAddRequirement()">
+                    <i class="bi bi-plus-circle me-1"></i> Add First Requirement
+                  </button>
+                  <button type="button" class="btn-lims btn-lims-copy" (click)="openCopyModal()">
+                    <i class="bi bi-copy me-1"></i> Copy from Another Version
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Unselected Placeholder State -->
+  <div *ngIf="!selectedSpec || !selectedVersionId || !selectedGradeId" class="card border shadow-sm p-5 text-center bg-light">
+    <div class="d-flex flex-column align-items-center justify-content-center">
+      <i class="bi bi-arrow-up-circle text-danger fs-1 mb-2"></i>
+      <h6 class="fw-bold text-dark fs-6 mb-1">Select Specification, Version & Applicability / Grade</h6>
+      <p class="text-muted fs-7 mb-0 max-w-md">
+        Please choose a Specification Master, followed by its Version Edition and Applicability / Grade from the top selector bar to configure or review test requirements.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Requirement Modal (7 Tabs) -->
+<app-requirement-modal
+  [visible]="showRequirementModal"
+  [isViewMode]="modalIsViewMode"
+  [requirementId]="modalRequirementId"
+  [versionId]="selectedVersionId || 0"
+  [gradeId]="selectedGradeId || 0"
+  [versionName]="context?.versionNumber || ''"
+  [gradeName]="context?.gradeName || ''"
+  [isLocked]="!context?.isEditable"
+  (close)="onModalClosed($event)">
+</app-requirement-modal>
+
+<!-- Copy Version Modal -->
+<div class="modal-backdrop-custom" *ngIf="showCopyModal">
+  <div class="modal-dialog-custom modal-sm-custom">
+    <div class="modal-content-custom">
+      <div class="modal-header-custom d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+        <span class="fw-bold fs-6 d-flex align-items-center">
+          <i class="bi bi-copy text-danger me-2"></i> Copy Requirements from Version
+        </span>
+        <button type="button" class="btn-close-custom" (click)="showCopyModal = false">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="p-3">
+        <p class="fs-7 text-dark mb-2">
+          Deep-copy all requirement lines, conditions, and test method mappings from an existing version into current <strong>Draft ({{ context?.versionNumber }})</strong>.
+        </p>
+
+        <div class="mb-3">
+          <label class="form-label fs-7 fw-semibold mb-1">Source Specification Version <span class="text-danger">*</span></label>
+          <select class="form-select form-select-sm fs-7" [(ngModel)]="copySourceVersionId">
+            <option [ngValue]="null" disabled>-- Select Source Version --</option>
+            <ng-container *ngFor="let v of versions">
+              <option *ngIf="v.id !== selectedVersionId" [value]="v.id">
+                {{ v.version }} {{ v.year ? '(' + v.year + ')' : '' }} [{{ v.status === 0 ? 'Draft' : (v.status === 1 ? 'Active' : 'Superseded') }}]
+              </option>
+            </ng-container>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fs-7 fw-semibold mb-1">Applicability Scope</label>
+          <div class="form-check fs-7">
+            <input class="form-check-input" type="radio" name="copyScope" id="scopeCurrent" value="current" [(ngModel)]="copyGradeOption">
+            <label class="form-check-label" for="scopeCurrent">
+              Only for current Grade: <strong>{{ context?.gradeName }}</strong>
+            </label>
+          </div>
+          <div class="form-check fs-7">
+            <input class="form-check-input" type="radio" name="copyScope" id="scopeAll" value="all" [(ngModel)]="copyGradeOption">
+            <label class="form-check-label" for="scopeAll">
+              For ALL Grades under this Specification
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer-custom d-flex align-items-center justify-content-end gap-2 px-3 py-2 border-top bg-light">
+        <button type="button" class="btn-lims btn-lims-cancel" (click)="showCopyModal = false" [disabled]="isCloning">
+          <i class="bi bi-x-circle me-1"></i> Cancel
+        </button>
+        <button type="button" class="btn-lims btn-lims-save" (click)="submitCopyVersion()" [disabled]="isCloning || !copySourceVersionId">
+          <i class="bi bi-copy me-1"></i> {{ isCloning ? 'Cloning...' : 'Clone Requirements' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Activate Version Confirmation Modal -->
+<div class="modal-backdrop-custom" *ngIf="showActivateModal">
+  <div class="modal-dialog-custom modal-sm-custom">
+    <div class="modal-content-custom">
+      <div class="modal-header-custom d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+        <span class="fw-bold fs-6 text-danger d-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Activate Specification Version
+        </span>
+        <button type="button" class="btn-close-custom" (click)="showActivateModal = false">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="p-3">
+        <div class="alert alert-warning py-2 px-3 fs-8 mb-2">
+          <strong>Notice on Version Immutability:</strong>
+          Activating Version <strong>{{ context?.versionNumber }}</strong> will:
+          <ul class="mb-0 ps-3 mt-1">
+            <li>Make this version the <strong>Active / Default</strong> edition for testing.</li>
+            <li>Transactionally <strong>Supersede</strong> the previously active version.</li>
+            <li>Permanently lock all requirements in Version <strong>{{ context?.versionNumber }}</strong> into <strong>Read-Only</strong> status.</li>
+          </ul>
+        </div>
+        <p class="fs-7 text-dark mb-0">Are you sure you want to activate Version <strong>{{ context?.versionNumber }}</strong>?</p>
+      </div>
+      <div class="modal-footer-custom d-flex align-items-center justify-content-end gap-2 px-3 py-2 border-top bg-light">
+        <button type="button" class="btn-lims btn-lims-cancel" (click)="showActivateModal = false" [disabled]="isActivating">
+          <i class="bi bi-x-circle me-1"></i> Cancel
+        </button>
+        <button type="button" class="btn-lims btn-lims-save" (click)="confirmActivateVersion()" [disabled]="isActivating">
+          <i class="bi bi-check-circle me-1"></i> {{ isActivating ? 'Activating...' : 'Yes, Activate Version' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

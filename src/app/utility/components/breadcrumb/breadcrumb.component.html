@@ -1,0 +1,31 @@
+<nav aria-label="Breadcrumb" class="lims-breadcrumb-wrapper" *ngIf="items().length > 0">
+  <ol class="breadcrumb lims-breadcrumb mb-0 py-0">
+    <li
+      *ngFor="let item of items(); let isLast = last; let i = index"
+      class="breadcrumb-item d-inline-flex align-items-center"
+      [class.active]="isLast"
+      [attr.aria-current]="isLast ? 'page' : null">
+
+      <!-- Clickable link for navigable parent nodes -->
+      <a
+        *ngIf="item.isClickable && !isLast; else nonLinkNode"
+        [routerLink]="item.url"
+        class="breadcrumb-link d-inline-flex align-items-center"
+        [title]="'Navigate to ' + item.label">
+        <i *ngIf="i === 0" class="bi bi-house-door me-1"></i>
+        <span>{{ item.label }}</span>
+      </a>
+
+      <!-- Plain text for non-navigable groupings or active page -->
+      <ng-template #nonLinkNode>
+        <span
+          class="d-inline-flex align-items-center"
+          [class.breadcrumb-active]="isLast"
+          [class.breadcrumb-group]="!isLast">
+          <i *ngIf="i === 0" class="bi bi-house-door me-1"></i>
+          <span>{{ item.label }}</span>
+        </span>
+      </ng-template>
+    </li>
+  </ol>
+</nav>

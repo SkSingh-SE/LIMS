@@ -1,100 +1,252 @@
-<div class="container-fluid d-flex flex-column align-items-center">
-  <div class="card basic-data-table w-100">
-    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-center text-md fw-medium ms-3">Product Master List</label>
-      <a (click)="navigateToCreate()" class="btn btn-outline-light me-3 cursor-pointer">
-        <i class="bi bi-plus-lg me-1.5"></i> Add Product Master
-      </a>
-    </div>
+<div class="container-fluid p-2">
+  <!-- Breadcrumb -->
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
 
-    <div class="card-body">
-      <!-- Search -->
-      <div class="d-flex justify-content-end mb-2">
-        <div class="w-25 input-group custom-search">
-          <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm" (input)="onSearch()" (keydown.enter)="onSearch()" />
-          <div class="input-group-text pe-auto cursor-pointer" (click)="onSearch()">
-            <i class="bi bi-search"></i>
-          </div>
+  <!-- Main Card -->
+  <div class="card shadow-sm border-0">
+    <!-- Header -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-box-seam text-danger fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Product / Material Master</h6>
+          <small class="text-muted text-xs">Manage product definitions, nominal sizes, versions, and applicability</small>
         </div>
       </div>
+      <div>
+        <a (click)="navigateToCreate()" class="btn-lims btn-lims-save text-decoration-none cursor-pointer">
+          <i class="bi bi-plus-circle me-1"></i> Add Product / Material
+        </a>
+      </div>
+    </div>
 
-      <!-- Table -->
-      <div *ngIf="items.length > 0" class="table-responsive">
-        <table class="table bordered-table align-middle w-100">
-          <thead class="table-light">
-            <tr class="text-center align-middle">
-              <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-              <th style="width: 50px;">#</th>
-              <th (click)="applySorting('productName')" class="cursor-pointer">
+    <!-- Filter Toolbar -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <!-- Search Input -->
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Filter product name..."
+              [(ngModel)]="filterProductName"
+              (keydown.enter)="onSearch()"
+            />
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Filter grade / applicability..."
+            [(ngModel)]="filterApplicability"
+            (keydown.enter)="onSearch()"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Filter governing specification..."
+            [(ngModel)]="filterSpecification"
+            (keydown.enter)="onSearch()"
+          />
+        </div>
+
+        <div class="col-md-1">
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="onSearch()">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-filter me-1"></i> Apply
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()" title="Reset Filters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Body -->
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th class="cursor-pointer text-center col-sn" (click)="applySorting('id')">
+                #
+                <i class="bi" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'id' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'id' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="applySorting('productName')">
                 <div class="d-flex align-items-center justify-content-between">
-                  <span>Product Name</span>
-                  <span class="d-flex flex-column ms-1">
-                    <i class="bi bi-caret-up sorting-icon-up" [ngClass]="{'text-danger': sortByColumn === 'productName' && sortOrder === 'asc'}"></i>
-                    <i class="bi bi-caret-down sorting-icon-down" [ngClass]="{'text-danger': sortByColumn === 'productName' && sortOrder === 'desc'}"></i>
-                  </span>
+                  <span>Product / Material</span>
+                  <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'productname' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'productname' && sortOrder === 'desc'}"></i>
                 </div>
               </th>
-              <th>Display Title</th>
-              <th>Size</th>
-              <th>Grade Prefix</th>
-              <th>Active Version</th>
-              <th>Linked Specifications</th>
+              <th class="th-size">Nominal Size</th>
+              <th class="text-center th-ver">Active Ver</th>
+              <th class="text-center th-vers">Versions</th>
+              <th>Applicability (Grades)</th>
+              <th class="th-specs">Governing Specifications</th>
+              <th class="text-center th-status cursor-pointer" (click)="applySorting('isActive')">
+                <div class="d-flex align-items-center justify-content-center">
+                  <span>Status</span>
+                  <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn.toLowerCase() === 'isactive' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn.toLowerCase() === 'isactive' && sortOrder === 'desc'}"></i>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of items; let i = index" class="text-sm">
-              <td class="text-center">
-                <div class="d-flex justify-content-center gap-3">
-                  <a (click)="navigateToDetails(item.id)" class="icon-link cursor-pointer" title="View Details">
-                    <img src="/icons/view.svg" alt="View" class="icon-svg" />
-                  </a>
-                  <a (click)="navigateToEdit(item.id)" class="icon-link cursor-pointer" title="Edit">
-                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
-                  </a>
-                  <a (click)="deleteItem(item.id)" class="icon-link cursor-pointer" title="Delete">
-                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
-                  </a>
+            <tr *ngFor="let item of items; let i = index">
+              <!-- SN -->
+              <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+
+              <!-- Actions -->
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center gap-1">
+                  <!-- View -->
+                  <button type="button" class="btn-tbl-action btn-tbl-view" (click)="navigateToDetails(item.id)" title="View Details">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <!-- Edit -->
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" (click)="navigateToEdit(item.id)" title="Edit Product / Material">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <!-- Toggle Status -->
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Active — Click to Deactivate' : 'Inactive — Click to Activate'"
+                    (click)="toggleStatus(item)"
+                  >
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                  <!-- Delete -->
+                  <button type="button" class="btn-tbl-action btn-tbl-delete" (click)="deleteItem(item.id)" title="Delete Product / Material">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
                 </div>
               </td>
-              <td class="text-center">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td class="fw-semibold">
-                <a (click)="navigateToDetails(item.id)" class="text-primary text-decoration-none cursor-pointer" title="View details">
-                  {{ item.productName }}
-                </a>
-              </td>
-              <td><span class="badge bg-light text-dark border">{{ item.displayTitle || '-' }}</span></td>
+
+              <!-- Product Name -->
               <td>
-                <span *ngIf="item.isSizeApplicable; else noSize" class="badge bg-info text-dark">
-                  {{ item.productSizeName || 'Default' }}
-                </span>
-                <ng-template #noSize>
-                  <span class="badge bg-secondary">No Size</span>
-                </ng-template>
+                <div class="d-flex align-items-center gap-1.5">
+                  <span *ngIf="item.gradePrefix" class="badge bg-light text-dark border font-monospace">{{ item.gradePrefix }}</span>
+                  <a (click)="navigateToDetails(item.id)" class="text-dark fw-semibold text-decoration-none cursor-pointer hover-primary" title="View details">
+                    {{ item.productName }}
+                  </a>
+                </div>
+                <div *ngIf="item.displayTitle" class="text-muted text-xs text-truncate max-w-300">
+                  {{ item.displayTitle }}
+                </div>
               </td>
-              <td>{{ item.gradePrefix || '-' }}</td>
-              <td><span class="badge bg-primary">V{{ item.activeVersionNo }}</span></td>
+
+              <!-- Nominal Size -->
               <td>
-                <span class="small text-truncate d-inline-block" style="max-width: 250px;" [title]="item.linkedSpecsSummary">
-                  {{ item.linkedSpecsSummary || 'None' }}
+                <span *ngIf="item.isSizeApplicable && item.productSizeName" class="badge bg-light text-dark border">
+                  <i class="bi bi-rulers me-1 text-secondary"></i>{{ item.productSizeName }}
                 </span>
+                <span *ngIf="!item.isSizeApplicable" class="text-muted text-xs">N/A (No Size)</span>
+                <span *ngIf="item.isSizeApplicable && !item.productSizeName" class="text-muted text-xs">-</span>
+              </td>
+
+              <!-- Active Ver -->
+              <td class="text-center">
+                <span class="badge bg-primary version-badge">V{{ item.activeVersionNo }}</span>
+              </td>
+
+              <!-- Versions Count -->
+              <td class="text-center">
+                <span class="badge bg-light text-dark border" title="Total Product Versions">
+                  <i class="bi bi-layers me-1 text-secondary"></i>{{ item.versionCount || 1 }}
+                </span>
+              </td>
+
+              <!-- Applicability -->
+              <td>
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                  <span class="badge bg-secondary-subtle text-secondary border text-xs" *ngIf="item.applicabilityCount">
+                    {{ item.applicabilityCount }} Linked
+                  </span>
+                  <ng-container *ngIf="item.applicabilities && item.applicabilities.length > 0; else noApps">
+                    <span *ngFor="let app of item.applicabilities.slice(0, 3)" class="badge bg-light text-dark border applicability-badge">
+                      {{ app }}
+                    </span>
+                    <span *ngIf="item.applicabilities.length > 3" class="badge bg-white text-muted border text-xs" [title]="item.applicabilitySummary">
+                      +{{ item.applicabilities.length - 3 }} more
+                    </span>
+                  </ng-container>
+                  <ng-template #noApps>
+                    <span class="text-muted text-xs">{{ item.applicabilitySummary || '-' }}</span>
+                  </ng-template>
+                </div>
+              </td>
+
+              <!-- Governing Specs -->
+              <td>
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                  <ng-container *ngIf="item.governingSpecifications && item.governingSpecifications.length > 0; else noSpecs">
+                    <span *ngFor="let spec of item.governingSpecifications.slice(0, 2)" class="badge bg-info-subtle text-info-emphasis border spec-badge">
+                      {{ spec }}
+                    </span>
+                    <span *ngIf="item.governingSpecifications.length > 2" class="badge bg-white text-muted border text-xs" [title]="item.governingSpecificationsSummary">
+                      +{{ item.governingSpecifications.length - 2 }} more
+                    </span>
+                  </ng-container>
+                  <ng-template #noSpecs>
+                    <span class="text-muted text-xs">{{ item.governingSpecificationsSummary || '-' }}</span>
+                  </ng-template>
+                </div>
+              </td>
+
+              <!-- Status -->
+              <td class="text-center">
+                <span
+                  class="badge px-2 py-1"
+                  [ngClass]="item.isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'"
+                >
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+
+            <!-- Empty State -->
+            <tr *ngIf="items.length === 0">
+              <td colspan="9" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary"></i>
+                <div>No Product / Material records found.</div>
+                <small class="text-xs">Try adjusting your search criteria or click "Add Product / Material" to create one.</small>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+    </div>
 
-      <div *ngIf="items.length === 0" class="w-100 h-100 text-center border rounded-3 mb-2">
-        <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-          <i class="bi bi-inbox fs-3 d-block mb-1"></i>
-          No Product Masters found.
-        </div>
-      </div>
-
-      <!-- Pagination -->
-      <div class="mt-3">
-        <app-pagination [currentPage]="pageNumber" [pageSize]="pageSize" [totalItems]="totalItems" (pageChange)="onPageChange($event)">
-        </app-pagination>
-      </div>
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-white py-2 px-3 border-top" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      ></app-pagination>
     </div>
   </div>
 </div>

@@ -1,0 +1,675 @@
+<div class="universal-plan-container">
+  <!-- Top Progress / Status Flow Banner -->
+  <div class="workflow-flow-banner d-flex align-items-center justify-content-between px-3 py-1 bg-white border-bottom">
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-danger px-2 py-1">SCREEN 14</span>
+      <span class="fw-semibold text-dark text-sm">Universal Test Planning Layer</span>
+      <span class="text-muted text-xs">| ISO 17025 / NABL Compliant Configuration</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="workflow-step completed"><i class="bi bi-check-circle me-1"></i>Sample Inward</span>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
+      <span class="workflow-step active"><i class="bi bi-diagram-3 me-1"></i>Universal Plan</span>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
+      <span class="workflow-step"><i class="bi bi-scissors me-1"></i>Prep / Cutting</span>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
+      <span class="workflow-step"><i class="bi bi-play-circle me-1"></i>Execution</span>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
+      <span class="workflow-step"><i class="bi bi-file-earmark-check me-1"></i>Report</span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center py-5">
+    <div class="spinner-border text-danger" role="status">
+      <span class="visually-hidden">Loading workspace...</span>
+    </div>
+    <span class="ms-2 fw-semibold text-secondary">Loading Universal Planning Workspace...</span>
+  </div>
+
+  <div *ngIf="!isLoading && workspace" class="workspace-body p-3">
+
+    <!-- Screen 14A: Multi-Sample Visual Selector Bar -->
+    <div *ngIf="workspace.availableSamples && workspace.availableSamples.length > 1" class="card mb-2 shadow-sm border bg-light">
+      <div class="card-body p-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="text-xs fw-semibold text-muted d-flex align-items-center">
+            <i class="bi bi-collection me-1 text-danger"></i> Case Samples ({{ workspace.availableSamples.length }}):
+          </span>
+          <button *ngFor="let s of workspace.availableSamples"
+                  type="button"
+                  class="sample-pill-btn"
+                  [class.active]="s.isSelected || s.sampleID === sampleId"
+                  (click)="switchSample(s.sampleID)">
+            <i class="bi bi-box-seam"></i>
+            <span class="sample-pill-title">{{ s.sampleNo }}</span>
+            <span class="sample-test-badge">
+              {{ s.plannedTestCount }} Tests
+            </span>
+            <span *ngIf="s.planStatus" class="badge rounded-pill" [ngClass]="{
+              'bg-success text-white': s.planStatus === 'Approved',
+              'bg-info text-dark': s.planStatus === 'Submitted',
+              'bg-warning text-dark': s.planStatus === 'Draft'
+            }">{{ s.planStatus }}</span>
+          </button>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button *ngIf="copyableTargetSamples.length > 0 && plannedTests.length > 0"
+                  type="button"
+                  class="btn btn-sm btn-lims btn-lims-copy py-1 px-2"
+                  (click)="openCopyPlanModal()"
+                  title="Copy this sample's planned tests to other samples">
+            <i class="bi bi-copy me-1"></i> Copy Plan...
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 14B: Plan Workspace Header -->
+    <div class="card workspace-header-card mb-2 shadow-sm border">
+      <div class="card-body p-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-sm btn-lims btn-lims-cancel py-0 px-2" (click)="goBack()" title="Back to Planning Queue">
+            <i class="bi bi-arrow-left me-1"></i> Queue
+          </button>
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-secondary text-white font-monospace text-xs">CASE #{{ workspace.caseNo }}</span>
+              <span class="badge bg-dark text-white font-monospace text-xs">SAMPLE #{{ workspace.sampleNo }}</span>
+              <span class="badge" [ngClass]="{
+                'bg-success': workspace.planStatus === 'Approved',
+                'bg-info text-dark': workspace.planStatus === 'Submitted',
+                'bg-warning text-dark': workspace.planStatus === 'Draft'
+              }">{{ workspace.planStatus | uppercase }}</span>
+              <span class="badge bg-light text-secondary border text-xs">Plan v{{ workspace.planVersion }}</span>
+            </div>
+            <div class="text-sm fw-semibold text-dark mt-1">
+              <i class="bi bi-building me-1 text-danger"></i>{{ workspace.customerName }}
+              <span class="text-muted fw-normal ms-2 text-xs">Inward Date: {{ workspace.inwardDate | date:'dd MMM yyyy, HH:mm' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <button *ngIf="copyableTargetSamples.length > 0 && plannedTests.length > 0"
+                  type="button"
+                  class="btn btn-sm btn-lims btn-lims-copy py-1 px-2"
+                  (click)="openCopyPlanModal()"
+                  title="Copy plan to other samples">
+            <i class="bi bi-copy me-1"></i> Copy Plan
+          </button>
+          <button class="btn btn-sm btn-lims btn-lims-edit py-1 px-2" (click)="validatePlan()">
+            <i class="bi bi-shield-check me-1"></i> Validate Plan (11 Gates)
+          </button>
+          <button class="btn btn-sm btn-lims btn-lims-save py-1 px-2" [disabled]="isSaving || workspace.isPlanLocked" (click)="saveDraft()">
+            <i class="bi bi-save me-1"></i> {{ isSaving ? 'Saving...' : 'Save Draft' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Locked Plan Alert Banner -->
+    <div *ngIf="workspace.isPlanLocked" class="alert alert-warning py-1.5 px-3 mb-2 d-flex align-items-center justify-content-between text-xs border-warning">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-lock-fill text-warning fs-5"></i>
+        <div>
+          <strong class="text-dark">PLAN LOCKED:</strong> This sample plan is currently in <strong>{{ workspace.planStatus | uppercase }}</strong> status. Editing and test additions are disabled.
+        </div>
+      </div>
+      <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-eye me-1"></i>Read-Only View</span>
+    </div>
+
+    <!-- Screen 14C & 14F: Sample & Specification / Branch Configuration -->
+    <div class="card config-card mb-2 shadow-sm border">
+      <div class="card-header bg-light py-1 px-2">
+        <span class="fw-semibold text-danger text-xs d-flex align-items-center">
+          <i class="bi bi-sliders me-1"></i> SAMPLE, SPECIFICATION & EXECUTION ROUTING
+        </span>
+      </div>
+      <div class="card-body p-2">
+        <div class="row g-2">
+          <!-- Product Master -->
+          <div class="col-md-3">
+            <div class="form-field-header">
+              <label class="form-label text-xs mb-0">Product Master</label>
+              <a class="btn-nav-link text-xs" (click)="openLinkedMaster('/product-master')">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+              </a>
+            </div>
+            <input type="text" class="form-control form-control-sm text-xs bg-light" [value]="workspace.productMasterName || 'Not Linked'" readonly>
+          </div>
+
+          <!-- Product Grade -->
+          <div class="col-md-3">
+            <div class="form-field-header">
+              <label class="form-label text-xs mb-0">Specification Grade</label>
+            </div>
+            <input type="text" class="form-control form-control-sm text-xs bg-light" [value]="workspace.gradeName || 'Standard'" readonly>
+          </div>
+
+          <!-- Specification Header & Version -->
+          <div class="col-md-3">
+            <div class="form-field-header">
+              <label class="form-label text-xs mb-0">Specification Standard</label>
+              <a class="btn-nav-link text-xs" (click)="openLinkedMaster('/specification-master')">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Specs
+              </a>
+            </div>
+            <input type="text" class="form-control form-control-sm text-xs bg-light" [value]="workspace.specificationName || 'Default Standard'" readonly>
+          </div>
+
+          <!-- Specification Version Selector (Active + Explicit Superseded) -->
+          <div class="col-md-3">
+            <div class="form-field-header">
+              <label class="form-label text-xs mb-0 fw-semibold text-danger">Spec Version (Screen 11)</label>
+              <span *ngIf="workspace.isSupersededSpecVersion" class="badge bg-warning text-dark text-xxs">Superseded</span>
+              <span *ngIf="!workspace.isSupersededSpecVersion" class="badge bg-success text-white text-xxs">Active</span>
+            </div>
+            <select class="form-select form-select-sm text-xs" [ngModel]="selectedSpecVersionId" (ngModelChange)="onSpecVersionChange($event)">
+              <option *ngFor="let ver of workspace.availableSpecVersions" [value]="ver.id">
+                v{{ ver.version }} ({{ ver.year || 'Standard' }}) - {{ ver.status }} {{ ver.isDefault ? '[DEFAULT]' : '' }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Superseded Specification Version Warning Banner -->
+        <div *ngIf="workspace.isSupersededSpecVersion" class="alert alert-warning py-1 px-2 mt-2 mb-0 d-flex align-items-center gap-2 text-xs">
+          <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
+          <div>
+            <strong>Explicit Superseded Specification Edition Selected:</strong>
+            Requirements, parameter acceptance limits, and test conditions will be strictly pinned to historical edition <code>v{{ workspace.specificationVersionName }}</code>.
+          </div>
+        </div>
+
+        <!-- Target Branch Selector (Dynamic Department Routing) -->
+        <div class="row g-2 mt-1 pt-1 border-top">
+          <div class="col-md-4">
+            <div class="form-field-header">
+              <label class="form-label text-xs mb-0 fw-semibold text-danger">Execution Branch (Screen 14F)</label>
+            </div>
+            <select class="form-select form-select-sm text-xs" [ngModel]="selectedBranchId" (ngModelChange)="onBranchChange($event)">
+              <option *ngFor="let b of workspace.availableBranches" [value]="b.id">
+                {{ b.name }} ({{ b.code }})
+              </option>
+            </select>
+          </div>
+          <div class="col-md-8 d-flex align-items-center">
+            <div class="text-xs text-muted mt-3">
+              <i class="bi bi-info-circle me-1 text-primary"></i>
+              Execution departments are resolved dynamically per test discipline: <code>BranchID ({{ workspace.branchName }}) + DisciplineID &rarr; DepartmentMaster</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Grid: Test Selection (14D) & Planned Summary (14H) -->
+    <div class="row g-2">
+      <!-- Screen 14D: Universal Test Selection Panel -->
+      <div class="col-lg-5">
+        <div class="card h-100 shadow-sm border">
+          <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
+            <span class="fw-semibold text-danger text-xs d-flex align-items-center">
+              <i class="bi bi-card-checklist me-1"></i> AVAILABLE UNIVERSAL TESTS (SCREEN 13)
+            </span>
+            <span class="badge bg-secondary text-white text-xxs">{{ filteredAvailableTests.length }} Available</span>
+          </div>
+          <div class="card-body p-2">
+            <!-- Search & Discipline Chips -->
+            <div class="mb-2">
+              <div class="input-group input-group-sm mb-1.5">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control form-control-sm text-xs" placeholder="Search test by name or code..." [(ngModel)]="searchTerm">
+                <button *ngIf="searchTerm" class="btn btn-outline-secondary btn-sm" (click)="searchTerm = ''">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+
+              <!-- Discipline Filter Chips -->
+              <div class="d-flex flex-wrap gap-1">
+                <button *ngFor="let disc of disciplines"
+                        class="btn btn-xs filter-chip"
+                        [ngClass]="{'active': selectedDiscipline === disc}"
+                        (click)="selectedDiscipline = disc">
+                  {{ disc }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Test Cards List -->
+            <div class="test-cards-scrollable">
+              <div *ngFor="let test of filteredAvailableTests" class="test-card p-2 mb-1.5 border rounded-2" [ngClass]="{'is-planned': isTestPlanned(test.id)}">
+                <div class="d-flex align-items-start justify-content-between gap-1">
+                  <div>
+                    <div class="d-flex align-items-center gap-1">
+                      <span class="badge bg-dark font-monospace text-xxs">{{ test.code }}</span>
+                      <span class="fw-semibold text-dark text-xs">{{ test.name }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 text-xxs text-muted mt-1">
+                      <span><i class="bi bi-tag me-1"></i>{{ test.disciplineName || 'General' }}</span>
+                      <span>|</span>
+                      <span><i class="bi bi-diagram-2 me-1"></i>{{ test.departmentName || 'Main Lab' }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                      <span class="badge bg-light text-secondary border text-xxs">
+                        <i class="bi bi-list-check me-1"></i>{{ test.parameterCount }} Params
+                      </span>
+                      <span class="badge bg-light text-secondary border text-xxs">
+                        <i class="bi bi-journal-code me-1"></i>{{ test.methodCount }} Methods
+                      </span>
+                      <span class="badge bg-light text-secondary border text-xxs">
+                        <i class="bi bi-sliders me-1"></i>{{ test.conditionCount }} Conds
+                      </span>
+                      <span class="badge text-xxs" [ngClass]="test.isReady ? 'bg-success text-white' : 'bg-warning text-dark'">
+                        {{ test.readinessMessage }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="d-flex flex-column gap-1 align-items-end">
+                    <button *ngIf="!isTestPlanned(test.id)"
+                            class="btn btn-xs btn-lims btn-lims-add px-2"
+                            [disabled]="workspace.isPlanLocked"
+                            (click)="addTestToPlan(test, false)"
+                            title="Add test to plan">
+                      <i class="bi bi-plus-circle me-1"></i> Add
+                    </button>
+                    <button *ngIf="isTestPlanned(test.id)"
+                            class="btn btn-xs btn-outline-secondary px-2"
+                            [disabled]="workspace.isPlanLocked"
+                            (click)="addTestToPlan(test, true)"
+                            title="Add legitimate retest / duplicate repeat test">
+                      <i class="bi bi-arrow-repeat me-1"></i> Retest
+                    </button>
+                    <button class="btn btn-xs btn-link text-primary p-0 text-xs" (click)="openPreview(test.id)" title="Inspect Effective Configuration">
+                      <i class="bi bi-eye me-1"></i> Preview
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="filteredAvailableTests.length === 0" class="text-center text-muted py-4 text-xs">
+                No matching universal test definitions found.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen 14H: Planned Universal Tests Table -->
+      <div class="col-lg-7">
+        <div class="card h-100 shadow-sm border">
+          <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
+            <span class="fw-semibold text-danger text-xs d-flex align-items-center">
+              <i class="bi bi-list-stars me-1"></i> PLANNED TESTS & EXECUTION ROUTING
+            </span>
+            <span class="badge bg-danger text-white text-xxs">{{ plannedTests.length }} Planned</span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm bordered-table align-middle w-100 mb-0">
+                <thead class="table-light text-xs">
+                  <tr>
+                    <th class="text-center" style="width: 30px;">#</th>
+                    <th>Test Definition</th>
+                    <th>Method & Version</th>
+                    <th>Routing (Dept / Branch)</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center" style="width: 70px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="text-xs">
+                  <tr *ngFor="let p of plannedTests; let i = index">
+                    <td class="text-center text-muted font-monospace">{{ i + 1 }}</td>
+                    <td>
+                      <div class="fw-semibold text-dark">{{ p.laboratoryTestName }}</div>
+                      <div class="d-flex align-items-center gap-1 text-xxs text-muted">
+                        <span class="font-monospace text-danger">{{ p.laboratoryTestCode }}</span>
+                        <span>&bull;</span>
+                        <span>{{ p.disciplineName || 'General' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="text-xs text-dark">{{ p.testMethodName || 'Standard Method' }}</div>
+                      <div class="d-flex align-items-center gap-1 text-xxs mt-0.5">
+                        <span class="badge bg-light text-secondary border">v{{ p.testMethodVersion || '1.0' }}</span>
+                        <span *ngIf="p.isSupersededMethodVersion" class="badge bg-warning text-dark">Superseded</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="text-xs fw-semibold text-dark">{{ p.departmentName || 'Resolved Lab Dept' }}</div>
+                      <div class="text-xxs text-muted">{{ p.branchName || workspace.branchName }}</div>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge text-xxs" [ngClass]="{
+                        'bg-warning text-dark': p.status === 'Pending',
+                        'bg-info text-dark': p.status === 'InProgress',
+                        'bg-success': p.status === 'Completed'
+                      }">{{ p.status }}</span>
+                    </td>
+                    <td class="text-center">
+                      <div class="d-flex justify-content-center gap-1">
+                        <button class="btn btn-xs btn-lims-icon" (click)="openPreview(p.laboratoryTestID)" title="Inspect Effective Configuration">
+                          <i class="bi bi-sliders text-primary"></i>
+                        </button>
+                        <button class="btn btn-xs btn-lims-icon" [disabled]="workspace.isPlanLocked" (click)="removePlannedTest(i)" title="Remove from Plan">
+                          <i class="bi bi-trash text-danger"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr *ngIf="plannedTests.length === 0">
+                    <td colspan="6" class="text-center text-muted py-5">
+                      <i class="bi bi-inbox fs-2 text-secondary opacity-50 d-block mb-1"></i>
+                      <div class="fw-semibold text-sm">No tests planned yet</div>
+                      <div class="text-xs text-muted">Select universal test definitions from the left panel to include in this plan.</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Screen 14I: Standard LIMS Sticky Action Bar -->
+  <div *ngIf="workspace" class="workspace-action-bar px-3 py-2 bg-white d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-lims btn-lims-cancel py-1 px-3" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i> Back to Queue
+      </button>
+      <span *ngIf="isDirty" class="text-xs text-warning d-flex align-items-center">
+        <i class="bi bi-exclamation-circle me-1"></i> You have unsaved changes
+      </span>
+      <span *ngIf="workspace.isPlanLocked" class="badge bg-warning text-dark px-2 py-1">
+        <i class="bi bi-lock-fill me-1"></i> Plan Locked ({{ workspace.planStatus }})
+      </span>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <button *ngIf="copyableTargetSamples.length > 0 && plannedTests.length > 0"
+              class="btn btn-sm btn-lims btn-lims-copy py-1 px-3"
+              (click)="openCopyPlanModal()"
+              title="Copy planned tests to other samples">
+        <i class="bi bi-copy me-1"></i> Copy Plan...
+      </button>
+      <button class="btn btn-sm btn-lims btn-lims-edit py-1 px-3" (click)="validatePlan()" [disabled]="isValidating || plannedTests.length === 0">
+        <i class="bi bi-shield-check me-1"></i> {{ isValidating ? 'Checking...' : 'Validate Plan' }}
+      </button>
+      <button class="btn btn-sm btn-lims btn-lims-save py-1 px-3" (click)="saveDraft()" [disabled]="isSaving || workspace.isPlanLocked">
+        <i class="bi bi-save me-1"></i> {{ isSaving ? 'Saving...' : 'Save Draft' }}
+      </button>
+      <button class="btn btn-sm btn-lims btn-lims-primary py-1 px-3" (click)="confirmAndCreateGroups()" [disabled]="isConfirming || plannedTests.length === 0 || workspace.isPlanLocked">
+        <i class="bi bi-check-circle me-1"></i> {{ isConfirming ? 'Creating Groups...' : 'Confirm & Create Test Groups' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Screen 14E: Effective Test Configuration Drawer -->
+  <div *ngIf="isPreviewDrawerOpen" class="drawer-backdrop" (click)="closePreviewDrawer()"></div>
+  <div class="effective-config-drawer" [ngClass]="{'open': isPreviewDrawerOpen}">
+    <div class="drawer-header p-2 bg-light border-bottom d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-sliders text-danger fs-6"></i>
+        <div>
+          <div class="fw-semibold text-dark text-xs">EFFECTIVE CONFIGURATION PREVIEW</div>
+          <div class="text-xxs text-muted">Authoritative resolution via IEffectiveConfigurationResolver</div>
+        </div>
+      </div>
+      <button type="button" class="btn-close btn-sm" (click)="closePreviewDrawer()"></button>
+    </div>
+
+    <!-- Drawer Content -->
+    <div class="drawer-body p-2" *ngIf="activePreviewLoading">
+      <div class="d-flex justify-content-center py-4">
+        <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
+        <span class="ms-2 text-xs text-muted">Resolving configuration...</span>
+      </div>
+    </div>
+
+    <div class="drawer-body p-2" *ngIf="!activePreviewLoading && activePreview">
+      <!-- Laboratory Test Header -->
+      <div class="alert alert-danger py-1.5 px-2 mb-2">
+        <div class="fw-bold text-xs">{{ activePreview.laboratoryTestName }}</div>
+        <div class="text-xxs font-monospace">{{ activePreview.laboratoryTestCode }} | {{ activePreview.disciplineName }}</div>
+      </div>
+
+      <!-- Test Method & Method Version Selection (Screen 07 Link) -->
+      <fieldset class="mb-2 p-1.5 border rounded-2">
+        <legend class="w-auto fw-semibold text-danger text-xs px-1 mb-0 d-flex align-items-center">
+          <i class="bi bi-journal-check me-1"></i> TEST METHOD & METHOD VERSION
+          <a class="btn-nav-link text-xs ms-2" (click)="openLinkedMaster('/test-specification')">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Screen 07
+          </a>
+        </legend>
+        <div class="row g-1 mt-0.5">
+          <div class="col-7">
+            <label class="form-label text-xxs mb-0">Method Name & Standard</label>
+            <input type="text" class="form-control form-control-sm text-xs bg-light" [value]="activePreview.testMethodName + ' (' + (activePreview.testMethodStandard || 'Standard') + ')'" readonly>
+          </div>
+          <div class="col-5">
+            <label class="form-label text-xxs mb-0 fw-semibold text-danger">Method Version (Screen 07)</label>
+            <select class="form-select form-select-sm text-xs" [ngModel]="selectedMethodVersionId" (ngModelChange)="onMethodVersionChange($event)">
+              <option *ngFor="let mv of activePreview.availableMethodVersions" [value]="mv.id">
+                v{{ mv.version }} - {{ mv.status }} {{ mv.isDefault ? '[DEFAULT]' : '' }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div *ngIf="activePreview.isSupersededMethodVersion" class="alert alert-warning py-1 px-2 mt-1 mb-0 text-xxs">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+          Superseded method edition selected for testing.
+        </div>
+      </fieldset>
+
+      <!-- Department Dynamic Routing Gate -->
+      <fieldset class="mb-2 p-1.5 border rounded-2">
+        <legend class="w-auto fw-semibold text-danger text-xs px-1 mb-0 d-flex align-items-center">
+          <i class="bi bi-diagram-2 me-1"></i> EXECUTION ROUTING
+        </legend>
+        <div class="text-xs text-dark mt-0.5">
+          Department: <strong class="text-danger">{{ activePreview.departmentName }}</strong>
+        </div>
+        <div class="text-xxs text-muted">{{ activePreview.departmentRoutingSource }}</div>
+      </fieldset>
+
+      <!-- Parameters & Specification Acceptance Matrix -->
+      <fieldset class="mb-2 p-1.5 border rounded-2">
+        <legend class="w-auto fw-semibold text-danger text-xs px-1 mb-0 d-flex align-items-center">
+          <i class="bi bi-list-check me-1"></i> PARAMETERS & SPEC REQUIREMENTS ({{ activePreview.parameters.length }})
+        </legend>
+        <div class="table-responsive mt-1">
+          <table class="table table-sm bordered-table align-middle w-100 mb-0 text-xxs">
+            <thead class="table-light">
+              <tr>
+                <th>Param</th>
+                <th>Unit</th>
+                <th>Spec Limit / Requirement</th>
+                <th class="text-center">Mandatory</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of activePreview.parameters">
+                <td>
+                  <div class="fw-semibold text-dark">{{ p.parameterName }}</div>
+                  <span class="font-monospace text-muted">{{ p.parameterCode }}</span>
+                  <span *ngIf="p.equation" class="badge bg-light text-primary border ms-1 font-monospace">{{ p.equation }}</span>
+                </td>
+                <td>{{ p.parameterUnit }}</td>
+                <td>
+                  <span *ngIf="p.hasRequirement" class="badge bg-light text-dark border font-monospace">{{ p.requirementText }}</span>
+                  <span *ngIf="!p.hasRequirement" class="badge bg-danger-subtle text-danger">No Spec Requirement</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="p.isMandatory ? 'bg-danger' : 'bg-secondary'">{{ p.isMandatory ? 'YES' : 'NO' }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+
+      <!-- Test Conditions Matrix -->
+      <fieldset class="mb-2 p-1.5 border rounded-2" *ngIf="activePreview.conditions.length > 0">
+        <legend class="w-auto fw-semibold text-danger text-xs px-1 mb-0 d-flex align-items-center">
+          <i class="bi bi-sliders me-1"></i> TEST CONDITIONS ({{ activePreview.conditions.length }})
+        </legend>
+        <div class="table-responsive mt-1">
+          <table class="table table-sm bordered-table align-middle w-100 mb-0 text-xxs">
+            <thead class="table-light">
+              <tr>
+                <th>Condition</th>
+                <th>Configured Value</th>
+                <th class="text-center">Mandatory</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of activePreview.conditions">
+                <td>
+                  <div class="fw-semibold text-dark">{{ c.conditionName }}</div>
+                  <span class="font-monospace text-muted">{{ c.conditionCode }}</span>
+                </td>
+                <td>
+                  <span *ngIf="c.hasConfiguration" class="badge bg-light text-dark border font-monospace">{{ c.configuredValue }}</span>
+                  <span *ngIf="!c.hasConfiguration" class="badge bg-danger-subtle text-danger">Unconfigured</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="c.isMandatory ? 'bg-danger' : 'bg-secondary'">{{ c.isMandatory ? 'YES' : 'NO' }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- Screen 14G: 11-Gate Validation Modal -->
+  <div *ngIf="isValidationModalOpen" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-lg border">
+        <div class="modal-header py-2 px-3 bg-light border-bottom">
+          <h6 class="modal-title fw-semibold text-danger d-flex align-items-center text-sm">
+            <i class="bi bi-shield-check me-2"></i> UNIVERSAL TEST PLANNING 11-GATE VERIFICATION
+          </h6>
+          <button type="button" class="btn-close btn-sm" (click)="closeValidationModal()"></button>
+        </div>
+        <div class="modal-body p-3" *ngIf="validationSummary">
+          <!-- Overall Status -->
+          <div class="alert py-2 px-3 mb-3 text-xs" [ngClass]="validationSummary.allPassed ? 'alert-success' : 'alert-danger'">
+            <div class="d-flex align-items-center gap-2 fw-semibold text-sm">
+              <i class="bi" [ngClass]="validationSummary.allPassed ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'"></i>
+              {{ validationSummary.allPassed ? 'ALL 11 VALIDATION GATES PASSED' : 'PLANNING GATES BLOCKED' }}
+            </div>
+            <div class="text-xs mt-1">
+              {{ validationSummary.allPassed ? 'This plan meets all ISO 17025 / NABL requirements and can be confirmed for execution.' : 'Blocking errors must be resolved before test groups can be created.' }}
+            </div>
+          </div>
+
+          <!-- Blocking Errors -->
+          <div *ngIf="validationSummary.blockingErrors.length > 0" class="mb-3">
+            <div class="fw-semibold text-danger text-xs mb-1">
+              <i class="bi bi-x-octagon-fill me-1"></i> BLOCKING ERRORS ({{ validationSummary.blockingErrors.length }})
+            </div>
+            <ul class="list-group list-group-flush border rounded-2">
+              <li *ngFor="let err of validationSummary.blockingErrors" class="list-group-item list-group-item-danger py-1 px-2 text-xs">
+                <i class="bi bi-dot me-1"></i> {{ err }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Warnings -->
+          <div *ngIf="validationSummary.warnings.length > 0" class="mb-2">
+            <div class="fw-semibold text-warning text-xs mb-1">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i> WARNINGS ({{ validationSummary.warnings.length }})
+            </div>
+            <ul class="list-group list-group-flush border rounded-2">
+              <li *ngFor="let w of validationSummary.warnings" class="list-group-item list-group-item-warning py-1 px-2 text-xs">
+                <i class="bi bi-dot me-1"></i> {{ w }}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer py-1.5 px-3 bg-light border-top">
+          <button type="button" class="btn btn-sm btn-lims btn-lims-cancel py-1 px-3" (click)="closeValidationModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 14J: Copy Plan to Other Samples Modal (P1) -->
+  <div *ngIf="isCopyModalOpen" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+      <div class="modal-content shadow-lg border">
+        <div class="modal-header py-2 px-3 bg-light border-bottom">
+          <h6 class="modal-title fw-semibold text-danger d-flex align-items-center text-sm mb-0">
+            <i class="bi bi-copy me-2"></i> COPY PLANNED TESTS TO OTHER SAMPLES
+          </h6>
+          <button type="button" class="btn-close btn-sm" (click)="closeCopyPlanModal()"></button>
+        </div>
+        <div class="modal-body p-3">
+          <div class="alert alert-info py-2 px-3 mb-2 text-xs">
+            <i class="bi bi-info-circle me-1"></i>
+            Copying <strong>{{ plannedTests.length }}</strong> planned test(s) from <strong>{{ workspace?.sampleNo }}</strong>. Test intent will be copied and configurations will be independently re-resolved per sample specification.
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <label class="form-label text-xs fw-semibold mb-0">Target Samples</label>
+            <button type="button" class="btn btn-xs btn-link text-xs p-0 text-danger" (click)="selectAllTargets()">
+              {{ selectedTargetSampleIds.length === copyableTargetSamples.length ? 'Deselect All' : 'Select All Eligible' }}
+            </button>
+          </div>
+
+          <div class="list-group mb-3 border rounded">
+            <label *ngFor="let target of copyableTargetSamples"
+                   class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 px-2.5 text-xs cursor-pointer"
+                   [ngClass]="{'bg-light text-muted': target.planStatus === 'Submitted' || target.planStatus === 'Approved'}">
+              <div class="d-flex align-items-center gap-2">
+                <input class="form-check-input mt-0"
+                       type="checkbox"
+                       [checked]="selectedTargetSampleIds.includes(target.sampleID)"
+                       [disabled]="target.planStatus === 'Submitted' || target.planStatus === 'Approved'"
+                       (change)="toggleTargetSample(target.sampleID)">
+                <div>
+                  <span class="fw-semibold text-dark">{{ target.sampleNo }}</span>
+                  <span *ngIf="target.gradeName" class="text-muted ms-1">({{ target.gradeName }})</span>
+                  <div class="text-xxs text-muted">{{ target.sampleDetails || 'No description' }}</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-1.5">
+                <span class="badge bg-secondary text-white">{{ target.plannedTestCount }} Tests</span>
+                <span class="badge" [ngClass]="{
+                  'bg-success': target.planStatus === 'Approved',
+                  'bg-info text-dark': target.planStatus === 'Submitted',
+                  'bg-warning text-dark': target.planStatus === 'Draft'
+                }">{{ target.planStatus }}</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Execution Branch Override (Optional) -->
+          <div class="mb-2">
+            <label class="form-label text-xs fw-semibold mb-1">Execution Branch</label>
+            <select class="form-select form-select-sm text-xs" [(ngModel)]="copyBranchId">
+              <option *ngFor="let b of workspace?.availableBranches" [value]="b.id">{{ b.name }} ({{ b.code }})</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-between">
+          <button type="button" class="btn btn-sm btn-lims btn-lims-cancel py-1 px-3" (click)="closeCopyPlanModal()">Cancel</button>
+          <button type="button" class="btn btn-sm btn-lims btn-lims-copy py-1 px-3"
+                  [disabled]="isCopying || selectedTargetSampleIds.length === 0"
+                  (click)="executeCopyPlan()">
+            <i class="bi bi-copy me-1"></i> {{ isCopying ? 'Copying...' : 'Copy to ' + selectedTargetSampleIds.length + ' Sample(s)' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,125 @@
+<div class="modal-backdrop fade show" *ngIf="visible"></div>
+
+<div class="modal fade show d-block" tabindex="-1" role="dialog" *ngIf="visible">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header bg-light py-2 px-3 border-bottom">
+        <h6 class="modal-title fw-semibold text-dark mb-0 d-flex align-items-center">
+          <i class="bi bi-building-fill text-danger me-2"></i>
+          {{ isEditMode ? 'Edit Organization' : 'Create Organization' }}
+        </h6>
+        <button type="button" class="btn-close btn-sm" aria-label="Close" (click)="onClose()"></button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="modal-body p-3">
+          <div class="row g-2">
+            <!-- Organization Name -->
+            <div class="col-md-8">
+              <label class="form-label">
+                Laboratory / Organization Name <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control form-control-sm" formControlName="labName" placeholder="e.g. Apex Testing Laboratory Pvt Ltd">
+              <div *ngIf="form.get('labName')?.touched && form.get('labName')?.invalid" class="text-danger form-error-msg">
+                Organization name is required.
+              </div>
+            </div>
+
+            <!-- Organization Code -->
+            <div class="col-md-4">
+              <label class="form-label">
+                Organization Code <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control form-control-sm font-monospace" formControlName="labCode" placeholder="e.g. APEX-LAB">
+              <div *ngIf="form.get('labCode')?.touched && form.get('labCode')?.invalid" class="text-danger form-error-msg">
+                Organization code is required.
+              </div>
+            </div>
+
+            <!-- Organization Address -->
+            <div class="col-md-12">
+              <label class="form-label">
+                Registered Address <span class="text-danger">*</span>
+              </label>
+              <textarea class="form-control form-control-sm" rows="2" formControlName="labAddress" placeholder="Full laboratory premises / registered office address"></textarea>
+              <div *ngIf="form.get('labAddress')?.touched && form.get('labAddress')?.invalid" class="text-danger form-error-msg">
+                Registered address is required.
+              </div>
+            </div>
+
+            <!-- Contact Email -->
+            <div class="col-md-4">
+              <label class="form-label">
+                Official Email <span class="text-danger">*</span>
+              </label>
+              <input type="email" class="form-control form-control-sm" formControlName="contactEmail" placeholder="contact@example.com">
+              <div *ngIf="form.get('contactEmail')?.touched && form.get('contactEmail')?.invalid" class="text-danger form-error-msg">
+                Valid email is required.
+              </div>
+            </div>
+
+            <!-- Contact Phone -->
+            <div class="col-md-4">
+              <label class="form-label">
+                Contact Phone <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control form-control-sm" formControlName="contactPhone" placeholder="+91 9876543210">
+              <div *ngIf="form.get('contactPhone')?.touched && form.get('contactPhone')?.invalid" class="text-danger form-error-msg">
+                Phone number is required.
+              </div>
+            </div>
+
+            <!-- Mobile No -->
+            <div class="col-md-4">
+              <label class="form-label">Mobile / Alternate Phone</label>
+              <input type="text" class="form-control form-control-sm" formControlName="mobileNo" placeholder="+91 9876543211">
+            </div>
+
+            <!-- CIN -->
+            <div class="col-md-4">
+              <label class="form-label">CIN / Registration No.</label>
+              <input type="text" class="form-control form-control-sm" formControlName="cin" placeholder="Corporate Identity No.">
+            </div>
+
+            <!-- Website -->
+            <div class="col-md-4">
+              <label class="form-label">Website URL</label>
+              <input type="text" class="form-control form-control-sm" formControlName="website" placeholder="https://www.example.com">
+            </div>
+
+            <!-- ULR Prefix -->
+            <div class="col-md-4">
+              <label class="form-label">ULR Prefix</label>
+              <input type="text" class="form-control form-control-sm" formControlName="ulrPrefix" placeholder="e.g. TC-9999">
+            </div>
+
+            <!-- Lab Location Code -->
+            <div class="col-md-4">
+              <label class="form-label">Lab Location Code</label>
+              <input type="text" class="form-control form-control-sm" formControlName="labLocationCode" placeholder="e.g. LOC-01">
+            </div>
+
+            <!-- Multi Branch Switch -->
+            <div class="col-md-8">
+              <div class="form-check form-switch pt-4">
+                <input class="form-check-input" type="checkbox" id="multiBranchCheck" formControlName="isMultiBranch">
+                <label class="form-check-label form-label-sm text-dark ms-1" for="multiBranchCheck">
+                  Enable Multi-Branch Mode for this Organization
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light py-2 px-3 border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="onClose()" [disabled]="isSubmitting">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-lims btn-lims-save btn-sm" [disabled]="isSubmitting">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update Organization' : 'Create Organization' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

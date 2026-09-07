@@ -99,12 +99,25 @@ export class SearchableDropdownComponent {
       const rawId = typeof val === 'object' && val !== null ? val.id : val;
 
       if (typeof val === 'object' && val !== null && val.id !== undefined) {
-        // Full object passed — use directly for rebind
-        this.selectedLabel = val.additionalValues?.['fullDisplayName'] || (val.name ?? val.label ?? String(val.id));
-        this.hasValidSelection = true;
-        this.dropdownData = [val, ...this.dropdownData.filter(x => x && x.id !== val.id)];
-        this.cdr.markForCheck();
-        return;
+        // Full object passed — resolve human-readable label
+        const candidateLabel =
+          val.additionalValues?.['fullDisplayName'] ||
+          val.additionalValues?.['displayTitle'] ||
+          val.name ||
+          val.label ||
+          val.displayTitle ||
+          val.DisplayTitle ||
+          val.title ||
+          (val.code && String(val.code) !== String(val.id) ? val.code : undefined);
+
+        if (candidateLabel) {
+          this.selectedLabel = candidateLabel;
+          this.hasValidSelection = true;
+          this.dropdownData = [val, ...this.dropdownData.filter(x => x && x.id !== val.id)];
+          this.cdr.markForCheck();
+          return;
+        }
+        // If candidateLabel is missing, do not display naked ID — fall through to query fetchDataFn
       }
 
       // Check if item is already in dropdownData (match by ID or by additionalValues master/subgroup ID)

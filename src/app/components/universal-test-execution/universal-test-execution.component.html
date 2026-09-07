@@ -1,0 +1,1247 @@
+<div class="universal-workspace-root" [class.is-fullscreen]="isFullscreen">
+
+  <!-- ================================================================= -->
+  <!-- TOP MASTER HEADER (Standardized Enterprise LIMS Header)           -->
+  <!-- ================================================================= -->
+  <header class="ute-master-header">
+    <div class="ute-header-left">
+      <div class="ute-header-title-box">
+        <h5 class="ute-workspace-title mb-0">
+          <i class="bi bi-gear-wide-connected me-2 text-danger"></i>Universal Test Execution
+        </h5>
+        <span class="badge bg-light text-secondary border ms-2">ISO 17025 Engine</span>
+      </div>
+    </div>
+
+    <div class="ute-header-right">
+      <!-- Organization & Branch context -->
+      <div class="ute-context-badge">
+        <i class="bi bi-building me-1 text-secondary"></i>
+        <span>Devine Laboratory</span>
+        <span class="mx-1.5 text-muted">|</span>
+        <i class="bi bi-geo-alt me-1 text-secondary"></i>
+        <span>{{ execution?.branchName || 'Devine Laboratory' }}</span>
+      </div>
+
+      <!-- Execution & Run Selectors -->
+      <div class="ute-execution-pill">
+        <span class="ute-pill-label text-muted me-1">Execution:</span>
+        <span class="ute-pill-val font-monospace fw-semibold">UT-{{ execution?.id ? ('00000' + execution?.id).slice(-6) : '000125' }}</span>
+      </div>
+
+      <div class="ute-run-selector">
+        <label class="ute-run-label text-muted me-1">Run:</label>
+        <select class="form-select form-select-sm ute-run-select" [(ngModel)]="selectedRunNo" [disabled]="isProcessing">
+          <option *ngFor="let run of availableRuns" [value]="run">Run {{ run }}</option>
+        </select>
+      </div>
+
+      <!-- Status Badge -->
+      <span class="badge ute-status-badge"
+            [ngClass]="{
+              'bg-secondary': execution?.status === 'Planned',
+              'bg-primary': execution?.status === 'InProgress',
+              'bg-info text-dark': execution?.status === 'Completed',
+              'bg-warning text-dark': execution?.status === 'Verified',
+              'bg-success': execution?.status === 'Approved',
+              'bg-danger': execution?.status === 'Rejected'
+            }">
+        <i class="bi bi-record-circle me-1" *ngIf="execution?.status === 'InProgress'"></i>
+        {{ execution?.status || 'InProgress' }}
+      </span>
+
+      <!-- Action Buttons -->
+      <div class="ute-header-actions">
+        <button class="btn-lims-icon btn-lims-secondary" (click)="loadExecutionById(testExecutionId!)" [disabled]="!testExecutionId || isProcessing" title="Refresh">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn-lims-icon btn-lims-secondary" (click)="toggleFullscreen()" title="Toggle Fullscreen">
+          <i class="bi" [ngClass]="isFullscreen ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
+        </button>
+        <button class="btn-lims btn-lims-cancel" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================================================================= -->
+  <!-- SUB-HEADER: TITLE & BREADCRUMB & CONTEXT BANNER                   -->
+  <!-- ================================================================= -->
+  <div class="ute-sub-header">
+    <div class="ute-sub-left">
+      <nav class="ute-breadcrumb">
+        <span>Testing</span>
+        <i class="bi bi-chevron-right mx-1 text-muted"></i>
+        <span>Universal Test Design</span>
+        <i class="bi bi-chevron-right mx-1 text-muted"></i>
+        <span class="ute-bc-active text-dark fw-semibold">Execution Workspace</span>
+      </nav>
+    </div>
+
+    <!-- Frozen Snapshot Banner if execution started -->
+    <div *ngIf="execution?.status && execution?.status !== 'Planned'" class="ute-frozen-indicator">
+      <i class="bi bi-lock-fill text-warning me-1"></i>
+      <span class="fw-semibold">CONFIGURATION SNAPSHOT FROZEN</span>
+      <span class="text-muted ms-1 small">(Immutable execution record)</span>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- TOP 7 WORKSPACE STEPPER TABS (Standardized LIMS Nav Tabs)         -->
+  <!-- ================================================================= -->
+  <nav class="ute-tabs-stepper">
+    <button class="ute-tab-btn" [class.active]="activeWorkspaceTab === 'config'" (click)="setWorkspaceTab('config')">
+      <span class="ute-tab-num">1</span>
+      <span class="ute-tab-text">Test Configuration</span>
+    </button>
+    <button class="ute-tab-btn" [class.active]="activeWorkspaceTab === 'entry'" (click)="setWorkspaceTab('entry')">
+      <span class="ute-tab-num">2</span>
+      <span class="ute-tab-text">Execution Entry</span>
+    </button>
+    <button class="ute-tab-btn" [class.active]="activeWorkspaceTab === 'results'" (click)="setWorkspaceTab('results')">
+      <span class="ute-tab-num">3</span>
+      <span class="ute-tab-text">Results Overview</span>
+    </button>
+    <button class="ute-tab-btn" [class.active]="activeWorkspaceTab === 'calculations'" (click)="setWorkspaceTab('calculations')">
+      <span class="ute-tab-num">4</span>
+      <span class="ute-tab-text">Calculations</span>
+    </button>
+    <button class="ute-tab-btn" [class.active]="activeWorkspaceTab === 'review'" (click)="setWorkspaceTab('review')">
+      <span class="ute-tab-num">5</span>
+      <span class="ute-tab-text">Review & Approval</span>
+    </button>
+    <button class="ute-tab-btn" [class.active]="activeWorkspaceTab === 'report'" (click)="setWorkspaceTab('report')">
+      <span class="ute-tab-num">6</span>
+      <span class="ute-tab-text">Report Preview</span>
+    </button>
+    <button class="ute-tab-btn" [class.active]="activeWorkspaceTab === 'audit'" (click)="setWorkspaceTab('audit')">
+      <span class="ute-tab-num">7</span>
+      <span class="ute-tab-text">Audit Trail</span>
+    </button>
+  </nav>
+
+  <!-- ================================================================= -->
+  <!-- MAIN WORKSPACE CONTAINER                                          -->
+  <!-- ================================================================= -->
+  <div class="ute-main-layout">
+
+    <!-- TAB 1: 3-COLUMN WORKSPACE (TEST CONFIGURATION) -->
+    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'config'">
+      <div class="row g-2 ute-3col-grid">
+
+        <!-- ============================================================= -->
+        <!-- COL 1: 10 CONFIGURATION CATEGORIES ACCORDION / NAV           -->
+        <!-- ============================================================= -->
+        <div class="col-12 col-lg-3 col-xl-2 ute-col-categories">
+          <div class="card shadow-sm border-0 ute-card h-100">
+            <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex align-items-center justify-content-between">
+              <span class="ute-panel-title"><i class="bi bi-sliders me-1"></i> Categories</span>
+              <span class="badge bg-light text-dark border">10 Modules</span>
+            </div>
+            <div class="list-group list-group-flush ute-category-list">
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'parameters'"
+                      (click)="setConfigCategory('parameters')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-list-columns me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Parameters</div>
+                    <small class="text-muted d-block category-desc">Input, Calculated & Derived</small>
+                  </div>
+                </div>
+                <span class="badge bg-primary rounded-pill">{{ configSnapshot?.parameters?.length || parameters.length || 0 }}</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'conditions'"
+                      (click)="setConfigCategory('conditions')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-thermometer-half me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Conditions</div>
+                    <small class="text-muted d-block category-desc">Test Environment</small>
+                  </div>
+                </div>
+                <span class="badge bg-secondary rounded-pill">{{ configSnapshot?.conditions?.length || 1 }}</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'limits'"
+                      (click)="setConfigCategory('limits')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-speedometer2 me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Specification Limits</div>
+                    <small class="text-muted d-block category-desc">Min / Max / Target</small>
+                  </div>
+                </div>
+                <span class="badge bg-success rounded-pill">{{ parameters.length || 3 }}</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'formula'"
+                      (click)="setConfigCategory('formula')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-calculator me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Formula Builder</div>
+                    <small class="text-muted d-block category-desc">Equations & Dependencies</small>
+                  </div>
+                </div>
+                <span class="badge bg-info text-dark rounded-pill">1</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'equipment'"
+                      (click)="setConfigCategory('equipment')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-tools me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Equipment</div>
+                    <small class="text-muted d-block category-desc">Instruments & Calibration</small>
+                  </div>
+                </div>
+                <span class="badge bg-warning text-dark rounded-pill">{{ configSnapshot?.equipment?.length || 1 }}</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'factors'"
+                      (click)="setConfigCategory('factors')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-percent me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Factors & Conversions</div>
+                    <small class="text-muted d-block category-desc">Multipliers & Dilutions</small>
+                  </div>
+                </div>
+                <span class="badge bg-secondary rounded-pill">{{ configSnapshot?.factors?.length || 2 }}</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'uncertainty'"
+                      (click)="setConfigCategory('uncertainty')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-graph-up me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Uncertainty (MU)</div>
+                    <small class="text-muted d-block category-desc">Measurement Uncertainty</small>
+                  </div>
+                </div>
+                <span class="badge bg-dark rounded-pill">1</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'acceptance'"
+                      (click)="setConfigCategory('acceptance')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-check2-circle me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Acceptance Criteria</div>
+                    <small class="text-muted d-block category-desc">Pass / Fail Rules</small>
+                  </div>
+                </div>
+                <span class="badge bg-success rounded-pill">1</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'attachments'"
+                      (click)="setConfigCategory('attachments')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-paperclip me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Attachments</div>
+                    <small class="text-muted d-block category-desc">Standards & Documents</small>
+                  </div>
+                </div>
+                <span class="badge bg-primary rounded-pill">{{ configSnapshot?.attachments?.length || 2 }}</span>
+              </button>
+
+              <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      [class.active]="activeConfigCategory === 'remarks'"
+                      (click)="setConfigCategory('remarks')">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-card-text me-1"></i>
+                  <div>
+                    <div class="fw-semibold ute-cat-title">Remarks & Notes</div>
+                    <small class="text-muted d-block category-desc">General Test Notes</small>
+                  </div>
+                </div>
+                <span class="badge bg-light text-dark border">1</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- COL 2: CENTER CONFIGURATION PANELS (MAIN WORKSPACE)           -->
+        <!-- ============================================================= -->
+        <div class="col-12 col-lg-6 col-xl-7 ute-col-center">
+
+          <!-- 1. PARAMETERS TABLE -->
+          <div class="card shadow-sm border-0 mb-2 ute-card">
+            <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex justify-content-between align-items-center">
+              <span class="ute-panel-title">
+                <i class="bi bi-list-columns me-1"></i>
+                PARAMETERS (Input / Calculated / Derived)
+              </span>
+              <div class="d-flex align-items-center gap-1">
+                <button *ngIf="execution?.status === 'Planned'" class="btn-lims btn-lims-add" (click)="showAddParamModal = true">
+                  <i class="bi bi-plus-circle me-1"></i> Add Parameter
+                </button>
+                <button class="btn-lims btn-lims-cancel py-0 px-1.5" title="Reorder Parameters">
+                  <i class="bi bi-arrow-down-up me-1"></i> Reorder
+                </button>
+              </div>
+            </div>
+            <div class="card-body p-0 table-responsive">
+              <table class="table table-sm table-hover table-bordered m-0 ute-table align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th class="text-center col-w-idx">#</th>
+                    <th>Parameter Code</th>
+                    <th>Parameter Name</th>
+                    <th>Type</th>
+                    <th>Unit</th>
+                    <th class="text-center">Decimals</th>
+                    <th>Input Type</th>
+                    <th>Formula</th>
+                    <th class="text-center col-w-action">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let param of parameters; let pIdx = index">
+                    <td class="text-center text-muted fw-semibold">{{ pIdx + 1 }}</td>
+                    <td>
+                      <span class="badge-code">{{ param.code }}</span>
+                    </td>
+                    <td class="fw-semibold">{{ param.name }}</td>
+                    <td>
+                      <span [ngClass]="param.isCalculated ? 'badge-type-calc' : 'badge-type-input'">
+                        {{ param.isCalculated ? 'Calculated' : (param.parameterType || 'Input') }}
+                      </span>
+                    </td>
+                    <td>{{ param.unit || '-' }}</td>
+                    <td class="text-center">{{ param.decimalPrecision }}</td>
+                    <td>{{ param.inputType }}</td>
+                    <td class="font-monospace text-primary small">{{ param.formula || '-' }}</td>
+                    <td class="text-center">
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <button *ngIf="param.isCalculated" class="btn-lims-icon btn-lims-edit" (click)="selectFormulaParameter(param)" title="Edit Formula">
+                          <i class="bi bi-calculator"></i>
+                        </button>
+                        <button *ngIf="execution?.status === 'Planned'" class="btn-lims-icon btn-lims-remove" (click)="deleteParameter(pIdx)" title="Delete Parameter">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2-COLUMN SPLIT: CONDITIONS & SPECIFICATION LIMITS -->
+          <div class="row g-2 mb-2">
+            <!-- CONDITIONS / ENVIRONMENT -->
+            <div class="col-12 col-xl-6">
+              <div class="card shadow-sm border-0 ute-card h-100">
+                <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex justify-content-between align-items-center">
+                  <span class="ute-panel-title">
+                    <i class="bi bi-thermometer-half me-1"></i> CONDITIONS / ENVIRONMENT
+                  </span>
+                  <button *ngIf="execution?.status === 'Planned'" class="btn-lims btn-lims-add py-0 px-1" (click)="showAddConditionModal = true">
+                    <i class="bi bi-plus me-1"></i> Add
+                  </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                  <table class="table table-sm table-bordered m-0 ute-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Condition</th>
+                        <th>Operator</th>
+                        <th>Value</th>
+                        <th>Unit</th>
+                        <th>Range / Criteria</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let cond of configSnapshot?.conditions || []">
+                        <td class="fw-semibold">{{ cond.dimensionName }}</td>
+                        <td class="text-center font-monospace">{{ cond.configuredOperator || '=' }}</td>
+                        <td class="fw-bold">{{ cond.selectedExecutionValue || cond.configuredValue1 || '27' }}</td>
+                        <td>{{ cond.unit || '°C' }}</td>
+                        <td class="small text-muted">{{ cond.configuredValue1 }} - {{ cond.configuredValue2 }} {{ cond.unit }}</td>
+                      </tr>
+                      <tr *ngIf="!configSnapshot?.conditions?.length">
+                        <td class="fw-semibold">Temperature</td>
+                        <td class="text-center font-monospace">=</td>
+                        <td class="fw-bold">27</td>
+                        <td>°C</td>
+                        <td class="small text-muted">20 - 30 °C</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SPECIFICATION LIMITS -->
+            <div class="col-12 col-xl-6">
+              <div class="card shadow-sm border-0 ute-card h-100">
+                <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex justify-content-between align-items-center">
+                  <span class="ute-panel-title">
+                    <i class="bi bi-speedometer2 me-1"></i> SPECIFICATION LIMITS
+                  </span>
+                  <span class="badge bg-light text-dark border">ISO Standard</span>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                  <table class="table table-sm table-bordered m-0 ute-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Parameter</th>
+                        <th>Min</th>
+                        <th>Max</th>
+                        <th>Target</th>
+                        <th>UOM</th>
+                        <th>Criteria</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let param of parameters">
+                        <td class="font-monospace fw-semibold">{{ param.code }}</td>
+                        <td>{{ param.specMin !== null && param.specMin !== undefined ? param.specMin : '-' }}</td>
+                        <td>{{ param.specMax !== null && param.specMax !== undefined ? param.specMax : '-' }}</td>
+                        <td>{{ param.specTarget ?? '-' }}</td>
+                        <td>{{ param.unit || '%' }}</td>
+                        <td><span class="badge bg-secondary-subtle text-dark border">{{ param.comparisonCriteria || 'Range' }}</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2-COLUMN SPLIT: EQUIPMENT & FACTORS -->
+          <div class="row g-2 mb-2">
+            <!-- EQUIPMENT / INSTRUMENTS -->
+            <div class="col-12 col-xl-6">
+              <div class="card shadow-sm border-0 ute-card h-100">
+                <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex justify-content-between align-items-center">
+                  <span class="ute-panel-title">
+                    <i class="bi bi-tools me-1"></i> EQUIPMENT / INSTRUMENTS
+                  </span>
+                  <button *ngIf="execution?.status === 'Planned'" class="btn-lims btn-lims-add py-0 px-1" (click)="showAddEquipmentModal = true">
+                    <i class="bi bi-plus me-1"></i> Add
+                  </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                  <table class="table table-sm table-bordered m-0 ute-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Equipment</th>
+                        <th>Model / Type</th>
+                        <th>Calibration No.</th>
+                        <th>Calibrated On</th>
+                        <th>Valid Upto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let eq of configSnapshot?.equipment || []">
+                        <td class="fw-semibold">{{ eq.name }}</td>
+                        <td>{{ eq.model || '-' }}</td>
+                        <td class="font-monospace">{{ eq.calibrationNo || '-' }}</td>
+                        <td>{{ eq.calibratedOn ? (eq.calibratedOn | date:'dd-MMM-yyyy') : '-' }}</td>
+                        <td>{{ eq.validUpto ? (eq.validUpto | date:'dd-MMM-yyyy') : '-' }}</td>
+                      </tr>
+                      <tr *ngIf="!configSnapshot?.equipment?.length">
+                        <td class="fw-semibold">Casagrande Apparatus</td>
+                        <td>CAL-01</td>
+                        <td class="font-monospace">CAL-258801-01</td>
+                        <td>01-Aug-2026</td>
+                        <td>31-Jul-2027</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- FACTORS & CONVERSIONS -->
+            <div class="col-12 col-xl-6">
+              <div class="card shadow-sm border-0 ute-card h-100">
+                <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex justify-content-between align-items-center">
+                  <span class="ute-panel-title">
+                    <i class="bi bi-percent me-1"></i> FACTORS & CONVERSIONS
+                  </span>
+                  <button *ngIf="execution?.status === 'Planned'" class="btn-lims btn-lims-add py-0 px-1" (click)="showAddFactorModal = true">
+                    <i class="bi bi-plus me-1"></i> Add
+                  </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                  <table class="table table-sm table-bordered m-0 ute-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Factor Type</th>
+                        <th>Factor Name</th>
+                        <th>Value</th>
+                        <th>Applied On</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let fac of configSnapshot?.factors || []">
+                        <td>{{ fac.factorType }}</td>
+                        <td class="fw-semibold">{{ fac.factorName }}</td>
+                        <td class="fw-bold">{{ fac.value }}</td>
+                        <td>{{ fac.appliedOn }}</td>
+                        <td class="small text-muted">{{ fac.description }}</td>
+                      </tr>
+                      <tr *ngIf="!configSnapshot?.factors?.length">
+                        <td>Multiplication Factor</td>
+                        <td class="fw-semibold">Percentage Factor</td>
+                        <td class="fw-bold">1.00</td>
+                        <td>All Results</td>
+                        <td class="small text-muted">No Adjustment</td>
+                      </tr>
+                      <tr *ngIf="!configSnapshot?.factors?.length">
+                        <td>Unit Conversion</td>
+                        <td class="fw-semibold">mm to cm</td>
+                        <td class="fw-bold">0.10</td>
+                        <td>Length</td>
+                        <td class="small text-muted">10 mm = 1 cm</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3-COLUMN SPLIT: ACCEPTANCE CRITERIA, ATTACHMENTS, REMARKS -->
+          <div class="row g-2">
+            <!-- ACCEPTANCE CRITERIA -->
+            <div class="col-12 col-xl-4">
+              <div class="card shadow-sm border-0 ute-card h-100">
+                <div class="card-header bg-white py-1.5 px-2 border-bottom">
+                  <span class="ute-panel-title">
+                    <i class="bi bi-check2-circle me-1"></i> ACCEPTANCE CRITERIA
+                  </span>
+                </div>
+                <div class="card-body p-2 d-flex flex-column gap-1.5">
+                  <div>
+                    <label class="form-label small mb-0 fw-semibold">Decision Rule:</label>
+                    <select class="form-select form-select-sm" [disabled]="isViewMode">
+                      <option>All Parameters Must Pass</option>
+                      <option>Configured Tolerance Rule</option>
+                      <option>Weighted Average</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label small mb-0 fw-semibold">Overall Decision:</label>
+                    <input type="text" class="form-control form-control-sm" value="Pass if all parameters within spec range" [disabled]="isViewMode">
+                  </div>
+                  <div>
+                    <label class="form-label small mb-0 fw-semibold">Rounding Rule:</label>
+                    <div class="d-flex gap-1">
+                      <select class="form-select form-select-sm" [disabled]="isViewMode">
+                        <option>Round to nearest</option>
+                        <option>Truncate</option>
+                      </select>
+                      <input type="text" class="form-control form-control-sm w-25" value="0.01" [disabled]="isViewMode">
+                    </div>
+                  </div>
+                  <div class="mt-auto pt-1 d-flex justify-content-between align-items-center">
+                    <span class="badge-status-pass px-2 py-0.5">PASS / FAIL</span>
+                    <button class="btn-lims btn-lims-save py-0 px-2" [disabled]="isViewMode">
+                      <i class="bi bi-check-circle me-1"></i> Save Criteria
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ATTACHMENTS -->
+            <div class="col-12 col-xl-4">
+              <div class="card shadow-sm border-0 ute-card h-100">
+                <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex justify-content-between align-items-center">
+                  <span class="ute-panel-title"><i class="bi bi-paperclip me-1"></i> ATTACHMENTS</span>
+                  <button class="btn-lims btn-lims-primary py-0 px-1.5" (click)="showUploadModal = true" [disabled]="isViewMode">
+                    <i class="bi bi-upload me-1"></i> Upload
+                  </button>
+                </div>
+                <div class="card-body p-0 table-responsive">
+                  <table class="table table-sm table-bordered m-0 ute-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>File Name</th>
+                        <th>Type</th>
+                        <th>Uploaded By</th>
+                        <th class="text-center col-w-action">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let att of configSnapshot?.attachments || []">
+                        <td class="fw-semibold text-truncate col-w-filename">{{ att.fileName }}</td>
+                        <td><span class="badge-status-fail">{{ att.fileType }}</span></td>
+                        <td>{{ att.uploadedByName || 'admin' }}</td>
+                        <td class="text-center">
+                          <button class="btn-lims-icon btn-lims-secondary"><i class="bi bi-download"></i></button>
+                        </td>
+                      </tr>
+                      <tr *ngIf="!configSnapshot?.attachments?.length">
+                        <td class="fw-semibold">Method_IS_2720_Part5.pdf</td>
+                        <td><span class="badge-status-fail">PDF</span></td>
+                        <td>admin</td>
+                        <td class="text-center"><i class="bi bi-download text-primary"></i></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- REMARKS & NOTES -->
+            <div class="col-12 col-xl-4">
+              <div class="card shadow-sm border-0 ute-card h-100">
+                <div class="card-header bg-white py-1.5 px-2 border-bottom">
+                  <span class="ute-panel-title">
+                    <i class="bi bi-card-text me-1"></i> REMARKS & NOTES
+                  </span>
+                </div>
+                <div class="card-body p-2 d-flex flex-column">
+                  <label class="form-label small mb-1 fw-semibold">General Remarks:</label>
+                  <textarea class="form-control form-control-sm flex-grow-1" rows="3" [disabled]="isViewMode"
+                            placeholder="Enter general observations, standard conditions, or sample remarks...">Sample in workable condition. Test performed as per IS 2720 Part 5. All observations recorded.</textarea>
+                  <div class="text-end mt-2">
+                    <button class="btn-lims btn-lims-save py-0 px-2" [disabled]="isViewMode">
+                      <i class="bi bi-check-circle me-1"></i> Save Remarks
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- COL 3: RIGHT INTELLIGENCE SIDEBAR                             -->
+        <!-- ============================================================= -->
+        <div class="col-12 col-lg-3 col-xl-3 ute-col-right">
+
+          <!-- 1. FORMULA BUILDER & LIVE PREVIEW CARD -->
+          <div class="card shadow-sm border-0 mb-2 ute-card">
+            <div class="card-header bg-white py-1.5 px-2 border-bottom d-flex justify-content-between align-items-center">
+              <span class="ute-panel-title"><i class="bi bi-calculator me-1"></i> FORMULA BUILDER & PREVIEW</span>
+              <span *ngIf="formulaValid" class="badge-status-pass">
+                <i class="bi bi-check-circle me-1"></i> Valid
+              </span>
+            </div>
+            <div class="card-body p-2 d-flex flex-column gap-1.5">
+              <div>
+                <label class="form-label small mb-0 fw-semibold">Selected Parameter:</label>
+                <select class="form-select form-select-sm" [(ngModel)]="selectedFormulaParam" (change)="selectFormulaParameter(selectedFormulaParam!)">
+                  <option *ngFor="let p of parameters" [ngValue]="p">{{ p.code }} — {{ p.name }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label small mb-0 fw-semibold">Formula Expression:</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control font-monospace" [(ngModel)]="formulaExpression" (ngModelChange)="testFormulaPreview()" placeholder="{SOIL_LL} - {SOIL_PL}" [disabled]="isViewMode">
+                  <button class="btn-lims btn-lims-cancel py-0 px-2" type="button" (click)="clearFormula()" [disabled]="isViewMode" title="Clear Formula">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Interactive Keypad Buttons -->
+              <div>
+                <label class="form-label small mb-1 text-muted">Functions & Operators:</label>
+                <div class="d-flex flex-wrap gap-1 ute-keypad-grid">
+                  <button *ngFor="let btn of keypadButtons" class="btn-lims btn-lims-secondary ute-keypad-btn" (click)="insertKeypadToken(btn)" [disabled]="isViewMode">
+                    {{ btn }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Formula Preview with Sample Values -->
+              <div class="ute-formula-preview-box mt-1 p-2 rounded">
+                <div class="small fw-semibold text-muted mb-1">Formula Preview with Sample Values:</div>
+                <div class="d-flex align-items-center gap-2 small font-monospace">
+                  <span>SOIL_LL = <strong>42.00</strong></span>
+                  <span>SOIL_PL = <strong>18.00</strong></span>
+                </div>
+                <div class="mt-1 pt-1 border-top fw-bold text-success font-monospace small">
+                  &rArr; SOIL_PI = 42.00 - 18.00 = 24.00 %
+                </div>
+              </div>
+
+              <div class="text-end pt-1">
+                <button class="btn-lims btn-lims-save w-100 py-1" (click)="saveFormulaExpression()" [disabled]="isViewMode || !selectedFormulaParam">
+                  <i class="bi bi-check-circle me-1"></i> Save Formula
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. MEASUREMENT UNCERTAINTY (MU) -->
+          <div class="card shadow-sm border-0 mb-2 ute-card">
+            <div class="card-header bg-white py-1.5 px-2 border-bottom">
+              <span class="ute-panel-title">
+                <i class="bi bi-graph-up me-1"></i> MEASUREMENT UNCERTAINTY (MU)
+              </span>
+            </div>
+            <div class="card-body p-2">
+              <div class="row g-1.5 align-items-center">
+                <div class="col-7">
+                  <label class="form-label small mb-0">Uncertainty Type:</label>
+                  <select class="form-select form-select-sm" [disabled]="isViewMode">
+                    <option>Expanded Uncertainty (k=2)</option>
+                    <option>Standard Uncertainty</option>
+                  </select>
+                </div>
+                <div class="col-5">
+                  <label class="form-label small mb-0">Value:</label>
+                  <input type="text" class="form-control form-control-sm fw-bold" value="2.50" [disabled]="isViewMode">
+                </div>
+                <div class="col-4">
+                  <label class="form-label small mb-0">Unit:</label>
+                  <input type="text" class="form-control form-control-sm" value="%" [disabled]="isViewMode">
+                </div>
+                <div class="col-4">
+                  <label class="form-label small mb-0">Coverage (k):</label>
+                  <input type="text" class="form-control form-control-sm" value="2.00" [disabled]="isViewMode">
+                </div>
+                <div class="col-4">
+                  <label class="form-label small mb-0">Basis:</label>
+                  <select class="form-select form-select-sm" [disabled]="isViewMode">
+                    <option>Type B</option>
+                    <option>Type A</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small mb-0">Remarks:</label>
+                  <input type="text" class="form-control form-control-sm" value="As per IS 17025" [disabled]="isViewMode">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. EXECUTION SUMMARY & RESULT SUMMARY -->
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <div class="card shadow-sm border-0 ute-card h-100 p-2">
+                <div class="ute-panel-title small mb-1 border-bottom pb-1">EXECUTION SUMMARY</div>
+                <div class="d-flex justify-content-between small py-0.5"><span>Total Parameters:</span><strong>{{ parameters.length }}</strong></div>
+                <div class="d-flex justify-content-between small py-0.5"><span>Input Params:</span><strong>{{ parameters.length - 1 }}</strong></div>
+                <div class="d-flex justify-content-between small py-0.5"><span>Calculated:</span><strong>1</strong></div>
+                <div class="d-flex justify-content-between small py-0.5"><span>Conditions:</span><strong>1</strong></div>
+                <div class="d-flex justify-content-between small py-0.5"><span>Status:</span><span class="badge bg-primary-subtle text-primary">{{ execution?.status }}</span></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card shadow-sm border-0 ute-card h-100 p-2">
+                <div class="ute-panel-title small mb-1 border-bottom pb-1">RESULT SUMMARY</div>
+                <div class="d-flex justify-content-between small py-0.5"><span>Total Readings:</span><strong>2</strong></div>
+                <div class="d-flex justify-content-between small py-0.5"><span>Calculated:</span><strong>1</strong></div>
+                <div class="d-flex justify-content-between small py-0.5 text-success"><span>Passed:</span><strong>3</strong></div>
+                <div class="d-flex justify-content-between small py-0.5 text-danger"><span>Failed:</span><strong>0</strong></div>
+                <div class="d-flex justify-content-between small py-0.5 text-muted"><span>N/A:</span><strong>0</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. NABL SCOPE CHECK -->
+          <div class="card shadow-sm border-0 mb-2 ute-card p-2">
+            <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+              <span class="ute-panel-title small"><i class="bi bi-patch-check me-1"></i> NABL SCOPE CHECK</span>
+              <span class="badge-scope">Partial Scope</span>
+            </div>
+            <div class="d-flex justify-content-between small py-0.5">
+              <span>Parameters In Scope:</span>
+              <strong class="text-success">{{ nablScope?.inScopeCount || 1 }}</strong>
+            </div>
+            <div class="d-flex justify-content-between small py-0.5">
+              <span>Parameters Out of Scope:</span>
+              <strong class="text-muted">{{ nablScope?.outOfScopeCount || 2 }}</strong>
+            </div>
+          </div>
+
+          <!-- 5. LIFECYCLE TIMELINE -->
+          <div class="card shadow-sm border-0 ute-card p-2">
+            <div class="ute-panel-title small mb-1 border-bottom pb-1">
+              <i class="bi bi-clock-history me-1"></i> LIFECYCLE TIMELINE
+            </div>
+            <div class="ute-timeline-stepper small">
+              <div class="ute-tline-item done">
+                <div class="ute-tline-icon"><i class="bi bi-check-circle-fill text-success"></i></div>
+                <div class="ute-tline-content">
+                  <div class="fw-bold">Planned</div>
+                  <div class="text-muted small">01-Sep-2026 09:15 AM &bull; admin</div>
+                </div>
+              </div>
+              <div class="ute-tline-item current">
+                <div class="ute-tline-icon"><i class="bi bi-play-circle-fill text-primary"></i></div>
+                <div class="ute-tline-content">
+                  <div class="fw-bold">In Progress</div>
+                  <div class="text-muted small">01-Sep-2026 10:05 AM &bull; Lab Technician</div>
+                </div>
+              </div>
+              <div class="ute-tline-item" [class.done]="execution?.status === 'Completed' || execution?.status === 'Verified' || execution?.status === 'Approved'">
+                <div class="ute-tline-icon"><i class="bi bi-circle text-muted"></i></div>
+                <div class="ute-tline-content">
+                  <div class="fw-semibold">Completed</div>
+                </div>
+              </div>
+              <div class="ute-tline-item" [class.done]="execution?.status === 'Verified' || execution?.status === 'Approved'">
+                <div class="ute-tline-icon"><i class="bi bi-circle text-muted"></i></div>
+                <div class="ute-tline-content">
+                  <div class="fw-semibold">Verified</div>
+                </div>
+              </div>
+              <div class="ute-tline-item" [class.done]="execution?.status === 'Approved'">
+                <div class="ute-tline-icon"><i class="bi bi-circle text-muted"></i></div>
+                <div class="ute-tline-content">
+                  <div class="fw-semibold">Approved</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 2: EXECUTION ENTRY (DYNAMIC OBSERVATION RECORDING MATRIX)     -->
+    <!-- ================================================================= -->
+    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'entry'">
+      <div class="card shadow-sm border-0 mb-2 ute-card">
+        <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="ute-panel-title fs-6">
+              <i class="bi bi-grid-3x3 me-1"></i> Execution Entry Grid:
+            </span>
+            <span class="fw-bold text-dark">{{ execution?.testName || 'Soil Mechanics Atterberg Limits' }}</span>
+          </div>
+          <div class="d-flex align-items-center gap-1.5">
+            <button *ngIf="!isViewMode" class="btn-lims btn-lims-add" (click)="addSpecimen()">
+              <i class="bi bi-plus-circle me-1"></i> Add Specimen
+            </button>
+            <button *ngIf="!isViewMode" class="btn-lims btn-lims-save" (click)="save()" [disabled]="isProcessing">
+              <i class="bi bi-check-circle me-1"></i> Save Draft
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body p-2">
+          <form [formGroup]="executionForm">
+            <div formArrayName="specimens">
+              <div class="card shadow-sm border mb-2 ute-specimen-card" *ngFor="let specimen of specimens.controls; let sIdx = index" [formGroupName]="sIdx">
+                <div class="card-header bg-light py-1.5 px-2 d-flex justify-content-between align-items-center border-bottom">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-dark text-white">Specimen #{{ sIdx + 1 }}</span>
+                    <input type="text" class="form-control form-control-sm w-auto" formControlName="specimenIdentifier" placeholder="Specimen Tag/ID">
+                  </div>
+                  <div class="d-flex align-items-center gap-1">
+                    <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add" (click)="addObservation(specimen)">
+                      <i class="bi bi-plus-circle me-1"></i> Add Reading
+                    </button>
+                    <button *ngIf="!isViewMode && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-remove" (click)="removeSpecimen(sIdx)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card-body p-0 table-responsive" formArrayName="observations">
+                  <table class="table table-sm table-bordered m-0 ute-table align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th class="text-center col-w-reading">Reading</th>
+                        <th *ngFor="let p of parameters">
+                          {{ p.name }}
+                          <span class="text-muted small">({{ p.unit || '-' }})</span>
+                          <span *ngIf="p.isCalculated" class="badge-type-calc ms-1">Calc</span>
+                        </th>
+                        <th class="text-center col-w-action">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let obs of getObservations(specimen).controls; let oIdx = index" [formGroupName]="oIdx">
+                        <td class="text-center fw-bold">#{{ obs.get('readingNo')?.value }}</td>
+                        <td *ngFor="let res of getResults(obs).controls; let rIdx = index" [formGroup]="asFormGroup(res)">
+                          <div class="input-group input-group-sm">
+                            <input type="text" class="form-control text-end fw-semibold"
+                                   [class.bg-light]="res.get('isFormulaCalculated')?.value"
+                                   [class.text-success]="res.get('resultStatus')?.value === 'Pass'"
+                                   [class.text-danger]="res.get('resultStatus')?.value === 'Fail'"
+                                   formControlName="rawValue"
+                                   (input)="onReadingInput(asFormGroup(obs))"
+                                   [placeholder]="res.get('isFormulaCalculated')?.value ? 'Auto' : '0.00'">
+                            <span class="input-group-text p-1" *ngIf="res.get('resultStatus')?.value">
+                              <i class="bi" [ngClass]="res.get('resultStatus')?.value === 'Pass' ? 'bi-check text-success' : 'bi-x text-danger'"></i>
+                            </span>
+                          </div>
+                        </td>
+                        <td class="text-center">
+                          <button *ngIf="!isViewMode && getObservations(specimen).length > 1" type="button" class="btn-lims-icon btn-lims-remove" (click)="removeObservation(specimen, oIdx)">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 3: RESULTS OVERVIEW                                           -->
+    <!-- ================================================================= -->
+    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'results'">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
+        <div class="ute-panel-title border-bottom pb-2 mb-3 fs-6">
+          <i class="bi bi-bar-chart-line me-1"></i> Comprehensive Results & Compliance Overview
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-md-3">
+            <div class="p-2 border rounded text-center bg-light">
+              <div class="small text-muted">Total Readings</div>
+              <div class="fs-4 fw-bold">{{ resultsOverview?.totalReadings || 2 }}</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-2 border rounded text-center bg-light">
+              <div class="small text-muted">Calculated Parameters</div>
+              <div class="fs-4 fw-bold text-primary">{{ resultsOverview?.calculatedResults || 1 }}</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-2 border rounded text-center bg-light">
+              <div class="small text-muted">Passed Parameters</div>
+              <div class="fs-4 fw-bold text-success">{{ resultsOverview?.passedCount || 3 }}</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="p-2 border rounded text-center bg-light">
+              <div class="small text-muted">Overall Verdict</div>
+              <div class="fs-4 fw-bold text-success">PASS</div>
+            </div>
+          </div>
+        </div>
+
+        <table class="table table-sm table-bordered ute-table">
+          <thead class="table-light">
+            <tr>
+              <th>Parameter Code</th>
+              <th>Parameter Name</th>
+              <th>Spec Limits</th>
+              <th>Average Value</th>
+              <th>Final Value</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of resultsOverview?.parameters || []">
+              <td class="font-monospace fw-semibold">{{ p.parameterCode }}</td>
+              <td>{{ p.parameterName }}</td>
+              <td>{{ p.specRange || '—' }}</td>
+              <td class="text-end fw-semibold">{{ p.averageValue }}</td>
+              <td class="text-end fw-bold">{{ p.finalValue }}</td>
+              <td class="text-center">
+                <span [ngClass]="p.status === 'Pass' ? 'badge-status-pass' : 'badge-status-fail'">{{ p.status }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="!resultsOverview?.parameters?.length">
+              <td colspan="6" class="text-center py-3 text-muted">
+                <i class="bi bi-info-circle me-1"></i> No parameter overview calculated yet. Enter observation readings and save to evaluate results.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 4: CALCULATIONS (DAG DEPENDENCY TREE & TRACE)                 -->
+    <!-- ================================================================= -->
+    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'calculations'">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
+        <div class="ute-panel-title border-bottom pb-2 mb-3 fs-6">
+          <i class="bi bi-diagram-3 me-1"></i> Topological Dependency Graph & Calculation Trace
+        </div>
+
+        <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-info-circle-fill fs-5"></i>
+          <div>
+            <strong>Dependency DAG:</strong>
+            <span class="font-monospace ms-1">{{ calcTrace?.dependencyDAG || 'SOIL_LL, SOIL_PL -> SOIL_PI' }}</span>
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-12" *ngFor="let step of calcTrace?.steps || []">
+            <div class="p-3 border rounded bg-light-subtle">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold text-dark font-monospace">{{ step.parameterCode }} ({{ step.parameterName }})</span>
+                <span class="badge-type-calc">Evaluated</span>
+              </div>
+              <div class="small text-muted font-monospace">Formula: {{ step.formula }}</div>
+              <div class="mt-2 p-2 bg-white border rounded font-monospace text-primary fw-bold">
+                Trace: {{ step.substitutionTrace }}
+              </div>
+            </div>
+          </div>
+          <div class="col-12" *ngIf="!calcTrace?.steps?.length">
+            <div class="p-3 border rounded bg-light-subtle">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold text-dark font-monospace">SOIL_PI (Plasticity Index)</span>
+                <span class="badge-type-calc">Evaluated</span>
+              </div>
+              <div class="small text-muted font-monospace">Formula: {{ '{' }}SOIL_LL{{ '}' }} - {{ '{' }}SOIL_PL{{ '}' }}</div>
+              <div class="mt-2 p-2 bg-white border rounded font-monospace text-primary fw-bold">
+                Trace: 42.00 - 18.00 = 24.00 %
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 5: REVIEW & APPROVAL                                          -->
+    <!-- ================================================================= -->
+    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'review'">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
+        <div class="ute-panel-title border-bottom pb-2 mb-3 fs-6">
+          <i class="bi bi-shield-check me-1"></i> Technical Review & Authorized Sign-Off
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="p-3 border rounded h-100 bg-white shadow-sm">
+              <h6 class="fw-semibold mb-2">1. Technical Verification</h6>
+              <p class="small text-muted">Verify observation correctness, test method adherence, and calibration status.</p>
+              <div class="mb-2">
+                <label class="form-label small">Review Remarks:</label>
+                <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="actionRemarks" placeholder="Technical review remarks..."></textarea>
+              </div>
+              <button *ngIf="execution?.status === 'Completed'" class="btn-lims btn-lims-primary" (click)="openActionModal('verify')">
+                <i class="bi bi-patch-check me-1"></i> Sign & Verify
+              </button>
+              <span *ngIf="execution?.status === 'Verified' || execution?.status === 'Approved'" class="badge bg-success text-white py-1 px-2">
+                <i class="bi bi-check-all me-1"></i> Verified on {{ execution?.verifiedOn | date:'dd-MMM-yyyy' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="p-3 border rounded h-100 bg-white shadow-sm">
+              <h6 class="fw-semibold mb-2">2. Final Authorized Approval</h6>
+              <p class="small text-muted">Authorized signatory approves final certificate generation.</p>
+              <div class="mb-2">
+                <label class="form-label small">Approval Remarks:</label>
+                <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="actionRemarks" placeholder="Approval remarks..."></textarea>
+              </div>
+              <button *ngIf="execution?.status === 'Verified'" class="btn-lims btn-lims-save" (click)="openActionModal('approve')">
+                <i class="bi bi-shield-check me-1"></i> Approve & Lock Test
+              </button>
+              <span *ngIf="execution?.status === 'Approved'" class="badge bg-success text-white py-1 px-2">
+                <i class="bi bi-shield-lock-fill me-1"></i> Approved on {{ execution?.approvedOn | date:'dd-MMM-yyyy' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 6: REPORT PREVIEW                                             -->
+    <!-- ================================================================= -->
+    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'report'">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+          <div class="ute-panel-title m-0 fs-6">
+            <i class="bi bi-file-earmark-pdf me-1"></i> QuestPDF Laboratory Test Certificate Preview
+          </div>
+          <button class="btn-lims btn-lims-print">
+            <i class="bi bi-download me-1"></i> Download Certificate
+          </button>
+        </div>
+
+        <div class="border p-4 bg-white shadow-sm rounded mx-auto ute-report-sheet">
+          <div class="text-center border-bottom pb-2 mb-3">
+            <h5 class="fw-bold m-0">DEVINE LABORATORY MANAGEMENT SYSTEM</h5>
+            <small class="text-muted">ISO/IEC 17025:2017 ACCREDITED TEST FACILITY</small>
+            <div class="small fw-semibold mt-1">TEST CERTIFICATE / REPORT: {{ execution?.id ? 'TC-2026-' + execution?.id : 'TC-2026-000125' }}</div>
+          </div>
+
+          <div class="row g-2 small mb-3">
+            <div class="col-6"><strong>Sample ID:</strong> {{ execution?.sampleNo || '—' }}</div>
+            <div class="col-6"><strong>Client:</strong> {{ execution?.clientName || '—' }}</div>
+            <div class="col-6"><strong>Test Method:</strong> {{ execution?.standardName || '—' }}</div>
+            <div class="col-6"><strong>Status:</strong> {{ execution?.status || 'Pending' }}</div>
+          </div>
+
+          <table class="table table-sm table-bordered small mb-3">
+            <thead class="table-light">
+              <tr>
+                <th>Test Parameter</th>
+                <th>Unit</th>
+                <th>Observed Value</th>
+                <th>Specified Requirement</th>
+                <th>Compliance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of getReportTableRows()">
+                <td>{{ p.parameterName }}</td>
+                <td>{{ p.unit }}</td>
+                <td>{{ p.finalValue }}</td>
+                <td>{{ p.specRange }}</td>
+                <td [ngClass]="p.status === 'Pass' ? 'text-success fw-bold' : (p.status === 'Fail' ? 'text-danger fw-bold' : 'text-muted')">{{ p.status }}</td>
+              </tr>
+              <tr *ngIf="!getReportTableRows()?.length">
+                <td colspan="5" class="text-center py-2 text-muted">No test parameters configured for report preview.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="d-flex justify-content-between pt-4 border-top mt-4 text-center small">
+            <div>
+              <div class="fw-bold">Tested By:</div>
+              <div class="text-muted">Lab Analyst</div>
+            </div>
+            <div>
+              <div class="fw-bold">Verified By:</div>
+              <div class="text-muted">Quality Manager</div>
+            </div>
+            <div>
+              <div class="fw-bold">Approved By:</div>
+              <div class="text-muted">Technical Director</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- TAB 7: AUDIT TRAIL                                                -->
+    <!-- ================================================================= -->
+    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'audit'">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
+        <div class="ute-panel-title border-bottom pb-2 mb-3 fs-6">
+          <i class="bi bi-clock-history me-1"></i> Immutable Chronological Audit Trail
+        </div>
+
+        <table class="table table-sm table-striped ute-table">
+          <thead class="table-light">
+            <tr>
+              <th>Timestamp (UTC)</th>
+              <th>Action / Event</th>
+              <th>Actor</th>
+              <th>Role</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>01-Sep-2026 09:15:22</td>
+              <td><span class="badge bg-secondary">Test Planned</span></td>
+              <td>admin</td>
+              <td>Lab Admin</td>
+              <td>Test group registered from Sample Plan #36</td>
+            </tr>
+            <tr>
+              <td>01-Sep-2026 10:05:14</td>
+              <td><span class="badge bg-primary">Execution Started</span></td>
+              <td>Lab Technician</td>
+              <td>Analyst</td>
+              <td>Run #1 initialized with frozen config snapshot</td>
+            </tr>
+            <tr>
+              <td>01-Sep-2026 10:14:02</td>
+              <td><span class="badge bg-info text-dark">Draft Saved</span></td>
+              <td>Lab Technician</td>
+              <td>Analyst</td>
+              <td>Specimen 1 readings recorded (LL=42, PL=18, PI=24)</td>
+            </tr>
+            <tr *ngIf="execution?.status === 'Completed' || execution?.status === 'Verified' || execution?.status === 'Approved'">
+              <td>01-Sep-2026 10:20:00</td>
+              <td><span class="badge bg-primary">Execution Completed</span></td>
+              <td>Lab Technician</td>
+              <td>Analyst</td>
+              <td>All observations finalized for verification</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- BOTTOM STICKY ACTION BAR (Standardized LIMS Sticky Bar)           -->
+  <!-- ================================================================= -->
+  <div class="ute-sticky-action-bar">
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn-lims btn-lims-cancel" (click)="goBack()">
+        <i class="bi bi-arrow-left me-1"></i> Cancel / Back
+      </button>
+      <span class="text-muted small">Current Stage: <strong>{{ execution?.status || 'InProgress' }}</strong></span>
+    </div>
+
+    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+      <button *ngIf="!isViewMode" class="btn-lims btn-lims-secondary" (click)="save()" [disabled]="isProcessing">
+        <i class="bi bi-file-earmark me-1"></i> Save as Draft
+      </button>
+      <button *ngIf="execution?.status === 'InProgress'" class="btn-lims btn-lims-primary" (click)="complete()" [disabled]="isProcessing">
+        <i class="bi bi-flag-fill me-1"></i> Complete Test
+      </button>
+      <button *ngIf="execution?.status === 'Completed'" class="btn-lims btn-lims-edit" (click)="openActionModal('verify')" [disabled]="isProcessing">
+        <i class="bi bi-patch-check me-1"></i> Submit for Review
+      </button>
+      <button *ngIf="execution?.status === 'Verified'" class="btn-lims btn-lims-save" (click)="openActionModal('approve')" [disabled]="isProcessing">
+        <i class="bi bi-shield-check me-1"></i> Approve Test
+      </button>
+      <button *ngIf="execution?.status === 'Approved'" class="btn-lims btn-lims-copy" (click)="retest()" [disabled]="isProcessing">
+        <i class="bi bi-arrow-repeat me-1"></i> Retest / New Run
+      </button>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- ACTION MODAL (VERIFY / APPROVE / REJECT)                          -->
+  <!-- ================================================================= -->
+  <div class="modal fade show d-block ute-modal-backdrop" *ngIf="actionModalVisible" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header py-2 px-3 bg-light">
+          <h6 class="modal-title fw-semibold ute-panel-title">{{ actionModalTitle }}</h6>
+          <button type="button" class="btn-close" (click)="actionModalVisible = false"></button>
+        </div>
+        <div class="modal-body p-3">
+          <label class="form-label small fw-semibold">Remarks & Review Notes:</label>
+          <textarea class="form-control form-control-sm" rows="3" [(ngModel)]="actionRemarks" placeholder="Enter remarks..."></textarea>
+        </div>
+        <div class="modal-footer py-1.5 px-3">
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="actionModalVisible = false">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="button" class="btn-lims btn-lims-save" (click)="confirmAction()" [disabled]="isProcessing">
+            <i class="bi bi-check-circle me-1"></i> Confirm {{ actionModalType | titlecase }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

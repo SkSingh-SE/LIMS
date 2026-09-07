@@ -1,222 +1,391 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-    <div class="card basic-data-table w-100">
-        <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Parameter Unit List</label>
-            <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i> Create Parameter Unit
-            </a>
+<div class="container-fluid p-2">
+  <!-- Breadcrumb Navigation Bar -->
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <!-- Card Header with Title and Add Action Button -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-rulers fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Parameter Unit Master</h6>
+          <small class="text-muted text-xs">Measurement units, SI base quantities, and unit conversions</small>
         </div>
+      </div>
+      <button class="btn-lims btn-lims-save" (click)="openModal('create')">
+        <i class="bi bi-plus-circle me-1"></i> Add Unit
+      </button>
+    </div>
 
-        <div *ngIf="!isLoading()" class="card-body">
-            <div class="d-flex justify-content-end mb-2">
-                <div class="w-25 input-group custom-search">
-                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
-                        (keydown.enter)="onSearch()">
-                    <div class="input-group-text pe-auto" (click)="onSearch()"><i class="bi bi-search"></i></div>
+    <!-- Filter Toolbar -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-2">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Code..."
+              [(ngModel)]="filterCode"
+              (keyup.enter)="onSearch()"
+            />
+          </div>
+        </div>
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search unit name..."
+            [(ngModel)]="filterName"
+            (keyup.enter)="onSearch()"
+          />
+        </div>
+        <div class="col-md-1">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Symbol (%, mm)"
+            [(ngModel)]="filterSymbol"
+            (keyup.enter)="onSearch()"
+          />
+        </div>
+        <div class="col-md-2">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="filterQuantityType"
+            (change)="onSearch()"
+          >
+            <option value="">All Quantity Types</option>
+            <option *ngFor="let qt of quantityTypes" [value]="qt">{{ qt }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="filterStatus"
+            (change)="onSearch()"
+          >
+            <option value="">All Statuses</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Grid Card -->
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="cursor-pointer text-center col-sn" (click)="applySorting('id')">
+                #
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'id' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'id' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="applySorting('code')">
+                Code
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'code' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'code' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('name')">
+                Unit Name
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'name' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'name' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('symbol')">
+                Symbol
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'symbol' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'symbol' && sortOrder === 'desc'}"></i>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('quantityType')">
+                Quantity Type
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'quantityType' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'quantityType' && sortOrder === 'desc'}"></i>
+              </th>
+              <th>Equivalent Units</th>
+              <th class="cursor-pointer text-center col-status" (click)="applySorting('isActive')">
+                Status
+                <i class="bi ms-1" [ngClass]="{'bi-arrow-up': sortByColumn === 'isActive' && sortOrder === 'asc', 'bi-arrow-down': sortByColumn === 'isActive' && sortOrder === 'desc'}"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="unitList.length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-6 d-block mb-1"></i>
+                No parameter units found.
+              </td>
+            </tr>
+            <tr *ngFor="let item of unitList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted font-monospace small">
+                {{ (pageNumber - 1) * pageSize + i + 1 }}
+              </td>
+              <td class="text-center col-actions">
+                <div class="d-flex gap-1 justify-content-center align-items-center">
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-view"
+                    title="View Details"
+                    (click)="openModal('view', item.id)"
+                  >
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-edit"
+                    title="Edit Unit"
+                    (click)="openModal('edit', item.id)"
+                  >
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Unit' : 'Activate Unit'"
+                    (click)="toggleStatus(item)"
+                  >
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
                 </div>
-            </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace fw-semibold">{{ item.code }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ item.name }}</td>
+              <td>
+                <span class="symbol-badge font-monospace">{{ item.symbol }}</span>
+              </td>
+              <td>
+                <span class="badge type-badge" *ngIf="item.quantityType">{{ item.quantityType }}</span>
+                <span class="text-muted small" *ngIf="!item.quantityType">—</span>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1" *ngIf="item.equivalents && item.equivalents.length > 0">
+                  <span
+                    class="badge bg-light text-dark border equivalent-chip"
+                    *ngFor="let eq of item.equivalents"
+                    [title]="'1 ' + item.name + ' = ' + eq.conversionFactor + ' ' + eq.name"
+                  >
+                    {{ eq.name }} (×{{ eq.conversionFactor }})
+                  </span>
+                </div>
+                <span class="text-muted small" *ngIf="!item.equivalents || item.equivalents.length === 0">—</span>
+              </td>
+              <td class="text-center">
+                <span
+                  class="badge"
+                  [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'"
+                >
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Pagination -->
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [totalItems]="totalItems"
+        [pageSize]="pageSize"
+        [currentPage]="pageNumber"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      ></app-pagination>
+    </div>
+  </div>
+</div>
 
-            <div *ngIf="parameterUnitList.length > 0 || filters.length > 0" class="table-responsive">
-                <table class="table bordered-table align-middle w-100">
-                    <thead class="table-light">
-                        <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-                            <th *ngFor="let column of columns; let i = index">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2" *ngIf="column.filter">
-                                        <i class="bi bi-caret-up sorting-icon-up" [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}" (click)="applySorting(column.key)"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down" [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}" (click)="applySorting(column.key)"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1" (click)="openFilterModal(column.key, $event)"><i class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1" (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let item of parameterUnitList; let i = index" class="text-sm">
+  <!-- Add / Edit / View Modal -->
+  <div class="modal fade" #modalRef tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content shadow">
+        <div class="modal-header py-2 px-3 bg-light border-bottom">
+          <h5 class="modal-title fs-6 fw-semibold text-danger d-flex align-items-center">
+            <i class="bi me-2" [ngClass]="{'bi-plus-circle': !isEditMode && !isViewMode, 'bi-pencil': isEditMode, 'bi-eye': isViewMode}"></i>
+            {{ formTitle }}
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            (click)="closeModal()"
+          ></button>
+        </div>
+        <div class="modal-body p-3">
+          <form [formGroup]="unitForm" (ngSubmit)="onSubmit()">
+            <!-- General Information Section -->
+            <fieldset class="lims-fieldset mb-3">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
+                <i class="bi bi-tag me-1"></i>Unit Information
+              </legend>
+              <div class="row g-2">
+                <div class="col-md-4 col-sm-6">
+                  <label class="form-label">Unit Code <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm text-uppercase font-monospace"
+                    placeholder="e.g. MPA, PERCENT, KN"
+                    formControlName="code"
+                    [class.is-invalid]="submitted && unitForm.get('code')?.invalid"
+                  />
+                  <app-field-error [control]="unitForm.get('code')" [submitted]="submitted"></app-field-error>
+                </div>
+                <div class="col-md-5 col-sm-6">
+                  <label class="form-label">Unit Name <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    placeholder="e.g. Megapascal, Percentage"
+                    formControlName="name"
+                    [class.is-invalid]="submitted && unitForm.get('name')?.invalid"
+                  />
+                  <app-field-error [control]="unitForm.get('name')" [submitted]="submitted"></app-field-error>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <label class="form-label">Symbol <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm font-monospace"
+                    placeholder="e.g. MPa, %, kN, °C"
+                    formControlName="symbol"
+                    [class.is-invalid]="submitted && unitForm.get('symbol')?.invalid"
+                  />
+                  <app-field-error [control]="unitForm.get('symbol')" [submitted]="submitted"></app-field-error>
+                </div>
+                <div class="col-md-5 col-sm-6">
+                  <label class="form-label">Quantity Type</label>
+                  <select class="form-select form-select-sm" formControlName="quantityType">
+                    <option value="">Select Quantity Type</option>
+                    <option *ngFor="let qt of quantityTypes" [value]="qt">{{ qt }}</option>
+                  </select>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                  <label class="form-label">Base Conversion Factor</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    class="form-control form-control-sm font-monospace"
+                    placeholder="1.0"
+                    formControlName="conversionFactor"
+                  />
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <label class="form-label">Status</label>
+                  <select class="form-select form-select-sm" formControlName="isActive">
+                    <option [ngValue]="true">Active</option>
+                    <option [ngValue]="false">Inactive</option>
+                  </select>
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label">Description</label>
+                  <textarea
+                    rows="2"
+                    class="form-control form-control-sm"
+                    placeholder="Optional description or scientific notes..."
+                    formControlName="description"
+                  ></textarea>
+                </div>
+              </div>
+            </fieldset>
 
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-3">
-                                    <a (click)="openModal('view',item.id)" class="icon-link" title="View"><img src="/icons/view.svg" alt="View" class="icon-svg"></a>
-                                    <a (click)="openModal('edit',item.id)" class="icon-link" title="Edit"><img src="/icons/edit.svg" alt="Edit" class="icon-svg"></a>
-                                    <a (click)="deleteFn(item.id)" class="icon-link" title="Delete"><img src="/icons/delete.svg" alt="Delete" class="icon-svg"></a>
-                                </div>
-                            </td>
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td class="fw-medium">{{ item.name }}</td>
-                            <td>{{ item.conversionFactor }}</td>
-                            <td>
-                                <div *ngIf="item.equivalents && item.equivalents.length > 0" class="d-flex flex-wrap gap-1 align-items-center">
-                                    <span *ngFor="let eq of item.equivalents" class="badge bg-light text-dark border" [title]="'Factor: ' + (eq.conversionFactor ?? 'N/A')">
-                                        {{ eq.name }} <small class="text-muted" *ngIf="eq.conversionFactor">({{ eq.conversionFactor }})</small>
-                                    </span>
-                                </div>
-                                <span *ngIf="!item.equivalents || item.equivalents.length === 0" class="text-muted">—</span>
-                            </td>                        </tr>
-                    </tbody>
+            <!-- Equivalents Section -->
+            <fieldset class="lims-fieldset mb-2">
+              <legend class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between w-100">
+                <span class="d-flex align-items-center">
+                  <i class="bi bi-arrow-left-right me-1"></i>Equivalent Units (Normalized Conversions)
+                </span>
+                <button
+                  type="button"
+                  class="btn-lims btn-lims-add py-0 px-2 small"
+                  *ngIf="!isViewMode"
+                  (click)="addEquivalent()"
+                >
+                  <i class="bi bi-plus-circle me-1"></i>Add Equivalent
+                </button>
+              </legend>
+
+              <div class="table-responsive" *ngIf="equivalents.length > 0">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                  <thead class="table-light small">
+                    <tr>
+                      <th class="th-sn">#</th>
+                      <th>Equivalent Unit Name <span class="text-danger">*</span></th>
+                      <th class="th-factor">Conversion Factor (Multiplier) <span class="text-danger">*</span></th>
+                      <th class="th-action text-center" *ngIf="!isViewMode">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="equivalents">
+                    <tr *ngFor="let eq of equivalents.controls; let idx = index" [formGroupName]="idx">
+                      <td class="text-center small text-muted">{{ idx + 1 }}</td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          placeholder="e.g. N, psi, mm"
+                          formControlName="name"
+                          [class.is-invalid]="submitted && eq.get('name')?.invalid"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          step="0.000001"
+                          class="form-control form-control-sm font-monospace"
+                          placeholder="e.g. 1000, 0.145038"
+                          formControlName="conversionFactor"
+                          [class.is-invalid]="submitted && eq.get('conversionFactor')?.invalid"
+                        />
+                      </td>
+                      <td class="text-center" *ngIf="!isViewMode">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-lims-icon text-danger"
+                          title="Remove Equivalent"
+                          (click)="removeEquivalent(idx)"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
                 </table>
+              </div>
+              <div class="text-center text-muted py-2 small" *ngIf="equivalents.length === 0">
+                No equivalent conversion units added. Click "+ Add Equivalent" to define conversions (e.g. kN &rarr; N).
+              </div>
+            </fieldset>
+
+            <!-- Sticky/Bottom Modal Footer -->
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-3">
+              <button
+                type="button"
+                class="btn-lims btn-lims-cancel"
+                (click)="closeModal()"
+              >
+                <i class="bi bi-x-circle me-1"></i>{{ isViewMode ? 'Close' : 'Cancel' }}
+              </button>
+              <button
+                type="submit"
+                class="btn-lims btn-lims-save"
+                *ngIf="!isViewMode"
+              >
+                <i class="bi bi-check-circle me-1"></i>{{ isEditMode ? 'Save Changes' : 'Save Unit' }}
+              </button>
             </div>
-
-            <div *ngIf="parameterUnitList.length == 0 && !isLoading()" class="w-100 h-100 text-center border rounded-3 mb-2">
-                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                    <div class="fw-semibold">No records found</div>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <app-pagination
-              [currentPage]="pageNumber"
-              [pageSize]="pageSize"
-              [totalItems]="totalItems"
-              [pageSizes]="pageSizes"
-              (pageChange)="onPageChange($event)"
-              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
-            </app-pagination>
-        </div>
+          </form>
+      </div>
     </div>
-</div>
-
-<!-- Filter Modal -->
-<div #filterModal class="filter-modal">
-    <div class="card py-2 px-3 shadow position-relative">
-        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
-        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-        <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
-            <option value="Equal">Equal</option>
-            <option value="NotEqual">Not Equal</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater Than</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than</option>
-        </select>
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date" class="form-control mb-2" [(ngModel)]="filterValue" />
-        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
-        </div>
-        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
-    </div>
-</div>
-
-<!-- Modal -->
-<div class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="parameterUnitModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header card-form-header text-white">
-                <label class="modal-title fw-medium" id="parameterUnitModalLabel">{{ formTitle }}</label>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
-            </div>
-            <form [formGroup]="parameterUnitForm" (ngSubmit)="onSubmit()">
-                <div class="modal-body">
-
-                    <!-- Base Unit Section -->
-                    <fieldset class="border p-3 mb-3">
-                        <legend>
-                            <i class="bi bi-rulers me-2"></i>Base Unit
-                        </legend>
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Unit Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" formControlName="name"
-                                    placeholder="e.g. MPa, %, J, HRC, mm" maxlength="100"
-                                    [ngClass]="{'is-invalid': isFieldInvalid('name')}"
-                                    [attr.disabled]="isViewMode ? true : null" />
-                                <app-field-error [control]="parameterUnitForm.get('name')" label="Name" [submitted]="submitted"/>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Base Conversion Factor <span class="text-danger">*</span></label>
-                                <input type="number" step="any" class="form-control form-control-sm" formControlName="conversionFactor"
-                                    placeholder="e.g. 1 (base), 0.001, 10000"
-                                    [ngClass]="{'is-invalid': isFieldInvalid('conversionFactor')}"
-                                    [attr.disabled]="isViewMode ? true : null" />
-                                <app-field-error [control]="parameterUnitForm.get('conversionFactor')" label="Base Conversion Factor" [submitted]="submitted"/>
-                                <small class="text-muted">Factor to convert to SI base unit</small>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <!-- Equivalent Units Section (normalized child grid — unlimited) -->
-                    <fieldset class="border p-3 mb-3">
-                         <legend>
-                             <i class="bi bi-arrow-left-right me-2"></i>Equivalent Units
-                         </legend>
-                         <div class="d-flex justify-content-end mb-2">
-                             <button *ngIf="!isViewMode" type="button" class="btn btn-lims btn-lims-add btn-sm" (click)="addEquivalent()">
-                                 <i class="bi bi-plus-lg me-1"></i> Add Unit
-                             </button>
-                         </div>
-                        <small class="text-muted d-block mb-3">Define units equivalent to the base unit.
-                            <span class="fw-medium">Formula: Base Value × Factor = Equivalent Value</span>
-                        </small>
-
-                        <div formArrayName="equivalents">
-                            <div *ngFor="let eq of equivalents.controls; let i = index" [formGroupName]="i" class="row align-items-start mb-2">
-                                <div class="col-md-5">
-                                    <label class="form-label">Equivalent Unit <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control form-control-sm" formControlName="name" placeholder="e.g. N/mm², ksi" maxlength="50"
-                                        [ngClass]="{ 'is-invalid': (eq.get('name')?.touched || eq.get('name')?.dirty || submitted) && eq.get('name')?.invalid }"
-                                        [attr.disabled]="isViewMode ? true : null" />
-                                    <app-field-error [control]="eq.get('name')" label="Unit Name" [submitted]="submitted"/>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Conversion Factor <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control form-control-sm" formControlName="conversionFactor" placeholder="e.g. 1, 0.145" step="any"
-                                        [ngClass]="{ 'is-invalid': (eq.get('conversionFactor')?.touched || eq.get('conversionFactor')?.dirty || submitted) && eq.get('conversionFactor')?.invalid }"
-                                        [attr.disabled]="isViewMode ? true : null" />
-                                    <app-field-error [control]="eq.get('conversionFactor')" label="Conversion Factor" [submitted]="submitted"/>
-                                </div>
-                                <div class="col-md-3 d-flex align-items-center gap-2" style="margin-top: 1.7rem;">
-                                    <div *ngIf="eq.get('name')?.value && eq.get('conversionFactor')?.value" class="bg-light border rounded px-2 py-1 flex-grow-1 text-center">
-                                        <small class="text-muted">1 {{ parameterUnitForm.get('name')?.value || '?' }} = {{ eq.get('conversionFactor')?.value }} {{ eq.get('name')?.value }}</small>
-                                    </div>
-                                    <button *ngIf="!isViewMode" type="button" class="btn btn-lims btn-lims-remove btn-sm" (click)="removeEquivalent(i)" title="Remove"><i class="bi bi-trash"></i></button>
-                                </div>
-                            </div>
-
-                            <div *ngIf="equivalents.length === 0" class="text-center text-muted py-2">
-                                <small>No equivalent units defined. Click "Add Unit" to add one.</small>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <!-- Live Conversion Calculator -->
-                    <div *ngIf="equivalents.length > 0 && !isViewMode" class="border rounded-3 p-3 bg-light">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-calculator text-info me-2"></i>
-                            <span class="fw-semibold text-dark">Quick Conversion Calculator</span>
-                        </div>
-                        <div class="row align-items-end">
-                            <div class="col-md-4">
-                                <label class="form-label">Value in {{ parameterUnitForm.get('name')?.value || 'base unit' }}</label>
-                                <input type="number" class="form-control form-control-sm" [(ngModel)]="testValue" [ngModelOptions]="{standalone: true}" placeholder="Enter value" step="any" />
-                            </div>
-                            <div class="col-md-8">
-                                <div class="d-flex flex-wrap gap-2 mt-2">
-                                    <ng-container *ngFor="let eq of equivalents.controls; let i = index">
-                                        <div *ngIf="eq.get('name')?.value && eq.get('conversionFactor')?.value" class="border rounded px-3 py-2 bg-white">
-                                            <small class="text-muted d-block">{{ eq.get('name')?.value }}</small>
-                                            <span class="fw-semibold text-primary">{{ getConvertedValue(i) }}</span>
-                                        </div>
-                                    </ng-container>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-lims btn-lims-cancel me-2" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-lims btn-lims-save">
-                        {{ isEditMode ? 'Update' : 'Save' }}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+  </div>

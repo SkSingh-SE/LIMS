@@ -33,7 +33,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const branchService = inject(BranchService);
 
   let token = authService.getUserData()?.token; // Retrieve token from service
-  const selectedBranchCode = branchService.selectedBranch()?.code;
+  const selectedBranch = branchService.selectedBranch();
   const excludedUrls = ['/api/Auth/login', '/api/Auth/refresh-token', 'api/Auth/refresh-token', '/api/Auth/forgot'];
   const excludeLoaderUrl = [
     '/api/Auth/login',
@@ -99,8 +99,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const headers: { [name: string]: string } = {
       Authorization: `Bearer ${accessToken}`
     };
-    if (selectedBranchCode) {
-      headers['X-Branch-Code'] = selectedBranchCode;
+    if (selectedBranch) {
+      if (selectedBranch.id) {
+        headers['X-Branch-ID'] = selectedBranch.id.toString();
+      }
+      if (selectedBranch.code) {
+        headers['X-Branch-Code'] = selectedBranch.code;
+      }
     }
 
     const modifiedReq = req.clone({
@@ -180,7 +185,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     reqId = loaderService.show();
   }
 
-  const outgoingReq = selectedBranchCode ? req.clone({ setHeaders: { 'X-Branch-Code': selectedBranchCode } }) : req;
+  const outgoingReq = selectedBranch?.code ? req.clone({ setHeaders: { 'X-Branch-Code': selectedBranch.code, 'X-Branch-ID': selectedBranch.id.toString() } }) : req;
 
   return next(outgoingReq).pipe(
     tap(event => {

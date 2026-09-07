@@ -1,0 +1,288 @@
+.universal-plan-container {
+  font-family: 'Poppins', sans-serif;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.text-xxs {
+  font-size: 0.68rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+}
+
+.text-sm {
+  font-size: 0.82rem;
+}
+
+/* Workflow Flow Banner */
+.workflow-flow-banner {
+  min-height: 36px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.workflow-step {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.workflow-step.active {
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+}
+
+.workflow-step.completed {
+  color: #10b981;
+  font-weight: 500;
+}
+
+/* Sample Visual Selector Pill Button */
+.sample-pill-btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 50rem;
+  border: 1.5px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  line-height: 1.25;
+}
+
+.sample-pill-btn i {
+  font-size: 0.8rem;
+  color: #64748b;
+  transition: color 0.18s ease;
+}
+
+.sample-pill-btn .sample-pill-title {
+  color: inherit;
+  font-weight: 500;
+}
+
+.sample-pill-btn .sample-test-badge {
+  background-color: #e2e8f0;
+  color: #1e293b;
+  font-size: 0.68rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 50rem;
+  font-weight: 600;
+  transition: all 0.18s ease;
+}
+
+/* Inactive Hover State — Clear, crisp, NO white-on-white */
+.sample-pill-btn:hover:not(.active) {
+  background-color: var(--primary-50, #fef2f2) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: var(--primary-color, #da261c) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(218, 38, 28, 0.15);
+}
+
+.sample-pill-btn:hover:not(.active) i {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.sample-pill-btn:hover:not(.active) .sample-pill-title {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.sample-pill-btn:hover:not(.active) .sample-test-badge {
+  background-color: rgba(218, 38, 28, 0.12);
+  color: var(--primary-color, #da261c);
+}
+
+/* Active / Selected State — Solid Brand Red with pure white text */
+.sample-pill-btn.active {
+  background: linear-gradient(135deg, var(--primary-color, #da261c) 0%, var(--primary-hover, #b81d14) 100%) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(218, 38, 28, 0.3);
+  transform: translateY(-1px);
+}
+
+.sample-pill-btn.active i {
+  color: #ffffff !important;
+}
+
+.sample-pill-btn.active .sample-pill-title {
+  color: #ffffff !important;
+}
+
+.sample-pill-btn.active .sample-test-badge {
+  background-color: #ffffff;
+  color: var(--primary-color, #da261c);
+}
+
+/* Active Hover State — Maintains contrast */
+.sample-pill-btn.active:hover {
+  background: var(--primary-hover, #b81d14) !important;
+  border-color: var(--primary-hover, #b81d14) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(218, 38, 28, 0.35);
+}
+
+.sample-pill-btn.active:hover i,
+.sample-pill-btn.active:hover .sample-pill-title {
+  color: #ffffff !important;
+}
+
+.sample-pill-btn.active:hover .sample-test-badge {
+  background-color: #ffffff;
+  color: var(--primary-hover, #b81d14);
+}
+
+/* Header & Config Cards */
+.workspace-header-card {
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.config-card {
+  border-radius: 6px;
+}
+
+.form-control-sm,
+.form-select-sm {
+  height: 28px;
+  min-height: 28px;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.btn-xs {
+  height: 24px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+/* Filter Chips */
+.filter-chip {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+}
+
+.filter-chip:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.filter-chip.active {
+  background-color: var(--primary-color, #da261c);
+  color: #ffffff;
+  border-color: var(--primary-color, #da261c);
+}
+
+/* Test Cards List */
+.test-cards-scrollable {
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.test-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.test-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.test-card.is-planned {
+  background-color: #f8fafc;
+  border-left: 3px solid var(--primary-color, #da261c);
+}
+
+/* Planned Table */
+.bordered-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.bordered-table th {
+  padding: 0.35rem 0.5rem;
+  font-weight: 600;
+  background-color: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.bordered-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Sticky Action Bar */
+.workspace-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  border-top: 2px solid var(--primary-color, #da261c);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+}
+
+/* Effective Configuration Preview Drawer (Screen 14E) */
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.35);
+  z-index: 1040;
+}
+
+.effective-config-drawer {
+  position: fixed;
+  top: 0;
+  right: -520px;
+  width: 520px;
+  height: 100vh;
+  background-color: #ffffff;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.25s ease-in-out;
+}
+
+.effective-config-drawer.open {
+  right: 0;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.drawer-header {
+  height: 44px;
+}
+
+.drawer-footer {
+  height: 44px;
+}
+
+/* Validation Modal */
+.modal-backdrop.show {
+  opacity: 0.45;
+}

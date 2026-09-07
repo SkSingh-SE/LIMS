@@ -1,203 +1,204 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormsModule } from '@angular/forms';
-import { LaboratoryTestService } from '../../../services/laboratory-test.service';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { LaboratoryTestService } from '../../../services/laboratory-test.service';
+import { DisciplineService } from '../../../services/discipline.service';
+import { DepartmentService } from '../../../services/department.service';
 import { ToastService } from '../../../services/toast.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { LaboratoryTestListDto } from '../../../models/laboratory-test.model';
 
 @Component({
   selector: 'app-laboratory-test-list',
-  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    PaginationComponent,
+    BreadcrumbComponent,
+    HasPermissionDirective
+  ],
   templateUrl: './laboratory-test-list.component.html',
   styleUrl: './laboratory-test-list.component.css'
 })
 export class LaboratoryTestListComponent implements OnInit {
-  @ViewChild('filterModal') filterModal!: ElementRef;
+  labTestList: LaboratoryTestListDto[] = [];
+  disciplines: any[] = [];
+  departments: any[] = [];
 
-  columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Test Name', filter: true },
-    { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'isChemicalTest', type: 'bool', label: 'Test Type', filter: true },
-    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
-  ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    name: 'string',
-    departmentName: 'string',
-    isChemicalTest: 'bool',
-    modifiedOn: 'date',
-  };
-
-  filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
-  filterType: string = 'Contains';
-  filterValue: string = '';
-  filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
-  isFilterOpen = false;
-  labTestList: any[] = [];
-
-  pageNumber = 1;
-  pageSize = 10;
-  totalItems = 0;
-  pageSizes = [10, 25, 50, 100, 200, 500];
-
-  sortByColumn: string = 'modifiedOn';
-  sortOrder: string = 'desc';
+  // Filter Bar State
   searchTerm: string = '';
+  selectedDisciplineId: number | null = null;
+  selectedDepartmentId: number | null = null;
+  selectedStatus: string = 'all'; // 'all' | 'active' | 'inactive'
 
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null
-  };
+  // Pagination & Sorting State
+  pageNumber: number = 1;
+  pageSize: number = 10;
+  totalItems: number = 0;
+  pageSizes: number[] = [10, 25, 50, 100];
+  sortByColumn: string = 'id';
+  sortOrder: string = 'desc';
 
-  constructor(private fb: FormBuilder, private labService: LaboratoryTestService, private toastService: ToastService) {
-  }
+  constructor(
+    private labService: LaboratoryTestService,
+    private disciplineService: DisciplineService,
+    private departmentService: DepartmentService,
+    private toastService: ToastService
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.loadDropdowns();
     this.fetchData();
   }
 
-  fetchData() {
-
-    this.labService.getAllLaboratoryTests(this.payload).subscribe({
-      next: (response) => {
-        this.labTestList = response?.items || [];
-        this.totalItems = response?.totalRecords || 0;
-        this.pageSize = response?.pageSize || 10;
-        this.pageNumber = response?.pageNumber || 1;
+  loadDropdowns(): void {
+    this.disciplineService.getDisciplineDropdown('', 0, 100).subscribe({
+      next: (res) => {
+        this.disciplines = Array.isArray(res) ? res : res?.items || [];
       },
-      error: (error) => {
-        console.error('Error fetching list:', error);
-        this.labTestList = [];
-      }
-
+      error: (err) => console.error('Error loading disciplines:', err)
     });
 
+    this.departmentService.getDepartmentDropdown('', 0, 100).subscribe({
+      next: (res) => {
+        this.departments = Array.isArray(res) ? res : res?.items || [];
+      },
+      error: (err) => console.error('Error loading departments:', err)
+    });
   }
 
-  applySorting(column: string) {
+  fetchData(): void {
+    const payload = {
+      pageNumber: this.pageNumber,
+      pageSize: this.pageSize,
+      searchTerm: this.searchTerm ? this.searchTerm.trim() : '',
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder,
+      filter: null
+    };
+
+    let isActiveParam: boolean | null = null;
+    if (this.selectedStatus === 'active') isActiveParam = true;
+    else if (this.selectedStatus === 'inactive') isActiveParam = false;
+
+    this.labService
+      .getPagedUniversalTests(
+        payload,
+        this.selectedDisciplineId || null,
+        this.selectedDepartmentId || null,
+        isActiveParam
+      )
+      .subscribe({
+        next: (res) => {
+          this.labTestList = res?.items || [];
+          this.totalItems = res?.totalRecords || 0;
+          this.pageNumber = res?.pageNumber || 1;
+          this.pageSize = res?.pageSize || 10;
+        },
+        error: (err) => {
+          console.error('Error fetching Universal Tests:', err);
+          this.labTestList = [];
+          this.totalItems = 0;
+          this.toastService.show(err?.error?.message || 'Error loading Laboratory Tests.', 'error');
+        }
+      });
+  }
+
+  onSearch(): void {
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  onFilterChange(): void {
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.selectedDisciplineId = null;
+    this.selectedDepartmentId = null;
+    this.selectedStatus = 'all';
+    this.pageNumber = 1;
+    this.sortByColumn = 'id';
+    this.sortOrder = 'desc';
+    this.fetchData();
+  }
+
+  applySorting(column: string): void {
     if (this.sortByColumn === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
     this.fetchData();
   }
 
-  openFilterModal(column: string, event: MouseEvent) {
-    this.filterColumn = column;
-    this.columns.forEach(col => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
+  toggleStatus(item: LaboratoryTestListDto): void {
+    const action = item.isActive ? 'deactivate' : 'activate';
+    const confirmed = window.confirm(`Are you sure you want to ${action} test '${item.name}'?`);
+    if (!confirmed) return;
+
+    this.labService.toggleTestStatus(item.id).subscribe({
+      next: (res) => {
+        item.isActive = !item.isActive;
+        this.toastService.show(
+          res?.message || `Test '${item.name}' status updated successfully.`,
+          'success'
+        );
+      },
+      error: (err) => {
+        this.toastService.show(
+          err?.error?.message || err?.message || `Failed to ${action} test '${item.name}'.`,
+          'error'
+        );
       }
-    })
-    this.filterValue = '';
-    this.filterValue2 = '';
-
-    // Determine filter type dynamically
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
-    }
-
-    this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
-    if (this.filterModal) {
-      const modal = this.filterModal.nativeElement;
-      modal.style.display = 'block';
-      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
-      modal.style.left = `${rect.left + window.scrollX}px`;
-
-      // Clamp to viewport so the popup doesn't overflow
-      requestAnimationFrame(() => {
-        const modalRect = modal.getBoundingClientRect();
-        if (modalRect.right > window.innerWidth) {
-          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-        }
-        if (modalRect.bottom > window.innerHeight) {
-          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-        }
-      });
-    }
+    });
   }
 
-  applyFilter() {
-    if (!this.filterColumn || this.filterValue === '') return;
+  deleteTest(item: LaboratoryTestListDto): void {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete Universal Test '${item.name}' (${item.code})?\nThis operation will be validated against active inward and execution records.`
+    );
+    if (!confirmed) return;
 
-    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
-    } else {
-      this.filters.push(filterData);
-    }
-
-    this.payload.filter = this.filters;
-    this.fetchData();
-    this.closeFilterModal();
+    this.labService.deleteUniversalTest(item.id).subscribe({
+      next: (res) => {
+        this.toastService.show(res?.message || `Test '${item.name}' deleted successfully.`, 'success');
+        this.fetchData();
+      },
+      error: (err) => {
+        this.toastService.show(
+          err?.error?.message || err?.message || 'Cannot delete Laboratory Test due to active dependencies.',
+          'error'
+        );
+      }
+    });
   }
 
-  resetFilter(column: string) {
-    this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
-    this.fetchData();
-  }
-
-  closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
-    }
-  }
-
-  onPageChange(page: number) {
+  onPageChange(page: number): void {
     this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
     this.fetchData();
   }
 
-  changePageSize(event: Event) {
+  onPageSizeChange(newSize: number): void {
+    this.pageSize = newSize;
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  changePageSize(event: Event): void {
     this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
+    this.pageNumber = 1;
     this.fetchData();
   }
 
-  onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
-  }
-
-  get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
-  }
   getStartRecord(): number {
     return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
   }
@@ -205,30 +206,4 @@ export class LaboratoryTestListComponent implements OnInit {
   getEndRecord(): number {
     return Math.min(this.pageNumber * this.pageSize, this.totalItems);
   }
-
-
-  hasFilter(column: string): boolean {
-    return this.filters?.some(f => f.column === column) ?? false;
-  }
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find(col => col.key === columnKey);
-    return column ? column.type : undefined;
-  }
-  deleteFn(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.labService.deleteLaboratoryTest(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
-    }
-  }
-
 }
-

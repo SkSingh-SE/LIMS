@@ -1,10 +1,15 @@
-<nav #navbar class="navbar-expand-lg fixed-top border-bottom shadow-sm">
-  <div class="nav-content navbar-background" style="position: relative;">
-    <!-- Logo -->
-    <div class="nav-logo border-end bg-white px-2">
-      <a class="navbar-brand d-flex align-items-center py-2 px-3" href="#">
-        <!-- <img src="LIMS.png" alt="Logo" width="50" height="40" /> -->
-        <img src="TPTL-icon.png" alt="Logo" width="40" height="40" />
+<nav #navbar class="navbar-expand-lg fixed-top shadow-sm">
+  <div class="nav-content navbar-background">
+    <!-- Logo & Brand Badge -->
+    <div class="nav-logo">
+      <a class="navbar-brand d-flex align-items-center" routerLink="/">
+        <div class="logo-badge">
+          <img src="TPTL-icon.png" alt="Logo" class="logo-img" width="34" height="34" />
+        </div>
+        <div class="brand-text-wrapper d-none d-xl-flex flex-column ms-2">
+          <span class="brand-title">LIMS</span>
+          <span class="brand-subtitle">Enterprise Lab</span>
+        </div>
       </a>
     </div>
     <!-- Menu cell: browser gives this the exact 1fr pixel width -->
@@ -21,12 +26,12 @@
     </div>
     <!-- Right Section -->
     <div #navRight class="nav-right-cell d-flex align-items-center gap-2">
-      <!-- Search Icon Button (always visible, no inline input) -->
-      <button class="btn btn-light rounded-circle h-auto menu-search-btn" (click)="toggleSearch()">
+      <!-- Search Icon Button -->
+      <button class="nav-action-btn menu-search-btn" (click)="toggleSearch()" title="Search Menu & Features (Ctrl+K)">
         <i class="bi bi-search"></i>
       </button>
-      <!-- Down Arrow Icon -->
-      <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" (click)="menuOpenClose()">
+      <!-- Overflow Categories Down Arrow -->
+      <button class="nav-action-btn menu-overflow-btn" (click)="menuOpenClose()" title="More Categories">
         <i class="bi"
           [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
       </button>
@@ -36,13 +41,16 @@
       <div class="me-2 user-dropdown-wrapper">
         <button class="btn user-avatar-btn border-0 d-flex align-items-center gap-2" type="button" id="userDropdown"
           data-bs-toggle="dropdown" aria-expanded="false">
-          <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" />
-          <div *ngIf="!profileImageUrl" class="user-initials-circle">{{ loggedInUserInitials }}</div>
+          <div class="avatar-status-container position-relative">
+            <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" />
+            <div *ngIf="!profileImageUrl" class="user-initials-circle">{{ loggedInUserInitials }}</div>
+            <span class="user-avatar-dot online" title="Active Session"></span>
+          </div>
           <div class="user-name-display d-none d-lg-flex flex-column align-items-start text-start">
             <span class="user-display-name">{{ loggedInUserName }}</span>
             <span class="user-display-role">
               {{ loggedInUserRole }} <span class="role-branch-sep">·</span>
-              <i class="bi bi-building"></i> {{ selectedBranch().name }}
+              <i class="bi bi-geo-alt-fill me-0.5"></i> {{ selectedBranch()?.name || 'No Branch' }}
             </span>
           </div>
           <i class="bi bi-chevron-down text-white user-chevron ms-1"></i>
@@ -73,21 +81,21 @@
           <div class="user-menu-divider"></div>
 
           <!-- Branch Switcher -->
-          <div class="px-3 pt-2 pb-1" *ngIf="branches && branches.length > 0">
+          <div class="px-3 pt-2 pb-1" *ngIf="branches().length > 0">
             <span class="text-muted extra-small fw-semibold text-uppercase d-flex align-items-center gap-1.5">
               <i class="bi bi-diagram-3"></i> Switch Branch
             </span>
           </div>
-          <div class="user-menu-body px-1.5 pb-1" *ngIf="branches && branches.length > 0">
-            <a *ngFor="let branch of branches"
+          <div class="user-menu-body px-1.5 pb-1" *ngIf="branches().length > 0">
+            <a *ngFor="let branch of branches()"
               class="dropdown-item user-menu-item rounded-3 d-flex align-items-center justify-content-between py-1.5 px-2.5"
               role="button"
               (click)="selectBranch(branch)">
               <div class="d-flex flex-column">
                 <span class="user-item-title">{{ branch.name }}</span>
-                <span class="user-item-desc text-muted extra-small">{{ branch.location }}</span>
+                <span class="user-item-desc text-muted extra-small">{{ branch.address }}</span>
               </div>
-              <i class="bi bi-check-lg text-success fw-bold" *ngIf="branch.code === selectedBranch().code"></i>
+              <i class="bi bi-check-lg text-success fw-bold" *ngIf="branch.code === selectedBranch()?.code"></i>
             </a>
           </div>
 

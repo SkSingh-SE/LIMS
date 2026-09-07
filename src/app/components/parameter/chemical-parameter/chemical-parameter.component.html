@@ -357,7 +357,7 @@
           <div *ngIf="ParameterForm.value.isCalculated && (ParameterForm.get('inputType')?.value === 'Decimal' || ParameterForm.get('inputType')?.value === 'Integer')" class="col-12 my-1">
             <label class="form-label">Formula</label>
             <div class="input-group">
-              <input type="text" class="form-control bg-light" formControlName="formulaDisplay" placeholder="{P12} + {P15}" readonly />
+              <input type="text" class="form-control bg-light" formControlName="formulaDisplay" placeholder="{C} + {MN} / 6" readonly />
               <button type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder()">Build Formula</button>
             </div>
           </div>

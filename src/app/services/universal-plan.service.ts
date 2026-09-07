@@ -156,10 +156,19 @@ export interface PreviewParameterDto {
   requirementText: string;
   minValue?: number;
   maxValue?: number;
+  minTolerance?: number;
+  maxTolerance?: number;
   acceptanceCriteria?: string;
   equation?: string;
+  note?: string;
   hasRequirement: boolean;
   status: string;
+
+  // Screen 14 Part C — resolution status & reason
+  resolutionStatus: string;
+  resolutionReason?: string;
+  specificationLineID?: number;
+  sourceSpecificationVersionID?: number;
 }
 
 export interface PreviewConditionDto {
@@ -234,6 +243,7 @@ export interface UniversalPlanPreviewResponseDto {
   isSupersededSpecVersion: boolean;
   specificationGradeID?: number;
   gradeName?: string;
+  isStandardlessTest: boolean;
   branchID: number;
   branchName?: string;
   departmentID?: number;
@@ -243,6 +253,13 @@ export interface UniversalPlanPreviewResponseDto {
   conditions: PreviewConditionDto[];
   validationSummary: UniversalPlanValidationSummaryDto;
   isConfigurationReady: boolean;
+  tenant?: TenantContextDto;
+}
+
+export interface TenantContextDto {
+  organizationID: number;
+  branchID: number;
+  companyCode: string;
 }
 
 export interface UniversalPlanTestItemDto {

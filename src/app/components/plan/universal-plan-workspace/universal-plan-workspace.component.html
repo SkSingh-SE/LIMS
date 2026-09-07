@@ -502,8 +502,40 @@
                 </td>
                 <td>{{ p.parameterUnit }}</td>
                 <td>
-                  <span *ngIf="p.hasRequirement" class="badge bg-light text-dark border font-monospace">{{ p.requirementText }}</span>
-                  <span *ngIf="!p.hasRequirement" class="badge bg-danger-subtle text-danger">No Spec Requirement</span>
+                  <!-- Screen 14 Part C: resolution-status-aware rendering.
+                       Never hidden behind a flat "No Spec Requirement" string. -->
+                  <ng-container [ngSwitch]="p.resolutionStatus">
+                    <span *ngSwitchCase="'RESOLVED'" class="badge bg-success-subtle text-success border border-success-subtle font-monospace" [title]="p.resolutionReason || ''">
+                      {{ p.requirementText }}
+                    </span>
+                    <span *ngSwitchCase="'SPECIFICATION_NOT_APPLICABLE'" class="badge bg-secondary-subtle text-secondary border" [title]="p.resolutionReason || ''">
+                      Standardless (N/A)
+                    </span>
+                    <span *ngSwitchCase="'MANDATORY_MISSING'" class="badge bg-danger text-white" [title]="p.resolutionReason || ''">
+                      Mandatory Missing
+                    </span>
+                    <span *ngSwitchCase="'VERSION_MISMATCH'" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" [title]="p.resolutionReason || ''">
+                      Version Mismatch
+                    </span>
+                    <span *ngSwitchCase="'GRADE_MISMATCH'" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" [title]="p.resolutionReason || ''">
+                      Grade Mismatch
+                    </span>
+                    <span *ngSwitchCase="'PARAMETER_MISMATCH'" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" [title]="p.resolutionReason || ''">
+                      Parameter Mismatch
+                    </span>
+                    <span *ngSwitchCase="'AMBIGUOUS_CONFIGURATION'" class="badge bg-warning text-dark" [title]="p.resolutionReason || ''">
+                      Ambiguous
+                    </span>
+                    <span *ngSwitchCase="'INVALID_CONFIGURATION'" class="badge bg-danger text-white" [title]="p.resolutionReason || ''">
+                      Invalid Config
+                    </span>
+                    <span *ngSwitchDefault class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" [title]="p.resolutionReason || ''">
+                      Not Configured
+                    </span>
+                  </ng-container>
+                  <div *ngIf="p.resolutionReason && p.resolutionStatus !== 'RESOLVED' && p.resolutionStatus !== 'SPECIFICATION_NOT_APPLICABLE'" class="resolution-reason text-xxs text-muted mt-0.5">
+                    <i class="bi bi-info-circle me-1"></i>{{ p.resolutionReason }}
+                  </div>
                 </td>
                 <td class="text-center">
                   <span class="badge" [ngClass]="p.isMandatory ? 'bg-danger' : 'bg-secondary'">{{ p.isMandatory ? 'YES' : 'NO' }}</span>

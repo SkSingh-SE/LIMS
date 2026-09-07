@@ -10,6 +10,13 @@
   font-size: 0.68rem;
 }
 
+/* Screen 14 Part C: resolution-reason inline diagnostic */
+.resolution-reason {
+  max-width: 320px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
 .text-xs {
   font-size: 0.75rem;
 }

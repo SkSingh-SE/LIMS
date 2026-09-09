@@ -1,7 +1,7 @@
 <ul
   #listRef
   class="list-group dropdown-panel"
-  style="max-height: 220px; overflow-y: auto;"
+  (mousedown)="$event.preventDefault()"
   (scroll)="onScrollEvent($event)"
 >
   <ng-container *ngFor="let item of items; let i = index; trackBy: trackById">
@@ -9,7 +9,6 @@
     <li
       *ngIf="item.isHeader && (item.level === 0 || !item.level)"
       class="list-group-item bg-light text-secondary fw-bold small py-1 px-2 text-uppercase position-sticky top-0 z-1 border-bottom border-top dropdown-group-header-0"
-      style="font-size: 0.72rem; letter-spacing: 0.5px; cursor: default; user-select: none;"
     >
       <i class="bi bi-folder2-open me-1 text-danger"></i> {{ item.name }}
     </li>
@@ -18,7 +17,6 @@
     <li
       *ngIf="item.isHeader && item.level === 1"
       class="list-group-item bg-light-subtle text-dark fw-semibold small py-1 ps-3 pe-2 border-bottom dropdown-group-header-1"
-      style="font-size: 0.74rem; letter-spacing: 0.2px; cursor: default; user-select: none;"
     >
       <i class="bi bi-folder me-1 text-secondary"></i> {{ item.name }}
     </li>
@@ -30,12 +28,13 @@
       [class.ps-3]="item.level === 1 || (item.isChild && !item.level)"
       [class.ps-4]="item.level === 2"
       [class.active]="i === highlightedIndex"
-      (click)="onSelect(item, i)"
+      (mousedown)="onItemMouseDown($event, item, i)"
+      (click)="onItemClick($event, item, i)"
       (mouseenter)="onHover(item, i)"
     >
       <div class="d-flex align-items-center justify-content-between">
         <span class="d-flex align-items-center">
-          <i *ngIf="item.level > 0 || item.isChild" class="bi bi-arrow-return-right text-muted me-1" style="font-size: 0.7rem;"></i>
+          <i *ngIf="item.level > 0 || item.isChild" class="bi bi-arrow-return-right text-muted me-1 dropdown-tree-arrow"></i>
           <span>{{ item.name }}</span>
         </span>
         <span *ngIf="item.isBase" class="badge bg-secondary-subtle text-secondary border text-xs ms-1">Base</span>

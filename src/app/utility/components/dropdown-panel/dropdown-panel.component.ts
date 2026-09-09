@@ -33,8 +33,27 @@ export class DropdownPanelComponent {
     this.highlightedIndex = index >= 0 ? index : 0;
   }
 
+  private lastSelectionTime = 0;
+
+  onItemMouseDown(event: MouseEvent, item: any, index: number): void {
+    event.preventDefault(); // Prevent input blur / focus stealing
+    this.executeSelection(item, index);
+  }
+
+  onItemClick(event: MouseEvent, item: any, index: number): void {
+    event.preventDefault();
+    this.executeSelection(item, index);
+  }
+
   onSelect(item: any, index: number): void {
+    this.executeSelection(item, index);
+  }
+
+  private executeSelection(item: any, index: number): void {
     if (item?.isHeader || item?.selectable === false) return;
+    const now = Date.now();
+    if (now - this.lastSelectionTime < 180) return; // Prevent duplicate execution from rapid mousedown+click
+    this.lastSelectionTime = now;
     this.highlightedIndex = index;
     this.selectItem.emit(item);
   }

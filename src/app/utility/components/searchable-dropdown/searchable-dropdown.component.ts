@@ -5,6 +5,7 @@ import { debounceTime, Subject, Subscription, switchMap } from 'rxjs';
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { DropdownPanelComponent } from '../dropdown-panel/dropdown-panel.component';
+import { rankAndFilterDropdownItems } from '../../helper/dropdown-search.helper';
 
 @Component({
   selector: 'app-searchable-dropdown',
@@ -58,8 +59,9 @@ export class SearchableDropdownComponent {
       )
       .subscribe({
         next: data => {
-          this.dropdownData = data as any[];
-          this.hasMore = (data as any[]).length === this.pageSize;
+          const rawItems = (data as any[]) || [];
+          this.dropdownData = rankAndFilterDropdownItems(rawItems, this.searchTerm);
+          this.hasMore = rawItems.length === this.pageSize;
           this.pageNo++;
           this.loading = false;
           const firstSelectable = this.dropdownData.findIndex(x => x && !x.isHeader && x.selectable !== false);
@@ -100,14 +102,15 @@ export class SearchableDropdownComponent {
 
       if (typeof val === 'object' && val !== null && val.id !== undefined) {
         // Full object passed — resolve human-readable label
+        // Grade/leaf items carry spec displayTitle in additionalValues — never let it shadow the child name.
         const candidateLabel =
-          val.additionalValues?.['fullDisplayName'] ||
-          val.additionalValues?.['displayTitle'] ||
           val.name ||
           val.label ||
+          val.additionalValues?.['fullDisplayName'] ||
           val.displayTitle ||
           val.DisplayTitle ||
           val.title ||
+          (val.additionalValues?.['displayTitle'] && String(val.additionalValues['displayTitle']) !== String(val.name) ? val.additionalValues['displayTitle'] : undefined) ||
           (val.code && String(val.code) !== String(val.id) ? val.code : undefined);
 
         if (candidateLabel) {
@@ -173,6 +176,17 @@ export class SearchableDropdownComponent {
       this.pageNo = 0;
       this.hasMore = true;
       this.itemSelected.emit(null);
+    }
+    // Instantly rank existing loaded items while the debounced backend request is pending
+    if (this.dropdownData.length > 0) {
+      this.dropdownData = rankAndFilterDropdownItems(this.dropdownData, this.searchTerm);
+      const firstSelectable = this.dropdownData.findIndex(x => x && !x.isHeader && x.selectable !== false);
+      this.highlightedIndex = firstSelectable >= 0 ? firstSelectable : 0;
+      if (this.dropdownComponentRef) {
+        this.dropdownComponentRef.instance.items = this.dropdownData;
+        this.dropdownComponentRef.instance.highlightedIndex = this.highlightedIndex;
+        this.dropdownComponentRef.changeDetectorRef.detectChanges();
+      }
     }
     this.openDropdownPanel();
     this.searchSubject.next(this.searchTerm);
@@ -287,10 +301,17 @@ export class SearchableDropdownComponent {
   handleOutsideClick = (event: MouseEvent) => {
     const inputEl = this.inputRef?.nativeElement;
     const dropdownEl = this.overlayRef?.overlayElement;
-    const clickedInsideInput = inputEl?.contains(event.target as Node);
-    const clickedInsideDropdown = dropdownEl?.contains(event.target as Node);
+    const target = event.target as Node;
+    const clickedInsideInput = inputEl?.contains(target);
+    const clickedInsideDropdown = dropdownEl?.contains(target);
 
     if (!clickedInsideInput && !clickedInsideDropdown) {
+      if (!this.hasValidSelection && this.selectedLabel) {
+        this.selectedLabel = '';
+        this.searchTerm = '';
+        this.selectedItem = null;
+        this.itemSelected.emit(null);
+      }
       this.closeDropdown();
       this.cdr.markForCheck();
     }
@@ -325,13 +346,21 @@ export class SearchableDropdownComponent {
   }
 
   onBlur(): void {
-    if (!this.hasValidSelection && this.selectedLabel) {
-      this.selectedLabel = '';
-      this.searchTerm = '';
-      this.selectedItem = null;
-      this.itemSelected.emit(null);
-      this.cdr.markForCheck();
-    }
+    // Delay clearing slightly so that any click/mousedown inside dropdown or overlay finishes first
+    setTimeout(() => {
+      if (this.hasValidSelection) return;
+      if (this.overlayRef?.hasAttached()) {
+        // Dropdown overlay is still attached (user is interacting with panel)
+        return;
+      }
+      if (this.selectedLabel) {
+        this.selectedLabel = '';
+        this.searchTerm = '';
+        this.selectedItem = null;
+        this.itemSelected.emit(null);
+        this.cdr.markForCheck();
+      }
+    }, 200);
   }
 
   onScroll(event: any) {
@@ -348,8 +377,10 @@ export class SearchableDropdownComponent {
 
     this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe({
       next: (data: any[]) => {
-        this.dropdownData = [...this.dropdownData, ...data];
-        this.hasMore = data.length === this.pageSize;
+        const rawNew = (data as any[]) || [];
+        const combined = [...this.dropdownData, ...rawNew];
+        this.dropdownData = rankAndFilterDropdownItems(combined, this.searchTerm);
+        this.hasMore = rawNew.length === this.pageSize;
         this.pageNo++;
         this.loading = false;
         this.cdr.markForCheck();

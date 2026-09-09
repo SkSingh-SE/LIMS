@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, SimpleChanges } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, Observable, Subject, Subscription, switchMap } from 'rxjs';
+import { rankAndFilterDropdownItems } from '../../helper/dropdown-search.helper';
 
 @Component({
   selector: 'app-searchable-dropdown-modal',
@@ -65,8 +66,9 @@ export class SearchableDropdownModalComponent {
       })
     ).subscribe({
       next: (data: any[]) => {
-        this.dropdownData = data || [];
-        this.hasMore = (data || []).length === this.pageSize;
+        const rawItems = data || [];
+        this.dropdownData = rankAndFilterDropdownItems(rawItems, this.searchTerm);
+        this.hasMore = rawItems.length === this.pageSize;
         this.pageNo++;
         this.loading = false;
         const idx = this.dropdownData.findIndex(d => d && !d.isHeader && d.selectable !== false && d.id === this.selectedItem);
@@ -221,8 +223,10 @@ export class SearchableDropdownModalComponent {
 
     this.fetchDataFn(this.searchTerm, this.pageNo, this.pageSize).subscribe({
       next: (data: any[]) => {
-        this.dropdownData = [...this.dropdownData, ...data];
-        this.hasMore = data.length === this.pageSize;
+        const rawNew = data || [];
+        const combined = [...this.dropdownData, ...rawNew];
+        this.dropdownData = rankAndFilterDropdownItems(combined, this.searchTerm);
+        this.hasMore = rawNew.length === this.pageSize;
         this.pageNo++;
         this.loading = false;
         if (this.highlightedIndex === -1 && this.dropdownData.length) {

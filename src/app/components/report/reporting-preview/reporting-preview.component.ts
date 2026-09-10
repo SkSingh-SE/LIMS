@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ReportingService, ReportingPreview, WorkflowAction } from '../../../services/reporting.service';
 import { Router } from '@angular/router';
@@ -17,7 +17,12 @@ import { HasPermissionDirective } from '../../../utility/directives/has-permissi
   styleUrl: './reporting-preview.component.css',
   imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective]
 })
-export class ReportingPreviewComponent implements OnInit {
+export class ReportingPreviewComponent implements OnInit, OnChanges {
+  @Input() inputSampleId?: string | number;
+  @Input() isInline: boolean = false;
+  @Output() closeRequested = new EventEmitter<void>();
+  @Output() reportActionCompleted = new EventEmitter<any>();
+
   baseUrl = environment.baseUrl;
   reportData: ReportingPreview | null = null;
   sampleId: string = '';
@@ -56,16 +61,35 @@ export class ReportingPreviewComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      this.sampleId = params.get('sampleId') || '';
-      if (this.sampleId) {
+    if (this.inputSampleId) {
+      this.sampleId = String(this.inputSampleId);
+      this.loadReportPreview(this.sampleId);
+    } else {
+      this.route.paramMap.subscribe(params => {
+        this.sampleId = params.get('sampleId') || '';
+        if (this.sampleId) {
+          this.loadReportPreview(this.sampleId);
+        }
+      });
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['inputSampleId'] && changes['inputSampleId'].currentValue) {
+      const newId = String(changes['inputSampleId'].currentValue);
+      if (newId && newId !== this.sampleId) {
+        this.sampleId = newId;
         this.loadReportPreview(this.sampleId);
       }
-    });
+    }
   }
 
   goBack(): void {
-    this.router.navigate(['/reporting/dashboard']);
+    if (this.isInline) {
+      this.closeRequested.emit();
+    } else {
+      this.router.navigate(['/reporting/dashboard']);
+    }
   }
 
   loadReportFormats(reportHeaderId: number | string): void {
@@ -327,7 +351,12 @@ export class ReportingPreviewComponent implements OnInit {
         this.showActionPanel = false;
         // keep UX consistent with other screens
         this.toast.show('Action completed successfully', 'success');
-        this.router.navigate(['/reporting/dashboard']);
+        this.reportActionCompleted.emit(payload);
+        if (!this.isInline) {
+          this.router.navigate(['/reporting/dashboard']);
+        } else {
+          this.loadReportPreview(this.sampleId);
+        }
       },
       error: (err) => {
         this.submitting = false;
@@ -385,6 +414,7 @@ export class ReportingPreviewComponent implements OnInit {
       next: () => {
         this.pdfGenerating = false;
         this.toast.show('Report generated & saved successfully', 'success');
+        this.reportActionCompleted.emit({ sampleId: this.sampleId, action: 'generatePdf' });
         this.loadReportPreview(this.sampleId);
       },
       error: (err) => {
@@ -402,6 +432,7 @@ export class ReportingPreviewComponent implements OnInit {
       next: () => {
         this.submittingForApproval = false;
         this.toast.show('Submitted for report approval successfully', 'success');
+        this.reportActionCompleted.emit({ sampleId: this.sampleId, action: 'submitForApproval' });
         this.loadReportPreview(this.sampleId);
       },
       error: (err) => {

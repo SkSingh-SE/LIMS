@@ -296,20 +296,28 @@
         (sampleAction)="onSampleAction($event)">
       </app-case-sample-selector>
 
-      <div *ngIf="selectedSampleId && activeInlineAction === 'testing'" class="inline-form-panel">
-        <div class="inline-form-header">
-          <span class="inline-form-title">
-            <i class="bi bi-flask"></i> Testing Execution: {{ getSelectedSample()?.sampleNo }}
+      <div *ngIf="selectedSampleId && activeInlineAction === 'testing'" class="inline-form-panel mt-2">
+        <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1.5">
+            <i class="bi bi-flask-fill"></i> Testing Execution: {{ getSelectedSample()?.sampleNo }}
           </span>
-          <button type="button" class="btn btn-sm btn-outline-secondary py-0" (click)="onCloseInlineForm()">
-            <i class="bi bi-x"></i> Close
-          </button>
+          <div class="d-flex align-items-center gap-2">
+            <a class="btn btn-sm btn-outline-primary py-0 px-2 fs-8" [routerLink]="['/test-result/entry', selectedSampleId]" target="_blank" title="Open full screen in a new tab">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Fullpage
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-8" (click)="onCloseInlineForm()">
+              <i class="bi bi-x-lg me-1"></i> Close
+            </button>
+          </div>
         </div>
-        <div class="alert alert-info py-2 fs-7 mb-0">
-          <i class="bi bi-info-circle me-1.5"></i>
-          Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for test execution. 
-          (Integrated inline parameter entry will render here in Phase 5).
-        </div>
+
+        <app-test-result-entry-form
+          [inputSampleId]="selectedSampleId"
+          [isInline]="true"
+          (resultSaved)="onTestingSaved()"
+          (resultCompleted)="onTestingCompleted()"
+          (closeRequested)="onCloseInlineForm()">
+        </app-test-result-entry-form>
       </div>
     </div>
 
@@ -322,20 +330,27 @@
         (sampleAction)="onSampleAction($event)">
       </app-case-sample-selector>
 
-      <div *ngIf="selectedSampleId && activeInlineAction === 'reporting'" class="inline-form-panel">
-        <div class="inline-form-header">
-          <span class="inline-form-title">
-            <i class="bi bi-file-earmark-text"></i> Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}
+      <div *ngIf="selectedSampleId && activeInlineAction === 'reporting'" class="inline-form-panel mt-2">
+        <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
+          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1.5">
+            <i class="bi bi-file-earmark-text-fill"></i> Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}
           </span>
-          <button type="button" class="btn btn-sm btn-outline-secondary py-0" (click)="onCloseInlineForm()">
-            <i class="bi bi-x"></i> Close
-          </button>
+          <div class="d-flex align-items-center gap-2">
+            <a class="btn btn-sm btn-outline-primary py-0 px-2 fs-8" [routerLink]="['/reporting/preview', selectedSampleId]" target="_blank" title="Open preview in a new tab">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Fullpage
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-8" (click)="onCloseInlineForm()">
+              <i class="bi bi-x-lg me-1"></i> Close
+            </button>
+          </div>
         </div>
-        <div class="alert alert-info py-2 fs-7 mb-0">
-          <i class="bi bi-info-circle me-1.5"></i>
-          Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for report generation / dispatch. 
-          (QuestPDF report preview & signatory approval will render here in Phase 6).
-        </div>
+
+        <app-reporting-preview
+          [inputSampleId]="selectedSampleId"
+          [isInline]="true"
+          (reportActionCompleted)="onReportActionCompleted()"
+          (closeRequested)="onCloseInlineForm()">
+        </app-reporting-preview>
       </div>
     </div>
 

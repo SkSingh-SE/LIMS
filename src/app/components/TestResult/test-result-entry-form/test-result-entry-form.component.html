@@ -1,9 +1,9 @@
-<div class="container-fluid p-3">
+<div class="container-fluid" [ngClass]="isInline ? 'p-1' : 'p-3'">
 
   <!-- ================================================================ -->
-  <!-- PAGE HEADER — Red Gradient Bar                                   -->
+  <!-- PAGE HEADER — Red Gradient Bar (hidden when inline)               -->
   <!-- ================================================================ -->
-  <div class="page-header-bar">
+  <div class="page-header-bar" *ngIf="!isInline">
     <h4>
       <i class="bi bi-clipboard2-pulse me-2"></i>Test Result Entry
     </h4>

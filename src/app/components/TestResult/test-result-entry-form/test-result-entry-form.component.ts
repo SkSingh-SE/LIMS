@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TestResultService } from '../../../services/test-result.service';
@@ -20,7 +20,12 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./test-result-entry-form.component.css'],
   imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent, DecimalOnlyDirective, TestStatusBadgeComponent, FormsModule],
 })
-export class TestResultEntryFormComponent implements OnInit {
+export class TestResultEntryFormComponent implements OnInit, OnChanges {
+  @Input() inputSampleId?: number;
+  @Input() isInline: boolean = false;
+  @Output() resultSaved = new EventEmitter<any>();
+  @Output() resultCompleted = new EventEmitter<any>();
+  @Output() closeRequested = new EventEmitter<void>();
 
   baseUrl: string = environment.baseUrl;
   sampleId: number = 0;
@@ -166,9 +171,17 @@ export class TestResultEntryFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      this.sampleId = Number(params.get('id'));
-    });
+    if (this.inputSampleId && this.inputSampleId > 0) {
+      this.sampleId = this.inputSampleId;
+    } else {
+      this.route.paramMap.subscribe(params => {
+        const idParam = params.get('id');
+        if (idParam) {
+          this.sampleId = Number(idParam);
+        }
+      });
+    }
+
     // View mode: check history.state first, then route path as fallback
     const state = history.state as { mode?: string };
     if (state?.mode === 'view' || this.route.snapshot.url.some(s => s.path === 'details')) {
@@ -189,6 +202,16 @@ export class TestResultEntryFormComponent implements OnInit {
     } else {
       this.loadDummyData();
       // loading handled by interceptor
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['inputSampleId'] && changes['inputSampleId'].currentValue) {
+      const newId = Number(changes['inputSampleId'].currentValue);
+      if (newId > 0 && newId !== this.sampleId) {
+        this.sampleId = newId;
+        this.loadFullResultPayload(this.sampleId);
+      }
     }
   }
 
@@ -921,6 +944,7 @@ export class TestResultEntryFormComponent implements OnInit {
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
         this.toastService.show(response.message, 'success');
+        this.resultSaved.emit(response);
       },
       error: (error) => {
         console.error("Error saving results:", error);
@@ -987,6 +1011,7 @@ export class TestResultEntryFormComponent implements OnInit {
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
         this.toastService.show(`${testName} — saved successfully`, 'success');
+        this.resultSaved.emit(response);
       },
       error: (error) => {
         this.toastService.show(`Error saving ${testName}`, 'error');
@@ -1488,6 +1513,7 @@ export class TestResultEntryFormComponent implements OnInit {
         next: (response) => {
           test.status = 'Completed';
           this.toastService.show('Test completed successfully', 'success');
+          this.resultCompleted.emit({ headerId, status: 'Completed' });
           // Capture timing from response or refresh from API
           if (response?.testEndTime) {
             this.testTimingMap[headerId] = {
@@ -1695,6 +1721,7 @@ export class TestResultEntryFormComponent implements OnInit {
       next: () => {
         this.isSubmittingReport = false;
         this.toastService.show('Submitted for report review successfully.', 'success');
+        this.resultCompleted.emit({ sampleId: this.sampleId, reportReviewSubmitted: true });
         this.loadFullResultPayload(this.sampleId);
       },
       error: (err: any) => {
@@ -1782,7 +1809,11 @@ export class TestResultEntryFormComponent implements OnInit {
     window.open(this.baseUrl+imgUrl, '_blank');
   }
   cancel(): void {
-    this.router.navigate(['/testing/dashboard']);
+    if (this.isInline) {
+      this.closeRequested.emit();
+    } else {
+      this.router.navigate(['/testing/dashboard']);
+    }
   }
 
   // ================================================================

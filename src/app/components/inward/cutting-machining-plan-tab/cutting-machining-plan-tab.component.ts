@@ -121,6 +121,16 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     const savedPrep = sample.preparationDetails || {};
     const savedTests: any[] = savedPrep.tests || [];
 
+    const cleanTestName = (name?: string | null): string => {
+      if (!name) return '';
+      const trimmed = name.trim();
+      const lower = trimmed.toLowerCase();
+      if (lower === 'general test' || lower === 'general' || lower === 'chemical test' || lower === 'chemical' || lower === 'test method' || lower === 'unknown test') {
+        return '';
+      }
+      return trimmed;
+    };
+
     // Extract test methods requiring preparation from testPlans
     if (sample.testPlans && Array.isArray(sample.testPlans)) {
       sample.testPlans.forEach((plan: any) => {
@@ -131,18 +141,28 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
               gt.methods.forEach((m: any) => {
                 if (!m.cancel && (m.preparationRequired || m.isPreparationRequired)) {
                   const saved = savedTests.find((st: any) => (m.id && st.plannedTestMethodID === m.id) || st.testId === (m.testMethodID || gt.laboratoryTestSubGroupID));
+                  const specSize = saved?.specimenSize || sample.specimen || sample.Specimen || '';
+                  const masterId = saved?.specimenPreparationMasterID || null;
+                  const rawSize = saved?.specimenRawMaterialSize || '';
+                  const resolvedTestName =
+                    cleanTestName(m.laboratoryTestName) ||
+                    cleanTestName(m.testMethodName) ||
+                    cleanTestName(saved?.testName) ||
+                    cleanTestName(gt.laboratoryTestName) ||
+                    cleanTestName(gt.subGroupName) ||
+                    (m.standardName ? `${m.standardName} Test` : 'Laboratory Test');
                   prepItems.push({
                     id: saved?.id || null,
                     plannedTestMethodID: m.id || 0,
                     plannedTestType: 'General',
                     testId: m.testMethodID || gt.laboratoryTestSubGroupID || 0,
-                    testName: m.testMethodName || m.laboratoryTestName || gt.subGroupName || 'General Test',
+                    testName: resolvedTestName,
                     standardId: m.standardID || gt.specification1 || 0,
                     standardName: m.standardName || '',
                     quantity: +(saved?.quantity || m.quantity || 1),
-                    specimenPreparationMasterID: saved?.specimenPreparationMasterID || null,
-                    specimenSize: saved?.specimenSize || '',
-                    specimenRawMaterialSize: saved?.specimenRawMaterialSize || '',
+                    specimenPreparationMasterID: masterId,
+                    specimenSize: specSize,
+                    specimenRawMaterialSize: rawSize,
                     drawingFilePath: saved?.drawingFilePath || '',
                     fileName: saved?.fileName || '',
                     resolvedMachiningRate: saved?.machiningRate || 0,
@@ -166,18 +186,28 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
               ct.methods.forEach((m: any) => {
                 if (!m.cancel && (m.preparationRequired || m.isPreparationRequired)) {
                   const saved = savedTests.find((st: any) => (m.id && st.plannedTestMethodID === m.id) || st.testId === (m.testMethodID || ct.laboratoryTestAnalysisTypeID));
+                  const specSize = saved?.specimenSize || sample.specimen || sample.Specimen || '';
+                  const masterId = saved?.specimenPreparationMasterID || null;
+                  const rawSize = saved?.specimenRawMaterialSize || '';
+                  const resolvedTestName =
+                    cleanTestName(m.laboratoryTestName) ||
+                    cleanTestName(m.testMethodName) ||
+                    cleanTestName(saved?.testName) ||
+                    cleanTestName(m.analysisTypeName) ||
+                    cleanTestName(ct.analysisTypeName) ||
+                    'Chemical Analysis';
                   prepItems.push({
                     id: saved?.id || null,
                     plannedTestMethodID: m.id || 0,
                     plannedTestType: 'Chemical',
                     testId: m.testMethodID || ct.laboratoryTestAnalysisTypeID || 0,
-                    testName: m.testMethodName || ct.analysisTypeName || 'Chemical Test',
+                    testName: resolvedTestName,
                     standardId: m.standardID || ct.specification1 || 0,
                     standardName: m.standardName || '',
                     quantity: +(saved?.quantity || m.quantity || 1),
-                    specimenPreparationMasterID: saved?.specimenPreparationMasterID || null,
-                    specimenSize: saved?.specimenSize || '',
-                    specimenRawMaterialSize: saved?.specimenRawMaterialSize || '',
+                    specimenPreparationMasterID: masterId,
+                    specimenSize: specSize,
+                    specimenRawMaterialSize: rawSize,
                     drawingFilePath: saved?.drawingFilePath || '',
                     fileName: saved?.fileName || '',
                     resolvedMachiningRate: saved?.machiningRate || 0,
@@ -201,18 +231,27 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
       sample.tests.forEach((t: any) => {
         if (t.requiresCutting || t.preparationRequired) {
           const saved = savedTests.find((st: any) => st.testId === (t.testId || t.id));
+          const specSize = saved?.specimenSize || sample.specimen || sample.Specimen || '';
+          const masterId = saved?.specimenPreparationMasterID || null;
+          const rawSize = saved?.specimenRawMaterialSize || '';
+          const resolvedTestName =
+            cleanTestName(saved?.testName) ||
+            cleanTestName(t.laboratoryTestName) ||
+            cleanTestName(t.testName) ||
+            cleanTestName(t.name) ||
+            (t.standardName ? `${t.standardName} Test` : 'Laboratory Test');
           prepItems.push({
             id: saved?.id || null,
             plannedTestMethodID: t.plannedTestMethodID || 0,
             plannedTestType: t.plannedTestType || 'General',
             testId: t.testId || t.id || 0,
-            testName: t.testName || t.name || 'Test Method',
+            testName: resolvedTestName,
             standardId: t.standardId || t.standardID || 0,
             standardName: t.standardName || '',
             quantity: +(saved?.quantity || t.quantity || 1),
-            specimenPreparationMasterID: saved?.specimenPreparationMasterID || null,
-            specimenSize: saved?.specimenSize || '',
-            specimenRawMaterialSize: saved?.specimenRawMaterialSize || '',
+            specimenPreparationMasterID: masterId,
+            specimenSize: specSize,
+            specimenRawMaterialSize: rawSize,
             drawingFilePath: saved?.drawingFilePath || '',
             fileName: saved?.fileName || '',
             resolvedMachiningRate: saved?.machiningRate || 0,
@@ -228,6 +267,25 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     }
 
     this.samplePrepTests[sample.id] = prepItems;
+
+    // Eagerly pre-populate selectedSpecimenMap so the dropdown displays immediately on load
+    prepItems.forEach((item, index) => {
+      const key = `${sample.id}_${index}`;
+      if (item.specimenSize || item.specimenPreparationMasterID) {
+        const displayName = item.specimenSize
+          ? (item.specimenRawMaterialSize ? `${item.specimenSize} (Raw: ${item.specimenRawMaterialSize})` : item.specimenSize)
+          : `Config #${item.specimenPreparationMasterID}`;
+        this.selectedSpecimenMap[key] = {
+          id: item.specimenPreparationMasterID || 0,
+          name: displayName,
+          rawObj: {
+            id: item.specimenPreparationMasterID,
+            specimenSize: item.specimenSize,
+            specimenRawMaterialSize: item.specimenRawMaterialSize
+          }
+        };
+      }
+    });
 
     // Build form
     const testsArray = this.fb.array(
@@ -308,38 +366,71 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
     const testGroup = this.getTestGroup(sampleId, testIndex);
     if (!testGroup) return;
 
-    // If only 1 configured specimen size, auto-select it (Zero User Interference)
-    if (configs.length === 1 || !testGroup.get('specimenPreparationMasterID')?.value) {
-      const selected = configs[0];
-      const key = `${sampleId}_${testIndex}`;
+    const key = `${sampleId}_${testIndex}`;
+    const existingMasterId = testGroup.get('specimenPreparationMasterID')?.value;
+    const existingSize = (testGroup.get('specimenSize')?.value || '').trim().toLowerCase();
+    const sample = this.samples.find(s => s.id === sampleId);
+    const sampleSpecimen = (sample?.specimen || sample?.Specimen || '').trim().toLowerCase();
+
+    // 1. Try to find matching config
+    let matched: any = null;
+    if (existingMasterId) {
+      matched = configs.find(c => c.id === existingMasterId);
+    }
+    if (!matched && existingSize) {
+      matched = configs.find(c => c.specimenSize && c.specimenSize.trim().toLowerCase() === existingSize);
+    }
+    if (!matched && sampleSpecimen) {
+      matched = configs.find(c => c.specimenSize && c.specimenSize.trim().toLowerCase() === sampleSpecimen);
+    }
+
+    // 2. If no existing selection and configs has only 1, auto-select it
+    if (!matched && configs.length === 1 && !existingMasterId && !existingSize) {
+      matched = configs[0];
+    }
+
+    if (matched) {
+      const { mRate, cRate } = this.resolveRates(matched, isHard);
       this.selectedSpecimenMap[key] = {
-        id: selected.id,
-        name: selected.specimenSize ? `${selected.specimenSize} (Raw: ${selected.specimenRawMaterialSize || 'Std'})` : 'Default Specimen Size'
+        id: matched.id,
+        name: matched.specimenSize ? `${matched.specimenSize} (Raw: ${matched.specimenRawMaterialSize || 'Std'})` : `Config #${matched.id}`,
+        rawObj: matched
       };
 
-      const { mRate, cRate } = this.resolveRates(selected, isHard);
-
       testGroup.patchValue({
-        specimenPreparationMasterID: selected.id,
-        specimenSize: selected.specimenSize || '',
-        specimenRawMaterialSize: selected.specimenRawMaterialSize || '',
-        drawingFilePath: selected.drawingFilePath || '',
+        specimenPreparationMasterID: matched.id,
+        specimenSize: matched.specimenSize || '',
+        specimenRawMaterialSize: matched.specimenRawMaterialSize || '',
+        drawingFilePath: matched.drawingFilePath || '',
         machiningRate: mRate,
         cuttingRate: cRate
       });
 
       const prepItem = this.samplePrepTests[sampleId]?.[testIndex];
       if (prepItem) {
-        prepItem.specimenPreparationMasterID = selected.id;
-        prepItem.specimenSize = selected.specimenSize;
-        prepItem.specimenRawMaterialSize = selected.specimenRawMaterialSize;
-        prepItem.drawingFilePath = selected.drawingFilePath;
-        prepItem.fileName = selected.fileName;
+        prepItem.specimenPreparationMasterID = matched.id;
+        prepItem.specimenSize = matched.specimenSize;
+        prepItem.specimenRawMaterialSize = matched.specimenRawMaterialSize;
+        prepItem.drawingFilePath = matched.drawingFilePath;
+        prepItem.fileName = matched.fileName;
         prepItem.resolvedMachiningRate = mRate;
         prepItem.resolvedCuttingRate = cRate;
       }
-      this.cdr.markForCheck();
+    } else if (existingMasterId || existingSize) {
+      // Rebind existing values even if not found in master configs list
+      const rawSize = testGroup.get('specimenRawMaterialSize')?.value || '';
+      const sizeVal = testGroup.get('specimenSize')?.value || '';
+      this.selectedSpecimenMap[key] = {
+        id: existingMasterId || 0,
+        name: sizeVal ? (rawSize ? `${sizeVal} (Raw: ${rawSize})` : sizeVal) : `Config #${existingMasterId}`,
+        rawObj: {
+          id: existingMasterId,
+          specimenSize: sizeVal,
+          specimenRawMaterialSize: rawSize
+        }
+      };
     }
+    this.cdr.markForCheck();
   }
 
   private resolveRates(raw: any, isHard: boolean): { mRate: number; cRate: number } {
@@ -359,15 +450,20 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
   getSpecimenDropdownFn = (sampleId: number, testIndex: number) => {
     return (term: string, page: number, pageSize: number) => {
       const item = this.samplePrepTests[sampleId]?.[testIndex];
-      if (!item) return of([]);
+      const key = `${sampleId}_${testIndex}`;
+      const currentSelected = this.selectedSpecimenMap[key];
 
-      const cacheKey = `${item.testId}_${item.standardId || 0}`;
+      const cacheKey = item ? `${item.testId}_${item.standardId || 0}` : '';
       const configs = this.specimenConfigsMap[cacheKey] || [];
       const mapped = configs.map(c => ({
         id: c.id,
         name: c.specimenSize ? `${c.specimenSize} (Raw: ${c.specimenRawMaterialSize || 'Standard'})` : `Config #${c.id}`,
         rawObj: c
       }));
+
+      if (currentSelected && !mapped.some(m => m.id === currentSelected.id || m.name === currentSelected.name)) {
+        mapped.unshift(currentSelected);
+      }
 
       if (term && term.trim()) {
         const t = term.toLowerCase();
@@ -429,7 +525,29 @@ export class CuttingMachiningPlanTabComponent implements OnInit, OnChanges {
   }
 
   getSpecimenSelected(sampleId: number, testIndex: number): any {
-    return this.selectedSpecimenMap[`${sampleId}_${testIndex}`] || null;
+    const key = `${sampleId}_${testIndex}`;
+    if (this.selectedSpecimenMap[key]) {
+      return this.selectedSpecimenMap[key];
+    }
+    const testGroup = this.getTestGroup(sampleId, testIndex);
+    if (testGroup) {
+      const masterId = testGroup.get('specimenPreparationMasterID')?.value;
+      const specSize = testGroup.get('specimenSize')?.value;
+      const rawSize = testGroup.get('specimenRawMaterialSize')?.value;
+      if (masterId || specSize) {
+        const displayName = specSize
+          ? (rawSize ? `${specSize} (Raw: ${rawSize})` : specSize)
+          : `Config #${masterId}`;
+        const item = {
+          id: masterId || 0,
+          name: displayName,
+          rawObj: { id: masterId, specimenSize: specSize, specimenRawMaterialSize: rawSize }
+        };
+        this.selectedSpecimenMap[key] = item;
+        return item;
+      }
+    }
+    return null;
   }
 
   getTests(sampleId: number): FormArray {

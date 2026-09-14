@@ -5,6 +5,7 @@ import { TestResultService } from '../../../services/test-result.service';
 import { ParameterService } from '../../../services/parameter.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
+import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
@@ -34,6 +35,29 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   plans: any[] = [];
   resultForm!: FormGroup;
   isViewMode: boolean = false;
+
+  // 7-Tab Workflow Navigation as per ISO 17025 Redesign
+  activeTab: 'info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history' = 'info';
+
+  testTabs: { id: 'info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'; label: string; icon: string }[] = [
+    { id: 'info', label: 'Test Information', icon: 'bi-file-text' },
+    { id: 'parameters', label: 'Parameters', icon: 'bi-grid-3x3' },
+    { id: 'execution', label: 'Execution', icon: 'bi-play-circle' },
+    { id: 'calculations', label: 'Calculations', icon: 'bi-calculator' },
+    { id: 'nabl', label: 'NABL & QA', icon: 'bi-shield-check' },
+    { id: 'attachments', label: 'Attachments', icon: 'bi-paperclip' },
+    { id: 'history', label: 'History', icon: 'bi-clock-history' },
+  ];
+
+  testPurposeOptions: string[] = [
+    'Material Qualification',
+    'Quality Control / Batch Release',
+    'Failure Analysis',
+    'Routine Testing',
+    'Customer Verification',
+    'Research & Development',
+    'Third Party Inspection (TPI)'
+  ];
 
   // Top-level tabs: Test Results vs Preparation & Pricing
   activeMainTab: 'results' | 'preparation' = 'results';
@@ -157,6 +181,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   fromMethodPlanIndex: number = 0;
   fromMethodTestIndex: number = 0;
   methodParameters: any[] = [];
+  selectedMethodParam: any = null;
   loadingMethodParams = false;
 
   constructor(
@@ -165,6 +190,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     private parameterService: ParameterService,
     private equipmentService: EquipmentService,
     private testMethodService: TestMethodSpecificationService,
+    private materialSpecService: MaterialSpecificationService,
     private toastService: ToastService,
     private route: ActivatedRoute,
     private router: Router
@@ -376,8 +402,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           headerId: chemicalTest.headerId,
           chemicalTestId: chemicalTest.chemicalTestId,
           labTestId: chemicalTest.labTestId,
+          parentLabTestId: chemicalTest.parentLabTestId || null,
+          standard: chemicalTest.standard || null,
+          standardName: chemicalTest.standardName || '',
           specification1: chemicalTest.specification1,
           specification2: chemicalTest.specification2,
+          specfication1Name: chemicalTest.specfication1Name || '',
+          specfication2Name: chemicalTest.specfication2Name || '',
+          techniqueCodes: chemicalTest.techniqueCodes || [],
           parameters: chemicalTest.parameters || []
         });
       });
@@ -392,6 +424,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.inward = {
       caseNo: apiData.inward.caseNo || '',
       customerName: apiData.inward.customerName || '',
+      receivedOn: apiData.inward.receivedOn ? this.formatDateDisplay(apiData.inward.receivedOn) : '',
     };
 
     // Set Sample Details
@@ -402,6 +435,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       material: sampleData.details || '',
       metalClassification: sampleData.metalClassification || '',
       productCondition: sampleData.productCondition || '',
+      productForm: sampleData.productForm || '',
+      productMasterName: sampleData.productMasterName || '',
+      productSizeDescription: sampleData.productSizeDescription || '',
+      productSizeFormatted: sampleData.productSizeFormatted || (sampleData.productForm ? sampleData.productForm : '-'),
       batchNo: this.getBatchNoFromAdditionalDetails(sampleData.additionalDetails),
       remarks: sampleData.remarks || '',
       thickness: sampleData.thickness,
@@ -426,11 +463,24 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         const baseName = generalTest.laboratoryTest || 'General Test';
         const testName = totalSpecimens > 1 ? `${baseName} - Specimen ${sequenceNo}` : baseName;
 
+        const methodName = generalTest.standardName || '';
+        const specName = specification && specification !== 'Unknown' ? specification : '';
         const genPlan: any = {
           type: 'General',
+          discipline: generalTest.discipline || 'Mechanical',
+          analysisTechnique: generalTest.analysisTechnique || generalTest.laboratoryTest || 'Mechanical Testing',
+          sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || 'As Received',
+          sampling: sampleData.sampling || apiData.inward?.sampleReceiptNote || 'Customer Supplied (As Received)',
+          specimenPreparation: sampleData.specimenPreparation || 'Direct Testing (No Prep Required)',
+          reportFormatName: generalTest.reportFormatName || sampleData.reportFormatName || 'Standard Laboratory Report',
+          reportFormatId: generalTest.reportFormatId || sampleData.reportFormatId || null,
           specification: specification,
           grade: '',
           headerId: generalTest.headerId,
+          methodId: generalTest.standard || null,
+          methodName: methodName,
+          methodSelected: generalTest.standard ? { id: generalTest.standard, name: methodName || `Method #${generalTest.standard}` } : null,
+          specSelected: generalTest.specification1 ? { id: generalTest.specification1, name: specName || `Spec #${generalTest.specification1}` } : null,
           specimenLabel: totalSpecimens > 1 ? `Specimen ${sequenceNo} of ${totalSpecimens}` : null,
           tests: [
             {
@@ -439,6 +489,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               name: testName,
               reportNo: generalTest.reportNo || `Auto-${gtIdx}`,
               status: generalTest.status || 'Pending',
+              testPurpose: generalTest.testPurpose || 'Material Qualification',
+              remarks: generalTest.remarks || '',
+              isNabl: generalTest.isNabl ?? false,
+              equipmentId: generalTest.equipmentId || null,
+              roomTemperature: generalTest.roomTemperature ?? null,
+              roomHumidity: generalTest.roomHumidity ?? null,
               parameters: (generalTest.parameters || []).map((param: any) => ({
                 id: param.id,
                 parameterID: param.parameterID || null,
@@ -482,9 +538,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
         const chemPlan: any = {
           type: 'Chemical',
+          discipline: chemicalTest.discipline || 'Chemical',
+          analysisTechnique: chemicalTest.analysisTechnique || 'OES (Optical Emission Spectroscopy)',
+          sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || 'As Received',
+          sampling: sampleData.sampling || apiData.inward?.sampleReceiptNote || 'Customer Supplied (As Received)',
+          specimenPreparation: sampleData.specimenPreparation || 'Direct Testing (No Prep Required)',
+          reportFormatName: chemicalTest.reportFormatName || sampleData.reportFormatName || 'Standard Laboratory Report',
+          reportFormatId: chemicalTest.reportFormatId || sampleData.reportFormatId || null,
           specification: specification,
           grade: '',
           headerId: chemicalTest.headerId,
+          methodId: chemicalTest.standard || null,
+          methodName: chemicalTest.standardName || '',
+          methodSelected: chemicalTest.standard ? { id: chemicalTest.standard, name: chemicalTest.standardName || `Method #${chemicalTest.standard}` } : null,
+          specSelected: chemicalTest.specification1 ? { id: chemicalTest.specification1, name: (specification && specification !== 'Unknown' ? specification : `Spec #${chemicalTest.specification1}`) } : null,
+          techniqueCodes: chemicalTest.techniqueCodes || [],
+          labTestId: chemicalTest.labTestId || null,
+          parentLabTestId: chemicalTest.parentLabTestId || null,
           tests: [
             {
               id: `chem-${chemicalTest.headerId}`,
@@ -492,6 +562,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               name: chemicalTest.laboratoryTest || 'Chemical Test',
               reportNo: chemicalTest.reportNo || `Auto-${chemicalTest.headerId}`,
               status: chemicalTest.status || 'Pending',
+              testPurpose: chemicalTest.testPurpose || 'Material Qualification',
+              remarks: chemicalTest.remarks || '',
+              isNabl: chemicalTest.isNabl ?? false,
+              equipmentId: chemicalTest.equipmentId || null,
+              roomTemperature: chemicalTest.roomTemperature ?? null,
+              roomHumidity: chemicalTest.roomHumidity ?? null,
               parameters: (chemicalTest.parameters || []).map((param: any) => ({
                 id: param.id,
                 parameterID: param.parameterID || null,
@@ -533,6 +609,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       const allTests = [...(plan.generalTests || []), ...(plan.chemicalTests || [])];
       allTests.forEach((test: any) => {
         if (test.headerId) {
+          if (test.roomTemperature != null || test.roomHumidity != null) {
+            this.environmentMap[test.headerId] = {
+              roomTemperature: test.roomTemperature,
+              roomHumidity: test.roomHumidity,
+              labRoomName: test.labRoomName || ''
+            };
+          }
           this.testTimingMap[test.headerId] = {
             testStartTime: test.testStartTime || '',
             testEndTime: test.testEndTime || '',
@@ -572,6 +655,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           const testGroup = (planGroup.get('tests') as FormArray).at(0) as FormGroup;
           const parametersArray = testGroup.get('parameters') as FormArray;
 
+          testGroup.patchValue({
+            testPurpose: generalTest.testPurpose || 'Material Qualification',
+            remarks: generalTest.remarks || ''
+          });
+
           (generalTest.parameters || []).forEach((param: any, paramIdx: number) => {
             if (paramIdx < parametersArray.length) {
               const paramGroup = parametersArray.at(paramIdx) as FormGroup;
@@ -599,6 +687,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           const planGroup = this.plansFA.at(currentPlanIndex) as FormGroup;
           const testGroup = (planGroup.get('tests') as FormArray).at(0) as FormGroup;
           const parametersArray = testGroup.get('parameters') as FormArray;
+
+          testGroup.patchValue({
+            testPurpose: chemicalTest.testPurpose || 'Material Qualification',
+            remarks: chemicalTest.remarks || ''
+          });
 
           (chemicalTest.parameters || []).forEach((param: any, paramIdx: number) => {
             if (paramIdx < parametersArray.length) {
@@ -730,6 +823,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       headerId: [test.headerId],
       name: [test.name],
       reportNo: [test.reportNo],
+      testPurpose: [test.testPurpose || 'Material Qualification'],
+      remarks: [test.remarks || ''],
       parameters: this.fb.array(test.parameters.map((p: any) => this.createParamGroup(p, planType)))
     });
   }
@@ -779,9 +874,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const parametersArray = this.getParameters(planIndex, testIndex);
     const planType = this.plansFA.at(planIndex).get('type')?.value;
 
-    // Get existing parameter names to avoid duplicates
-    const existingNames = parametersArray.value.map((p: any) => p.parameterName?.toLowerCase() || '');
-
     const newParam = this.createParamGroup({
       id: 0,
       parameterID: null,
@@ -796,6 +888,20 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }, planType);
 
     parametersArray.push(newParam);
+    this.switchTab('parameters');
+    this.toastService.show('New parameter row added. Please select parameter.', 'info');
+
+    setTimeout(() => {
+      const rows = document.querySelectorAll('.result-table tbody tr');
+      if (rows && rows.length > 0) {
+        const lastRow = rows[rows.length - 1];
+        lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const focusable = lastRow.querySelector('input:not([readonly]), select, button, .dropdown-toggle') as HTMLElement;
+        if (focusable) {
+          focusable.focus();
+        }
+      }
+    }, 200);
   }
 
   removeParameter(planIndex: number, testIndex: number, paramIndex: number): void {
@@ -888,36 +994,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // Validate Chemical Parameters
   // ----------------------------------------------------------------
   validateChemicalParameters(): { isValid: boolean; message: string } {
-    const formValue = this.resultForm.value;
-    const invalidParams: string[] = [];
-
-    formValue.plans.forEach((plan: any, planIdx: number) => {
-      if (plan.type === 'Chemical') {
-        plan.tests.forEach((test: any, testIdx: number) => {
-          test.parameters.forEach((param: any, paramIdx: number) => {
-            if (param.parameterID) {
-              if (param.minValue === null || param.minValue === undefined || param.minValue === '') {
-                invalidParams.push(`${param.parameterName} - Min Value is required`);
-              }
-              if (param.maxValue === null || param.maxValue === undefined || param.maxValue === '') {
-                invalidParams.push(`${param.parameterName} - Max Value is required`);
-              }
-              if (param.value === null || param.value === undefined || param.value === '') {
-                invalidParams.push(`${param.parameterName} - Value is required`);
-              }
-            }
-          });
-        });
-      }
-    });
-
-    if (invalidParams.length > 0) {
-      return {
-        isValid: false,
-        message: `Chemical test parameters cannot have 0 values:\n\n${invalidParams.join('\n')}`
-      };
-    }
-
     return { isValid: true, message: '' };
   }
 
@@ -983,6 +1059,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       payload.generalTests.push({
         headerId, generalTestId: apiGeneral.generalTestId, testMethodId: apiGeneral.testMethodId,
         laboratoryTestId: apiGeneral.laboratoryTestId, equipmentIdsJson,
+        testPurpose: testGroup.get('testPurpose')?.value || 'Material Qualification',
+        remarks: testGroup.get('remarks')?.value || '',
         parameters: params.map((p: any) => ({
           id: p.id, parameterID: p.parameterID, parameterName: p.parameterName, unit: p.unit,
           value: p.value, remarks: p.remarks, minValue: p.minValue, maxValue: p.maxValue,
@@ -996,6 +1074,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       payload.chemicalTests.push({
         headerId, chemicalTestId: apiChemical.chemicalTestId, testMethodId: apiChemical.testMethodId,
         laboratoryTestId: apiChemical.laboratoryTestId, equipmentIdsJson,
+        testPurpose: testGroup.get('testPurpose')?.value || 'Material Qualification',
+        remarks: testGroup.get('remarks')?.value || '',
         parameters: params.map((p: any) => ({
           id: p.id, parameterID: p.parameterID, parameterName: p.parameterName, unit: p.unit,
           value: p.value, remarks: p.remarks, minValue: p.minValue, maxValue: p.maxValue,
@@ -1094,6 +1174,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
             testMethodId: apiGeneral.testMethodId,
             laboratoryTestId: apiGeneral.laboratoryTestId,
             equipmentIdsJson: equipmentIdsJson,
+            testPurpose: test.testPurpose || 'Material Qualification',
+            remarks: test.remarks || '',
             parameters: testParams.map((param: any) => ({
               id: param.id,
               parameterID: param.parameterID,
@@ -1118,6 +1200,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
             generalTestId: apiChemical.chemicalTestId,
             laboratoryTestId: apiChemical.labTestId,
             equipmentIdsJson: equipmentIdsJson,
+            testPurpose: test.testPurpose || 'Material Qualification',
+            remarks: test.remarks || '',
             parameters: testParams.map((param: any) => ({
               id: param.id,
               parameterID: param.parameterID,
@@ -1363,6 +1447,55 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   getTestMethodSpecDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.testMethodService.getTestMethodSpecificationDropdown(term, page, pageSize);
 
+  getSpecGradeDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.materialSpecService.getGradeDropdown(term, page, pageSize);
+
+  getMethodVersionDrop = (term: string, page: number, pageSize: number): Observable<any[]> =>
+    this.testMethodService.getTestMethodSpecificationVersionDropdown(term, page, pageSize, 0);
+
+  /** Reselect test method standard from result entry — updates underlying plan */
+  onTestMethodReselect(planIndex: number, testIndex: number, selectedItem: any): void {
+    const test = this.plans[planIndex]?.tests[testIndex];
+    if (!test?.headerId || !selectedItem?.id) return;
+    this.testResultService.updatePlanMethod({
+      headerId: test.headerId,
+      testMethodSpecificationID: selectedItem.id
+    }).subscribe({
+      next: (res: any) => {
+        const plan = this.plans[planIndex];
+        plan.methodId = res.testMethodSpecificationID ?? selectedItem.id;
+        plan.methodName = res.methodName || selectedItem.name;
+        plan.methodSelected = { id: plan.methodId, name: plan.methodName };
+        this.toastService.show(`Test method updated to ${plan.methodName}`, 'success');
+      },
+      error: (err: any) => {
+        console.error('Error updating test method:', err);
+        this.toastService.show(err?.error?.message || 'Failed to update test method', 'error');
+      }
+    });
+  }
+
+  /** Reselect material specification (grade) from result entry — updates underlying plan + sample grade */
+  onSpecReselect(planIndex: number, testIndex: number, selectedItem: any): void {
+    const test = this.plans[planIndex]?.tests[testIndex];
+    if (!test?.headerId || !selectedItem?.id) return;
+    this.testResultService.updatePlanMethod({
+      headerId: test.headerId,
+      specification1: selectedItem.id
+    }).subscribe({
+      next: (res: any) => {
+        const plan = this.plans[planIndex];
+        plan.specSelected = { id: res.specification1 ?? selectedItem.id, name: res.specName || selectedItem.name };
+        plan.specification = res.specName || selectedItem.name;
+        this.toastService.show(`Specification updated to ${plan.specification}. Use Load Parameters to refresh acceptance limits.`, 'success');
+      },
+      error: (err: any) => {
+        console.error('Error updating specification:', err);
+        this.toastService.show(err?.error?.message || 'Failed to update specification', 'error');
+      }
+    });
+  }
+
   /** Get unit options from form control (safe accessor) */
   getUnitOptions(row: any): any[] {
     return row.get('unitOptions')?.value || [];
@@ -1468,17 +1601,140 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // ================================================================
   // Test Start / Complete Flow
   // ================================================================
+  // Validation & Modal states
+  showConfigValidationModal = false;
+  configValidationResult: any = null;
+  pendingStartTest: { planIndex: number; testIndex: number } | null = null;
+
+  showRequirementDetailModal = false;
+  selectedRequirementParam: any = null;
+
+  showReadingsModal = false;
+  readingTarget: { planIndex: number; testIndex: number; paramIndex: number } | null = null;
+  readingValues: (number | null)[] = [null, null, null];
+  calculatedAverage: number = 0;
+
+  isConfigLocked(status: string): boolean {
+    if (this.isViewMode) return true;
+    return ['Started', 'In-Progress', 'In Progress', 'Completed', 'PendingVerification', 'Verified'].includes(status);
+  }
+
+  canStartTest(status: string): boolean {
+    if (this.isViewMode) return false;
+    return !status || status === 'Pending' || status === 'VerificationRejected';
+  }
+
+  isHardnessTest(test: any): boolean {
+    const name = (test?.name || '').toLowerCase();
+    return name.includes('hardness') || name.includes('rockwell') || name.includes('brinell') || name.includes('vickers');
+  }
+
+  formatRequirement(param: any): string {
+    if (!param) return '—';
+    const min = param.specMinValue != null ? param.specMinValue : param.minValue;
+    const max = param.specMaxValue != null ? param.specMaxValue : param.maxValue;
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return param.acceptanceCriteria || '—';
+  }
+
+  openRequirementDetails(param: any): void {
+    this.selectedRequirementParam = param;
+    this.showRequirementDetailModal = true;
+  }
+
+  closeRequirementDetails(): void {
+    this.showRequirementDetailModal = false;
+    this.selectedRequirementParam = null;
+  }
+
+  openMultipleReadingsModal(planIndex: number, testIndex: number, paramIndex: number): void {
+    this.readingTarget = { planIndex, testIndex, paramIndex };
+    const paramGroup = this.getParameters(planIndex, testIndex).at(paramIndex);
+    const currVal = parseFloat(paramGroup.get('value')?.value);
+    if (!isNaN(currVal) && currVal > 0) {
+      this.readingValues = [currVal, null, null];
+    } else {
+      this.readingValues = [null, null, null];
+    }
+    this.recomputeReadingAverage();
+    this.showReadingsModal = true;
+  }
+
+  recomputeReadingAverage(): void {
+    const valid = this.readingValues.filter(v => v !== null && v !== undefined && !isNaN(Number(v)) && Number(v) > 0) as number[];
+    if (valid.length > 0) {
+      const sum = valid.reduce((acc, v) => acc + Number(v), 0);
+      this.calculatedAverage = parseFloat((sum / valid.length).toFixed(2));
+    } else {
+      this.calculatedAverage = 0;
+    }
+  }
+
+  applyMultipleReadings(): void {
+    if (!this.readingTarget) return;
+    const { planIndex, testIndex, paramIndex } = this.readingTarget;
+    const paramGroup = this.getParameters(planIndex, testIndex).at(paramIndex);
+    paramGroup.get('value')?.setValue(this.calculatedAverage);
+    this.onValueChanged(planIndex, testIndex, paramIndex);
+    this.closeMultipleReadingsModal();
+  }
+
+  closeMultipleReadingsModal(): void {
+    this.showReadingsModal = false;
+    this.readingTarget = null;
+  }
+
+  closeConfigValidationModal(): void {
+    this.showConfigValidationModal = false;
+    this.configValidationResult = null;
+    this.pendingStartTest = null;
+  }
+
+  // ================================================================
+  // Test Start / Complete Flow
+  // ================================================================
   startTest(planIndex: number, testIndex: number): void {
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
 
-    if (!confirm(`Start test "${test.name}"? This will record the start time and performer.`)) return;
+    if (!headerId && headerId !== 0) {
+      this.toastService.show('Test Header ID is missing', 'error');
+      return;
+    }
+
+    // Call configuration validation endpoint
+    this.testResultService.validateTestConfiguration(headerId).subscribe({
+      next: (valResult) => {
+        if (!valResult.isValid) {
+          this.configValidationResult = valResult;
+          this.pendingStartTest = { planIndex, testIndex };
+          this.showConfigValidationModal = true;
+          return;
+        }
+
+        if (confirm(`Start test "${test.name}"? This will lock test configuration (methods, specifications, parameters) and record start time.`)) {
+          this.executeStartTest(planIndex, testIndex);
+        }
+      },
+      error: (err) => {
+        console.warn('Validate test configuration call failed, proceeding with confirm prompt', err);
+        if (confirm(`Start test "${test.name}"? This will lock test configuration and record start time.`)) {
+          this.executeStartTest(planIndex, testIndex);
+        }
+      }
+    });
+  }
+
+  executeStartTest(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
 
     this.testResultService.startTest(headerId).subscribe({
       next: (response) => {
         test.status = 'Started';
-        this.toastService.show('Test started successfully', 'success');
-        // Capture timing from response or refresh from API
+        this.toastService.show('Test started successfully. Configuration locked for execution.', 'success');
         if (response?.testStartTime) {
           this.testTimingMap[headerId] = {
             ...this.testTimingMap[headerId],
@@ -1486,20 +1742,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
             performedByName: response.performedByName || this.testTimingMap[headerId]?.performedByName
           };
         } else {
-          // Refresh timing from environment endpoint
           this.fetchEnvironmentData(headerId);
         }
-        // Show preparation warning if returned by backend
-        if (response?.preparationWarning) {
-          this.toastService.show(
-            response.warningMessage || 'Sample preparation data is not yet entered in the system.',
-            'warning'
-          );
-        }
+        this.closeConfigValidationModal();
       },
       error: (error) => {
         console.error('Error starting test:', error);
-        this.toastService.show('Error starting test', 'error');
+        this.toastService.show('Error starting test: ' + (error?.error?.message || error?.message || 'Server error'), 'error');
       }
     });
   }
@@ -1508,13 +1757,43 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
 
-    if (confirm('Are you sure you want to complete this test?')) {
+    const planGroup = (this.resultForm.get('plans') as FormArray).at(planIndex) as FormGroup;
+    const testGroup = (planGroup.get('tests') as FormArray).at(testIndex) as FormGroup;
+    const testParams = testGroup.get('parameters') as FormArray;
+
+    if (!testParams || testParams.length === 0) {
+      this.toastService.show('No parameters found in this test to complete', 'warning');
+      return;
+    }
+
+    // Check for empty values in parameters
+    const missingValues = testParams.controls.filter((ctrl) => {
+      const val = ctrl.get('value')?.value;
+      return val === null || val === undefined || String(val).trim() === '';
+    });
+
+    if (missingValues.length > 0) {
+      const missingNames = missingValues.map(ctrl => ctrl.get('parameterName')?.value || 'Parameter').slice(0, 3).join(', ');
+      this.toastService.show(`Cannot complete test. Missing values for: ${missingNames}${missingValues.length > 3 ? '...' : ''}`, 'error');
+      return;
+    }
+
+    // Recalculate all formulas before completion
+    this.calculateParameters(planIndex, testIndex);
+
+    if (confirm(`Complete test "${test.name}"? This will finalize test results, evaluate overall pass/fail status, and generate audit record.`)) {
+      // Save test data first
+      this.saveTestWise(planIndex, testIndex);
+
       this.testResultService.completeTest(headerId).subscribe({
         next: (response) => {
           test.status = 'Completed';
-          this.toastService.show('Test completed successfully', 'success');
-          this.resultCompleted.emit({ headerId, status: 'Completed' });
-          // Capture timing from response or refresh from API
+          test.isOverallPass = response.isOverallPass;
+          const msg = response.isOverallPass
+            ? `Test Completed! Overall Result: PASS.`
+            : `Test Completed! Overall Result: FAIL (Parameters out of specification limit).`;
+          this.toastService.show(msg, response.isOverallPass ? 'success' : 'warning');
+          this.resultCompleted.emit({ headerId, status: 'Completed', isOverallPass: response.isOverallPass });
           if (response?.testEndTime) {
             this.testTimingMap[headerId] = {
               ...this.testTimingMap[headerId],
@@ -1522,13 +1801,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               performedByName: response.performedByName || this.testTimingMap[headerId]?.performedByName
             };
           } else {
-            // Refresh timing from environment endpoint
             this.fetchEnvironmentData(headerId);
           }
         },
         error: (error) => {
           console.error('Error completing test:', error);
-          this.toastService.show('Error completing test', 'error');
+          this.toastService.show('Error completing test: ' + (error?.error?.message || error?.message || 'Server error'), 'error');
         }
       });
     }
@@ -1613,6 +1891,197 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         this.toastService.show('Error updating parameter', 'error');
       }
     });
+  }
+
+  // ================================================================
+  // 7-Tab Workflow Navigation & Quick Actions
+  // ================================================================
+  switchTab(tab: 'info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'): void {
+    this.activeTab = tab;
+  }
+
+  goToNextTab(): void {
+    const tabOrder: ('info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history')[] = [
+      'info', 'parameters', 'execution', 'calculations', 'nabl', 'attachments', 'history'
+    ];
+    const currentIndex = tabOrder.indexOf(this.activeTab);
+    if (currentIndex < tabOrder.length - 1) {
+      this.activeTab = tabOrder[currentIndex + 1];
+    }
+  }
+
+  formatDateDisplay(dateStr: any): string {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '-';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  viewMethodDetails(methodId?: number): void {
+    const id = methodId || this.plans[this.activePlanIndex]?.methodId;
+    if (id && id > 0) {
+      window.open(`/test-specification/details/${id}`, '_blank');
+    } else {
+      this.toastService.show('No test method standard linked to this test.', 'warning');
+    }
+  }
+
+  viewSpecification(specId?: number): void {
+    const id = specId || this.sample?.specificationGradeID || this.sample?.assignedGradeID;
+    if (id && id > 0) {
+      window.open(`/material-specification/details/${id}`, '_blank');
+    } else {
+      this.toastService.show('No Material Specification linked to this test.', 'warning');
+    }
+  }
+
+  viewEquipment(equipmentId?: number): void {
+    if (equipmentId && equipmentId > 0) {
+      window.open(`/equipment/details/${equipmentId}`, '_blank');
+    } else {
+      this.switchTab('execution');
+      this.toastService.show('No equipment assigned yet for this test. Please select equipment under Execution.', 'info');
+    }
+  }
+
+  viewReportFormat(formatId?: number): void {
+    if (formatId && formatId > 0) {
+      window.open(`/report-format/designer/${formatId}`, '_blank');
+    } else if (this.sampleId) {
+      window.open(`/reporting/preview/${this.sampleId}`, '_blank');
+    } else {
+      this.toastService.show('No configured report format found for preview.', 'warning');
+    }
+  }
+
+  navigateToScope(): void {
+    window.open('/scope', '_blank');
+  }
+
+  navigateToPreparation(sampleId?: number): void {
+    const id = sampleId || this.sampleId;
+    if (id) {
+      window.open(`/sample/preparation/create/${id}`, '_blank');
+    } else {
+      window.open('/sample/preparation', '_blank');
+    }
+  }
+
+  isNablAccredited(test: any): boolean {
+    if (!test) return false;
+    const headerId = test.headerId;
+    if (headerId && this.nablScopeMap[headerId]) {
+      const summary = this.getNablScopeSummary(headerId);
+      if (summary.totalChecked > 0) {
+        // Strict ISO 17025 requirement: ALL tested parameters must be within accredited scope
+        return summary.allInScope;
+      }
+    }
+    return !!test.isNabl;
+  }
+
+  getEnvironmentDisplay(headerId: number): string | null {
+    const env = this.environmentMap[headerId];
+    if (!env) return null;
+    const parts: string[] = [];
+    if (env.roomTemperature != null && env.roomTemperature !== undefined && !isNaN(Number(env.roomTemperature))) {
+      parts.push(`${env.roomTemperature}°C`);
+    }
+    if (env.roomHumidity != null && env.roomHumidity !== undefined && !isNaN(Number(env.roomHumidity))) {
+      parts.push(`${env.roomHumidity}% RH`);
+    }
+    return parts.length > 0 ? parts.join(', ') : null;
+  }
+
+  viewSOP(methodId?: number, sopFilePath?: string): void {
+    if (sopFilePath) {
+      const fullUrl = this.baseUrl + (sopFilePath.startsWith('/') ? '' : '/') + sopFilePath;
+      window.open(fullUrl, '_blank');
+      return;
+    }
+    if (methodId && methodId > 0) {
+      this.testMethodService.getTestMethodSpecificationById(methodId).subscribe({
+        next: (spec: any) => {
+          const filePath = spec?.versions?.find((v: any) => v.isDefault && v.standardFilePath)?.standardFilePath
+            || spec?.versions?.find((v: any) => v.standardFilePath)?.standardFilePath;
+          if (filePath) {
+            const fullUrl = this.baseUrl + (filePath.startsWith('/') ? '' : '/') + filePath;
+            window.open(fullUrl, '_blank');
+          } else {
+            this.toastService.show('No SOP / Procedure document attached for this test method.', 'warning');
+          }
+        },
+        error: () => {
+          this.toastService.show('No SOP / Procedure document attached for this test method.', 'warning');
+        }
+      });
+    } else {
+      this.toastService.show('No test method standard linked to check for SOP.', 'warning');
+    }
+  }
+
+  addRemarkFocus(): void {
+    const el = document.getElementById('test-remarks-input');
+    if (el) {
+      el.focus();
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  markAsNonconforming(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex]?.tests[testIndex];
+    if (confirm(`Mark test "${test?.name || 'Test'}" as Nonconforming work (ISO 17025 Clause 7.10)?`)) {
+      this.router.navigate(['/non-conforming-work/create'], {
+        state: {
+          sampleId: this.sampleId,
+          sampleNo: this.sample?.sampleNo,
+          caseNo: this.inward?.caseNo,
+          customerName: this.inward?.customerName,
+          testName: test?.name,
+          headerId: test?.headerId
+        }
+      });
+    }
+  }
+
+  saveAsDraft(planIndex: number, testIndex: number): void {
+    this.saveTestWise(planIndex, testIndex);
+  }
+
+  formatSpecRange(param: any): string {
+    if (!param) return '—';
+    const min = param.specMinValue != null ? param.specMinValue : param.minValue;
+    const max = param.specMaxValue != null ? param.specMaxValue : param.maxValue;
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return param.acceptanceCriteria || '—';
+  }
+
+  getParameterStatus(param: any): 'pass' | 'fail' | 'marginal' | null {
+    if (!param) return null;
+    if (param.resultStatus) {
+      const status = String(param.resultStatus).toLowerCase();
+      if (status === 'pass' || status === 'within range') return 'pass';
+      if (status === 'fail' || status === 'under range' || status === 'over range') return 'fail';
+      if (status === 'marginal') return 'marginal';
+    }
+    if (param.isWithinLimit === true) return 'pass';
+    if (param.isWithinLimit === false) return 'fail';
+    return null;
+  }
+
+  getNablScopeStatus(headerId: number, parameterId: number): string {
+    const statusObj = this.getNablStatus(headerId, parameterId);
+    return statusObj?.scopeStatus || 'WithinScope';
+  }
+
+  onParameterValueChanged(planIndex: number, testIndex: number, paramIndex: number): void {
+    this.onValueChanged(planIndex, testIndex, paramIndex);
   }
 
   // ================================================================
@@ -1947,12 +2416,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.testMethodService.getTestMethodSpecificationDropdown(term, page, pageSize);
 
   openFromMethodModal(planIndex: number, testIndex: number): void {
-    const test = this.plans[planIndex].tests[testIndex];
-    this.fromMethodHeaderId = test.headerId;
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    this.fromMethodHeaderId = test?.headerId || 0;
     this.fromMethodPlanIndex = planIndex;
     this.fromMethodTestIndex = testIndex;
     this.fromMethodForm.reset();
     this.methodParameters = [];
+    this.selectedMethodParam = null;
+    this.loadingMethodParams = false;
     this.showFromMethodModal = true;
   }
 
@@ -1960,22 +2431,86 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.showFromMethodModal = false;
     this.fromMethodForm.reset();
     this.methodParameters = [];
+    this.selectedMethodParam = null;
+    this.loadingMethodParams = false;
+  }
+
+  isParamAlreadyInHeader(paramId: number): boolean {
+    if (!this.plans || this.fromMethodPlanIndex === undefined || this.fromMethodTestIndex === undefined) return false;
+    const test = this.plans[this.fromMethodPlanIndex]?.tests?.[this.fromMethodTestIndex];
+    if (!test || !test.parameters) return false;
+    return test.parameters.some((p: any) => (p.parameterID === paramId || p.parameterId === paramId));
   }
 
   onTestMethodSelected(selectedItem: any): void {
     if (!selectedItem) {
       this.fromMethodForm.patchValue({ testMethodId: null, parameterID: null });
       this.methodParameters = [];
+      this.selectedMethodParam = null;
       return;
     }
-    this.fromMethodForm.patchValue({ testMethodId: selectedItem.id, parameterID: null });
+    const methodId = selectedItem.id;
+    this.fromMethodForm.patchValue({ testMethodId: methodId, parameterID: null });
     this.methodParameters = [];
+    this.selectedMethodParam = null;
     this.loadingMethodParams = true;
 
-    // Load parameters for the selected test method
-    this.testMethodService.getTestMethodSpecificationById(selectedItem.id).subscribe({
-      next: (method) => {
-        this.methodParameters = method.parameters || method.testParameters || [];
+    // Call specialized endpoint that matches specification limits and marks duplicate parameters
+    this.testResultService.getMethodParametersForHeader(this.fromMethodHeaderId, methodId).subscribe({
+      next: (params: any[]) => {
+        if (params && params.length > 0) {
+          this.methodParameters = params.map(p => ({
+            ...p,
+            isAlreadyAdded: p.isAlreadyAdded || this.isParamAlreadyInHeader(p.parameterID)
+          }));
+          this.loadingMethodParams = false;
+        } else {
+          this.loadFallbackMethodParameters(methodId);
+        }
+      },
+      error: (err) => {
+        console.warn('getMethodParametersForHeader failed, falling back to spec details:', err);
+        this.loadFallbackMethodParameters(methodId);
+      }
+    });
+  }
+
+  private loadFallbackMethodParameters(methodId: number): void {
+    this.testMethodService.getTestMethodSpecificationById(methodId).subscribe({
+      next: (method: any) => {
+        let params: any[] = [];
+        if (method?.versions && method.versions.length > 0) {
+          const ver = method.versions.find((v: any) => v.id === methodId)
+                   || method.versions.find((v: any) => v.isDefault)
+                   || method.versions[0];
+          if (ver && ver.parameters && ver.parameters.length > 0) {
+            params = ver.parameters.map((vp: any) => {
+              const pId = vp.parameterID || vp.parameter?.id || vp.id;
+              return {
+                parameterID: pId,
+                parameterName: vp.parameter?.name || vp.parameterName || `Parameter #${pId}`,
+                unit: vp.parameterUnit?.name || vp.parameter?.parameterUnit?.name || vp.unit || '',
+                specRange: null,
+                isAlreadyAdded: this.isParamAlreadyInHeader(pId),
+                comment: vp.comment
+              };
+            });
+          }
+        }
+        if (params.length === 0 && (method?.parameters || method?.testParameters)) {
+          params = (method.parameters || method.testParameters).map((p: any) => {
+            const pId = p.parameterID || p.id;
+            return {
+              parameterID: pId,
+              parameterName: p.parameterName || p.name || `Parameter #${pId}`,
+              unit: p.unit || p.parameterUnit?.name || '',
+              specRange: null,
+              isAlreadyAdded: this.isParamAlreadyInHeader(pId),
+              comment: p.comment
+            };
+          });
+        }
+        this.methodParameters = params;
         this.loadingMethodParams = false;
       },
       error: () => {
@@ -1987,7 +2522,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   selectMethodParameter(param: any): void {
-    this.fromMethodForm.patchValue({ parameterID: param.id || param.parameterId });
+    if (param.isAlreadyAdded) {
+      this.toastService.show(`Parameter '${param.parameterName}' is already present in this test.`, 'info');
+      return;
+    }
+    this.selectedMethodParam = param;
+    this.fromMethodForm.patchValue({ parameterID: param.parameterID || param.id });
   }
 
   submitFromMethod(): void {
@@ -1996,17 +2536,28 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       return;
     }
 
-    const dto = this.fromMethodForm.value;
+    const formVal = this.fromMethodForm.value;
+    if (this.isParamAlreadyInHeader(formVal.parameterID)) {
+      this.toastService.show('This parameter is already added to this test.', 'warning');
+      return;
+    }
+
+    const dto = {
+      sourceTestMethodId: formVal.testMethodId,
+      testMethodId: formVal.testMethodId,
+      parameterID: formVal.parameterID
+    };
+
     this.testResultService.addParameterFromMethod(this.fromMethodHeaderId, dto).subscribe({
       next: (response) => {
-        this.toastService.show('Parameter added from test method successfully', 'success');
+        this.toastService.show(response?.message || 'Parameter added from test method successfully', 'success');
         this.closeFromMethodModal();
-        // Refresh to get the new parameter
+        // Refresh full payload so table displays the new parameter with matching specification limits
         this.loadFullResultPayload(this.sampleId);
       },
       error: (error) => {
         console.error('Error adding parameter from method:', error);
-        this.toastService.show(error?.error?.message || 'Error adding parameter from method', 'error');
+        this.toastService.show(error?.error?.message || error?.error || 'Error adding parameter from method', 'error');
       }
     });
   }

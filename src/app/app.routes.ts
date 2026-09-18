@@ -638,7 +638,7 @@ export const routes: Routes = [
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
-            // { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
             { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },

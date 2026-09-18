@@ -77,6 +77,17 @@
   </div>
 
   <!-- ================================================================ -->
+  <!-- 3B. EMPTY STATE — No test plans for this sample (truthful)       -->
+  <!-- ================================================================ -->
+  <div class="alert alert-warning d-flex align-items-center gap-2 my-2" *ngIf="payloadLoaded && (!plans || plans.length === 0)">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div class="small">
+      <strong>No test plans found for this sample.</strong>
+      <span class="text-muted"> Create a sample plan first — no records were fabricated.</span>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
   <!-- 4. 7-TAB WORKFLOW NAVIGATION                                     -->
   <!-- ================================================================ -->
   <ul class="nav workflow-tabs">
@@ -149,7 +160,7 @@
                           <div class="detail-icon"><i class="bi bi-cpu text-danger"></i></div>
                           <div class="detail-content">
                             <span class="detail-label">Analysis Technique</span>
-                            <span class="detail-value">{{ plans[p].analysisTechnique || 'OES (Optical Emission Spectroscopy)' }}</span>
+                            <span class="detail-value">{{ plans[p].analysisTechnique || '—' }}</span>
                           </div>
                         </div>
 
@@ -163,7 +174,7 @@
                               </a>
                             </div>
                             <span class="detail-value text-primary fw-semibold" *ngIf="!plans[p].showMethodEdit">
-                              {{ plans[p].methodName || 'ASTM E415 : 2021' }}
+                              {{ plans[p].methodName || '—' }}
                             </span>
                             <div *ngIf="plans[p].showMethodEdit && !isViewMode && !isConfigLocked(plans[p].tests[t]?.status)" class="mt-1">
                               <app-searchable-dropdown
@@ -188,7 +199,7 @@
                               </a>
                             </div>
                             <span class="detail-value text-dark fw-semibold" *ngIf="!plans[p].showSpecEdit">
-                              {{ plans[p].specification || 'ASTM A240-2023 (Gr. 304)' }}
+                              {{ plans[p].specification || '—' }}
                             </span>
                             <div *ngIf="plans[p].showSpecEdit && !isViewMode && !isConfigLocked(plans[p].tests[t]?.status)" class="mt-1">
                               <app-searchable-dropdown
@@ -207,7 +218,7 @@
                           <div class="detail-icon"><i class="bi bi-box-seam text-danger"></i></div>
                           <div class="detail-content">
                             <span class="detail-label">Sample Type</span>
-                            <span class="detail-value">{{ plans[p].sampleType || sample?.sampleType || sample?.productForm || sample?.productMasterName || 'Customer Supplied Sample' }}</span>
+                            <span class="detail-value">{{ plans[p].sampleType || sample?.sampleType || sample?.productForm || sample?.productMasterName || '—' }}</span>
                           </div>
                         </div>
 
@@ -215,7 +226,7 @@
                           <div class="detail-icon"><i class="bi bi-bezier2 text-danger"></i></div>
                           <div class="detail-content">
                             <span class="detail-label">Sampling</span>
-                            <span class="detail-value">{{ plans[p].sampling || sample?.details || 'Customer Supplied (As Received)' }}</span>
+                            <span class="detail-value">{{ plans[p].sampling || sample?.details || '—' }}</span>
                           </div>
                         </div>
 
@@ -228,7 +239,7 @@
                                 <i class="bi bi-box-arrow-up-right me-1"></i>Manage
                               </a>
                             </div>
-                            <span class="detail-value">{{ plans[p].specimenPreparation || 'Direct Testing (No Prep Required)' }}</span>
+                            <span class="detail-value">{{ plans[p].specimenPreparation || '—' }}</span>
                           </div>
                         </div>
 
@@ -261,7 +272,7 @@
                                 <i class="bi bi-box-arrow-up-right me-1"></i>View
                               </a>
                             </div>
-                            <span class="detail-value">{{ plans[p].reportFormatName || 'Standard Laboratory Report' }}</span>
+                            <span class="detail-value">{{ plans[p].reportFormatName || '—' }}</span>
                           </div>
                         </div>
 
@@ -665,21 +676,21 @@
                         <span class="detail-label">Lab / Room</span>
                         <span class="detail-value fs-6 fw-semibold">
                           <i class="bi bi-building me-1 text-muted"></i>
-                          {{ environmentMap[plans[p].tests[t].headerId]?.labRoomName || 'Controlled Metallurgy & Chemical Lab' }}
+                          {{ environmentMap[plans[p].tests[t].headerId]?.labRoomName || 'Not Recorded' }}
                         </span>
                       </div>
                       <div class="mb-2.5">
                         <span class="detail-label">Room Temperature</span>
                         <span class="detail-value fs-6 fw-semibold text-danger">
                           <i class="bi bi-thermometer me-1"></i>
-                          {{ environmentMap[plans[p].tests[t].headerId]?.roomTemperature != null ? environmentMap[plans[p].tests[t].headerId]?.roomTemperature + ' °C' : '23.5 °C (Nominal)' }}
+                          {{ environmentMap[plans[p].tests[t].headerId]?.roomTemperature != null ? environmentMap[plans[p].tests[t].headerId]?.roomTemperature + ' °C' : 'Not Recorded' }}
                         </span>
                       </div>
                       <div class="mb-0">
                         <span class="detail-label">Relative Humidity</span>
                         <span class="detail-value fs-6 fw-semibold text-primary">
                           <i class="bi bi-droplet me-1"></i>
-                          {{ environmentMap[plans[p].tests[t].headerId]?.roomHumidity != null ? environmentMap[plans[p].tests[t].headerId]?.roomHumidity + ' % RH' : '52 % RH (Nominal)' }}
+                          {{ environmentMap[plans[p].tests[t].headerId]?.roomHumidity != null ? environmentMap[plans[p].tests[t].headerId]?.roomHumidity + ' % RH' : 'Not Recorded' }}
                         </span>
                       </div>
                     </div>
@@ -697,7 +708,7 @@
                         <span class="detail-label">Performed By</span>
                         <span class="detail-value fw-semibold text-dark">
                           <i class="bi bi-person-badge me-1 text-muted"></i>
-                          {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || 'Authorized Technician' }}
+                          {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || '—' }}
                         </span>
                       </div>
                       <div class="mb-2.5">
@@ -739,7 +750,7 @@
                         <app-searchable-dropdown
                           [placeholder]="'Add Equipment...'"
                           [labelName]="'Equipment'"
-                          [fetchDataFn]="getEquipmentDropdown"
+                          [fetchDataFn]="getEquipmentDropdownFor(p, t)"
                           (itemSelected)="onEquipmentSelected(plans[p].tests[t].headerId, $event)"
                           [hideLabel]="true"
                           [smallInput]="true">
@@ -918,7 +929,7 @@
                     <div class="timeline-icon bg-warning text-dark"><i class="bi bi-play-fill"></i></div>
                     <div class="timeline-info">
                       <span class="fw-semibold small">Testing In Progress</span>
-                      <span class="text-muted small d-block">Performer: {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || 'Assigned Technician' }}</span>
+                      <span class="text-muted small d-block">Performer: {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || '—' }}</span>
                     </div>
                   </div>
                   <div class="timeline-item" *ngIf="plans[p].tests[t].status === 'Completed' || plans[p].tests[t].status === 'Verified' || plans[p].tests[t].status === 'PendingVerification'">

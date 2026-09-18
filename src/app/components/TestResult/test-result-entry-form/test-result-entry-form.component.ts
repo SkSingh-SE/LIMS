@@ -35,6 +35,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   plans: any[] = [];
   resultForm!: FormGroup;
   isViewMode: boolean = false;
+  payloadLoaded: boolean = false;
 
   // 7-Tab Workflow Navigation as per ISO 17025 Redesign
   activeTab: 'info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history' = 'info';
@@ -226,7 +227,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     if (this.sampleId) {
       this.loadFullResultPayload(this.sampleId);
     } else {
-      this.loadDummyData();
+      this.payloadLoaded = true;
+      this.toastService.show('Sample ID is required', 'warning');
       // loading handled by interceptor
     }
   }
@@ -468,15 +470,16 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         const genPlan: any = {
           type: 'General',
           discipline: generalTest.discipline || 'Mechanical',
-          analysisTechnique: generalTest.analysisTechnique || generalTest.laboratoryTest || 'Mechanical Testing',
-          sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || 'As Received',
-          sampling: sampleData.sampling || apiData.inward?.sampleReceiptNote || 'Customer Supplied (As Received)',
-          specimenPreparation: sampleData.specimenPreparation || 'Direct Testing (No Prep Required)',
-          reportFormatName: generalTest.reportFormatName || sampleData.reportFormatName || 'Standard Laboratory Report',
+          analysisTechnique: generalTest.analysisTechnique || generalTest.laboratoryTest || '—',
+          sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || '—',
+          sampling: sampleData.sampling || apiData.inward?.sampleReceiptNote || '—',
+          specimenPreparation: sampleData.specimenPreparation || '—',
+          reportFormatName: generalTest.reportFormatName || sampleData.reportFormatName || '—',
           reportFormatId: generalTest.reportFormatId || sampleData.reportFormatId || null,
           specification: specification,
           grade: '',
           headerId: generalTest.headerId,
+          labTestId: (generalTest as any).laboratoryTestId || null,
           methodId: generalTest.standard || null,
           methodName: methodName,
           methodSelected: generalTest.standard ? { id: generalTest.standard, name: methodName || `Method #${generalTest.standard}` } : null,
@@ -539,11 +542,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         const chemPlan: any = {
           type: 'Chemical',
           discipline: chemicalTest.discipline || 'Chemical',
-          analysisTechnique: chemicalTest.analysisTechnique || 'OES (Optical Emission Spectroscopy)',
-          sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || 'As Received',
-          sampling: sampleData.sampling || apiData.inward?.sampleReceiptNote || 'Customer Supplied (As Received)',
-          specimenPreparation: sampleData.specimenPreparation || 'Direct Testing (No Prep Required)',
-          reportFormatName: chemicalTest.reportFormatName || sampleData.reportFormatName || 'Standard Laboratory Report',
+          analysisTechnique: chemicalTest.analysisTechnique || '—',
+          sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || '—',
+          sampling: sampleData.sampling || apiData.inward?.sampleReceiptNote || '—',
+          specimenPreparation: sampleData.specimenPreparation || '—',
+          reportFormatName: chemicalTest.reportFormatName || sampleData.reportFormatName || '—',
           reportFormatId: chemicalTest.reportFormatId || sampleData.reportFormatId || null,
           specification: specification,
           grade: '',
@@ -635,9 +638,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       });
     });
 
-    // Fallback to dummy if no plans
+    // Truthful empty state: never fabricate plans when API returns none
+    this.payloadLoaded = true;
     if (this.plans.length === 0) {
-      this.loadDummyData();
+      this.toastService.show('No test plans found for this sample. Create a sample plan first.', 'warning');
     }
   }
 
@@ -728,66 +732,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   private buildSpecificationName(spec1Name: string, spec2Name: string): string {
     if (!spec1Name) return 'Unknown';
     return spec2Name ? `${spec1Name} / ${spec2Name}` : spec1Name;
-  }
-
-  // ----------------------------------------------------------------
-  // 1. Dummy Data
-  // ----------------------------------------------------------------
-  loadDummyData(): void {
-    this.inward = {
-      caseNo: "DMSPL-000001",
-      customerName: "Harsh Gujral",
-    };
-
-    this.sample = {
-      sampleNo: "25-000001",
-      material: "TMT",
-      metalClassification: "MS",
-      productCondition: "Hot Rolled",
-      batchNo: "1",
-      remarks: "Tensile",
-    };
-
-    this.plans = [
-      {
-        type: "General",
-        specification: "IS 1608",
-        grade: "Fe500D",
-        headerId: 0,
-        tests: [
-          {
-            id: 1,
-            headerId: 0,
-            name: "Tensile Test",
-            reportNo: "25-000001-1",
-            parameters: [
-              { id: 1, parameterName: "Yield Strength", unit: "MPa", value: null, remarks: "", minValue: null, maxValue: null, isWithinLimit: null },
-              { id: 2, parameterName: "UTS", unit: "MPa", value: null, remarks: "", minValue: null, maxValue: null, isWithinLimit: null },
-              { id: 3, parameterName: "% Elongation", unit: "%", value: null, remarks: "", minValue: null, maxValue: null, isWithinLimit: null },
-            ]
-          }
-        ]
-      },
-      {
-        type: "Chemical",
-        specification: "IS 1786",
-        grade: "Fe500D",
-        headerId: 0,
-        tests: [
-          {
-            id: 2,
-            headerId: 0,
-            name: "Spectro Analysis",
-            reportNo: "25-000001-2",
-            parameters: [
-              { id: 4, parameterName: "C", unit: "%", value: null, remarks: "", minValue: 0.15, maxValue: 0.25, isWithinLimit: null },
-              { id: 5, parameterName: "Mn", unit: "%", value: null, remarks: "", minValue: 0.5, maxValue: 1.8, isWithinLimit: null },
-              { id: 6, parameterName: "S", unit: "%", value: null, remarks: "", minValue: 0.0, maxValue: 0.045, isWithinLimit: null }
-            ]
-          }
-        ]
-      }
-    ];
   }
 
   // ----------------------------------------------------------------
@@ -1630,13 +1574,22 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   formatRequirement(param: any): string {
-    if (!param) return '—';
-    const min = param.specMinValue != null ? param.specMinValue : param.minValue;
-    const max = param.specMaxValue != null ? param.specMaxValue : param.maxValue;
-    if (min != null && max != null) return `${min} – ${max}`;
-    if (min != null) return `≥ ${min}`;
-    if (max != null) return `≤ ${max}`;
-    return param.acceptanceCriteria || '—';
+    if (!param) return 'Not Specified';
+    const rawMin = param.specMinValue != null ? param.specMinValue : param.minValue;
+    const rawMax = param.specMaxValue != null ? param.specMaxValue : param.maxValue;
+    const unit = (param.unit || param.selectedUnit || '').toString().trim();
+    const withUnit = (s: string) => unit ? `${s} ${unit}` : s;
+    const hasMin = rawMin !== null && rawMin !== undefined && rawMin !== '' && !isNaN(Number(rawMin));
+    const hasMax = rawMax !== null && rawMax !== undefined && rawMax !== '' && !isNaN(Number(rawMax));
+    if (hasMin && hasMax) {
+      if (Number(rawMin) === Number(rawMax)) return withUnit(`= ${rawMin}`);
+      return withUnit(`${rawMin} – ${rawMax}`);
+    }
+    if (hasMin) return withUnit(`≥ ${rawMin}`);
+    if (hasMax) return withUnit(`≤ ${rawMax}`);
+    const criteria = (param.acceptanceCriteria || '').toString().trim();
+    if (criteria) return criteria;
+    return 'Not Specified';
   }
 
   openRequirementDetails(param: any): void {
@@ -2334,6 +2287,21 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // ================================================================
   getEquipmentDropdown = (term: string, page: number, pageSize: number): Observable<any[]> =>
     this.equipmentService.getEquipmentDropdown(term, page, pageSize);
+
+  getEquipmentDropdownFor = (pIdx: number, tIdx: number) => (term: string, page: number, pageSize: number): Observable<any[]> => {
+    const plan: any = this.plans?.[pIdx];
+    let labTestId: number | undefined;
+    let analysisTypeId: number | undefined;
+    if (plan) {
+      if (plan.type === 'Chemical') {
+        analysisTypeId = plan.labTestId || undefined;
+        labTestId = plan.parentLabTestId || undefined;
+      } else {
+        labTestId = plan.labTestId || plan.methodId || undefined;
+      }
+    }
+    return this.equipmentService.getEquipmentDropdown(term, page, pageSize, labTestId, undefined, analysisTypeId);
+  };
 
   onEquipmentSelected(headerId: number, selectedItem: any): void {
     if (!selectedItem) {
@@ -3299,13 +3267,25 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
       let expr = expression.trim();
 
-      // Replace aggregate functions: MEAN(...), MAX(...), MIN(...), SUM(...), COUNT(...), STDEV(...)
-      expr = expr.replace(/(MEAN|MAX|MIN|SUM|COUNT|STDEV)\(([^)]+)\)/gi, (match, fn, args) => {
-        const argTokens = args.split(',').map((a: string) => a.trim());
+      // Parity with FormulaEvaluator.ConvertToNCalcExpression: strip target assignment (e.g. "UTS = Load / Area")
+      const eqIdx = expr.indexOf('=');
+      if (eqIdx > 0 && !expr.startsWith('>=') && !expr.startsWith('<=') && !expr.startsWith('==') && !expr.startsWith('!=')) {
+        const left = expr.substring(0, eqIdx).trim();
+        if (/^[a-zA-Z_%][a-zA-Z0-9_ %]*$/.test(left)) {
+          expr = expr.substring(eqIdx + 1).trim();
+        }
+      }
+      // Strip % prefix from parameter tokens (e.g. "%C" -> "C"), parity with backend
+      expr = expr.replace(/%([a-zA-Z_][a-zA-Z0-9_]*)/g, '$1');
+
+      // Replace aggregate functions: MEAN/AVG/MAX/MIN/SUM/COUNT/STDEV(...)
+      expr = expr.replace(/(MEAN|AVG|MAX|MIN|SUM|COUNT|STDEV)\(([^)]+)\)/gi, (match, fn, args) => {
+        const argTokens = args.split(',').map((a: string) => a.trim().replace(/[{}]/g, ''));
         const values: number[] = [];
         for (const token of argTokens) {
-          if (paramValueMap[token] !== undefined) {
-            values.push(paramValueMap[token]);
+          const normKey = /^P\d+$/i.test(token) ? token.toUpperCase() : token;
+          if (paramValueMap[normKey] !== undefined) {
+            values.push(paramValueMap[normKey]);
           } else if (!isNaN(Number(token))) {
             values.push(Number(token));
           } else {
@@ -3316,7 +3296,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
         const fnUpper = fn.toUpperCase();
         switch (fnUpper) {
-          case 'MEAN': return String(values.reduce((a, b) => a + b, 0) / values.length);
+          case 'MEAN':
+          case 'AVG': return String(values.reduce((a, b) => a + b, 0) / values.length);
           case 'MAX': return String(Math.max(...values));
           case 'MIN': return String(Math.min(...values));
           case 'SUM': return String(values.reduce((a, b) => a + b, 0));
@@ -3330,8 +3311,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         }
       });
 
-      // Replace P{ID} references with their numeric values
-      expr = expr.replace(/P(\d+)/g, (match, id) => {
+      // Replace {P<ID>} and P<ID> references with their numeric values (parity with backend {P12} tokens)
+      expr = expr.replace(/\{?P(\d+)\}?/g, (match, id) => {
         const key = `P${id}`;
         if (paramValueMap[key] !== undefined) {
           return String(paramValueMap[key]);

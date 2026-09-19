@@ -341,4 +341,24 @@ export class TestResultService {
   deleteMachiningItem(itemId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/machining-items/${itemId}`);
   }
+
+  // ================================================================
+  // Environment Recording & Lab Rooms
+  // ================================================================
+  updateEnvironment(headerId: number, dto: { roomTemperature?: number; roomHumidity?: number; labRoomId?: number }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/update-environment/${headerId}`, dto);
+  }
+
+  getLabRooms(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/lab-rooms`);
+  }
+
+  getDailyEnvironment(labRoomId?: number): Observable<any> {
+    const params = labRoomId ? `?labRoomId=${labRoomId}` : '';
+    return this.http.get<any>(`${this.apiUrl}/daily-environment${params}`);
+  }
+
+  getEnvironmentAtTime(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/environment-at-time/${headerId}`);
+  }
 }

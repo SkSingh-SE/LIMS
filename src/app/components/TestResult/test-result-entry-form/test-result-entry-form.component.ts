@@ -109,11 +109,19 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // Phase 2A: Enhanced Test Execution
   // ================================================================
   // Environment info per headerId
-  environmentMap: Record<number, { roomTemperature?: number; roomHumidity?: number; labRoomName?: string }> = {};
+  environmentMap: Record<number, { roomTemperature?: number; roomHumidity?: number; labRoomName?: string; labRoomId?: number }> = {};
   // Equipment selection per headerId
   selectedEquipmentMap: Record<number, any[]> = {};
   // Test timing info per headerId (from API response)
   testTimingMap: Record<number, { testStartTime?: string; testEndTime?: string; performedByName?: string }> = {};
+
+  // Lab Environment Recording Modal
+  showRecordEnvironmentModal = false;
+  recordEnvForm!: FormGroup;
+  activeEnvHeaderId: number | null = null;
+  activeEnvTestTitle: string = '';
+  labRooms: any[] = [];
+  loadingLabRooms = false;
 
   // Add Standalone Parameter Modal
   showStandaloneParamModal = false;
@@ -224,6 +232,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.buildMoveToLongTermForm();
     this.buildStandaloneParamForm();
     this.buildFromMethodForm();
+    this.buildRecordEnvironmentForm();
     if (this.sampleId) {
       this.loadFullResultPayload(this.sampleId);
     } else {
@@ -512,7 +521,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                 specMinValue: param.specMinValue ?? null,
                 specMaxValue: param.specMaxValue ?? null,
                 acceptanceCriteria: param.acceptanceCriteria || '',
-                isCalculated: param.isCalculated || false,
+                isCalculated: param.isCalculated || !!param.formulaExpression || false,
                 isStandalone: param.isStandalone || false,
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
                 resultStatus: param.resultStatus || null,
@@ -523,7 +532,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                 convertedValue: param.convertedValue ?? null,
                 selectedUnit: param.selectedUnit || param.unit || '',
                 unitOptions: param.unitOptions || [],
-                isBillable: param.isBillable ?? true
+                isBillable: param.isBillable ?? true,
+                inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
+                dropdownOptions: param.dropdownOptions || []
               }))
             }
           ]
@@ -586,7 +597,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                 specMinValue: param.specMinValue ?? null,
                 specMaxValue: param.specMaxValue ?? null,
                 acceptanceCriteria: param.acceptanceCriteria || '',
-                isCalculated: param.isCalculated || false,
+                isCalculated: param.isCalculated || !!param.formulaExpression || false,
                 isStandalone: param.isStandalone || false,
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
                 resultStatus: param.resultStatus || null,
@@ -597,7 +608,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                 convertedValue: param.convertedValue ?? null,
                 selectedUnit: param.selectedUnit || param.unit || '',
                 unitOptions: param.unitOptions || [],
-                isBillable: param.isBillable ?? true
+                isBillable: param.isBillable ?? true,
+                inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
+                dropdownOptions: param.dropdownOptions || []
               }))
             }
           ]
@@ -782,6 +795,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const minValidators = (planType === 'Chemical') ? [Validators.required] : [];
     const maxValidators = (planType === 'Chemical') ? [Validators.required] : [];
 
+    const isCalculated = p.isCalculated === true || !!p.formulaExpression || !!p.formula;
+    const inputType = p.inputType || (p.parameterType === 'Qualitative' ? 'Text' : 'Decimal');
+
     return this.fb.group({
       id: [p.id || 0],
       parameterID: [p.parameterID, Validators.required],
@@ -793,7 +809,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       maxValue: [planType === 'Chemical' ? (p.maxValue ?? 0) : (p.maxValue ?? null), maxValidators],
       isWithinLimit: [p.isWithinLimit ?? null],
       altered: [p.altered || false],
-      formulaExpression: [p.formulaExpression || ''],
+      formulaExpression: [p.formulaExpression || p.formula || ''],
+      isCalculated: [isCalculated],
+      inputType: [inputType],
+      dropdownOptions: [p.dropdownOptions || []],
       specMinValue: [p.specMinValue ?? null],
       specMaxValue: [p.specMaxValue ?? null],
       acceptanceCriteria: [p.acceptanceCriteria || ''],
@@ -1518,7 +1537,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const currentParamId = row.get('parameterID')?.value;
 
     if (!selectedItem) {
-      row.patchValue({ parameterID: null, parameterName: null, unit: null });
+      row.patchValue({
+        parameterID: null,
+        parameterName: null,
+        unit: null,
+        inputType: 'Decimal',
+        isCalculated: false,
+        formulaExpression: '',
+        dropdownOptions: []
+      });
       return;
     }
 
@@ -1526,12 +1553,25 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     if (currentParamId === selectedItem.id) return;
 
     const unit = selectedItem?.additionalValues?.['Unit'] || selectedItem?.unit || row.get('unit')?.value;
+    const inputType = selectedItem?.additionalValues?.['InputType'] || selectedItem?.inputType || 'Decimal';
+    const isCalculated = selectedItem?.additionalValues?.['IsCalculated'] ?? selectedItem?.isCalculated ?? false;
+    const formula = selectedItem?.additionalValues?.['Formula'] || selectedItem?.formula || '';
+    const formulaDisplay = selectedItem?.additionalValues?.['FormulaDisplay'] || selectedItem?.formulaDisplay || '';
+    const dropdownOptions = selectedItem?.additionalValues?.['DropdownOptions'] || selectedItem?.dropdownOptions || [];
+    const decimalPrecision = selectedItem?.additionalValues?.['DecimalPrecision'] ?? selectedItem?.decimalPrecision ?? 2;
+    const parameterType = selectedItem?.additionalValues?.['ParameterType'] || selectedItem?.parameterType || '';
 
     // Parameter actually changed — clear old values and update
     row.patchValue({
       parameterID: selectedItem.id,
       parameterName: selectedItem.name,
       unit: unit,
+      inputType: inputType,
+      isCalculated: isCalculated || !!formula,
+      formulaExpression: formula || formulaDisplay,
+      dropdownOptions: dropdownOptions,
+      decimalPrecision: decimalPrecision,
+      parameterType: parameterType,
       specMinValue: null,
       specMaxValue: null,
       minValue: null,
@@ -1540,6 +1580,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       isWithinLimit: null,
       resultStatus: null,
     });
+
+    if (formula || isCalculated) {
+      this.recalculateFormulas(planIndex, testIndex);
+    }
   }
 
   // ================================================================
@@ -1797,8 +1841,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
    * Check if parameter is calculated (disabled for editing)
    */
   isParameterCalculated(param: any): boolean {
-    // Check if parameter has isCalculated flag or is marked as read-only
-    return param?.isCalculated === true || param?.isReadOnly === true;
+    // Check if parameter has isCalculated flag, is marked as read-only, or has a formula
+    return param?.isCalculated === true || param?.isReadOnly === true || !!param?.formulaExpression || !!param?.formula;
   }
 
   /**
@@ -2239,8 +2283,123 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   // ================================================================
-  // Phase 2A: Environment Data
+  // Phase 2A: Environment Data & Recording Modal
   // ================================================================
+  private buildRecordEnvironmentForm(): void {
+    this.recordEnvForm = this.fb.group({
+      labRoomId: [null],
+      roomTemperature: [null, [Validators.required, Validators.min(-50), Validators.max(100)]],
+      roomHumidity: [null, [Validators.required, Validators.min(0), Validators.max(100)]]
+    });
+  }
+
+  openRecordEnvironmentModal(plan: any, test: any): void {
+    if (!test || !test.headerId) {
+      this.toastService.show('Please start the test before recording environment conditions', 'warning');
+      return;
+    }
+    this.activeEnvHeaderId = test.headerId;
+    this.activeEnvTestTitle = test.testName || test.testMethodName || 'Test Execution';
+
+    const currentEnv = this.environmentMap[test.headerId] || {};
+    this.recordEnvForm.patchValue({
+      labRoomId: currentEnv.labRoomId || null,
+      roomTemperature: currentEnv.roomTemperature ?? null,
+      roomHumidity: currentEnv.roomHumidity ?? null
+    });
+
+    if (this.labRooms.length === 0) {
+      this.loadLabRooms();
+    }
+
+    // Auto-fetch daily environment if not yet recorded
+    if (currentEnv.roomTemperature == null && currentEnv.roomHumidity == null) {
+      this.fetchLatestDailyEnv(false);
+    }
+
+    this.showRecordEnvironmentModal = true;
+  }
+
+  closeRecordEnvironmentModal(): void {
+    this.showRecordEnvironmentModal = false;
+    this.activeEnvHeaderId = null;
+  }
+
+  loadLabRooms(): void {
+    this.loadingLabRooms = true;
+    this.testResultService.getLabRooms().subscribe({
+      next: (rooms) => {
+        this.labRooms = rooms || [];
+        this.loadingLabRooms = false;
+      },
+      error: () => {
+        this.loadingLabRooms = false;
+      }
+    });
+  }
+
+  onLabRoomChange(): void {
+    const roomId = this.recordEnvForm.get('labRoomId')?.value;
+    if (roomId) {
+      this.fetchLatestDailyEnv(false, roomId);
+    }
+  }
+
+  fetchLatestDailyEnv(showSuccessToast: boolean = true, roomId?: number): void {
+    const selectedRoomId = roomId || this.recordEnvForm.get('labRoomId')?.value || undefined;
+    this.testResultService.getDailyEnvironment(selectedRoomId).subscribe({
+      next: (res: any) => {
+        if (res) {
+          if (res.labRoomId && !this.recordEnvForm.get('labRoomId')?.value) {
+            this.recordEnvForm.patchValue({ labRoomId: res.labRoomId });
+          }
+          if (res.roomTemperature != null || res.roomHumidity != null) {
+            this.recordEnvForm.patchValue({
+              roomTemperature: res.roomTemperature,
+              roomHumidity: res.roomHumidity
+            });
+            if (showSuccessToast) {
+              this.toastService.show('Loaded daily environment log', 'success');
+            }
+          } else if (showSuccessToast) {
+            this.toastService.show('No daily environment record found for today', 'info');
+          }
+        }
+      },
+      error: () => {
+        if (showSuccessToast) {
+          this.toastService.show('Failed to fetch daily environment log', 'error');
+        }
+      }
+    });
+  }
+
+  saveEnvironmentRecord(): void {
+    if (this.recordEnvForm.invalid || !this.activeEnvHeaderId) {
+      this.recordEnvForm.markAllAsTouched();
+      return;
+    }
+
+    const payload = this.recordEnvForm.value;
+    const headerId = this.activeEnvHeaderId;
+
+    this.testResultService.updateEnvironment(headerId, payload).subscribe({
+      next: (res: any) => {
+        this.toastService.show('Lab environment recorded successfully', 'success');
+        this.environmentMap[headerId] = {
+          roomTemperature: res.roomTemperature,
+          roomHumidity: res.roomHumidity,
+          labRoomId: res.labRoomId,
+          labRoomName: res.labRoomName || (this.labRooms.find(r => r.id === payload.labRoomId)?.name) || ''
+        };
+        this.closeRecordEnvironmentModal();
+      },
+      error: (err: any) => {
+        this.toastService.show(err.error?.message || 'Failed to record lab environment', 'error');
+      }
+    });
+  }
+
   fetchEnvironmentData(headerId: number): void {
     if (!headerId) return;
     this.testResultService.getEnvironmentAtTime(headerId).subscribe({
@@ -2248,6 +2407,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         this.environmentMap[headerId] = {
           roomTemperature: env.roomTemperature ?? env.temperature,
           roomHumidity: env.roomHumidity ?? env.humidity,
+          labRoomId: env.labRoomId,
           labRoomName: env.labRoomName || env.roomName || ''
         };
       },

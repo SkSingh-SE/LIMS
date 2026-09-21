@@ -93,6 +93,7 @@
                         <app-searchable-dropdown
                           [fetchDataFn]="getSpecimenDropdownFn(sample.id, ti)"
                           [smallInput]="true"
+                          [hideLabel]="true"
                           [placeholder]="'Select Specimen Size'"
                           [selectedItem]="getSpecimenSelected(sample.id, ti)"
                           (itemSelected)="onSpecimenSelected($event, sample.id, ti)"

@@ -32,14 +32,34 @@ export class InvoiceCaseComponent implements OnInit {
   isChemicalTest = false;
   subGroups: any[] = [];
   selectedAnalysisTypeId: number | null = null;
+  selectedAnalysisTypeName = '';
+  selectedLaboratoryTestName = '';
 
   getDefaultPricingTypeOptions(versionIndex: number): any[] {
     const pricesCtrl = this.pricesOf(versionIndex);
     if (!pricesCtrl) return [];
-    return pricesCtrl.controls
+
+    const types = new Set<string>();
+    pricesCtrl.controls.forEach(ctrl => {
+      const st = ctrl.get('selectionType')?.value;
+      if (st) types.add(st);
+    });
+
+    const options: { value: string; label: string }[] = [];
+    types.forEach(t => {
+      options.push({ value: t, label: `${t} (Dimension Type)` });
+    });
+
+    pricesCtrl.controls
       .map(ctrl => ctrl.get('name')?.value)
       .filter(Boolean)
-      .map(name => ({ value: name, label: name }));
+      .forEach(name => {
+        if (!types.has(name)) {
+          options.push({ value: name, label: `${name}` });
+        }
+      });
+
+    return options;
   }
 
   constructor(
@@ -168,6 +188,7 @@ export class InvoiceCaseComponent implements OnInit {
       id: [p?.id ?? 0],
       invoiceCaseConfigID: [p?.invoiceCaseConfigID ?? null],
       name: [p?.name ?? ''],
+      configName: [p?.configName ?? ''],
       aliasName: [p?.aliasName ?? '', Validators.required],
       price: [p?.price ?? 0, [Validators.required, Validators.min(0)]],
       elementPrices: [p?.elementPrices ?? null],
@@ -175,7 +196,10 @@ export class InvoiceCaseComponent implements OnInit {
       overrideParameterIDs: [p?.overrideParameterIDs ?? null],
       overrideParameterNames: [p?.overrideParameterNames ?? ''],
       groupName: [p?.groupName ?? ''],
-      groupType: [p?.groupType ?? '']
+      groupType: [p?.groupType ?? ''],
+      selectionType: [p?.selectionType ?? ''],
+      configValue: [p?.configValue ?? ''],
+      isBaseConfig: [p?.isBaseConfig ?? false]
     });
   }
 
@@ -221,6 +245,7 @@ export class InvoiceCaseComponent implements OnInit {
               id: existingPrice?.id ?? 0,
               invoiceCaseConfigID: meta.invoiceCaseConfigID,
               name: meta.groupName ? `${meta.groupName} — ${meta.configName}` : meta.configName,
+              configName: meta.configName ?? '',
               aliasName: existingPrice?.aliasName ?? meta.configName ?? '',
               price: existingPrice?.price ?? 0,
               elementPrices: existingPrice?.elementPrices ?? null,
@@ -228,7 +253,10 @@ export class InvoiceCaseComponent implements OnInit {
               overrideParameterIDs: meta.overrideParameterIDs ?? null,
               overrideParameterNames: meta.overrideParameterNames ?? '',
               groupName: meta.groupName ?? '',
-              groupType: meta.groupType ?? ''
+              groupType: meta.groupType ?? '',
+              selectionType: meta.selectionType ?? '',
+              configValue: meta.configValue ?? '',
+              isBaseConfig: meta.isBaseConfig ?? false
             };
           });
           v.prices = mergedPrices;
@@ -266,13 +294,17 @@ export class InvoiceCaseComponent implements OnInit {
       this.isChemicalTest = false;
       this.subGroups = [];
       this.selectedAnalysisTypeId = null;
+      this.selectedAnalysisTypeName = '';
+      this.selectedLaboratoryTestName = '';
       return;
     }
+    this.selectedLaboratoryTestName = item.name || '';
     this.invoiceCaseForm.patchValue({
       laboratoryTestID: item.id,
       analysisTypeID: null
     });
     this.selectedAnalysisTypeId = null;
+    this.selectedAnalysisTypeName = '';
 
     // Fetch test details to check if isChemicalTest
     this.labTestService.getLaboratoryTestById(item.id).subscribe({
@@ -300,6 +332,7 @@ export class InvoiceCaseComponent implements OnInit {
   selectAnalysisType(at: any): void {
     if (this.isViewMode) return;
     this.selectedAnalysisTypeId = at.id;
+    this.selectedAnalysisTypeName = at.name || '';
     this.invoiceCaseForm.patchValue({ analysisTypeID: at.id });
 
     const labTestId = this.invoiceCaseForm.get('laboratoryTestID')?.value;
@@ -328,6 +361,7 @@ export class InvoiceCaseComponent implements OnInit {
       id: 0,
       invoiceCaseConfigID: c?.invoiceCaseConfigID,
       name: c?.groupName ? `${c.groupName} — ${c.configName}` : c.configName,
+      configName: c?.configName ?? '',
       aliasName: c?.configName ?? '',
       price: 0,
       elementPrices: null,
@@ -335,7 +369,10 @@ export class InvoiceCaseComponent implements OnInit {
       overrideParameterIDs: c?.overrideParameterIDs ?? null,
       overrideParameterNames: c?.overrideParameterNames ?? '',
       groupName: c?.groupName ?? '',
-      groupType: c?.groupType ?? ''
+      groupType: c?.groupType ?? '',
+      selectionType: c?.selectionType ?? '',
+      configValue: c?.configValue ?? '',
+      isBaseConfig: c?.isBaseConfig ?? false
     }));
   }
 
@@ -431,6 +468,132 @@ export class InvoiceCaseComponent implements OnInit {
       },
       error: (err) => this.toastService.show(err?.error?.message || 'Failed to save invoice case prices', 'error')
     });
+  }
+
+  isBaseTierRow(versionIndex: number, priceIndex: number): boolean {
+    const ctrl = this.pricesOf(versionIndex)?.at(priceIndex);
+    if (!ctrl) return false;
+    const val = (ctrl.get('configValue')?.value || '').toString().trim().toUpperCase();
+    return ctrl.get('isBaseConfig')?.value === true || val === 'BASE';
+  }
+
+  getBaseTypeInfo(versionIndex: number, priceIndex: number): {
+    badgeText: string;
+    subText: string;
+    typeClass: string;
+    icon: string;
+    tooltip: string;
+  } {
+    const ctrl = this.pricesOf(versionIndex)?.at(priceIndex);
+    if (!ctrl) {
+      return { badgeText: 'Standard', subText: 'Standard Price', typeClass: 'badge-default', icon: 'bi-tag', tooltip: 'Standard rate' };
+    }
+
+    const selType = ctrl.get('selectionType')?.value || '';
+    const val = (ctrl.get('configValue')?.value || '').toString().trim();
+    const isBase = ctrl.get('isBaseConfig')?.value === true || val.toUpperCase() === 'BASE';
+    const isOverride = ctrl.get('isOverride')?.value === true;
+    const name = ctrl.get('name')?.value || '';
+
+    // 1. Base Tier
+    if (isBase) {
+      return {
+        badgeText: 'Base Tier',
+        subText: selType ? `${selType} • Full Matrix` : 'Primary Standard',
+        typeClass: 'badge-base-tier',
+        icon: 'bi-shield-check',
+        tooltip: 'Primary Base Tier — standard comprehensive test method coverage'
+      };
+    }
+
+    // 2. Chemical Special Elements Surcharge
+    if (val.toUpperCase() === 'SPECIAL' || (selType === 'ChemicalElement' && name.includes('Special Elements'))) {
+      return {
+        badgeText: 'Special Surcharge',
+        subText: 'N, B, Ca (+₹/element)',
+        typeClass: 'badge-surcharge-special',
+        icon: 'bi-lightning-fill',
+        tooltip: 'Surcharge for special elements (Nitrogen, Boron, Calcium)'
+      };
+    }
+
+    // 3. Chemical Super Special Elements Surcharge
+    if (val.toUpperCase() === 'SUPER' || (selType === 'ChemicalElement' && name.includes('Super Special'))) {
+      return {
+        badgeText: 'Super Special',
+        subText: 'Zr, Nb, Pt, Au (+₹/element)',
+        typeClass: 'badge-surcharge-super',
+        icon: 'bi-gem',
+        tooltip: 'Surcharge for super special elements (Zirconium, Niobium, Precious Metals)'
+      };
+    }
+
+    // 4. Element Count Slab
+    if (selType === 'ChemicalElement' || selType === 'Element' || selType === 'ElementCountFormula') {
+      if (val && val !== 'OVERRIDE' && val !== 'Flat') {
+        const displayVal = val.startsWith('<=') || val.startsWith('>=') ? val : `≤ ${val}`;
+        return {
+          badgeText: `Element Slab (${displayVal})`,
+          subText: `${selType} Count`,
+          typeClass: 'badge-slab',
+          icon: 'bi-layers-half',
+          tooltip: `Count-based slab pricing: applies when active parameters match ${displayVal}`
+        };
+      }
+    }
+
+    // 5. Flat Rate
+    if (selType === 'FlatRate') {
+      return {
+        badgeText: 'Flat Rate',
+        subText: 'Fixed Price',
+        typeClass: 'badge-flat',
+        icon: 'bi-tag-fill',
+        tooltip: 'Fixed flat price per sample / test'
+      };
+    }
+
+    // 6. Range Types (SizeRange, LoadRange, TemperatureRange, HoursRange)
+    if (selType.includes('Range')) {
+      return {
+        badgeText: `${selType.replace('Range', '')} Range`,
+        subText: val || 'Condition Range',
+        typeClass: 'badge-range',
+        icon: 'bi-arrows-expand',
+        tooltip: `Evaluated dynamically based on sample specifications (${selType})`
+      };
+    }
+
+    // 7. Single Dimension Types (Size, Load, Temperature, Hours, DayWise)
+    if (['Size', 'Load', 'Temperature', 'Hours', 'DayWise'].includes(selType)) {
+      return {
+        badgeText: `${selType} Condition`,
+        subText: val ? `${val}` : 'Specific Value',
+        typeClass: 'badge-dimension',
+        icon: 'bi-sliders',
+        tooltip: `Condition matched on ${selType}`
+      };
+    }
+
+    // 8. Quantity / Unit-based (PerIndent, PerLocation, PerField, PerDolly, WithImage, WithExtenso)
+    if (['PerIndent', 'PerLocation', 'PerField', 'PerDolly', 'WithImage', 'WithExtenso'].includes(selType)) {
+      return {
+        badgeText: `Unit (${selType})`,
+        subText: 'Variable Count',
+        typeClass: 'badge-qty',
+        icon: 'bi-123',
+        tooltip: `Pricing per unit/reading: ${selType}`
+      };
+    }
+
+    // Fallback
+    return {
+      badgeText: selType || 'Standard',
+      subText: isOverride ? 'Override Row' : 'Standard Rule',
+      typeClass: isOverride ? 'badge-surcharge-special' : 'badge-default',
+      icon: isOverride ? 'bi-sliders' : 'bi-info-circle',
+      tooltip: isOverride ? 'Override rule with custom element rates' : 'Standard configuration rule'
+    };
   }
 
   isOverrideRow(versionIndex: number, priceIndex: number): boolean {

@@ -54,6 +54,13 @@ export class TestResultService {
   // Test Start / Complete Flow
   // ================================================================
   /**
+   * Validate test configuration before starting
+   */
+  validateTestConfiguration(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/validate-test-configuration/${headerId}`);
+  }
+
+  /**
    * Start a test (mark as Started)
    */
   startTest(headerId: number): Observable<any> {
@@ -124,6 +131,13 @@ export class TestResultService {
   // Phase 2A: Enhanced Test Execution
   // ================================================================
   /**
+   * Reselect plan test method / specification from result entry
+   */
+  updatePlanMethod(dto: { headerId: number; testMethodSpecificationID?: number | null; testMethodSpecificationVersionID?: number | null; specification1?: number | null }): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update-plan-method`, dto);
+  }
+
+  /**
    * Trigger formula calculations for a test header
    */
   calculateParameters(headerId: number): Observable<any> {
@@ -138,18 +152,19 @@ export class TestResultService {
   }
 
   /**
+   * Get parameters under a test method with spec ranges pre-matched
+   */
+  getMethodParametersForHeader(headerId: number, methodId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/method-parameters-for-header/${headerId}/${methodId}`);
+  }
+
+  /**
    * Add a parameter from another test method
    */
   addParameterFromMethod(headerId: number, dto: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/add-parameter-from-method/${headerId}`, dto);
   }
 
-  /**
-   * Get lab room environment conditions at test time
-   */
-  getEnvironmentAtTime(headerId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/environment-at-time/${headerId}`);
-  }
 
   // ================================================================
   // Image Uploads (Test-wise)
@@ -319,5 +334,25 @@ export class TestResultService {
 
   deleteMachiningItem(itemId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/machining-items/${itemId}`);
+  }
+
+  // ================================================================
+  // Environment Recording & Lab Rooms
+  // ================================================================
+  updateEnvironment(headerId: number, dto: { roomTemperature?: number; roomHumidity?: number; labRoomId?: number }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/update-environment/${headerId}`, dto);
+  }
+
+  getLabRooms(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/lab-rooms`);
+  }
+
+  getDailyEnvironment(labRoomId?: number): Observable<any> {
+    const params = labRoomId ? `?labRoomId=${labRoomId}` : '';
+    return this.http.get<any>(`${this.apiUrl}/daily-environment${params}`);
+  }
+
+  getEnvironmentAtTime(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/environment-at-time/${headerId}`);
   }
 }

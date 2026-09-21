@@ -146,16 +146,14 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     });
     const state = history.state as { mode?: string; cloneData?: any };
 
-    if (state) {
-      if (state.mode === 'view') {
-        this.isViewMode = true;
-      }
-      if (state.mode === 'edit') {
-        this.isEditMode = true;
-      }
-      if (state.mode === 'clone' && state.cloneData) {
-        this.cloneData = state.cloneData;
-      }
+    if (state?.mode === 'view' || this.route.snapshot.url.some(s => s.path === 'details')) {
+      this.isViewMode = true;
+    }
+    if (state?.mode === 'edit' || this.route.snapshot.url.some(s => s.path === 'edit')) {
+      this.isEditMode = true;
+    }
+    if (state?.mode === 'clone' && state?.cloneData) {
+      this.cloneData = state.cloneData;
     }
 
     this.initForm();

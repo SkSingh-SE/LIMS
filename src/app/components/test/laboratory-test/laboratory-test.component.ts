@@ -843,7 +843,10 @@ export class LaboratoryTestComponent implements OnInit {
 
   saveNewSubGroup() {
     if (this.subGroupForm.invalid) {
-      this.toastService.show('Sub-Group name and Report Test Name are required.', 'warning');
+      this.subGroupForm.markAllAsTouched();
+      const errorList = this.collectValidationErrors(this.subGroupForm, 'New Sub-Group');
+      const errorMsg = errorList.length > 0 ? errorList.join('; ') : 'Sub-Group name and Report Test Name are required.';
+      this.toastService.show(errorMsg, 'warning');
       return;
     }
     const payload = {
@@ -888,7 +891,10 @@ export class LaboratoryTestComponent implements OnInit {
 
   saveNewAnalysisType() {
     if (this.analysisTypeForm.invalid) {
-      this.toastService.show('Analysis Type name is required.', 'warning');
+      this.analysisTypeForm.markAllAsTouched();
+      const errorList = this.collectValidationErrors(this.analysisTypeForm, 'New Analysis Type');
+      const errorMsg = errorList.length > 0 ? errorList.join('; ') : 'Analysis Type name is required.';
+      this.toastService.show(errorMsg, 'warning');
       return;
     }
     const subgroupToKeep = this.selectedSubGroup;
@@ -956,10 +962,67 @@ export class LaboratoryTestComponent implements OnInit {
     });
   }
 
+  // --- VALIDATION ERROR HELPER ---
+  collectValidationErrors(form: AbstractControl | null, contextTitle: string): string[] {
+    if (!form) return [];
+    const errors: string[] = [];
+
+    if (form instanceof FormGroup) {
+      Object.keys(form.controls).forEach(key => {
+        const control = form.get(key);
+        if (control && control.invalid) {
+          if (control instanceof FormArray) {
+            control.controls.forEach((item, index) => {
+              if (item.invalid) {
+                if (key === 'parameters') {
+                  const pName = item.get('parameterName')?.value;
+                  errors.push(pName ? `Parameter "${pName}" has validation errors` : `Parameter row #${index + 1} is missing a parameter selection`);
+                } else if (key === 'testMethods') {
+                  const mName = item.get('testMethodName')?.value;
+                  errors.push(mName ? `Test Method "${mName}" is missing specification version` : `Test Method row #${index + 1} is invalid`);
+                } else if (key === 'equipments') {
+                  const eqName = item.get('equipmentName')?.value;
+                  errors.push(eqName ? `Equipment "${eqName}" is invalid` : `Equipment row #${index + 1} is missing equipment selection`);
+                } else if (key === 'specifications') {
+                  const sName = item.get('specName')?.value;
+                  errors.push(sName ? `Specification "${sName}" is invalid` : `Specification row #${index + 1} is invalid`);
+                } else if (key === 'invoiceCases') {
+                  const icName = item.get('invoiceCaseConfigName')?.value;
+                  errors.push(icName ? `Invoice Case "${icName}" is invalid` : `Invoice Case row #${index + 1} is missing configuration selection`);
+                } else if (key === 'allowedTechniques') {
+                  errors.push(`Allowed Technique row #${index + 1} is invalid`);
+                } else {
+                  errors.push(`${key} row #${index + 1} is invalid`);
+                }
+              }
+            });
+          } else if (control instanceof FormGroup) {
+            errors.push(...this.collectValidationErrors(control, key));
+          } else {
+            const fieldLabels: { [k: string]: string } = {
+              name: `${contextTitle} Name is required`,
+              reportTestName: 'Report Test Name is required',
+              testDuration: 'Test Duration must be at least 1 day',
+              labDepartmentID: 'Laboratory Department is required',
+              metalClassificationID: 'Metal Classification is invalid'
+            };
+            errors.push(fieldLabels[key] || `${contextTitle} field "${key}" is invalid`);
+          }
+        }
+      });
+    }
+
+    return errors;
+  }
+
   // --- SAVE WORKFLOWS ---
   saveSubGroupConfig() {
+    if (!this.subGroupConfigForm) return;
     if (this.subGroupConfigForm.invalid) {
-      this.toastService.show('Please fix the validation errors.', 'warning');
+      this.subGroupConfigForm.markAllAsTouched();
+      const errorList = this.collectValidationErrors(this.subGroupConfigForm, 'Sub-Group');
+      const errorMsg = errorList.length > 0 ? errorList.slice(0, 3).join('; ') : 'Please fix the validation errors.';
+      this.toastService.show(errorMsg, 'warning');
       return;
     }
     this.labService.updateSubGroup(this.subGroupConfigForm.value).subscribe({
@@ -972,8 +1035,12 @@ export class LaboratoryTestComponent implements OnInit {
   }
 
   saveAnalysisTypeConfig() {
+    if (!this.analysisTypeConfigForm) return;
     if (this.analysisTypeConfigForm.invalid) {
-      this.toastService.show('Please fix the validation errors.', 'warning');
+      this.analysisTypeConfigForm.markAllAsTouched();
+      const errorList = this.collectValidationErrors(this.analysisTypeConfigForm, 'Analysis Type');
+      const errorMsg = errorList.length > 0 ? errorList.slice(0, 3).join('; ') : 'Please fix the validation errors.';
+      this.toastService.show(errorMsg, 'warning');
       return;
     }
     this.labService.updateAnalysisType(this.analysisTypeConfigForm.value).subscribe({
@@ -989,7 +1056,10 @@ export class LaboratoryTestComponent implements OnInit {
   submit(): void {
     this.submitted = true;
     if (this.labTestForm.invalid) {
-      this.toastService.show('Please fix validation errors in General Info.', 'warning');
+      this.labTestForm.markAllAsTouched();
+      const errorList = this.collectValidationErrors(this.labTestForm, 'General Info');
+      const errorMsg = errorList.length > 0 ? errorList.join('; ') : 'Please fix validation errors in General Info.';
+      this.toastService.show(errorMsg, 'warning');
       return;
     }
 
@@ -1063,8 +1133,11 @@ export class LaboratoryTestComponent implements OnInit {
   }
 
   saveActiveConfig() {
-    this.saveSubGroupConfig();
-    this.saveAnalysisTypeConfig();
+    if (this.activeAnalysisTypeId) {
+      this.saveAnalysisTypeConfig();
+    } else if (this.activeSubGroupId) {
+      this.saveSubGroupConfig();
+    }
   }
 
   startAddAnalysisTypeInline(sg: any, event: Event) {

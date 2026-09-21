@@ -288,8 +288,10 @@
                         type="text"
                         class="form-control form-control-sm text-xs"
                         formControlName="name"
+                        [ngClass]="{ 'is-invalid': isSubGroupFieldInvalid('name') }"
                         [attr.disabled]="isViewMode ? true : null"
                       />
+                      <app-field-error [control]="subGroupConfigForm.get('name')" label="Subgroup Name"></app-field-error>
                     </div>
                     <div class="col-md-6">
                       <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Report Test Name *</label>
@@ -297,8 +299,10 @@
                         type="text"
                         class="form-control form-control-sm text-xs"
                         formControlName="reportTestName"
+                        [ngClass]="{ 'is-invalid': isSubGroupFieldInvalid('reportTestName') }"
                         [attr.disabled]="isViewMode ? true : null"
                       />
+                      <app-field-error [control]="subGroupConfigForm.get('reportTestName')" label="Report Test Name"></app-field-error>
                     </div>
                     <div class="col-md-6">
                       <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Test Duration (Days)</label>
@@ -306,8 +310,10 @@
                         type="number"
                         class="form-control form-control-sm text-xs"
                         formControlName="testDuration"
+                        [ngClass]="{ 'is-invalid': isSubGroupFieldInvalid('testDuration') }"
                         [attr.disabled]="isViewMode ? true : null"
                       />
+                      <app-field-error [control]="subGroupConfigForm.get('testDuration')" label="Test Duration"></app-field-error>
                     </div>
                     <div class="col-md-6">
                       <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Metal Classification</label>
@@ -506,8 +512,10 @@
                         type="text"
                         class="form-control form-control-sm text-xs"
                         formControlName="name"
+                        [ngClass]="{ 'is-invalid': isAnalysisTypeFieldInvalid('name') }"
                         [attr.disabled]="isViewMode ? true : null"
                       />
+                      <app-field-error [control]="analysisTypeConfigForm.get('name')" label="Analysis Type Name"></app-field-error>
                     </div>
                     <div class="col-md-3">
                       <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Test Duration (Days)</label>
@@ -515,8 +523,10 @@
                         type="number"
                         class="form-control form-control-sm text-xs"
                         formControlName="testDuration"
+                        [ngClass]="{ 'is-invalid': isAnalysisTypeFieldInvalid('testDuration') }"
                         [attr.disabled]="isViewMode ? true : null"
                       />
+                      <app-field-error [control]="analysisTypeConfigForm.get('testDuration')" label="Test Duration"></app-field-error>
                     </div>
                     <div class="col-md-3">
                       <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Metal Classification</label>

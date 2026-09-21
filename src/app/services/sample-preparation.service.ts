@@ -23,6 +23,10 @@ export class SamplePreparationService {
     return this.http.get<any>(`${this.apiUrl}/by-sample/${sampleId}`);
   }
 
+  getOrCreateBySample(sampleId: number): Observable<any> {
+    return this.getBySample(sampleId);
+  }
+
   create(dto: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/create`, dto);
   }
@@ -37,5 +41,9 @@ export class SamplePreparationService {
 
   refreshCharges(sampleId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/refresh-charges/${sampleId}`, {});
+  }
+
+  updateItemStatus(itemId: number, dto: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/item-status/${itemId}`, dto);
   }
 }

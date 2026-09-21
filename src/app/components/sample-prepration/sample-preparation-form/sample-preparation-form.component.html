@@ -1,555 +1,479 @@
-<div class="container-fluid d-flex flex-column align-items-center" [class.d-print-none]="isPrinting">
+<div class="container-fluid px-2 py-2" [class.d-print-none]="isPrinting">
   <div class="card basic-data-table w-100 border-0 shadow-sm">
-    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-      <label class="text-md fw-medium ms-3">Sample Preparation</label>
-      <div class="d-flex gap-2 me-3">
-        <button *ngIf="prepData" class="btn btn-add btn-sm" (click)="printJobCard()">
+
+    <!-- Card Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-2 px-3">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-tools fs-6"></i>
+        <span class="fw-semibold fs-14">Sample Preparation</span>
+        <span class="badge bg-white text-danger fw-bold ms-2" *ngIf="prepData?.sampleNo">
+          {{ prepData.sampleNo }}
+        </span>
+      </div>
+      <div class="d-flex gap-2">
+        <button *ngIf="prepData" type="button" class="btn btn-lims btn-lims-print btn-sm" (click)="printJobCard()">
           <i class="bi bi-printer me-1"></i> Print Job Card
         </button>
-        <button class="btn btn-outline-light btn-sm" (click)="goBack()">
+        <button type="button" class="btn btn-cancel btn-sm" (click)="goBack()">
           <i class="bi bi-arrow-left me-1"></i> Back to List
         </button>
       </div>
     </div>
 
-    <div class="card-body" *ngIf="prepData">
+    <div class="card-body p-2" *ngIf="prepData">
+      <form [formGroup]="prepForm" (ngSubmit)="savePreparation()">
 
-      <!-- Sample Info Bar -->
-      <div class="d-flex flex-wrap gap-2 mb-3">
-        <div class="info-card-sm">
-          <span class="text-muted small">Case No</span>
-          <strong>{{ prepData.caseNo }}</strong>
-        </div>
-        <div class="info-card-sm">
-          <span class="text-muted small">Sample</span>
-          <strong>{{ prepData.sampleNo }}</strong>
-        </div>
-        <div class="info-card-sm">
-          <span class="text-muted small">Customer</span>
-          <strong>{{ prepData.customerName || '-' }}</strong>
-        </div>
-        <div class="info-card-sm">
-          <span class="text-muted small">Material</span>
-          <strong>{{ prepData.sampleDescription || '-' }}</strong>
-        </div>
-        <div class="info-card-sm">
-          <span class="text-muted small">Status</span>
-          <app-test-status-badge [status]="prepData.status"></app-test-status-badge>
-        </div>
-        <div class="info-card-sm" *ngIf="prepData.specimen">
-          <span class="text-muted small">Specimen</span>
-          <strong>{{ prepData.specimen }}</strong>
-        </div>
-        <div class="info-card-sm" *ngIf="prepData.thickness || prepData.diameter || prepData.width || prepData.length">
-          <span class="text-muted small">Dimensions</span>
-          <span class="small fw-semibold">
-            <span *ngIf="prepData.thickness">T:{{prepData.thickness}} </span>
-            <span *ngIf="prepData.diameter">D:{{prepData.diameter}} </span>
-            <span *ngIf="prepData.width">W:{{prepData.width}} </span>
-            <span *ngIf="prepData.length">L:{{prepData.length}}</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Tabs -->
-      <ul class="nav nav-tabs mb-0">
-        <li class="nav-item">
-          <button class="nav-link" [class.active]="activeTab === 'cutting'" (click)="activeTab = 'cutting'">
-            <i class="bi bi-scissors me-1"></i> Cutting
-            <span class="badge bg-light text-dark border ms-1" *ngIf="cuttingSubtotal > 0">₹{{ cuttingSubtotal | number:'1.0-0' }}</span>
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" [class.active]="activeTab === 'machining'" (click)="activeTab = 'machining'">
-            <i class="bi bi-gear me-1"></i> Machining
-            <span class="badge bg-light text-dark border ms-1" *ngIf="machiningTotal > 0">₹{{ machiningTotal | number:'1.0-0' }}</span>
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" [class.active]="activeTab === 'other'" (click)="activeTab = 'other'">
-            <i class="bi bi-tools me-1"></i> Other
-            <span class="badge bg-light text-dark border ms-1" *ngIf="otherPrepCharge > 0">₹{{ otherPrepCharge | number:'1.0-0' }}</span>
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link" [class.active]="activeTab === 'summary'" (click)="activeTab = 'summary'">
-            <i class="bi bi-receipt me-1"></i> Summary
-            <span class="badge bg-danger text-white ms-1">₹{{ grandTotal | number:'1.0-0' }}</span>
-          </button>
-        </li>
-      </ul>
-
-      <!-- ═══════════════════════════════════════════════ -->
-      <!-- TAB: CUTTING                                    -->
-      <!-- ═══════════════════════════════════════════════ -->
-      <div class="tab-pane-content border border-top-0 rounded-bottom p-3" *ngIf="activeTab === 'cutting'">
-        <form [formGroup]="cuttingForm">
-          <!-- Specimen Info Row -->
-          <div class="row g-2 mb-3">
-            <div class="col-md-3">
-              <app-searchable-dropdown
-                [placeholder]="'Specimen Type'"
-                [labelName]="'Specimen Type'"
-                [fetchDataFn]="fetchSpecimenTypeDropdown"
-                (itemSelected)="onSpecimenTypeSelected($event)"
-                [selectedItem]="cuttingForm.get('specimenTypeId')?.value"
-                [isDisabled]="isViewMode || prepData.isInvoiced"
-              ></app-searchable-dropdown>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Length (mm)</label>
-              <input type="number" class="form-control form-control-sm" formControlName="length" placeholder="Length" />
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Width (mm)</label>
-              <input type="number" class="form-control form-control-sm" formControlName="width" placeholder="Width" />
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Thickness (mm)</label>
-              <input type="number" class="form-control form-control-sm" formControlName="thickness" placeholder="Thickness" />
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Diameter (mm)</label>
-              <input type="number" class="form-control form-control-sm" formControlName="diameter" placeholder="Diameter" />
+        <!-- Sample Info Bar -->
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <div class="info-card-sm">
+            <span class="text-muted fs-11">Case No</span>
+            <strong>{{ prepData.caseNo || '-' }}</strong>
+          </div>
+          <div class="info-card-sm">
+            <span class="text-muted fs-11">Sample No</span>
+            <strong class="text-danger">{{ prepData.sampleNo }}</strong>
+          </div>
+          <div class="info-card-sm">
+            <span class="text-muted fs-11">Customer</span>
+            <strong>{{ prepData.customerName || '-' }}</strong>
+          </div>
+          <div class="info-card-sm">
+            <span class="text-muted fs-11">Material / Product</span>
+            <strong>{{ prepData.sampleDescription || '-' }}</strong>
+          </div>
+          <div class="info-card-sm">
+            <span class="text-muted fs-11">Preparation Status</span>
+            <div>
+              <app-test-status-badge [status]="prepForm.get('status')?.value || prepData.status"></app-test-status-badge>
             </div>
           </div>
-
-          <!-- Add Cutting Type Buttons -->
-          <div class="mb-3" *ngIf="!isViewMode && !prepData.isInvoiced">
-            <button *ngFor="let price of cuttingPriceList" type="button"
-                    class="btn btn-sm btn-dark me-1 mb-1" (click)="addCuttingType(price)">
-              + {{ price.cuttingType }}
-            </button>
+          <div class="info-card-sm" *ngIf="prepData.specimen">
+            <span class="text-muted fs-11">Inward Specimen</span>
+            <strong>{{ prepData.specimen }}</strong>
           </div>
-
-          <!-- Cutting Details Table -->
-          <div class="table-responsive" *ngIf="cuttingDetails.length > 0">
-            <table class="table bordered-table align-middle small mb-0">
-              <thead class="table-light">
-                <tr class="text-center">
-                  <th>Type</th>
-                  <th>Unit</th>
-                  <th>Rate (₹)</th>
-                  <th>Qty / Time</th>
-                  <th>Total (₹)</th>
-                  <th *ngIf="!isViewMode && !prepData.isInvoiced" style="width:60px">Action</th>
-                </tr>
-              </thead>
-              <tbody formArrayName="cuttingDetails">
-                <tr *ngFor="let row of cuttingDetails.controls; let j = index" [formGroupName]="j" class="text-center">
-                  <td>{{ row.get('cuttingType')?.value }}</td>
-                  <td>{{ row.get('unitType')?.value }}</td>
-                  <td>
-                    <input type="number" class="form-control form-control-sm text-center" formControlName="rate"
-                           (input)="recalcCuttingRow(j)" style="width:80px;margin:auto" />
-                  </td>
-                  <td>
-                    <input type="number" class="form-control form-control-sm text-center" formControlName="quantity"
-                           (input)="recalcCuttingRow(j)" style="width:80px;margin:auto" min="1" />
-                  </td>
-                  <td class="fw-bold">{{ row.get('total')?.value | number:'1.0-0' }}</td>
-                  <td *ngIf="!isViewMode && !prepData.isInvoiced">
-                    <a class="icon-link" title="Remove" (click)="removeCuttingRow(j)">
-                      <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                    </a>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="text-end mt-2 fw-bold" *ngIf="cuttingDetails.length > 0">
-            Subtotal: ₹{{ cuttingSubtotal | number:'1.0-0' }}
-          </div>
-
-          <!-- Save Cutting -->
-          <div class="text-end mt-3" *ngIf="!isViewMode && !prepData.isInvoiced">
-            <button class="btn btn-sm btn-save" (click)="saveCutting()" [disabled]="cuttingDetails.length === 0">
-              <i class="bi bi-check-circle me-1"></i> Save Cutting Charges
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- ═══════════════════════════════════════════════ -->
-      <!-- TAB: MACHINING                                  -->
-      <!-- ═══════════════════════════════════════════════ -->
-      <div class="tab-pane-content border border-top-0 rounded-bottom p-3" *ngIf="activeTab === 'machining'">
-        <!-- Existing Items -->
-        <div class="table-responsive mb-3" *ngIf="machiningItems.length > 0">
-          <table class="table bordered-table align-middle small mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Description</th>
-                <th class="text-end">Amount (₹)</th>
-                <th>Remark</th>
-                <th *ngIf="!isViewMode && !prepData.isInvoiced" style="width:60px">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of machiningItems">
-                <td>{{ item.description }}</td>
-                <td class="text-end">{{ item.amount | number:'1.2-2' }}</td>
-                <td>{{ item.remark || '-' }}</td>
-                <td *ngIf="!isViewMode && !prepData.isInvoiced">
-                  <a class="icon-link" title="Delete" (click)="deleteMachiningItem(item.id)">
-                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="fw-bold">
-                <td>Total</td>
-                <td class="text-end">₹{{ machiningTotal | number:'1.2-2' }}</td>
-                <td colspan="2"></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <!-- Add New Machining -->
-        <div *ngIf="!isViewMode && !prepData.isInvoiced" class="row g-2 align-items-end">
-          <div class="col-md-5">
-            <label class="form-label small">Description</label>
-            <input type="text" class="form-control form-control-sm" [(ngModel)]="newMachiningDesc" placeholder="e.g., Specimen machining" />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small">Amount (₹)</label>
-            <input type="number" class="form-control form-control-sm" [(ngModel)]="newMachiningAmount" placeholder="Amount" min="0" />
-          </div>
-          <div class="col-md-3">
-            <label class="form-label small">Remark</label>
-            <input type="text" class="form-control form-control-sm" [(ngModel)]="newMachiningRemark" placeholder="Optional" />
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-sm btn-save w-100" (click)="addMachiningItem()"
-                    [disabled]="!newMachiningDesc.trim() || !newMachiningAmount">
-              <i class="bi bi-plus-circle me-1"></i> Add
-            </button>
+          <div class="info-card-sm" *ngIf="prepData.thickness || prepData.diameter || prepData.width || prepData.length">
+            <span class="text-muted fs-11">Dimensions</span>
+            <span class="fw-semibold fs-11">
+              <span *ngIf="prepData.thickness">T: {{prepData.thickness}}mm </span>
+              <span *ngIf="prepData.diameter">D: {{prepData.diameter}}mm </span>
+              <span *ngIf="prepData.width">W: {{prepData.width}}mm </span>
+              <span *ngIf="prepData.length">L: {{prepData.length}}mm</span>
+            </span>
           </div>
         </div>
 
-        <div *ngIf="machiningItems.length === 0 && (isViewMode || prepData.isInvoiced)" class="text-center text-muted py-4">
-          <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-          No machining charges recorded.
-        </div>
-      </div>
-
-      <!-- ═══════════════════════════════════════════════ -->
-      <!-- TAB: OTHER PREPARATION                          -->
-      <!-- ═══════════════════════════════════════════════ -->
-      <div class="tab-pane-content border border-top-0 rounded-bottom p-3" *ngIf="activeTab === 'other'">
-        <div class="alert alert-light border py-2 small">
-          <i class="bi bi-info-circle me-1"></i>
-          Other preparation charges (e.g., Other Preparation, Machining Amount) are set in the <strong>Test Plan</strong> form.
-          Values shown here are auto-synced from the plan.
-        </div>
-
-        <div class="row g-3 mt-2">
-          <div class="col-md-4">
-            <div class="card border-start border-warning border-4">
-              <div class="card-body text-center py-3">
-                <h6 class="text-muted mb-1">Machining Amount (Plan)</h6>
-                <h4 class="mb-0">₹{{ (prepData.machiningChargesTotal || 0) | number:'1.2-2' }}</h4>
-              </div>
-            </div>
+        <!-- Collapsible NABL Environmental & Equipment Tracking Section -->
+        <div class="card mb-2 border bg-light-subtle shadow-none">
+          <div class="card-header bg-transparent py-1 px-2 border-bottom d-flex justify-content-between align-items-center cursor-pointer"
+               (click)="showNablSection = !showNablSection">
+            <span class="fw-semibold text-danger fs-12 d-flex align-items-center gap-1">
+              <i class="bi bi-shield-check text-danger"></i> NABL Traceability, Equipment & Environment
+            </span>
+            <i class="bi fs-12" [ngClass]="showNablSection ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
           </div>
-          <div class="col-md-4">
-            <div class="card border-start border-info border-4">
-              <div class="card-body text-center py-3">
-                <h6 class="text-muted mb-1">Other Preparation Charge</h6>
-                <h4 class="mb-0">₹{{ (prepData.otherChargesTotal || 0) | number:'1.2-2' }}</h4>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="card border-start border-success border-4">
-              <div class="card-body text-center py-3">
-                <h6 class="text-muted mb-1">Cutting Charges</h6>
-                <h4 class="mb-0">₹{{ (prepData.cuttingChargesTotal || 0) | number:'1.2-2' }}</h4>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ═══════════════════════════════════════════════ -->
-      <!-- TAB: SUMMARY                                    -->
-      <!-- ═══════════════════════════════════════════════ -->
-      <div class="tab-pane-content border border-top-0 rounded-bottom p-3" *ngIf="activeTab === 'summary'">
-        <!-- Charge Summary Table -->
-        <div class="card shadow-sm mb-3">
-          <div class="card-body p-0">
-            <table class="table bordered-table align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Charge Type</th>
-                  <th class="text-end">Amount (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><i class="bi bi-scissors me-2 text-danger"></i>Cutting Charges</td>
-                  <td class="text-end fw-semibold">{{ cuttingSubtotal | number:'1.2-2' }}</td>
-                </tr>
-                <tr>
-                  <td><i class="bi bi-gear me-2 text-primary"></i>Machining Charges</td>
-                  <td class="text-end fw-semibold">{{ machiningTotal | number:'1.2-2' }}</td>
-                </tr>
-                <tr>
-                  <td><i class="bi bi-tools me-2 text-warning"></i>Other Preparation</td>
-                  <td class="text-end fw-semibold">{{ otherPrepCharge | number:'1.2-2' }}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr class="table-warning fw-bold">
-                  <td>Grand Total</td>
-                  <td class="text-end fs-5">₹{{ grandTotal | number:'1.2-2' }}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-
-        <!-- Plan Details (auto-filled) -->
-        <div class="card shadow-sm mb-3" *ngIf="prepData.specimen || prepData.testInstructions || prepData.machiningRequired">
-          <div class="card-body p-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-clipboard-check me-1"></i>From Test Plan (Auto-Filled)</h6>
+          <div class="card-body p-2" *ngIf="showNablSection">
             <div class="row g-2">
-              <div class="col-md-3" *ngIf="prepData.specimen">
-                <div class="small text-muted">Specimen</div>
-                <div class="fw-semibold">{{ prepData.specimen }}</div>
+              <div class="col-md-3">
+                <label class="form-label-compact">Machining / Cutting Equipment</label>
+                <app-searchable-dropdown
+                  [fetchDataFn]="fetchEquipmentDropdown"
+                  [smallInput]="true"
+                  [hideLabel]="true"
+                  [placeholder]="'Select Equipment'"
+                  [selectedItem]="selectedEquipment"
+                  (itemSelected)="onEquipmentSelected($event)"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
               </div>
-              <div class="col-md-3" *ngIf="prepData.machiningRequired">
-                <div class="small text-muted">Machining Required</div>
-                <div class="fw-semibold">Yes — ₹{{ prepData.machiningAmountFromPlan | number:'1.2-2' }}</div>
+
+              <div class="col-md-3">
+                <label class="form-label-compact">Preparation Method / SOP</label>
+                <input type="text" class="form-control form-control-compact" formControlName="preparationMethod" placeholder="e.g. Lathe Turning / Milling SOP-04" />
               </div>
-              <div class="col-md-3" *ngIf="prepData.otherPreparation">
-                <div class="small text-muted">Other Prep Charge</div>
-                <div class="fw-semibold">₹{{ prepData.otherPreparationCharge | number:'1.2-2' }}</div>
+
+              <div class="col-md-3">
+                <label class="form-label-compact">Temperature (°C)</label>
+                <input type="number" step="0.1" class="form-control form-control-compact" formControlName="temperature" placeholder="23.0" />
               </div>
-              <div class="col-md-12" *ngIf="prepData.testInstructions">
-                <div class="small text-muted">Test Instructions</div>
-                <div class="fw-semibold">{{ prepData.testInstructions }}</div>
+
+              <div class="col-md-3">
+                <label class="form-label-compact">Humidity (%)</label>
+                <input type="number" step="0.1" class="form-control form-control-compact" formControlName="humidity" placeholder="50.0" />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label-compact">Preparation Instructions</label>
+                <input type="text" class="form-control form-control-compact" formControlName="preparationInstructions" placeholder="Special cutting/machining instructions" />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label-compact">Pre/Post Condition Remarks</label>
+                <input type="text" class="form-control form-control-compact" formControlName="preConditionNotes" placeholder="Observations before/after preparation" />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- NABL Fields -->
-        <form [formGroup]="prepForm">
-          <h6 class="text-muted mb-2"><i class="bi bi-shield-check me-1"></i>NABL / ISO 17025 Details</h6>
-          <div class="row g-2">
-            <div class="col-md-4">
-              <label class="form-label small">Preparation Method</label>
-              <input type="text" class="form-control form-control-sm" formControlName="preparationMethod"
-                     placeholder="e.g., ASTM E3" />
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Temperature (°C)</label>
-              <input type="number" class="form-control form-control-sm" formControlName="temperature" step="0.1" placeholder="e.g., 25.0" />
-            </div>
-            <div class="col-md-2">
-              <label class="form-label small">Humidity (%)</label>
-              <input type="number" class="form-control form-control-sm" formControlName="humidity" step="0.1" placeholder="e.g., 55.0" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small">Pre-Condition Notes</label>
-              <input type="text" class="form-control form-control-sm" formControlName="preConditionNotes"
-                     placeholder="Sample condition before prep" />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small">Post-Condition Notes</label>
-              <input type="text" class="form-control form-control-sm" formControlName="postConditionNotes"
-                     placeholder="Sample condition after prep" />
-            </div>
-            <div class="col-md-8">
-              <label class="form-label small">Preparation Instructions</label>
-              <textarea class="form-control form-control-sm" formControlName="preparationInstructions" rows="2"
-                        placeholder="Special instructions"></textarea>
+        <!-- 2-Panel Layout: Specimen Matrix + Cutting Parameters & Charges -->
+        <div class="row g-2">
+
+          <!-- Left Panel: Test & Specimen Matrix (col-lg-8) -->
+          <div class="col-lg-8">
+            <div class="card h-100 border-0 bg-light-subtle shadow-none">
+              <div class="card-header bg-transparent py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-danger fs-12 d-flex align-items-center gap-1">
+                  <i class="bi bi-tools text-danger"></i> Specimen Preparation & Machining Matrix
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary fs-11">
+                  {{ tests.length }} Test Item(s) Configured
+                </span>
+              </div>
+
+              <div class="table-responsive p-0">
+                <table class="table table-sm table-bordered table-hover cm-test-table mb-0 align-middle">
+                  <thead class="table-light small">
+                    <tr>
+                      <th class="col-test-name">Test / Method</th>
+                      <th class="col-specimen-size">Specimen Size</th>
+                      <th class="col-raw-size text-center">Raw Material Size</th>
+                      <th class="col-rates text-center">Date-Effective Rate</th>
+                      <th class="col-drawing text-center">Blueprint</th>
+                      <th class="col-flags text-center">Options</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="tests">
+                    <tr *ngFor="let testCtrl of tests.controls; let ti = index" [formGroupName]="ti">
+
+                      <!-- Test & Standard Name -->
+                      <td>
+                        <div class="fw-semibold text-dark fs-12">
+                          {{ testCtrl.get('testName')?.value || 'Test ' + (ti + 1) }}
+                        </div>
+                        <div class="text-muted fs-11 d-flex align-items-center gap-1" *ngIf="testCtrl.get('standardName')?.value">
+                          <i class="bi bi-journal-text text-secondary"></i>
+                          <span>{{ testCtrl.get('standardName')?.value }}</span>
+                          <span class="badge bg-secondary-subtle text-dark ms-1">Qty: {{ testCtrl.get('quantity')?.value || 1 }}</span>
+                        </div>
+                      </td>
+
+                      <!-- Specimen Size Dropdown (Clean Table Cell Binding) -->
+                      <td>
+                        <app-searchable-dropdown
+                          [fetchDataFn]="getSpecimenDropdownFn(ti)"
+                          [smallInput]="true"
+                          [hideLabel]="true"
+                          [placeholder]="'Select Specimen Size'"
+                          [selectedItem]="getSpecimenSelected(ti)"
+                          (itemSelected)="onSpecimenSelected($event, ti)"
+                          [isDisabled]="isViewMode">
+                        </app-searchable-dropdown>
+                      </td>
+
+                      <!-- Auto Raw Material Size -->
+                      <td class="text-center">
+                        <span class="badge bg-info-subtle text-info-emphasis border fs-11" *ngIf="testCtrl.get('specimenRawMaterialSize')?.value">
+                          {{ testCtrl.get('specimenRawMaterialSize')?.value }}
+                        </span>
+                        <span class="text-muted fs-11" *ngIf="!testCtrl.get('specimenRawMaterialSize')?.value">-</span>
+                      </td>
+
+                      <!-- Date-effective Rate Pill -->
+                      <td class="text-center">
+                        <div *ngIf="testCtrl.get('machiningRate')?.value > 0" class="fw-bold text-success fs-12">
+                          ₹{{ testCtrl.get('machiningRate')?.value }} <span class="fs-10 text-muted fw-normal">/pc</span>
+                        </div>
+                        <div *ngIf="testCtrl.get('cuttingRate')?.value > 0" class="text-muted fs-10">
+                          Cut: ₹{{ testCtrl.get('cuttingRate')?.value }}
+                        </div>
+                        <span class="text-muted fs-11" *ngIf="!testCtrl.get('machiningRate')?.value && !testCtrl.get('cuttingRate')?.value">
+                          Standard
+                        </span>
+                      </td>
+
+                      <!-- Technical Drawing Blueprint Preview -->
+                      <td class="text-center">
+                        <button *ngIf="testCtrl.get('drawingFilePath')?.value"
+                                type="button"
+                                class="btn btn-nav-icon"
+                                title="View Technical Drawing Blueprint"
+                                (click)="viewDrawing(testCtrl.get('drawingFilePath')?.value)">
+                          <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        </button>
+                        <span class="text-muted fs-11" *ngIf="!testCtrl.get('drawingFilePath')?.value">-</span>
+                      </td>
+
+                      <!-- Checkboxes & Item Status -->
+                      <td class="text-center">
+                        <div class="d-flex justify-content-center align-items-center gap-1.5 flex-wrap">
+                          <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer" title="Requires Cutting">
+                            <input type="checkbox" class="form-check-input" formControlName="requiresCutting" (change)="recalcRow(ti)" [attr.disabled]="isViewMode ? true : null" />
+                            <span>Cut</span>
+                          </label>
+                          <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer" title="Requires Machining">
+                            <input type="checkbox" class="form-check-input" formControlName="requiresMachining" (change)="recalcRow(ti)" [attr.disabled]="isViewMode ? true : null" />
+                            <span>Mach</span>
+                          </label>
+                          <label class="form-check form-check-inline mb-0 fs-11 cursor-pointer text-danger" title="Specimen Only (No Testing Required)">
+                            <input type="checkbox" class="form-check-input" formControlName="noTesting" [attr.disabled]="isViewMode ? true : null" />
+                            <span>No Test</span>
+                          </label>
+                        </div>
+                        <div class="d-flex justify-content-center align-items-center gap-1 mt-1">
+                          <span class="badge fs-10" [ngClass]="{
+                            'bg-success-subtle text-success border border-success': testCtrl.get('status')?.value === 'Completed' || testCtrl.get('status')?.value === 'QCVerified',
+                            'bg-warning-subtle text-warning-emphasis border border-warning': testCtrl.get('status')?.value === 'InProgress' || testCtrl.get('status')?.value === 'CuttingCompleted' || testCtrl.get('status')?.value === 'MachiningCompleted',
+                            'bg-secondary-subtle text-secondary': testCtrl.get('status')?.value === 'Required' || testCtrl.get('status')?.value === 'Pending'
+                          }">{{ testCtrl.get('status')?.value }}</span>
+                          <button *ngIf="!isViewMode && testCtrl.get('status')?.value !== 'Completed'"
+                                  type="button"
+                                  class="btn btn-xs btn-outline-success py-0 px-1 fs-10"
+                                  title="Mark this item completed"
+                                  (click)="markItemCompleted(ti)">
+                            <i class="bi bi-check"></i>
+                          </button>
+                        </div>
+                      </td>
+
+                    </tr>
+
+                    <tr *ngIf="tests.length === 0">
+                      <td colspan="6" class="text-center py-3 text-muted fs-12">
+                        No specific specimen preparation tests configured.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          <!-- Save NABL details -->
-          <div class="text-end mt-3" *ngIf="!isViewMode && !prepData.isInvoiced">
-            <button class="btn btn-sm btn-save" (click)="savePrepDetails()">
-              <i class="bi bi-check-circle me-1"></i> Save Details
-            </button>
-          </div>
-        </form>
-      </div>
+          <!-- Right Panel: Cutting Parameters & Charges (col-lg-4) -->
+          <div class="col-lg-4">
+            <div class="card h-100 border bg-white shadow-none">
+              <div class="card-header bg-light py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-dark fs-12 d-flex align-items-center gap-1">
+                  <i class="bi bi-scissors text-danger"></i> Cutting Parameters & Charges
+                </span>
+              </div>
 
-      <!-- ═══════════════════════════════════════════════ -->
-      <!-- ACTION BAR                                      -->
-      <!-- ═══════════════════════════════════════════════ -->
-      <div class="sticky-action-bar mt-3" *ngIf="!isViewMode">
-        <div class="d-flex justify-content-between align-items-center">
-          <div class="d-flex gap-2">
-            <button *ngIf="prepData.status === 'Pending' || prepData.status === 'Assigned'"
-                    class="btn btn-sm btn-primary" (click)="updateStatus('InProgress')">
-              <i class="bi bi-play-fill me-1"></i> Start Preparation
+              <div class="card-body p-2">
+                <div class="row g-2">
+                  <div class="col-6">
+                    <label class="form-label-compact">Number of Cuts</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="numberOfCuts" [readOnly]="isViewMode" placeholder="e.g. 2" min="0" />
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label-compact">Cut Thickness (mm)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="cutThickness" [readOnly]="isViewMode" placeholder="e.g. 5" min="0" />
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label-compact">Water Jet Cutting (mins &#64; ₹10/min)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="waterJetCuttingMins" [readOnly]="isViewMode" placeholder="e.g. 15" min="0" />
+                  </div>
+
+                  <!-- EDM Cutting Details & Charge -->
+                  <div class="col-7">
+                    <label class="form-label-compact">EDM Cutting</label>
+                    <input type="text" class="form-control form-control-compact" formControlName="edmCutting" [readOnly]="isViewMode" placeholder="Details" />
+                  </div>
+                  <div class="col-5">
+                    <label class="form-label-compact">EDM (₹)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="edmCuttingCharge" [readOnly]="isViewMode" placeholder="0.00" min="0" />
+                  </div>
+
+                  <!-- Gas Cutting Details & Charge -->
+                  <div class="col-7">
+                    <label class="form-label-compact">Gas Cutting</label>
+                    <input type="text" class="form-control form-control-compact" formControlName="gasCutting" [readOnly]="isViewMode" placeholder="Details" />
+                  </div>
+                  <div class="col-5">
+                    <label class="form-label-compact">Gas (₹)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="gasCuttingCharge" [readOnly]="isViewMode" placeholder="0.00" min="0" />
+                  </div>
+
+                  <!-- Special Cutting Details & Charge -->
+                  <div class="col-7">
+                    <label class="form-label-compact">Special Cutting</label>
+                    <input type="text" class="form-control form-control-compact" formControlName="specialCutting" [readOnly]="isViewMode" placeholder="Details" />
+                  </div>
+                  <div class="col-5">
+                    <label class="form-label-compact">Special (₹)</label>
+                    <input type="number" class="form-control form-control-compact" formControlName="specialCuttingCharge" [readOnly]="isViewMode" placeholder="0.00" min="0" />
+                  </div>
+                </div>
+
+                <!-- Live Financial Summary Cost Card -->
+                <div class="cm-cost-card mt-3 p-2 rounded border bg-light-subtle">
+                  <div class="d-flex justify-content-between align-items-center small py-1 border-bottom">
+                    <span class="text-secondary">Water Jet Cutting:</span>
+                    <span class="fw-medium">₹{{ waterJetCharge | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center small py-1 border-bottom" *ngIf="prepForm.get('edmCuttingCharge')?.value > 0">
+                    <span class="text-secondary">EDM Cutting:</span>
+                    <span class="fw-medium">₹{{ prepForm.get('edmCuttingCharge')?.value | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center small py-1 border-bottom" *ngIf="prepForm.get('gasCuttingCharge')?.value > 0">
+                    <span class="text-secondary">Gas Cutting:</span>
+                    <span class="fw-medium">₹{{ prepForm.get('gasCuttingCharge')?.value | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center small py-1 border-bottom" *ngIf="prepForm.get('specialCuttingCharge')?.value > 0">
+                    <span class="text-secondary">Special Cutting:</span>
+                    <span class="fw-medium">₹{{ prepForm.get('specialCuttingCharge')?.value | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center small py-1 border-bottom">
+                    <span class="text-secondary">Total Cutting Charges:</span>
+                    <span class="fw-semibold text-danger">₹{{ (sampleCuttingTotal + testCuttingTotal) | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center small py-1 border-bottom">
+                    <span class="text-secondary">Total Machining Charges:</span>
+                    <span class="fw-semibold text-success">₹{{ testMachiningTotal | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center pt-2 mt-1 border-top">
+                    <span class="fw-bold text-dark fs-12">Grand Preparation Total:</span>
+                    <span class="fw-bold fs-14 text-danger">₹{{ grandTotal | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sticky Bottom Action Bar -->
+        <div class="sticky-action-bar mt-3 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-cancel btn-sm" (click)="goBack()">
+              <i class="bi bi-arrow-left me-1"></i> Back
             </button>
-            <button *ngIf="prepData.status === 'InProgress'"
-                    class="btn btn-sm btn-success" (click)="updateStatus('Completed')">
-              <i class="bi bi-check-circle me-1"></i> Mark Completed
-            </button>
-            <button *ngIf="prepData.status === 'Completed'"
-                    class="btn btn-sm btn-primary" (click)="updateStatus('QCVerified')">
-              <i class="bi bi-shield-check me-1"></i> QC Verify
-            </button>
-            <button *ngIf="prepData.status === 'Completed'"
-                    class="btn btn-sm btn-danger" (click)="updateStatus('Rejected')">
-              <i class="bi bi-x-circle me-1"></i> Reject
+            <button *ngIf="prepData" type="button" class="btn btn-lims btn-lims-print btn-sm" (click)="printJobCard()">
+              <i class="bi bi-printer me-1"></i> Print Job Card
             </button>
           </div>
-          <div class="d-flex gap-2 align-items-center">
-            <span class="fw-bold text-danger me-2">TOTAL: ₹{{ grandTotal | number:'1.2-2' }}</span>
-            <button class="btn btn-sm btn-cancel" (click)="goBack()">Cancel</button>
+
+          <div class="d-flex align-items-center gap-2">
+            <!-- Status Transition Buttons -->
+            <ng-container *ngIf="!isViewMode && prepId > 0">
+              <button *ngIf="prepForm.get('status')?.value === 'Pending'"
+                      type="button"
+                      class="btn btn-sm btn-outline-warning"
+                      (click)="updateStatus('InProgress')">
+                <i class="bi bi-play-circle me-1"></i> Mark In Progress
+              </button>
+              <button *ngIf="prepForm.get('status')?.value === 'InProgress'"
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      (click)="updateStatus('Completed')">
+                <i class="bi bi-check2-all me-1"></i> Mark Completed
+              </button>
+              <button *ngIf="prepForm.get('status')?.value === 'Completed'"
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      (click)="updateStatus('QCVerified')">
+                <i class="bi bi-patch-check me-1"></i> QC Verify
+              </button>
+            </ng-container>
+
+            <!-- LIMS Standard Save Button -->
+            <button *ngIf="!isViewMode"
+                    type="submit"
+                    class="btn btn-save btn-sm"
+                    [disabled]="isSaving">
+              <i class="bi bi-check-circle me-1"></i>
+              {{ isSaving ? 'Saving...' : 'Save Preparation' }}
+            </button>
           </div>
         </div>
-      </div>
+
+      </form>
     </div>
+
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ -->
-<!-- PRINT JOB CARD (hidden on screen, shown on print) -->
-<!-- ═══════════════════════════════════════════════ -->
-<div class="job-card-print" id="jobCardPrint" *ngIf="prepData">
+<!-- ══════════════════════════════════════════ -->
+<!-- PRINTABLE JOB CARD (PRINT ONLY)            -->
+<!-- ══════════════════════════════════════════ -->
+<div class="job-card-print" *ngIf="prepData">
   <div class="jc-header">
-    <h2 class="jc-title">Sample Preparation Job Card</h2>
+    <div class="jc-title">Sample Preparation Job Card</div>
     <div class="jc-meta">
-      <div><strong>Case No:</strong> {{ prepData.caseNo || '-' }}</div>
-      <div><strong>Sample No:</strong> {{ prepData.sampleNo || '-' }}</div>
-      <div><strong>Date:</strong> {{ prepData.startedOn ? (prepData.startedOn | date:'dd-MM-yyyy') : (prepData.createdOn | date:'dd-MM-yyyy') }}</div>
+      <span><strong>Date:</strong> {{ prepData.assignedOn ? (prepData.assignedOn | date:'dd-MMM-yyyy') : 'Pending' }}</span>
+      <span><strong>Case No:</strong> {{ prepData.caseNo }}</span>
+      <span><strong>Sample No:</strong> {{ prepData.sampleNo }}</span>
     </div>
   </div>
 
   <div class="jc-section">
-    <div class="jc-section-title">Customer & Sample Details</div>
+    <div class="jc-section-title">Sample Information</div>
     <table class="jc-info-table">
       <tr>
-        <td><strong>Customer:</strong> {{ prepData.customerName || '-' }}</td>
-        <td><strong>Material:</strong> {{ prepData.sampleDescription || '-' }}</td>
+        <td style="width: 20%;"><strong>Customer:</strong></td>
+        <td style="width: 30%;">{{ prepData.customerName || '-' }}</td>
+        <td style="width: 20%;"><strong>Material:</strong></td>
+        <td style="width: 30%;">{{ prepData.sampleDescription || '-' }}</td>
       </tr>
       <tr>
-        <td><strong>Status:</strong> {{ prepData.status || 'Pending' }}</td>
+        <td><strong>Specimen:</strong></td>
+        <td>{{ prepData.specimen || '-' }}</td>
+        <td><strong>Dimensions:</strong></td>
         <td>
-          <strong>Dimensions:</strong>
-          <span *ngIf="prepData.thickness">T:{{prepData.thickness}}mm </span>
-          <span *ngIf="prepData.diameter">D:{{prepData.diameter}}mm </span>
-          <span *ngIf="prepData.width">W:{{prepData.width}}mm </span>
-          <span *ngIf="prepData.length">L:{{prepData.length}}mm</span>
-          <span *ngIf="!prepData.thickness && !prepData.diameter && !prepData.width && !prepData.length">-</span>
+          <span *ngIf="prepData.thickness">T:{{prepData.thickness}} </span>
+          <span *ngIf="prepData.diameter">D:{{prepData.diameter}} </span>
+          <span *ngIf="prepData.width">W:{{prepData.width}} </span>
+          <span *ngIf="prepData.length">L:{{prepData.length}}</span>
         </td>
       </tr>
       <tr>
-        <td><strong>Preparation Method:</strong> {{ prepForm.get('preparationMethod')?.value || '-' }}</td>
-        <td><strong>Equipment:</strong> {{ prepData.equipmentName || '-' }}</td>
-      </tr>
-      <tr>
-        <td><strong>Temperature:</strong> {{ prepForm.get('temperature')?.value ? prepForm.get('temperature')?.value + ' °C' : '-' }}</td>
-        <td><strong>Humidity:</strong> {{ prepForm.get('humidity')?.value ? prepForm.get('humidity')?.value + ' %' : '-' }}</td>
-      </tr>
-      <tr>
-        <td colspan="2"><strong>Pre-Condition Notes:</strong> {{ prepForm.get('preConditionNotes')?.value || '-' }}</td>
-      </tr>
-      <tr>
-        <td colspan="2"><strong>Preparation Instructions:</strong> {{ prepForm.get('preparationInstructions')?.value || '-' }}</td>
+        <td><strong>Assigned To:</strong></td>
+        <td>{{ prepData.assignedToName || 'Unassigned' }}</td>
+        <td><strong>Status:</strong></td>
+        <td>{{ prepData.status }}</td>
       </tr>
     </table>
   </div>
 
   <div class="jc-section">
-    <div class="jc-section-title">Specimen Details</div>
-    <table class="jc-info-table">
-      <tr>
-        <td><strong>Specimen Type:</strong> {{ cuttingForm.get('specimenTypeId')?.value ? 'Selected' : '-' }}</td>
-        <td><strong>Orientation:</strong> {{ cuttingForm.get('orientation')?.value || '-' }}</td>
-      </tr>
-      <tr>
-        <td><strong>Length:</strong> {{ cuttingForm.get('length')?.value || '-' }} mm</td>
-        <td><strong>Width:</strong> {{ cuttingForm.get('width')?.value || '-' }} mm</td>
-      </tr>
-      <tr>
-        <td><strong>Thickness:</strong> {{ cuttingForm.get('thickness')?.value || '-' }} mm</td>
-        <td><strong>Diameter:</strong> {{ cuttingForm.get('diameter')?.value || '-' }} mm</td>
-      </tr>
-    </table>
-  </div>
-
-  <div class="jc-section" *ngIf="cuttingDetails.length > 0">
-    <div class="jc-section-title">Cutting Charges</div>
+    <div class="jc-section-title">Preparation Requirements</div>
     <table class="jc-table">
       <thead>
-        <tr><th>Type</th><th>Unit</th><th>Rate (₹)</th><th>Qty</th><th>Total (₹)</th></tr>
+        <tr>
+          <th>#</th>
+          <th>Test / Method</th>
+          <th>Specimen Size</th>
+          <th>Raw Size</th>
+          <th>Qty</th>
+          <th>Cutting</th>
+          <th>Machining</th>
+          <th>Status</th>
+        </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of cuttingDetails.controls">
-          <td>{{ row.get('cuttingType')?.value }}</td>
-          <td>{{ row.get('unitType')?.value }}</td>
-          <td>{{ row.get('rate')?.value }}</td>
-          <td>{{ row.get('quantity')?.value }}</td>
-          <td>{{ row.get('total')?.value }}</td>
+        <tr *ngFor="let t of tests.controls; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ t.get('testName')?.value }}</td>
+          <td>{{ t.get('specimenSize')?.value || '-' }}</td>
+          <td>{{ t.get('specimenRawMaterialSize')?.value || '-' }}</td>
+          <td>{{ t.get('quantity')?.value || 1 }}</td>
+          <td>{{ t.get('requiresCutting')?.value ? 'Yes' : 'No' }}</td>
+          <td>{{ t.get('requiresMachining')?.value ? 'Yes' : 'No' }}</td>
+          <td>{{ t.get('status')?.value }}</td>
         </tr>
       </tbody>
-      <tfoot><tr><td colspan="4" class="text-end"><strong>Subtotal</strong></td><td><strong>₹{{ cuttingSubtotal }}</strong></td></tr></tfoot>
     </table>
-  </div>
-
-  <div class="jc-section" *ngIf="machiningItems.length > 0">
-    <div class="jc-section-title">Machining Charges</div>
-    <table class="jc-table">
-      <thead>
-        <tr><th>Description</th><th>Amount (₹)</th><th>Remark</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of machiningItems">
-          <td>{{ item.description }}</td>
-          <td>{{ item.amount }}</td>
-          <td>{{ item.remark || '-' }}</td>
-        </tr>
-      </tbody>
-      <tfoot><tr><td><strong>Subtotal</strong></td><td><strong>₹{{ machiningTotal }}</strong></td><td></td></tr></tfoot>
-    </table>
-  </div>
-
-  <div class="jc-section">
-    <div class="jc-section-title">Charge Summary</div>
-    <table class="jc-info-table">
-      <tr>
-        <td><strong>Cutting Charges:</strong> ₹{{ cuttingSubtotal | number:'1.2-2' }}</td>
-        <td><strong>Machining Charges:</strong> ₹{{ machiningTotal | number:'1.2-2' }}</td>
-        <td><strong>Other Charges:</strong> ₹{{ otherPrepCharge | number:'1.2-2' }}</td>
-      </tr>
-      <tr>
-        <td colspan="3" style="text-align:right;font-size:14px;font-weight:bold;">
-          GRAND TOTAL: ₹{{ grandTotal | number:'1.2-2' }}
-        </td>
-      </tr>
-    </table>
-  </div>
-
-  <div class="jc-section" *ngIf="prepForm.get('postConditionNotes')?.value">
-    <div class="jc-section-title">Post-Condition Notes</div>
-    <p>{{ prepForm.get('postConditionNotes')?.value }}</p>
   </div>
 
   <div class="jc-footer">
     <div class="jc-sign-block">
       <div class="jc-sign-line"></div>
-      <div>Prepared By</div>
-      <div class="small">{{ prepData.preparedByName || '' }}</div>
+      <div>Prepared By / Technician</div>
     </div>
     <div class="jc-sign-block">
       <div class="jc-sign-line"></div>
-      <div>Verified By</div>
-      <div class="small">{{ prepData.verifiedByName || '' }}</div>
-    </div>
-    <div class="jc-sign-block">
-      <div class="jc-sign-line"></div>
-      <div>Authorized By</div>
+      <div>Verified By / Quality In-Charge</div>
     </div>
   </div>
 </div>

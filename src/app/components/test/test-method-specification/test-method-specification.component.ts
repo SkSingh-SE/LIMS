@@ -59,13 +59,11 @@ export class TestMethodSpecificationComponent implements OnInit {
     });
     const state = history.state as { mode?: string };
 
-    if (state) {
-      if (state.mode === 'view') {
-        this.isViewMode = true;
-      }
-      if (state.mode === 'edit') {
-        this.isEditMode = true;
-      }
+    if (state?.mode === 'view' || this.route.snapshot.url.some(s => s.path === 'details')) {
+      this.isViewMode = true;
+    }
+    if (state?.mode === 'edit' || this.route.snapshot.url.some(s => s.path === 'edit')) {
+      this.isEditMode = true;
     }
     this.initForm();
     if (this.testMethodSpecificationID > 0) {
@@ -680,7 +678,8 @@ export class TestMethodSpecificationComponent implements OnInit {
             this.router.navigate(['/test-specification']);
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            const msg = error?.error?.message || error?.error?.Message || (typeof error?.error === 'string' ? error.error : null) || error?.message || 'Failed to update test method specification.';
+            this.toastService.show(msg, 'error');
           },
         });
       } else {
@@ -693,7 +692,8 @@ export class TestMethodSpecificationComponent implements OnInit {
             this.router.navigate(['/test-specification']);
           },
           error: (error) => {
-            this.toastService.show(error.message, 'error');
+            const msg = error?.error?.message || error?.error?.Message || (typeof error?.error === 'string' ? error.error : null) || error?.message || 'Failed to create test method specification.';
+            this.toastService.show(msg, 'error');
           },
         });
       }

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { ToastService } from '../../../services/toast.service';
@@ -10,6 +10,8 @@ import { ReviewOfRequestFormComponent } from '../review-of-request-form/review-o
 import { CuttingMachiningPlanTabComponent } from '../cutting-machining-plan-tab/cutting-machining-plan-tab.component';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { CaseSampleSelectorComponent } from './case-sample-selector/case-sample-selector.component';
+import { TestResultEntryFormComponent } from '../../TestResult/test-result-entry-form/test-result-entry-form.component';
+import { ReportingPreviewComponent } from '../../report/reporting-preview/reporting-preview.component';
 
 export interface LifecycleStage {
   id: string; // 'inward' | 'review-plan' | 'preparation' | 'testing' | 'reporting' | 'accounts' | 'close'
@@ -40,11 +42,14 @@ export interface LifecycleStage {
   imports: [
     CommonModule,
     FormsModule,
+    RouterModule,
     SampleInwardFormComponent,
     ReviewOfRequestFormComponent,
     CuttingMachiningPlanTabComponent,
     TestStatusBadgeComponent,
-    CaseSampleSelectorComponent
+    CaseSampleSelectorComponent,
+    TestResultEntryFormComponent,
+    ReportingPreviewComponent
   ]
 })
 export class CaseLifecycleWorkspaceComponent implements OnInit {
@@ -419,6 +424,20 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
   onSampleAction(event: { sampleId: number; action: string }): void {
     this.selectedSampleId = event.sampleId;
     this.activeInlineAction = event.action;
+  }
+
+  onTestingSaved(): void {
+    this.loadCaseData();
+  }
+
+  onTestingCompleted(): void {
+    this.loadCaseData();
+    this.toast.show('Test results updated successfully.', 'success');
+  }
+
+  onReportActionCompleted(): void {
+    this.loadCaseData();
+    this.toast.show('Report status updated successfully.', 'success');
   }
 
   onCloseInlineForm(): void {

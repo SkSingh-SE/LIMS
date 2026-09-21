@@ -3,7 +3,7 @@
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">Invoice Case Config List</label>
       <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
-        <i class="bi bi-plus-lg"></i>
+        <i class="bi bi-plus-circle me-1"></i>
         Create Invoice Case Config
       </a>
     </div>
@@ -234,8 +234,8 @@
               </div>
             </ng-container>
 
-            <!-- Single-value types (hidden for SpectroCombination — value is auto-set from name) -->
-            <div class="col-6" *ngIf="!currentConfig.isRange && !isSizeLoadType && !isSpectroType && !isFormulaType">
+            <!-- Single-value types (hidden for SpectroCombination and Element/Formula override) -->
+            <div class="col-6" *ngIf="!currentConfig.isRange && !isSizeLoadType && !isSpectroType && !isElementOrFormulaType">
               <label class="form-label">Value <span class="text-danger">*</span></label>
               <!-- Select type (e.g. WithImage, WithExtenso) -->
               <select *ngIf="currentConfig.inputType === 'select'"
@@ -262,22 +262,78 @@
                     class="text-danger text-sm">Value is required.</span>
             </div>
 
-            <!-- ElementCountFormula controls -->
-            <div class="col-12" *ngIf="isFormulaType">
+            <!-- Element & ElementCountFormula controls -->
+            <div class="col-12" *ngIf="isElementOrFormulaType">
               <div class="row g-2 border rounded p-2 mb-2 bg-light ms-0 me-0">
                 <div class="col-12 mb-1">
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" [value]="false" id="ecfBaseType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
-                    <label class="form-check-label fw-medium" for="ecfBaseType">Base Tier (Count-based)</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" [value]="true" id="ecfOverrideType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
-                    <label class="form-check-label fw-medium" for="ecfOverrideType">Override Row (Special Element)</label>
-                  </div>
+                  <!-- For ChemicalElement -->
+                  <ng-container *ngIf="isChemicalElementType">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="chemModeRadio" value="BASE" id="chemModeBase"
+                             [checked]="invoiceForm.get('chemMode')?.value === 'BASE'"
+                             (change)="onChemModeChange('BASE')"
+                             [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="chemModeBase">Base Tier (Full Spectro Analysis)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="chemModeRadio" value="SPECIAL" id="chemModeSpecial"
+                             [checked]="invoiceForm.get('chemMode')?.value === 'SPECIAL'"
+                             (change)="onChemModeChange('SPECIAL')"
+                             [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="chemModeSpecial">Special Elements Surcharge (N, B, Ca)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="chemModeRadio" value="SUPER" id="chemModeSuper"
+                             [checked]="invoiceForm.get('chemMode')?.value === 'SUPER'"
+                             (change)="onChemModeChange('SUPER')"
+                             [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="chemModeSuper">Super Special Elements Surcharge (Zr, Nb, Pt, Au)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="chemModeRadio" value="COUNT" id="chemModeCount"
+                             [checked]="invoiceForm.get('chemMode')?.value === 'COUNT'"
+                             (change)="onChemModeChange('COUNT')"
+                             [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="chemModeCount">Element Count Slab (1, 2, 3...)</label>
+                    </div>
+                  </ng-container>
+
+                  <!-- For ElementCountFormula -->
+                  <ng-container *ngIf="isFormulaType">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" [value]="false" id="ecfBaseType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="ecfBaseType">Base Tier (Count-based)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" [value]="true" id="ecfOverrideType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="ecfOverrideType">Override Row (Special / Super Element)</label>
+                    </div>
+                  </ng-container>
+
+                  <!-- For Element -->
+                  <ng-container *ngIf="isElementType">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" [value]="false" id="elemStandardType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="elemStandardType">Standard Element / Count (e.g. Ag, Fe, 10 Element)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" [value]="true" id="elemOverrideType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
+                      <label class="form-check-label fw-medium" for="elemOverrideType">Override Row (Special / Super Element Surcharge)</label>
+                    </div>
+                  </ng-container>
                 </div>
 
-                <!-- Base Tier Dropdown + Number -->
-                <div class="col-12" *ngIf="!isOverrideRow">
+                <!-- Standard Element value input (when Element and not override) -->
+                <div class="col-12" *ngIf="isElementType && !isOverrideRow">
+                  <label class="form-label" style="font-size:0.75rem;">Element Name / Value <span class="text-danger">*</span></label>
+                  <div class="input-group input-group-sm" style="max-width: 320px;">
+                    <input class="form-control" type="text" formControlName="value" placeholder="e.g. Ag, Fe, 10 Element" [readonly]="isViewMode" (input)="autoGenerateName()" />
+                  </div>
+                  <small class="text-muted mt-1 d-block">Enter element name or count value.</small>
+                </div>
+
+                <!-- Base Tier Dropdown + Number (when ElementCountFormula and not override) -->
+                <div class="col-12" *ngIf="isFormulaType && !isOverrideRow">
                   <label class="form-label" style="font-size:0.75rem;">Count Condition <span class="text-danger">*</span></label>
                   <div class="input-group input-group-sm" style="max-width: 320px;">
                     <select class="form-select form-select-sm" formControlName="conditionPrefix" style="max-width: 80px" [attr.disabled]="isViewMode ? true : null">
@@ -293,22 +349,32 @@
                   <small class="text-muted mt-1 d-block">Formula evaluates against active element count.</small>
                 </div>
 
-                 <!-- Override Elements MultiSelectDropdown -->
+                <!-- ChemicalElement Count Slab (when ChemicalElement and COUNT mode) -->
+                <div class="col-12" *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'COUNT'">
+                  <label class="form-label">Element Count Slab / Condition <span class="text-danger">*</span></label>
+                  <div class="input-group input-group-sm">
+                    <input class="form-control" type="text" formControlName="value" placeholder="e.g. 2, 3, <=3, or Per Element" [readonly]="isViewMode" (input)="autoGenerateName()" />
+                    <span class="input-group-text">Elements</span>
+                  </div>
+                  <small class="text-muted mt-1 d-block">Specify element count or condition (e.g. 2, 3, 5, or 'Per Element').</small>
+                </div>
+
+                <!-- Override Elements MultiSelectDropdown (when isOverrideRow is true) -->
                 <div class="col-12" *ngIf="isOverrideRow">
-                  <label class="form-label" style="font-size:0.75rem;">Override Elements</label>
-                  <div style="max-width: 480px;">
+                  <label class="form-label" style="font-size:0.75rem;">Override Elements <span class="text-danger">*</span></label>
+                  <div style="max-width: 540px;">
                     <app-multi-select-dropdown
                       [fetchDataFn]="getOverrideParamsFn"
                       [smallInput]="true"
                       [selectedValues]="selectedOverrideParamIds"
                       [isDisabled]="isViewMode"
                       [hideLabel]="true"
-                      placeholder="Search and select override elements..."
+                      placeholder="Search and select chemical elements (N, B, Ca, Zr, etc.)..."
                       (itemsSelected)="onOverrideSelected($event)">
                     </app-multi-select-dropdown>
                     <div class="mt-1 text-muted" style="font-size:0.7rem;">
                       <i class="bi bi-info-circle me-1"></i>
-                      Note: If no parameters are selected, this override rule will apply to ALL special/super parameters by default.
+                      Select the chemical elements included in this surcharge/override rule (e.g. Nitrogen, Boron, Calcium).
                     </div>
                   </div>
                 </div>
@@ -316,7 +382,7 @@
                 <div class="col-12 mt-2">
                   <div class="alert alert-light py-1 border px-2 mb-0">
                     <small class="text-muted">
-                      Stored Value: <code>{{ invoiceForm.get('value')?.value || 'override' }}</code>
+                      Stored Value: <code>{{ invoiceForm.get('value')?.value || (isOverrideRow ? 'OVERRIDE' : '(Enter count condition)') }}</code>
                     </small>
                   </div>
                 </div>
@@ -488,7 +554,7 @@
               <div class="d-flex justify-content-between mb-1">
                 <label class="form-label mb-0">Alias Names</label>
                 <button type="button" class="btn btn-sm btn-add" (click)="addAlias()">
-                  <i class="bi bi-plus-circle-dotted"></i> Add Alias
+                  <i class="bi bi-plus-circle me-1"></i> Add Alias
                 </button>
               </div>
               <div formArrayName="aliasNames" class="d-flex flex-column gap-1">
@@ -496,24 +562,26 @@
                      [formGroupName]="i" class="d-flex align-items-center">
                   <input class="form-control me-2" formControlName="name"
                          placeholder="Enter alias name" (keydown.enter)="addAlias()" />
-                    <button type="button" class="btn btn-remove btn-sm"
-                           *ngIf="aliasNames.length > 1" (click)="removeAlias(i)">×</button>
+                  <button type="button" class="btn btn-remove btn-sm"
+                          *ngIf="aliasNames.length > 1" (click)="removeAlias(i)">
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
-
-
         </div>
 
         <!-- Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
-          <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-cancel" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
           <button type="button" class="btn btn-save"
                   [disabled]="invoiceForm.invalid || !!rangeError"
                   (click)="onSubmit()">
-            {{ isEditMode ? 'Update' : 'Save' }}
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>
       </form>

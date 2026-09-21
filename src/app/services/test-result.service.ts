@@ -165,12 +165,6 @@ export class TestResultService {
     return this.http.post<any>(`${this.apiUrl}/add-parameter-from-method/${headerId}`, dto);
   }
 
-  /**
-   * Get lab room environment conditions at test time
-   */
-  getEnvironmentAtTime(headerId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/environment-at-time/${headerId}`);
-  }
 
   // ================================================================
   // Image Uploads (Test-wise)

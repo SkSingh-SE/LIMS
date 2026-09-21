@@ -91,6 +91,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
   selectionTypes = [
     { label: 'Flat Rate',             value: 'FlatRate',           group: 'Fixed',        hint: 'Fixed price per test, no parameters needed' },
+    { label: 'Chemical Element',      value: 'ChemicalElement',    group: 'Chemical',     hint: 'Base tier + Special & Super Special element surcharges + element slabs' },
     { label: 'Element',               value: 'Element',            group: 'Single Value', hint: 'e.g. Ag, Fe, 10 Element' },
     { label: 'Hours',                 value: 'Hours',              group: 'Single Value', hint: 'e.g. 24hr, 672hr' },
     { label: 'Size',                  value: 'Size',               group: 'Single Value', hint: 'e.g. 10mm, 32mm' },
@@ -119,6 +120,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
    */
   typeConfig: Record<string, TypeConfig> = {
     FlatRate:            { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'Flat',                        startPlaceholder: '', endPlaceholder: '', defaultValue: 'Flat' },
+    ChemicalElement:     { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'BASE / SPECIAL / SUPER / 1..5', startPlaceholder: '', endPlaceholder: '', defaultValue: 'BASE' },
     Element:             { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'e.g. Ag, Fe, 10 Element',     startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     Hours:               { isRange: false, inputType: 'number', unit: 'hr',   valuePlaceholder: 'Enter hours (e.g. 24, 672)',  startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     Size:                { isRange: false, inputType: 'number', unit: 'mm',   valuePlaceholder: 'Enter size in mm',            startPlaceholder: '', endPlaceholder: '', defaultValue: '', dimensionHint: 'Value auto-detected from sample diameter (SampleDetail)' },
@@ -323,7 +325,16 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'ElementCountFormula', name: '<=3 elements', value: '<=3', unit: '' },
       { selectionType: 'ElementCountFormula', name: '==4 elements', value: '==4', unit: '' },
       { selectionType: 'ElementCountFormula', name: '>=4 elements', value: '>=4', unit: '' },
-      { selectionType: 'ElementCountFormula', name: 'override (Special Element)', value: 'override', unit: '' }
+      { selectionType: 'ElementCountFormula', name: 'override (Special Element)', value: 'override', unit: '' },
+      // ChemicalElement
+      { selectionType: 'ChemicalElement', name: 'Full Spectro Analysis', value: 'BASE', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Special Elements (N, B, Ca)', value: 'SPECIAL', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Super Special Elements (Zr, Nb, Ag, Pt, Au)', value: 'SUPER', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 2 elements', value: '2', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 3 elements', value: '3', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 4 elements', value: '4', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 5 elements', value: '5', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Per Element', value: '1', unit: '' }
     ];
 
   filteredSuggestions: any[] = [];
@@ -399,13 +410,26 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   };
 
   getOverrideParamsFn = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.parameterService.getParameterDropdown(searchTerm, page, pageSize, 'special,super');
+    return this.parameterService.getChemicalParameterDropdown(searchTerm, page, pageSize);
   };
 
   onOverrideSelected(items: any[]): void {
     this.selectedOverrideParamItems = items || [];
     const ids = this.selectedOverrideParamItems.map((i: any) => i.id).join(',');
-    this.invoiceForm.patchValue({ overrideParameterIDs: ids });
+    this.invoiceForm.patchValue({
+      overrideParameterIDs: ids,
+      sourceParameterIDs: ids
+    });
+
+    // Auto-suggest name for override rows if name is empty or default
+    if (this.isOverrideRow && (!this.invoiceForm.get('name')?.value || this.invoiceForm.get('name')?.value.startsWith('Special Elements'))) {
+      const paramNames = this.selectedOverrideParamItems.map((i: any) => i.symbol || i.name?.trim()).filter(Boolean);
+      if (paramNames.length > 0) {
+        const autoName = `Special Elements (${paramNames.join(', ')})`;
+        this.invoiceForm.patchValue({ name: autoName });
+        this.selectedSuggestion = { name: autoName };
+      }
+    }
   }
 
   onParamSelected(items: any[]): void {
@@ -476,7 +500,8 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       conditionPrefix: ['<='],
       conditionNumber: [null],
       isOverrideRow: [false],
-      overrideParameterIDs: ['']
+      overrideParameterIDs: [''],
+      chemMode: ['BASE']
     });
 
     // Also auto-update stored value on ECF form control changes
@@ -484,9 +509,13 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     this.invoiceForm.get('conditionNumber')?.valueChanges.subscribe(() => this.updateEcfValueName());
     this.invoiceForm.get('isOverrideRow')?.valueChanges.subscribe(isOverride => {
       if (isOverride) {
-        this.invoiceForm.get('value')?.setValue('override');
+        this.invoiceForm.get('value')?.setValue('OVERRIDE');
       } else {
-        this.updateEcfValueName();
+        if (this.isFormulaType) {
+          this.updateEcfValueName();
+        } else if (this.isElementType) {
+          this.invoiceForm.get('value')?.setValue('');
+        }
       }
     });
   }
@@ -495,17 +524,93 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     if (this.isFormulaType && !this.isOverrideRow) {
       const prefix = this.invoiceForm.get('conditionPrefix')?.value || '<=';
       const num = this.invoiceForm.get('conditionNumber')?.value;
-      const combinedVal = prefix + (num != null ? String(num) : '');
-      this.invoiceForm.get('value')?.setValue(combinedVal);
+      if (num != null && num !== '') {
+        const combinedVal = `${prefix}${num}`;
+        this.invoiceForm.get('value')?.setValue(combinedVal);
+
+        // Auto-suggest name if empty or generic element name
+        const currentName = this.invoiceForm.get('name')?.value || '';
+        if (!currentName || currentName.includes('Element')) {
+          let autoName = '';
+          if (prefix === '<=') autoName = `Up to ${num} Elements`;
+          else if (prefix === '==') autoName = `${num} Element${num > 1 ? 's' : ''}`;
+          else if (prefix === '>=') autoName = `${num} or More Elements`;
+          else if (prefix === '>') autoName = `Above ${num} Elements`;
+          else if (prefix === '<') autoName = `Less than ${num} Elements`;
+
+          if (autoName) {
+            this.invoiceForm.patchValue({ name: autoName });
+            this.selectedSuggestion = { name: autoName };
+          }
+        }
+      } else {
+        this.invoiceForm.get('value')?.setValue('');
+      }
     }
+  }
+
+  get isElementType(): boolean {
+    return this.invoiceForm?.get('selectionType')?.value === 'Element';
   }
 
   get isFormulaType(): boolean {
     return this.invoiceForm?.get('selectionType')?.value === 'ElementCountFormula';
   }
 
+  get isChemicalElementType(): boolean {
+    return this.invoiceForm?.get('selectionType')?.value === 'ChemicalElement';
+  }
+
+  get isElementOrFormulaType(): boolean {
+    const t = this.invoiceForm?.get('selectionType')?.value;
+    return t === 'Element' || t === 'ElementCountFormula' || t === 'ChemicalElement';
+  }
+
   get isOverrideRow(): boolean {
     return this.invoiceForm?.get('isOverrideRow')?.value === true;
+  }
+
+  onChemModeChange(mode: string): void {
+    this.invoiceForm.patchValue({ chemMode: mode });
+    if (mode === 'BASE') {
+      this.invoiceForm.patchValue({
+        value: 'BASE',
+        name: 'Full Spectro Analysis',
+        isBaseConfig: true,
+        isOverrideRow: false,
+        overrideParameterIDs: ''
+      });
+      this.selectedOverrideParamIds = [];
+      this.selectedOverrideParamItems = [];
+    } else if (mode === 'SPECIAL') {
+      this.invoiceForm.patchValue({
+        value: 'SPECIAL',
+        name: 'Special Elements (N, B, Ca)',
+        isBaseConfig: false,
+        isOverrideRow: true,
+        overrideParameterIDs: '8,6,19'
+      });
+      this.selectedOverrideParamIds = [8, 6, 19];
+    } else if (mode === 'SUPER') {
+      this.invoiceForm.patchValue({
+        value: 'SUPER',
+        name: 'Super Special Elements (Zr, Nb, Ag, Pt, Au)',
+        isBaseConfig: false,
+        isOverrideRow: true,
+        overrideParameterIDs: '36,37,39,40,49,50'
+      });
+      this.selectedOverrideParamIds = [36, 37, 39, 40, 49, 50];
+    } else if (mode === 'COUNT') {
+      this.invoiceForm.patchValue({
+        value: '2',
+        name: 'Up to 2 elements',
+        isBaseConfig: false,
+        isOverrideRow: false,
+        overrideParameterIDs: ''
+      });
+      this.selectedOverrideParamIds = [];
+      this.selectedOverrideParamItems = [];
+    }
   }
 
   parseCondition(val: string): { prefix: string; number: number | null } {
@@ -849,13 +954,33 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
         let num: number | null = null;
         let isOverride = false;
 
-        if (res.selectionType === 'ElementCountFormula') {
-          if (res.value === 'override') {
+        const valUpper = (res.value || '').trim().toUpperCase();
+        let chemMode = 'BASE';
+        if (res.selectionType === 'ChemicalElement') {
+          if (valUpper === 'SPECIAL' || (res.name && res.name.toLowerCase().includes('special elements (n'))) {
+            chemMode = 'SPECIAL';
+            isOverride = true;
+          } else if (valUpper === 'SUPER' || (res.name && res.name.toLowerCase().includes('super special'))) {
+            chemMode = 'SUPER';
+            isOverride = true;
+          } else if (valUpper === 'BASE' || res.isBaseConfig) {
+            chemMode = 'BASE';
+            isOverride = false;
+          } else {
+            chemMode = 'COUNT';
+            isOverride = false;
+          }
+        } else if (res.selectionType === 'ElementCountFormula') {
+          if (valUpper === 'OVERRIDE') {
             isOverride = true;
           } else {
             const parsed = this.parseCondition(res.value || '');
             prefix = parsed.prefix;
             num = parsed.number;
+          }
+        } else if (res.selectionType === 'Element') {
+          if (valUpper === 'OVERRIDE' || !!res.overrideParameterIDs || (res.name && res.name.toLowerCase().includes('special element'))) {
+            isOverride = true;
           }
         }
 
@@ -864,7 +989,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
           selectionType: res.selectionType,
           name: res.name,
           aliasName: res.aliasName,
-          value: loadValue,
+          value: isOverride ? (res.selectionType === 'ChemicalElement' ? valUpper : 'OVERRIDE') : loadValue,
           value2: loadValue2,
           start: res.start,
           end: res.end,
@@ -875,11 +1000,13 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
           conditionPrefix: prefix,
           conditionNumber: num,
           isOverrideRow: isOverride,
-          overrideParameterIDs: res.overrideParameterIDs || ''
+          overrideParameterIDs: res.overrideParameterIDs || (isOverride ? res.sourceParameterIDs : '') || '',
+          chemMode: chemMode
         });
 
-        if (res.overrideParameterIDs) {
-          this.selectedOverrideParamIds = res.overrideParameterIDs
+        const overrideIdsStr = res.overrideParameterIDs || (isOverride ? res.sourceParameterIDs : '');
+        if (overrideIdsStr) {
+          this.selectedOverrideParamIds = overrideIdsStr
             .split(',')
             .map((s: string) => parseInt(s.trim(), 10))
             .filter((id: number) => !isNaN(id) && id > 0);
@@ -932,17 +1059,52 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
     const payload = this.invoiceForm.getRawValue();
 
-    // ECF formatting:
-    if (payload.selectionType === 'ElementCountFormula') {
+    // Element & ECF & ChemicalElement formatting:
+    if (payload.selectionType === 'ChemicalElement') {
+      const chemMode = payload.chemMode || 'BASE';
+      if (chemMode === 'BASE') {
+        payload.value = 'BASE';
+        payload.isBaseConfig = true;
+        payload.overrideParameterIDs = null;
+      } else if (chemMode === 'SPECIAL') {
+        payload.value = 'SPECIAL';
+        payload.isBaseConfig = false;
+        const ids = this.selectedOverrideParamItems?.length > 0
+          ? this.selectedOverrideParamItems.map((i: any) => i.id).join(',')
+          : (this.invoiceForm.get('overrideParameterIDs')?.value || null);
+        payload.overrideParameterIDs = ids;
+        payload.sourceParameterIDs = ids;
+      } else if (chemMode === 'SUPER') {
+        payload.value = 'SUPER';
+        payload.isBaseConfig = false;
+        const ids = this.selectedOverrideParamItems?.length > 0
+          ? this.selectedOverrideParamItems.map((i: any) => i.id).join(',')
+          : (this.invoiceForm.get('overrideParameterIDs')?.value || null);
+        payload.overrideParameterIDs = ids;
+        payload.sourceParameterIDs = ids;
+      } else if (chemMode === 'COUNT') {
+        payload.isBaseConfig = false;
+        payload.overrideParameterIDs = null;
+        payload.value = String(payload.value || '1');
+      }
+    } else if (payload.selectionType === 'ElementCountFormula' || payload.selectionType === 'Element') {
       if (payload.isOverrideRow) {
-        payload.value = 'override';
-      } else {
+        payload.value = 'OVERRIDE';
+        const ids = this.selectedOverrideParamItems?.length > 0
+          ? this.selectedOverrideParamItems.map((i: any) => i.id).join(',')
+          : (this.invoiceForm.get('overrideParameterIDs')?.value || null);
+        payload.overrideParameterIDs = ids;
+        payload.sourceParameterIDs = ids;
+      } else if (payload.selectionType === 'ElementCountFormula') {
         payload.value = (payload.conditionPrefix || '<=') + String(payload.conditionNumber || 0);
+        payload.overrideParameterIDs = null;
+      } else {
         payload.overrideParameterIDs = null;
       }
     } else {
       payload.overrideParameterIDs = null;
     }
+    delete payload.chemMode;
     delete payload.conditionPrefix;
     delete payload.conditionNumber;
     delete payload.isOverrideRow;

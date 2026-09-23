@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 export class MultiSelectPanelComponent {
   @Input() items: any[] = [];
   @Input() selectedIds: any[] = [];
+  @Input() selectedCount?: number;
   @Input() loading = false;
 
   @Output() itemToggled = new EventEmitter<any>();
@@ -21,6 +22,13 @@ export class MultiSelectPanelComponent {
 
   searchInput = '';
   private scrollEndPending = false;
+
+  get count(): number {
+    if (this.selectedCount !== undefined && this.selectedCount !== null) {
+      return this.selectedCount;
+    }
+    return (this.selectedIds || []).length;
+  }
 
   /** Called by parent after overlay attaches */
   focusSearch(): void {

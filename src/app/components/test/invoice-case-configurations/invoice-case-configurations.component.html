@@ -273,21 +273,21 @@
                              [checked]="invoiceForm.get('chemMode')?.value === 'BASE'"
                              (change)="onChemModeChange('BASE')"
                              [attr.disabled]="isViewMode ? true : null">
-                      <label class="form-check-label fw-medium" for="chemModeBase">Base Tier (Full Spectro Analysis)</label>
+                      <label class="form-check-label fw-medium" for="chemModeBase">Base Tier (Normal Elements)</label>
                     </div>
                     <div class="form-check form-check-inline">
                       <input class="form-check-input" type="radio" name="chemModeRadio" value="SPECIAL" id="chemModeSpecial"
                              [checked]="invoiceForm.get('chemMode')?.value === 'SPECIAL'"
                              (change)="onChemModeChange('SPECIAL')"
                              [attr.disabled]="isViewMode ? true : null">
-                      <label class="form-check-label fw-medium" for="chemModeSpecial">Special Elements Surcharge (N, B, Ca)</label>
+                      <label class="form-check-label fw-medium" for="chemModeSpecial">Special Elements Surcharge</label>
                     </div>
                     <div class="form-check form-check-inline">
                       <input class="form-check-input" type="radio" name="chemModeRadio" value="SUPER" id="chemModeSuper"
                              [checked]="invoiceForm.get('chemMode')?.value === 'SUPER'"
                              (change)="onChemModeChange('SUPER')"
                              [attr.disabled]="isViewMode ? true : null">
-                      <label class="form-check-label fw-medium" for="chemModeSuper">Super Special Elements Surcharge (Zr, Nb, Pt, Au)</label>
+                      <label class="form-check-label fw-medium" for="chemModeSuper">Super Special Elements Surcharge</label>
                     </div>
                     <div class="form-check form-check-inline">
                       <input class="form-check-input" type="radio" name="chemModeRadio" value="COUNT" id="chemModeCount"
@@ -295,18 +295,6 @@
                              (change)="onChemModeChange('COUNT')"
                              [attr.disabled]="isViewMode ? true : null">
                       <label class="form-check-label fw-medium" for="chemModeCount">Element Count Slab (1, 2, 3...)</label>
-                    </div>
-                  </ng-container>
-
-                  <!-- For ElementCountFormula -->
-                  <ng-container *ngIf="isFormulaType">
-                    <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" [value]="false" id="ecfBaseType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
-                      <label class="form-check-label fw-medium" for="ecfBaseType">Base Tier (Count-based)</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" [value]="true" id="ecfOverrideType" formControlName="isOverrideRow" [attr.disabled]="isViewMode ? true : null">
-                      <label class="form-check-label fw-medium" for="ecfOverrideType">Override Row (Special / Super Element)</label>
                     </div>
                   </ng-container>
 
@@ -332,49 +320,57 @@
                   <small class="text-muted mt-1 d-block">Enter element name or count value.</small>
                 </div>
 
-                <!-- Base Tier Dropdown + Number (when ElementCountFormula and not override) -->
-                <div class="col-12" *ngIf="isFormulaType && !isOverrideRow">
-                  <label class="form-label" style="font-size:0.75rem;">Count Condition <span class="text-danger">*</span></label>
-                  <div class="input-group input-group-sm" style="max-width: 320px;">
-                    <select class="form-select form-select-sm" formControlName="conditionPrefix" style="max-width: 80px" [attr.disabled]="isViewMode ? true : null">
-                      <option value="<=">&le;</option>
-                      <option value="==">==</option>
-                      <option value=">=">&ge;</option>
-                      <option value="<">&lt;</option>
-                      <option value=">">&gt;</option>
-                    </select>
-                    <input class="form-control" type="number" min="1" formControlName="conditionNumber" placeholder="e.g. 3" [readonly]="isViewMode" />
-                    <span class="input-group-text">Elements</span>
-                  </div>
-                  <small class="text-muted mt-1 d-block">Formula evaluates against active element count.</small>
-                </div>
-
                 <!-- ChemicalElement Count Slab (when ChemicalElement and COUNT mode) -->
                 <div class="col-12" *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'COUNT'">
-                  <label class="form-label">Element Count Slab / Condition <span class="text-danger">*</span></label>
-                  <div class="input-group input-group-sm">
-                    <input class="form-control" type="text" formControlName="value" placeholder="e.g. 2, 3, <=3, or Per Element" [readonly]="isViewMode" (input)="autoGenerateName()" />
+                  <label class="form-label" style="font-size:0.75rem;">Element Count Slab / Condition <span class="text-danger">*</span></label>
+                  <div class="input-group input-group-sm" style="max-width: 320px;">
+                    <select class="form-select form-select-sm" formControlName="conditionPrefix" style="max-width: 85px" [attr.disabled]="isViewMode ? true : null" (change)="onChemCountChange()">
+                      <option value="<=">&le; (Up to)</option>
+                      <option value="==">== (Exact)</option>
+                      <option value=">=">&ge; (At least)</option>
+                    </select>
+                    <input class="form-control" type="number" min="1" appNumberOnly formControlName="conditionNumber" placeholder="e.g. 2" [readonly]="isViewMode" (input)="onChemCountChange()" />
                     <span class="input-group-text">Elements</span>
                   </div>
-                  <small class="text-muted mt-1 d-block">Specify element count or condition (e.g. 2, 3, 5, or 'Per Element').</small>
+                  <small class="text-muted mt-1 d-block">Number of elements (only numbers greater than 0 allowed).</small>
+                  <div *ngIf="invoiceForm.get('conditionNumber')?.touched && (!invoiceForm.get('conditionNumber')?.value || invoiceForm.get('conditionNumber')?.value <= 0)" class="text-danger text-sm mt-1">
+                    Element count must be a number greater than 0.
+                  </div>
                 </div>
 
-                <!-- Override Elements MultiSelectDropdown (when isOverrideRow is true) -->
-                <div class="col-12" *ngIf="isOverrideRow">
-                  <label class="form-label" style="font-size:0.75rem;">Override Elements <span class="text-danger">*</span></label>
+                <!-- Elements MultiSelectDropdown (when isOverrideRow is true or Base Tier) -->
+                <div class="col-12" *ngIf="isOverrideRow || (isChemicalElementType && invoiceForm.get('chemMode')?.value === 'BASE')">
+                  <label class="form-label" style="font-size:0.75rem;">
+                    <ng-container *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'BASE'">Normal Elements</ng-container>
+                    <ng-container *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'SPECIAL'">Special Elements <span class="text-danger">*</span></ng-container>
+                    <ng-container *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'SUPER'">Super Special Elements <span class="text-danger">*</span></ng-container>
+                    <ng-container *ngIf="isElementType || (!isChemicalElementType && invoiceForm.get('chemMode')?.value !== 'BASE' && invoiceForm.get('chemMode')?.value !== 'SPECIAL' && invoiceForm.get('chemMode')?.value !== 'SUPER')">Override / Surcharge Elements <span class="text-danger">*</span></ng-container>
+                  </label>
                   <div style="max-width: 540px;">
                     <app-multi-select-dropdown
                       [fetchDataFn]="getOverrideParamsFn"
                       [smallInput]="true"
                       [selectedValues]="selectedOverrideParamIds"
+                      [reloadKey]="overridePickerReloadKey"
                       [isDisabled]="isViewMode"
                       [hideLabel]="true"
-                      placeholder="Search and select chemical elements (N, B, Ca, Zr, etc.)..."
+                      [placeholder]="elementsPlaceholder"
                       (itemsSelected)="onOverrideSelected($event)">
                     </app-multi-select-dropdown>
                     <div class="mt-1 text-muted" style="font-size:0.7rem;">
                       <i class="bi bi-info-circle me-1"></i>
-                      Select the chemical elements included in this surcharge/override rule (e.g. Nitrogen, Boron, Calcium).
+                      <ng-container *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'BASE'">
+                        Select normal chemical elements included in this Base Tier.
+                      </ng-container>
+                      <ng-container *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'SPECIAL'">
+                        Select the special chemical elements included in this surcharge rule.
+                      </ng-container>
+                      <ng-container *ngIf="isChemicalElementType && invoiceForm.get('chemMode')?.value === 'SUPER'">
+                        Select the super special chemical elements included in this surcharge rule.
+                      </ng-container>
+                      <ng-container *ngIf="isElementType || (!isChemicalElementType && invoiceForm.get('chemMode')?.value !== 'BASE' && invoiceForm.get('chemMode')?.value !== 'SPECIAL' && invoiceForm.get('chemMode')?.value !== 'SUPER')">
+                        Select the chemical elements included in this surcharge/override rule.
+                      </ng-container>
                     </div>
                   </div>
                 </div>
@@ -421,7 +417,7 @@
             </div>
 
             <!-- Name (auto-generated or picked from suggestions) -->
-            <div [ngClass]="isSizeLoadType || isSpectroType ? 'col-12' : 'col-6'">
+            <div [ngClass]="isSizeLoadType || isSpectroType || isElementOrFormulaType ? 'col-12' : 'col-6'">
               <label class="form-label">Name <span class="text-danger">*</span></label>
 
               <!-- SpectroCombination: name is auto-generated from linked parameters -->
@@ -446,6 +442,19 @@
                 [placeholder]="namePlaceholder"
                 [disabled]="isViewMode"
               ></ng-select>
+
+              <!-- Quick suggestion pills (top contextual suggestions for quick 1-click apply) -->
+              <div class="d-flex flex-wrap align-items-center gap-1 mt-1" *ngIf="!isViewMode && !isSpectroType && quickSuggestions.length > 0">
+                <span class="text-muted text-xs me-1"><i class="bi bi-lightbulb text-warning me-1"></i>Suggestions:</span>
+                <button type="button"
+                        *ngFor="let s of quickSuggestions"
+                        class="lims-suggestion-chip"
+                        [class.active]="invoiceForm.get('name')?.value === s.name"
+                        (click)="onSuggestionSelected(s)"
+                        [title]="'Apply: ' + s.name">
+                  {{ s.name }}
+                </button>
+              </div>
 
               <span *ngIf="invoiceForm.get('name')?.invalid && invoiceForm.get('name')?.touched"
                     class="text-danger text-sm">Name is required.</span>

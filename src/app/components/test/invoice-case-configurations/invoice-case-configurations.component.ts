@@ -11,6 +11,7 @@ import { of } from 'rxjs';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
+import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
 
 interface TypeConfig {
   isRange: boolean;
@@ -27,7 +28,7 @@ interface TypeConfig {
 
 @Component({
   selector: 'app-invoice-case-configurations',
-  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule, PaginationComponent, MultiSelectDropdownComponent ],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NgSelectModule, PaginationComponent, MultiSelectDropdownComponent, NumberOnlyDirective ],
   templateUrl: './invoice-case-configurations.component.html',
   styleUrl: './invoice-case-configurations.component.css'
 })
@@ -104,8 +105,6 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     { label: 'Temperature Range',     value: 'TemperatureRange',   group: 'Range',        hint: 'From – To °C' },
     { label: 'Size + Load',           value: 'SizeLoad',           group: 'Combo',        hint: 'Size range + Max load capacity' },
     { label: 'Size + Load Range',     value: 'SizeAndLoad',        group: 'Combo',        hint: 'Size range + Load range' },
-    { label: 'Spectro Combination',   value: 'SpectroCombination', group: 'Special',      hint: 'Full + extra elements (linked via parameter IDs)' },
-    { label: 'Element Count Formula', value: 'ElementCountFormula', group: 'Formula',      hint: 'Tier pricing by element count + special element overrides' },
     { label: 'Per Indent',            value: 'PerIndent',          group: 'Quantity',     hint: 'HV 3 Readings, HV 5 Readings, Vickers 10 Values' },
     { label: 'Per Location',          value: 'PerLocation',        group: 'Quantity',     hint: '3 Locations, 5 Locations, 10 Locations' },
     { label: 'Per Field',             value: 'PerField',           group: 'Quantity',     hint: '5 Fields, 10 Fields, 30 Fields' },
@@ -133,8 +132,6 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     TemperatureRange:    { isRange: true,  inputType: 'text',   unit: '°C',   valuePlaceholder: '', startPlaceholder: 'From (°C)', endPlaceholder: 'To (°C)', defaultValue: '' },
     SizeLoad:            { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
     SizeAndLoad:         { isRange: false, isSizeLoad: true, inputType: 'number', unit: '', valuePlaceholder: 'Max Load (kN)', startPlaceholder: 'Min Size (mm)', endPlaceholder: 'Max Size (mm)', defaultValue: '' },
-    SpectroCombination:  { isRange: false, inputType: 'text',   unit: '',     valuePlaceholder: 'e.g. Full + N + B',           startPlaceholder: '', endPlaceholder: '', defaultValue: 'Full' },
-    ElementCountFormula: { isRange: false, inputType: 'ecf',    unit: '',     valuePlaceholder: '',                            startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     PerIndent:           { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of test readings (e.g. 3, 5, 10)',  startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     PerLocation:         { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of locations (e.g. 3, 5, 10)',      startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
     PerField:            { isRange: false, inputType: 'number', unit: '×',    valuePlaceholder: 'No. of fields (e.g. 5, 10, 30)',        startPlaceholder: '', endPlaceholder: '', defaultValue: '' },
@@ -183,6 +180,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   }
 
   selectedSuggestion: any;
+  quickSuggestions: any[] = [];
   suggestionList: {
     name: string;
     selectionType: string;
@@ -192,66 +190,174 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     end?: string;
     unit: string;
   }[] = [
-      { selectionType: 'Element', name: 'Ag', value: 'Ag', unit: '' },
-      { selectionType: 'Element', name: 'Au', value: 'Au', unit: '' },
-      { selectionType: 'Element', name: 'Pt', value: 'Pt', unit: '' },
-      { selectionType: 'Element', name: 'Ir', value: 'Ir', unit: '' },
-      { selectionType: 'Element', name: 'Pd', value: 'Pd', unit: '' },
-      { selectionType: 'Element', name: 'Se', value: 'Se', unit: '' },
-      { selectionType: 'Element', name: 'Rh', value: 'Rh', unit: '' },
-      { selectionType: 'Element', name: 'Te', value: 'Te', unit: '' },
-      { selectionType: 'Element', name: '1 Element', value: '1', unit: '' },
-      { selectionType: 'Element', name: '2 Element', value: '2', unit: '' },
-      { selectionType: 'Element', name: '3 Element', value: '3', unit: '' },
-      { selectionType: 'Element', name: '4 Element', value: '4', unit: '' },
-      { selectionType: 'Element', name: '5 Element', value: '5', unit: '' },
-      { selectionType: 'Element', name: '6 Element', value: '6', unit: '' },
-      { selectionType: 'Element', name: '7 Element', value: '7', unit: '' },
-      { selectionType: 'Element', name: '8 Element', value: '8', unit: '' },
-      { selectionType: 'Element', name: '9 Element', value: '9', unit: '' },
-      { selectionType: 'Element', name: '10 Element', value: '10', unit: '' },
-      { selectionType: 'Element', name: '11 Element', value: '11', unit: '' },
-      { selectionType: 'Element', name: '12 Element', value: '12', unit: '' },
-      { selectionType: 'Element', name: '13 Element', value: '13', unit: '' },
-      { selectionType: 'Element', name: '14 Element', value: '14', unit: '' },
-      { selectionType: 'Element', name: '15 Element', value: '15', unit: '' },
-      { selectionType: 'Element', name: '16 Element', value: '16', unit: '' },
-      { selectionType: 'Element', name: '17 Element', value: '17', unit: '' },
-      { selectionType: 'Element', name: '18 Element', value: '18', unit: '' },
-      { selectionType: 'Element', name: '19 Element', value: '19', unit: '' },
-      { selectionType: 'Element', name: '20 Element', value: '20', unit: '' },
-      { selectionType: 'FlatRate', name: 'Flat', value: 'Flat', unit: '' },
-      { selectionType: 'FlatRate', name: 'Standard Rate', value: 'Standard Rate', unit: '' },
-      { selectionType: 'FlatRate', name: 'Premium Rate', value: 'Premium Rate', unit: '' },
+      // ChemicalElement
+      { selectionType: 'ChemicalElement', name: 'Base Tier (Normal Elements)', value: 'BASE', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Special Elements Surcharge', value: 'SPECIAL', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Super Special Elements Surcharge', value: 'SUPER', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 1 Element', value: '1', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 2 Elements', value: '2', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 3 Elements', value: '3', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 4 Elements', value: '4', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Up to 5 Elements', value: '5', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Per Element', value: '1', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Base Tier', value: 'BASE', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Special Elements', value: 'SPECIAL', unit: '' },
+      { selectionType: 'ChemicalElement', name: 'Super Special Elements', value: 'SUPER', unit: '' },
+
+      // ElementCountFormula Tiers
+      { selectionType: 'ElementCountFormula', name: 'Up to 1 Element', value: '<=1', unit: '' },
+      { selectionType: 'ElementCountFormula', name: 'Up to 2 Elements', value: '<=2', unit: '' },
+      { selectionType: 'ElementCountFormula', name: 'Up to 3 Elements', value: '<=3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: 'Up to 4 Elements', value: '<=4', unit: '' },
+      { selectionType: 'ElementCountFormula', name: 'Up to 5 Elements', value: '<=5', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '<=1 Elements', value: '<=1', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '<=2 Elements', value: '<=2', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '<=3 Elements', value: '<=3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '<=4 Elements', value: '<=4', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '==1 Element', value: '==1', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '==2 Elements', value: '==2', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '==3 Elements', value: '==3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '==4 Elements', value: '==4', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '>=3 Elements', value: '>=3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '>=4 Elements', value: '>=4', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '>3 Elements', value: '>3', unit: '' },
+      { selectionType: 'ElementCountFormula', name: '>4 Elements', value: '>4', unit: '' },
+      { selectionType: 'ElementCountFormula', name: 'Special Element Surcharge', value: 'OVERRIDE', unit: '' },
+
+      // Hours
       { selectionType: 'Hours', name: '24hr', value: '24', unit: 'hr' },
-      { selectionType: 'Hours', name: '24hr@RT', value: '24', unit: 'hr' },
-      { selectionType: 'Hours', name: '24hr@HT', value: '24', unit: 'hr' },
-      { selectionType: 'Hours', name: '28days@RT', value: '672', unit: 'hr' },
-      { selectionType: 'Hours', name: '28days@HT', value: '672', unit: 'hr' },
-      { selectionType: 'Other', name: 'With Photograph', value: 'Yes', unit: '' },
-      { selectionType: 'Other', name: 'Without Photograph', value: 'No', unit: '' },
+      { selectionType: 'Hours', name: '48hr', value: '48', unit: 'hr' },
+      { selectionType: 'Hours', name: '72hr', value: '72', unit: 'hr' },
+      { selectionType: 'Hours', name: '96hr', value: '96', unit: 'hr' },
+      { selectionType: 'Hours', name: '120hr', value: '120', unit: 'hr' },
+      { selectionType: 'Hours', name: '168hr (7 Days)', value: '168', unit: 'hr' },
+      { selectionType: 'Hours', name: '240hr (10 Days)', value: '240', unit: 'hr' },
+      { selectionType: 'Hours', name: '336hr (14 Days)', value: '336', unit: 'hr' },
+      { selectionType: 'Hours', name: '504hr (21 Days)', value: '504', unit: 'hr' },
+      { selectionType: 'Hours', name: '672hr (28 Days)', value: '672', unit: 'hr' },
+      { selectionType: 'Hours', name: '720hr (30 Days)', value: '720', unit: 'hr' },
+      { selectionType: 'Hours', name: '1000hr', value: '1000', unit: 'hr' },
+      { selectionType: 'Hours', name: '24hr @ RT', value: '24', unit: 'hr' },
+      { selectionType: 'Hours', name: '24hr @ HT', value: '24', unit: 'hr' },
+
+      // HoursRange
+      { selectionType: 'HoursRange', name: '24hr to 48hr', start: '24', end: '48', unit: 'hr' },
+      { selectionType: 'HoursRange', name: '48hr to 72hr', start: '48', end: '72', unit: 'hr' },
+      { selectionType: 'HoursRange', name: '72hr to 168hr', start: '72', end: '168', unit: 'hr' },
+      { selectionType: 'HoursRange', name: '168hr to 336hr', start: '168', end: '336', unit: 'hr' },
+      { selectionType: 'HoursRange', name: '336hr to 672hr', start: '336', end: '672', unit: 'hr' },
+
+      // Size
+      { selectionType: 'Size', name: '6mm', value: '6', unit: 'mm' },
+      { selectionType: 'Size', name: '8mm', value: '8', unit: 'mm' },
       { selectionType: 'Size', name: '10mm', value: '10', unit: 'mm' },
       { selectionType: 'Size', name: '12mm', value: '12', unit: 'mm' },
+      { selectionType: 'Size', name: '16mm', value: '16', unit: 'mm' },
+      { selectionType: 'Size', name: '20mm', value: '20', unit: 'mm' },
+      { selectionType: 'Size', name: '25mm', value: '25', unit: 'mm' },
       { selectionType: 'Size', name: '32mm', value: '32', unit: 'mm' },
       { selectionType: 'Size', name: '36mm', value: '36', unit: 'mm' },
       { selectionType: 'Size', name: '40mm', value: '40', unit: 'mm' },
+      { selectionType: 'Size', name: '50mm', value: '50', unit: 'mm' },
+
+      // SizeRange
+      { selectionType: 'SizeRange', name: 'Up to 10mm', start: '0', end: '10', unit: 'mm' },
       { selectionType: 'SizeRange', name: '10mm to 12mm', start: '10', end: '12', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '12mm to 16mm', start: '12', end: '16', unit: 'mm' },
       { selectionType: 'SizeRange', name: '16mm to 20mm', start: '16', end: '20', unit: 'mm' },
-      { selectionType: 'SizeRange', name: '<25mm', start: '0', end: '24', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '20mm to 25mm', start: '20', end: '25', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '25mm to 32mm', start: '25', end: '32', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '32mm to 40mm', start: '32', end: '40', unit: 'mm' },
+      { selectionType: 'SizeRange', name: '40mm to 50mm', start: '40', end: '50', unit: 'mm' },
       { selectionType: 'SizeRange', name: '25mm to 50mm', start: '25', end: '50', unit: 'mm' },
-      { selectionType: 'Weight', name: 'Up to 600KN', value: '600', unit: 'kn' },
-      { selectionType: 'WeightRange', name: '601KN to 1000KN', start: '601', end: '1000', unit: 'kn' },
-      { selectionType: 'Weight', name: 'Above 1000KN', value: '>1000', unit: 'kn' },
-      { selectionType: 'Temprature', name: 'ASTM@RT', value: 'RT', unit: '°C' },
-      { selectionType: 'Temprature', name: 'ASTM@0°C', value: '0', unit: '°C' },
-      { selectionType: 'TempratureRange', name: 'ASTM@-1°C to -50°C', start: '-1', end: '-50', unit: '°C' },
-      { selectionType: 'Other', name: '5 Field', value: '5', unit: '' },
-      { selectionType: 'Other', name: '10 Field', value: '10', unit: '' },
-      { selectionType: 'Other', name: '15 Field', value: '15', unit: '' },
-      { selectionType: 'Other', name: '30 Field', value: '30', unit: '' },
-      { selectionType: 'Other', name: 'E45 Method A', value: 'A', unit: '' },
-      { selectionType: 'Other', name: 'E45 Method D', value: 'D', unit: '' },
-      { selectionType: 'Other', name: 'ISO 643', value: 'ISO 643', unit: '' },
+
+      // Load / LoadRange
+      { selectionType: 'Load', name: 'Up to 50kN', value: '50', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 100kN', value: '100', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 200kN', value: '200', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 300kN', value: '300', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 500kN', value: '500', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 600kN', value: '600', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 1000kN', value: '1000', unit: 'kN' },
+      { selectionType: 'Load', name: 'Up to 2000kN', value: '2000', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '0kN to 100kN', start: '0', end: '100', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '100kN to 300kN', start: '100', end: '300', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '300kN to 600kN', start: '300', end: '600', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '600kN to 1000kN', start: '600', end: '1000', unit: 'kN' },
+      { selectionType: 'LoadRange', name: '1000kN to 2000kN', start: '1000', end: '2000', unit: 'kN' },
+
+      // Temperature / TemperatureRange
+      { selectionType: 'Temperature', name: 'RT', value: 'RT', unit: '°C' },
+      { selectionType: 'Temperature', name: '0°C', value: '0', unit: '°C' },
+      { selectionType: 'Temperature', name: '-10°C', value: '-10', unit: '°C' },
+      { selectionType: 'Temperature', name: '-20°C', value: '-20', unit: '°C' },
+      { selectionType: 'Temperature', name: '-30°C', value: '-30', unit: '°C' },
+      { selectionType: 'Temperature', name: '-40°C', value: '-40', unit: '°C' },
+      { selectionType: 'Temperature', name: '-50°C', value: '-50', unit: '°C' },
+      { selectionType: 'Temperature', name: '-60°C', value: '-60', unit: '°C' },
+      { selectionType: 'Temperature', name: '-80°C', value: '-80', unit: '°C' },
+      { selectionType: 'Temperature', name: '-100°C', value: '-100', unit: '°C' },
+      { selectionType: 'Temperature', name: '-196°C', value: '-196', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '0°C to -20°C', start: '0', end: '-20', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-20°C to -40°C', start: '-20', end: '-40', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-40°C to -60°C', start: '-40', end: '-60', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-60°C to -80°C', start: '-60', end: '-80', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '-80°C to -100°C', start: '-80', end: '-100', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: 'RT to 100°C', start: 'RT', end: '100', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '100°C to 300°C', start: '100', end: '300', unit: '°C' },
+      { selectionType: 'TemperatureRange', name: '300°C to 500°C', start: '300', end: '500', unit: '°C' },
+
+      // DayWise
+      { selectionType: 'DayWise', name: '1 Day', value: '1', unit: 'days' },
+      { selectionType: 'DayWise', name: '2 Days', value: '2', unit: 'days' },
+      { selectionType: 'DayWise', name: '3 Days', value: '3', unit: 'days' },
+      { selectionType: 'DayWise', name: '5 Days', value: '5', unit: 'days' },
+      { selectionType: 'DayWise', name: '7 Days (1 Week)', value: '7', unit: 'days' },
+      { selectionType: 'DayWise', name: '14 Days (2 Weeks)', value: '14', unit: 'days' },
+      { selectionType: 'DayWise', name: '21 Days (3 Weeks)', value: '21', unit: 'days' },
+      { selectionType: 'DayWise', name: '28 Days (4 Weeks)', value: '28', unit: 'days' },
+      { selectionType: 'DayWise', name: '56 Days (8 Weeks)', value: '56', unit: 'days' },
+      { selectionType: 'DayWise', name: '90 Days (3 Months)', value: '90', unit: 'days' },
+      { selectionType: 'DayWise', name: '180 Days (6 Months)', value: '180', unit: 'days' },
+
+      // PerIndent
+      { selectionType: 'PerIndent', name: '1 Reading', value: '1', unit: '' },
+      { selectionType: 'PerIndent', name: '3 Readings', value: '3', unit: '' },
+      { selectionType: 'PerIndent', name: '5 Readings', value: '5', unit: '' },
+      { selectionType: 'PerIndent', name: '10 Readings', value: '10', unit: '' },
+      { selectionType: 'PerIndent', name: '15 Readings', value: '15', unit: '' },
+      { selectionType: 'PerIndent', name: 'Per Reading', value: '1', unit: '' },
+
+      // PerLocation
+      { selectionType: 'PerLocation', name: '1 Location', value: '1', unit: '' },
+      { selectionType: 'PerLocation', name: '2 Locations', value: '2', unit: '' },
+      { selectionType: 'PerLocation', name: '3 Locations', value: '3', unit: '' },
+      { selectionType: 'PerLocation', name: '5 Locations', value: '5', unit: '' },
+      { selectionType: 'PerLocation', name: '10 Locations', value: '10', unit: '' },
+      { selectionType: 'PerLocation', name: 'Per Location', value: '1', unit: '' },
+
+      // PerField
+      { selectionType: 'PerField', name: '5 Fields', value: '5', unit: '' },
+      { selectionType: 'PerField', name: '10 Fields', value: '10', unit: '' },
+      { selectionType: 'PerField', name: '15 Fields', value: '15', unit: '' },
+      { selectionType: 'PerField', name: '20 Fields', value: '20', unit: '' },
+      { selectionType: 'PerField', name: '30 Fields', value: '30', unit: '' },
+      { selectionType: 'PerField', name: 'Per Field', value: '1', unit: '' },
+
+      // PerDolly
+      { selectionType: 'PerDolly', name: '1 Dolly', value: '1', unit: '' },
+      { selectionType: 'PerDolly', name: '2 Dollies', value: '2', unit: '' },
+      { selectionType: 'PerDolly', name: '3 Dollies', value: '3', unit: '' },
+      { selectionType: 'PerDolly', name: '5 Dollies', value: '5', unit: '' },
+      { selectionType: 'PerDolly', name: 'Per Dolly', value: '1', unit: '' },
+
+      // WithImage / WithExtenso
+      { selectionType: 'WithImage', name: 'With Image', value: '1', unit: '' },
+      { selectionType: 'WithImage', name: 'Without Image', value: '0', unit: '' },
+      { selectionType: 'WithExtenso', name: 'With Extensometer', value: '1', unit: '' },
+      { selectionType: 'WithExtenso', name: 'Without Extensometer', value: '0', unit: '' },
+
+      // SizeLoad & SizeAndLoad
       { selectionType: 'SizeLoad', name: 'Size 0-20mm, Load ≤600kN', start: '0', end: '20', value: '600', unit: '' },
       { selectionType: 'SizeLoad', name: 'Size 0-20mm, Load ≤1000kN', start: '0', end: '20', value: '1000', unit: '' },
       { selectionType: 'SizeLoad', name: 'Size 20-40mm, Load ≤600kN', start: '20', end: '40', value: '600', unit: '' },
@@ -261,80 +367,72 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       { selectionType: 'SizeAndLoad', name: 'Size 0-25mm, Load 600-1000kN', start: '0', end: '25', value: '600', value2: '1000', unit: '' },
       { selectionType: 'SizeAndLoad', name: 'Size 25-50mm, Load 600-1000kN', start: '25', end: '50', value: '600', value2: '1000', unit: '' },
       { selectionType: 'SizeAndLoad', name: 'Size 25-50mm, Load 1000-2000kN', start: '25', end: '50', value: '1000', value2: '2000', unit: '' },
-      // Load / LoadRange (replaces legacy Weight/WeightRange)
-      { selectionType: 'Load', name: 'Up to 100kN', value: '100', unit: 'kN' },
-      { selectionType: 'Load', name: 'Up to 300kN', value: '300', unit: 'kN' },
-      { selectionType: 'Load', name: 'Up to 600kN', value: '600', unit: 'kN' },
-      { selectionType: 'Load', name: 'Up to 1000kN', value: '1000', unit: 'kN' },
-      { selectionType: 'Load', name: 'Up to 2000kN', value: '2000', unit: 'kN' },
-      { selectionType: 'LoadRange', name: '100kN to 300kN', start: '100', end: '300', unit: 'kN' },
-      { selectionType: 'LoadRange', name: '300kN to 600kN', start: '300', end: '600', unit: 'kN' },
-      { selectionType: 'LoadRange', name: '600kN to 1000kN', start: '600', end: '1000', unit: 'kN' },
-      { selectionType: 'LoadRange', name: '1000kN to 2000kN', start: '1000', end: '2000', unit: 'kN' },
-      // Temperature / TemperatureRange
-      { selectionType: 'Temperature', name: 'RT', value: 'RT', unit: '°C' },
-      { selectionType: 'Temperature', name: '0°C', value: '0', unit: '°C' },
-      { selectionType: 'Temperature', name: '-20°C', value: '-20', unit: '°C' },
-      { selectionType: 'Temperature', name: '-40°C', value: '-40', unit: '°C' },
-      { selectionType: 'Temperature', name: '-60°C', value: '-60', unit: '°C' },
-      { selectionType: 'Temperature', name: '-80°C', value: '-80', unit: '°C' },
-      { selectionType: 'Temperature', name: '-100°C', value: '-100', unit: '°C' },
-      { selectionType: 'TemperatureRange', name: '-1°C to -20°C', start: '-1', end: '-20', unit: '°C' },
-      { selectionType: 'TemperatureRange', name: '-20°C to -40°C', start: '-20', end: '-40', unit: '°C' },
-      { selectionType: 'TemperatureRange', name: '-40°C to -60°C', start: '-40', end: '-60', unit: '°C' },
-      { selectionType: 'TemperatureRange', name: '-60°C to -100°C', start: '-60', end: '-100', unit: '°C' },
-      // DayWise
-      { selectionType: 'DayWise', name: '1 Day', value: '1', unit: 'day' },
-      { selectionType: 'DayWise', name: '3 Days', value: '3', unit: 'days' },
-      { selectionType: 'DayWise', name: '7 Days', value: '7', unit: 'days' },
-      { selectionType: 'DayWise', name: '14 Days', value: '14', unit: 'days' },
-      { selectionType: 'DayWise', name: '28 Days', value: '28', unit: 'days' },
-      { selectionType: 'DayWise', name: '56 Days', value: '56', unit: 'days' },
-      { selectionType: 'DayWise', name: '90 Days', value: '90', unit: 'days' },
-      { selectionType: 'DayWise', name: '180 Days', value: '180', unit: 'days' },
-      // PerIndent — number of test readings/values given in the report per sample
-      { selectionType: 'PerIndent', name: '3 Test Values', value: '3', unit: '' },
-      { selectionType: 'PerIndent', name: '5 Test Values', value: '5', unit: '' },
-      { selectionType: 'PerIndent', name: '10 Test Values', value: '10', unit: '' },
-      { selectionType: 'PerIndent', name: '15 Test Values', value: '15', unit: '' },
-      // PerLocation
-      { selectionType: 'PerLocation', name: '1 Location', value: '1', unit: '' },
-      { selectionType: 'PerLocation', name: '3 Locations', value: '3', unit: '' },
-      { selectionType: 'PerLocation', name: '5 Locations', value: '5', unit: '' },
-      { selectionType: 'PerLocation', name: '10 Locations', value: '10', unit: '' },
-      // PerField
-      { selectionType: 'PerField', name: '5 Fields', value: '5', unit: '' },
-      { selectionType: 'PerField', name: '10 Fields', value: '10', unit: '' },
-      { selectionType: 'PerField', name: '15 Fields', value: '15', unit: '' },
-      { selectionType: 'PerField', name: '30 Fields', value: '30', unit: '' },
-      // PerDolly
-      { selectionType: 'PerDolly', name: '1 Dolly', value: '1', unit: '' },
-      { selectionType: 'PerDolly', name: '3 Dollies', value: '3', unit: '' },
-      { selectionType: 'PerDolly', name: '5 Dollies', value: '5', unit: '' },
-      // WithImage / WithExtenso
-      { selectionType: 'WithImage', name: 'With Image', value: '1', unit: '' },
-      { selectionType: 'WithImage', name: 'Without Image', value: '0', unit: '' },
-      { selectionType: 'WithExtenso', name: 'With Extensometer', value: '1', unit: '' },
-      { selectionType: 'WithExtenso', name: 'Without Extensometer', value: '0', unit: '' },
-      // ElementCountFormula Tiers
-      { selectionType: 'ElementCountFormula', name: '<=1 elements', value: '<=1', unit: '' },
-      { selectionType: 'ElementCountFormula', name: '==2 elements', value: '==2', unit: '' },
-      { selectionType: 'ElementCountFormula', name: '==3 elements', value: '==3', unit: '' },
-      { selectionType: 'ElementCountFormula', name: '>=3 elements', value: '>=3', unit: '' },
-      { selectionType: 'ElementCountFormula', name: '>3 elements', value: '>3', unit: '' },
-      { selectionType: 'ElementCountFormula', name: '<=3 elements', value: '<=3', unit: '' },
-      { selectionType: 'ElementCountFormula', name: '==4 elements', value: '==4', unit: '' },
-      { selectionType: 'ElementCountFormula', name: '>=4 elements', value: '>=4', unit: '' },
-      { selectionType: 'ElementCountFormula', name: 'override (Special Element)', value: 'override', unit: '' },
-      // ChemicalElement
-      { selectionType: 'ChemicalElement', name: 'Full Spectro Analysis', value: 'BASE', unit: '' },
-      { selectionType: 'ChemicalElement', name: 'Special Elements (N, B, Ca)', value: 'SPECIAL', unit: '' },
-      { selectionType: 'ChemicalElement', name: 'Super Special Elements (Zr, Nb, Ag, Pt, Au)', value: 'SUPER', unit: '' },
-      { selectionType: 'ChemicalElement', name: 'Up to 2 elements', value: '2', unit: '' },
-      { selectionType: 'ChemicalElement', name: 'Up to 3 elements', value: '3', unit: '' },
-      { selectionType: 'ChemicalElement', name: 'Up to 4 elements', value: '4', unit: '' },
-      { selectionType: 'ChemicalElement', name: 'Up to 5 elements', value: '5', unit: '' },
-      { selectionType: 'ChemicalElement', name: 'Per Element', value: '1', unit: '' }
+
+      // FlatRate
+      { selectionType: 'FlatRate', name: 'Flat', value: 'Flat', unit: '' },
+      { selectionType: 'FlatRate', name: 'Standard Rate', value: 'Standard Rate', unit: '' },
+      { selectionType: 'FlatRate', name: 'Premium Rate', value: 'Premium Rate', unit: '' },
+      { selectionType: 'FlatRate', name: 'Base Charge', value: 'Base Charge', unit: '' },
+      { selectionType: 'FlatRate', name: 'Minimum Charge', value: 'Minimum Charge', unit: '' },
+      { selectionType: 'FlatRate', name: 'Setup Charge', value: 'Setup Charge', unit: '' },
+
+      // Element
+      { selectionType: 'Element', name: 'C', value: 'C', unit: '' },
+      { selectionType: 'Element', name: 'Mn', value: 'Mn', unit: '' },
+      { selectionType: 'Element', name: 'Si', value: 'Si', unit: '' },
+      { selectionType: 'Element', name: 'S', value: 'S', unit: '' },
+      { selectionType: 'Element', name: 'P', value: 'P', unit: '' },
+      { selectionType: 'Element', name: 'Cr', value: 'Cr', unit: '' },
+      { selectionType: 'Element', name: 'Ni', value: 'Ni', unit: '' },
+      { selectionType: 'Element', name: 'Mo', value: 'Mo', unit: '' },
+      { selectionType: 'Element', name: 'Cu', value: 'Cu', unit: '' },
+      { selectionType: 'Element', name: 'Al', value: 'Al', unit: '' },
+      { selectionType: 'Element', name: 'V', value: 'V', unit: '' },
+      { selectionType: 'Element', name: 'Ti', value: 'Ti', unit: '' },
+      { selectionType: 'Element', name: 'W', value: 'W', unit: '' },
+      { selectionType: 'Element', name: 'Co', value: 'Co', unit: '' },
+      { selectionType: 'Element', name: 'Pb', value: 'Pb', unit: '' },
+      { selectionType: 'Element', name: 'Sn', value: 'Sn', unit: '' },
+      { selectionType: 'Element', name: 'B', value: 'B', unit: '' },
+      { selectionType: 'Element', name: 'N', value: 'N', unit: '' },
+      { selectionType: 'Element', name: 'Ca', value: 'Ca', unit: '' },
+      { selectionType: 'Element', name: 'Mg', value: 'Mg', unit: '' },
+      { selectionType: 'Element', name: 'Zr', value: 'Zr', unit: '' },
+      { selectionType: 'Element', name: 'Nb', value: 'Nb', unit: '' },
+      { selectionType: 'Element', name: 'Au', value: 'Au', unit: '' },
+      { selectionType: 'Element', name: 'Pt', value: 'Pt', unit: '' },
+      { selectionType: 'Element', name: 'Ag', value: 'Ag', unit: '' },
+      { selectionType: 'Element', name: 'Fe', value: 'Fe', unit: '' },
+      { selectionType: 'Element', name: '1 Element', value: '1', unit: '' },
+      { selectionType: 'Element', name: '2 Elements', value: '2', unit: '' },
+      { selectionType: 'Element', name: '3 Elements', value: '3', unit: '' },
+      { selectionType: 'Element', name: '4 Elements', value: '4', unit: '' },
+      { selectionType: 'Element', name: '5 Elements', value: '5', unit: '' },
+      { selectionType: 'Element', name: '6 Elements', value: '6', unit: '' },
+      { selectionType: 'Element', name: '7 Elements', value: '7', unit: '' },
+      { selectionType: 'Element', name: '8 Elements', value: '8', unit: '' },
+      { selectionType: 'Element', name: '9 Elements', value: '9', unit: '' },
+      { selectionType: 'Element', name: '10 Elements', value: '10', unit: '' },
+      { selectionType: 'Element', name: '12 Elements', value: '12', unit: '' },
+      { selectionType: 'Element', name: '15 Elements', value: '15', unit: '' },
+      { selectionType: 'Element', name: '20 Elements', value: '20', unit: '' },
+
+      // Other / Legacy
+      { selectionType: 'Other', name: 'With Photograph', value: 'Yes', unit: '' },
+      { selectionType: 'Other', name: 'Without Photograph', value: 'No', unit: '' },
+      { selectionType: 'Other', name: '5 Field', value: '5', unit: '' },
+      { selectionType: 'Other', name: '10 Field', value: '10', unit: '' },
+      { selectionType: 'Other', name: '15 Field', value: '15', unit: '' },
+      { selectionType: 'Other', name: '30 Field', value: '30', unit: '' },
+      { selectionType: 'Other', name: 'E45 Method A', value: 'A', unit: '' },
+      { selectionType: 'Other', name: 'E45 Method D', value: 'D', unit: '' },
+      { selectionType: 'Other', name: 'ISO 643', value: 'ISO 643', unit: '' },
+      { selectionType: 'Weight', name: 'Up to 600KN', value: '600', unit: 'kn' },
+      { selectionType: 'WeightRange', name: '601KN to 1000KN', start: '601', end: '1000', unit: 'kn' },
+      { selectionType: 'Weight', name: 'Above 1000KN', value: '>1000', unit: 'kn' },
+      { selectionType: 'Temprature', name: 'ASTM@RT', value: 'RT', unit: '°C' },
+      { selectionType: 'Temprature', name: 'ASTM@0°C', value: '0', unit: '°C' },
+      { selectionType: 'TempratureRange', name: 'ASTM@-1°C to -50°C', start: '-1', end: '-50', unit: '°C' }
     ];
 
   filteredSuggestions: any[] = [];
@@ -409,9 +507,33 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
   };
 
+  overridePickerReloadKey = 0;
+
   getOverrideParamsFn = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.parameterService.getChemicalParameterDropdown(searchTerm, page, pageSize);
+    let elementType: string | undefined;
+    if (this.isChemicalElementType) {
+      const chemMode = this.invoiceForm?.get('chemMode')?.value;
+      if (chemMode === 'BASE') {
+        elementType = 'normal';
+      } else if (chemMode === 'SPECIAL') {
+        elementType = 'special';
+      } else if (chemMode === 'SUPER') {
+        elementType = 'super';
+      }
+    }
+    // When isElementType (Override Row), do not restrict to 'normal' — return all chemical parameters
+    return this.parameterService.getChemicalParameterDropdown(searchTerm, page, pageSize, elementType);
   };
+
+  get elementsPlaceholder(): string {
+    if (this.isChemicalElementType) {
+      const chemMode = this.invoiceForm?.get('chemMode')?.value;
+      if (chemMode === 'BASE') return 'Search and select normal chemical elements...';
+      if (chemMode === 'SPECIAL') return 'Search and select special chemical elements...';
+      if (chemMode === 'SUPER') return 'Search and select super special chemical elements...';
+    }
+    return 'Search and select override / surcharge elements...';
+  }
 
   onOverrideSelected(items: any[]): void {
     this.selectedOverrideParamItems = items || [];
@@ -421,15 +543,43 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       sourceParameterIDs: ids
     });
 
-    // Auto-suggest name for override rows if name is empty or default
-    if (this.isOverrideRow && (!this.invoiceForm.get('name')?.value || this.invoiceForm.get('name')?.value.startsWith('Special Elements'))) {
-      const paramNames = this.selectedOverrideParamItems.map((i: any) => i.symbol || i.name?.trim()).filter(Boolean);
-      if (paramNames.length > 0) {
-        const autoName = `Special Elements (${paramNames.join(', ')})`;
-        this.invoiceForm.patchValue({ name: autoName });
-        this.selectedSuggestion = { name: autoName };
+    // Auto-update / suggest name when elements are picked
+    const chemMode = this.invoiceForm.get('chemMode')?.value;
+    const currentName = this.invoiceForm.get('name')?.value || '';
+    const itemSymbols = this.selectedOverrideParamItems.map((i: any) => i.name?.trim()).filter(Boolean);
+
+    if (chemMode === 'SPECIAL') {
+      if (!currentName || currentName.startsWith('Special Elements')) {
+        const newName = itemSymbols.length > 0
+          ? `Special Elements Surcharge - ${itemSymbols.join(', ')}`
+          : 'Special Elements Surcharge';
+        this.invoiceForm.patchValue({ name: newName });
+        this.selectedSuggestion = { name: newName };
+      }
+    } else if (chemMode === 'SUPER') {
+      if (!currentName || currentName.startsWith('Super Special Elements')) {
+        const newName = itemSymbols.length > 0
+          ? `Super Special Elements Surcharge - ${itemSymbols.join(', ')}`
+          : 'Super Special Elements Surcharge';
+        this.invoiceForm.patchValue({ name: newName });
+        this.selectedSuggestion = { name: newName };
+      }
+    } else if (chemMode === 'BASE') {
+      if (!currentName) {
+        this.invoiceForm.patchValue({ name: 'Base Tier (Normal Elements)' });
+        this.selectedSuggestion = { name: 'Base Tier (Normal Elements)' };
+      }
+    } else if (this.isElementType && this.isOverrideRow) {
+      if (!currentName || currentName.includes('Element Surcharge')) {
+        const newName = itemSymbols.length > 0
+          ? `Element Surcharge - ${itemSymbols.join(', ')}`
+          : 'Element Surcharge';
+        this.invoiceForm.patchValue({ name: newName });
+        this.selectedSuggestion = { name: newName };
       }
     }
+
+    this.updateSuggestionsList();
   }
 
   onParamSelected(items: any[]): void {
@@ -504,18 +654,44 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       chemMode: ['BASE']
     });
 
-    // Also auto-update stored value on ECF form control changes
-    this.invoiceForm.get('conditionPrefix')?.valueChanges.subscribe(() => this.updateEcfValueName());
-    this.invoiceForm.get('conditionNumber')?.valueChanges.subscribe(() => this.updateEcfValueName());
+    // Auto-update stored value on condition prefix and number changes
+    this.invoiceForm.get('conditionPrefix')?.valueChanges.subscribe(() => {
+      if (this.isChemicalElementType && this.invoiceForm.get('chemMode')?.value === 'COUNT') {
+        this.onChemCountChange();
+      }
+    });
+    this.invoiceForm.get('conditionNumber')?.valueChanges.subscribe(() => {
+      if (this.isChemicalElementType && this.invoiceForm.get('chemMode')?.value === 'COUNT') {
+        this.onChemCountChange();
+      }
+    });
     this.invoiceForm.get('isOverrideRow')?.valueChanges.subscribe(isOverride => {
+      this.overridePickerReloadKey++;
       if (isOverride) {
         this.invoiceForm.get('value')?.setValue('OVERRIDE');
       } else {
-        if (this.isFormulaType) {
-          this.updateEcfValueName();
-        } else if (this.isElementType) {
+        if (this.isElementType) {
           this.invoiceForm.get('value')?.setValue('');
         }
+      }
+    });
+    this.invoiceForm.get('selectionType')?.valueChanges.subscribe(type => {
+      this.selectedOverrideParamIds = [];
+      this.selectedOverrideParamItems = [];
+      this.overridePickerReloadKey++;
+      if (type === 'Element') {
+        this.invoiceForm.patchValue({
+          chemMode: null,
+          isOverrideRow: false,
+          value: '',
+          overrideParameterIDs: ''
+        }, { emitEvent: false });
+      } else if (type === 'ChemicalElement') {
+        this.invoiceForm.patchValue({
+          chemMode: 'BASE',
+          isBaseConfig: true,
+          value: 'BASE'
+        }, { emitEvent: false });
       }
     });
   }
@@ -554,7 +730,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   }
 
   get isFormulaType(): boolean {
-    return this.invoiceForm?.get('selectionType')?.value === 'ElementCountFormula';
+    return false;
   }
 
   get isChemicalElementType(): boolean {
@@ -563,7 +739,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
   get isElementOrFormulaType(): boolean {
     const t = this.invoiceForm?.get('selectionType')?.value;
-    return t === 'Element' || t === 'ElementCountFormula' || t === 'ChemicalElement';
+    return t === 'Element' || t === 'ChemicalElement';
   }
 
   get isOverrideRow(): boolean {
@@ -573,44 +749,89 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   onChemModeChange(mode: string): void {
     this.invoiceForm.patchValue({ chemMode: mode });
     if (mode === 'BASE') {
+      const defaultName = 'Base Tier (Normal Elements)';
       this.invoiceForm.patchValue({
         value: 'BASE',
-        name: 'Full Spectro Analysis',
+        name: defaultName,
         isBaseConfig: true,
         isOverrideRow: false,
         overrideParameterIDs: ''
       });
+      this.selectedSuggestion = { name: defaultName };
       this.selectedOverrideParamIds = [];
       this.selectedOverrideParamItems = [];
     } else if (mode === 'SPECIAL') {
+      const defaultName = 'Special Elements Surcharge';
       this.invoiceForm.patchValue({
         value: 'SPECIAL',
-        name: 'Special Elements (N, B, Ca)',
+        name: defaultName,
         isBaseConfig: false,
         isOverrideRow: true,
-        overrideParameterIDs: '8,6,19'
+        overrideParameterIDs: ''
       });
-      this.selectedOverrideParamIds = [8, 6, 19];
+      this.selectedSuggestion = { name: defaultName };
+      this.selectedOverrideParamIds = [];
+      this.selectedOverrideParamItems = [];
     } else if (mode === 'SUPER') {
+      const defaultName = 'Super Special Elements Surcharge';
       this.invoiceForm.patchValue({
         value: 'SUPER',
-        name: 'Super Special Elements (Zr, Nb, Ag, Pt, Au)',
+        name: defaultName,
         isBaseConfig: false,
         isOverrideRow: true,
-        overrideParameterIDs: '36,37,39,40,49,50'
+        overrideParameterIDs: ''
       });
-      this.selectedOverrideParamIds = [36, 37, 39, 40, 49, 50];
+      this.selectedSuggestion = { name: defaultName };
+      this.selectedOverrideParamIds = [];
+      this.selectedOverrideParamItems = [];
     } else if (mode === 'COUNT') {
+      const defaultName = 'Up to 2 Elements';
       this.invoiceForm.patchValue({
-        value: '2',
-        name: 'Up to 2 elements',
+        conditionPrefix: '<=',
+        conditionNumber: 2,
+        value: '<=2',
+        name: defaultName,
         isBaseConfig: false,
         isOverrideRow: false,
         overrideParameterIDs: ''
       });
+      this.selectedSuggestion = { name: defaultName };
       this.selectedOverrideParamIds = [];
       this.selectedOverrideParamItems = [];
     }
+    this.overridePickerReloadKey++;
+    this.updateSuggestionsList();
+  }
+
+  onChemCountChange(): void {
+    if (!this.isChemicalElementType || this.invoiceForm.get('chemMode')?.value !== 'COUNT') return;
+    const prefix = this.invoiceForm.get('conditionPrefix')?.value || '<=';
+    const rawNum = this.invoiceForm.get('conditionNumber')?.value;
+
+    if (rawNum != null && rawNum !== '') {
+      const num = parseInt(rawNum, 10);
+      if (isNaN(num) || num <= 0) {
+        this.invoiceForm.get('value')?.setValue('');
+        this.invoiceForm.get('conditionNumber')?.setErrors({ min: true });
+        return;
+      }
+
+      this.invoiceForm.get('conditionNumber')?.setErrors(null);
+      const combinedVal = `${prefix}${num}`;
+      this.invoiceForm.get('value')?.setValue(combinedVal);
+
+      let autoName = '';
+      if (prefix === '<=') autoName = `Up to ${num} Elements`;
+      else if (prefix === '==') autoName = `${num} Element${num > 1 ? 's' : ''}`;
+      else if (prefix === '>=') autoName = `${num} or More Elements`;
+      else autoName = `${prefix} ${num} Elements`;
+
+      this.invoiceForm.patchValue({ name: autoName }, { emitEvent: false });
+      this.selectedSuggestion = { name: autoName };
+    } else {
+      this.invoiceForm.get('value')?.setValue('');
+    }
+    this.updateSuggestionsList();
   }
 
   parseCondition(val: string): { prefix: string; number: number | null } {
@@ -618,6 +839,10 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
     const match = val.match(/^(<=|==|>=|<|>)\s*(\d+)$/);
     if (match) {
       return { prefix: match[1], number: parseInt(match[2], 10) };
+    }
+    const plainNum = parseInt(val, 10);
+    if (!isNaN(plainNum) && plainNum > 0) {
+      return { prefix: '<=', number: plainNum };
     }
     return { prefix: '<=', number: null };
   }
@@ -677,9 +902,127 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
 
   updateSuggestionsList(): void {
     const currentType = this.invoiceForm?.get('selectionType')?.value;
-    this.filteredSuggestions = this.suggestionList.filter(s =>
-      !currentType || s.selectionType === currentType
-    );
+    if (!currentType) {
+      this.filteredSuggestions = [];
+      this.quickSuggestions = [];
+      return;
+    }
+
+    const dynamicItems: any[] = [];
+    const currentVal = this.invoiceForm.get('value')?.value;
+    const currentStart = this.invoiceForm.get('start')?.value;
+    const currentEnd = this.invoiceForm.get('end')?.value;
+
+    // 1. ChemicalElement dynamic suggestions based on chemMode + selected elements
+    if (currentType === 'ChemicalElement') {
+      const chemMode = this.invoiceForm.get('chemMode')?.value || 'BASE';
+      const symbols = (this.selectedOverrideParamItems || [])
+        .map((i: any) => i.name?.trim())
+        .filter(Boolean);
+      const symbolStr = symbols.join(', ');
+
+      if (chemMode === 'BASE') {
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Base Tier (Normal Elements)', value: 'BASE' });
+        if (symbolStr) {
+          dynamicItems.push({ selectionType: 'ChemicalElement', name: `Base Tier (Normal Elements - ${symbolStr})`, value: 'BASE' });
+        }
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Base Tier', value: 'BASE' });
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Normal Elements Base Tier', value: 'BASE' });
+      } else if (chemMode === 'SPECIAL') {
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Special Elements Surcharge', value: 'SPECIAL' });
+        if (symbolStr) {
+          dynamicItems.push({ selectionType: 'ChemicalElement', name: `Special Elements Surcharge - ${symbolStr}`, value: 'SPECIAL' });
+          dynamicItems.push({ selectionType: 'ChemicalElement', name: `${symbolStr} Surcharge`, value: 'SPECIAL' });
+          dynamicItems.push({ selectionType: 'ChemicalElement', name: `Special Elements - ${symbolStr}`, value: 'SPECIAL' });
+        }
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Special Elements', value: 'SPECIAL' });
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Special Elements Additional Charge', value: 'SPECIAL' });
+      } else if (chemMode === 'SUPER') {
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Super Special Elements Surcharge', value: 'SUPER' });
+        if (symbolStr) {
+          dynamicItems.push({ selectionType: 'ChemicalElement', name: `Super Special Elements Surcharge - ${symbolStr}`, value: 'SUPER' });
+          dynamicItems.push({ selectionType: 'ChemicalElement', name: `${symbolStr} Surcharge`, value: 'SUPER' });
+          dynamicItems.push({ selectionType: 'ChemicalElement', name: `Super Special Elements - ${symbolStr}`, value: 'SUPER' });
+        }
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Super Special Elements', value: 'SUPER' });
+        dynamicItems.push({ selectionType: 'ChemicalElement', name: 'Super Special Elements Additional Charge', value: 'SUPER' });
+      } else if (chemMode === 'COUNT') {
+        const count = currentVal ? String(currentVal) : '1';
+        dynamicItems.push(
+          { selectionType: 'ChemicalElement', name: `Up to ${count} Element${count === '1' ? '' : 's'}`, value: count },
+          { selectionType: 'ChemicalElement', name: 'Up to 1 Element', value: '1' },
+          { selectionType: 'ChemicalElement', name: 'Up to 2 Elements', value: '2' },
+          { selectionType: 'ChemicalElement', name: 'Up to 3 Elements', value: '3' },
+          { selectionType: 'ChemicalElement', name: 'Up to 4 Elements', value: '4' },
+          { selectionType: 'ChemicalElement', name: 'Up to 5 Elements', value: '5' },
+          { selectionType: 'ChemicalElement', name: 'Per Element', value: '1' }
+        );
+      }
+    } else if (currentType === 'ElementCountFormula') {
+      const isOverride = this.invoiceForm.get('isOverrideRow')?.value;
+      if (isOverride) {
+        const symbols = (this.selectedOverrideParamItems || []).map((i: any) => i.name?.trim()).filter(Boolean);
+        dynamicItems.push({ selectionType: 'ElementCountFormula', name: 'Special Element Surcharge', value: 'OVERRIDE' });
+        if (symbols.length > 0) {
+          dynamicItems.push({ selectionType: 'ElementCountFormula', name: `Special Element - ${symbols.join(', ')}`, value: 'OVERRIDE' });
+          dynamicItems.push({ selectionType: 'ElementCountFormula', name: `${symbols.join(', ')} Surcharge`, value: 'OVERRIDE' });
+        }
+      } else {
+        const prefix = this.invoiceForm.get('conditionPrefix')?.value || '<=';
+        const num = this.invoiceForm.get('conditionNumber')?.value;
+        if (num != null && num !== '') {
+          let autoName = '';
+          if (prefix === '<=') autoName = `Up to ${num} Elements`;
+          else if (prefix === '==') autoName = `${num} Element${num > 1 ? 's' : ''}`;
+          else if (prefix === '>=') autoName = `${num} or More Elements`;
+          else if (prefix === '>') autoName = `Above ${num} Elements`;
+          else if (prefix === '<') autoName = `Less than ${num} Elements`;
+          if (autoName) {
+            dynamicItems.push({ selectionType: 'ElementCountFormula', name: autoName, value: `${prefix}${num}` });
+            dynamicItems.push({ selectionType: 'ElementCountFormula', name: `${prefix} ${num} Elements`, value: `${prefix}${num}` });
+          }
+        }
+      }
+    } else if (currentType === 'SizeLoad' || currentType === 'SizeAndLoad') {
+      const s = currentStart?.toString().trim();
+      const e = currentEnd?.toString().trim();
+      const v = currentVal?.toString().trim();
+      const v2 = this.invoiceForm.get('value2')?.value?.toString().trim();
+      if (currentType === 'SizeAndLoad' && s && e && v && v2) {
+        dynamicItems.push({ selectionType: 'SizeAndLoad', name: `Size ${s}-${e}mm, Load ${v}-${v2}kN`, start: s, end: e, value: v, value2: v2 });
+      } else if (currentType === 'SizeLoad' && s && e && v) {
+        dynamicItems.push({ selectionType: 'SizeLoad', name: `Size ${s}-${e}mm, Load ≤${v}kN`, start: s, end: e, value: v });
+      }
+    } else if (this.currentConfig.isRange && currentStart && currentEnd) {
+      const s = currentStart.toString().trim();
+      const e = currentEnd.toString().trim();
+      const unit = this.currentConfig.unit || '';
+      const rangeName = unit ? `${s}${unit} to ${e}${unit}` : `${s} to ${e}`;
+      dynamicItems.push({ selectionType: currentType, name: rangeName, start: s, end: e, unit });
+    } else if (currentVal && !this.currentConfig.isRange) {
+      const v = currentVal.toString().trim();
+      const unit = this.currentConfig.unit || '';
+      const singleName = unit ? `${v}${unit}` : v;
+      dynamicItems.push({ selectionType: currentType, name: singleName, value: v, unit });
+    }
+
+    // Static predefined suggestions for current type
+    const staticItems = this.suggestionList.filter(s => s.selectionType === currentType);
+
+    // Merge dynamic + static, deduplicating by name
+    const seen = new Set<string>();
+    const merged: any[] = [];
+    for (const item of [...dynamicItems, ...staticItems]) {
+      const key = item.name?.trim().toLowerCase();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        merged.push(item);
+      }
+    }
+
+    this.filteredSuggestions = merged;
+    // Top 5 suggestions for quick 1-click pills below the input
+    this.quickSuggestions = this.filteredSuggestions.slice(0, 5);
   }
 
   onTypeChange(): void {
@@ -813,16 +1156,17 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       if (config.inputType === 'select' && config.selectOptions) {
         const opt = config.selectOptions.find(o => o.value === value);
         if (opt) displayValue = opt.label;
+      } else if (this.isElementType && /^\d+$/.test(value)) {
+        displayValue = `${value} Element${parseInt(value, 10) > 1 ? 's' : ''}`;
       }
       generatedName = config.unit ? `${displayValue}${config.unit}` : displayValue;
     }
 
     if (generatedName) {
-      const prefix = `[${type}]`;
-      const finalName = generatedName.startsWith(prefix) ? generatedName : `${prefix} ${generatedName}`;
-      this.invoiceForm.patchValue({ name: finalName });
-      this.selectedSuggestion = { name: finalName };
+      this.invoiceForm.patchValue({ name: generatedName });
+      this.selectedSuggestion = { name: generatedName };
     }
+    this.updateSuggestionsList();
   }
 
   // ─── Suggestion selection ────────────────────────────────────────────────────
@@ -830,6 +1174,7 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
   onSuggestionSelected(selection: any): void {
     if (!selection) {
       this.invoiceForm.patchValue({ name: '' });
+      this.selectedSuggestion = null;
       return;
     }
 
@@ -838,21 +1183,29 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       const cfg = this.typeConfig[selection.selectionType];
       const isRange = cfg?.isRange ?? selection.selectionType.toLowerCase().includes('range');
       
-      let suggestionName = selection.name;
-      const prefix = `[${selection.selectionType}]`;
-      if (suggestionName && !suggestionName.startsWith(prefix)) {
-        suggestionName = `${prefix} ${suggestionName}`;
-      }
+      const suggestionName = selection.name;
 
       this.invoiceForm.patchValue({
         name: suggestionName,
         selectionType: selection.selectionType,
         unit: selection.unit ?? cfg?.unit ?? '',
-        value: selection.value || '',
+        value: selection.value !== undefined ? selection.value : (this.invoiceForm.get('value')?.value || ''),
         value2: selection.value2 || '',
         start: selection.start || '',
         end: selection.end || ''
       });
+
+      // ECF condition auto-fill
+      if (selection.selectionType === 'ElementCountFormula' && selection.value && selection.value !== 'OVERRIDE') {
+        const parsed = this.parseCondition(selection.value);
+        if (parsed.number !== null) {
+          this.invoiceForm.patchValue({
+            conditionPrefix: parsed.prefix,
+            conditionNumber: parsed.number
+          });
+        }
+      }
+
       this.applyValidatorsForType(isRange);
       this.selectedSuggestion = { ...selection, name: suggestionName };
       this.nameLoading = false;
@@ -957,18 +1310,21 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
         const valUpper = (res.value || '').trim().toUpperCase();
         let chemMode = 'BASE';
         if (res.selectionType === 'ChemicalElement') {
-          if (valUpper === 'SPECIAL' || (res.name && res.name.toLowerCase().includes('special elements (n'))) {
+          if (valUpper === 'SPECIAL' || (res.name && res.name.toLowerCase().includes('special elements'))) {
             chemMode = 'SPECIAL';
             isOverride = true;
           } else if (valUpper === 'SUPER' || (res.name && res.name.toLowerCase().includes('super special'))) {
             chemMode = 'SUPER';
             isOverride = true;
-          } else if (valUpper === 'BASE' || res.isBaseConfig) {
+          } else if (valUpper === 'BASE' || res.isBaseConfig || (res.name && res.name.toLowerCase().includes('base tier'))) {
             chemMode = 'BASE';
             isOverride = false;
           } else {
             chemMode = 'COUNT';
             isOverride = false;
+            const parsed = this.parseCondition(res.value || '');
+            prefix = parsed.prefix;
+            num = parsed.number;
           }
         } else if (res.selectionType === 'ElementCountFormula') {
           if (valUpper === 'OVERRIDE') {
@@ -1085,7 +1441,14 @@ export class InvoiceCaseConfigurationsComponent implements OnInit {
       } else if (chemMode === 'COUNT') {
         payload.isBaseConfig = false;
         payload.overrideParameterIDs = null;
-        payload.value = String(payload.value || '1');
+        const prefix = this.invoiceForm.get('conditionPrefix')?.value || '<=';
+        const rawNum = this.invoiceForm.get('conditionNumber')?.value;
+        const num = rawNum != null && rawNum !== '' ? parseInt(rawNum, 10) : 0;
+        if (num <= 0 || isNaN(num)) {
+          this.toastService.show('Element count must be a number greater than 0.', 'error');
+          return;
+        }
+        payload.value = `${prefix}${num}`;
       }
     } else if (payload.selectionType === 'ElementCountFormula' || payload.selectionType === 'Element') {
       if (payload.isOverrideRow) {

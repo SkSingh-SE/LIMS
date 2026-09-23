@@ -29,7 +29,7 @@ if (-not (Test-Path $MSDeployPath)) {
 $SourcePath = Join-Path $PSScriptRoot "dist\lims\browser"
 
 & $MSDeployPath -verb:sync `
-    -source:contentPath="$SourcePath" `
+    "-source:contentPath=`"$SourcePath`"" `
     -dest:contentPath="dmspl91-001-site2",wmsvc="https://win6046.site4now.net:8172/MsDeploy.axd?site=dmspl91-001-site2",userName="dmspl91-001",password="$Password",authtype="Basic" `
     -enableRule:AppOffline `
     -allowUntrusted

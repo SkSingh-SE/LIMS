@@ -56,6 +56,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   pageSize = 20;
   hasMore = true;
   loading = false;
+  isPageLoading = false;
   touched = false;
   isOpen = false;
 
@@ -89,6 +90,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
           this.items = data;
           this.hasMore = data.length === this.pageSize;
           this.loading = false;
+          this.syncSelectedItems();
           this.syncPanelState();
           this.cdr.markForCheck();
         },
@@ -113,6 +115,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
           this.fetchMissingItems(missingIds);
         } else {
           this.syncSelectedItems();
+          this.syncPanelState();
         }
       }
     }
@@ -127,23 +130,29 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   // Page is incremented ONLY inside the success callback to prevent drift when
   // the guard (loading flag) or errors block the request.
   private fetchPage(page: number): void {
-    if (this.loading) return;
+    if (this.isPageLoading) return;
+    this.isPageLoading = true;
     this.loading = true;
     this.syncPanelState();
 
     const sub = this.fetchDataFn(this.searchTerm, page, this.pageSize).subscribe({
       next: data => {
         this.page = page;
-        this.items =
-          page === 0
-            ? data
-            : [...this.items, ...data.filter(d => !this.items.some(i => +i.id === +d.id))];
+        if (page === 0) {
+          const missingSelected = this.selectedItems.filter(s => !data.some(d => +d.id === +s.id));
+          this.items = [...data, ...missingSelected];
+        } else {
+          this.items = [...this.items, ...data.filter(d => !this.items.some(i => +i.id === +d.id))];
+        }
         this.hasMore = data.length === this.pageSize;
+        this.isPageLoading = false;
         this.loading = false;
+        this.syncSelectedItems();
         this.syncPanelState();
         this.cdr.markForCheck();
       },
       error: () => {
+        this.isPageLoading = false;
         this.loading = false;
         this.syncPanelState();
         this.cdr.markForCheck();
@@ -154,15 +163,24 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
 
   // Fetch individual items by ID for initial selectedValues rebind
   private fetchMissingItems(ids: any[]): void {
+    this.loading = true;
+    this.syncPanelState();
     const requests = ids.map(id => this.fetchDataFn(id.toString(), 0, 1));
     const sub = forkJoin(requests).subscribe({
       next: (results: any[][]) => {
         const collected = results.filter(d => d?.length > 0).map(d => d[0]);
         this.items = [...this.items, ...collected.filter(f => !this.items.some(i => +i.id === +f.id))];
+        this.loading = false;
         this.syncSelectedItems();
+        this.syncPanelState();
         this.cdr.markForCheck();
       },
-      error: () => this.syncSelectedItems(),
+      error: () => {
+        this.loading = false;
+        this.syncSelectedItems();
+        this.syncPanelState();
+        this.cdr.markForCheck();
+      },
     });
     this.subs.add(sub);
   }
@@ -172,6 +190,15 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
     this.selectedItems = (this.selectedValues || [])
       .map(id => this.items.find(item => +item.id === +id))
       .filter(Boolean);
+
+    // Sync selectedValues so missing/non-existent IDs don't linger
+    if (!this.loading && !this.isPageLoading) {
+      const validIds = this.selectedItems.map(item => item.id);
+      if ((this.selectedValues || []).length !== validIds.length) {
+        this.selectedValues = validIds;
+        this.itemsSelected.emit(this.selectedItems);
+      }
+    }
   }
 
   // ─── Overlay ─────────────────────────────────────────────────────────────────
@@ -207,7 +234,8 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
       const portal = new ComponentPortal(MultiSelectPanelComponent, this.vcr);
       this.panelRef = this.overlayRef.attach(portal);
       this.panelRef.instance.items = this.items;
-      this.panelRef.instance.selectedIds = [...(this.selectedValues || [])];
+      this.panelRef.instance.selectedIds = this.selectedItems.map(item => item.id);
+      this.panelRef.instance.selectedCount = this.selectedItems.length;
       this.panelRef.instance.loading = this.loading;
 
       this.panelRef.instance.itemToggled.subscribe((item: any) => this.toggleItem(item));
@@ -231,7 +259,8 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   private syncPanelState(): void {
     if (!this.panelRef || !this.overlayRef?.hasAttached()) return;
     this.panelRef.instance.items = this.items;
-    this.panelRef.instance.selectedIds = [...(this.selectedValues || [])];
+    this.panelRef.instance.selectedIds = this.selectedItems.map(item => item.id);
+    this.panelRef.instance.selectedCount = this.selectedItems.length;
     this.panelRef.instance.loading = this.loading;
     this.panelRef.changeDetectorRef.detectChanges();
   }
@@ -299,16 +328,13 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   // Toggle selection — mutates selectedItems directly, never re-derives from items list
   // (items may be filtered by search and not contain previously selected entries)
   toggleItem(item: any): void {
-    const currentIds: any[] = [...(this.selectedValues || [])];
-    const idx = currentIds.findIndex(id => +id === +item.id);
+    const idx = this.selectedItems.findIndex(i => +i.id === +item.id);
     if (idx >= 0) {
-      currentIds.splice(idx, 1);
       this.selectedItems = this.selectedItems.filter(i => +i.id !== +item.id);
     } else {
-      currentIds.push(item.id);
       this.selectedItems = [...this.selectedItems, item];
     }
-    this.selectedValues = currentIds;
+    this.selectedValues = this.selectedItems.map(i => i.id);
     this.itemsSelected.emit(this.selectedItems);
     this.syncPanelState();
     this.cdr.markForCheck();

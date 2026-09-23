@@ -43,9 +43,9 @@
   </ul>
 
   <!-- Footer: selected count -->
-  <div class="ms-panel-footer" *ngIf="selectedIds.length > 0">
+  <div class="ms-panel-footer" *ngIf="count > 0">
     <i class="bi bi-check-circle-fill me-1"></i>
-    {{ selectedIds.length }} item{{ selectedIds.length !== 1 ? 's' : '' }} selected
+    {{ count }} item{{ count !== 1 ? 's' : '' }} selected
   </div>
 
 </div>

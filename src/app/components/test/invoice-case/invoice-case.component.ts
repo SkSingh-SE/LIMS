@@ -529,7 +529,7 @@ export class InvoiceCaseComponent implements OnInit {
     }
 
     // 4. Element Count Slab
-    if (selType === 'ChemicalElement' || selType === 'Element' || selType === 'ElementCountFormula') {
+    if (selType === 'ChemicalElement' || selType === 'Element') {
       if (val && val !== 'OVERRIDE' && val !== 'Flat') {
         const displayVal = val.startsWith('<=') || val.startsWith('>=') ? val : `≤ ${val}`;
         return {

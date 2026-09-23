@@ -46,8 +46,12 @@ export class ParameterService {
     }
     return this.http.get<any>(url);
   }
-  getChemicalParameterDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/chemical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  getChemicalParameterDropdown(searchTerm: string, pageNumber: number, pageSize: number, elementTypes?: string): Observable<any> {
+    let url = `${this.apiUrl}/chemical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`;
+    if (elementTypes) {
+      url += `&elementTypes=${encodeURIComponent(elementTypes)}`;
+    }
+    return this.http.get<any>(url);
   }
   getMechanicalParameterDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/mechanical-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);

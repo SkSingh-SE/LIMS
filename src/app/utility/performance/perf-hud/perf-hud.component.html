@@ -1,0 +1,422 @@
+<div class="lims-perf-hud-container" *ngIf="isVisible()">
+
+  <!-- 1. COLLAPSED FLOATING PILL -->
+  <div class="perf-pill" *ngIf="!isExpanded()" (click)="toggleExpand()" title="Click to open LIMS Performance Analyzer">
+    <div class="perf-pill-status-dot" [ngClass]="latestTransaction()?.status || 'fast'"></div>
+    
+    <div class="perf-pill-content">
+      <span class="perf-pill-brand"><i class="bi bi-speedometer2 me-1"></i>Perf</span>
+      
+      <ng-container *ngIf="latestTransaction(); else noTxTpl">
+        <span class="perf-pill-metric">
+          <i class="bi bi-stopwatch me-1"></i>{{ formatMs(latestTransaction()?.totalDuration) }}
+        </span>
+        <span class="perf-pill-submetric">
+          (API: {{ formatMs(latestTransaction()?.apiDuration) }} | DOM: {{ formatMs(latestTransaction()?.renderDuration) }})
+        </span>
+        <span class="perf-pill-count">
+          <i class="bi bi-hdd-network me-1"></i>{{ latestTransaction()?.apis?.length || 0 }} APIs
+        </span>
+        
+        <!-- Warning Indicators -->
+        <span class="perf-warning-tag dup-tag" *ngIf="latestTransaction()?.duplicates?.length" title="Duplicate API calls detected">
+          <i class="bi bi-arrow-repeat me-1"></i>{{ latestTransaction()?.duplicates?.length }} Dup
+        </span>
+        <span class="perf-warning-tag slow-tag" *ngIf="latestTransaction()?.slowApis?.length" title="Slow API calls (>500ms)">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ latestTransaction()?.slowApis?.length }} Slow
+        </span>
+      </ng-container>
+      
+      <ng-template #noTxTpl>
+        <span class="perf-pill-submetric">Monitoring user interactions...</span>
+      </ng-template>
+    </div>
+
+    <button type="button" class="perf-pill-expand-btn">
+      <i class="bi bi-chevron-up"></i>
+    </button>
+  </div>
+
+  <!-- 2. EXPANDED PERFORMANCE DASHBOARD MODAL/DRAWER -->
+  <div class="perf-drawer" *ngIf="isExpanded()">
+    
+    <!-- Header -->
+    <div class="perf-drawer-header">
+      <div class="perf-drawer-title-group">
+        <div class="perf-logo-badge">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <div>
+          <h6 class="perf-drawer-title">LIMS Performance & Gap Analyzer</h6>
+          <span class="perf-drawer-subtitle">Live Event Tracing, Duplicate API Detection & Render Diagnostics</span>
+        </div>
+      </div>
+
+      <div class="perf-drawer-actions">
+        <button type="button" class="perf-btn perf-btn-secondary" (click)="clearData()" title="Clear trace history">
+          <i class="bi bi-trash me-1"></i>Clear
+        </button>
+        <button type="button" class="perf-btn perf-btn-secondary" (click)="exportCsv()" title="Export CSV Report">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV
+        </button>
+        <button type="button" class="perf-btn perf-btn-secondary" (click)="exportJson()" title="Export JSON Trace">
+          <i class="bi bi-code-slash me-1"></i>JSON
+        </button>
+        <button type="button" class="perf-btn perf-btn-close" (click)="closeExpand()" title="Minimize">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Summary Cards Row -->
+    <div class="perf-kpi-grid">
+      <div class="perf-kpi-card">
+        <div class="perf-kpi-header">
+          <span class="perf-kpi-label">Total Events</span>
+          <i class="bi bi-cursor-fill text-primary"></i>
+        </div>
+        <div class="perf-kpi-value">{{ stats().totalEvents }}</div>
+        <div class="perf-kpi-foot">Recorded interactions</div>
+      </div>
+
+      <div class="perf-kpi-card">
+        <div class="perf-kpi-header">
+          <span class="perf-kpi-label">Avg API Latency</span>
+          <i class="bi bi-hdd-network-fill text-info"></i>
+        </div>
+        <div class="perf-kpi-value" [ngClass]="getDurationBadgeClass(stats().avgApiDuration)">
+          {{ formatMs(stats().avgApiDuration) }}
+        </div>
+        <div class="perf-kpi-foot">Over {{ stats().totalApis }} API requests</div>
+      </div>
+
+      <div class="perf-kpi-card">
+        <div class="perf-kpi-header">
+          <span class="perf-kpi-label">Avg DOM Render</span>
+          <i class="bi bi-cpu-fill text-success"></i>
+        </div>
+        <div class="perf-kpi-value" [ngClass]="getDurationBadgeClass(stats().avgRenderDuration)">
+          {{ formatMs(stats().avgRenderDuration) }}
+        </div>
+        <div class="perf-kpi-foot">Change detection & paint</div>
+      </div>
+
+      <div class="perf-kpi-card" [class.perf-kpi-alert]="stats().totalDuplicates > 0 || stats().totalSlowApis > 0">
+        <div class="perf-kpi-header">
+          <span class="perf-kpi-label">Gaps & Duplicates</span>
+          <i class="bi bi-exclamation-octagon-fill text-warning"></i>
+        </div>
+        <div class="perf-kpi-value text-warning">
+          {{ stats().totalDuplicates }} Dup / {{ stats().totalSlowApis }} Slow
+        </div>
+        <div class="perf-kpi-foot">Optimization opportunities</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="perf-tabs-bar">
+      <button type="button" class="perf-tab-item" [class.active]="activeTab() === 'traces'" (click)="setTab('traces')">
+        <i class="bi bi-activity me-1"></i>Event Traces ({{ transactions().length }})
+      </button>
+      <button type="button" class="perf-tab-item" [class.active]="activeTab() === 'duplicates'" (click)="setTab('duplicates')">
+        <i class="bi bi-arrow-repeat me-1"></i>Duplicates ({{ allDuplicates().length }})
+      </button>
+      <button type="button" class="perf-tab-item" [class.active]="activeTab() === 'slow'" (click)="setTab('slow')">
+        <i class="bi bi-clock-history me-1"></i>Slow APIs ({{ allSlowApis().length }})
+      </button>
+      <button type="button" class="perf-tab-item" [class.active]="activeTab() === 'settings'" (click)="setTab('settings')">
+        <i class="bi bi-gear me-1"></i>Settings
+      </button>
+    </div>
+
+    <!-- TAB 1: EVENT TRACES SPLIT VIEW -->
+    <div class="perf-tab-content" *ngIf="activeTab() === 'traces'">
+      <div class="perf-split-layout">
+        
+        <!-- Left: Transactions List -->
+        <div class="perf-list-pane">
+          <div class="perf-pane-header">
+            <span>User Actions & Route Changes</span>
+            <span class="text-muted">{{ transactions().length }} events</span>
+          </div>
+
+          <div class="perf-list-items" *ngIf="transactions().length > 0; else noEventsTpl">
+            <div
+              *ngFor="let tx of transactions()"
+              class="perf-list-card"
+              [class.active]="selectedTx()?.id === tx.id"
+              (click)="selectTransaction(tx)"
+            >
+              <div class="perf-card-top">
+                <span class="perf-card-title text-truncate">
+                  <i class="bi" [ngClass]="tx.triggerType === 'click' ? 'bi-hand-index-thumb me-1' : tx.triggerType === 'route' ? 'bi-compass me-1' : 'bi-cpu me-1'"></i>
+                  {{ tx.name }}
+                </span>
+                <span class="perf-badge" [ngClass]="getDurationBadgeClass(tx.totalDuration)">
+                  {{ formatMs(tx.totalDuration) }}
+                </span>
+              </div>
+
+              <div class="perf-card-meta">
+                <span><i class="bi bi-hdd-network me-1"></i>{{ tx.apis.length }} APIs</span>
+                <span><i class="bi bi-paint-bucket me-1"></i>DOM: {{ formatMs(tx.renderDuration) }}</span>
+                <span class="text-muted">{{ tx.timestamp | date:'HH:mm:ss' }}</span>
+              </div>
+
+              <!-- Tags for duplicates / warnings -->
+              <div class="perf-card-tags" *ngIf="tx.duplicates.length || tx.slowApis.length">
+                <span class="perf-micro-tag text-danger" *ngIf="tx.duplicates.length">
+                  <i class="bi bi-arrow-repeat me-1"></i>{{ tx.duplicates.length }} Duplicate
+                </span>
+                <span class="perf-micro-tag text-warning" *ngIf="tx.slowApis.length">
+                  <i class="bi bi-clock me-1"></i>{{ tx.slowApis.length }} Slow
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noEventsTpl>
+            <div class="perf-empty-state">
+              <i class="bi bi-mouse2 display-6 mb-2 text-muted"></i>
+              <p>No user interactions recorded yet. Click anywhere in the app to record traces.</p>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- Right: Selected Transaction Waterfall & Deep Dive -->
+        <div class="perf-detail-pane">
+          <ng-container *ngIf="selectedTx(); else selectTxTpl">
+            
+            <div class="perf-detail-header">
+              <div>
+                <h6 class="perf-detail-title">{{ selectedTx()?.name }}</h6>
+                <div class="perf-detail-meta">
+                  <span class="me-3"><i class="bi bi-clock me-1"></i>{{ selectedTx()?.timestamp | date:'mediumTime' }}</span>
+                  <span class="me-3"><i class="bi bi-grid-3x3 me-1"></i>DOM Nodes: {{ selectedTx()?.domNodeCount || 'N/A' }}</span>
+                </div>
+              </div>
+              <div class="perf-total-badge" [ngClass]="getDurationBadgeClass(selectedTx()?.totalDuration)">
+                <div class="perf-badge-sub">TOTAL TIME</div>
+                <div class="perf-badge-main">{{ formatMs(selectedTx()?.totalDuration) }}</div>
+              </div>
+            </div>
+
+            <!-- Waterfall Visualizer Bar -->
+            <div class="perf-waterfall-card">
+              <div class="perf-wf-label-row">
+                <span><strong>Execution Breakdown:</strong></span>
+                <span>API Network: {{ formatMs(selectedTx()?.apiDuration) }} | DOM Paint: {{ formatMs(selectedTx()?.renderDuration) }}</span>
+              </div>
+              <div class="perf-waterfall-bar">
+                <div class="perf-wf-segment perf-wf-api" title="API Network & Server Time"></div>
+                <div class="perf-wf-segment perf-wf-render" title="Browser Render & Paint Time"></div>
+              </div>
+            </div>
+
+            <!-- Recommendations / Gap Analysis Box -->
+            <div class="perf-recommendations-box" *ngIf="selectedTx()?.recommendations?.length">
+              <div class="perf-rec-header">
+                <i class="bi bi-lightbulb-fill text-warning me-1"></i>
+                <strong>Performance Gap Insights & Fixes:</strong>
+              </div>
+              <ul class="perf-rec-list">
+                <li *ngFor="let rec of selectedTx()?.recommendations" class="perf-rec-item">
+                  {{ rec }}
+                </li>
+              </ul>
+            </div>
+
+            <!-- Triggered APIs Table -->
+            <div class="perf-apis-table-card">
+              <div class="perf-table-header">
+                <i class="bi bi-hdd-network me-1"></i><strong>Triggered HTTP Requests ({{ selectedTx()?.apis?.length }})</strong>
+              </div>
+
+              <div class="table-responsive" *ngIf="selectedTx()?.apis?.length; else noApisTpl">
+                <table class="table perf-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Method</th>
+                      <th>Endpoint URL</th>
+                      <th>Status</th>
+                      <th>Latency</th>
+                      <th>Analysis</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let api of selectedTx()?.apis" [class.table-warning]="api.isDuplicate" [class.table-danger]="api.isSlow">
+                      <td>
+                        <span class="perf-method-badge" [ngClass]="getMethodBadgeClass(api.method)">{{ api.method }}</span>
+                      </td>
+                      <td class="perf-url-cell" [title]="api.url">
+                        <span class="text-truncate d-block">{{ api.cleanUrl }}</span>
+                      </td>
+                      <td>
+                        <span class="badge" [ngClass]="api.status >= 200 && api.status < 300 ? 'bg-success' : 'bg-danger'">
+                          {{ api.status || 'Pending' }}
+                        </span>
+                      </td>
+                      <td>
+                        <strong [ngClass]="getDurationBadgeClass(api.duration)">{{ formatMs(api.duration) }}</strong>
+                      </td>
+                      <td>
+                        <span class="badge bg-warning text-dark me-1" *ngIf="api.isDuplicate">
+                          <i class="bi bi-arrow-repeat me-1"></i>Duplicate ({{ api.duplicateCount }}x)
+                        </span>
+                        <span class="badge bg-danger me-1" *ngIf="api.isSlow">
+                          <i class="bi bi-clock-history me-1"></i>Slow
+                        </span>
+                        <span class="badge bg-success" *ngIf="!api.isDuplicate && !api.isSlow">
+                          <i class="bi bi-check-circle me-1"></i>Optimal
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <ng-template #noApisTpl>
+                <div class="perf-empty-state p-3">
+                  <p class="text-muted mb-0">No network requests were triggered during this user event (Pure client-side interaction).</p>
+                </div>
+              </ng-template>
+            </div>
+
+          </ng-container>
+
+          <ng-template #selectTxTpl>
+            <div class="perf-empty-state">
+              <i class="bi bi-arrow-left-circle display-6 mb-2 text-muted"></i>
+              <p>Select an event transaction from the left list to view its complete API waterfall and rendering diagnosis.</p>
+            </div>
+          </ng-template>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: DUPLICATE APIS REPORT -->
+    <div class="perf-tab-content p-3" *ngIf="activeTab() === 'duplicates'">
+      <div class="perf-pane-header mb-2">
+        <strong>Detected Repeated & Redundant API Calls</strong>
+        <span class="text-muted">These requests were called multiple times within a short window.</span>
+      </div>
+
+      <div class="table-responsive" *ngIf="allDuplicates().length > 0; else noDupsTpl">
+        <table class="table perf-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint URL</th>
+              <th>Duplicate Count</th>
+              <th>Duration</th>
+              <th>Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dup of allDuplicates()" class="table-warning">
+              <td><span class="perf-method-badge" [ngClass]="getMethodBadgeClass(dup.method)">{{ dup.method }}</span></td>
+              <td class="perf-url-cell">{{ dup.cleanUrl }}</td>
+              <td><span class="badge bg-danger">{{ dup.duplicateCount }} times</span></td>
+              <td><strong>{{ formatMs(dup.duration) }}</strong></td>
+              <td>
+                <span class="text-dark">
+                  <i class="bi bi-lightbulb text-warning me-1"></i>Cache in service with <code>shareReplay(1)</code> or memory state.
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noDupsTpl>
+        <div class="perf-empty-state">
+          <i class="bi bi-check-circle-fill text-success display-6 mb-2"></i>
+          <p>No duplicate API calls detected! All requests are firing efficiently.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- TAB 3: SLOW APIS REPORT -->
+    <div class="perf-tab-content p-3" *ngIf="activeTab() === 'slow'">
+      <div class="perf-pane-header mb-2">
+        <strong>Slow & Stuck API Requests (>{{ config().slowApiThresholdMs }}ms)</strong>
+        <span class="text-muted">Backend database query or network latency bottlenecks</span>
+      </div>
+
+      <div class="table-responsive" *ngIf="allSlowApis().length > 0; else noSlowTpl">
+        <table class="table perf-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint URL</th>
+              <th>Status</th>
+              <th>Duration</th>
+              <th>Diagnosis</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let slow of allSlowApis()" class="table-danger">
+              <td><span class="perf-method-badge" [ngClass]="getMethodBadgeClass(slow.method)">{{ slow.method }}</span></td>
+              <td class="perf-url-cell">{{ slow.url }}</td>
+              <td><span class="badge bg-secondary">{{ slow.status }}</span></td>
+              <td><strong class="text-danger">{{ formatMs(slow.duration) }}</strong></td>
+              <td>
+                <span class="text-dark">
+                  <i class="bi bi-cpu text-danger me-1"></i>Check database indexes, EF Core query, or server CPU.
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noSlowTpl>
+        <div class="perf-empty-state">
+          <i class="bi bi-lightning-charge-fill text-success display-6 mb-2"></i>
+          <p>No slow APIs detected! All responses returned within {{ config().slowApiThresholdMs }}ms.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- TAB 4: SETTINGS & TOOLS -->
+    <div class="perf-tab-content p-3" *ngIf="activeTab() === 'settings'">
+      <div class="perf-pane-header mb-3">
+        <strong>Profiler Configuration & Diagnostics Tools</strong>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h6 class="fw-bold mb-2"><i class="bi bi-sliders me-1"></i>Thresholds</h6>
+            <div class="mb-3">
+              <label class="form-label small">Slow API Threshold: <strong>{{ config().slowApiThresholdMs }} ms</strong></label>
+              <input type="range" class="form-range" min="200" max="2000" step="100" [ngModel]="config().slowApiThresholdMs" (ngModelChange)="perfService.updateConfig({ slowApiThresholdMs: $event })">
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Duplicate Detection Window: <strong>{{ config().duplicateWindowMs }} ms</strong></label>
+              <input type="range" class="form-range" min="1000" max="5000" step="500" [ngModel]="config().duplicateWindowMs" (ngModelChange)="perfService.updateConfig({ duplicateWindowMs: $event })">
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card p-3 h-100">
+            <h6 class="fw-bold mb-2"><i class="bi bi-terminal me-1"></i>Console & Logging</h6>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="chkConsole" [checked]="config().logToConsole" (change)="toggleConsoleLog()">
+              <label class="form-check-label" for="chkConsole">Log detailed performance summaries to Browser Console (F12)</label>
+            </div>
+            <div class="mt-auto">
+              <div class="alert alert-info py-2 px-3 mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>You can also run <code>limsPerf.summary()</code> or <code>limsPerf.exportCsv()</code> directly in the browser console.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

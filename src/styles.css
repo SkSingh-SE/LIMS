@@ -52,9 +52,12 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MANDATORY GLOBAL ICON-TO-TEXT SPACING RULE (STRICT)
-   All icons (<i>) placed beside text in buttons, nav tabs,
-   links, badges, and labels MUST maintain explicit 6px spacing.
+   MANDATORY GLOBAL ICON-TO-TEXT SPACING & CENTERING SYSTEM (STRICT)
+   1. Icons placed beside text in buttons/links/badges maintain 6px right spacing.
+   2. All icon-only buttons, circular buttons, badges, detail icons,
+      and action triggers have ZERO margins and 100% horizontal + vertical centering.
+   3. Reset Bootstrap Icons' default `vertical-align: -0.125em` inside all
+      flex containers to eliminate vertical font glyph baseline drops.
 ═══════════════════════════════════════════════════════════ */
 .btn i,
 .btn-lims i,
@@ -64,21 +67,159 @@ body {
 .badge i,
 button i,
 a i {
-  margin-right: 6px !important;
+  margin-right: 6px;
 }
 
-/* Explicit icon-only buttons override (no right margin) */
+/* Explicit icon-only buttons & containers override (no right/left margin) */
 .btn-lims-icon i,
 .btn-icon i,
 .btn-nav-icon i,
 .btn-nav-plus i,
 .btn-field-add i,
 .btn-circle i,
+.circle-btn i,
 .btn-close i,
 .btn-remove.p-1 i,
 .btn-outline-danger.p-1 i,
-.icon-only i {
+.icon-only i,
+.header-icon-badge i,
+.detail-icon i,
+.timeline-icon i,
+.quick-action-icon i,
+.env-metric-icon i,
+.timing-icon i,
+.step-circle i,
+.rounded-circle i,
+.notif-btn i,
+.nav-icon-btn i,
+.nav-circle-btn i,
+.user-menu-icon-box i,
+.pd-detail-icon-box i,
+.spec-delete-btn i,
+.btn-delete-row i,
+.btn-edit-row i,
+#btn-back-to-top i,
+button.rounded-circle i,
+.btn.rounded-circle i,
+button:has(> i:only-child) i,
+a:has(> i:only-child) i,
+.btn:has(> i:only-child) i,
+.badge:has(> i:only-child) i,
+i.no-space,
+.bi.no-space {
   margin-right: 0 !important;
+  margin-left: 0 !important;
+  margin: 0 !important;
+}
+
+/* Global circular container & badge flex centering */
+.header-icon-badge,
+.detail-icon,
+.timeline-icon,
+.quick-action-icon,
+.env-metric-icon,
+.timing-icon,
+.step-circle,
+.btn-circle,
+.circle-btn,
+.btn-lims-icon,
+.btn-icon,
+.btn-nav-icon,
+.nav-circle-btn,
+.user-menu-icon-box,
+.pd-detail-icon-box,
+.notif-btn,
+#btn-back-to-top,
+button.rounded-circle,
+.btn.rounded-circle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* Default dimensions and padding reset for circular buttons */
+button.rounded-circle,
+.btn.rounded-circle,
+.btn-circle,
+.circle-btn,
+.nav-circle-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  flex-shrink: 0;
+}
+
+/* Flex centering for internal icon tags */
+.header-icon-badge i,
+.detail-icon i,
+.timeline-icon i,
+.quick-action-icon i,
+.env-metric-icon i,
+.timing-icon i,
+.step-circle i,
+.btn-circle i,
+.circle-btn i,
+.btn-lims-icon i,
+.btn-icon i,
+.btn-nav-icon i,
+.nav-circle-btn i,
+.user-menu-icon-box i,
+.pd-detail-icon-box i,
+.notif-btn i,
+#btn-back-to-top i,
+button.rounded-circle i,
+.btn.rounded-circle i,
+.btn:has(> i:only-child) i,
+button:has(> i:only-child) i,
+a:has(> i:only-child) i {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 🚨 CRITICAL GLOBAL FIX: Bootstrap Icons Pseudo-element Baseline Reset.
+   Eliminates the default -0.125em vertical drop on icon glyphs inside centered containers */
+.header-icon-badge i::before,
+.detail-icon i::before,
+.timeline-icon i::before,
+.quick-action-icon i::before,
+.env-metric-icon i::before,
+.timing-icon i::before,
+.step-circle i::before,
+.btn-circle i::before,
+.circle-btn i::before,
+.btn-lims-icon i::before,
+.btn-icon i::before,
+.btn-nav-icon i::before,
+.nav-circle-btn i::before,
+.user-menu-icon-box i::before,
+.pd-detail-icon-box i::before,
+.notif-btn i::before,
+#btn-back-to-top i::before,
+button.rounded-circle i::before,
+.btn.rounded-circle i::before,
+.btn:has(> i:only-child) i::before,
+button:has(> i:only-child) i::before,
+a:has(> i:only-child) i::before,
+td .btn:has(> i:only-child) i::before,
+td button:has(> i:only-child) i::before,
+td .btn-lims-icon i::before,
+td .spec-delete-btn i::before,
+td .btn-delete-row i::before,
+td .btn-edit-row i::before {
+  vertical-align: 0 !important;
+  display: inline-block !important;
+  line-height: 1 !important;
+  margin: 0 !important;
 }
 
 .content-container {
@@ -3784,9 +3925,25 @@ fieldset.border {
 }
 
 /* ─── MANDATORY GLOBAL ICON-TO-LABEL SPACING RULE (STRICT) ─── */
-i.bi,
-.bi {
-  margin-right: 6px !important;
+.btn i.bi,
+.btn .bi,
+.btn-lims i.bi,
+.btn-lims .bi,
+.nav-tab-btn i.bi,
+.nav-tab-btn .bi,
+.tpi-toggle-btn i.bi,
+.tpi-toggle-btn .bi,
+.btn-nav-link i.bi,
+.btn-nav-link .bi,
+.badge i.bi,
+.badge .bi,
+.dropdown-item i.bi,
+.dropdown-item .bi,
+.form-label i.bi,
+.form-label .bi,
+legend i.bi,
+legend .bi {
+  margin-right: 6px;
 }
 
 /* Reset margin for icon-only containers, stepper circles & icon-only buttons so icons remain perfectly centered */
@@ -3814,10 +3971,30 @@ a:has(> .bi:only-child) .bi,
 .rounded-circle .bi,
 .btn-circle i.bi,
 .btn-circle .bi,
+.circle-btn i.bi,
+.circle-btn .bi,
 .notif-btn i.bi,
 .notif-btn .bi,
 .nav-icon-btn i.bi,
 .nav-icon-btn .bi,
+.nav-circle-btn i.bi,
+.nav-circle-btn .bi,
+.detail-icon i.bi,
+.detail-icon .bi,
+.header-icon-badge i.bi,
+.header-icon-badge .bi,
+.timeline-icon i.bi,
+.timeline-icon .bi,
+.quick-action-icon i.bi,
+.quick-action-icon .bi,
+.env-metric-icon i.bi,
+.env-metric-icon .bi,
+.timing-icon i.bi,
+.timing-icon .bi,
+.user-menu-icon-box i.bi,
+.user-menu-icon-box .bi,
+.pd-detail-icon-box i.bi,
+.pd-detail-icon-box .bi,
 .icon-only i.bi,
 .icon-only .bi,
 .sorting-icon-up,

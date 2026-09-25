@@ -60,6 +60,8 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
   activeStageId: string = 'overview';
   isLoading: boolean = false;
 
+  userExplicitlySelectedTab: boolean = false;
+
   // Selected sample & inline active form state
   selectedSampleId: number | null = null;
   activeInlineAction: string | null = null;
@@ -178,6 +180,11 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
     this.route.paramMap.subscribe(params => {
       this.inwardId = Number(params.get('id'));
       if (this.inwardId > 0) {
+        const queryTab = this.route.snapshot.queryParamMap.get('tab');
+        if (queryTab) {
+          this.activeStageId = queryTab;
+          this.userExplicitlySelectedTab = true;
+        }
         this.loadCaseData();
       }
     });
@@ -215,26 +222,121 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
   }
 
   updateLifecycleStages(status: string): void {
-    const s = (status || '').toUpperCase();
+    const s = (status || '').toUpperCase().trim();
+    const isClosed = this.lifecycleSummary?.isClosed || s === 'CASE_CLOSED' || s === 'CLOSED';
 
-    // Map InwardStatus to the 7-step index (0-based)
+    // 1. Check if preparation is required across all samples
+    const samples = this.lifecycleSummary?.samples || [];
+    const hasSamples = samples.length > 0;
+    const isPrepRequired = samples.some(
+      (sm: any) => sm.preparationRequired || sm.machiningRequired || sm.preparationStatus === 'In Progress' || sm.preparationStatus === 'Completed'
+    );
+
+    // 2. Accurate Stage Index Determination (0 to 6)
     let activeStageIndex = 0;
-    if (s.includes('PLAN') || s.includes('REVIEW')) {
-      activeStageIndex = 1; // 2. Review & Plan
-    } else if (s.includes('PREP') || s.includes('CUTTING') || s.includes('MACHINING')) {
-      activeStageIndex = 2; // 3. Preparation
-    } else if (s.includes('TEST') || s.includes('VERIF')) {
-      activeStageIndex = 3; // 4. Testing
-    } else if (s.includes('REPORT') || s.includes('DISPATCH')) {
-      activeStageIndex = 4; // 5. Reporting
-    } else if (s.includes('INVOICE') || s.includes('ACCOUNT') || s.includes('BILLING')) {
-      activeStageIndex = 5; // 6. Accounts
-    } else if (s.includes('CLOSE') || s.includes('COMPLET')) {
-      activeStageIndex = 6; // 7. Close
-    }
 
-    // Check if preparation is required across all samples (or active stage is preparation)
-    const isPrepRequired = s.includes('PREP') || s.includes('CUTTING') || s.includes('MACHINING') || (this.lifecycleSummary?.samples?.some((sm: any) => sm.preparationRequired || sm.machiningRequired) ?? false);
+    if (isClosed) {
+      activeStageIndex = 6; // 6 = Close
+    } else if (
+      s === 'SAMPLE_INWARD_REGISTERED' ||
+      s === 'NOT_STARTED' ||
+      s === 'AWAITING_MISSING_INFORMATION' ||
+      s === 'REGISTERED' ||
+      !s
+    ) {
+      activeStageIndex = 0; // 0 = Inward
+    } else if (
+      s === 'INWARD_COMPLETED' ||
+      s === 'UNDER_PLANNING' ||
+      s === 'UNDER_REVIEW' ||
+      s === 'UNDER_REVIEW_REQUEST' ||
+      s === 'REQUEST_REJECTED'
+    ) {
+      activeStageIndex = 1; // 1 = Review & Plan
+    } else if (
+      s === 'REQUEST_APPROVED' ||
+      s === 'REVIEW_COMPLETED' ||
+      s === 'PLAN_APPROVED'
+    ) {
+      // Review is approved — move to prep if required, otherwise testing
+      activeStageIndex = isPrepRequired ? 2 : 3;
+    } else if (
+      s === 'PREPARATION_REQUIRED' ||
+      s === 'PREPARATION_IN_PROGRESS' ||
+      s === 'SAMPLE_UNDER_PREPARATION' ||
+      s === 'CUTTING_IN_PROGRESS' ||
+      s === 'MACHINING_IN_PROGRESS'
+    ) {
+      activeStageIndex = 2; // 2 = Preparation
+    } else if (
+      s === 'PREPARATION_COMPLETED' ||
+      s === 'UNDER_TESTING' ||
+      s === 'TESTING_IN_PROGRESS' ||
+      s === 'TESTING_UNDER_VERIFICATION' ||
+      s === 'TESTING_VERIFICATION_REJECTED' ||
+      s === 'TESTING_VERIFIED'
+    ) {
+      activeStageIndex = 3; // 3 = Testing
+    } else if (
+      s === 'TESTING_COMPLETED'
+    ) {
+      if (hasSamples && samples.every((sm: any) => sm.isTestingCompleted || sm.testResultStatus === 'Completed' || sm.testResultStatus === 'Verified')) {
+        activeStageIndex = 4; // 4 = Reporting
+      } else {
+        activeStageIndex = 3; // 3 = Testing
+      }
+    } else if (
+      s === 'REPORT_GENERATION_IN_PROGRESS' ||
+      s === 'REPORT_GENERATED' ||
+      s === 'REPORT_UNDER_REVIEW' ||
+      s === 'REPORT_REJECTED_BY_INTERNAL' ||
+      s === 'REPORT_AMENDED_BY_INTERNAL' ||
+      s === 'REPORT_AMENDMENT_APPROVED' ||
+      s === 'REPORT_SENT_FOR_CUSTOMER_REVIEW' ||
+      s === 'CUSTOMER_REQUESTED_AMENDMENT' ||
+      s === 'AMENDMENT_IN_PROGRESS' ||
+      s === 'AMENDMENT_COMPLETED'
+    ) {
+      activeStageIndex = 4; // 4 = Reporting
+    } else if (
+      s === 'FINAL_REPORT_APPROVED' ||
+      s === 'REPORT_DISPATCHED'
+    ) {
+      if (this.lifecycleSummary?.hasTaxInvoice || this.lifecycleSummary?.balanceDueAmount === 0) {
+        activeStageIndex = 6; // Close
+      } else {
+        activeStageIndex = 5; // Accounts
+      }
+    } else if (
+      s === 'PI_GENERATED' ||
+      s === 'ADVANCE_PAYMENT_PENDING' ||
+      s === 'ADVANCE_PAYMENT_COMPLETED' ||
+      s === 'PAYMENT_PENDING' ||
+      s === 'PAYMENT_COMPLETED' ||
+      s === 'INVOICE_GENERATED' ||
+      s === 'TAX_INVOICE_GENERATED' ||
+      s.includes('INVOICE') ||
+      s.includes('BILLING')
+    ) {
+      activeStageIndex = 5; // 5 = Accounts
+    } else if (s === 'CASE_CLOSED' || s === 'CLOSED' || s === 'READY_FOR_CLOSURE') {
+      activeStageIndex = 6; // 6 = Close
+    } else {
+      // Fallback heuristics: check sample-level progress
+      if (hasSamples && samples.every((sm: any) => sm.reportStatus === 'Dispatched' || sm.reportStatus === 'Approved')) {
+        activeStageIndex = 5;
+      } else if (hasSamples && samples.every((sm: any) => sm.isTestingCompleted || sm.testResultStatus === 'Verified')) {
+        activeStageIndex = 4;
+      } else if (hasSamples && samples.some((sm: any) => sm.testResultStatus === 'In Progress' || sm.testResultStatus === 'UNDER_TESTING')) {
+        activeStageIndex = 3;
+      } else if (isPrepRequired && samples.some((sm: any) => sm.preparationStatus === 'In Progress')) {
+        activeStageIndex = 2;
+      } else if (this.lifecycleSummary?.reviewStatus === 'Approved') {
+        activeStageIndex = isPrepRequired ? 2 : 3;
+      } else {
+        activeStageIndex = 1; // Default to Review & Plan once inward is completed
+      }
+    }
 
     this.stages = this.stages.map((stage, i) => {
       let stageStatus: 'completed' | 'active' | 'pending' | 'na' = 'pending';
@@ -244,11 +346,12 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
       let completedBy = null;
       let naReason: string | undefined = undefined;
 
-      // Check for Preparation N/A condition (only if not required and case is already beyond prep or at planning without prep)
-      if (stage.id === 'preparation' && !isPrepRequired && activeStageIndex !== 2 && (this.lifecycleSummary?.samples?.length ?? 0) > 0) {
+      // Handle Preparation N/A
+      if (stage.id === 'preparation' && !isPrepRequired && activeStageIndex !== 2) {
         stageStatus = 'na';
         naReason = 'No cutting or machining required for any sample in this case';
         isAccessible = false;
+        isReadOnly = true;
       } else if (i < activeStageIndex) {
         stageStatus = 'completed';
         isAccessible = true;
@@ -259,13 +362,17 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
         isReadOnly = false;
       } else {
         stageStatus = 'pending';
-        // Allow accounts to be accessible if permitted
+        // Accounts is always accessible if permitted
         isAccessible = stage.id === 'accounts';
         isReadOnly = false;
       }
 
       // Check dates / actors from caseInfo / summary
       if (stage.id === 'inward') {
+        if (activeStageIndex >= 1) {
+          stageStatus = 'completed';
+          isAccessible = true;
+        }
         completedOn = this.caseInfo?.collectionTime || this.caseInfo?.createdOn;
         completedBy = this.caseInfo?.createdBy;
       } else if (stage.id === 'review-plan' && (stageStatus === 'completed' || activeStageIndex > 1)) {
@@ -284,8 +391,8 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
       };
     });
 
-    // Default to the active stage if first load and on overview
-    if (this.activeStageId === 'overview' && !this.selectedSampleId) {
+    // Default to active stage or overview on first load if user hasn't explicitly clicked a tab
+    if (!this.userExplicitlySelectedTab && !this.selectedSampleId) {
       const activeStage = this.stages.find(st => st.status === 'active');
       if (activeStage) {
         this.activeStageId = activeStage.id;
@@ -297,7 +404,7 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
     this.inwardService.getSampleInwardById(this.inwardId).subscribe({
       next: (data: any) => {
         this.caseInfo = data;
-        this.currentStageStatus = data?.inwardStatus || data?.status || res?.status || 'SAMPLE_UNDER_PREPARATION';
+        this.currentStageStatus = data?.inwardStatus || data?.status || res?.status || 'REQUEST_APPROVED';
 
         this.inwardService.getLifecycleSummary(this.inwardId).subscribe({
           next: (summary: any) => {
@@ -307,20 +414,20 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
             }
             this.updateLifecycleStages(this.currentStageStatus);
 
-            // Smoothly auto-navigate to the next stage
-            const s = (this.currentStageStatus || '').toUpperCase();
-            if (s.includes('PREP') || s.includes('CUTTING') || s.includes('MACHINING')) {
-              this.activeStageId = 'preparation';
-              this.activeInlineAction = 'preparation';
-            } else if (s.includes('TEST') || s.includes('VERIF')) {
-              this.activeStageId = 'testing';
-              this.activeInlineAction = 'testing';
+            // Auto-navigate to the next active stage
+            const activeStage = this.stages.find(st => st.status === 'active');
+            if (activeStage) {
+              this.activeStageId = activeStage.id;
+              this.activeInlineAction = activeStage.id;
             }
           },
           error: () => {
             this.updateLifecycleStages(this.currentStageStatus);
-            this.activeStageId = 'preparation';
-            this.activeInlineAction = 'preparation';
+            const activeStage = this.stages.find(st => st.status === 'active');
+            if (activeStage) {
+              this.activeStageId = activeStage.id;
+              this.activeInlineAction = activeStage.id;
+            }
           }
         });
       }
@@ -354,6 +461,7 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
   }
 
   selectStage(stageId: string): void {
+    this.userExplicitlySelectedTab = true;
     if (stageId === 'overview') {
       this.activeStageId = 'overview';
       return;
@@ -424,6 +532,10 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
   onSampleAction(event: { sampleId: number; action: string }): void {
     this.selectedSampleId = event.sampleId;
     this.activeInlineAction = event.action;
+    this.userExplicitlySelectedTab = true;
+    if (event.action === 'inward' || event.action === 'review-plan' || event.action === 'preparation' || event.action === 'testing' || event.action === 'reporting') {
+      this.activeStageId = event.action;
+    }
   }
 
   onTestingSaved(): void {

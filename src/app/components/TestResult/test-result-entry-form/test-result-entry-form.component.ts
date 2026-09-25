@@ -2061,6 +2061,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
   getParameterStatus(param: any): 'pass' | 'fail' | 'marginal' | null {
     if (!param) return null;
+    // CRITICAL: If no result value has been entered, status cannot be Pass/Fail
+    if (param.value === null || param.value === undefined || param.value === '') {
+      return null;
+    }
     if (param.resultStatus) {
       const status = String(param.resultStatus).toLowerCase();
       if (status === 'pass' || status === 'within range') return 'pass';

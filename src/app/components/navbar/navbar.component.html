@@ -21,11 +21,11 @@
     <!-- Right Section -->
     <div #navRight class="nav-right-cell d-flex align-items-center gap-2">
       <!-- Search Icon Button (always visible, no inline input) -->
-      <button class="btn btn-light rounded-circle h-auto menu-search-btn" (click)="toggleSearch()">
+      <button type="button" class="btn btn-light rounded-circle nav-circle-btn menu-search-btn" (click)="toggleSearch()" title="Search menu">
         <i class="bi bi-search"></i>
       </button>
       <!-- Down Arrow Icon -->
-      <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" (click)="menuOpenClose()">
+      <button type="button" class="btn btn-light rounded-circle nav-circle-btn menu-toggle-btn" data-bs-toggle="collapse" (click)="menuOpenClose()" title="Toggle submenu">
         <i class="bi"
           [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
       </button>

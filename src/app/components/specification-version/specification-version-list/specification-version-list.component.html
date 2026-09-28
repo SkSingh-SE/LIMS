@@ -15,7 +15,16 @@
           <small class="text-muted text-xs">Manage specification editions, revisions, parameters, and lifecycle states</small>
         </div>
       </div>
-      <div>
+      <div class="d-flex align-items-center gap-2">
+        <button *ngIf="filterSpecificationId" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToSpecification()" title="View Parent Specification Master">
+          <i class="bi bi-box-arrow-up-right me-1"></i> Manage Specification
+        </button>
+        <button *ngIf="filterSpecificationId" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToGrades()" title="Manage Grades for this Specification">
+          <i class="bi bi-tags me-1"></i> Manage Grades
+        </button>
+        <button *ngIf="filterSpecificationId" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToRequirementsForFilter()" title="Configure Universal Requirements">
+          <i class="bi bi-sliders me-1"></i> Manage Requirements
+        </button>
         <button type="button" class="btn-lims btn-lims-save" (click)="openAddModal()">
           <i class="bi bi-plus-circle me-1"></i> Add Version
         </button>
@@ -129,6 +138,10 @@
                   <button type="button" class="btn-tbl-action btn-tbl-versions" (click)="navigateToRequirements(item)" title="Manage Requirements">
                     <i class="bi bi-card-checklist"></i>
                   </button>
+                  <!-- Manage Grades -->
+                  <button type="button" class="btn-tbl-action btn-tbl-grades" (click)="navigateToGrades(item)" title="Manage Grades for this Specification">
+                    <i class="bi bi-tags"></i>
+                  </button>
                   <!-- Parameter Mapping -->
                   <button type="button" class="btn-tbl-action btn-tbl-params" (click)="openParamModal(item)" title="Map Parameters">
                     <i class="bi bi-sliders"></i>
@@ -157,8 +170,8 @@
               <td class="text-center text-xs">{{ item.effectiveDate ? (item.effectiveDate | date:'yyyy-MM-dd') : '—' }}</td>
               <td class="text-center text-xs">{{ item.supersededDate ? (item.supersededDate | date:'yyyy-MM-dd') : '—' }}</td>
               <td class="text-center">
-                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1.5 param-count-btn" (click)="openParamModal(item)" title="Manage mapped parameters">
-                  <i class="bi bi-sliders me-1"></i>{{ item.parametersCount }}
+                <button type="button" class="param-count-btn" (click)="openParamModal(item)" title="Manage mapped parameters">
+                  <i class="bi bi-sliders"></i>{{ item.parametersCount }}
                 </button>
               </td>
               <td class="text-center">

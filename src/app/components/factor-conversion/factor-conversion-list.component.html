@@ -1,0 +1,377 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-calculator fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Factor / Conversion</h6>
+          <small class="text-muted text-xs">Reusable test transformation configuration (Layer 4: Operational Configuration)</small>
+        </div>
+      </div>
+      <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create')"
+        *hasPermission="['CanCreateFactorConversion','CanManageFactorConversion']">
+        <i class="bi bi-plus-circle me-1"></i> New Factor
+      </button>
+    </div>
+
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control form-control-sm" placeholder="Search code, name, parameter..."
+              [(ngModel)]="filterSearch" (keydown.enter)="onSearch()" />
+          </div>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="filterType" (change)="onSearch()">
+            <option value="">All Types</option>
+            <option *ngFor="let t of factorTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Input Parameter"
+            [fetchDataFn]="getInputParamDropdown" (itemSelected)="onFilterInputParamSelected($event)"
+            [selectedItem]="selectedFilterInputParam">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-2">
+          <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Output Parameter"
+            [fetchDataFn]="getInputParamDropdown" (itemSelected)="onFilterOutputParamSelected($event)"
+            [selectedItem]="selectedFilterOutputParam">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-1">
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="onSearch()">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-filter me-1"></i>Apply
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="onSort('code')">
+                Code
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'code' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'code' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th>Name</th>
+              <th class="text-center">Type</th>
+              <th>Input</th>
+              <th>Output</th>
+              <th>Factor / Rule</th>
+              <th class="text-center col-status">Status</th>
+              <th>Modified By / Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="factorList.length === 0">
+              <td colspan="10" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary"></i>
+                <div>No records found.</div>
+              </td>
+            </tr>
+            <tr *ngFor="let item of factorList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center gap-1">
+                  <button type="button" class="btn-tbl-action btn-tbl-view" title="View Details"
+                    (click)="openModal('view', item.id)">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" title="Edit Factor"
+                    (click)="openModal('edit', item.id)"
+                    *hasPermission="['CanUpdateFactorConversion','CanManageFactorConversion']">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Factor' : 'Activate Factor'"
+                    (click)="toggleStatus(item)"
+                    *hasPermission="['CanUpdateFactorConversion','CanManageFactorConversion']">
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace">{{ item.code }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ item.name }}</td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border font-monospace">{{ item.factorType }}</span>
+              </td>
+              <td>{{ item.inputParameterName || '-' }}</td>
+              <td>{{ item.outputParameterName || item.inputParameterName || '-' }}</td>
+              <td class="font-monospace text-success fw-semibold">{{ item.transformationText || '-' }}</td>
+              <td class="text-center">
+                <span class="badge px-2 py-1 border"
+                  [ngClass]="item.isActive ? 'bg-success-subtle text-success border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border-warning-subtle'">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (item.modifiedByName || item.createdByName || '-') + ' on ' + ((item.modifiedOn || item.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ item.modifiedByName || item.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">· {{ (item.modifiedOn || item.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-footer bg-white py-2 px-3 border-top" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<div #modalRef class="modal fade" tabindex="-1" aria-labelledby="factorConversionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 bg-light border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="factorConversionModalLabel">
+          <i class="bi bi-calculator text-danger"></i>
+          <span>{{ formTitle }}</span>
+        </h6>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="factorForm" (ngSubmit)="saveFactor()">
+        <div class="modal-body p-3">
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-tag me-1"></i> Identity
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label mb-1">Factor Code <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm text-uppercase font-monospace"
+                  placeholder="e.g. DILUTION_10X" formControlName="code" maxlength="50"
+                  (input)="onCodeInput()"
+                  [ngClass]="{'is-invalid': (factorForm.get('code')?.touched || submitted) && factorForm.get('code')?.invalid}" />
+                <app-field-error [control]="factorForm.get('code')" label="Factor Code" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label mb-1">Factor Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm"
+                  placeholder="e.g. 10x Dilution Correction" formControlName="name" maxlength="150"
+                  [ngClass]="{'is-invalid': (factorForm.get('name')?.touched || submitted) && factorForm.get('name')?.invalid}" />
+                <app-field-error [control]="factorForm.get('name')" label="Factor Name" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Status</label>
+                <select class="form-select form-select-sm" formControlName="isActive">
+                  <option [ngValue]="true">Active</option>
+                  <option [ngValue]="false">Inactive</option>
+                </select>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label mb-1">Description</label>
+                <input type="text" class="form-control form-control-sm" placeholder="Why/when this transformation applies"
+                  formControlName="description" maxlength="500" />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-box-arrow-in-down me-1"></i> Input
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Input Parameter <span class="text-danger">*</span></label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Parameters" routerLink="/parameter">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Parameter
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Select observed parameter..."
+                  [fetchDataFn]="getInputParamDropdown" (itemSelected)="onInputParamSelected($event)"
+                  [selectedItem]="selectedInputParam" [isDisabled]="isViewMode"
+                  [isInvalid]="((factorForm.get('inputParameterID')?.touched || submitted) && factorForm.get('inputParameterID')?.invalid) || false">
+                </app-searchable-dropdown>
+                <app-field-error [control]="factorForm.get('inputParameterID')" label="Input Parameter" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label mb-1">Input Unit</label>
+                <input type="text" class="form-control form-control-sm" readonly
+                  [value]="auditInfo?.inputParameterUnit || 'Resolved from Parameter Master'" />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-lightning me-1"></i> Transformation
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label mb-1">Factor Type <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="factorType"
+                  [ngClass]="{'is-invalid': (factorForm.get('factorType')?.touched || submitted) && factorForm.get('factorType')?.invalid}">
+                  <option *ngFor="let t of factorTypes" [value]="t">{{ t }}</option>
+                </select>
+                <small class="text-muted">{{ factorTypeHint(factorForm.get('factorType')?.value) }}</small>
+                <app-field-error [control]="factorForm.get('factorType')" label="Factor Type" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label mb-1">Factor Value <span class="text-danger">*</span></label>
+                <input type="number" class="form-control form-control-sm font-monospace" placeholder="1" formControlName="factorValue" appDecimalOnly
+                  [ngClass]="{'is-invalid': (factorForm.get('factorValue')?.touched || submitted) && factorForm.get('factorValue')?.invalid}" />
+                <app-field-error [control]="factorForm.get('factorValue')" label="Factor Value" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label mb-1">Applied On <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="appliedOn">
+                  <option *ngFor="let a of appliedOnOptions" [value]="a">{{ a }}</option>
+                </select>
+              </div>
+              <div class="col-md-12">
+                <div class="dryrun-bar d-flex align-items-center gap-2 flex-wrap">
+                  <span class="fw-semibold">Try it:</span>
+                  <input type="number" class="form-control form-control-sm dryrun-input" placeholder="Trial input"
+                    [(ngModel)]="dryRunInput" [ngModelOptions]="{standalone: true}" appDecimalOnly />
+                  <button type="button" class="btn btn-lims btn-lims-copy btn-sm" (click)="runDryRun()" [disabled]="dryRunLoading">
+                    <i class="bi bi-play-circle me-1"></i> Validate
+                  </button>
+                  <span class="dryrun-result font-monospace" *ngIf="dryRunResult">
+                    {{ dryRunResult.inputValue }} {{ dryRunResult.appliedOperation }} = <strong>{{ dryRunResult.outputValue }}</strong>
+                  </span>
+                </div>
+                <small class="text-muted">Dry-run uses the same server transformation (no formula engine involved).</small>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-box-arrow-up me-1"></i> Output
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Output Parameter</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Parameters" routerLink="/parameter">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Parameter
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Same as input (optional)..."
+                  [fetchDataFn]="getInputParamDropdown" (itemSelected)="onOutputParamSelected($event)"
+                  [selectedItem]="selectedOutputParam" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label mb-1">Output Unit</label>
+                <input type="text" class="form-control form-control-sm" readonly
+                  [value]="auditInfo?.outputParameterUnit || 'Same as input unless mapped'" />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-diagram-3 me-1"></i> Applicability
+            </legend>
+            <div class="row g-2 align-items-end">
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Laboratory Test</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Laboratory Tests" routerLink="/test">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Test
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Global (optional)..."
+                  [fetchDataFn]="getTestDropdown" (itemSelected)="onTestSelected($event)"
+                  [selectedItem]="selectedTest" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Test Method</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Test Methods" routerLink="/test-method">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Method
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Any method (optional)..."
+                  [fetchDataFn]="getMethodDropdown" (itemSelected)="onMethodSelected($event)"
+                  [selectedItem]="selectedMethod" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label mb-1">Method Version</label>
+                <select class="form-select form-select-sm" formControlName="testMethodSpecificationVersionID">
+                  <option [ngValue]="null">Any version</option>
+                  <option *ngFor="let v of methodVersions" [ngValue]="v.id">{{ versionLabel(v) }}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="fcMandatory" formControlName="isMandatory" />
+                  <label class="form-check-label" for="fcMandatory">Mandatory factor</label>
+                </div>
+                <small class="text-muted">Mandatory = auto-applied whenever applicability matches. Unchecked = applied only at execution discretion.</small>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label mb-1">Display Order</label>
+                <input type="number" class="form-control form-control-sm" formControlName="displayOrder" min="0" appNumberOnly />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-card-text me-1"></i> Summary
+            </legend>
+            <div class="req-summary">{{ summaryLine }}</div>
+            <div class="row g-2 mt-1" *ngIf="auditInfo">
+              <div class="col-md-6">
+                <small class="text-muted">Created by {{ auditInfo.createdByName || '-' }} on {{ (auditInfo.createdOn | date:'dd MMM, yyyy hh:mm a') || '-' }}</small>
+              </div>
+              <div class="col-md-6 text-end">
+                <small class="text-muted">Modified by {{ auditInfo.modifiedByName || '-' }} on {{ (auditInfo.modifiedOn | date:'dd MMM, yyyy hh:mm a') || '-' }}</small>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <div class="modal-footer py-2 bg-light border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i> {{ isViewMode ? 'Close' : 'Cancel' }}
+          </button>
+          <button *ngIf="!isViewMode" type="submit" class="btn btn-lims btn-lims-save btn-sm">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

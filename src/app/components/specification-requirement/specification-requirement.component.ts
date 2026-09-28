@@ -4,8 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SpecificationRequirementService } from '../../services/specification-requirement.service';
 import { SpecificationVersionService, SpecificationVersionDropdownItem } from '../../services/specification-version.service';
-import { SpecificationMasterService } from '../../services/specification-master.service';
-import { MaterialSpecificationService } from '../../services/material-specification.service';
+import { SpecificationMasterService, SpecificationGradeDto } from '../../services/specification-master.service';
 import { ToastService } from '../../services/toast.service';
 import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import {
@@ -35,9 +34,9 @@ export class SpecificationRequirementComponent implements OnInit {
   selectedVersionId: number | null = null;
   selectedVersion: SpecificationVersionDropdownItem | null = null;
 
-  grades: any[] = [];
+  grades: SpecificationGradeDto[] = [];
   selectedGradeId: number | null = null;
-  selectedGrade: any = null;
+  selectedGrade: SpecificationGradeDto | null = null;
 
   context: SpecificationRequirementContext | null = null;
   requirements: SpecificationRequirementItem[] = [];
@@ -67,7 +66,6 @@ export class SpecificationRequirementComponent implements OnInit {
     private reqService: SpecificationRequirementService,
     private versionService: SpecificationVersionService,
     private specMasterService: SpecificationMasterService,
-    private materialSpecService: MaterialSpecificationService,
     private toast: ToastService
   ) {}
 
@@ -130,10 +128,10 @@ export class SpecificationRequirementComponent implements OnInit {
           this.selectedVersion = this.versions.find(v => v.id === this.selectedVersionId) || null;
         }
 
-        // 2. Load Grades
-        this.materialSpecService.getMaterialSpecificationById(specId).subscribe({
-          next: (specDetail) => {
-            this.grades = specDetail?.grades || [];
+        // 2. Load Grades from modern SpecificationMasterService (including inactive so requirements can be inspected)
+        this.specMasterService.getGrades(specId, true).subscribe({
+          next: (grades) => {
+            this.grades = grades || [];
             if (this.grades.length > 0) {
               if (targetGradeId && this.grades.some(g => g.id === targetGradeId)) {
                 this.selectedGradeId = targetGradeId;
@@ -141,11 +139,19 @@ export class SpecificationRequirementComponent implements OnInit {
                 this.selectedGradeId = this.grades[0].id;
               }
               this.selectedGrade = this.grades.find(g => g.id === this.selectedGradeId) || null;
+            } else {
+              this.selectedGradeId = null;
+              this.selectedGrade = null;
             }
 
             this.onContextChanged();
           },
-          error: () => {}
+          error: () => {
+            this.grades = [];
+            this.selectedGradeId = null;
+            this.selectedGrade = null;
+            this.onContextChanged();
+          }
         });
       },
       error: () => {}
@@ -363,9 +369,27 @@ export class SpecificationRequirementComponent implements OnInit {
     });
   }
 
+  navigateToSpecificationMaster(): void {
+    this.router.navigate(['/specification'], {
+      queryParams: { specId: this.selectedSpec?.id }
+    });
+  }
+
   navigateToVersionMaster(): void {
     this.router.navigate(['/specification-version'], {
       queryParams: { specId: this.selectedSpec?.id }
+    });
+  }
+
+  navigateToAddVersion(): void {
+    this.router.navigate(['/specification-version'], {
+      queryParams: { specId: this.selectedSpec?.id, action: 'add' }
+    });
+  }
+
+  navigateToGradeMaster(): void {
+    this.router.navigate(['/specification'], {
+      queryParams: { specId: this.selectedSpec?.id, action: 'grade' }
     });
   }
 

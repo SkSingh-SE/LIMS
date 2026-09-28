@@ -1,7 +1,7 @@
 <div class="modal-backdrop fade show" *ngIf="visible"></div>
 
 <div class="modal fade show d-block" tabindex="-1" role="dialog" *ngIf="visible">
-  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
     <div class="modal-content shadow-lg border-0">
       <div class="modal-header bg-light py-2 px-3 border-bottom">
         <h6 class="modal-title fw-semibold text-dark mb-0 d-flex align-items-center">
@@ -12,103 +12,119 @@
       </div>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="modal-body p-3">
-          <div class="row g-2">
-            <!-- Organization Name -->
-            <div class="col-md-8">
-              <label class="form-label">
-                Laboratory / Organization Name <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control form-control-sm" formControlName="labName" placeholder="e.g. Apex Testing Laboratory Pvt Ltd">
-              <div *ngIf="form.get('labName')?.touched && form.get('labName')?.invalid" class="text-danger form-error-msg">
-                Organization name is required.
+        <div class="modal-body p-2">
+          <!-- 1. Organization Identity -->
+          <fieldset>
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-building me-1"></i> Organization Identity
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-8">
+                <div class="form-field-header">
+                  <label class="form-label">Laboratory / Organization Name <span class="text-danger">*</span></label>
+                </div>
+                <input type="text" class="form-control form-control-sm" formControlName="labName" placeholder="e.g. Apex Testing Laboratory Pvt Ltd"
+                  [ngClass]="{'is-invalid': (form.get('labName')?.touched || submitted) && form.get('labName')?.invalid}" />
+                <app-field-error [control]="form.get('labName')" label="Organization Name" [submitted]="submitted"></app-field-error>
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">Organization Code <span class="text-danger">*</span></label>
+                </div>
+                <input type="text" class="form-control form-control-sm font-monospace text-uppercase" formControlName="labCode" placeholder="e.g. APEX-LAB"
+                  [ngClass]="{'is-invalid': (form.get('labCode')?.touched || submitted) && form.get('labCode')?.invalid}" />
+                <app-field-error [control]="form.get('labCode')" label="Organization Code" [submitted]="submitted"></app-field-error>
+              </div>
+
+              <div class="col-md-12">
+                <div class="form-field-header">
+                  <label class="form-label">Registered Address <span class="text-danger">*</span></label>
+                </div>
+                <textarea class="form-control form-control-sm" rows="2" formControlName="labAddress" placeholder="Full laboratory premises / registered office address"
+                  [ngClass]="{'is-invalid': (form.get('labAddress')?.touched || submitted) && form.get('labAddress')?.invalid}"></textarea>
+                <app-field-error [control]="form.get('labAddress')" label="Registered Address" [submitted]="submitted"></app-field-error>
               </div>
             </div>
+          </fieldset>
 
-            <!-- Organization Code -->
-            <div class="col-md-4">
-              <label class="form-label">
-                Organization Code <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control form-control-sm font-monospace" formControlName="labCode" placeholder="e.g. APEX-LAB">
-              <div *ngIf="form.get('labCode')?.touched && form.get('labCode')?.invalid" class="text-danger form-error-msg">
-                Organization code is required.
+          <!-- 2. Contact & Corporate Information -->
+          <fieldset>
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-envelope me-1"></i> Official Contact & Identification
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">Official Email <span class="text-danger">*</span></label>
+                </div>
+                <input type="email" class="form-control form-control-sm" formControlName="contactEmail" placeholder="contact@example.com"
+                  [ngClass]="{'is-invalid': (form.get('contactEmail')?.touched || submitted) && form.get('contactEmail')?.invalid}" />
+                <app-field-error [control]="form.get('contactEmail')" label="Official Email" [submitted]="submitted"></app-field-error>
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">Contact Phone <span class="text-danger">*</span></label>
+                </div>
+                <input type="text" class="form-control form-control-sm" formControlName="contactPhone" placeholder="+91 9876543210"
+                  [ngClass]="{'is-invalid': (form.get('contactPhone')?.touched || submitted) && form.get('contactPhone')?.invalid}" />
+                <app-field-error [control]="form.get('contactPhone')" label="Contact Phone" [submitted]="submitted"></app-field-error>
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">Mobile / Alternate Phone</label>
+                </div>
+                <input type="text" class="form-control form-control-sm" formControlName="mobileNo" placeholder="+91 9876543211" />
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">CIN / Registration No.</label>
+                </div>
+                <input type="text" class="form-control form-control-sm" formControlName="cin" placeholder="Corporate Identity No." />
+              </div>
+
+              <div class="col-md-8">
+                <div class="form-field-header">
+                  <label class="form-label">Official Website URL</label>
+                </div>
+                <input type="text" class="form-control form-control-sm" formControlName="website" placeholder="https://www.example.com" />
               </div>
             </div>
+          </fieldset>
 
-            <!-- Organization Address -->
-            <div class="col-md-12">
-              <label class="form-label">
-                Registered Address <span class="text-danger">*</span>
-              </label>
-              <textarea class="form-control form-control-sm" rows="2" formControlName="labAddress" placeholder="Full laboratory premises / registered office address"></textarea>
-              <div *ngIf="form.get('labAddress')?.touched && form.get('labAddress')?.invalid" class="text-danger form-error-msg">
-                Registered address is required.
+          <!-- 3. Regulatory & Branch Configuration -->
+          <fieldset>
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-sliders me-1"></i> Regulatory & Multi-Branch Configuration
+            </legend>
+            <div class="row g-2 align-items-center">
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">ULR Prefix</label>
+                </div>
+                <input type="text" class="form-control form-control-sm font-monospace" formControlName="ulrPrefix" placeholder="e.g. TC-9999" />
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">Lab Location Code</label>
+                </div>
+                <input type="text" class="form-control form-control-sm font-monospace" formControlName="labLocationCode" placeholder="e.g. LOC-01" />
+              </div>
+
+              <div class="col-md-4">
+                <div class="form-check form-switch pt-3">
+                  <input class="form-check-input" type="checkbox" id="multiBranchCheck" formControlName="isMultiBranch" />
+                  <label class="form-check-label form-label text-dark ms-1" for="multiBranchCheck">
+                    Enable Multi-Branch Mode
+                  </label>
+                </div>
               </div>
             </div>
-
-            <!-- Contact Email -->
-            <div class="col-md-4">
-              <label class="form-label">
-                Official Email <span class="text-danger">*</span>
-              </label>
-              <input type="email" class="form-control form-control-sm" formControlName="contactEmail" placeholder="contact@example.com">
-              <div *ngIf="form.get('contactEmail')?.touched && form.get('contactEmail')?.invalid" class="text-danger form-error-msg">
-                Valid email is required.
-              </div>
-            </div>
-
-            <!-- Contact Phone -->
-            <div class="col-md-4">
-              <label class="form-label">
-                Contact Phone <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control form-control-sm" formControlName="contactPhone" placeholder="+91 9876543210">
-              <div *ngIf="form.get('contactPhone')?.touched && form.get('contactPhone')?.invalid" class="text-danger form-error-msg">
-                Phone number is required.
-              </div>
-            </div>
-
-            <!-- Mobile No -->
-            <div class="col-md-4">
-              <label class="form-label">Mobile / Alternate Phone</label>
-              <input type="text" class="form-control form-control-sm" formControlName="mobileNo" placeholder="+91 9876543211">
-            </div>
-
-            <!-- CIN -->
-            <div class="col-md-4">
-              <label class="form-label">CIN / Registration No.</label>
-              <input type="text" class="form-control form-control-sm" formControlName="cin" placeholder="Corporate Identity No.">
-            </div>
-
-            <!-- Website -->
-            <div class="col-md-4">
-              <label class="form-label">Website URL</label>
-              <input type="text" class="form-control form-control-sm" formControlName="website" placeholder="https://www.example.com">
-            </div>
-
-            <!-- ULR Prefix -->
-            <div class="col-md-4">
-              <label class="form-label">ULR Prefix</label>
-              <input type="text" class="form-control form-control-sm" formControlName="ulrPrefix" placeholder="e.g. TC-9999">
-            </div>
-
-            <!-- Lab Location Code -->
-            <div class="col-md-4">
-              <label class="form-label">Lab Location Code</label>
-              <input type="text" class="form-control form-control-sm" formControlName="labLocationCode" placeholder="e.g. LOC-01">
-            </div>
-
-            <!-- Multi Branch Switch -->
-            <div class="col-md-8">
-              <div class="form-check form-switch pt-4">
-                <input class="form-check-input" type="checkbox" id="multiBranchCheck" formControlName="isMultiBranch">
-                <label class="form-check-label form-label-sm text-dark ms-1" for="multiBranchCheck">
-                  Enable Multi-Branch Mode for this Organization
-                </label>
-              </div>
-            </div>
-          </div>
+          </fieldset>
         </div>
 
         <div class="modal-footer bg-light py-2 px-3 border-top">

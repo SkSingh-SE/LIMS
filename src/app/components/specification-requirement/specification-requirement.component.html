@@ -17,8 +17,14 @@
         </div>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <button *ngIf="selectedSpec" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToVersionMaster()">
-          <i class="bi bi-box-arrow-up-right me-1"></i> Manage Versions
+        <button *ngIf="selectedSpec" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToSpecificationMaster()" title="Manage Parent Specification">
+          <i class="bi bi-box-arrow-up-right me-1"></i> Manage Spec
+        </button>
+        <button *ngIf="selectedSpec" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToGradeMaster()" title="Manage Grades for this Specification">
+          <i class="bi bi-tags me-1"></i> Manage Grades
+        </button>
+        <button *ngIf="selectedSpec" type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 fs-8 d-flex align-items-center" (click)="navigateToVersionMaster()" title="Manage Versions for this Specification">
+          <i class="bi bi-layers me-1"></i> Manage Versions
         </button>
       </div>
     </div>
@@ -71,9 +77,29 @@
             (ngModelChange)="onGradeChange($event)">
             <option [ngValue]="null" disabled>-- Select Applicability / Grade --</option>
             <option *ngFor="let g of grades" [value]="g.id">
-              {{ g.grade }} {{ g.metalClassification?.name ? '• ' + g.metalClassification.name : '' }}
+              {{ g.grade }} {{ !g.isActive ? '(Inactive)' : '' }}
             </option>
           </select>
+        </div>
+
+        <!-- Empty State Helper: No Versions -->
+        <div *ngIf="selectedSpec && versions.length === 0" class="col-12 mt-1">
+          <div class="alert alert-warning py-1.5 px-2.5 mb-0 d-flex align-items-center justify-content-between text-xs">
+            <span><i class="bi bi-exclamation-triangle-fill me-1"></i> No Versions found for <strong>{{ selectedSpec.name || selectedSpec.code }}</strong>. You must create at least one Version before configuring requirements.</span>
+            <button type="button" class="btn-lims btn-lims-add py-0 px-2 fs-8" (click)="navigateToAddVersion()">
+              <i class="bi bi-plus-circle me-1"></i>+ Add Version Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State Helper: No Grades -->
+        <div *ngIf="selectedSpec && grades.length === 0" class="col-12 mt-1">
+          <div class="alert alert-warning py-1.5 px-2.5 mb-0 d-flex align-items-center justify-content-between text-xs">
+            <span><i class="bi bi-exclamation-triangle-fill me-1"></i> No Grades found for <strong>{{ selectedSpec.name || selectedSpec.code }}</strong>. You must create at least one Grade before configuring requirements.</span>
+            <button type="button" class="btn-lims btn-lims-add py-0 px-2 fs-8" (click)="navigateToGradeMaster()">
+              <i class="bi bi-tags me-1"></i>+ Add Grade Now
+            </button>
+          </div>
         </div>
 
       </div>
@@ -109,9 +135,6 @@
         <div class="context-pill">
           <span class="pill-label">Applicability / Grade</span>
           <span class="pill-value fw-bold text-dark">{{ context.gradeName }}</span>
-          <span *ngIf="context.metalClassificationName" class="badge bg-light text-muted border ms-1 fs-8">
-            {{ context.metalClassificationName }}
-          </span>
         </div>
 
         <div class="context-pill">
@@ -155,7 +178,7 @@
   <!-- Requirements Table Card -->
   <div *ngIf="selectedSpec && selectedVersionId && selectedGradeId" class="card border shadow-sm bg-white">
 
-    <!-- Table Toolbar: Search & Legacy Filter -->
+    <!-- Table Toolbar: Search & Actions — draft must expose primary Add inside card for visibility when scrolled -->
     <div class="card-header bg-white py-2 px-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
       <div class="d-flex align-items-center gap-2 flex-grow-1 max-w-md">
         <div class="input-group input-group-sm">
@@ -172,6 +195,9 @@
       </div>
       <div class="d-flex align-items-center gap-2">
         <span class="fs-8 fw-semibold text-muted">Showing {{ filteredRequirements.length }} of {{ requirements.length }} Requirements</span>
+        <button *ngIf="context?.isEditable" type="button" class="btn-lims btn-lims-add py-0 px-2 fs-8 d-flex align-items-center" (click)="openAddRequirement()" title="Add new requirement to this Draft version & grade">
+          <i class="bi bi-plus-circle me-1"></i> Add Requirement
+        </button>
       </div>
     </div>
 

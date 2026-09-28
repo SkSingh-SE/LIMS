@@ -162,8 +162,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
         ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
         : (userData.userName || '').substring(0, 2).toUpperCase();
       this.loadProfileImage(userData);
-      if (userData.employeeId) {
-        this.getUserMenu(userData.employeeId);
+      const menuUserId = userData.userId ?? userData.id ?? userData.employeeId;
+      if (menuUserId) {
+        this.getUserMenu(menuUserId);
       }
       this.branchService.loadUserBranches().subscribe({ error: () => {} });
     }
@@ -636,6 +637,10 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     if (this.selectedBranch()?.id === branch.id) return;
     this.branchService.setBranch(branch);
     this.toastService.show(`Switched to ${branch.name}`, 'success');
+  }
+
+  isAdminRole(): boolean {
+    return (this.loggedInUserRole || '').trim().toLowerCase() === 'admin';
   }
 
   openProfile() { this.isProfileOpen.set(true); }

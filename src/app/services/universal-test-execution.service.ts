@@ -3,12 +3,32 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { ExecutionLayoutDto } from '../models/execution-layout.model';
+
+export interface SnapshotDropdownOptionDto {
+  id: number;
+  displayText: string;
+  value: string;
+  isDefault: boolean;
+  displayOrder: number;
+}
+
+export interface SnapshotProvenanceDto {
+  sourceType: string;
+  sourceReferenceID?: number;
+  sourceRevision: number;
+  frozenAtUtc: string;
+  resolvedByUserID: number;
+}
 
 export interface SnapshotParameterDto {
   parameterMasterID: number;
   code: string;
+  parameterCode?: string;
   name: string;
+  parameterName?: string;
   unit?: string;
+  symbol?: string;
   inputType: string;
   parameterType?: string; // 'Input' | 'Calculated' | 'Derived'
   decimalPrecision: number;
@@ -18,55 +38,93 @@ export interface SnapshotParameterDto {
   specMin?: number;
   specMax?: number;
   specTarget?: number;
+  effectiveMin?: number;
+  effectiveMax?: number;
+  toleranceSource?: string;
+  toleranceType?: string;
+  appliedTolerance?: number;
+  parameterCombinedUncertainty?: number;
+  parameterExpandedUncertainty?: number;
+  parameterCoverageFactor?: number;
+  muSource?: string;
   comparisonCriteria?: string;
   acceptanceCriteria?: string;
   displayOrder: number;
   isRequired: boolean;
+  isReportable?: boolean;
   aggregateType?: string;
+  dropdownOptions?: SnapshotDropdownOptionDto[];
 }
 
 export interface SnapshotConditionDto {
   conditionDimensionID?: number;
+  conditionMasterID?: number;
   dimensionName: string;
+  dimensionCode?: string;
   unit?: string;
+  category?: string;
+  operator?: string;
+  configuredValue?: string;
   configuredOperator?: string;
   configuredValue1?: string;
   configuredValue2?: string;
   selectedExecutionValue?: string;
+  actualExecutionValue?: string;
+  requirementContext?: string;
+  isMandatory?: boolean;
+  displayOrder?: number;
 }
 
 export interface SnapshotEquipmentDto {
   equipmentID?: number;
   name: string;
+  equipmentName?: string;
   model?: string;
+  equipmentType?: string;
   calibrationNo?: string;
   calibratedOn?: string;
   validUpto?: string;
+  calibrationStatus?: string;
+  isMandatory?: boolean;
 }
 
 export interface SnapshotFactorDto {
+  factorConversionID?: number;
+  code?: string;
+  name?: string;
   factorType: string;
-  factorName: string;
-  value: number;
+  factorName?: string;
+  factorValue?: number;
+  value?: number;
+  inputParameterID?: number;
+  outputParameterID?: number;
   appliedOn?: string;
   description?: string;
+  isMandatory?: boolean;
+  displayOrder?: number;
 }
 
 export interface SnapshotMeasurementUncertaintyDto {
+  masterCode?: string;
+  masterName?: string;
   uncertaintyType: string;
+  combinedUncertainty?: number;
+  expandedUncertainty?: number;
   value?: number;
   unit?: string;
   coverageFactor: number;
-  basis: string;
+  confidenceLevel?: number;
+  basis?: string;
   remarks?: string;
 }
 
 export interface SnapshotAcceptanceCriteriaDto {
   decisionRule: string;
-  overallDecision: string;
+  overallDecision?: string;
   roundingRule: string;
   roundingPrecision: number;
   passFailThreshold?: string;
+  statement?: string;
 }
 
 export interface SnapshotAttachmentDto {
@@ -90,6 +148,7 @@ export interface TestExecutionConfigSnapshotDto {
   testMethodSpecificationID?: number;
   testMethodName?: string;
   testMethodStandard?: string;
+  testMethodVersion?: string;
   specificationHeaderID?: number;
   specificationTitle?: string;
   specificationName?: string;
@@ -99,6 +158,9 @@ export interface TestExecutionConfigSnapshotDto {
   isFrozen?: boolean;
 
   // Execution Layout Metadata
+  executionLayoutID?: number;
+  executionLayoutCode?: string;
+  executionLayoutName?: string;
   rendererType?: string; // 'ObservationMatrix' | 'MultiSpecimen' | 'MultiReading' | 'ParameterTable' | 'Qualitative' | 'Calculation' | 'Graph'
   specimenMode?: string;
   observationMode?: string;
@@ -106,6 +168,14 @@ export interface TestExecutionConfigSnapshotDto {
   configuredReadingCount?: number;
   defaultAggregateType?: string;
   aggregateScope?: string;
+  layoutResolutionLevel?: string;
+  executionLayout?: ExecutionLayoutDto;
+  unmappedParameterIDs?: number[];
+
+  // Provenance
+  provenance?: SnapshotProvenanceDto;
+  scope?: any;
+  accreditation?: any;
 
   // 10 Configuration Categories
   parameters: SnapshotParameterDto[];
@@ -116,6 +186,31 @@ export interface TestExecutionConfigSnapshotDto {
   acceptanceCriteria?: SnapshotAcceptanceCriteriaDto;
   attachments: SnapshotAttachmentDto[];
   generalRemarks?: string;
+}
+
+export interface ActualConditionEntryDto {
+  conditionDimensionID?: number;
+  dimensionName: string;
+  dimensionCode: string;
+  unit?: string;
+  configuredValue?: string;
+  selectedExecutionValue?: string;
+  actualExecutionValue?: string;
+  remarks?: string;
+}
+
+export interface ActualEquipmentEntryDto {
+  equipmentID: number;
+  equipmentRequirementID?: number;
+  name: string;
+  model?: string;
+  equipmentType?: string;
+  calibrationNo?: string;
+  calibratedOn?: string;
+  validUpto?: string;
+  calibrationStatus?: string;
+  readinessStatus?: string;
+  remarks?: string;
 }
 
 export interface ParameterObservationResultDto {
@@ -176,20 +271,40 @@ export interface TestExecutionDto {
   configSnapshot?: TestExecutionConfigSnapshotDto;
   testSpecimens: TestSpecimenDto[];
 
-  // Context properties
+  actualConditionsJson?: string;
+  actualEquipmentJson?: string;
+  actualConditions?: ActualConditionEntryDto[];
+  actualEquipment?: ActualEquipmentEntryDto[];
+
+  // Context properties (backend: SampleID/SampleNo/CustomerName/SampleDescription/CaseNo/TestName)
   sampleID?: number;
+  sampleId?: number;
   sampleNo?: string;
   caseNo?: string;
+  customerName?: string;
   clientName?: string;
+  sampleDescription?: string;
   materialName?: string;
   testName?: string;
   standardName?: string;
   gradeName?: string;
+  testMethodVersion?: string;
+  specificationTitle?: string;
 }
 
 export interface TestExecutionSaveDto {
   specimens: any[];
+  actualConditions?: ActualConditionEntryDto[];
+  actualEquipment?: ActualEquipmentEntryDto[];
   conditions?: any[];
+  equipment?: any[];
+  remarks?: string;
+  executionRemarks?: string;
+}
+
+export interface RetestRequestDto {
+  reasonCode: string;
+  justification: string;
 }
 
 export interface ExecutionActionDto {
@@ -282,6 +397,26 @@ export class UniversalTestExecutionService {
   private normalizeExecution(raw: any): TestExecutionDto {
     if (!raw) return raw;
     const exec = { ...raw };
+    // Backend uses PascalCase DTOs; JSON may arrive in either casing — normalize sample context
+    exec.sampleID = exec.sampleID ?? exec.SampleID ?? exec.sampleId;
+    exec.sampleId = exec.sampleID;
+    exec.sampleNo = exec.sampleNo ?? exec.SampleNo;
+    exec.caseNo = exec.caseNo ?? exec.CaseNo;
+    exec.customerName = exec.customerName ?? exec.CustomerName;
+    exec.clientName = exec.clientName ?? exec.customerName;
+    exec.sampleDescription = exec.sampleDescription ?? exec.SampleDescription;
+    exec.materialName = exec.materialName ?? exec.sampleDescription;
+    exec.testName = exec.testName ?? exec.TestName;
+    exec.standardName = exec.standardName ?? exec.StandardName;
+    exec.gradeName = exec.gradeName ?? exec.GradeName;
+    exec.testMethodVersion = exec.testMethodVersion ?? exec.TestMethodVersion;
+    exec.specificationTitle = exec.specificationTitle ?? exec.SpecificationTitle;
+    exec.branchName = exec.branchName ?? exec.BranchName;
+    exec.actualConditionsJson = exec.actualConditionsJson ?? exec.ActualConditionsJson;
+    exec.actualEquipmentJson = exec.actualEquipmentJson ?? exec.ActualEquipmentJson;
+    exec.actualConditions = exec.actualConditions ?? exec.ActualConditions;
+    exec.actualEquipment = exec.actualEquipment ?? exec.ActualEquipment;
+
     const specimensList = exec.specimens || exec.testSpecimens || [];
     exec.testSpecimens = specimensList.map((s: any) => {
       const obsList = s.observations || s.testObservations || [];
@@ -302,14 +437,33 @@ export class UniversalTestExecutionService {
     );
   }
 
+  getExecutionDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> {
+    const term = encodeURIComponent(searchTerm || '');
+    return this.http.get<any[]>(`${this.apiUrl}/dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}`).pipe(
+      map(res => (res as any)?.data ?? res ?? [])
+    );
+  }
+
   getExecutionByGroup(groupId: number): Observable<TestExecutionDto> {
     return this.http.get<any>(`${this.apiUrl}/by-group/${groupId}`).pipe(
       map(res => this.normalizeExecution(res?.data ?? res))
     );
   }
 
+  getExecutionByGroupAndRun(groupId: number, runNo: number): Observable<TestExecutionDto> {
+    return this.http.get<any>(`${this.apiUrl}/by-group/${groupId}/run/${runNo}`).pipe(
+      map(res => this.normalizeExecution(res?.data ?? res))
+    );
+  }
+
   startExecution(groupId: number, isRetest: boolean = false): Observable<TestExecutionDto> {
     return this.http.post<any>(`${this.apiUrl}/start/${groupId}?isRetest=${isRetest}`, {}).pipe(
+      map(res => this.normalizeExecution(res?.data ?? res))
+    );
+  }
+
+  retestExecution(executionId: number, dto: RetestRequestDto): Observable<TestExecutionDto> {
+    return this.http.post<any>(`${this.apiUrl}/retest/${executionId}`, dto).pipe(
       map(res => this.normalizeExecution(res?.data ?? res))
     );
   }

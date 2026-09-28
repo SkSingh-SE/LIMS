@@ -13,6 +13,7 @@ import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
+import { ExecutionLayoutService } from '../../../services/execution-layout.service';
 import { DisciplineService } from '../../../services/discipline.service';
 import { DepartmentService } from '../../../services/department.service';
 import { ParameterService } from '../../../services/parameter.service';
@@ -26,7 +27,9 @@ import { HasPermissionDirective } from '../../../utility/directives/has-permissi
 import {
   LaboratoryTestCreateDto,
   LaboratoryTestDetailDto,
-  LaboratoryTestUpdateDto
+  LaboratoryTestUpdateDto,
+  LaboratoryTestLayoutItemDto,
+  EffectiveLayoutResponseDto
 } from '../../../models/laboratory-test.model';
 
 @Component({
@@ -51,7 +54,21 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
   isViewMode: boolean = false;
   isEditMode: boolean = false;
   isSaved: boolean = false;
-  activeTab: 'header' | 'parameters' | 'methods' | 'conditions' | 'audit' = 'header';
+  activeTab: 'header' | 'parameters' | 'methods' | 'conditions' | 'layouts' | 'audit' = 'header';
+
+  // Phase 2: Layout Assignment (presentation only — separate API, never part of test save payload)
+  layoutAssignments: LaboratoryTestLayoutItemDto[] = [];
+  effectiveLayout: EffectiveLayoutResponseDto | null = null;
+  selectedLayout: any = null;
+  assignmentMethodId: number | null = null;
+  assignmentVersionId: number | null = null;
+  assignmentPriority = 0;
+  assignmentIsDefault = false;
+  editingAssignmentId: number | null = null;
+  assignmentVersions: any[] = [];
+  resolveMethodId: number | null = null;
+  resolveVersionId: number | null = null;
+  resolveVersions: any[] = [];
 
   // Selected dropdown representations
   selectedDiscipline: any = null;
@@ -93,11 +110,16 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
     return this.conditionService.getConditionMasterDropdown(searchTerm, pageNo, pageSize);
   };
 
+  getLayoutDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.layoutService.getDropdown(searchTerm, pageNo, pageSize);
+  };
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     public router: Router,
     private labService: LaboratoryTestService,
+    private layoutService: ExecutionLayoutService,
     private disciplineService: DisciplineService,
     private departmentService: DepartmentService,
     private parameterService: ParameterService,
@@ -237,20 +259,29 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
           };
         });
 
-        // Populate Methods FormArray
+        // Populate Methods FormArray — version leaf stores versionId (implies standard)
         this.methods.clear();
         this.selectedMethods = [];
         (data.methods || []).forEach((m, idx) => {
           this.addMethodRow(m);
-          const methodTitle = m.displayTitle || m.methodName || m.methodCode || ('Method #' + m.testMethodSpecificationID);
+          const hasVersion = !!m.testMethodSpecificationVersionID;
+          const versionSuffix = hasVersion ? ` : ${m.methodVersion || 'v'}${m.isSupersededVersion ? ' [Superseded]' : ''}` : '';
+          const methodTitle = hasVersion
+            ? (m.displayTitle + versionSuffix)
+            : (m.displayTitle || m.methodName || m.methodCode || ('Method #' + m.testMethodSpecificationID));
+          const effectiveId = hasVersion ? (m.testMethodSpecificationVersionID as number) : m.testMethodSpecificationID;
           this.selectedMethods[idx] = {
-            id: m.testMethodSpecificationID,
+            id: effectiveId,
             name: methodTitle,
             label: methodTitle,
             code: m.methodCode,
             displayTitle: methodTitle,
             testMethodStandard: m.standardReference,
-            technique: m.analysisTechniqueName
+            technique: m.analysisTechniqueName,
+            testMethodSpecificationId: m.testMethodSpecificationID,
+            versionId: m.testMethodSpecificationVersionID,
+            versionName: m.methodVersion,
+            isSuperseded: m.isSupersededVersion
           };
         });
 
@@ -268,6 +299,9 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
             unit: c.parameterUnit
           };
         });
+
+        // Phase 2: Layout assignments ride on details DTO (read-only snapshot of assignment state)
+        this.layoutAssignments = (data.layouts || []) as LaboratoryTestLayoutItemDto[];
 
         if (this.isViewMode) {
           this.form.disable();
@@ -360,7 +394,10 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
     const row = this.fb.group({
       id: [data?.id || 0],
       testMethodSpecificationID: [data?.testMethodSpecificationID || null, Validators.required],
+      testMethodSpecificationVersionID: [data?.testMethodSpecificationVersionID || null],
       methodCode: [data?.methodCode || ''],
+      methodVersion: [data?.methodVersion || ''],
+      isSupersededVersion: [data?.isSupersededVersion || false],
       displayTitle: [data?.displayTitle || ''],
       standardReference: [data?.standardReference || ''],
       analysisTechniqueName: [data?.analysisTechniqueName || ''],
@@ -396,17 +433,42 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
   }
 
   onMethodSelected(event: any, index: number): void {
+    // event is a version leaf (Level 2) or unversioned spec leaf (Level 1)
+    // For version leaf: event.id = versionId, event.additionalValues.testMethodSpecificationId = specId
+    // We store versionId as primary key (implies standard); specId is kept for traceability & standardReference
+    const resolveIds = (ev: any) => {
+      if (!ev) return { specId: null, versionId: null };
+      const isVersion = ev.NodeType === 'Version' || ev.Level === 2 || ev.additionalValues?.['versionId'] > 0;
+      if (isVersion) {
+        const versionId = ev.id || ev.ID || ev.additionalValues?.['versionId'];
+        const specId = ev.additionalValues?.['testMethodSpecificationId'] || ev.ParentId || ev.parentId || null;
+        return { specId: specId ? Number(specId) : null, versionId: versionId ? Number(versionId) : null };
+      }
+      // Unversioned spec leaf
+      const specId = ev.id || ev.ID;
+      return { specId: specId ? Number(specId) : null, versionId: null };
+    };
+
     if (event) {
-      const selectedId = event.id || event.ID;
-      const alreadyExists = this.methods.controls.some(
-        (ctrl, idx) => idx !== index && ctrl.get('testMethodSpecificationID')?.value === selectedId
-      );
+      const { specId, versionId } = resolveIds(event);
+      const effectiveKey = versionId ? `V:${versionId}` : `S:${specId}`;
+      const alreadyExists = this.methods.controls.some((ctrl, idx) => {
+        if (idx === index) return false;
+        const cSpec = ctrl.get('testMethodSpecificationID')?.value;
+        const cVer = ctrl.get('testMethodSpecificationVersionID')?.value;
+        const cKey = cVer ? `V:${cVer}` : `S:${cSpec}`;
+        return cKey === effectiveKey;
+      });
       if (alreadyExists) {
-        this.toastService.show(`Test Method '${event.displayTitle || event.name || event.code}' is already added to this test.`, 'warning');
+        const name = event.additionalValues?.['fullDisplayName'] || event.displayTitle || event.name || event.code || 'This method';
+        this.toastService.show(`Test Method '${name}' is already added to this test.`, 'warning');
         const r = this.methods.at(index);
         r.patchValue({
           testMethodSpecificationID: null,
+          testMethodSpecificationVersionID: null,
           methodCode: '',
+          methodVersion: '',
+          isSupersededVersion: false,
           displayTitle: '',
           standardReference: '',
           analysisTechniqueName: ''
@@ -415,28 +477,50 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
         return;
       }
     }
+
     const row = this.methods.at(index);
     if (event) {
-      const title = event.name || event.displayTitle || event.DisplayTitle || event.code || event.Code || '';
+      const av = event.additionalValues || {};
+      const { specId, versionId } = resolveIds(event);
+      const standard = av['testMethodStandard'] || event.testMethodStandard || event.TestMethodStandard || '';
+      const technique = av['technique'] || av['analysisTechniqueName'] || event.technique || event.analysisTechniqueName || '';
+      const code = av['code'] || event.code || event.Code || '';
+      const title = av['fullDisplayName'] || event.displayTitle || event.DisplayTitle || event.name || event.Name || code || '';
+      const versionLabel = av['versionName'] || event.versionName || '';
+      const isSuperseded = !!av['isSuperseded'] || !!event.isSuperseded;
+
       this.selectedMethods[index] = {
         ...event,
-        id: event.id || event.ID,
+        id: versionId || specId,
         name: title,
         label: title,
-        displayTitle: title
-      };
-      row.patchValue({
-        testMethodSpecificationID: event.id || event.ID,
-        methodCode: event.code || event.Code || '',
         displayTitle: title,
-        standardReference: event.testMethodStandard || event.TestMethodStandard || event.standardReference || '',
-        analysisTechniqueName: event.technique || event.analysisTechniqueName || ''
+        testMethodStandard: standard,
+        standardReference: standard,
+        technique: technique,
+        testMethodSpecificationId: specId,
+        versionId: versionId,
+        isSuperseded: isSuperseded
+      };
+
+      row.patchValue({
+        testMethodSpecificationID: specId,
+        testMethodSpecificationVersionID: versionId,
+        methodCode: code,
+        methodVersion: versionLabel,
+        isSupersededVersion: isSuperseded,
+        displayTitle: title,
+        standardReference: standard,
+        analysisTechniqueName: technique
       });
     } else {
       this.selectedMethods[index] = null;
       row.patchValue({
         testMethodSpecificationID: null,
+        testMethodSpecificationVersionID: null,
         methodCode: '',
+        methodVersion: '',
+        isSupersededVersion: false,
         displayTitle: '',
         standardReference: '',
         analysisTechniqueName: ''
@@ -560,6 +644,137 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
     window.open(routePath, '_blank');
   }
 
+  // ── Phase 2: Layout Assignment (separate lifecycle — immediate API persistence) ──
+
+  refreshLayouts(): void {
+    if (!this.labTestId) return;
+    this.labService.getLayoutAssignments(this.labTestId).subscribe({
+      next: (rows) => { this.layoutAssignments = rows || []; },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || 'Error loading layout assignments.', 'error');
+      }
+    });
+  }
+
+  onLayoutSelected(item: any): void {
+    this.selectedLayout = item;
+  }
+
+  onAssignmentMethodChange(methodId: number | null, preserveVersionId: number | null = null): void {
+    this.assignmentMethodId = methodId;
+    this.assignmentVersionId = null;
+    this.assignmentVersions = [];
+    if (methodId) {
+      this.methodService.getVersionsDropdown(methodId, true).subscribe({
+        next: (rows) => {
+          this.assignmentVersions = this.normalizeVersionList(rows);
+          if (preserveVersionId != null && this.assignmentVersions.some((v) => v.id === preserveVersionId)) {
+            this.assignmentVersionId = preserveVersionId;
+          }
+        },
+        error: () => { this.assignmentVersions = []; }
+      });
+    }
+  }
+
+  private normalizeVersionList(data: any): any[] {
+    const list = Array.isArray(data) ? data : (data?.items || data?.data || []);
+    return Array.isArray(list) ? list : [];
+  }
+
+  versionLabel(v: any): string {
+    if (!v) return '';
+    const ver = v.version ?? v.versionName ?? v.name ?? v.id;
+    const def = v.isDefault ? ' ★' : '';
+    return `${ver}${def}`;
+  }
+
+  editAssignment(row: LaboratoryTestLayoutItemDto): void {
+    this.editingAssignmentId = row.id;
+    this.selectedLayout = { id: row.executionLayoutID, code: row.layoutCode, name: row.layoutName };
+    this.assignmentMethodId = row.testMethodSpecificationID ?? null;
+    this.assignmentVersionId = row.testMethodSpecificationVersionID ?? null;
+    this.assignmentPriority = row.priority;
+    this.assignmentIsDefault = row.isDefault;
+    if (this.assignmentMethodId) this.onAssignmentMethodChange(this.assignmentMethodId, row.testMethodSpecificationVersionID ?? null);
+  }
+
+  cancelAssignmentEdit(): void {
+    this.editingAssignmentId = null;
+    this.selectedLayout = null;
+    this.assignmentMethodId = null;
+    this.assignmentVersionId = null;
+    this.assignmentPriority = 0;
+    this.assignmentIsDefault = false;
+    this.assignmentVersions = [];
+  }
+
+  saveAssignment(): void {
+    if (!this.labTestId) {
+      this.toastService.show('Save the test before assigning layouts.', 'warning');
+      return;
+    }
+    if (!this.selectedLayout?.id) {
+      this.toastService.show('Execution Layout is mandatory.', 'warning');
+      return;
+    }
+    const payload = {
+      executionLayoutID: this.selectedLayout.id,
+      testMethodSpecificationID: this.assignmentMethodId,
+      testMethodSpecificationVersionID: this.assignmentVersionId,
+      priority: this.assignmentPriority || 0,
+      isDefault: this.assignmentIsDefault ?? false
+    };
+    const op = this.editingAssignmentId
+      ? this.labService.updateLayoutAssignment(this.labTestId, this.editingAssignmentId, payload)
+      : this.labService.addLayoutAssignment(this.labTestId, payload);
+    op.subscribe({
+      next: (res) => {
+        this.toastService.show(res?.message || 'Layout assignment saved.', 'success');
+        this.cancelAssignmentEdit();
+        this.refreshLayouts();
+      },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || 'Error saving layout assignment.', 'error');
+      }
+    });
+  }
+
+  toggleAssignment(row: LaboratoryTestLayoutItemDto): void {
+    this.labService.toggleLayoutAssignmentStatus(this.labTestId, row.id).subscribe({
+      next: (res) => {
+        this.toastService.show(res?.message || 'Assignment status updated.', 'success');
+        this.refreshLayouts();
+      },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || 'Error updating assignment status.', 'error');
+      }
+    });
+  }
+
+  onResolveMethodChange(methodId: number | null): void {
+    this.resolveMethodId = methodId;
+    this.resolveVersionId = null;
+    this.resolveVersions = [];
+    if (methodId) {
+      this.methodService.getVersionsDropdown(methodId, true).subscribe({
+        next: (rows) => { this.resolveVersions = this.normalizeVersionList(rows); },
+        error: () => { this.resolveVersions = []; }
+      });
+    }
+  }
+
+  resolveEffectiveLayout(): void {
+    if (!this.labTestId) return;
+    this.labService.getEffectiveLayout(this.labTestId, this.resolveMethodId, this.resolveVersionId).subscribe({
+      next: (res) => { this.effectiveLayout = res; },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || 'No layout resolved for this context.', 'warning');
+        this.effectiveLayout = null;
+      }
+    });
+  }
+
   // ── Form Submission ──
 
   onSave(activate: boolean): void {
@@ -630,6 +845,7 @@ export class LaboratoryTestComponent implements OnInit, CanComponentDeactivate {
           id: m.id || 0,
           laboratoryTestID: this.labTestId,
           testMethodSpecificationID: m.testMethodSpecificationID,
+          testMethodSpecificationVersionID: m.testMethodSpecificationVersionID || null,
           isDefault: m.isDefault ?? false,
           displayOrder: m.displayOrder || 0,
           isActive: m.isActive ?? true

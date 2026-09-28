@@ -1,0 +1,1072 @@
+<div class="container-fluid p-2">
+  <!-- Breadcrumb -->
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div *ngIf="detail && eff">
+    <!-- Header Card -->
+    <div class="card shadow-sm border-0 mb-2">
+      <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-layers-fill text-danger fs-5"></i>
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h6 class="mb-0 fw-bold text-dark">Universal Test Group #{{ detail.id }} — Effective Configuration</h6>
+              <span class="badge" [ngClass]="getOverallStatusBadgeClass(eff.validation.overallStatus)">
+                <i class="bi" [ngClass]="eff.validation.overallStatus === 'READY' ? 'bi-check-circle-fill' : eff.validation.overallStatus === 'WARNING' ? 'bi-exclamation-triangle-fill' : 'bi-x-octagon-fill'"></i>
+                {{ eff.validation.overallStatus }}
+              </span>
+              <span *ngIf="eff.validation.blockingCount > 0" class="badge-lims-blocked">
+                {{ eff.validation.blockingCount }} Blocking
+              </span>
+              <span *ngIf="eff.validation.warningCount > 0" class="badge-lims-warning">
+                {{ eff.validation.warningCount }} Warning(s)
+              </span>
+              <span class="badge ms-1" [ngClass]="getAdjustmentBadgeClass(activeAdjustment?.status)">
+                <i class="bi bi-sliders2 me-1"></i>
+                Adjustment: {{ activeAdjustment ? ('#' + activeAdjustment.adjustmentNumber + ' ' + activeAdjustment.status) : 'No Adjustment' }}
+              </span>
+            </div>
+            <small class="text-muted text-xs">
+              Frozen Planned Baseline: {{ detail.createdOn | date:'dd MMM yyyy, hh:mm a' }}
+              <span *ngIf="detail.createdByName"> by {{ detail.createdByName }}</span>
+              · Read-Only Pre-Execution Resolution
+            </small>
+          </div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="backToPlan()">
+            <i class="bi bi-arrow-left me-1"></i> Back to Plan
+          </button>
+          <button type="button" class="btn btn-lims btn-lims-edit btn-sm"
+                  *ngIf="!detail.hasExecution"
+                  (click)="openDeviationModal()">
+            <i class="bi bi-shuffle me-1"></i> Request Configuration Deviation
+          </button>
+          <button type="button" class="btn btn-lims btn-lims-remove btn-sm"
+                  *ngIf="canReject"
+                  [disabled]="isRejecting"
+                  (click)="openRejectModal()">
+            <i class="bi bi-x-circle me-1"></i> Reject Deviation
+          </button>
+          <button type="button" class="btn btn-lims btn-lims-primary btn-sm"
+                  *ngIf="canApprove"
+                  [disabled]="isApproving"
+                  (click)="approveAdjustment()">
+            <i class="bi bi-shield-check me-1"></i> Approve Deviation
+          </button>
+          <button type="button" class="btn btn-lims btn-sm"
+                  [ngClass]="detail.hasExecution ? 'btn-lims-primary' : 'btn-lims-save'"
+                  [disabled]="!detail.hasExecution && (!detail.canOpenExecution || eff.validation.overallStatus === 'BLOCKED')"
+                  [title]="detail.hasExecution ? 'View execution in Universal Test Execution workspace' : detail.canOpenExecutionReason"
+                  (click)="openExecution()">
+            <i class="bi me-1" [ngClass]="detail.hasExecution ? 'bi-eye' : 'bi-play-circle'"></i>
+            {{ detail.hasExecution ? 'View Execution' : 'Open Execution' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body p-2">
+        <fieldset class="mb-1">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5"><i class="bi bi-box-seam me-1"></i> Sample & Specification Context</legend>
+          <div class="row g-2">
+            <div class="col-md-2">
+              <label class="form-label">Sample No</label>
+              <div class="fw-semibold small">{{ detail.sampleNo }}</div>
+              <small class="text-muted text-xs">{{ detail.inwardCaseNo }} · {{ detail.sampleDetails || '—' }}</small>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Customer</label>
+              <div class="small text-truncate" [title]="detail.customerName">{{ detail.customerName || '—' }}</div>
+              <small class="text-muted text-xs">Date: {{ detail.inwardDate | date:'dd MMM yyyy' }}</small>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Product & Grade</label>
+              <div class="small fw-semibold">{{ detail.productName || 'Standardless' }}</div>
+              <small class="text-muted text-xs">Grade: {{ detail.gradeName || 'N/A' }}</small>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Specification & Pinned Version</label>
+              <div class="small text-truncate" [title]="detail.specificationTitle || 'Standardless'">
+                {{ detail.specificationTitle || 'Standardless Testing' }}
+              </div>
+              <small class="text-muted text-xs">
+                Version: {{ detail.specificationVersionName || 'N/A' }}
+                <span *ngIf="detail.isSupersededSpecVersion" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1">Superseded</span>
+                <span *ngIf="detail.isStandardless" class="badge bg-light text-muted border ms-1">Standardless</span>
+              </small>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Test Method & Pinned Version</label>
+              <div class="small fw-semibold text-truncate" [title]="detail.testMethodName || ''">
+                {{ detail.testMethodName || '—' }}
+              </div>
+              <small class="text-muted text-xs">
+                Method Code: {{ detail.testMethodCode }} · Version: {{ detail.testMethodVersion || 'N/A' }}
+                <span *ngIf="detail.isSupersededMethodVersion" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1">Superseded</span>
+              </small>
+            </div>
+          </div>
+          <div class="row g-2 mt-1 pt-1 border-top">
+            <div class="col-md-2">
+              <label class="form-label">Discipline</label>
+              <div class="small fw-semibold">{{ detail.disciplineName || '—' }}</div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Lab Branch</label>
+              <div class="small">{{ detail.branchName || '—' }}</div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Department</label>
+              <div class="small">{{ detail.departmentName || '—' }}</div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Execution Layout</label>
+              <div class="small fw-semibold">{{ eff.layout.effectiveLayoutName }} ({{ eff.layout.effectiveLayoutCode }})</div>
+              <small class="text-muted text-xs">Level: {{ eff.layout.layoutResolutionLevel }} · Renderer: {{ eff.layout.effectiveRendererType || 'Default' }}</small>
+            </div>
+            <div class="col-md-3 text-end d-flex flex-column justify-content-center">
+              <div>
+                <span class="badge px-2 py-1" [ngClass]="detail.status === 'Pending' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle' : 'bg-success-subtle text-success border border-success-subtle'">
+                  Status: {{ detail.status }}
+                </span>
+              </div>
+              <small class="text-muted text-xs mt-1">Company: {{ detail.companyCode }} · Org: {{ detail.organizationID }}</small>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+
+    <!-- Section: Effective Configuration Navigation Tabs -->
+    <div class="card shadow-sm border-0 mb-2">
+      <div class="card-header bg-white p-0 border-bottom position-relative tab-header-container">
+        <div class="d-flex align-items-stretch w-100 position-relative tab-scroll-wrapper">
+          <button *ngIf="hasTabOverflow" type="button" class="btn tab-scroll-btn tab-scroll-btn-left" [disabled]="!canScrollLeft" (click)="scrollTabStrip('left')" title="Scroll tabs left">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+
+          <ul #tabStrip class="nav nav-tabs card-header-tabs flex-nowrap overflow-x-auto small flex-grow-1 px-1 mb-0 border-0"
+              (wheel)="onTabWheel($event)"
+              (scroll)="checkTabScroll()">
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'parameters'" (click)="setTab('parameters')">
+                <i class="bi bi-sliders me-1"></i>Parameters
+                <span class="badge bg-secondary-subtle text-secondary border ms-1">Read-Only</span>
+                <span class="badge bg-light text-dark border ms-1">{{ eff.parameters.length }}</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'conditions'" (click)="setTab('conditions')">
+                <i class="bi bi-thermometer-half me-1"></i>Conditions
+                <span class="badge bg-secondary-subtle text-secondary border ms-1">Read-Only</span>
+                <span class="badge bg-light text-dark border ms-1">{{ eff.conditions.length }}</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'equipment'" (click)="setTab('equipment')">
+                <i class="bi bi-tools me-1"></i>Equipment
+                <span class="badge bg-light text-dark border ms-1">{{ eff.equipment.length }}</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'factors'" (click)="setTab('factors')">
+                <i class="bi bi-calculator me-1"></i>Factors & Conversions
+                <span class="badge bg-secondary-subtle text-secondary border ms-1">Read-Only</span>
+                <span class="badge bg-light text-dark border ms-1">{{ eff.factors.length }}</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'uncertainty'" (click)="setTab('uncertainty')">
+                <i class="bi bi-bullseye me-1"></i>Uncertainty
+                <span class="badge bg-secondary-subtle text-secondary border ms-1">Read-Only</span>
+                <span class="badge ms-1" [ngClass]="eff.uncertainty?.isConfigured ? 'bg-success-subtle text-success' : 'bg-light text-muted border'">
+                  {{ eff.uncertainty?.isConfigured ? 'Phase 1F' : 'None' }}
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'acceptance'" (click)="setTab('acceptance')">
+                <i class="bi bi-check2-square me-1"></i>Acceptance Criteria
+                <span class="badge bg-secondary-subtle text-secondary border ms-1">Read-Only</span>
+                <span class="badge ms-1" [ngClass]="eff.acceptanceCriteria?.isConfigured ? 'bg-success-subtle text-success' : 'bg-light text-muted border'">
+                  {{ eff.acceptanceCriteria?.isConfigured ? 'Resolved' : 'N/A' }}
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'layout'" (click)="setTab('layout')">
+                <i class="bi bi-grid-1x2 me-1"></i>Execution Layout
+                <span class="badge ms-1" [ngClass]="getLayoutStatusBadge(eff.layout.resolutionStatus)">
+                  {{ eff.layout.resolutionStatus }}
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'validation'" (click)="setTab('validation')">
+                <i class="bi bi-shield-check me-1"></i>17-Gate Validation
+                <span class="badge ms-1" [ngClass]="getOverallStatusBadgeClass(eff.validation.overallStatus)">
+                  {{ eff.validation.overallStatus }}
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'audit'" (click)="setTab('audit')">
+                <i class="bi bi-clock-history me-1"></i>Difference Audit
+                <span class="badge ms-1" [ngClass]="comprehensiveAudit && comprehensiveAudit.totalItems > 0 ? 'bg-primary-subtle text-primary border' : 'bg-light text-muted border'">
+                  {{ comprehensiveAudit?.totalItems || differenceAuditItems.length }}
+                </span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'history'" (click)="setTab('history')">
+                <i class="bi bi-journal-text me-1"></i>Approval History
+                <span class="badge ms-1" [ngClass]="approvalHistory.length > 0 ? 'bg-secondary-subtle text-secondary border' : 'bg-light text-muted border'">
+                  {{ approvalHistory.length }}
+                </span>
+              </a>
+            </li>
+          </ul>
+
+          <button *ngIf="hasTabOverflow" type="button" class="btn tab-scroll-btn tab-scroll-btn-right" [disabled]="!canScrollRight" (click)="scrollTabStrip('right')" title="Scroll tabs right">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body tab-pane-container">
+
+        <!-- TAB 1: PARAMETERS & REQUIREMENTS -->
+        <div *ngIf="activeTab === 'parameters'" class="table-responsive">
+          <div class="py-1 px-2 bg-light border-bottom small text-muted d-flex justify-content-between align-items-center">
+            <span>
+              <i class="bi bi-info-circle me-1 text-primary"></i>
+              <strong>Planned Parameter Scope Lock:</strong> Executable parameter scope and scientific/compliance commitments remain frozen to planned values. Live master differences are shown as comparison data only.
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">Planned Scope Retained</span>
+          </div>
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th class="text-center table-col-num">#</th>
+                <th>Parameter</th>
+                <th>Effective Unit</th>
+                <th>Type / Precision</th>
+                <th class="text-center">Mandatory</th>
+                <th class="text-center">Reportable</th>
+                <th>Effective Formula</th>
+                <th>Effective Requirements (Planned)</th>
+                <th>Current Master (Comparison)</th>
+                <th class="text-center table-col-status">Drift Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of eff.parameters; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="badge bg-light text-dark border param-code-badge">{{ p.parameterCode }}</span>
+                    <span class="small fw-semibold">{{ p.parameterName }}</span>
+                    <span *ngIf="p.symbol" class="badge bg-light text-muted border text-2xs">{{ p.symbol }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="small fw-semibold">{{ p.unit || '—' }}</span>
+                  <div class="text-2xs text-muted">{{ p.unitSource }}</div>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ p.inputType }}</span>
+                  <span *ngIf="p.decimalPrecision !== null && p.decimalPrecision !== undefined" class="badge bg-light text-secondary border ms-1">
+                    prec: {{ p.decimalPrecision }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="p.isMandatory ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'">
+                    {{ p.isMandatory ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="p.isReportable ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-light text-muted border'">
+                    {{ p.isReportable ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td>
+                  <span *ngIf="p.isCalculated" class="badge bg-info-subtle text-info border border-info-subtle me-1">Calculated</span>
+                  <span *ngIf="!p.isCalculated" class="badge bg-light text-muted border me-1">Direct</span>
+                  <span *ngIf="p.formula" class="formula-block">{{ p.formula }}</span>
+                </td>
+                <td>
+                  <div class="small fw-semibold">
+                    <span *ngIf="p.minValue !== null && p.minValue !== undefined">Min: {{ p.minValue }}</span>
+                    <span *ngIf="p.maxValue !== null && p.maxValue !== undefined" class="ms-2">Max: {{ p.maxValue }}</span>
+                    <span *ngIf="p.minValue === null && p.maxValue === null && !p.requirementText" class="text-muted">—</span>
+                  </div>
+                  <div *ngIf="p.requirementText" class="text-2xs text-dark">{{ p.requirementText }}</div>
+                  <div class="text-2xs text-muted">{{ p.requirementSource }}</div>
+                </td>
+                <td>
+                  <div class="comparison-box text-2xs">
+                    <div><span class="text-muted">Unit:</span> {{ p.masterUnit || '—' }}</div>
+                    <div><span class="text-muted">Limits:</span> [{{ p.masterMinValue ?? '—' }}, {{ p.masterMaxValue ?? '—' }}]</div>
+                    <div *ngIf="p.masterFormula"><span class="text-muted">Formula:</span> <span class="font-monospace">{{ p.masterFormula }}</span></div>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="badge px-2 py-1" [ngClass]="getDriftBadgeClass(p.masterDriftStatus)">
+                    {{ p.masterDriftStatus }}
+                  </span>
+                  <div *ngIf="p.driftCategory" class="mt-1">
+                    <span [ngClass]="getCategoryBadge(p.driftCategory)">{{ p.driftCategory }}</span>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="eff.parameters.length === 0">
+                <td colspan="10" class="text-center py-3 text-muted small">No parameters configured.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TAB 2: CONDITIONS -->
+        <div *ngIf="activeTab === 'conditions'" class="table-responsive">
+          <div class="py-1 px-2 bg-light border-bottom small text-muted">
+            <i class="bi bi-info-circle me-1 text-primary"></i>
+            Test conditions capture pre-requisite environmental/apparatus specifications. Actual specimen observations belong strictly to Phase 6 execution.
+          </div>
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th class="text-center table-col-num">#</th>
+                <th>Condition</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Operator</th>
+                <th>Configured Value</th>
+                <th>Context / Rule</th>
+                <th class="text-center">Mandatory</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of eff.conditions; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border param-code-badge me-1">{{ c.conditionCode }}</span>
+                  <span class="small fw-semibold">{{ c.conditionName }}</span>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ c.category }}</span></td>
+                <td class="small">{{ c.unit || '—' }}</td>
+                <td class="small fw-semibold">{{ c.operator }}</td>
+                <td class="small fw-bold text-dark">{{ c.configuredValue || '—' }}</td>
+                <td class="small text-muted">{{ c.requirementContext }}</td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="c.isMandatory ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'">
+                    {{ c.isMandatory ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td><span class="badge px-2 py-1" [ngClass]="getStatusBadge(c.status)">{{ c.status }}</span></td>
+              </tr>
+              <tr *ngIf="eff.conditions.length === 0">
+                <td colspan="9" class="text-center py-3 text-muted small">No test conditions configured for this test definition.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TAB 3: EQUIPMENT READINESS -->
+        <div *ngIf="activeTab === 'equipment'" class="table-responsive">
+          <div class="py-1 px-2 bg-light border-bottom small text-muted">
+            <i class="bi bi-info-circle me-1 text-primary"></i>
+            Phase 1D equipment requirements dynamically evaluated against physical equipment and calibration records in operating branch <strong>{{ detail.branchName }}</strong>.
+          </div>
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th>Requirement</th>
+                <th>Equipment Type</th>
+                <th class="text-center">Mandatory</th>
+                <th class="text-center">Branch Inventory</th>
+                <th class="text-center">Calibrated & Valid</th>
+                <th>Assigned Instrument</th>
+                <th>Calibration Due</th>
+                <th class="text-center">Readiness Status</th>
+                <th>Diagnostic / Blocking Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of eff.equipment">
+                <td>
+                  <span class="badge bg-light text-dark border param-code-badge me-1">{{ e.requirementCode }}</span>
+                  <span class="small fw-semibold">{{ e.requirementName }}</span>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ e.equipmentTypeName || e.equipmentType }}</span></td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="e.isMandatory ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'">
+                    {{ e.isMandatory ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td class="text-center"><span class="badge bg-light text-dark border">{{ e.matchingEquipmentCount }}</span></td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="e.availableEquipmentCount > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+                    {{ e.availableEquipmentCount }}
+                  </span>
+                </td>
+                <td>
+                  <div class="small fw-semibold">{{ e.name }}</div>
+                  <small class="text-muted text-2xs">{{ e.model ? 'Model: ' + e.model : '' }} {{ e.calibrationNo ? '· Cert: ' + e.calibrationNo : '' }}</small>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="e.calibrationStatus === 'Valid' ? 'bg-success-subtle text-success border border-success-subtle' : e.calibrationStatus === 'Expired' ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'">
+                    {{ e.calibrationStatus }}
+                  </span>
+                  <div *ngIf="e.validUpto" class="text-2xs text-muted">{{ e.validUpto | date:'dd MMM yyyy' }}</div>
+                </td>
+                <td class="text-center">
+                  <span class="badge px-2 py-1" [ngClass]="getReadinessBadge(e.readinessStatus)">
+                    {{ e.readinessStatus }}
+                  </span>
+                </td>
+                <td>
+                  <span *ngIf="e.blockingReason" class="text-xs text-danger">{{ e.blockingReason }}</span>
+                  <span *ngIf="!e.blockingReason" class="text-xs text-muted">Equipment ready in branch.</span>
+                </td>
+              </tr>
+              <tr *ngIf="eff.equipment.length === 0">
+                <td colspan="9" class="text-center py-3 text-muted small">No equipment requirements configured for this test.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TAB 4: FACTORS & CONVERSIONS -->
+        <div *ngIf="activeTab === 'factors'" class="table-responsive">
+          <div class="py-1 px-2 bg-light border-bottom small text-muted">
+            <i class="bi bi-info-circle me-1 text-primary"></i>
+            Phase 1E Factor Conversions evaluated with strict precedence: <strong>Version (Weight 3) &gt; Method (Weight 2) &gt; Test (Weight 1) &gt; Global (Weight 0)</strong>.
+          </div>
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th>Factor Rule</th>
+                <th>Factor Type</th>
+                <th>Factor Value</th>
+                <th>Input Parameter</th>
+                <th>Output Parameter</th>
+                <th>Applied On</th>
+                <th>Precedence Scope</th>
+                <th class="text-center">Mandatory</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of eff.factors">
+                <td>
+                  <span class="badge bg-light text-dark border param-code-badge me-1">{{ f.code }}</span>
+                  <span class="small fw-semibold">{{ f.name }}</span>
+                  <div *ngIf="f.description" class="text-2xs text-muted">{{ f.description }}</div>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ f.factorType }}</span></td>
+                <td class="small fw-bold">{{ f.factorValue }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border param-code-badge">{{ f.inputParameterCode }}</span>
+                  <span class="small ms-1">{{ f.inputParameterName }}</span>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border param-code-badge">{{ f.outputParameterCode }}</span>
+                  <span class="small ms-1">{{ f.outputParameterName }}</span>
+                </td>
+                <td class="small text-muted">{{ f.appliedOn || 'Execution' }}</td>
+                <td>
+                  <span class="badge" [ngClass]="f.scopeLevel === 'Version' ? 'bg-primary-subtle text-primary border border-primary-subtle' : f.scopeLevel === 'Method' ? 'bg-info-subtle text-info border border-info-subtle' : 'bg-light text-dark border'">
+                    {{ f.scopeLevel }}-Scoped
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="f.isMandatory ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'">
+                    {{ f.isMandatory ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td><span class="badge px-2 py-1 badge-lims-ready">{{ f.status }}</span></td>
+              </tr>
+              <tr *ngIf="eff.factors.length === 0">
+                <td colspan="9" class="text-center py-3 text-muted small">No factor conversion rules configured or applicable for participating parameters.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TAB 5: MEASUREMENT UNCERTAINTY -->
+        <div *ngIf="activeTab === 'uncertainty'" class="p-2">
+          <div *ngIf="eff.uncertainty?.isConfigured">
+            <div class="alert alert-light border py-2 px-3 small mb-3">
+              <i class="bi bi-info-circle me-1 text-primary"></i>
+              <strong>Strict Phase 1F Uncertainty Model:</strong> Values are derived directly from <code>MeasurementUncertaintyMasters</code> matching the test definition and method version. Zero calculation or legacy NABL string fallback in Phase 4.
+            </div>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Uncertainty Master</label>
+                  <div class="small fw-semibold">{{ eff.uncertainty?.masterName }}</div>
+                  <div class="text-2xs text-muted font-monospace">{{ eff.uncertainty?.masterCode }}</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Uncertainty Basis</label>
+                  <div class="small fw-bold text-dark">{{ eff.uncertainty?.basis || 'Type A+B' }}</div>
+                  <small class="text-2xs text-muted">ISO 17025 Model</small>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Combined (u_c)</label>
+                  <div class="small fw-semibold">{{ eff.uncertainty?.combinedUncertainty ?? '—' }} {{ eff.uncertainty?.unit }}</div>
+                  <small class="text-2xs text-muted">Standard Uncertainty</small>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Expanded (U)</label>
+                  <div class="small fw-bold text-danger">{{ eff.uncertainty?.expandedUncertainty ?? eff.uncertainty?.value }} {{ eff.uncertainty?.unit }}</div>
+                  <small class="text-2xs text-muted">At stated confidence</small>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Coverage & Confidence</label>
+                  <div class="small">k = {{ eff.uncertainty?.coverageFactor || 2.0 }} · {{ eff.uncertainty?.confidenceLevel || 95.45 }}% Confidence</div>
+                  <small class="text-2xs text-muted">Normal Distribution</small>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="eff.uncertainty?.componentsJson" class="mt-3">
+              <label class="form-label-sm text-muted mb-1">Uncertainty Budget Components (Phase 1F JSON)</label>
+              <pre class="bg-light border rounded p-2 text-2xs font-monospace mb-0">{{ eff.uncertainty?.componentsJson }}</pre>
+            </div>
+            <div *ngIf="eff.uncertainty?.remarks" class="mt-2 text-2xs text-muted">
+              Remarks: {{ eff.uncertainty?.remarks }}
+            </div>
+          </div>
+
+          <div *ngIf="!eff.uncertainty?.isConfigured" class="text-center py-4 text-muted small">
+            <i class="bi bi-bullseye fs-3 d-block mb-1 text-secondary"></i>
+            Measurement Uncertainty is NOT CONFIGURED for this test and method version.
+            <div class="text-2xs text-muted mt-1">Evaluates as N/A in system validation unless specifically mandated by laboratory accreditation rules.</div>
+          </div>
+        </div>
+
+        <!-- TAB 6: ACCEPTANCE CRITERIA -->
+        <div *ngIf="activeTab === 'acceptance'" class="p-2">
+          <div *ngIf="eff.acceptanceCriteria?.isConfigured">
+            <div class="alert alert-light border py-2 px-3 small mb-3">
+              <i class="bi bi-info-circle me-1 text-primary"></i>
+              <strong>Lock 4: Resolution Source Exposed:</strong> Acceptance criteria resolved via <strong>{{ eff.acceptanceCriteria?.resolutionSource }}</strong>. Zero PASS/FAIL decision is calculated in Phase 4.
+            </div>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Criteria Code & Name</label>
+                  <div class="small fw-semibold">{{ eff.acceptanceCriteria?.name }}</div>
+                  <div class="text-2xs text-muted font-monospace">{{ eff.acceptanceCriteria?.code }}</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Resolution Source</label>
+                  <div class="small fw-semibold text-primary">{{ eff.acceptanceCriteria?.resolutionSource }}</div>
+                  <small class="text-2xs text-muted">Determined at Query Time</small>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Evaluation & Comparison</label>
+                  <div class="small">{{ eff.acceptanceCriteria?.evaluationType || 'ALL_PASS' }}</div>
+                  <small class="text-2xs text-muted">Comparison: {{ eff.acceptanceCriteria?.comparisonType || 'Standard' }}</small>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Decision Rule</label>
+                  <div class="small fw-semibold">{{ eff.acceptanceCriteria?.decisionRule || 'None' }}</div>
+                  <small class="text-2xs text-muted">Conformity Statement</small>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="info-field-box">
+                  <label class="form-label-sm text-muted mb-0">Rounding Rule</label>
+                  <div class="small">{{ eff.acceptanceCriteria?.roundingRule || 'ROUND_HALF_UP' }}</div>
+                  <small class="text-2xs text-muted">Precision: {{ eff.acceptanceCriteria?.roundingPrecision || 0.01 }}</small>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="eff.acceptanceCriteria?.description" class="mt-2 text-2xs text-muted">
+              Description: {{ eff.acceptanceCriteria?.description }}
+            </div>
+          </div>
+
+          <div *ngIf="!eff.acceptanceCriteria?.isConfigured" class="text-center py-4 text-muted small">
+            <i class="bi bi-check2-square fs-3 d-block mb-1 text-secondary"></i>
+            Acceptance Criteria is NOT CONFIGURED (Resolution Source: {{ eff.acceptanceCriteria?.resolutionSource || 'Not Configured' }}).
+          </div>
+        </div>
+
+        <!-- TAB 7: EXECUTION LAYOUT -->
+        <div *ngIf="activeTab === 'layout'" class="p-2">
+          <div class="alert alert-light border py-2 px-3 small mb-3">
+            <i class="bi bi-info-circle me-1 text-primary"></i>
+            <strong>Lock 3: Layout Operational Drift with Immutable Planned Layout:</strong> Planned layout is preserved from the frozen baseline. Live re-evaluation runs via <code>ILaboratoryTestLayoutService</code> with precedence: <code>Test+Method+Version &gt; Test+Method &gt; Test &gt; UNASSIGNED</code>.
+          </div>
+
+          <div class="row g-2">
+            <div class="col-md-6">
+              <fieldset>
+                <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5"><i class="bi bi-bookmark-check me-1"></i> Frozen Planned Layout (Baseline)</legend>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label-sm text-muted mb-0">Layout Name</label>
+                    <div class="small fw-semibold">{{ eff.layout.plannedLayoutName || 'UNASSIGNED' }}</div>
+                    <small class="text-2xs text-muted font-monospace">{{ eff.layout.plannedLayoutCode || 'No layout' }}</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label-sm text-muted mb-0">Renderer Type</label>
+                    <div class="small">{{ eff.layout.plannedRendererType || 'Default Dynamic Grid' }}</div>
+                    <small class="text-2xs text-muted">Layout ID: {{ eff.layout.plannedExecutionLayoutID || 'None' }}</small>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="col-md-6">
+              <fieldset>
+                <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5"><i class="bi bi-arrow-repeat me-1"></i> Live Resolved Effective Layout</legend>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label-sm text-muted mb-0">Resolved Layout</label>
+                    <div class="small fw-semibold">{{ eff.layout.effectiveLayoutName || 'UNASSIGNED' }}</div>
+                    <small class="text-2xs text-muted font-monospace">{{ eff.layout.effectiveLayoutCode || 'No layout' }}</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label-sm text-muted mb-0">Resolution Status & Level</label>
+                    <div>
+                      <span class="badge" [ngClass]="getLayoutStatusBadge(eff.layout.resolutionStatus)">{{ eff.layout.resolutionStatus }}</span>
+                      <span class="badge bg-light text-dark border ms-1">{{ eff.layout.layoutResolutionLevel }}</span>
+                    </div>
+                    <small class="text-2xs text-muted">Renderer: {{ eff.layout.effectiveRendererType || 'Default' }}</small>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+
+          <div class="mt-2 alert alert-secondary py-2 px-3 small mb-0">
+            <strong>Resolution Diagnostic:</strong> {{ eff.layout.reason || 'No layout discrepancy detected.' }}
+          </div>
+        </div>
+
+        <!-- TAB 8: 17-GATE VALIDATION -->
+        <div *ngIf="activeTab === 'validation'" class="p-2">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <span class="fw-bold text-dark small">
+                <i class="bi bi-shield-check me-1 text-danger"></i>
+                Authoritative 17-Gate Validation Engine (UniversalTestGroupService)
+              </span>
+              <span class="badge ms-2" [ngClass]="getOverallStatusBadgeClass(eff.validation.overallStatus)">
+                {{ eff.validation.overallStatus }}
+              </span>
+            </div>
+            <div class="d-flex gap-2">
+              <span class="badge-lims-blocked" *ngIf="eff.validation.blockingCount > 0">
+                {{ eff.validation.blockingCount }} Blocking Error(s)
+              </span>
+              <span class="badge-lims-warning" *ngIf="eff.validation.warningCount > 0">
+                {{ eff.validation.warningCount }} Warning(s)
+              </span>
+              <span class="badge-lims-ready" *ngIf="eff.validation.allPassed">
+                All 17 Checks Passed
+              </span>
+            </div>
+          </div>
+
+          <!-- 17 Gates Grid -->
+          <div class="row g-2">
+            <div *ngFor="let item of eff.validation.items; let i = index" class="col-md-4">
+              <div class="gate-card p-2"
+                   [ngClass]="item.status === 'PASS' ? 'gate-pass' : item.status === 'WARNING' ? 'gate-warning' : item.status === 'N/A' ? 'gate-na' : 'gate-blocked'">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="small fw-semibold text-dark">
+                    <span class="text-muted text-2xs me-1">#{{ i + 1 }}</span>
+                    {{ item.check }}
+                  </span>
+                  <span class="badge px-2 py-1" [ngClass]="getValidationBadge(item.status)">
+                    {{ item.status }}
+                  </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-baseline">
+                  <small class="text-2xs text-muted">{{ item.source }}</small>
+                </div>
+                <div *ngIf="item.message" class="text-2xs mt-1 text-secondary">
+                  {{ item.message }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Diagnostic summary lists -->
+          <div *ngIf="eff.validation.blockingErrors.length" class="mt-3">
+            <div class="small fw-semibold text-danger mb-1">
+              <i class="bi bi-x-octagon me-1"></i> Blocking Errors Preventing Execution ({{ eff.validation.blockingErrors.length }})
+            </div>
+            <div *ngFor="let e of eff.validation.blockingErrors" class="alert alert-danger py-1 px-2 mb-1 text-xs">
+              {{ e }}
+            </div>
+          </div>
+
+          <div *ngIf="eff.validation.warnings.length" class="mt-3">
+            <div class="small fw-semibold text-warning-emphasis mb-1">
+              <i class="bi bi-exclamation-triangle me-1"></i> Non-Blocking Warnings & Drift Notices ({{ eff.validation.warnings.length }})
+            </div>
+            <div *ngFor="let w of eff.validation.warnings" class="alert alert-warning py-1 px-2 mb-1 text-xs">
+              {{ w }}
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 9: COMPREHENSIVE 3-WAY DIFFERENCE AUDIT -->
+        <div *ngIf="activeTab === 'audit'" class="table-responsive">
+          <div class="py-1 px-2 bg-light border-bottom small text-muted d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-clock-history text-primary"></i>
+              <strong>Phase 5 Controlled 3-Way Difference Engine:</strong> Deterministic comparison (Planned Baseline vs Live Effective vs Proposed/Approved Adjustment).
+            </div>
+            <div class="d-flex gap-1 align-items-center">
+              <span class="badge bg-secondary-subtle text-secondary border">Total: {{ comprehensiveAudit?.totalItems || 0 }}</span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle">Added: {{ comprehensiveAudit?.addedCount || 0 }}</span>
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Removed: {{ comprehensiveAudit?.removedCount || 0 }}</span>
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Changed: {{ comprehensiveAudit?.changedCount || 0 }}</span>
+              <span class="badge bg-light text-muted border">Unchanged: {{ comprehensiveAudit?.unchangedCount || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="p-2 bg-light-subtle border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <label class="form-label mb-0 small fw-semibold">Section Filter:</label>
+              <select class="form-select form-select-sm w-auto" [(ngModel)]="auditSectionFilter">
+                <option value="ALL">All Sections (8 Technical Areas)</option>
+                <option value="Parameters">Parameters</option>
+                <option value="Requirements">Requirements</option>
+                <option value="Conditions">Conditions</option>
+                <option value="Equipment">Equipment</option>
+                <option value="Factors">Factors</option>
+                <option value="Uncertainty">Uncertainty</option>
+                <option value="AcceptanceCriteria">Acceptance Criteria</option>
+                <option value="Layout">Layout</option>
+              </select>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+              <span class="small text-muted me-1">Classification:</span>
+              <button type="button" class="btn btn-sm py-0 px-2"
+                      [ngClass]="auditClassificationFilter === 'ALL' ? 'btn-dark' : 'btn-outline-secondary'"
+                      (click)="auditClassificationFilter = 'ALL'">All</button>
+              <button type="button" class="btn btn-sm py-0 px-2"
+                      [ngClass]="auditClassificationFilter === 'ADDED' ? 'btn-success' : 'btn-outline-success'"
+                      (click)="auditClassificationFilter = 'ADDED'">Added</button>
+              <button type="button" class="btn btn-sm py-0 px-2"
+                      [ngClass]="auditClassificationFilter === 'REMOVED' ? 'btn-danger' : 'btn-outline-danger'"
+                      (click)="auditClassificationFilter = 'REMOVED'">Removed</button>
+              <button type="button" class="btn btn-sm py-0 px-2"
+                      [ngClass]="auditClassificationFilter === 'CHANGED' ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'"
+                      (click)="auditClassificationFilter = 'CHANGED'">Changed</button>
+              <button type="button" class="btn btn-sm py-0 px-2"
+                      [ngClass]="auditClassificationFilter === 'UNCHANGED' ? 'btn-secondary' : 'btn-outline-secondary'"
+                      (click)="auditClassificationFilter = 'UNCHANGED'">Unchanged</button>
+            </div>
+          </div>
+
+          <div *ngIf="filteredAuditItems.length === 0" class="text-center py-4 text-muted small">
+            <i class="bi bi-filter-circle text-muted fs-4 d-block mb-1"></i>
+            No difference items matching the selected filters.
+          </div>
+
+          <table *ngIf="filteredAuditItems.length > 0" class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th class="text-center table-col-num">#</th>
+                <th>Deviation Area</th>
+                <th>Target / Field</th>
+                <th>Planned Baseline</th>
+                <th>Effective Live</th>
+                <th>Deviation / Adjusted</th>
+                <th class="text-center">Status</th>
+                <th>Justification & Provenance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of filteredAuditItems; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ item.section }}</span>
+                </td>
+                <td>
+                  <span class="small fw-semibold text-primary">{{ item.fieldName }}</span>
+                  <div class="text-2xs text-muted" *ngIf="item.entityName">{{ item.entityName }}</div>
+                </td>
+                <td>
+                  <span class="small text-muted font-monospace">{{ item.plannedValue || '—' }}</span>
+                </td>
+                <td>
+                  <span class="small text-secondary font-monospace">{{ item.effectiveValue || '—' }}</span>
+                </td>
+                <td>
+                  <span class="small fw-semibold text-dark bg-light px-1 py-0.5 rounded border font-monospace"
+                        [ngClass]="item.classification === 'CHANGED' ? 'border-warning text-warning-emphasis bg-warning-subtle' : ''">
+                    {{ item.adjustedValue || '—' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="badge"
+                        [ngClass]="item.classification === 'CHANGED' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle' : 'bg-light text-muted border'">
+                    {{ item.classification }}
+                  </span>
+                  <div class="mt-0.5">
+                    <span class="badge"
+                          [ngClass]="item.authorizationStatus === 'Approved' ? 'badge-lims-approved' :
+                                     item.authorizationStatus === 'Applied' ? 'badge-lims-applied' :
+                                     item.authorizationStatus === 'Rejected' ? 'bg-danger-subtle text-danger border' :
+                                     'badge-lims-draft'">
+                      {{ item.authorizationStatus || 'Baseline' }}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="small text-dark" [title]="item.reason || ''">{{ item.reason || '—' }}</div>
+                  <div class="text-2xs text-muted" *ngIf="item.createdByName">
+                    By {{ item.createdByName }} · {{ item.createdOn | date:'dd MMM, hh:mm a' }}
+                  </div>
+                  <div class="text-2xs text-success" *ngIf="item.authorizedByName">
+                    Reviewed: {{ item.authorizedByName }} · {{ item.authorizedOn | date:'dd MMM, hh:mm a' }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TAB 10: APPROVAL HISTORY & REVISION LINEAGE -->
+        <div *ngIf="activeTab === 'history'" class="table-responsive">
+          <div class="py-1 px-2 bg-light border-bottom small text-muted d-flex justify-content-between align-items-center">
+            <span>
+              <i class="bi bi-journal-text me-1 text-primary"></i>
+              <strong>Complete Revision Lineage & Four-Eyes Audit Trail:</strong> Historical record of all draft, applied, rejected, and approved adjustment iterations.
+            </span>
+            <span class="badge bg-secondary-subtle text-secondary border">Total Revisions: {{ approvalHistory.length }}</span>
+          </div>
+
+          <div *ngIf="approvalHistory.length === 0" class="text-center py-4 text-muted small">
+            <i class="bi bi-folder2-open text-muted fs-4 d-block mb-1"></i>
+            No adjustment revision history exists for this test group.
+          </div>
+
+          <table *ngIf="approvalHistory.length > 0" class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th class="text-center table-col-num">#</th>
+                <th class="text-center">Revision</th>
+                <th class="text-center">Status</th>
+                <th>Overall Justification</th>
+                <th>Drafted By & On</th>
+                <th>Applied By & On</th>
+                <th>Reviewed By & On</th>
+                <th>Rejection / Approval Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of approvalHistory; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td class="text-center">
+                  <span class="badge bg-light text-dark border">Rev {{ h.adjustmentNumber }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="getAdjustmentBadgeClass(h.status)">
+                    {{ h.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="small fw-semibold text-dark">{{ h.overallReason || '—' }}</div>
+                  <small class="text-muted text-xs" *ngIf="h.itemsCount">{{ h.itemsCount }} item(s) adjusted</small>
+                </td>
+                <td>
+                  <div class="small">{{ h.createdByName || 'User #' + h.createdBy }}</div>
+                  <small class="text-muted text-xs">{{ h.createdOn | date:'dd MMM yyyy, hh:mm a' }}</small>
+                </td>
+                <td>
+                  <div class="small" *ngIf="h.appliedByName">{{ h.appliedByName }}</div>
+                  <small class="text-muted text-xs" *ngIf="h.appliedOn">{{ h.appliedOn | date:'dd MMM yyyy, hh:mm a' }}</small>
+                  <span class="text-muted text-xs" *ngIf="!h.appliedOn">—</span>
+                </td>
+                <td>
+                  <div class="small" *ngIf="h.status === 'Approved'">{{ h.approvedByName || 'User #' + h.approvedBy }}</div>
+                  <small class="text-muted text-xs" *ngIf="h.status === 'Approved'">{{ h.approvedOn | date:'dd MMM yyyy, hh:mm a' }}</small>
+                  <div class="small text-danger" *ngIf="h.status === 'Rejected'">{{ h.rejectedByName || h.modifiedByName || 'Reviewer' }}</div>
+                  <small class="text-muted text-xs text-danger" *ngIf="h.status === 'Rejected'">{{ (h.rejectedOn || h.modifiedOn) | date:'dd MMM yyyy, hh:mm a' }}</small>
+                  <span class="text-muted text-xs" *ngIf="h.status !== 'Approved' && h.status !== 'Rejected'">Awaiting Review</span>
+                </td>
+                <td>
+                  <div class="small" *ngIf="h.status === 'Approved'">{{ h.approvalRemarks || 'Approved' }}</div>
+                  <div class="small text-danger fw-semibold" *ngIf="h.status === 'Rejected'">
+                    <i class="bi bi-x-circle me-1"></i>Rejection: {{ h.rejectionReason || h.approvalRemarks || 'Rejected' }}
+                  </div>
+                  <span class="text-muted text-xs" *ngIf="h.status !== 'Approved' && h.status !== 'Rejected'">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PHASE 5: CONTROLLED EXECUTION DEVIATION MODAL -->
+    <div *ngIf="isDeviationModalOpen" class="lims-modal-backdrop">
+      <div class="lims-modal-dialog" style="max-width: 650px;">
+        <div class="lims-modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shuffle text-danger fs-5"></i>
+            <h6 class="mb-0 fw-bold text-dark">Request Execution Configuration Deviation — UTG #{{ testGroupId }}</h6>
+          </div>
+          <button type="button" class="btn-close" (click)="closeDeviationModal()"></button>
+        </div>
+
+        <div class="lims-modal-body p-3">
+          <!-- Information Callout -->
+          <div class="alert alert-info py-1.5 px-2 mb-2 text-xs d-flex align-items-center gap-1.5">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            <div>
+              <strong>Controlled Deviation Exception:</strong> Select an authoritative active master record for planning or test-setup. Parameters, formulas, limits, factors, uncertainty, and acceptance criteria are Read-Only. Baseline records remain immutable.
+            </div>
+          </div>
+
+          <!-- Category Selection and Current Value -->
+          <div class="row g-2 mb-2">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Deviation Category</label>
+              <select class="form-select form-select-sm" [(ngModel)]="deviationCategory" (change)="onDeviationCategoryChange(deviationCategory)">
+                <option value="Equipment">Equipment Assignment (Branch Instrument)</option>
+                <option value="ExecutionLayout">Execution Layout (Screen Renderer)</option>
+                <option value="TestMethod">Test Method Standard (Alternative Method)</option>
+                <option value="Specification">Specification & Grade</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted">Current Effective Value</label>
+              <div class="small fw-semibold text-dark bg-light border rounded px-2 py-1 text-truncate" [title]="deviationLookup?.currentValueDisplay || ''">
+                {{ deviationLookup?.currentValueDisplay || 'Loading...' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Alternative Master Record Selection -->
+          <div class="mb-2">
+            <label class="form-label fw-semibold text-primary">
+              Select Authoritative Alternative Master Record (Active Only)
+            </label>
+            <div *ngIf="isLoadingOptions" class="text-center py-2 text-muted small">
+              <div class="spinner-border spinner-border-sm text-danger me-1"></div> Loading available options...
+            </div>
+            <select *ngIf="!isLoadingOptions" class="form-select form-select-sm" [(ngModel)]="selectedAlternativeId">
+              <option [ngValue]="null" disabled>-- Select Authoritative Master --</option>
+              <option *ngFor="let opt of deviationLookup?.availableOptions" [ngValue]="opt.id" [disabled]="opt.isCurrent">
+                {{ opt.name }} ({{ opt.code }}) {{ opt.description ? '— ' + opt.description : '' }} {{ opt.isCurrent ? ' [CURRENT]' : '' }}
+              </option>
+            </select>
+            <small class="text-muted text-xs">
+              <i class="bi bi-shield-check text-success me-1"></i>
+              Only active, branch-authorized master records with valid calibration/compliance are eligible for selection.
+            </small>
+          </div>
+
+          <!-- Mandatory Reason Field -->
+          <div class="mb-2">
+            <label class="form-label fw-semibold text-danger">Deviation Justification / Reason (Mandatory)</label>
+            <textarea class="form-control form-control-sm" rows="2"
+                      [(ngModel)]="deviationReason"
+                      placeholder="State technical or operational justification for this execution deviation (e.g. primary UTM instrument calibration downtime, customer requested revised standard)..."></textarea>
+          </div>
+
+          <!-- Evidence Reference Field -->
+          <div class="mb-2">
+            <label class="form-label text-muted">Supporting Evidence / Reference ID (Optional)</label>
+            <input type="text" class="form-control form-control-sm"
+                   [(ngModel)]="deviationEvidence"
+                   placeholder="e.g. Maintenance Work Order #WO-2026-11, Customer Variation Notice CR-09..." />
+          </div>
+
+          <!-- Immediate Technical Review Checkbox -->
+          <div class="form-check form-check-sm mb-1">
+            <input class="form-check-input" type="checkbox" id="submitApprovalChk" [(ngModel)]="submitForApproval">
+            <label class="form-check-label small text-dark" for="submitApprovalChk">
+              Submit immediately for technical review & approval (Strict Four-Eyes maker-checker)
+            </label>
+          </div>
+        </div>
+
+        <div class="lims-modal-footer">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeDeviationModal()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-lims btn-lims-save btn-sm"
+                  [disabled]="isSubmittingDeviation || !selectedAlternativeId || !deviationReason || !deviationReason.trim()"
+                  (click)="submitDeviation()">
+            <i class="bi bi-check-circle me-1"></i>
+            {{ submitForApproval ? 'Submit Deviation Request' : 'Save Deviation Draft' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 5: REJECTION MODAL -->
+    <div *ngIf="isRejectModalOpen" class="lims-modal-backdrop">
+      <div class="lims-modal-dialog" style="max-width: 500px;">
+        <div class="lims-modal-header bg-danger text-white">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-x-circle fs-5"></i>
+            <h6 class="mb-0 fw-bold text-white">Reject Configuration Adjustment — Rev #{{ activeAdjustment?.adjustmentNumber }}</h6>
+          </div>
+          <button type="button" class="btn-close btn-close-white" (click)="closeRejectModal()"></button>
+        </div>
+
+        <div class="lims-modal-body p-3">
+          <p class="small text-muted mb-2">
+            Rejecting this adjustment will record the rejection audit trail, freeze this revision as historical-only, and prevent Phase 6 test execution until a new compliant revision is drafted and approved.
+          </p>
+
+          <div class="mb-2">
+            <label class="form-label fw-semibold text-danger">Rejection Reason (Mandatory):</label>
+            <textarea class="form-control form-control-sm" rows="3"
+                      [(ngModel)]="rejectionReasonText"
+                      placeholder="State technical, scientific, or compliance reason for rejecting this proposed adjustment..."></textarea>
+          </div>
+        </div>
+
+        <div class="lims-modal-footer">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeRejectModal()">
+            <i class="bi bi-arrow-left me-1"></i> Cancel
+          </button>
+          <button type="button" class="btn btn-lims btn-lims-remove btn-sm"
+                  [disabled]="isRejecting || !rejectionReasonText || !rejectionReasonText.trim()"
+                  (click)="confirmRejectAdjustment()">
+            <i class="bi bi-x-circle me-1"></i> Confirm Rejection
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!detail" class="text-center py-4 text-muted small">
+    No test group found for ID #{{ testGroupId }}.
+  </div>
+</div>

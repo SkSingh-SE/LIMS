@@ -1,0 +1,427 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-bullseye fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Measurement Uncertainty</h6>
+          <small class="text-muted text-xs">Reusable uncertainty configuration (Layer 4: Operational Configuration)</small>
+        </div>
+      </div>
+      <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create')"
+        *hasPermission="['CanCreateMeasurementUncertainty','CanManageMeasurementUncertainty']">
+        <i class="bi bi-plus-circle me-1"></i> New Uncertainty
+      </button>
+    </div>
+
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-2">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control form-control-sm" placeholder="Search code, name..."
+              [(ngModel)]="filterSearch" (keydown.enter)="onSearch()" />
+          </div>
+        </div>
+        <div class="col-md-2">
+          <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Laboratory Test"
+            [fetchDataFn]="getTestDropdown" (itemSelected)="onFilterTestSelected($event)"
+            [selectedItem]="selectedFilterTest">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-2">
+          <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Parameter"
+            [fetchDataFn]="getParamDropdown" (itemSelected)="onFilterParamSelected($event)"
+            [selectedItem]="selectedFilterParam">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-2">
+          <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Test Method"
+            [fetchDataFn]="getMethodDropdown" (itemSelected)="onFilterMethodSelected($event)"
+            [selectedItem]="selectedFilterMethod">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-1">
+          <select class="form-select form-select-sm" [(ngModel)]="filterType" (change)="onSearch()">
+            <option value="">All Types</option>
+            <option *ngFor="let t of uncertaintyTypes" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="onSearch()">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-filter me-1"></i>Apply
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="onSort('code')">
+                Code
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'code' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'code' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th>Name</th>
+              <th>Test</th>
+              <th>Parameter</th>
+              <th>Method</th>
+              <th class="text-center">Type</th>
+              <th class="text-center">Expanded U</th>
+              <th class="text-center">k</th>
+              <th class="text-center col-status">Status</th>
+              <th>Modified By / Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="muList.length === 0">
+              <td colspan="12" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary"></i>
+                <div>No records found.</div>
+              </td>
+            </tr>
+            <tr *ngFor="let item of muList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center gap-1">
+                  <button type="button" class="btn-tbl-action btn-tbl-view" title="View Details"
+                    (click)="openModal('view', item.id)">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" title="Edit Uncertainty"
+                    (click)="openModal('edit', item.id)"
+                    *hasPermission="['CanUpdateMeasurementUncertainty','CanManageMeasurementUncertainty']">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Uncertainty' : 'Activate Uncertainty'"
+                    (click)="toggleStatus(item)"
+                    *hasPermission="['CanUpdateMeasurementUncertainty','CanManageMeasurementUncertainty']">
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace">{{ item.code }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ item.name }}</td>
+              <td>{{ item.laboratoryTestName || '—' }}</td>
+              <td>{{ item.parameterName || '—' }}</td>
+              <td>{{ item.testMethodName || '—' }}</td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border font-monospace">{{ item.uncertaintyType }}</span>
+              </td>
+              <td class="text-center font-monospace">{{ item.summaryText }}</td>
+              <td class="text-center font-monospace">k={{ item.coverageFactor }}</td>
+              <td class="text-center col-status">
+                <span class="badge px-2 py-1 border"
+                  [ngClass]="item.isActive ? 'bg-success-subtle text-success border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border-warning-subtle'">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (item.modifiedByName || item.createdByName || '-') + ' on ' + ((item.modifiedOn || item.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ item.modifiedByName || item.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">· {{ (item.modifiedOn || item.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-footer bg-white py-2 px-3 border-top" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<div #modalRef class="modal fade" tabindex="-1" aria-labelledby="measurementUncertaintyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 bg-light border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="measurementUncertaintyModalLabel">
+          <i class="bi bi-bullseye text-danger"></i>
+          <span>{{ formTitle }}</span>
+        </h6>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="muForm" (ngSubmit)="saveUncertainty()">
+        <div class="modal-body p-3">
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-tag me-1"></i> Identity
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label mb-1">Code <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm text-uppercase font-monospace"
+                  placeholder="e.g. MU_TENSILE_UTS" formControlName="code" maxlength="50"
+                  (input)="onCodeInput()"
+                  [ngClass]="{'is-invalid': (muForm.get('code')?.touched || submitted) && muForm.get('code')?.invalid}" />
+                <app-field-error [control]="muForm.get('code')" label="Code" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label mb-1">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm"
+                  placeholder="e.g. Tensile UTS expanded uncertainty" formControlName="name" maxlength="150"
+                  [ngClass]="{'is-invalid': (muForm.get('name')?.touched || submitted) && muForm.get('name')?.invalid}" />
+                <app-field-error [control]="muForm.get('name')" label="Name" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Status</label>
+                <select class="form-select form-select-sm" formControlName="isActive">
+                  <option [ngValue]="true">Active</option>
+                  <option [ngValue]="false">Inactive</option>
+                </select>
+              </div>
+              <div class="col-md-9">
+                <label class="form-label mb-1">Description</label>
+                <input type="text" class="form-control form-control-sm"
+                  placeholder="Scope note, revision reference, validity note..." formControlName="description" maxlength="500" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Display Order</label>
+                <input type="number" class="form-control form-control-sm" formControlName="displayOrder" min="0" appNumberOnly />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-diagram-3 me-1"></i> Applicability
+            </legend>
+            <div class="row g-2 align-items-end">
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Laboratory Test</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Laboratory Tests" routerLink="/test">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Test
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Any Test (global)"
+                  [fetchDataFn]="getTestDropdown" (itemSelected)="onTestSelected($event)"
+                  [selectedItem]="selectedTest" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Parameter</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Parameters" routerLink="/parameter">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Parameter
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Any Parameter"
+                  [fetchDataFn]="getParamDropdown" (itemSelected)="onParamSelected($event)"
+                  [selectedItem]="selectedParam" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Measurement Unit</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Units" routerLink="/parameter-unit">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Unit
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Unit (optional)"
+                  [fetchDataFn]="getUnitDropdown" (itemSelected)="onUnitSelected($event)"
+                  [selectedItem]="selectedUnit" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-6">
+                <div class="form-field-header">
+                  <label class="form-label mb-1">Test Method</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" title="Manage Test Methods" routerLink="/test-method">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Method
+                  </a>
+                </div>
+                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" placeholder="Any Method"
+                  [fetchDataFn]="getMethodDropdown" (itemSelected)="onMethodSelected($event)"
+                  [selectedItem]="selectedMethod" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label mb-1">Method Version</label>
+                <select class="form-select form-select-sm" formControlName="testMethodSpecificationVersionID">
+                  <option [ngValue]="null">Any Version</option>
+                  <option *ngFor="let v of methodVersions" [ngValue]="v.id">{{ versionLabel(v) }}</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-bullseye me-1"></i> Uncertainty Configuration
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label mb-1">Uncertainty Type <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="uncertaintyType">
+                  <option *ngFor="let t of uncertaintyTypes" [value]="t">{{ t }}</option>
+                </select>
+                <small class="text-muted">{{ typeHint(muForm.get('uncertaintyType')?.value) }}</small>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Basis <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="basis">
+                  <option *ngFor="let b of basisOptions" [value]="b">{{ b }}</option>
+                </select>
+                <small class="text-muted">Type A: statistics of repeats. Type B: calibration / resolution / reference info.</small>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label mb-1">Combined (uc)</label>
+                <input type="number" class="form-control form-control-sm font-monospace" placeholder="e.g. 1.25"
+                  formControlName="combinedUncertainty" appDecimalOnly />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label mb-1">Expanded (U)</label>
+                <input type="number" class="form-control form-control-sm font-monospace" placeholder="e.g. 2.50"
+                  formControlName="expandedUncertainty" appDecimalOnly />
+              </div>
+              <div class="col-md-1">
+                <label class="form-label mb-1">k <span class="text-danger">*</span></label>
+                <input type="number" class="form-control form-control-sm font-monospace" formControlName="coverageFactor" appDecimalOnly
+                  [ngClass]="{'is-invalid': (muForm.get('coverageFactor')?.touched || submitted) && muForm.get('coverageFactor')?.invalid}" />
+                <app-field-error [control]="muForm.get('coverageFactor')" label="Coverage factor" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-1">
+                <label class="form-label mb-1">Conf %</label>
+                <input type="number" class="form-control form-control-sm font-monospace" placeholder="95"
+                  formControlName="confidenceLevel" appDecimalOnly />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-list-check me-1"></i> Uncertainty Components
+              <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm ms-2" (click)="addComponent()">
+                <i class="bi bi-plus-circle me-1"></i>Add Component
+              </button>
+            </legend>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered mb-0 align-middle lims-compact-table">
+                <thead class="table-light text-nowrap">
+                  <tr>
+                    <th class="text-center col-sn">#</th>
+                    <th>Source <span class="text-danger">*</span></th>
+                    <th>Type</th>
+                    <th>Distribution</th>
+                    <th>Std Unc (u) <span class="text-danger">*</span></th>
+                    <th>Sensitivity (c)</th>
+                    <th>Contribution (u×c)</th>
+                    <th *ngIf="!isViewMode" class="text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="components">
+                  <tr *ngIf="components.length === 0">
+                    <td [attr.colspan]="isViewMode ? 7 : 8" class="text-center py-3 text-muted">
+                      No components. Add rows for repeatability, calibration, resolution, reference, environment — or leave empty and store combined/expanded directly.
+                    </td>
+                  </tr>
+                  <tr *ngFor="let row of components.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center text-muted col-sn">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="source"
+                        placeholder="e.g. Repeatability" maxlength="200" />
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="evalType">
+                        <option *ngFor="let e of evalTypeOptions" [value]="e">{{ e }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="distribution">
+                        <option value="">—</option>
+                        <option *ngFor="let d of distributionOptions" [value]="d">{{ d }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm font-monospace" formControlName="stdUncertainty"
+                        appDecimalOnly />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm font-monospace" formControlName="sensitivityCoefficient"
+                        appDecimalOnly />
+                    </td>
+                    <td class="font-monospace text-success">{{ componentContribution(i) | number:'1.2-6' }}</td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm p-1" (click)="removeComponent(i)" title="Remove">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-calculator me-1"></i> Calculation Summary
+            </legend>
+            <div class="req-summary mb-2">Live: {{ summaryLine }}</div>
+            <div class="dryrun-bar d-flex align-items-center gap-2 flex-wrap">
+              <span class="fw-semibold">Try it:</span>
+              <button *ngIf="!isViewMode" type="button" class="btn btn-lims btn-lims-copy btn-sm" (click)="runDryRun()" [disabled]="dryRunLoading">
+                <i class="bi bi-play-circle me-1"></i> Validate
+              </button>
+              <span class="dryrun-result font-monospace" *ngIf="dryRunResult">
+                uc={{ dryRunResult.combinedUncertainty }} · k={{ dryRunResult.coverageFactor }} · U={{ dryRunResult.expandedUncertainty }}
+              </span>
+              <small *ngIf="dryRunResult" class="text-muted">{{ dryRunResult.appliedOperation }}</small>
+            </div>
+            <small class="text-muted">Dry-run uses the same server calculation (no second engine).</small>
+            <div class="row g-2 mt-1" *ngIf="auditInfo">
+              <div class="col-md-6">
+                <small class="text-muted">Created by {{ auditInfo.createdByName || '-' }} on {{ (auditInfo.createdOn | date:'dd MMM, yyyy hh:mm a') || '-' }}</small>
+              </div>
+              <div class="col-md-6 text-end">
+                <small class="text-muted">Modified by {{ auditInfo.modifiedByName || '-' }} on {{ (auditInfo.modifiedOn | date:'dd MMM, yyyy hh:mm a') || '-' }}</small>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <div class="modal-footer py-2 bg-light border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i> {{ isViewMode ? 'Close' : 'Cancel' }}
+          </button>
+          <button *ngIf="!isViewMode" type="submit" class="btn btn-lims btn-lims-save btn-sm">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

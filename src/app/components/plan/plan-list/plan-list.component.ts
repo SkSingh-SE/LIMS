@@ -1,52 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { SampleInwardService } from '../../../services/sample-inward.service';
+import { ToastService } from '../../../services/toast.service';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-plan-list',
-  imports: [ CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent, PaginationComponent ],
+  imports: [ CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent, PaginationComponent, BreadcrumbComponent ],
   templateUrl: './plan-list.component.html',
   styleUrls: ['./plan-list.component.css']
 })
 export class PlanListComponent implements OnInit {
-  @ViewChild('filterModal') filterModal!: ElementRef;
-
-  columns = [
-    { key: 'caseNo', type: 'string', label: 'Case No', filter: true },
-    { key: 'customerName', type: 'string', label: 'Customer', filter: true },
-    { key: 'contactPersonName', type: 'string', label: 'Contact Person', filter: true },
-    { key: 'contactEmail', type: 'string', label: 'Contact Email', filter: true },
-    { key: 'contactPhone', type: 'string', label: 'Contact Phone', filter: true },
-    { key: 'collectionTime', type: 'string', label: 'Collection Time', filter: true },
-    { key: 'planStatus', type: 'string', label: 'Status', filter: true },
-    { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
-    { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
-  ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    caseNo: 'string',
-    customerName: 'string',
-    contactPersonName: 'string',
-    contactEmail: 'string',
-    contactPhone: 'string',
-    collectionTime: 'string',
-    planStatus: 'string',
-    modifiedBy: 'string',
-    modifiedOn: 'string',
-  };
-
-  filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
-  filterType: string = 'Contains';
-  filterValue: string = '';
-  filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
-  isFilterOpen = false;
-  // materialSpecificationListForm: FormGroup;
   listData: any[] = [];
 
   pageNumber = 1;
@@ -57,6 +25,9 @@ export class PlanListComponent implements OnInit {
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
+  selectedStatus: string = 'all';
+
+  filters: { column: string; type: string; value: any; value2?: any }[] = [];
 
   payload = {
     PageNumber: this.pageNumber,
@@ -67,7 +38,7 @@ export class PlanListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private inwardService: SampleInwardService) {
+  constructor(private fb: FormBuilder, private inwardService: SampleInwardService, private toastService: ToastService) {
   }
 
 
@@ -76,6 +47,23 @@ export class PlanListComponent implements OnInit {
   }
 
   fetchData() {
+    const effectiveFilters = [...this.filters];
+    if (this.selectedStatus && this.selectedStatus !== 'all') {
+      const statusFilter = { column: 'planStatus', type: 'Equal', value: this.selectedStatus };
+      const idx = effectiveFilters.findIndex(f => f.column === 'planStatus');
+      if (idx > -1) {
+        effectiveFilters[idx] = statusFilter;
+      } else {
+        effectiveFilters.push(statusFilter);
+      }
+    }
+
+    this.payload.PageNumber = this.pageNumber;
+    this.payload.PageSize = this.pageSize;
+    this.payload.searchTerm = this.searchTerm ? this.searchTerm.trim() : '';
+    this.payload.sortByColumn = this.sortByColumn;
+    this.payload.sortOrder = this.sortOrder;
+    this.payload.filter = effectiveFilters;
 
     this.inwardService.getPlanList(this.payload).subscribe({
       next: (response) => {
@@ -85,8 +73,8 @@ export class PlanListComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        console.error('Error fetching designations:', error);
         this.listData = [];
+        this.toastService.show(error?.error?.message || 'Error loading sample plans.', 'error');
       }
 
     });
@@ -100,130 +88,33 @@ export class PlanListComponent implements OnInit {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
     this.fetchData();
-  }
-
-  openFilterModal(column: string, event: MouseEvent) {
-    this.filterColumn = column;
-    this.columns.forEach(col => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
-      }
-    })
-    this.filterValue = '';
-    this.filterValue2 = '';
-
-    // Determine filter type dynamically
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
-    }
-
-    this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
-    if (this.filterModal) {
-      const modal = this.filterModal.nativeElement;
-      modal.style.display = 'block';
-      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
-      modal.style.left = `${rect.left + window.scrollX}px`;
-
-      // Clamp to viewport so the popup doesn't overflow
-      requestAnimationFrame(() => {
-        const modalRect = modal.getBoundingClientRect();
-        if (modalRect.right > window.innerWidth) {
-          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-        }
-        if (modalRect.bottom > window.innerHeight) {
-          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-        }
-      });
-    }
-  }
-
-  applyFilter() {
-    if (!this.filterColumn || this.filterValue === '') return;
-
-    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
-    } else {
-      this.filters.push(filterData);
-    }
-
-    this.fetchData();
-    this.closeFilterModal();
-  }
-
-  resetFilter(column: string) {
-    this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
-    this.fetchData();
-  }
-
-  closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
-    }
   }
 
   onPageChange(page: number) {
     this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
     this.fetchData();
   }
 
-  changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
+  onPageSizeChange(newSize: number): void {
+    this.pageSize = newSize;
+    this.pageNumber = 1;
     this.fetchData();
   }
 
   onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
-  get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
-  }
-  getStartRecord(): number {
-    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
-  }
-
-  getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
-  }
-
-
-  hasFilter(column: string): boolean {
-    return this.filters?.some(f => f.column === column) ?? false;
-  }
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find(col => col.key === columnKey);
-    return column ? column.type : undefined;
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.filters = [];
+    this.pageNumber = 1;
+    this.sortByColumn = 'modifiedOn';
+    this.sortOrder = 'desc';
+    this.fetchData();
   }
 
 }
-

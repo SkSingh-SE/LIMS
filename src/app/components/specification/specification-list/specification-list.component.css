@@ -1,6 +1,6 @@
 .col-actions {
-  width: 170px;
-  min-width: 170px;
+  width: 205px;
+  min-width: 205px;
 }
 
 .cursor-pointer {
@@ -34,4 +34,20 @@
   font-size: 0.82rem;
   padding: 0 0.4rem;
   margin-bottom: 0.4rem;
+}
+
+.col-grade-sn {
+  width: 45px;
+}
+
+.col-grade-req {
+  width: 130px;
+}
+
+.col-grade-status {
+  width: 100px;
+}
+
+.col-grade-actions {
+  width: 100px;
 }

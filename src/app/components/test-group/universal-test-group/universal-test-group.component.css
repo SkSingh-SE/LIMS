@@ -1,0 +1,154 @@
+/* Compact table — aligns with global .lims-compact-table */
+.lims-compact-table th { font-size: 0.72rem; font-weight: 600; color: #475569; white-space: nowrap; padding: 0.25rem 0.4rem; }
+.lims-compact-table td { font-size: 0.78rem; padding: 0.25rem 0.4rem; vertical-align: middle; }
+.text-xs { font-size: 0.72rem; }
+.text-2xs { font-size: 0.68rem; }
+.breadcrumb { font-size: 0.78rem; }
+/* ── Horizontal Scrollable Tabs ── */
+.tab-header-container {
+  background: #fff;
+  border-bottom: 2px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.tab-scroll-wrapper {
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+  min-height: 38px;
+}
+
+:host ::ng-deep .card-header-tabs.nav-tabs,
+.card-header-tabs.nav-tabs,
+ul.card-header-tabs {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+:host ::ng-deep .card-header-tabs.nav-tabs::-webkit-scrollbar,
+.card-header-tabs.nav-tabs::-webkit-scrollbar,
+ul.card-header-tabs::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+:host ::ng-deep .card-header-tabs.nav-tabs .nav-item,
+.card-header-tabs.nav-tabs .nav-item,
+ul.card-header-tabs .nav-item {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+:host ::ng-deep .card-header-tabs.nav-tabs .nav-link,
+.card-header-tabs.nav-tabs .nav-link,
+ul.card-header-tabs .nav-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  color: #475569;
+  cursor: pointer;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+  transition: all 0.15s ease-in-out;
+  background: transparent;
+}
+
+:host ::ng-deep .card-header-tabs.nav-tabs .nav-link:hover,
+.card-header-tabs.nav-tabs .nav-link:hover {
+  color: var(--primary-color, #da261c);
+  background: rgba(218, 38, 28, 0.04);
+  border-bottom-color: var(--primary-200, #fecaca) !important;
+}
+
+:host ::ng-deep .card-header-tabs.nav-tabs .nav-link.active,
+.card-header-tabs.nav-tabs .nav-link.active {
+  color: var(--primary-color, #da261c) !important;
+  font-weight: 600;
+  border-bottom: 2px solid var(--primary-color, #da261c) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+/* Scroll Chevron Buttons at Both Ends */
+.tab-scroll-btn {
+  padding: 0 0.65rem;
+  font-size: 0.85rem;
+  color: #475569;
+  background: #f8fafc;
+  border: none;
+  z-index: 3;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.tab-scroll-btn:hover:not(:disabled) {
+  color: #fff;
+  background: var(--primary-color, #da261c);
+}
+
+.tab-scroll-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.tab-scroll-btn-left {
+  border-right: 1px solid #e2e8f0;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.03);
+}
+
+.tab-scroll-btn-right {
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -2px 0 4px rgba(0,0,0,0.03);
+}
+
+.btn-nav-link { color: var(--primary-color, #da261c); font-size: 0.75rem; cursor: pointer; text-decoration: none; }
+.btn-nav-link:hover { text-decoration: underline; }
+.cursor-pointer { cursor: pointer; }
+.param-code-badge { font-family: monospace; font-size: 0.72rem; }
+.table-col-num { width: 35px; min-width: 35px; }
+.table-col-status { width: 110px; min-width: 110px; }
+.formula-block { font-family: monospace; font-size: 0.72rem; color: #64748b; background: #f8fafc; padding: 2px 4px; border-radius: 3px; word-break: break-word; }
+.comparison-box { background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 4px; padding: 3px 6px; }
+.info-field-box { background-color: #fafbfc; border: 1px solid #e2e8f0; border-left: 3px solid var(--primary-color, #da261c); border-radius: 4px; padding: 0.4rem 0.6rem; }
+.lineage-title { font-size: 0.75rem; }
+.gate-col { min-height: 72px; }
+.legend-compact { font-size: 0.75rem; }
+.tab-pane-container { border: none !important; padding: 0 !important; }
+
+/* — Fieldset standard: border-left accent + compact density — */
+fieldset { border: 1px solid #e2e8f0; border-left: 3px solid var(--primary-color, #da261c); border-radius: 6px; padding: 0.4rem 0.6rem 0.5rem; background: #fafbfc; margin-bottom: 0; }
+fieldset legend { font-size: 0.75rem; padding: 0 0.35rem; margin-bottom: 0.35rem; float: none; width: auto; }
+
+/* Card header density */
+.card-header { padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
+
+/* Ultra-high density helpers */
+.card-body.p-2 { padding: 0.5rem !important; }
+

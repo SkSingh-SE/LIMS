@@ -1201,11 +1201,20 @@
                                   </span>
                                   <a *ngIf="utgCtrl.get('id')?.value > 0"
                                      [routerLink]="['/universal-test-execution']"
-                                     [queryParams]="{ utgId: utgCtrl.get('id')?.value }"
-                                     class="btn btn-sm btn-outline-primary ms-1 py-0 px-1 text-xs-70"
-                                     title="Open Execution">
-                                    <i class="bi bi-play-circle"></i>
+                                     [queryParams]="utgCtrl.get('testExecutionID')?.value ? { executionId: utgCtrl.get('testExecutionID')?.value, utgId: utgCtrl.get('id')?.value, from: 'plan' } : { utgId: utgCtrl.get('id')?.value, from: 'plan' }"
+                                     class="btn btn-sm ms-1 py-0 px-1 text-xs-70"
+                                     [ngClass]="['Completed', 'Approved', 'Verified'].includes(utgCtrl.get('status')?.value) || utgCtrl.get('testExecutionID')?.value ? 'btn-outline-success' : 'btn-outline-primary'"
+                                     [title]="utgCtrl.get('testExecutionID')?.value ? 'View Completed Execution (ID: ' + utgCtrl.get('testExecutionID')?.value + ')' : ['Completed', 'Approved', 'Verified'].includes(utgCtrl.get('status')?.value) ? 'View Completed Execution' : 'Open Execution'">
+                                    <i class="bi" [ngClass]="['Completed', 'Approved', 'Verified'].includes(utgCtrl.get('status')?.value) || utgCtrl.get('testExecutionID')?.value ? 'bi-clipboard-check' : 'bi-play-circle'"></i>
                                   </a>
+                                  <div *ngIf="utgCtrl.get('testExecutionID')?.value" class="mt-0.5">
+                                    <a class="badge bg-light text-primary border text-xxs text-decoration-none"
+                                       [routerLink]="['/universal-test-execution']"
+                                       [queryParams]="{ executionId: utgCtrl.get('testExecutionID')?.value, utgId: utgCtrl.get('id')?.value, from: 'plan' }"
+                                       [title]="'View Execution Workspace (ID: ' + utgCtrl.get('testExecutionID')?.value + ')'">
+                                      <i class="bi bi-box-arrow-up-right me-0.5"></i>UT-{{ ('00000' + utgCtrl.get('testExecutionID')?.value).slice(-6) }}
+                                    </a>
+                                  </div>
                                 </td>
                                 <td *ngIf="!isViewMode && !isPlanApproved(testPlan)" class="text-center">
                                   <button type="button" class="btn-lims btn-lims-remove btn-lims-icon"

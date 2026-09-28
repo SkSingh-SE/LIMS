@@ -1,0 +1,255 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-tags fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Classification Master</h6>
+          <small class="text-muted text-xs">Universal material classification metadata (Layer 3: Specification &amp; Compliance)</small>
+        </div>
+      </div>
+      <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create')">
+        <i class="bi bi-plus-circle me-1"></i> Add Classification
+      </button>
+    </div>
+
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm font-monospace text-uppercase"
+              placeholder="Search code (METAL)..."
+              [(ngModel)]="filterCode"
+              (keydown.enter)="onSearch()" />
+          </div>
+        </div>
+        <div class="col-md-4">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search classification name..."
+            [(ngModel)]="filterName"
+            (keydown.enter)="onSearch()" />
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="onSearch()">
+            <option value="">All Statuses</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="onSort('code')">
+                Code
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'code' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'code' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('name')">
+                Classification Name
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'name' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'name' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th>Description</th>
+              <th class="cursor-pointer text-center col-status" (click)="onSort('isActive')">
+                Status
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'isActive' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'isActive' && sortOrder === 'desc'
+                }"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="classificationList.length === 0">
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-6 d-block mb-1"></i>
+                No classifications found matching the criteria.
+              </td>
+            </tr>
+            <tr *ngFor="let item of classificationList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted font-monospace small">
+                {{ (pageNumber - 1) * pageSize + i + 1 }}
+              </td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center align-items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-view"
+                    title="View Details"
+                    (click)="openModal('view', item.id)">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-edit"
+                    title="Edit Classification"
+                    (click)="openModal('edit', item.id)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Classification' : 'Activate Classification'"
+                    (click)="toggleStatus(item)">
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace fw-semibold">{{ item.code || '-' }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ item.name }}</td>
+              <td class="text-muted text-truncate max-w-desc" [title]="item.description || ''">
+                {{ item.description || '-' }}
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<div #modalRef class="modal fade" tabindex="-1" aria-labelledby="classificationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 bg-light border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="classificationModalLabel">
+          <i class="bi bi-tags text-danger"></i>
+          <span>{{ formTitle }}</span>
+        </h6>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="classificationForm" (ngSubmit)="saveClassification()">
+        <div class="modal-body p-3">
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-tag me-1"></i> Classification Identity
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label mb-1">Classification Code <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm text-uppercase"
+                  placeholder="e.g. METAL, POLYMER"
+                  formControlName="code"
+                  maxlength="50"
+                  (input)="onCodeInput()"
+                  [class.is-invalid]="submitted && classificationForm.get('code')?.invalid" />
+                <app-field-error
+                  [control]="classificationForm.get('code')"
+                  label="Classification Code"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label mb-1">Classification Name <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="e.g. Metallic Material"
+                  formControlName="name"
+                  maxlength="100"
+                  [class.is-invalid]="submitted && classificationForm.get('name')?.invalid" />
+                <app-field-error
+                  [control]="classificationForm.get('name')"
+                  label="Classification Name"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Status <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="isActive">
+                  <option [ngValue]="true">Active</option>
+                  <option [ngValue]="false">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-card-text me-1"></i> Ordering & Notes
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label mb-1">Display Order</label>
+                <input
+                  type="number"
+                  class="form-control form-control-sm"
+                  placeholder="0"
+                  formControlName="displayOrder"
+                  min="0"
+                  [class.is-invalid]="submitted && classificationForm.get('displayOrder')?.invalid" />
+                <app-field-error
+                  [control]="classificationForm.get('displayOrder')"
+                  label="Display Order"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-9">
+                <label class="form-label mb-1">Description</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="Brief description or material scope"
+                  formControlName="description"
+                  maxlength="500" />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <div class="modal-footer py-2 bg-light border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i> {{ isViewMode ? 'Close' : 'Cancel' }}
+          </button>
+          <button *ngIf="!isViewMode" type="submit" class="btn btn-lims btn-lims-save btn-sm">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

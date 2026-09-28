@@ -540,9 +540,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let sample of sampleDetails.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i"
-                    [class.table-secondary]="sample.get('isCancelled')?.value"
-                    [class.opacity-75]="sample.get('isCancelled')?.value">
+                <ng-container *ngFor="let sample of sampleDetails.controls; let i = index; trackBy: trackByIndex">
+                  <tr [formGroupName]="i"
+                      [class.table-secondary]="sample.get('isCancelled')?.value"
+                      [class.opacity-75]="sample.get('isCancelled')?.value">
                   <td class="text-center align-middle">
                     <span class="sample-no-badge">
                       {{ sample.get('sampleNo')?.value || ('Sample ' + (i+1)) }}
@@ -625,7 +626,85 @@
                     </div>
                   </td>
                 </tr>
-              </tbody>
+
+                <!-- Universal Laboratory Test Selection Sub-row -->
+                <tr [formGroupName]="i" class="bg-light-subtle"
+                    [class.table-secondary]="sample.get('isCancelled')?.value"
+                    [class.opacity-75]="sample.get('isCancelled')?.value">
+                  <td colspan="6" class="p-1.5 border-top-0 border-bottom">
+                    <div class="req-tests-container">
+                      <!-- Top Row: Header & Selector -->
+                      <div class="req-tests-top-row">
+                        <div class="req-tests-header">
+                          <span class="req-tests-header-title">
+                            <i class="bi bi-flask-fill text-danger me-1"></i>
+                            Requested Tests
+                          </span>
+                          <span *ngIf="getSampleDisciplineName(i)" class="req-tests-discipline-badge">
+                            <i class="bi bi-tag-fill me-1 text-primary"></i>{{ getSampleDisciplineName(i) }}
+                          </span>
+                          <span *ngIf="getSelectedTestsForSample(i).length > 0" class="req-tests-count-badge">
+                            {{ getSelectedTestsForSample(i).length }} {{ getSelectedTestsForSample(i).length === 1 ? 'Test' : 'Tests' }}
+                          </span>
+                        </div>
+
+                        <!-- Right: Test Selector Dropdown (Discipline-gated) -->
+                        <div *ngIf="!isViewMode && !sample.get('isCancelled')?.value" class="test-selector-box">
+                          <i class="bi bi-plus-circle-fill test-selector-icon"></i>
+                          <select class="form-select form-select-sm test-selector-select"
+                                  [class.border-warning]="!getSampleDisciplineId(i)"
+                                  [class.bg-warning-subtle]="!getSampleDisciplineId(i)"
+                                  (mousedown)="onTestDropdownMouseDown(i, $event)"
+                                  (change)="onTestSelectChange(i, $event)">
+                            <option value="" *ngIf="!getSampleDisciplineId(i)">⚠️ Select Discipline First</option>
+                            <option value="" *ngIf="getSampleDisciplineId(i)">+ Add {{ getSampleDisciplineName(i) }} Test...</option>
+                            <option *ngFor="let opt of getAvailableTestsForSample(i)" [value]="opt.id">
+                              {{ opt.code ? '[' + opt.code + '] ' : '' }}{{ opt.name }}
+                            </option>
+                            <option value="" *ngIf="getSampleDisciplineId(i) && getAvailableTestsForSample(i).length === 0" disabled>
+                              (All {{ getSampleDisciplineName(i) }} tests selected)
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Bottom Row: Selected Test Chips List -->
+                      <div class="req-tests-chips-list">
+                        <ng-container *ngIf="getSelectedTestsForSample(i).length > 0; else noTestsSelected">
+                          <div *ngFor="let t of getSelectedTestsForSample(i)" class="req-test-chip">
+                            <span class="req-test-chip-icon">
+                              <i class="bi bi-flask text-danger"></i>
+                            </span>
+                            <span *ngIf="t.code || t.laboratoryTestCode" class="req-test-chip-code">
+                              {{ t.code || t.laboratoryTestCode }}
+                            </span>
+                            <span class="req-test-chip-name" [title]="t.name || t.laboratoryTestName">
+                              {{ t.name || t.laboratoryTestName }}
+                            </span>
+                            <button *ngIf="!isViewMode && !sample.get('isCancelled')?.value"
+                                    type="button"
+                                    class="req-test-chip-remove icon-only"
+                                    (click)="removeTestFromSample(i, t.id || t.laboratoryTestID)"
+                                    title="Remove {{ t.name || t.laboratoryTestName }}">
+                              <i class="bi bi-x-lg"></i>
+                            </button>
+                          </div>
+                        </ng-container>
+
+                        <ng-template #noTestsSelected>
+                          <span *ngIf="getSampleDisciplineId(i)" class="req-tests-empty">
+                            <i class="bi bi-info-circle text-primary me-1"></i> No {{ getSampleDisciplineName(i) }} tests selected yet for this sample. Choose from the dropdown to assign.
+                          </span>
+                          <span *ngIf="!getSampleDisciplineId(i)" class="req-tests-empty text-warning">
+                            <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> Please select <strong>Discipline</strong> in the row above to choose tests.
+                          </span>
+                        </ng-template>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
             </table>
           </div>
 

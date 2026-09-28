@@ -1,0 +1,13 @@
+.font-monospace {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+th.cursor-pointer {
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+th.cursor-pointer:hover {
+  background-color: #f1f5f9 !important;
+}

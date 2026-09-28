@@ -33,7 +33,7 @@ export class DashboardBranchMockupComponent implements OnInit {
   constructor(private router: Router, public branchService: BranchService) {
     effect(() => {
       const selectedBranch = this.branchService.selectedBranch();
-      this.loadDataForBranch(selectedBranch.code);
+      this.loadDataForBranch(selectedBranch?.code ?? 'ALL');
     });
   }
 
@@ -184,7 +184,7 @@ export class DashboardBranchMockupComponent implements OnInit {
   }
 
   onRefresh(): void {
-    this.loadDataForBranch(this.branchService.selectedBranch().code);
+    this.loadDataForBranch(this.branchService.selectedBranch()?.code ?? 'ALL');
   }
 
   formatTimestamp(timestamp: Date): string {
@@ -196,13 +196,13 @@ export class DashboardBranchMockupComponent implements OnInit {
   onViewAllNotifications(): void {}
 
   get isAllBranches(): boolean {
-    return this.branchService.selectedBranch().code === 'ALL';
+    return (this.branchService.selectedBranch()?.code ?? 'ALL') === 'ALL';
   }
 
   get branchSummaries(): any[] {
     return Object.keys(this.branchDataMap).map(key => {
       const bData = this.branchDataMap[key];
-      const branchInfo = this.branchService.branches.find(b => b.code === key);
+      const branchInfo = this.branchService.branches().find((b: BranchInfo) => b.code === key);
       return {
         code: key,
         name: branchInfo?.name || key,

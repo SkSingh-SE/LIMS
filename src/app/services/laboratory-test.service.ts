@@ -70,6 +70,33 @@ export class LaboratoryTestService {
     return this.http.get<{ isUnique: boolean }>(url);
   }
 
+  // ── Phase 2: Layout Assignment (presentation only) ──
+
+  getLayoutAssignments(testId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${testId}/layouts`);
+  }
+
+  addLayoutAssignment(testId: number, payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${testId}/layouts`, payload);
+  }
+
+  updateLayoutAssignment(testId: number, assignmentId: number, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${testId}/layouts/${assignmentId}`, payload);
+  }
+
+  toggleLayoutAssignmentStatus(testId: number, assignmentId: number): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${testId}/layouts/${assignmentId}/toggle-status`, {});
+  }
+
+  getEffectiveLayout(testId: number, methodId?: number | null, versionId?: number | null): Observable<any> {
+    let url = `${this.apiUrl}/${testId}/effective-layout`;
+    const params: string[] = [];
+    if (methodId !== undefined && methodId !== null) params.push(`methodId=${methodId}`);
+    if (versionId !== undefined && versionId !== null) params.push(`versionId=${versionId}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    return this.http.get<any>(url);
+  }
+
   // ── Legacy / Cross-module Methods ──
 
   getAllLaboratoryTests(filter: any): Observable<any> {

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
 import { StandardOrgnizationService } from '../../services/standard-orgnization.service';
 import { ToastService } from '../../services/toast.service';
@@ -12,78 +12,63 @@ import { PaginationComponent } from '../../utility/components/pagination/paginat
 
 @Component({
   selector: 'app-standard-orgnization',
-  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent ],
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent],
   templateUrl: './standard-orgnization.component.html',
   styleUrl: './standard-orgnization.component.css'
 })
 export class StandardOrgnizationComponent implements OnInit {
-  @ViewChild('filterModal') filterModal!: ElementRef;
   @ViewChild('modalRef') modalElement!: ElementRef;
   private bsModal!: Modal;
 
-  columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
-  ];
-  filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    name: 'string',
-    modifiedOn: 'date',
-  };
-
-  filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
-  filterType: string = 'Contains';
-  filterValue: string = '';
-  filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
-  isFilterOpen = false;
   StandardOrganizationList: any[] = [];
   standardOrganizationId: number = 0;
 
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [10, 25, 50, 100, 200, 500];
+  pageSizes = [10, 25, 50, 100, 200];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null
-  };
-
-  // form
+  // Form state
   StandardOrganizationForm!: FormGroup;
   submitted = false;
   isEditMode: boolean = false;
-  isViewMode: boolean = true;
-  customerTypeObject: any = null;
-  formTitle = 'Standard Organization Form';
+  isViewMode: boolean = false;
+  formTitle = 'Add Standard Organization';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private standardOrgService: StandardOrgnizationService, private toastService: ToastService) {
+  constructor(
+    private fb: FormBuilder,
+    private standardOrgService: StandardOrgnizationService,
+    private toastService: ToastService
+  ) {}
 
-  }
-
-
-  ngOnInit() {
-    this.fetchData();
+  ngOnInit(): void {
     this.initForm();
+    this.fetchData();
   }
-  initForm() {
+
+  initForm(): void {
     this.StandardOrganizationForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]]
     });
   }
-  fetchData() {
+
+  get payload(): any {
+    return {
+      PageNumber: this.pageNumber,
+      PageSize: this.pageSize,
+      searchTerm: this.searchTerm ? this.searchTerm.trim() : '',
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder
+    };
+  }
+
+  fetchData(): void {
     this.standardOrgService.getAllStandardOrganizations(this.payload).subscribe({
       next: (response) => {
         this.StandardOrganizationList = response?.items || [];
@@ -92,202 +77,106 @@ export class StandardOrgnizationComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        this.toastService.show(error.message, 'error');
+        this.toastService.show(error.message || 'Failed to load standard organizations.', 'error');
         this.StandardOrganizationList = [];
-      }
-    }
-
-    );
-  }
-  getDetails(): void {
-    const requestId = this.standardOrganizationId;
-    this.standardOrgService.getStandardOrganizationById(requestId).subscribe({
-      next: (response) => {
-        if (this.standardOrganizationId !== requestId) return; // discard stale response
-        this.customerTypeObject = response;
-        this.StandardOrganizationForm.patchValue(response);
-      },
-      error: (error) => {
-        console.error('Error fetching tax data:', error);
       }
     });
   }
 
-  applySorting(column: string) {
+  getDetails(): void {
+    const requestId = this.standardOrganizationId;
+    this.standardOrgService.getStandardOrganizationById(requestId).subscribe({
+      next: (response) => {
+        if (this.standardOrganizationId !== requestId) return;
+        this.StandardOrganizationForm.patchValue(response);
+      },
+      error: (error) => {
+        this.toastService.show(error.message || 'Failed to load details.', 'error');
+      }
+    });
+  }
+
+  applySorting(column: string): void {
     if (this.sortByColumn === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
     this.fetchData();
   }
 
-  openFilterModal(column: string, event: MouseEvent) {
-    this.filterColumn = column;
-    this.columns.forEach(col => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
-      }
-    })
-    this.filterValue = '';
-    this.filterValue2 = '';
-
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
+  getSortIcon(column: string): string {
+    if (this.sortByColumn !== column) {
+      return 'bi-arrow-down-up text-muted opacity-50';
     }
-
-    this.isFilterOpen = true;
-    const target = event.target as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
-    if (this.filterModal) {
-      const modal = this.filterModal.nativeElement;
-      modal.style.display = 'block';
-      modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
-      modal.style.left = `${rect.left + window.scrollX}px`;
-
-      // Clamp to viewport so the popup doesn't overflow
-      requestAnimationFrame(() => {
-        const modalRect = modal.getBoundingClientRect();
-        if (modalRect.right > window.innerWidth) {
-          modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-        }
-        if (modalRect.bottom > window.innerHeight) {
-          modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-        }
-      });
-    }
+    return this.sortOrder === 'asc' ? 'bi-sort-alpha-down text-danger' : 'bi-sort-alpha-up-alt text-danger';
   }
 
-  applyFilter() {
-    if (!this.filterColumn || this.filterValue === '') return;
-
-    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
-    const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
-
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
-    } else {
-      this.filters.push(filterData);
-    }
-
-    this.fetchData();
-    this.closeFilterModal();
-  }
-
-  resetFilter(column: string) {
-    this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
-    this.fetchData();
-  }
-
-  closeFilterModal() {
-    if (this.filterModal) {
-      this.filterModal.nativeElement.style.display = 'none';
-    }
-  }
-
-  onPageChange(page: number) {
+  onPageChange(page: number): void {
     this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
     this.fetchData();
   }
 
-  changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+    this.pageNumber = 1;
     this.fetchData();
   }
 
-  onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
+  onSearch(): void {
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
-  get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
-  }
-  getStartRecord(): number {
-    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
-  }
-
-  getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
-  }
-
-
-  hasFilter(column: string): boolean {
-    return this.filters?.some(f => f.column === column) ?? false;
-  }
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find(col => col.key === columnKey);
-    return column ? column.type : undefined;
+  resetSearch(): void {
+    this.searchTerm = '';
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
   deleteFn(id: number): void {
     if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.standardOrgService.deleteStandardOrganization(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error.message, 'error');
-        }
-      });
-    }
+    if (!confirm('Are you sure you want to delete this standard organization?')) return;
+
+    this.standardOrgService.deleteStandardOrganization(id).subscribe({
+      next: (response) => {
+        this.toastService.show(response.message || 'Deleted successfully.', 'success');
+        this.fetchData();
+      },
+      error: (error) => {
+        this.toastService.show(error.message || 'Failed to delete standard organization.', 'error');
+      }
+    });
   }
-  openModal(type: string, id: number): void {
-    this.StandardOrganizationForm.reset();
+
+  openModal(type: 'create' | 'edit' | 'view', id: number): void {
+    this.submitted = false;
+    this.StandardOrganizationForm.reset({ id: 0, name: '' });
     this.StandardOrganizationForm.enable();
-    this.standardOrganizationId = 0;
-    if (id > 0) {
-      this.standardOrganizationId = id;
-      this.getDetails();
-    }
+    this.standardOrganizationId = id;
+
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.initForm();
-      this.formTitle = 'Standard Organization Form';
+      this.formTitle = 'Add Standard Organization';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Standard Organization Form';
-      this.StandardOrganizationForm.enable();
-
-    }
-    else if (type === 'view') {
+      this.formTitle = 'Edit Standard Organization';
+      this.getDetails();
+    } else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Specimen Orientation';
+      this.formTitle = 'View Standard Organization';
       this.StandardOrganizationForm.disable();
+      this.getDetails();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
-    this.bsModal.show();
+    if (!this.bsModal && this.modalElement) {
+      this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
+    }
+    this.bsModal?.show();
   }
 
   isFieldInvalid(path: string): boolean {
@@ -299,7 +188,7 @@ export class StandardOrgnizationComponent implements OnInit {
     if (this.bsModal) {
       this.bsModal.hide();
     }
-    this.StandardOrganizationForm.reset();
+    this.StandardOrganizationForm.reset({ id: 0, name: '' });
     this.StandardOrganizationForm.enable();
     this.standardOrganizationId = 0;
     this.isEditMode = false;
@@ -307,40 +196,40 @@ export class StandardOrgnizationComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.isViewMode) return;
+
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.StandardOrganizationForm);
+
     if (!this.StandardOrganizationForm.valid) {
       this.toastService.show('Please fix the validation errors before submitting.', 'warning');
       return;
     }
-    let formData = this.StandardOrganizationForm.value;
+
+    const formData = this.StandardOrganizationForm.value;
     if (this.isEditMode) {
       this.standardOrgService.updateStandardOrganization(formData).subscribe({
         next: (response) => {
-          this.toastService.show(response.message, 'success');
+          this.toastService.show(response.message || 'Updated successfully.', 'success');
           this.closeModal();
           this.fetchData();
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.message || 'Failed to update standard organization.', 'error');
         }
       });
     } else {
       formData.id = 0;
       this.standardOrgService.createStandardOrganization(formData).subscribe({
         next: (response) => {
-          this.toastService.show(response.message, 'success');
+          this.toastService.show(response.message || 'Created successfully.', 'success');
           this.closeModal();
           this.fetchData();
         },
         error: (error) => {
-          this.toastService.show(error.message, 'error');
+          this.toastService.show(error.message || 'Failed to create standard organization.', 'error');
         }
       });
     }
   }
-
 }
-
-
-

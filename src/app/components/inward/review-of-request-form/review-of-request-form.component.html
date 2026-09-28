@@ -28,15 +28,141 @@
     </button>
   </div>
 
-  <!-- ═══════════════════════ TAB 1: TEST PLAN ═══════════════════════ -->
+  <!-- ═══════════════════════ TAB 1: UNIVERSAL TEST PLAN OVERVIEW ═══════════════════════ -->
   <div class="tab-pane-content" [class.d-none]="activeTab !== 'test-plan'">
-    <div class="card border rounded-2 shadow-xs p-2 bg-white">
-      <app-plan-form
-        #planFormRef
-        *ngIf="inwardId > 0"
-        [inwardID]="inwardId"
-        [mode]="isEmbeddedReadOnly ? 'review' : 'plan'">
-      </app-plan-form>
+    <div class="card border rounded-2 shadow-xs p-3 bg-white">
+
+      <!-- Section Title Header & Universal Workspace Action -->
+      <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="tpi-header-icon-box">
+            <i class="bi bi-flask-fill text-danger fs-5"></i>
+          </div>
+          <div>
+            <span class="fw-bold fs-7 text-dark d-block">Universal Laboratory Test Plan & Technical Routing</span>
+            <span class="text-muted fs-8">Authoritative laboratory tests, methods, and specifications assigned to registered samples</span>
+          </div>
+        </div>
+
+        <a [routerLink]="['/sample/plan/universal', inwardId]"
+           class="btn-lims btn-lims-primary btn-sm d-flex align-items-center gap-1.5 text-decoration-none">
+          <i class="bi bi-gear-wide-connected me-1"></i>
+          <span>Open Universal Plan Workspace</span>
+        </a>
+      </div>
+
+      <!-- Sample Test Plan Cards -->
+      <div *ngIf="samples && samples.length > 0; else noSamplesTpl" class="d-flex flex-column gap-3">
+        <div *ngFor="let sample of samples; let sIdx = index" class="border rounded-2 p-2.5 bg-light-subtle">
+          
+          <!-- Sample Metadata Bar -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-1.5 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-dark fw-semibold px-2 py-1 fs-8">Sample #{{ sample.sampleNo }}</span>
+              <span class="fw-semibold text-dark fs-7.5">{{ sample.details || 'General Sample' }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 flex-wrap fs-8">
+              <span *ngIf="sample.metalClassificationName" class="badge bg-secondary-subtle text-secondary border">
+                <i class="bi bi-tag me-1"></i>{{ sample.metalClassificationName }}
+              </span>
+              <span *ngIf="sample.productConditionName" class="badge bg-info-subtle text-info-emphasis border">
+                <i class="bi bi-box me-1"></i>{{ sample.productConditionName }}
+              </span>
+              <span *ngIf="sample.specificationGradeName" class="badge bg-primary-subtle text-primary border">
+                <i class="bi bi-award me-1"></i>Grade: {{ sample.specificationGradeName }}
+              </span>
+              <span class="badge bg-danger-subtle text-danger border fw-bold">
+                {{ getSampleUniversalTests(sample).length }} Universal Test(s)
+              </span>
+            </div>
+          </div>
+
+          <!-- Universal Test Table for this Sample -->
+          <div *ngIf="getSampleUniversalTests(sample).length > 0; else emptySampleTestsTpl" class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 fs-8 border">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-center" style="width: 40px;">#</th>
+                  <th>Laboratory Test</th>
+                  <th>Department</th>
+                  <th>Test Method / Standard</th>
+                  <th>Specification & Grade</th>
+                  <th class="text-center" style="width: 100px;">Status</th>
+                  <th class="text-end" style="width: 130px;">Execution</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let test of getSampleUniversalTests(sample); let tIdx = index">
+                  <td class="text-center text-muted fw-semibold">{{ tIdx + 1 }}</td>
+                  <td>
+                    <span class="fw-semibold text-dark d-block">
+                      {{ test.laboratoryTestName || test.laboratoryTest?.name || 'Universal Test' }}
+                    </span>
+                    <small *ngIf="test.laboratoryTestCode" class="text-muted fs-9">Code: {{ test.laboratoryTestCode }}</small>
+                  </td>
+                  <td>
+                    <span class="text-secondary">{{ test.departmentName || test.laboratoryTest?.labDepartment?.name || '-' }}</span>
+                  </td>
+                  <td>
+                    <span class="text-dark">{{ test.testMethodName || test.testMethodSpecification?.name || '-' }}</span>
+                  </td>
+                  <td>
+                    <span class="text-dark">{{ test.specificationGradeName || sample.specificationGradeName || '-' }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge"
+                          [ngClass]="{
+                            'bg-warning text-dark': test.status === 'Pending' || !test.status,
+                            'bg-info text-dark': test.status === 'Configured',
+                            'bg-primary': test.status === 'In-Progress' || test.status === 'Execution_Started',
+                            'bg-success': test.status === 'Completed' || test.status === 'Verified' || test.status === 'Approved'
+                          }">
+                      {{ test.status || 'Pending' }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <a *ngIf="test.testExecutionID"
+                       [routerLink]="['/universal-test-execution']"
+                       [queryParams]="{ executionId: test.testExecutionID }"
+                       class="btn-lims btn-lims-primary btn-sm d-inline-flex align-items-center gap-1 text-decoration-none">
+                      <i class="bi bi-clipboard2-pulse me-1"></i>
+                      <span>Execute</span>
+                    </a>
+                    <a *ngIf="!test.testExecutionID"
+                       [routerLink]="['/sample/plan/universal', inwardId]"
+                       class="btn-lims btn-lims-secondary btn-sm d-inline-flex align-items-center gap-1 text-decoration-none">
+                      <i class="bi bi-arrow-right-circle me-1"></i>
+                      <span>Route</span>
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State for Sample -->
+          <ng-template #emptySampleTestsTpl>
+            <div class="alert alert-light border d-flex align-items-center justify-content-between p-2 mb-0">
+              <span class="text-muted fs-8">
+                <i class="bi bi-info-circle me-1 text-primary"></i>
+                No laboratory tests selected for this sample yet. Select tests in Sample Inward or configure in Universal Plan Workspace.
+              </span>
+              <a [routerLink]="['/sample/plan/universal', inwardId]" class="btn-nav-link fs-8">
+                <i class="bi bi-plus-circle me-1"></i>Configure Tests
+              </a>
+            </div>
+          </ng-template>
+
+        </div>
+      </div>
+
+      <ng-template #noSamplesTpl>
+        <div class="text-center py-4 text-muted fs-8">
+          <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+          No samples registered under this Inward request.
+        </div>
+      </ng-template>
+
     </div>
   </div>
 

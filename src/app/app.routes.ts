@@ -37,10 +37,7 @@ import { StandardOrgnizationComponent } from './components/standard-orgnization/
 import { UniversalCodeTypeComponent } from './components/universal-code-type/universal-code-type.component';
 import { InvoiceCaseComponent } from './components/test/invoice-case/invoice-case.component';
 import { MetalClassificationComponent } from './components/metal-classification/metal-classification.component';
-import { MaterialSpecificationFormComponent } from './components/material-specification/material-specification-form/material-specification-form.component';
-import { MaterialSpecificationListComponent } from './components/material-specification/material-specification-list/material-specification-list.component';
-import { CustomMaterialSpecificationListComponent } from './components/material-specification/custom-material-specification-list/custom-material-specification-list.component';
-import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
+
 import { ToleranceMasterComponent } from './components/tolerance-master/tolerance-master.component';
 import { HardnessEquivalenceComponent } from './components/hardness-equivalence/hardness-equivalence.component';
 import { ParameterUnitComponent } from './components/parameter-unit/parameter-unit.component';
@@ -50,8 +47,6 @@ import { SupplierFormComponent } from './components/supplier/supplier-form/suppl
 import { LaboratoryTestListComponent } from './components/test/laboratory-test-list/laboratory-test-list.component';
 import { TestMethodSpecificationComponent } from './components/test/test-method-specification/test-method-specification.component';
 import { TestMethodSpecificationListComponent } from './components/test/test-method-specification-list/test-method-specification-list.component';
-import { ScopeComponent } from './components/iso/scope/scope.component';
-import { ScopeListComponent } from './components/iso/scope-list/scope-list.component';
 import { OEMFormComponent } from './components/equipment/oem-form/oem-form.component';
 import { OemListComponent } from './components/equipment/oem-list/oem-list.component';
 import { EquipmentFormComponent } from './components/equipment/equipment-form/equipment-form.component';
@@ -71,7 +66,6 @@ import { RoleFormComponent } from './components/role/role-form/role-form.compone
 import { UserPermissionComponent } from './components/employee/user-permission/user-permission.component';
 import { MenuPermissionComponent } from './components/menu/menu-permission/menu-permission.component';
 import { SampleInwardListComponent } from './components/inward/sample-inward-list/sample-inward-list.component';
-import { PlanFormComponent } from './components/plan/plan-form/plan-form.component';
 import { ReviewOfRequestComponent } from './components/inward/review-of-request/review-of-request.component';
 import { WorkflowFormComponent } from './components/workflow/workflow-form/workflow-form.component';
 import { WorkflowListComponent } from './components/workflow/workflow-list/workflow-list.component';
@@ -181,6 +175,10 @@ export const routes: Routes = [
             { path: 'test/create', component: LaboratoryTestComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'test/edit/:id', component: LaboratoryTestComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'test/details/:id', component: LaboratoryTestComponent },
+            { path: 'universal-test-definition', redirectTo: 'test', pathMatch: 'full' },
+            { path: 'universal-test-definition/create', redirectTo: 'test/create', pathMatch: 'full' },
+            { path: 'universal-test-definition/edit/:id', redirectTo: 'test/edit/:id' },
+            { path: 'universal-test-definition/details/:id', redirectTo: 'test/details/:id' },
             { path: 'discipline', loadComponent: () => import('./components/discipline/discipline-list.component').then(m => m.DisciplineListComponent) },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
@@ -189,6 +187,8 @@ export const routes: Routes = [
             { path: 'test-method', loadComponent: () => import('./components/test-method/test-method-list.component').then(m => m.TestMethodListComponent) },
             { path: 'test-method-version', loadComponent: () => import('./components/test-method-version/test-method-version-list.component').then(m => m.TestMethodVersionListComponent) },
             { path: 'specification', loadComponent: () => import('./components/specification/specification-list/specification-list.component').then(m => m.SpecificationListComponent) },
+            { path: 'specification-master', redirectTo: 'specification', pathMatch: 'full' },
+            { path: 'material-specification', redirectTo: 'specification', pathMatch: 'full' },
             { path: 'specification-version', loadComponent: () => import('./components/specification-version/specification-version-list/specification-version-list.component').then(m => m.SpecificationVersionListComponent) },
             { path: 'specification-requirement', loadComponent: () => import('./components/specification-requirement/specification-requirement.component').then(m => m.SpecificationRequirementComponent) },
             { path: 'tpi', component: TPIComponent },
@@ -336,19 +336,26 @@ export const routes: Routes = [
             { path: 'environment-monitoring/preview/:id', component: EnvironmentMonitoringPreviewComponent },
             { path: 'standard-organization', component: StandardOrgnizationComponent },
             { path: 'universal-code-type', component: UniversalCodeTypeComponent },
-            { path: 'material-specification', component: MaterialSpecificationListComponent },
-            { path: 'material-specification/create', component: MaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'material-specification/edit/:id', component: MaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'material-specification/details/:id', component: MaterialSpecificationFormComponent },
-            { path: 'custom-material-specification', component: CustomMaterialSpecificationListComponent },
-            { path: 'custom-material-specification/create', component: CustomMaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'custom-material-specification/edit/:id', component: CustomMaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'custom-material-specification/details/:id', component: CustomMaterialSpecificationFormComponent },
+            // Legacy Material Specification routes redirected to modern Specification Master
+            { path: 'material-specification', redirectTo: 'specification', pathMatch: 'full' },
+            { path: 'material-specification/create', redirectTo: 'specification', pathMatch: 'full' },
+            { path: 'material-specification/edit/:id', redirectTo: 'specification' },
+            { path: 'material-specification/details/:id', redirectTo: 'specification' },
+            { path: 'custom-material-specification', redirectTo: 'specification', pathMatch: 'full' },
+            { path: 'custom-material-specification/create', redirectTo: 'specification', pathMatch: 'full' },
+            { path: 'custom-material-specification/edit/:id', redirectTo: 'specification' },
+            { path: 'custom-material-specification/details/:id', redirectTo: 'specification' },
             { path: 'metal-classification', component: MetalClassificationComponent },
+            { path: 'classification-master', loadComponent: () => import('./components/classification/classification-list.component').then(m => m.ClassificationListComponent) },
+            { path: 'acceptance-criteria', loadComponent: () => import('./components/acceptance-criteria/acceptance-criteria-list.component').then(m => m.AcceptanceCriteriaListComponent) },
             { path: 'tolerance-master', component: ToleranceMasterComponent },
             { path: 'hardness-equivalence', component: HardnessEquivalenceComponent },
             { path: 'parameter-unit', component: ParameterUnitComponent },
             { path: 'condition-master', component: ConditionMasterComponent },
+            { path: 'equipment-requirement-master', loadComponent: () => import('./components/equipment-requirement/equipment-requirement-list.component').then(m => m.EquipmentRequirementListComponent) },
+            { path: 'factor-conversion-master', loadComponent: () => import('./components/factor-conversion/factor-conversion-list.component').then(m => m.FactorConversionListComponent) },
+            { path: 'measurement-uncertainty-master', loadComponent: () => import('./components/measurement-uncertainty/measurement-uncertainty-list.component').then(m => m.MeasurementUncertaintyListComponent) },
+            { path: 'execution-layout-master', loadComponent: () => import('./components/execution-layout/execution-layout-list.component').then(m => m.ExecutionLayoutListComponent) },
             { path: 'supplier', component: SupplierListComponent },
             { path: 'supplier/create', component: SupplierFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'supplier/edit/:id', component: SupplierFormComponent, canDeactivate: [unsavedChangesGuard] },
@@ -357,15 +364,16 @@ export const routes: Routes = [
             { path: 'test-specification/create', component: TestMethodSpecificationComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'test-specification/edit/:id', component: TestMethodSpecificationComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'test-specification/details/:id', component: TestMethodSpecificationComponent },
-            { path: 'scope', component: ScopeListComponent },
-            { path: 'scope/create', component: ScopeComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'scope/edit/:id', component: ScopeComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'scope/details/:id', component: ScopeComponent },
+            { path: 'lab-scope', loadComponent: () => import('./components/lab-scope/lab-scope-list.component').then(m => m.LabScopeListComponent) },
+            { path: 'lab-scope/create', loadComponent: () => import('./components/lab-scope/lab-scope-form.component').then(m => m.LabScopeFormComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'lab-scope/edit/:id', loadComponent: () => import('./components/lab-scope/lab-scope-form.component').then(m => m.LabScopeFormComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'lab-scope/details/:id', loadComponent: () => import('./components/lab-scope/lab-scope-form.component').then(m => m.LabScopeFormComponent) },
             { path: 'oem', component: OemListComponent },
             { path: 'oem/create', component: OEMFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'oem/edit/:id', component: OEMFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'oem/details/:id', component: OEMFormComponent },
             { path: 'equipment', component: EquipmentListComponent },
+            { path: 'equipment-type', loadComponent: () => import('./components/equipment/equipment-type/equipment-type-list.component').then(m => m.EquipmentTypeListComponent) },
             { path: 'equipment/create', component: EquipmentFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'equipment/edit/:id', component: EquipmentFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'equipment/details/:id', component: EquipmentFormComponent },
@@ -623,7 +631,9 @@ export const routes: Routes = [
             { path: 'sample/preparation/details/:id', loadComponent: () => import('./components/sample-prepration/sample-preparation-form/sample-preparation-form.component').then(m => m.SamplePreparationFormComponent) },
             { path: 'sample/plan', component: PlanListComponent },
             { path: 'sample/plan/universal/:id', loadComponent: () => import('./components/plan/universal-plan-workspace/universal-plan-workspace.component').then(m => m.UniversalPlanWorkspaceComponent), canDeactivate: [unsavedChangesGuard] },
-            { path: 'sample/plan/edit/:id', component: PlanFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'sample/test-groups', loadComponent: () => import('./components/test-group/universal-test-group-list/universal-test-group-list.component').then(m => m.UniversalTestGroupListComponent) },
+            { path: 'sample/test-group/:id', loadComponent: () => import('./components/test-group/universal-test-group/universal-test-group.component').then(m => m.UniversalTestGroupComponent) },
+            { path: 'sample/plan/edit/:id', redirectTo: 'sample/plan/universal/:id' },
             { path: 'sample/review', component: ReviewOfRequestComponent },
             { path: 'sample/review/:id', component: ReviewOfRequestFormComponent },
             { path: 'sample/inward', component: SampleInwardListComponent },
@@ -658,6 +668,9 @@ export const routes: Routes = [
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
             { path: 'test-result', component: TestResultComponent },
             { path: 'universal-test-execution', loadComponent: () => import('./components/universal-test-execution/universal-test-execution.component').then(m => m.UniversalTestExecutionComponent) },
+            { path: 'universal-result', loadComponent: () => import('./components/universal-result/universal-result.component').then(m => m.UniversalResultComponent) },
+            { path: 'universal-review', loadComponent: () => import('./components/universal-review/universal-review.component').then(m => m.UniversalReviewComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'universal-report', loadComponent: () => import('./components/universal-report/universal-report.component').then(m => m.UniversalReportComponent), canDeactivate: [unsavedChangesGuard] },
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },
@@ -683,8 +696,6 @@ export const routes: Routes = [
             { path: 'nabl/dashboard', loadComponent: () => import('./components/nabl/nabl-dashboard/nabl-dashboard.component').then(m => m.NablDashboardComponent) },
             { path: 'nabl/audit-print', loadComponent: () => import('./components/nabl/nabl-audit-print/nabl-audit-print.component').then(m => m.NablAuditPrintComponent) },
             
-            // Universal Test Execution
-            { path: 'universal-test-execution', loadComponent: () => import('./components/universal-test-execution/universal-test-execution.component').then(m => m.UniversalTestExecutionComponent) }
         ]
     },
     { path: 'payment/:token', component: PaymentComponent },

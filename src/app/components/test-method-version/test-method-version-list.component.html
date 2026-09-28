@@ -129,8 +129,8 @@
               <td class="text-center">{{ item.effectiveDate ? (item.effectiveDate | date:'yyyy-MM-dd') : '—' }}</td>
               <td class="text-center">{{ item.reviewDate ? (item.reviewDate | date:'yyyy-MM-dd') : '—' }}</td>
               <td class="text-center">
-                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1.5 param-count-btn" (click)="openParamModal(item)" title="Manage mapped parameters">
-                  <i class="bi bi-sliders me-1"></i>{{ item.parametersCount }}
+                <button type="button" class="param-count-btn" (click)="openParamModal(item)" title="Manage mapped parameters">
+                  <i class="bi bi-sliders"></i>{{ item.parametersCount }}
                 </button>
               </td>
               <td class="text-center">

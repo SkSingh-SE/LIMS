@@ -90,6 +90,7 @@ export class ConditionMasterComponent implements OnInit {
   isViewMode: boolean = false;
   selectedId: number = 0;
   formTitle: string = 'Add Condition Master';
+  private isCodeManuallyEdited: boolean = false;
 
   // Selection value tags input
   newDiscreteValue: string = '';
@@ -133,6 +134,16 @@ export class ConditionMasterComponent implements OnInit {
       description: ['', [Validators.maxLength(500)]],
       displayOrder: [0, [Validators.min(0)]],
       isActive: [true]
+    });
+
+    // Code uppercase + spaces-to-underscore normalization (same as Parameter Master)
+    this.conditionForm.get('code')?.valueChanges.subscribe(val => {
+      if (val && typeof val === 'string') {
+        const upper = val.toUpperCase().replace(/\s+/g, '_');
+        if (upper !== val) {
+          this.conditionForm.get('code')?.setValue(upper, { emitEvent: false });
+        }
+      }
     });
 
     // Listen to ValueType changes to update default operators & clear discrete values
@@ -227,6 +238,7 @@ export class ConditionMasterComponent implements OnInit {
     this.isViewMode = false;
     this.submitted = false;
     this.selectedId = 0;
+    this.isCodeManuallyEdited = false;
     this.discreteValues = [];
     this.newDiscreteValue = '';
     this.formTitle = 'Add Condition Master';
@@ -254,6 +266,7 @@ export class ConditionMasterComponent implements OnInit {
     this.isViewMode = false;
     this.submitted = false;
     this.selectedId = item.id;
+    this.isCodeManuallyEdited = true;
     this.formTitle = 'Edit Condition Master';
 
     this.discreteValues = item.allowedValues ? [...item.allowedValues] : [];
@@ -432,6 +445,32 @@ export class ConditionMasterComponent implements OnInit {
 
   removeDiscreteValue(index: number): void {
     this.discreteValues.splice(index, 1);
+  }
+
+  // Code auto-format (same as Parameter Master): manual edit tracking + auto from name
+  onCodeInput(): void {
+    const val = this.conditionForm.get('code')?.value;
+    if (val && typeof val === 'string' && val.trim().length > 0) {
+      this.isCodeManuallyEdited = true;
+    } else if (!val) {
+      this.isCodeManuallyEdited = false;
+    }
+  }
+
+  onNameInput(): void {
+    if (this.isEditMode || this.isCodeManuallyEdited) return;
+    const nameVal = this.conditionForm.get('name')?.value;
+    if (!nameVal || typeof nameVal !== 'string' || !nameVal.trim()) return;
+    const autoCode = this.generateCodeFromName(nameVal);
+    if (autoCode) {
+      this.conditionForm.get('code')?.setValue(autoCode, { emitEvent: false });
+    }
+  }
+
+  private generateCodeFromName(name: string): string {
+    const upper = name.trim().toUpperCase();
+    const underscored = upper.replace(/[\s\-]+/g, '_');
+    return underscored.replace(/[^A-Z0-9_]/g, '');
   }
 
   // Parameter Unit Dropdown function

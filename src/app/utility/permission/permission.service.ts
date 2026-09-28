@@ -10,6 +10,9 @@ export class PermissionService {
 
   setAdmin(isAdmin: boolean): void {
     this._isAdmin = isAdmin;
+    // Re-emit so *hasPermission directives re-evaluate with the admin flag.
+    // Without this, views initialized before setAdmin stay frozen in denied state.
+    this.perms$.next(new Set(this.perms$.value));
   }
 
   get isAdmin(): boolean {

@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { OrganizationAdminService } from '../../../services/organization-admin.service';
 import { ToastService } from '../../../services/toast.service';
+import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 
 @Component({
   selector: 'app-organization-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './organization-form.component.html',
   styleUrls: ['./organization-form.component.css']
 })
@@ -24,6 +27,7 @@ export class OrganizationFormComponent implements OnInit, OnChanges {
   form!: FormGroup;
   isEditMode: boolean = false;
   isSubmitting: boolean = false;
+  submitted: boolean = false;
 
   ngOnInit(): void {
     this.initForm();
@@ -42,13 +46,14 @@ export class OrganizationFormComponent implements OnInit, OnChanges {
   }
 
   private initForm(): void {
+    this.submitted = false;
     this.isEditMode = !!this.organizationId;
     this.form = this.fb.group({
-      labName: ['', [Validators.required, Validators.maxLength(200)]],
-      labCode: ['', [Validators.required, Validators.maxLength(50)]],
-      labAddress: ['', [Validators.required, Validators.maxLength(500)]],
+      labName: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
+      labCode: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
+      labAddress: ['', [Validators.required, Validators.maxLength(500), noWhitespaceValidator()]],
       contactEmail: ['', [Validators.required, Validators.email, Validators.maxLength(200)]],
-      contactPhone: ['', [Validators.required, Validators.maxLength(50)]],
+      contactPhone: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
       cin: ['', [Validators.maxLength(100)]],
       website: ['', [Validators.maxLength(100)]],
       mobileNo: ['', [Validators.maxLength(50)]],
@@ -82,9 +87,11 @@ export class OrganizationFormComponent implements OnInit, OnChanges {
   }
 
   onSubmit(): void {
+    this.submitted = true;
+    FormValidationHelper.markAllTouched(this.form);
+
     if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.toastService.show('Please fill in all required fields properly.', 'error');
+      this.toastService.show('Please fill in all required fields properly.', 'warning');
       return;
     }
 
@@ -124,6 +131,7 @@ export class OrganizationFormComponent implements OnInit, OnChanges {
   }
 
   onClose(): void {
+    this.submitted = false;
     this.close.emit();
   }
 }

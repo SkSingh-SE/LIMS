@@ -186,10 +186,10 @@
                   <!-- Quick Action Buttons -->
                   <div class="d-flex align-items-center gap-2 flex-wrap">
                     <a [routerLink]="['/universal-test-execution']"
-                       [queryParams]="{ utgId: plans[p].universalTestGroupId }"
+                       [queryParams]="plans[p].latestExecutionId ? { executionId: plans[p].latestExecutionId, utgId: plans[p].universalTestGroupId, from: 'testing' } : { utgId: plans[p].universalTestGroupId, from: 'testing' }"
                        class="btn-lims btn-lims-save btn-sm text-decoration-none">
-                      <i class="bi bi-box-arrow-up-right me-1"></i>
-                      <span>{{ plans[p].latestExecutionId ? 'Open Execution Workspace' : 'Start Universal Test' }}</span>
+                      <i class="bi" [ngClass]="plans[p].latestExecutionId ? 'bi-eye me-1' : 'bi-box-arrow-up-right me-1'"></i>
+                      <span>{{ plans[p].latestExecutionId ? 'View Execution Workspace' : 'Start Universal Test' }}</span>
                     </a>
 
                     <button *ngIf="plans[p].tests[t].status === 'Approved' || plans[p].executionStatus === 'Approved'"
@@ -202,7 +202,7 @@
 
                     <a *ngIf="plans[p].tests[t].status === 'Approved' || plans[p].executionStatus === 'Approved'"
                        [routerLink]="['/universal-test-execution']"
-                       [queryParams]="{ utgId: plans[p].universalTestGroupId, mode: 'retest' }"
+                       [queryParams]="{ utgId: plans[p].universalTestGroupId, mode: 'retest', from: 'testing' }"
                        class="btn-lims btn-lims-secondary btn-sm text-decoration-none">
                       <i class="bi bi-arrow-repeat me-1"></i>
                       <span>Retest / New Run</span>
@@ -379,7 +379,7 @@
                   </div>
 
                   <!-- Parameter Results Matrix -->
-                  <div *ngIf="universalResultsMap[plans[p].universalTestGroupId]?.parameters?.length > 0">
+                  <div *ngIf="(universalResultsMap[plans[p].universalTestGroupId]?.parameters?.length || 0) > 0">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                       <h6 class="fw-semibold text-dark mb-0 d-flex align-items-center gap-1.5">
                         <i class="bi bi-table text-danger me-1"></i> Execution Results Overview

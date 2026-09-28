@@ -100,3 +100,12 @@
   border-top: 2px solid var(--primary-color, #da261c);
   background-color: #ffffff;
 }
+
+.input-priority-sm {
+  width: 72px;
+  min-width: 72px;
+}
+
+.assignment-default-box {
+  min-height: 28px;
+}

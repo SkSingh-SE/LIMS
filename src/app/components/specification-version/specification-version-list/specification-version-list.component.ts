@@ -95,6 +95,12 @@ export class SpecificationVersionListComponent implements OnInit {
         this.filterSpecificationId = Number(params['specId']);
       }
       this.loadVersions();
+
+      if (params['action'] === 'add') {
+        setTimeout(() => {
+          this.openAddModal();
+        }, 150);
+      }
     });
   }
 
@@ -105,6 +111,38 @@ export class SpecificationVersionListComponent implements OnInit {
         versionId: item.id
       }
     });
+  }
+
+  navigateToGrades(item?: SpecificationVersionListItem): void {
+    const specId = item?.specificationHeaderID || this.filterSpecificationId;
+    if (specId) {
+      this.router.navigate(['/specification'], {
+        queryParams: { specId, action: 'grade' }
+      });
+    } else {
+      this.router.navigate(['/specification']);
+    }
+  }
+
+  navigateToSpecification(item?: SpecificationVersionListItem): void {
+    const specId = item?.specificationHeaderID || this.filterSpecificationId;
+    if (specId) {
+      this.router.navigate(['/specification'], {
+        queryParams: { specId }
+      });
+    } else {
+      this.router.navigate(['/specification']);
+    }
+  }
+
+  navigateToRequirementsForFilter(): void {
+    if (this.filterSpecificationId) {
+      this.router.navigate(['/specification-requirement'], {
+        queryParams: { specId: this.filterSpecificationId }
+      });
+    } else {
+      this.router.navigate(['/specification-requirement']);
+    }
   }
 
   private initForm(): void {

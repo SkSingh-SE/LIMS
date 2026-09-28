@@ -75,6 +75,17 @@
           <button
             type="button"
             class="nav-link"
+            [ngClass]="{ active: activeTab === 'layouts' }"
+            (click)="activeTab = 'layouts'"
+          >
+            <i class="bi bi-layout-text-window-reverse me-1"></i> Layout Assignment
+            <span class="badge bg-secondary ms-1">{{ layoutAssignments.length }}</span>
+          </button>
+        </li>
+        <li class="nav-item">
+          <button
+            type="button"
+            class="nav-link"
             [ngClass]="{ active: activeTab === 'audit' }"
             (click)="activeTab = 'audit'"
           >
@@ -333,7 +344,7 @@
 
           <div class="d-flex justify-content-between align-items-center mb-2">
             <p class="text-muted text-xs mb-0">
-              Select all approved test methods for this test. Exactly <strong>one default method</strong> must be selected before activation.
+              Select test method <strong>versions</strong> (version implies standard). Exactly <strong>one default method</strong> must be selected before activation.
             </p>
             <button
               type="button"
@@ -350,7 +361,7 @@
               <thead class="table-light text-nowrap">
                 <tr>
                   <th class="col-seq text-center">#</th>
-                  <th class="col-method-select">Test Method Specification <span class="text-danger">*</span></th>
+                  <th class="col-method-select">Test Method <span class="text-danger">*</span></th>
                   <th>Standard Reference</th>
                   <th>Technique</th>
                   <th class="col-check text-center">Default Method</th>
@@ -371,7 +382,7 @@
                           [fetchDataFn]="getMethodDropdown"
                           [selectedItem]="selectedMethods[mIdx]"
                           (itemSelected)="onMethodSelected($event, mIdx)"
-                          placeholder="Select Test Method"
+                          placeholder="Select Test Method (pick version)"
                           [smallInput]="true"
                           [hideLabel]="true"
                           [isDisabled]="isViewMode"
@@ -380,8 +391,8 @@
                       <a
                         *ngIf="!isViewMode"
                         class="btn-nav-icon"
-                        title="Manage Test Method Specifications"
-                        (click)="openLinkedMaster('/test-specification')"
+                        title="Manage Test Methods"
+                        (click)="openLinkedMaster('/test-method')"
                       >
                         <i class="bi bi-box-arrow-up-right"></i>
                       </a>
@@ -582,7 +593,150 @@
         </fieldset>
       </div>
 
-      <!-- ── TAB 5: AUDIT & LEGACY ── -->
+      <!-- ── TAB 5: LAYOUT ASSIGNMENT (presentation only) ── -->
+      <div *ngIf="activeTab === 'layouts'" class="tab-pane-content">
+        <fieldset class="lims-fieldset mb-3">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+            <i class="bi bi-layout-text-window-reverse me-1"></i> Execution Layout Assignment
+          </legend>
+
+          <p class="text-muted text-xs mb-2">
+            Which presentation layout applies to this test. Assignment only — formulas, limits, uncertainty and compliance stay with their own masters.
+          </p>
+
+          <div *ngIf="!labTestId" class="alert alert-info py-1 text-xs mb-2">
+            Save the test before assigning execution layouts.
+          </div>
+
+          <div *ngIf="labTestId && !isViewMode" class="border rounded bg-light p-2 mb-2">
+            <div class="row g-2 align-items-end">
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">Execution Layout <span class="text-danger">*</span></label>
+                  <a class="btn-nav-link" (click)="openLinkedMaster('/execution-layout-master')">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Layouts
+                  </a>
+                </div>
+                <app-searchable-dropdown
+                  [fetchDataFn]="getLayoutDropdown"
+                  [selectedItem]="selectedLayout"
+                  (itemSelected)="onLayoutSelected($event)"
+                  placeholder="Select Layout"
+                  [smallInput]="true"
+                  [hideLabel]="true"
+                  [isDisabled]="isViewMode"
+                ></app-searchable-dropdown>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Method (optional)</label>
+                <select class="form-select form-select-sm" [(ngModel)]="assignmentMethodId" (ngModelChange)="onAssignmentMethodChange($event)" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode">
+                  <option [ngValue]="null">-- Test level --</option>
+                  <option *ngFor="let m of methods.controls; let i = index" [ngValue]="m.get('testMethodSpecificationID')?.value">
+                    {{ selectedMethods[i]?.code || selectedMethods[i]?.methodCode || ('Method #' + m.get('testMethodSpecificationID')?.value) }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Version (optional)</label>
+                <select class="form-select form-select-sm" [(ngModel)]="assignmentVersionId" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode || !assignmentMethodId">
+                  <option [ngValue]="null">-- Any --</option>
+                  <option *ngFor="let v of assignmentVersions" [ngValue]="v.id">{{ versionLabel(v) }}</option>
+                </select>
+              </div>
+              <div class="col-auto text-center">
+                <label class="form-label d-block">Priority</label>
+                <input type="number" class="form-control form-control-sm text-center input-priority-sm" [(ngModel)]="assignmentPriority" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode" />
+              </div>
+              <div class="col-auto text-center">
+                <label class="form-label d-block">Default</label>
+                <div class="d-flex justify-content-center align-items-center assignment-default-box">
+                  <input type="checkbox" class="form-check-input m-0" [(ngModel)]="assignmentIsDefault" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode" />
+                </div>
+              </div>
+              <div class="col-auto d-flex gap-1 align-items-center ms-auto">
+                <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="saveAssignment()">
+                  <i class="bi bi-check-circle me-1"></i>{{ editingAssignmentId ? 'Update' : 'Save' }}
+                </button>
+                <button *ngIf="editingAssignmentId" type="button" class="btn-lims btn-lims-cancel btn-sm" (click)="cancelAssignmentEdit()">
+                  <i class="bi bi-x-circle me-1"></i>Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle lims-sub-table">
+              <thead class="table-light text-nowrap">
+                <tr>
+                  <th class="col-seq text-center">#</th>
+                  <th>Layout</th>
+                  <th>Renderer</th>
+                  <th>Method</th>
+                  <th>Version</th>
+                  <th class="col-order text-center">Priority</th>
+                  <th class="col-check text-center">Default</th>
+                  <th class="col-check text-center">Status</th>
+                  <th *ngIf="!isViewMode" class="col-action text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of layoutAssignments; let i = index">
+                  <td class="text-center text-muted col-seq">{{ i + 1 }}</td>
+                  <td><span class="badge bg-light text-dark border font-monospace">{{ row.layoutCode }}</span> {{ row.layoutName }}</td>
+                  <td><span class="text-muted text-xs">{{ row.rendererType || '—' }}</span></td>
+                  <td><span class="text-xs">{{ row.methodName || '—' }}</span></td>
+                  <td><span class="text-xs">{{ row.versionName || '—' }}</span></td>
+                  <td class="text-center">{{ row.priority }}</td>
+                  <td class="text-center"><span *ngIf="row.isDefault" class="badge bg-warning-subtle text-warning-emphasis border">Default</span><span *ngIf="!row.isDefault" class="text-muted">—</span></td>
+                  <td class="text-center"><span class="badge" [ngClass]="row.isActive ? 'bg-success-subtle text-success border' : 'bg-secondary-subtle text-secondary border'">{{ row.isActive ? 'Active' : 'Inactive' }}</span></td>
+                  <td *ngIf="!isViewMode" class="text-center col-action">
+                    <div class="d-flex justify-content-center gap-1">
+                      <button type="button" class="btn-tbl-action btn-tbl-edit" title="Edit" (click)="editAssignment(row)"><i class="bi bi-pencil-square"></i></button>
+                      <button type="button" class="btn-tbl-action btn-tbl-status" [ngClass]="row.isActive ? 'status-active' : 'status-inactive'" [title]="row.isActive ? 'Deactivate' : 'Reactivate'" (click)="toggleAssignment(row)"><i class="bi" [ngClass]="row.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="layoutAssignments.length === 0">
+                  <td [attr.colspan]="isViewMode ? 8 : 9" class="text-center py-3 text-muted text-xs">No layout assigned. Test-level assignment applies when no method/version assignment matches.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="labTestId" class="border rounded p-2 mt-2 bg-light">
+            <div class="row g-2 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label">Preview context: Method</label>
+                <select class="form-select form-select-sm" [(ngModel)]="resolveMethodId" (ngModelChange)="onResolveMethodChange($event)" [ngModelOptions]="{standalone: true}">
+                  <option [ngValue]="null">-- Test level --</option>
+                  <option *ngFor="let m of methods.controls; let i = index" [ngValue]="m.get('testMethodSpecificationID')?.value">
+                    {{ selectedMethods[i]?.code || selectedMethods[i]?.methodCode || ('Method #' + m.get('testMethodSpecificationID')?.value) }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Version</label>
+                <select class="form-select form-select-sm" [(ngModel)]="resolveVersionId" [ngModelOptions]="{standalone: true}" [disabled]="!resolveMethodId">
+                  <option [ngValue]="null">-- Any --</option>
+                  <option *ngFor="let v of resolveVersions" [ngValue]="v.id">{{ versionLabel(v) }}</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="resolveEffectiveLayout()">
+                  <i class="bi bi-search me-1"></i> Resolve
+                </button>
+              </div>
+              <div class="col-md-3" *ngIf="effectiveLayout">
+                <span class="badge bg-light text-dark border font-monospace">{{ effectiveLayout.layoutCode || 'Unassigned' }}</span>
+                <span class="badge bg-secondary-subtle text-secondary border ms-1">{{ effectiveLayout.resolutionLevel }}</span>
+                <div class="text-muted text-xs mt-1">{{ effectiveLayout.reason }}</div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- ── TAB 6: AUDIT & LEGACY ── -->
       <div *ngIf="activeTab === 'audit'" class="tab-pane-content">
         <fieldset class="lims-fieldset mb-3">
           <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
@@ -646,10 +800,9 @@
       </div>
 
       <div class="d-flex gap-2" *ngIf="!isViewMode">
-        <!-- Save as Draft -->
+        <!-- Save as Draft — must always be visible in Create/Edit so user can save -->
         <button
           type="button"
-          *hasPermission="['CanCreateLaboratoryTest', 'CanUpdateLaboratoryTest', 'CanManageLaboratoryTest']"
           class="btn-lims btn-lims-secondary"
           (click)="onSave(false)"
           title="Save definition as draft without activation gate requirements"
@@ -657,10 +810,9 @@
           <i class="bi bi-bookmark me-1"></i> Save as Draft
         </button>
 
-        <!-- Save & Activate -->
+        <!-- Save & Activate — must always be visible in Create/Edit -->
         <button
           type="button"
-          *hasPermission="['CanCreateLaboratoryTest', 'CanUpdateLaboratoryTest', 'CanManageLaboratoryTest']"
           class="btn-lims btn-lims-save"
           (click)="onSave(true)"
           title="Validate activation gate and activate for lab execution"

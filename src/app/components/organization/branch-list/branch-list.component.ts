@@ -6,11 +6,13 @@ import { OrganizationAdminService, BranchAdminItem, BranchDependency, Organizati
 import { ToastService } from '../../../services/toast.service';
 import { BranchFormComponent } from '../branch-form/branch-form.component';
 import { BranchDisciplineModalComponent } from '../branch-discipline-modal/branch-discipline-modal.component';
+import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-branch-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, BranchFormComponent, BranchDisciplineModalComponent],
+  imports: [CommonModule, FormsModule, RouterModule, BranchFormComponent, BranchDisciplineModalComponent, BreadcrumbComponent, PaginationComponent],
   templateUrl: './branch-list.component.html',
   styleUrls: ['./branch-list.component.css']
 })
@@ -26,6 +28,7 @@ export class BranchListComponent implements OnInit {
   totalCount: number = 0;
   pageNo: number = 1;
   pageSize: number = 10;
+  pageSizes: number[] = [10, 25, 50, 100];
   searchTerm: string = '';
   statusFilter: string = 'all';
 
@@ -98,6 +101,19 @@ export class BranchListComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.pageNo = page;
+    this.loadBranches();
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+    this.pageNo = 1;
+    this.loadBranches();
+  }
+
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = 'all';
+    this.pageNo = 1;
     this.loadBranches();
   }
 
@@ -187,7 +203,4 @@ export class BranchListComponent implements OnInit {
     this.branchDependencies = null;
   }
 
-  get totalPages(): number {
-    return Math.ceil(this.totalCount / this.pageSize) || 1;
-  }
 }

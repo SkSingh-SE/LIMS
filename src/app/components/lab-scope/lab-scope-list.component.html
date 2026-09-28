@@ -1,0 +1,194 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-award fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Lab Scope / NABL Master</h6>
+          <small class="text-muted text-xs">Accredited laboratory activities by test, method and parameter range</small>
+        </div>
+      </div>
+      <a *hasPermission="['CanCreateLabScopeMaster','CanManageLabScopeMaster']" routerLink="/lab-scope/create" class="btn-lims btn-lims-save">
+        <i class="bi bi-plus-circle me-1"></i> New Lab Scope
+      </a>
+    </div>
+
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-2">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control form-control-sm" placeholder="Search test / method..."
+              [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          </div>
+        </div>
+        <div class="col-md-2">
+          <app-searchable-dropdown
+            [placeholder]="'Filter by test'"
+            [fetchDataFn]="getTestDropdown"
+            (itemSelected)="onTestSelected($event)"
+            [hideLabel]="true"
+            [smallInput]="true"
+            [selectedItem]="selectedTest">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="branchID" (change)="onSearch()">
+            <option value="">All Branches</option>
+            <option *ngFor="let b of branchService.branches()" [value]="b.id">{{ b.name }}</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <select class="form-select form-select-sm" [(ngModel)]="status" (change)="onSearch()">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="validity" (change)="onSearch()">
+            <option value="all">All Validity</option>
+            <option value="valid">Valid Now</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <select class="form-select form-select-sm" [(ngModel)]="accreditation" (change)="onSearch()" title="Accreditation certificate coverage">
+            <option value="all">All Certs</option>
+            <option value="covered">Covered</option>
+            <option value="uncovered">Uncovered</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="onSort('laboratoryTestName')">
+                Test
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'laboratoryTestName' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'laboratoryTestName' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('branchName')">
+                Branch
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'branchName' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'branchName' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th>Methods</th>
+              <th class="text-center">Parameters</th>
+              <th class="cursor-pointer text-center" (click)="onSort('validUntil')">
+                Validity
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'validUntil' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'validUntil' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="text-center">Status</th>
+              <th class="text-center">Modified By / Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="scopes.length === 0">
+              <td colspan="9" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-6 d-block mb-1"></i>
+                No lab scopes found matching the criteria.
+              </td>
+            </tr>
+            <tr *ngFor="let item of scopes; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted font-monospace small">
+                {{ (pageNumber - 1) * pageSize + i + 1 }}
+              </td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center align-items-center gap-1">
+                  <a *hasPermission="['CanReadLabScopeMaster','CanManageLabScopeMaster']"
+                    [routerLink]="['/lab-scope/details', item.id]" title="View Details"
+                    class="btn-tbl-action btn-tbl-view">
+                    <i class="bi bi-eye-fill"></i>
+                  </a>
+                  <a *hasPermission="['CanUpdateLabScopeMaster','CanManageLabScopeMaster']"
+                    [routerLink]="['/lab-scope/edit', item.id]" title="Edit Lab Scope"
+                    class="btn-tbl-action btn-tbl-edit">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+                  <button *hasPermission="['CanUpdateLabScopeMaster','CanManageLabScopeMaster']"
+                    type="button" class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Lab Scope' : 'Activate Lab Scope'"
+                    (click)="toggleStatus(item)">
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                  <button *hasPermission="['CanDeleteLabScopeMaster','CanManageLabScopeMaster']"
+                    type="button" class="btn-tbl-action btn-tbl-delete" title="Delete Lab Scope"
+                    (click)="deleteScope(item)">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <a [routerLink]="['/lab-scope/details', item.id]" class="fw-semibold text-dark text-decoration-none">
+                  {{ item.laboratoryTestName }}
+                </a>
+                <span *ngIf="!item.accreditationCovered" class="badge bg-warning-subtle text-warning-emphasis border ms-1" title="No effective accreditation certificate covers this branch">No Cert</span>
+              </td>
+              <td>{{ item.branchName || '-' }}</td>
+              <td class="text-muted small text-truncate max-w-desc" [title]="item.methodsSummary || ''">
+                {{ item.methodsSummary || '-' }}
+              </td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border">{{ item.parameterCount }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="validityBadgeClass(item.validityState)">{{ item.validityState }}</span>
+                <div class="text-muted text-xxs" *ngIf="item.validFrom || item.validUntil">
+                  {{ item.validFrom ? (item.validFrom | date:'dd MMM yyyy') : '…' }} – {{ item.validUntil ? (item.validUntil | date:'dd MMM yyyy') : '…' }}
+                </div>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (item.modifiedByName || item.createdByName || '-') + ' on ' + ((item.modifiedOn || item.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ item.modifiedByName || item.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">· {{ (item.modifiedOn || item.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+</div>

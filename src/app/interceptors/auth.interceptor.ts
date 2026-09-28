@@ -6,6 +6,7 @@ import { catchError, finalize, switchMap, tap, throwError } from 'rxjs';
 import { LoaderService } from '../services/loader.service';
 import { ToastService } from '../services/toast.service';
 import { BranchService } from '../services/branch.service';
+import { extractErrorMessage } from '../utility/helper/error.helper';
 
 let unauthorizedCount = 0; // Track consecutive 401 responses
 const unauthorizedLimit = 3;
@@ -59,40 +60,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     if (error.status === 0) {
       return errorMessages[0];
     }
-    if (error.error) {
-      if (typeof error.error === 'string') {
-        return error.error;
-      }
-      // Handle: { message: "..." } or { Message: "..." }
-      if (error.error.message) {
-        return error.error.message;
-      }
-      if (error.error.Message) {
-        return error.error.Message;
-      }
-      // Handle: { errors: { field: ["error"] } } (validation errors)
-      if (error.error.errors) {
-        const errors = error.error.errors;
-        const messages = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`);
-        return messages.join('; ');
-      }
-      // Handle: { title: "..." } (ASP.NET problem details)
-      if (error.error.title) {
-        return error.error.title;
-      }
-    }
-    // Use user-friendly status message (before raw error.message which contains URLs)
-    if (errorMessages[error.status]) {
-      return errorMessages[error.status];
-    }
-    return 'An unexpected error occurred. Please try again.';
+    const fallback = errorMessages[error.status] || 'An unexpected error occurred. Please try again.';
+    return extractErrorMessage(error, fallback);
   };
 
   // Auto-show toast for all API errors (except 401 which triggers logout)
   const showErrorToast = (error: HttpErrorResponse, message: string) => {
     if (error.status === 401) return; // handled by logout flow
-    const type = error.status === 400 ? 'warning' : 'error';
-    toastService.show(message, type);
+    toastService.show(message, 'error');
   };
 
   const handleRequest = (accessToken: any) => {

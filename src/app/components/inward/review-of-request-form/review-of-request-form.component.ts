@@ -15,7 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
-import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { RouterModule } from '@angular/router';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 
 export interface TpiPerson {
@@ -34,8 +34,8 @@ export interface TpiPerson {
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    SearchableDropdownComponent,
-    PlanFormComponent
+    RouterModule,
+    SearchableDropdownComponent
   ]
 })
 export class ReviewOfRequestFormComponent implements OnInit {
@@ -49,8 +49,6 @@ export class ReviewOfRequestFormComponent implements OnInit {
 
   // Primary 4-Tab Navigation State
   activeTab: 'test-plan' | 'tpi' | 'approval' | 'history' = 'test-plan';
-
-  @ViewChild('planFormRef') planFormRef?: PlanFormComponent;
 
   // Re-plan modal state
   showReplanModal: boolean = false;
@@ -107,8 +105,31 @@ export class ReviewOfRequestFormComponent implements OnInit {
     }
   }
 
+  get samples(): any[] {
+    return this.plan?.samples || [];
+  }
+
   isPlanDirty(): boolean {
-    return !!this.planFormRef?.planForm?.dirty;
+    return false;
+  }
+
+  getSampleUniversalTests(sample: any): any[] {
+    if (!sample) return [];
+    if (sample.selectedLaboratoryTests && sample.selectedLaboratoryTests.length > 0) {
+      return sample.selectedLaboratoryTests;
+    }
+    const utgs: any[] = [];
+    (sample.testPlans || []).forEach((tp: any) => {
+      if (Array.isArray(tp.universalTestGroups)) {
+        utgs.push(...tp.universalTestGroups);
+      }
+    });
+    return utgs;
+  }
+
+  getTotalUniversalTestCount(): number {
+    if (!this.plan?.samples) return 0;
+    return this.plan.samples.reduce((total: number, s: any) => total + this.getSampleUniversalTests(s).length, 0);
   }
 
   isTpiDirty(): boolean {
@@ -239,6 +260,18 @@ export class ReviewOfRequestFormComponent implements OnInit {
                   approvedByName: tp.approvedByName,
                   approvedAt: tp.approvedAt,
                   planHistories: tp.planHistories || [],
+                  universalTestGroups: (tp.universalTestGroups || []).map((utg: any) => ({
+                    id: utg.id,
+                    laboratoryTestID: utg.laboratoryTestID,
+                    laboratoryTestCode: utg.laboratoryTestCode || utg.laboratoryTest?.code || '',
+                    laboratoryTestName: utg.laboratoryTestName || utg.laboratoryTest?.name || 'Universal Test',
+                    departmentName: utg.departmentName || utg.laboratoryTest?.labDepartment?.name || '-',
+                    testMethodName: utg.testMethodName || utg.testMethodSpecification?.name || '-',
+                    specificationGradeName: utg.specificationGradeName || utg.specificationGrade?.grade || '-',
+                    status: utg.status || 'Pending',
+                    testExecutionID: utg.testExecutionID,
+                    executionStatus: utg.executionStatus
+                  })),
                   generalTests: (tp.generalTests || []).map((gt: any, gtIdx: number) => ({
                     id: gt.id || `gt_${s.id}_${gtIdx}`,
                     sampleNo: gt.sampleNo || s.sampleNo,
@@ -353,10 +386,6 @@ export class ReviewOfRequestFormComponent implements OnInit {
         console.error('Error fetching sample inward details:', err);
       }
     });
-  }
-
-  get samples(): any[] {
-    return this.plan?.samples || [];
   }
 
   // ─── Multiple TPI Persons Handlers ───

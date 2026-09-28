@@ -1,0 +1,22 @@
+.legend-compact {
+  font-size: 0.8rem;
+  padding: 0 0.4rem;
+}
+
+.text-xs {
+  font-size: 0.72rem;
+}
+
+.item-row {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: #ffffff;
+  padding: 0.35rem 0.5rem;
+}
+
+.section-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background-color: #f8fafc;
+  padding: 0.5rem;
+}

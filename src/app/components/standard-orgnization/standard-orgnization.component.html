@@ -1,172 +1,152 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-    <div class="card basic-data-table w-100">
-        <div
-            class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Standard Organization List</label>
-            <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i> Create Standard Organization
-            </a>
+<div class="container-fluid p-2">
+  <!-- Main Data Card -->
+  <div class="card shadow-sm border-0">
+    <!-- Standard Card Header -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-award-fill text-danger fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Standard Organization Master</h6>
+          <small class="text-muted text-xs">Publishing authorities & issuing bodies (ISO, ASTM, BIS, DIN, IS, etc.)</small>
         </div>
-
-        <div class="card-body">
-            <!-- Search -->
-            <div class="d-flex justify-content-end mb-2">
-                <div class="w-25 input-group custom-search">
-                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
-                        (keydown.enter)="onSearch()">
-                    <div class="input-group-text pe-auto" (click)="onSearch()">
-                        <i class="bi bi-search"></i>
-                    </div>
-                </div>
-            </div>
-
-
-            <div *ngIf="StandardOrganizationList.length > 0 || filters.length > 0" class="table-responsive ">
-                <table class="table bordered-table  align-middle w-100">
-                    <thead class="table-light">
-                        <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-                            <th *ngFor="let column of columns; let i = index">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal(column.key, $event)"><i
-                                            class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                        </tr>
-
-
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let customerType of StandardOrganizationList; let i = index" class="text-sm">
-
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
-                                    <a (click)="openModal('view',customerType.id)" class="icon-link" title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
-                                    </a>
-                                    <a (click)="openModal('edit',customerType.id)" class="icon-link" title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-                                    </a>
-                                    <a (click)="deleteFn(customerType.id)" class="icon-link" title="Delete">
-                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                                    </a>
-                                </div>
-                            </td>
-
-
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ customerType.name }}</td>
-                            <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
-                    </tbody>
-                </table>
-
-
-            </div>
-            <div *ngIf="StandardOrganizationList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
-                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                    <div class="fw-semibold">No records found</div>
-
-                </div>
-            </div>
-            <!-- Pagination -->
-            <!-- Pagination -->
-            <app-pagination
-              [currentPage]="pageNumber"
-              [pageSize]="pageSize"
-              [totalItems]="totalItems"
-              [pageSizes]="pageSizes"
-              (pageChange)="onPageChange($event)"
-              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
-            </app-pagination>
-
-
-        </div>
+      </div>
+      <div class="d-flex gap-1">
+        <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create', 0)">
+          <i class="bi bi-plus-circle me-1"></i> Add Standard Organization
+        </button>
+      </div>
     </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control form-control-sm" placeholder="Search standard organization name..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+          </div>
+        </div>
+        <div class="col-md-7 d-flex gap-1 justify-content-end align-items-center">
+          <button type="button" class="btn-lims btn-lims-primary" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i> Search
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="resetSearch()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+          </button>
+          <span class="text-muted small ms-2">Showing <strong>{{ StandardOrganizationList.length }}</strong> of <strong>{{ totalItems }}</strong> records</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact Table -->
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="applySorting('name')">
+                Standard Organization Name
+                <i class="bi ms-1" [ngClass]="getSortIcon('name')"></i>
+              </th>
+              <th class="cursor-pointer text-center" style="width: 220px;" (click)="applySorting('modifiedOn')">
+                Last Modified
+                <i class="bi ms-1" [ngClass]="getSortIcon('modifiedOn')"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of StandardOrganizationList; let i = index">
+              <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center gap-1">
+                  <button type="button" class="btn-tbl-action btn-tbl-view" (click)="openModal('view', item.id)" title="View Details">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" (click)="openModal('edit', item.id)" title="Edit Standard Organization">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-delete" (click)="deleteFn(item.id)" title="Delete Standard Organization">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-1.5">
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace text-xs px-2 py-0.5">{{ item.name }}</span>
+                </div>
+              </td>
+              <td class="text-center text-muted small">
+                {{ item.modifiedOn | date:'dd MMM yyyy, hh:mm a' }}
+              </td>
+            </tr>
+            <tr *ngIf="StandardOrganizationList.length === 0">
+              <td colspan="4" class="text-center py-4 text-muted">
+                <i class="bi bi-award fs-3 d-block mb-1 text-secondary"></i>
+                <div>No standard organizations found matching the criteria.</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-white py-2 px-3 border-top" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
 </div>
 
-<!-- Filter Modal -->
-<div #filterModal class="filter-modal">
-    <div class="card py-2 px-3 shadow position-relative">
-        <!-- Close Button in the Top-Right Corner -->
-        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
-            (click)="closeFilterModal()"></button>
-
-        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-
-        <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains
-            </option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
-            <option value="Equal">Equal</option>
-            <option value="NotEqual">Not Equal</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater
-                Than</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than
-            </option>
-        </select>
-
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
-            class="form-control mb-2" [(ngModel)]="filterValue" />
-        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
-        </div>
-
-        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
-    </div>
-</div>
-
-<!-- Modal for Add/Edit/Update Customer -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
-    aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header card-form-header text-white">
-                <label class="modal-title fw-medium" id="customerTypeModalLabel">
-                    {{formTitle}}
-                </label>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close"
-                    (click)="closeModal()"></button>
+<!-- Modal for Create / Edit / View Standard Organization -->
+<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-light py-2 px-3 border-bottom">
+        <h6 class="modal-title fw-semibold text-dark mb-0 d-flex align-items-center">
+          <i class="bi bi-award-fill text-danger me-2"></i>
+          {{ formTitle }}
+        </h6>
+        <button type="button" class="btn-close btn-sm" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="StandardOrganizationForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body p-3">
+          <fieldset>
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-building me-1"></i> Standard Body Information
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-12">
+                <div class="form-field-header">
+                  <label for="name" class="form-label">Standard Body / Organization Name <span class="text-danger">*</span></label>
+                </div>
+                <input type="text" id="name" class="form-control form-control-sm" formControlName="name"
+                  placeholder="e.g. ISO, ASTM, BIS, DIN, IS" maxlength="200"
+                  [ngClass]="{'is-invalid': isFieldInvalid('name')}"
+                  [attr.disabled]="isViewMode ? true : null" />
+                <app-field-error [control]="StandardOrganizationForm.get('name')" label="Standard Body Name" [submitted]="submitted"></app-field-error>
+              </div>
             </div>
-            <form [formGroup]="StandardOrganizationForm" (ngSubmit)="onSubmit()">
-                <div class="modal-body">
-                    <!-- Name Field -->
-                    <div class="mb-1 ">
-                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" class="form-control" formControlName="name"
-                            placeholder="Enter Name" maxlength="200"
-                            [ngClass]="{'is-invalid': isFieldInvalid('name')}"
-                            [attr.disabled]="isViewMode ? true : null" />
-                        <app-field-error [control]="StandardOrganizationForm.get('name')" label="Name" [submitted]="submitted"/>
-                    </div>
-
-                </div>
-
-                <!-- Modal Footer -->
-                <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save">
-                        {{ isEditMode ? 'Update' : 'Save' }}
-                    </button>
-                </div>
-            </form>
+          </fieldset>
         </div>
+
+        <div class="modal-footer bg-light py-2 px-3 border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i> {{ isViewMode ? 'Close' : 'Cancel' }}
+          </button>
+          <button *ngIf="!isViewMode" type="submit" class="btn btn-lims btn-lims-save btn-sm">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update Organization' : 'Save Organization' }}
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>

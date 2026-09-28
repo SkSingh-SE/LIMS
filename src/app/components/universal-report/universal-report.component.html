@@ -1,0 +1,657 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-check text-danger fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Universal Report</h6>
+          <small class="text-muted text-xs">Frozen execution + final result + approved review — presentation only, no recalculation</small>
+        </div>
+      </div>
+      <div class="d-flex gap-1">
+        <button type="button" class="btn-lims btn-lims-cancel" (click)="openExecution()">
+          <i class="bi bi-arrow-left me-1"></i> Execution
+        </button>
+        <button type="button" class="btn-lims btn-lims-secondary" (click)="openReview()">
+          <i class="bi bi-patch-check me-1"></i> Review
+        </button>
+        <button type="button" class="btn-lims btn-lims-primary" (click)="onPreview()">
+          <i class="bi bi-eye me-1"></i> Preview
+        </button>
+        <button type="button" class="btn-lims btn-lims-save" *hasPermission="'CanGenerateUniversalReport'" (click)="onGenerate()">
+          <i class="bi bi-check-circle me-1"></i> Generate
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-4 col-lg-3">
+          <div class="form-field-header">
+            <label class="form-label mb-0">Test Execution</label>
+            <a class="btn-nav-link" routerLink="/universal-test-execution" [queryParams]="{ executionId: executionId, from: 'report' }" *ngIf="executionId" title="Open in Execution Workspace">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Workspace
+            </a>
+          </div>
+          <app-searchable-dropdown
+            [hideLabel]="true"
+            [smallInput]="true"
+            [placeholder]="'Search by ID, Test name, Sample No...'"
+            [fetchDataFn]="getExecutionDropdown"
+            [selectedItem]="selectedExecutionItem"
+            (itemSelected)="onExecutionSelected($event)">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-3 col-lg-3">
+          <div class="form-field-header">
+            <div class="d-flex align-items-center gap-1">
+              <label class="form-label mb-0">Report Format</label>
+              <a class="btn-nav-link" routerLink="/report-format" target="_blank" title="Manage Report Formats">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Formats
+              </a>
+            </div>
+            <span class="badge bg-secondary-subtle text-secondary border fs-9" *ngIf="selectedFormatCode">
+              {{ selectedFormatCode === 'DEFAULT' ? 'DEFAULT' : 'CONFIGURED' }}
+            </span>
+          </div>
+          <select class="form-select form-select-sm" [(ngModel)]="selectedFormatCode" (change)="onPreview()">
+            <option *ngFor="let f of availableFormats" [value]="f.formatCode || f.FormatCode">
+              {{ f.formatName || f.FormatName }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-3 col-lg-4">
+          <div class="form-field-header">
+            <label class="form-label mb-0">Remarks (generate / release)</label>
+          </div>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="remarks" placeholder="Optional remarks frozen into audit" />
+        </div>
+        <div class="col-md-2 col-lg-2 d-flex gap-1 justify-content-end align-items-end">
+          <button type="button" class="btn-lims btn-lims-primary btn-sm" (click)="loadAll()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Reload
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-2" *ngIf="preview">
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="w-auto fw-semibold text-danger px-2">
+          <i class="bi bi-eye me-1"></i> Preview — {{ preview?.watermark ?? preview?.Watermark }} (no report number, not official)
+        </legend>
+        <div class="row g-2 small mb-2">
+          <div class="col-md-2"><span class="text-muted">Decision:</span> <span class="badge" [ngClass]="verdictClass(dataOf(preview)?.overallDecision)">{{ dataOf(preview)?.overallDecision || '-' }}</span></div>
+          <div class="col-md-2"><span class="text-muted">Snapshot:</span> <span class="font-monospace">{{ (dataOf(preview)?.snapshotHash || '-') | slice:0:12 }}</span></div>
+          <div class="col-md-3"><span class="text-muted">Test:</span> {{ dataOf(preview)?.laboratoryTestName || '-' }}</div>
+          <div class="col-md-2"><span class="text-muted">Scope:</span> {{ dataOf(preview)?.scopeStatus || '-' }}</div>
+          <div class="col-md-3">
+            <span class="text-muted">NABL Mark:</span>
+            <span class="badge ms-1" [ngClass]="dataOf(preview)?.showNablMark ? 'bg-success' : 'bg-secondary'">
+              <i class="bi" [ngClass]="dataOf(preview)?.showNablMark ? 'bi-patch-check-fill' : 'bi-x-circle'"></i>
+              {{ dataOf(preview)?.showNablMark ? 'NABL Accredited' : 'Non-NABL Report' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- ── 8-SECTION UNIVERSAL LAB REPORT SHEET (MATCHING REPORT FORMAT SPECIFICATION) ── -->
+        <div class="ute-report-sheet mx-auto position-relative my-3">
+          <!-- Watermark -->
+          <div class="ute-report-watermark">
+            {{ preview?.watermark ?? 'UNCONTROLLED PREVIEW' }}
+          </div>
+
+          <!-- 1. Header with Laboratory Details -->
+          <div class="ute-report-header">
+            <!-- Left: Lab Logo & Organization Contact -->
+            <div class="ute-report-lab-block">
+              <div class="d-flex align-items-center" *ngIf="getLabLogoUrl(preview)">
+                <img [src]="getLabLogoUrl(preview)" alt="Laboratory Logo" class="ute-report-lab-logo" />
+              </div>
+              <div class="ute-report-lab-details">
+                <div class="ute-report-lab-name">{{ dataOf(preview)?.labName || '—' }}</div>
+                <div class="ute-report-lab-subtitle" *ngIf="dataOf(preview)?.labSubtitle">{{ dataOf(preview)?.labSubtitle }}</div>
+                <div class="ute-report-lab-tagline" *ngIf="dataOf(preview)?.labTagline">{{ dataOf(preview)?.labTagline }}</div>
+                <div *ngIf="dataOf(preview)?.branchAddress || dataOf(preview)?.labAddress">{{ dataOf(preview)?.branchAddress || dataOf(preview)?.labAddress }}</div>
+                <div class="d-flex flex-wrap gap-2" *ngIf="dataOf(preview)?.labPhone || dataOf(preview)?.labEmail || dataOf(preview)?.labWebsite">
+                  <span *ngIf="dataOf(preview)?.labPhone">Phone: {{ dataOf(preview)?.labPhone }}</span>
+                  <span *ngIf="dataOf(preview)?.labPhone && (dataOf(preview)?.labEmail || dataOf(preview)?.labWebsite)">|</span>
+                  <span *ngIf="dataOf(preview)?.labEmail">Email: {{ dataOf(preview)?.labEmail }}</span>
+                  <span *ngIf="dataOf(preview)?.labEmail && dataOf(preview)?.labWebsite">|</span>
+                  <span *ngIf="dataOf(preview)?.labWebsite">Website: {{ dataOf(preview)?.labWebsite }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Center: ilac-MRA & NABL Emblem with TC-XXXX -->
+            <div class="ute-report-nabl-block" *ngIf="hasNablMark(preview)">
+              <ng-container *ngIf="getNablLogoUrl(preview); else defaultNablBadge">
+                <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                  <img [src]="getNablLogoUrl(preview)" alt="NABL Accreditation Logo" class="ute-report-nabl-img mb-1" />
+                  <div class="ute-nabl-tc-no">{{ dataOf(preview)?.nablCertNo || 'TC-5098' }}</div>
+                </div>
+              </ng-container>
+              <ng-template #defaultNablBadge>
+                <div class="ute-ilac-badge">
+                  ilac-MRA
+                </div>
+                <div class="ute-nabl-emblem">
+                  <div class="ute-nabl-emblem-badge">
+                    NABL
+                  </div>
+                  <div class="ute-nabl-tc-no">{{ dataOf(preview)?.nablCertNo || 'TC-5098' }}</div>
+                </div>
+              </ng-template>
+            </div>
+            <div class="ute-report-nabl-block" *ngIf="!hasNablMark(preview)">
+              <div class="badge bg-secondary-subtle text-secondary border p-2">
+                STANDARD LAB REPORT
+              </div>
+            </div>
+
+            <!-- Right: QR Code -->
+            <div class="ute-report-qr-block">
+              <svg class="ute-report-qr-svg" viewBox="0 0 100 100">
+                <rect width="100" height="100" fill="#ffffff" />
+                <!-- Position Pattern TL -->
+                <rect x="10" y="10" width="25" height="25" fill="#0f172a" />
+                <rect x="15" y="15" width="15" height="15" fill="#ffffff" />
+                <rect x="18" y="18" width="9" height="9" fill="#0f172a" />
+                <!-- Position Pattern TR -->
+                <rect x="65" y="10" width="25" height="25" fill="#0f172a" />
+                <rect x="70" y="15" width="15" height="15" fill="#ffffff" />
+                <rect x="73" y="18" width="9" height="9" fill="#0f172a" />
+                <!-- Position Pattern BL -->
+                <rect x="10" y="65" width="25" height="25" fill="#0f172a" />
+                <rect x="15" y="70" width="15" height="15" fill="#ffffff" />
+                <rect x="18" y="73" width="9" height="9" fill="#0f172a" />
+                <!-- Inner QR bits -->
+                <rect x="42" y="15" width="6" height="6" fill="#0f172a" />
+                <rect x="52" y="22" width="6" height="6" fill="#0f172a" />
+                <rect x="40" y="40" width="8" height="8" fill="#0f172a" />
+                <rect x="52" y="40" width="8" height="8" fill="#0f172a" />
+                <rect x="40" y="52" width="8" height="8" fill="#0f172a" />
+                <rect x="65" y="45" width="6" height="12" fill="#0f172a" />
+                <rect x="75" y="55" width="12" height="6" fill="#0f172a" />
+                <rect x="45" y="70" width="12" height="6" fill="#0f172a" />
+                <rect x="65" y="75" width="10" height="10" fill="#0f172a" />
+                <rect x="80" y="70" width="8" height="12" fill="#0f172a" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- 2. Report Identity Banner & Barcode Block -->
+          <div class="ute-report-title-banner">TEST REPORT</div>
+          <div class="ute-report-id-bar">
+            <!-- Left: Numbers -->
+            <div class="ute-report-id-col">
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Report No.</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ dataOf(preview)?.reportNo || '— (Draft Preview)' }}</span>
+              </div>
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">ULR No.</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ dataOf(preview)?.ulrNo || (hasNablMark(preview) ? '— (Assigned on Release)' : 'Not Applicable (Non-NABL)') }}</span>
+              </div>
+            </div>
+
+            <!-- Center: Barcode Visual -->
+            <div class="ute-report-barcode-block">
+              <svg class="ute-report-barcode-svg" viewBox="0 0 170 28">
+                <rect x="2" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="7" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="11" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="18" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="23" y="2" width="1" height="24" fill="#0f172a" />
+                <rect x="27" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="33" y="2" width="5" height="24" fill="#0f172a" />
+                <rect x="41" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="45" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="51" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="56" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="63" y="2" width="1" height="24" fill="#0f172a" />
+                <rect x="67" y="2" width="3.5" height="24" fill="#0f172a" />
+                <rect x="73" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="78" y="2" width="5" height="24" fill="#0f172a" />
+                <rect x="86" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="90" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="96" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="103" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="108" y="2" width="1" height="24" fill="#0f172a" />
+                <rect x="112" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="118" y="2" width="4.5" height="24" fill="#0f172a" />
+                <rect x="125" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="129" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="135" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="140" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="147" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="151" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="157" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="162" y="2" width="4" height="24" fill="#0f172a" />
+              </svg>
+              <div class="ute-report-barcode-text">{{ dataOf(preview)?.ulrNo || dataOf(preview)?.reportNo || ('EXEC-' + executionId) }}</div>
+            </div>
+
+            <!-- Right: Dates & Pagination -->
+            <div class="ute-report-id-col">
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Report Date</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ (preview?.generatedOn ? (preview.generatedOn | date:'dd MMM yyyy') : (dataOf(preview)?.testCompletedOn | date:'dd MMM yyyy')) || (today | date:'dd MMM yyyy') }}</span>
+              </div>
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Issue Date</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ (preview?.releasedOn ? (preview.releasedOn | date:'dd MMM yyyy') : '— (Pending Release)') }}</span>
+              </div>
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Page No.</span>
+                <span>: </span>
+                <span class="ute-report-id-val">1 of 1</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Customer & Sample Information (Side-by-Side 2-Column Cards) -->
+          <div class="row g-2 mb-2">
+            <!-- Left: Customer Details -->
+            <div class="col-md-6 col-lg-6">
+              <div class="ute-report-card h-100">
+                <div class="ute-report-card-header">CUSTOMER DETAILS</div>
+                <div class="ute-report-card-body">
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Customer Name</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val fw-semibold">{{ dataOf(preview)?.customerName || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Address</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOf(preview)?.customerAddress || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Contact Person</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOf(preview)?.contactPerson || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Reference</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOf(preview)?.customerReference || dataOf(preview)?.caseNo || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Sample Details -->
+            <div class="col-md-6 col-lg-6">
+              <div class="ute-report-card h-100">
+                <div class="ute-report-card-header">SAMPLE DETAILS</div>
+                <div class="ute-report-card-body">
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Description</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOf(preview)?.sampleDescription || dataOf(preview)?.gradeName || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Identification</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val font-monospace fw-semibold">{{ dataOf(preview)?.sampleNo || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Received Date</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ (dataOf(preview)?.sampleReceivedOn | date:'dd MMM yyyy') || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Test Commencement Date</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ (dataOf(preview)?.testCommencedOn | date:'dd MMM yyyy') || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Test Completion Date</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ (dataOf(preview)?.testCompletedOn | date:'dd MMM yyyy') || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Condition</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOf(preview)?.sampleCondition || 'As Received' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sampling Source</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOf(preview)?.samplingSource || 'Customer Supplied' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sampling Plan</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOf(preview)?.samplingPlan || 'Not Applicable' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Test Details -->
+          <div class="ute-report-card">
+            <div class="ute-report-card-header">TEST DETAILS</div>
+            <div class="ute-report-card-body">
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Test Name</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val fw-semibold">{{ dataOf(preview)?.laboratoryTestName || '—' }}</span>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Test Method</span>
+                <span class="ute-report-kv-sep">:</span>
+                <div class="ute-report-kv-val d-flex justify-content-between">
+                  <span>{{ dataOf(preview)?.testMethodStandard || dataOf(preview)?.testMethodName || '—' }}</span>
+                  <span class="text-muted pe-4"><strong class="text-dark">Method Version :</strong> {{ getMethodVersion(preview) }}</span>
+                </div>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Discipline</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val">{{ dataOf(preview)?.disciplineName || '—' }}</span>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Test Equipment</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val">{{ getEquipmentString(preview) }}</span>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Environmental Conditions</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val">{{ getConditionsString(preview) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Test Results Table -->
+          <div class="ute-report-table-box">
+            <div class="ute-report-card-header">TEST RESULTS</div>
+            <div class="table-responsive">
+              <table class="ute-report-table">
+                <thead>
+                  <tr>
+                    <th class="text-center" style="width: 45px;">S. No.</th>
+                    <th style="width: 250px;">Parameter</th>
+                    <th class="text-center" style="width: 90px;">Result</th>
+                    <th class="text-center" style="width: 70px;">Unit</th>
+                    <th>Requirement / Specification ({{ dataOf(preview)?.specificationTitle || dataOf(preview)?.testMethodStandard || 'Standard' }})</th>
+                    <th class="text-center" style="width: 140px;">Method Detection Limit (if applicable)</th>
+                    <th class="text-center" style="width: 90px;">NABL Scope (Yes / No)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of getReportTableRows(preview)">
+                    <td class="text-center font-monospace">{{ p.srNo }}</td>
+                    <td class="fw-semibold">{{ p.parameterName }}</td>
+                    <td class="text-center font-monospace fw-bold">{{ p.finalValue }}</td>
+                    <td class="text-center font-monospace">{{ p.unit }}</td>
+                    <td>{{ p.specRange }}</td>
+                    <td class="text-center font-monospace text-muted">{{ p.detectionLimit }}</td>
+                    <td class="text-center">
+                      <span class="ute-report-scope-badge">{{ p.isNabl }}</span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!getReportTableRows(preview)?.length">
+                    <td colspan="7" class="text-center py-3 text-muted">No test parameters configured for report preview.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 6. Remarks / Observations -->
+          <div class="ute-report-remarks-box">
+            <div class="ute-report-card-header">REMARKS / OBSERVATIONS</div>
+            <div class="p-2">
+              <ol class="ute-report-remarks-list">
+                <li>The sample {{ (dataOf(preview)?.overallDecision === 'FAIL' ? 'does not conform' : 'conforms') }} to the requirements of {{ dataOf(preview)?.specificationTitle || dataOf(preview)?.testMethodStandard || 'the specified standard' }} for the tested parameters.</li>
+                <li>The results reported are only for the sample tested.</li>
+                <li>NABL accredited tests are marked as "Yes" under NABL Scope column.</li>
+                <li>This report shall not be reproduced, except in full, without the written approval of {{ dataOf(preview)?.labName || 'the laboratory' }}.</li>
+                <li *ngIf="dataOf(preview)?.measurementUncertainty?.expandedUncertainty || dataOf(preview)?.measurementUncertainty?.value">
+                  <strong>Expanded Uncertainty (U):</strong> ±{{ (dataOf(preview)?.measurementUncertainty?.expandedUncertainty || dataOf(preview)?.measurementUncertainty?.value) }} {{ dataOf(preview)?.measurementUncertainty?.unit || '%' }} at approx. 95.45% confidence level (coverage factor k = {{ (dataOf(preview)?.measurementUncertainty?.coverageFactor || '2') }}).
+                </li>
+                <li *ngIf="dataOf(preview)?.reviewRemarks || dataOf(preview)?.approvalRemarks || dataOf(preview)?.remarks">
+                  {{ dataOf(preview)?.reviewRemarks || dataOf(preview)?.approvalRemarks || dataOf(preview)?.remarks }}
+                </li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- 7. Signatures (3 Distinct Columns) -->
+          <div class="ute-report-signatures">
+            <!-- Analyst -->
+            <div class="ute-report-sig-col">
+              <div class="ute-report-sig-role">Tested By</div>
+              <div class="ute-report-sig-sub">(Analyst)</div>
+              <div class="ute-report-sig-img-container">
+                <img *ngIf="dataOf(preview)?.analystSignaturePath" [src]="getApiUrl(dataOf(preview)?.analystSignaturePath)" alt="Signature" class="ute-report-sig-img" />
+                <div *ngIf="!dataOf(preview)?.analystSignaturePath" class="ute-report-sig-blank-line"></div>
+              </div>
+              <div class="ute-report-sig-name">{{ dataOf(preview)?.analystName || '—' }}</div>
+              <div class="ute-report-sig-desig">{{ dataOf(preview)?.analystDesignation || '—' }}</div>
+              <div class="ute-report-sig-date">Date: {{ (dataOf(preview)?.testCompletedOn || dataOf(preview)?.testCommencedOn | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+
+            <!-- Reviewer / Verifier -->
+            <div class="ute-report-sig-col">
+              <div class="ute-report-sig-role">Verified By</div>
+              <div class="ute-report-sig-sub">(Technical Reviewer)</div>
+              <div class="ute-report-sig-img-container">
+                <img *ngIf="dataOf(preview)?.reviewerSignaturePath" [src]="getApiUrl(dataOf(preview)?.reviewerSignaturePath)" alt="Signature" class="ute-report-sig-img" />
+                <div *ngIf="!dataOf(preview)?.reviewerSignaturePath" class="ute-report-sig-blank-line"></div>
+              </div>
+              <div class="ute-report-sig-name">{{ dataOf(preview)?.verifiedByName || dataOf(preview)?.reviewerName || '—' }}</div>
+              <div class="ute-report-sig-desig">{{ dataOf(preview)?.reviewerDesignation || '—' }}</div>
+              <div class="ute-report-sig-date">Date: {{ (dataOf(preview)?.verifiedOn | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+
+            <!-- Approver / Signatory -->
+            <div class="ute-report-sig-col">
+              <div class="ute-report-sig-role">Approved By</div>
+              <div class="ute-report-sig-sub">(Authorized Signatory)</div>
+              <div class="ute-report-sig-img-container">
+                <img *ngIf="dataOf(preview)?.approverSignaturePath" [src]="getApiUrl(dataOf(preview)?.approverSignaturePath)" alt="Signature" class="ute-report-sig-img" />
+                <div *ngIf="!dataOf(preview)?.approverSignaturePath" class="ute-report-sig-blank-line"></div>
+              </div>
+              <div class="ute-report-sig-name">{{ dataOf(preview)?.approvedByName || '—' }}</div>
+              <div class="ute-report-sig-desig">{{ dataOf(preview)?.approverDesignation || '—' }}</div>
+              <div class="ute-report-sig-date">Date: {{ (dataOf(preview)?.approvedOn | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+          </div>
+
+          <!-- 8. Footer -->
+          <div class="ute-report-end-line">---------- End of Report ----------</div>
+          <div class="ute-report-footer-disclaimer">
+            This laboratory is accredited by NABL, India in accordance with ISO/IEC 17025:2017 for the tests as specified in the scope of accreditation.<br />
+            The validity of this report can be verified by scanning the QR code or on NABL website (www.nabl-india.org).
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="card-body p-2" *ngIf="reports.length > 0">
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="w-auto fw-semibold text-danger px-2">
+          <i class="bi bi-clock-history me-1"></i> Report History (execution lineage — never overwritten)
+        </legend>
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th class="text-center col-sn">#</th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('reportNo')" title="Sort by Report No">
+                  Report No
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'reportNo' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('ulrNo')" title="Sort by ULR No">
+                  ULR No
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'ulrNo' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="text-center cursor-pointer user-select-none" (click)="onSort('resultRevisionNo')" title="Sort by Result Revision">
+                  Result Rev
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'resultRevisionNo' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="text-center cursor-pointer user-select-none" (click)="onSort('reportRevisionNo')" title="Sort by Report Revision">
+                  Report Rev
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'reportRevisionNo' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('status')" title="Sort by Status">
+                  Status
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'status' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('showNablMark')" title="Sort by NABL">
+                  NABL
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'showNablMark' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('reportFormatSource')" title="Sort by Format">
+                  Format
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'reportFormatSource' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('reportDataHash')" title="Sort by Data Hash">
+                  Data Hash
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'reportDataHash' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('generatedOn')" title="Sort by Generated Date">
+                  Generated
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'generatedOn' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="cursor-pointer user-select-none" (click)="onSort('releasedOn')" title="Sort by Released Date">
+                  Released
+                  <i class="bi ms-1" [ngClass]="sortColumn === 'releasedOn' ? (sortAsc ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted opacity-50'"></i>
+                </th>
+                <th class="text-center col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of reports; let i = index" [class.table-active]="(r.id ?? r.ID) === selectedId()">
+                <td class="text-center text-muted col-sn">{{ i + 1 }}</td>
+                <td><span class="badge bg-light text-dark border font-monospace">{{ r.reportNo ?? r.ReportNo }}</span></td>
+                <td>
+                  <span class="badge bg-info-subtle text-info-emphasis border font-monospace" *ngIf="r.ulrNo ?? r.UlrNo">{{ r.ulrNo ?? r.UlrNo }}</span>
+                  <span class="text-muted" *ngIf="!(r.ulrNo ?? r.UlrNo)">—</span>
+                </td>
+                <td class="text-center">{{ r.resultRevisionNo ?? r.ResultRevisionNo }}</td>
+                <td class="text-center">{{ r.reportRevisionNo ?? r.ReportRevisionNo }}</td>
+                <td><span class="badge" [ngClass]="statusClass(r.status ?? r.Status)">{{ r.status ?? r.Status }}</span></td>
+                <td>
+                  <span class="badge" [ngClass]="(r.showNablMark ?? r.ShowNablMark) ? 'bg-success' : 'bg-secondary'">
+                    {{ (r.showNablMark ?? r.ShowNablMark) ? 'NABL' : 'Non-NABL' }}
+                  </span>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ r.reportFormatSource ?? r.ReportFormatSource ?? 'DEFAULT' }}</span></td>
+                <td class="font-monospace text-muted">{{ ((r.reportDataHash ?? r.ReportDataHash) || '-') | slice:0:12 }}</td>
+                <td class="cell-audit">{{ (r.generatedOn ?? r.GeneratedOn) | date:"dd MMM, hh:mm a" }}</td>
+                <td class="cell-audit">{{ ((r.releasedOn ?? r.ReleasedOn) | date:"dd MMM, hh:mm a") || '-' }}</td>
+                <td class="text-center col-actions">
+                  <div class="d-flex justify-content-center gap-1">
+                    <button type="button" class="btn-tbl-action btn-tbl-view" title="View" (click)="onView(r)">
+                      <i class="bi bi-eye-fill"></i>
+                    </button>
+                    <button type="button" class="btn-tbl-action btn-tbl-edit" title="Download PDF" (click)="onDownload(r)" *ngIf="!isVoidStatus(r.status ?? r.Status)">
+                      <i class="bi bi-download"></i>
+                    </button>
+                    <button type="button" class="btn-tbl-action btn-tbl-delete" title="VOID reports cannot be downloaded (invalidated)" disabled *ngIf="isVoidStatus(r.status ?? r.Status)">
+                      <i class="bi bi-slash-circle"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="card-body p-2" *ngIf="selected">
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="w-auto fw-semibold text-danger px-2">
+          <i class="bi bi-file-earmark-text me-1"></i> {{ selected?.reportNo ?? selected?.ReportNo }} — {{ selected?.status ?? selected?.Status }}
+          <span class="badge ms-2" [ngClass]="dataOf(selected)?.showNablMark ? 'bg-success' : 'bg-secondary'">
+            {{ dataOf(selected)?.showNablMark ? 'NABL Accredited' : 'Non-NABL' }}
+          </span>
+          <span class="badge bg-info ms-1 font-monospace" *ngIf="dataOf(selected)?.ulrNo">
+            ULR: {{ dataOf(selected)?.ulrNo }}
+          </span>
+        </legend>
+        <div class="row g-2 small mb-2">
+          <div class="col-md-3"><span class="text-muted">Lab:</span> {{ dataOf(selected)?.labName || '-' }}<br /><span class="text-muted">{{ dataOf(selected)?.branchName || '' }}</span></div>
+          <div class="col-md-3"><span class="text-muted">Customer:</span> {{ dataOf(selected)?.customerName || '-' }}<br /><span class="text-muted">{{ dataOf(selected)?.caseNo || '' }} / {{ dataOf(selected)?.sampleNo || '' }}</span></div>
+          <div class="col-md-3"><span class="text-muted">Method:</span> {{ dataOf(selected)?.testMethodStandard || dataOf(selected)?.testMethodName || '-' }}<br /><span class="text-muted">{{ dataOf(selected)?.testMethodVersion || '' }} · {{ dataOf(selected)?.specificationTitle || '' }}</span></div>
+          <div class="col-md-3"><span class="text-muted">Approval:</span> {{ dataOf(selected)?.approvedByName || '-' }}<br /><span class="text-muted">{{ (dataOf(selected)?.approvedOn | date:"dd MMM, hh:mm a") || '-' }}</span></div>
+        </div>
+        <div class="row g-2 small mb-2 text-muted">
+          <div class="col-md-3"><span>Format:</span> <strong class="text-dark">{{ dataOf(selected)?.reportFormatName || dataOf(selected)?.reportFormatCode }}</strong> ({{ dataOf(selected)?.reportFormatSource }})</div>
+          <div class="col-md-3"><span>Cert No:</span> <strong class="text-dark">{{ dataOf(selected)?.nablCertNo || 'N/A' }}</strong></div>
+          <div class="col-md-6" *ngIf="dataOf(selected)?.ulrExceptionReason"><span>ULR Note:</span> <em>{{ dataOf(selected)?.ulrExceptionReason }}</em></div>
+        </div>
+        <div class="alert alert-danger py-1 px-2 mb-2 small fw-bold" *ngIf="isSelectedVoid()">
+          <i class="bi bi-slash-circle me-1"></i>VOID — REPORT NOT VALID FOR USE. This report has been invalidated and cannot be downloaded, released, or reissued as an official document.
+        </div>
+        <div class="alert alert-warning py-1 px-2 mb-2 small" *ngIf="dataOf(selected)?.scopeDisclaimer">
+          <i class="bi bi-exclamation-triangle me-1"></i>{{ dataOf(selected)?.scopeDisclaimer }}
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap">
+              <tr>
+                <th>Parameter</th>
+                <th>Observed</th>
+                <th>Calculated</th>
+                <th>Official</th>
+                <th>Unit</th>
+                <th>Requirement</th>
+                <th>Verdict</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of paramsOf(selected)">
+                <td>{{ p.parameterCode }} — {{ p.parameterName }}</td>
+                <td class="font-monospace">{{ p.rawValue ?? '-' }}</td>
+                <td class="font-monospace">{{ p.calculatedValue ?? '-' }}<span class="text-muted" *ngIf="p.substitutionTrace"> ({{ p.substitutionTrace }})</span></td>
+                <td class="font-monospace fw-semibold">{{ p.reportedValue ?? p.displayValue ?? '-' }}</td>
+                <td>{{ p.unit || '-' }}</td>
+                <td class="text-muted">{{ (p.effectiveMin ?? p.specMin ?? '—') }} / {{ (p.effectiveMax ?? p.specMax ?? '—') }}</td>
+                <td><span class="badge" [ngClass]="verdictClass(p.verdict)">{{ p.verdict || '-' }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mt-2">
+          <button type="button" class="btn-lims btn-lims-print" (click)="onDownload()" *ngIf="!isSelectedVoid()">
+            <i class="bi bi-download me-1"></i> Download PDF
+          </button>
+          <button type="button" class="btn-lims btn-lims-secondary" disabled title="VOID reports cannot be downloaded (invalidated)" *ngIf="isSelectedVoid()">
+            <i class="bi bi-slash-circle me-1"></i> Download Blocked (VOID)
+          </button>
+          <ng-container *ngIf="!isSelectedVoid()">
+            <button type="button" class="btn-lims btn-lims-save" *hasPermission="'CanReleaseUniversalReport'" (click)="onRelease()">
+              <i class="bi bi-check-circle me-1"></i> Release
+            </button>
+          </ng-container>
+          <ng-container *ngIf="!isSelectedVoid()">
+            <input type="text" class="form-control form-control-sm flex-grow-1" [(ngModel)]="reissueReason" placeholder="Reissue reason (min 10 chars) — old PDF never overwritten" />
+            <button type="button" class="btn-lims btn-lims-copy" *hasPermission="'CanReissueUniversalReport'" (click)="onReissue()">
+              <i class="bi bi-copy me-1"></i> Reissue
+            </button>
+          </ng-container>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="card-body p-3 text-center text-muted" *ngIf="!preview && reports.length === 0">
+      <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+      <div>Enter an Execution ID and Reload — preview needs a finalized result, generate needs an Approved result.</div>
+    </div>
+  </div>
+</div>

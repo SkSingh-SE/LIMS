@@ -1,0 +1,25 @@
+.req-summary {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+
+.dryrun-bar {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+
+.dryrun-input {
+  max-width: 140px;
+}
+
+.dryrun-result {
+  font-size: 0.78rem;
+  color: #059669;
+}

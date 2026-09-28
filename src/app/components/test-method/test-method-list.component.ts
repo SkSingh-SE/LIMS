@@ -95,7 +95,7 @@ export class TestMethodListComponent implements OnInit {
 
   fetchData(): void {
     const payload = {
-      PageNumber: this.pageNumber - 1, // 0-indexed on backend
+      PageNumber: this.pageNumber,
       PageSize: this.pageSize,
       SortByColumn: this.sortByColumn,
       SortOrder: this.sortOrder

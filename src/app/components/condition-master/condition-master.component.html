@@ -1,16 +1,15 @@
-<div class="condition-master-container">
-  <!-- Breadcrumb -->
-  <app-breadcrumb></app-breadcrumb>
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
 
-  <!-- Main Card -->
-  <div class="card shadow-sm border-0 mb-3">
-    <!-- Header -->
-    <div class="card-header bg-white py-2 px-3 d-flex align-items-center justify-content-between border-bottom">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-sliders text-danger fs-5"></i>
+        <i class="bi bi-sliders fs-5 text-danger"></i>
         <div>
           <h6 class="mb-0 fw-bold text-dark">Condition Master</h6>
-          <small class="text-muted text-xs">Configure universal technical, environmental, and specimen testing conditions</small>
+          <small class="text-muted text-xs">Universal technical, environmental and specimen testing conditions</small>
         </div>
       </div>
       <div>
@@ -20,469 +19,381 @@
       </div>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="card-body p-2 border-bottom bg-light">
+    <div class="card-body p-2 bg-light border-bottom">
       <div class="row g-2 align-items-center">
-        <!-- Search Input -->
         <div class="col-md-3">
           <div class="input-group input-group-sm">
-            <span class="input-group-text bg-white border-end-0">
-              <i class="bi bi-search text-muted"></i>
-            </span>
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
             <input
               type="text"
-              class="form-control form-control-sm border-start-0 ps-0"
+              class="form-control form-control-sm"
               placeholder="Search code, name, description..."
               [(ngModel)]="filterSearch"
-              (keyup.enter)="applyFilters()"
-            />
+              (keydown.enter)="applyFilters()" />
           </div>
         </div>
-
-        <!-- Category Filter -->
         <div class="col-md-2">
-          <select
-            class="form-select form-select-sm"
-            [(ngModel)]="filterCategory"
-            (change)="applyFilters()"
-          >
+          <select class="form-select form-select-sm" [(ngModel)]="filterCategory" (change)="applyFilters()">
             <option value="">All Categories</option>
             <option *ngFor="let cat of standardCategories" [value]="cat">{{ cat }}</option>
           </select>
         </div>
-
-        <!-- Value Type Filter -->
         <div class="col-md-2">
-          <select
-            class="form-select form-select-sm"
-            [(ngModel)]="filterValueType"
-            (change)="applyFilters()"
-          >
+          <select class="form-select form-select-sm" [(ngModel)]="filterValueType" (change)="applyFilters()">
             <option value="">All Value Types</option>
             <option *ngFor="let vt of standardValueTypes" [value]="vt">{{ vt }}</option>
           </select>
         </div>
-
-        <!-- Status Filter -->
         <div class="col-md-2">
-          <select
-            class="form-select form-select-sm"
-            [(ngModel)]="filterStatus"
-            (change)="applyFilters()"
-          >
-            <option value="">All Status</option>
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="applyFilters()">
+            <option value="">All Statuses</option>
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
         </div>
-
-        <!-- Filter Actions -->
         <div class="col-md-3 d-flex gap-1 justify-content-end">
-          <button type="button" class="btn-lims btn-lims-primary" (click)="applyFilters()">
-            <i class="bi bi-funnel me-1"></i> Filter
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="applyFilters()">
+            <i class="bi bi-filter me-1"></i>Apply
           </button>
           <button type="button" class="btn-lims btn-lims-cancel" (click)="clearFilters()">
-            <i class="bi bi-arrow-counterclockwise me-1"></i> Clear
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Table Container -->
-    <div class="table-responsive p-0">
-      <table class="table table-hover table-striped table-bordered align-middle mb-0 lims-compact-table">
-        <thead class="table-light">
-          <tr>
-            <th class="text-center col-order" (click)="onSort('displayOrder')">
-              <div class="d-flex align-items-center justify-content-center gap-1 cursor-pointer">
-                <span>#</span>
-                <i class="bi" [ngClass]="sortByColumn === 'displayOrder' ? (sortOrder === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted'"></i>
-              </div>
-            </th>
-            <th class="text-center col-actions">Actions</th>
-            <th class="col-code" (click)="onSort('code')">
-              <div class="d-flex align-items-center gap-1 cursor-pointer">
-                <span>Code</span>
-                <i class="bi" [ngClass]="sortByColumn === 'code' ? (sortOrder === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted'"></i>
-              </div>
-            </th>
-            <th class="col-name" (click)="onSort('name')">
-              <div class="d-flex align-items-center gap-1 cursor-pointer">
-                <span>Condition Name</span>
-                <i class="bi" [ngClass]="sortByColumn === 'name' ? (sortOrder === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted'"></i>
-              </div>
-            </th>
-            <th class="col-category" (click)="onSort('category')">
-              <div class="d-flex align-items-center gap-1 cursor-pointer">
-                <span>Category</span>
-                <i class="bi" [ngClass]="sortByColumn === 'category' ? (sortOrder === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted'"></i>
-              </div>
-            </th>
-            <th class="col-type" (click)="onSort('valueType')">
-              <div class="d-flex align-items-center gap-1 cursor-pointer">
-                <span>Value Type</span>
-                <i class="bi" [ngClass]="sortByColumn === 'valueType' ? (sortOrder === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted'"></i>
-              </div>
-            </th>
-            <th class="col-unit">Unit</th>
-            <th class="col-operators">Allowed Operators</th>
-            <th class="col-discrete">Allowed / Discrete Values</th>
-            <th class="col-default">Default</th>
-            <th class="text-center col-refs" title="Linked Specification Lines">Refs</th>
-            <th class="text-center col-status" (click)="onSort('isActive')">
-              <div class="d-flex align-items-center justify-content-center gap-1 cursor-pointer">
-                <span>Status</span>
-                <i class="bi" [ngClass]="sortByColumn === 'isActive' ? (sortOrder === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down') : 'bi-arrow-down-up text-muted'"></i>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Empty State -->
-          <tr *ngIf="conditionList.length === 0">
-            <td colspan="12" class="text-center py-4 text-muted">
-              <i class="bi bi-inbox fs-2 text-secondary d-block mb-1"></i>
-              <span>No condition masters found matching your criteria.</span>
-            </td>
-          </tr>
-
-          <!-- Data Rows -->
-          <tr *ngFor="let item of conditionList; let idx = index">
-            <!-- Display Order -->
-            <td class="text-center text-muted fw-semibold">
-              {{ item.displayOrder || (pageNumber - 1) * pageSize + idx + 1 }}
-            </td>
-
-            <!-- Actions -->
-            <td class="text-center col-actions">
-              <div class="d-flex align-items-center justify-content-center gap-1">
-                <!-- View -->
-                <button
-                  type="button"
-                  class="btn-tbl-action btn-tbl-view"
-                  title="View Details"
-                  (click)="openViewModal(item)"
-                >
-                  <i class="bi bi-eye-fill"></i>
-                </button>
-                <!-- Edit -->
-                <button
-                  type="button"
-                  class="btn-tbl-action btn-tbl-edit"
-                  title="Edit Condition"
-                  (click)="openEditModal(item)"
-                >
-                  <i class="bi bi-pencil-square"></i>
-                </button>
-                <!-- Delete -->
-                <button
-                  type="button"
-                  class="btn-tbl-action btn-tbl-delete"
-                  title="Delete Condition"
-                  (click)="confirmDelete(item)"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-            </td>
-
-            <!-- Code -->
-            <td>
-              <span class="badge-condition-code">{{ item.code }}</span>
-            </td>
-
-            <!-- Name & Description -->
-            <td>
-              <div class="fw-semibold text-dark">{{ item.name }}</div>
-              <small class="text-muted d-block text-truncate max-w-200" *ngIf="item.description" [title]="item.description">
-                {{ item.description }}
-              </small>
-            </td>
-
-            <!-- Category -->
-            <td>
-              <span class="badge-category" [ngClass]="getCategoryBadgeClass(item.category)">
-                {{ item.category }}
-              </span>
-            </td>
-
-            <!-- Value Type -->
-            <td>
-              <span class="badge-value-type" [ngClass]="getValueTypeBadgeClass(item.valueType)">
-                {{ item.valueType }}
-              </span>
-            </td>
-
-            <!-- Unit -->
-            <td>
-              <span *ngIf="item.parameterUnitSymbol || item.parameterUnitName" class="badge bg-light text-dark border">
-                {{ item.parameterUnitSymbol || item.parameterUnitName }}
-              </span>
-              <span *ngIf="!item.parameterUnitSymbol && !item.parameterUnitName" class="text-muted">—</span>
-            </td>
-
-            <!-- Allowed Operators -->
-            <td>
-              <div class="d-flex flex-wrap gap-1">
-                <span *ngFor="let op of item.allowedOperators" class="badge-operator">
-                  {{ op }}
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="onSort('code')">
+                Code
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'code' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'code' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('name')">
+                Condition Name
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'name' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'name' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('category')">
+                Category
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'category' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'category' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('valueType')">
+                Value Type
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'valueType' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'valueType' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th>Unit</th>
+              <th>Allowed Operators</th>
+              <th>Allowed / Discrete Values</th>
+              <th>Default</th>
+              <th class="text-center col-refs" title="Linked Specification Lines">Refs</th>
+              <th class="text-center col-status cursor-pointer" (click)="onSort('isActive')">
+                Status
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'isActive' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'isActive' && sortOrder === 'desc'
+                }"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="conditionList.length === 0">
+              <td colspan="12" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary"></i>
+                <div>No records found.</div>
+              </td>
+            </tr>
+            <tr *ngFor="let item of conditionList; let idx = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + idx + 1 }}</td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center gap-1">
+                  <button type="button" class="btn-tbl-action btn-tbl-view" title="View Details" (click)="openViewModal(item)">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" title="Edit Condition" (click)="openEditModal(item)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Condition' : 'Activate Condition'"
+                    (click)="toggleActive(item)">
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                  <button type="button" class="btn-tbl-action btn-tbl-delete" title="Delete Condition" (click)="confirmDelete(item)">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace">{{ item.code }}</span>
+              </td>
+              <td>
+                <div class="fw-semibold text-dark">{{ item.name }}</div>
+                <small class="text-muted d-block text-truncate max-w-200" *ngIf="item.description" [title]="item.description">
+                  {{ item.description }}
+                </small>
+              </td>
+              <td>
+                <span class="badge-category" [ngClass]="getCategoryBadgeClass(item.category)">
+                  {{ item.category }}
                 </span>
-                <span *ngIf="!item.allowedOperators || item.allowedOperators.length === 0" class="text-muted">—</span>
-              </div>
-            </td>
-
-            <!-- Allowed / Discrete Values -->
-            <td>
-              <div *ngIf="item.allowedValues && item.allowedValues.length > 0" class="d-flex flex-wrap gap-1">
-                <span *ngFor="let val of item.allowedValues" class="badge-discrete-val">
-                  {{ val }}
+              </td>
+              <td>
+                <span class="badge-value-type" [ngClass]="getValueTypeBadgeClass(item.valueType)">
+                  {{ item.valueType }}
                 </span>
-              </div>
-              <span *ngIf="!item.allowedValues || item.allowedValues.length === 0" class="text-muted">—</span>
-            </td>
-
-            <!-- Default Value -->
-            <td>
-              <span *ngIf="item.defaultValue" class="fw-medium text-dark">{{ item.defaultValue }}</span>
-              <span *ngIf="!item.defaultValue" class="text-muted">—</span>
-            </td>
-
-            <!-- References -->
-            <td class="text-center">
-              <span class="badge rounded-pill" [ngClass]="item.referenceCount > 0 ? 'bg-info text-dark' : 'bg-light text-muted border'">
-                {{ item.referenceCount || 0 }}
-              </span>
-            </td>
-
-            <!-- Status Toggle -->
-            <td class="text-center">
-              <div class="form-check form-switch d-inline-block">
-                <input
-                  class="form-check-input cursor-pointer"
-                  type="checkbox"
-                  role="switch"
-                  [checked]="item.isActive"
-                  (change)="toggleActive(item)"
-                  title="Click to toggle active/inactive"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+              <td>
+                <span *ngIf="item.parameterUnitSymbol || item.parameterUnitName" class="badge bg-light text-dark border">
+                  {{ item.parameterUnitSymbol || item.parameterUnitName }}
+                </span>
+                <span *ngIf="!item.parameterUnitSymbol && !item.parameterUnitName" class="text-muted">—</span>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <span *ngFor="let op of item.allowedOperators" class="badge-operator">
+                    {{ op }}
+                  </span>
+                  <span *ngIf="!item.allowedOperators || item.allowedOperators.length === 0" class="text-muted">—</span>
+                </div>
+              </td>
+              <td>
+                <div *ngIf="item.allowedValues && item.allowedValues.length > 0" class="d-flex flex-wrap gap-1">
+                  <span *ngFor="let val of item.allowedValues" class="badge-discrete-val">
+                    {{ val }}
+                  </span>
+                </div>
+                <span *ngIf="!item.allowedValues || item.allowedValues.length === 0" class="text-muted">—</span>
+              </td>
+              <td>
+                <span *ngIf="item.defaultValue" class="fw-medium text-dark">{{ item.defaultValue }}</span>
+                <span *ngIf="!item.defaultValue" class="text-muted">—</span>
+              </td>
+              <td class="text-center">
+                <span class="badge rounded-pill" [ngClass]="item.referenceCount > 0 ? 'bg-info text-dark' : 'bg-light text-muted border'">
+                  {{ item.referenceCount || 0 }}
+                </span>
+              </td>
+              <td class="text-center">
+                <span *ngIf="item.isActive" class="badge px-2 py-1 bg-success-subtle text-success border border-success-subtle">Active</span>
+                <span *ngIf="!item.isActive" class="badge px-2 py-1 bg-warning-subtle text-warning-emphasis border border-warning-subtle">Inactive</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Pagination Footer -->
-    <div class="card-footer bg-white p-2 border-top">
+    <div class="card-footer bg-white py-2 px-3 border-top" *ngIf="totalItems > 0">
       <app-pagination
         [totalItems]="totalItems"
         [currentPage]="pageNumber"
         [pageSize]="pageSize"
         [pageSizes]="pageSizes"
         (pageChange)="onPageChange($event)"
-        (pageSizeChange)="onPageSizeChange($event)"
-      >
+        (pageSizeChange)="onPageSizeChange($event)">
       </app-pagination>
     </div>
   </div>
 
-  <!-- ADD / EDIT MODAL -->
   <div class="modal fade" #modalRef tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <!-- Modal Header -->
-        <div class="modal-header py-2 px-3 border-bottom">
-          <h6 class="modal-title fw-semibold text-danger d-flex align-items-center gap-1">
-            <i class="bi bi-sliders me-1"></i>
-            {{ formTitle }}
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header py-2 bg-light border-bottom">
+          <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-sliders text-danger"></i>
+            <span>{{ formTitle }}</span>
           </h6>
           <button type="button" class="btn-close" (click)="hideModal()" aria-label="Close"></button>
         </div>
-
-        <!-- Modal Body -->
         <div class="modal-body p-3">
           <form [formGroup]="conditionForm" (ngSubmit)="onSubmit()" novalidate>
-            <div class="row g-2">
-              <!-- Code -->
-              <div class="col-md-6">
-                <label class="form-label required">Condition Code</label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm text-uppercase"
-                  placeholder="e.g. TEST_TEMP, SPEC_THICKNESS"
-                  formControlName="code"
-                  [readonly]="isEditMode"
-                  [ngClass]="{ 'is-invalid': submitted && conditionForm.get('code')?.invalid }"
-                />
-                <app-field-error [control]="conditionForm.get('code')" [submitted]="submitted"></app-field-error>
-                <small class="text-muted d-block mt-0.5">Uppercase alphanumeric & underscore only.</small>
-              </div>
-
-              <!-- Name -->
-              <div class="col-md-6">
-                <label class="form-label required">Condition Name</label>
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="e.g. Test Temperature, Specimen Thickness"
-                  formControlName="name"
-                  [ngClass]="{ 'is-invalid': submitted && conditionForm.get('name')?.invalid }"
-                />
-                <app-field-error [control]="conditionForm.get('name')" [submitted]="submitted"></app-field-error>
-              </div>
-
-              <!-- Category -->
-              <div class="col-md-4">
-                <label class="form-label required">Category</label>
-                <select class="form-select form-select-sm" formControlName="category">
-                  <option *ngFor="let cat of standardCategories" [value]="cat">{{ cat }}</option>
-                </select>
-                <app-field-error [control]="conditionForm.get('category')" [submitted]="submitted"></app-field-error>
-              </div>
-
-              <!-- Value Type -->
-              <div class="col-md-4">
-                <label class="form-label required">Value Type</label>
-                <select class="form-select form-select-sm" formControlName="valueType">
-                  <option *ngFor="let vt of standardValueTypes" [value]="vt">{{ vt }}</option>
-                </select>
-                <app-field-error [control]="conditionForm.get('valueType')" [submitted]="submitted"></app-field-error>
-              </div>
-
-              <!-- Parameter Unit with Standard Header Navigation Link -->
-              <div class="col-md-4">
-                <div class="form-field-header">
-                  <label class="form-label">Parameter Unit</label>
-                  <a class="btn-nav-link" (click)="openLinkedMaster('/parameter-unit')">
-                    <i class="bi bi-box-arrow-up-right me-1"></i> Manage Units
-                  </a>
+            <fieldset class="border rounded p-2 mb-3">
+              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+                <i class="bi bi-tag me-1"></i> Condition Identity
+              </legend>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <label class="form-label mb-1">Condition Code <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm text-uppercase"
+                    placeholder="e.g. TEST_TEMP"
+                    formControlName="code"
+                    maxlength="50"
+                    [readonly]="isEditMode"
+                    (input)="onCodeInput()"
+                    [ngClass]="{ 'is-invalid': submitted && conditionForm.get('code')?.invalid }" />
+                  <app-field-error [control]="conditionForm.get('code')" label="Condition Code" [submitted]="submitted"></app-field-error>
+                  <small class="text-muted d-block mt-1">Auto from Name; uppercase alphanumeric & underscore only.</small>
                 </div>
-                <app-searchable-dropdown
-                  [fetchDataFn]="getUnitDropdown"
-                  [selectedItem]="conditionForm.get('parameterUnitID')?.value"
-                  (itemSelected)="onUnitSelected($event)"
-                  [placeholder]="'Select Unit (Optional)'"
-                  [hideLabel]="true"
-                  [smallInput]="true"
-                  [isDisabled]="isViewMode"
-                >
-                </app-searchable-dropdown>
-              </div>
-
-              <!-- Allowed Operators -->
-              <div class="col-md-12">
-                <label class="form-label required">Allowed Operators</label>
-                <div class="d-flex flex-wrap gap-1 p-2 bg-light rounded border">
-                  <button
-                    type="button"
-                    *ngFor="let op of getAvailableOperatorsForCurrentType()"
-                    class="btn btn-sm btn-operator-chip"
-                    [ngClass]="isOperatorSelected(op) ? 'btn-operator-active' : 'btn-operator-inactive'"
-                    (click)="toggleOperator(op)"
-                  >
-                    <i class="bi" [ngClass]="isOperatorSelected(op) ? 'bi-check2 me-1' : 'bi-plus me-1'"></i>
-                    {{ op }}
-                  </button>
-                </div>
-                <small class="text-muted d-block mt-0.5">Click operator badges to toggle allowed comparisons.</small>
-              </div>
-
-              <!-- Allowed / Discrete Values (If Selection Type) -->
-              <div class="col-md-12" *ngIf="conditionForm.get('valueType')?.value === 'Selection'">
-                <label class="form-label required">Allowed Discrete Values / Options</label>
-                <div class="input-group input-group-sm mb-1.5">
+                <div class="col-md-5">
+                  <label class="form-label mb-1">Condition Name <span class="text-danger">*</span></label>
                   <input
                     type="text"
                     class="form-control form-control-sm"
-                    placeholder="Enter discrete option e.g. Natural, Dry, Saturated..."
-                    [(ngModel)]="newDiscreteValue"
-                    [ngModelOptions]="{ standalone: true }"
-                    (keyup.enter)="addDiscreteValue()"
-                  />
-                  <button type="button" class="btn btn-outline-secondary btn-sm" (click)="addDiscreteValue()">
-                    <i class="bi bi-plus-lg me-1"></i> Add Option
-                  </button>
+                    placeholder="e.g. Test Temperature"
+                    formControlName="name"
+                    maxlength="100"
+                    (input)="onNameInput()"
+                    [ngClass]="{ 'is-invalid': submitted && conditionForm.get('name')?.invalid }" />
+                  <app-field-error [control]="conditionForm.get('name')" label="Condition Name" [submitted]="submitted"></app-field-error>
                 </div>
-
-                <div class="d-flex flex-wrap gap-1 p-2 bg-light rounded border min-h-36">
-                  <span *ngFor="let val of discreteValues; let i = index" class="badge-discrete-chip">
-                    {{ val }}
-                    <i class="bi bi-x ms-1 cursor-pointer text-danger" (click)="removeDiscreteValue(i)"></i>
-                  </span>
-                  <small *ngIf="discreteValues.length === 0" class="text-muted align-self-center">
-                    No discrete options added yet. Type an option above and press Enter.
-                  </small>
+                <div class="col-md-3">
+                  <label class="form-label mb-1">Status <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" formControlName="isActive">
+                    <option [ngValue]="true">Active</option>
+                    <option [ngValue]="false">Inactive</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label mb-1">Category <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" formControlName="category">
+                    <option *ngFor="let cat of standardCategories" [value]="cat">{{ cat }}</option>
+                  </select>
+                  <app-field-error [control]="conditionForm.get('category')" label="Category" [submitted]="submitted"></app-field-error>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label mb-1">Value Type <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" formControlName="valueType">
+                    <option *ngFor="let vt of standardValueTypes" [value]="vt">{{ vt }}</option>
+                  </select>
+                  <app-field-error [control]="conditionForm.get('valueType')" label="Value Type" [submitted]="submitted"></app-field-error>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-field-header">
+                    <label class="form-label">Parameter Unit</label>
+                    <a class="btn-nav-link" (click)="openLinkedMaster('/parameter-unit')">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>Manage Units
+                    </a>
+                  </div>
+                  <app-searchable-dropdown
+                    [fetchDataFn]="getUnitDropdown"
+                    [selectedItem]="conditionForm.get('parameterUnitID')?.value"
+                    (itemSelected)="onUnitSelected($event)"
+                    [placeholder]="'Select Unit (Optional)'"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [isDisabled]="isViewMode">
+                  </app-searchable-dropdown>
                 </div>
               </div>
+            </fieldset>
 
-              <!-- Default Value -->
-              <div class="col-md-6">
-                <label class="form-label">Default Value <span class="text-muted fw-normal">(Optional UI suggestion only)</span></label>
-                <!-- If Selection, provide dropdown from discrete values -->
-                <select
-                  *ngIf="conditionForm.get('valueType')?.value === 'Selection' && discreteValues.length > 0"
-                  class="form-select form-select-sm"
-                  formControlName="defaultValue"
-                >
-                  <option value="">No Default</option>
-                  <option *ngFor="let val of discreteValues" [value]="val">{{ val }}</option>
-                </select>
-                <!-- Otherwise standard text input -->
-                <input
-                  *ngIf="conditionForm.get('valueType')?.value !== 'Selection' || discreteValues.length === 0"
-                  type="text"
-                  class="form-control form-control-sm"
-                  placeholder="Optional UI suggestion only"
-                  formControlName="defaultValue"
-                />
-                <small class="text-muted d-block mt-0.5">UI suggestion only; never creates conditions or populates execution snapshots automatically.</small>
+            <fieldset class="border rounded p-2 mb-3">
+              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+                <i class="bi bi-funnel me-1"></i> Operators & Values
+              </legend>
+              <div class="row g-2">
+                <div class="col-12">
+                  <label class="form-label mb-1">Allowed Operators <span class="text-danger">*</span></label>
+                  <div class="d-flex flex-wrap gap-1 p-2 bg-light rounded border">
+                    <button
+                      type="button"
+                      *ngFor="let op of getAvailableOperatorsForCurrentType()"
+                      class="btn btn-sm btn-operator-chip"
+                      [ngClass]="isOperatorSelected(op) ? 'btn-operator-active' : 'btn-operator-inactive'"
+                      (click)="toggleOperator(op)">
+                      <i class="bi" [ngClass]="isOperatorSelected(op) ? 'bi-check2 me-1' : 'bi-plus me-1'"></i>
+                      {{ op }}
+                    </button>
+                  </div>
+                  <small class="text-muted d-block mt-1">Click operator badges to toggle allowed comparisons.</small>
+                </div>
+                <div class="col-12" *ngIf="conditionForm.get('valueType')?.value === 'Selection'">
+                  <label class="form-label mb-1">Allowed Discrete Values / Options <span class="text-danger">*</span></label>
+                  <div class="input-group input-group-sm mb-2">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      placeholder="Enter discrete option e.g. Natural, Dry, Saturated..."
+                      [(ngModel)]="newDiscreteValue"
+                      [ngModelOptions]="{ standalone: true }"
+                      (keyup.enter)="addDiscreteValue()" />
+                    <button type="button" class="btn btn-lims-add btn-sm" (click)="addDiscreteValue()">
+                      <i class="bi bi-plus-circle me-1"></i>Add Option
+                    </button>
+                  </div>
+                  <div class="d-flex flex-wrap gap-1 p-2 bg-light rounded border min-h-36">
+                    <span *ngFor="let val of discreteValues; let i = index" class="badge-discrete-chip">
+                      {{ val }}
+                      <i class="bi bi-x ms-1 cursor-pointer text-danger" (click)="removeDiscreteValue(i)"></i>
+                    </span>
+                    <small *ngIf="discreteValues.length === 0" class="text-muted align-self-center">
+                      No discrete options added yet. Type an option above and press Enter.
+                    </small>
+                  </div>
+                </div>
               </div>
+            </fieldset>
 
-              <!-- Display Order -->
-              <div class="col-md-3">
-                <label class="form-label">Display Order</label>
-                <input
-                  type="number"
-                  class="form-control form-control-sm"
-                  placeholder="0"
-                  formControlName="displayOrder"
-                  min="0"
-                />
-              </div>
-
-              <!-- Is Active -->
-              <div class="col-md-3 d-flex align-items-center pt-3">
-                <div class="form-check form-switch">
+            <fieldset class="border rounded p-2">
+              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+                <i class="bi bi-card-text me-1"></i> Defaults & Notes
+              </legend>
+              <div class="row g-2">
+                <div class="col-md-8">
+                  <label class="form-label mb-1">Default Value <span class="text-muted fw-normal">(Optional)</span></label>
+                  <select
+                    *ngIf="conditionForm.get('valueType')?.value === 'Selection' && discreteValues.length > 0"
+                    class="form-select form-select-sm"
+                    formControlName="defaultValue">
+                    <option value="">No Default</option>
+                    <option *ngFor="let val of discreteValues" [value]="val">{{ val }}</option>
+                  </select>
                   <input
-                    class="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="modalIsActive"
-                    formControlName="isActive"
-                  />
-                  <label class="form-check-label ms-1" for="modalIsActive">Is Active</label>
+                    *ngIf="conditionForm.get('valueType')?.value !== 'Selection' || discreteValues.length === 0"
+                    type="text"
+                    class="form-control form-control-sm"
+                    placeholder="Optional UI suggestion only"
+                    formControlName="defaultValue" />
+                  <small class="text-muted d-block mt-1">UI suggestion only; never auto-populates execution snapshots.</small>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label mb-1">Display Order</label>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                    placeholder="0"
+                    formControlName="displayOrder"
+                    min="0"
+                    [ngClass]="{ 'is-invalid': submitted && conditionForm.get('displayOrder')?.invalid }" />
+                  <app-field-error [control]="conditionForm.get('displayOrder')" label="Display Order" [submitted]="submitted"></app-field-error>
+                </div>
+                <div class="col-12">
+                  <label class="form-label mb-1">Description / Instructions</label>
+                  <textarea
+                    class="form-control form-control-sm"
+                    rows="2"
+                    placeholder="Brief technical description or instructions for technicians..."
+                    formControlName="description"></textarea>
                 </div>
               </div>
+            </fieldset>
 
-              <!-- Description -->
-              <div class="col-md-12">
-                <label class="form-label">Description / Instructions</label>
-                <textarea
-                  class="form-control form-control-sm"
-                  rows="2"
-                  placeholder="Brief technical description or instructions for technicians..."
-                  formControlName="description"
-                ></textarea>
-              </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer px-0 pb-0 pt-3 border-top mt-3">
-              <button type="button" class="btn-lims btn-lims-cancel" (click)="hideModal()">
+            <div class="modal-footer py-2 bg-light border-top mt-3">
+              <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="hideModal()">
                 <i class="bi bi-x-circle me-1"></i> Cancel
               </button>
-              <button type="submit" class="btn-lims btn-lims-save">
-                <i class="bi bi-check-circle me-1"></i> Save Condition
+              <button type="submit" class="btn btn-lims btn-lims-save btn-sm">
+                <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
               </button>
             </div>
           </form>
@@ -491,29 +402,27 @@
     </div>
   </div>
 
-  <!-- VIEW MODAL -->
   <div class="modal fade" #viewModalRef tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-md modal-dialog-centered">
-      <div class="modal-content" *ngIf="viewItem">
-        <div class="modal-header py-2 px-3 border-bottom">
-          <h6 class="modal-title fw-semibold text-danger d-flex align-items-center gap-1">
-            <i class="bi bi-info-circle me-1"></i> Condition Details
+    <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow" *ngIf="viewItem">
+        <div class="modal-header py-2 bg-light border-bottom">
+          <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle text-danger"></i>
+            <span>Condition Details</span>
           </h6>
-          <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+          <button type="button" class="btn-close" (click)="closeViewModal()" aria-label="Close"></button>
         </div>
         <div class="modal-body p-3">
           <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
             <div>
               <h5 class="mb-0 fw-bold text-dark">{{ viewItem.name }}</h5>
-              <span class="badge-condition-code">{{ viewItem.code }}</span>
+              <span class="badge bg-light text-dark border font-monospace">{{ viewItem.code }}</span>
             </div>
             <div>
-              <span class="badge" [ngClass]="viewItem.isActive ? 'bg-success' : 'bg-secondary'">
-                {{ viewItem.isActive ? 'Active' : 'Inactive' }}
-              </span>
+              <span *ngIf="viewItem.isActive" class="badge px-2 py-1 bg-success-subtle text-success border border-success-subtle">Active</span>
+              <span *ngIf="!viewItem.isActive" class="badge px-2 py-1 bg-warning-subtle text-warning-emphasis border border-warning-subtle">Inactive</span>
             </div>
           </div>
-
           <div class="row g-2 mb-3">
             <div class="col-6">
               <small class="text-muted d-block">Category</small>
@@ -544,55 +453,51 @@
               <span class="badge bg-info text-dark">{{ viewItem.referenceCount }} line(s)</span>
             </div>
           </div>
-
           <div class="mb-2">
             <small class="text-muted d-block mb-1">Allowed Operators</small>
             <div class="d-flex flex-wrap gap-1">
               <span *ngFor="let op of viewItem.allowedOperators" class="badge-operator">{{ op }}</span>
             </div>
           </div>
-
           <div class="mb-2" *ngIf="viewItem.allowedValues && viewItem.allowedValues.length > 0">
             <small class="text-muted d-block mb-1">Allowed Discrete Values</small>
             <div class="d-flex flex-wrap gap-1">
               <span *ngFor="let val of viewItem.allowedValues" class="badge-discrete-val">{{ val }}</span>
             </div>
           </div>
-
           <div class="mb-2" *ngIf="viewItem.description">
             <small class="text-muted d-block mb-1">Description</small>
             <div class="p-2 bg-light rounded border small">{{ viewItem.description }}</div>
           </div>
-
-          <!-- Audit info -->
           <div class="pt-2 border-top text-muted small mt-3">
-            <div><strong>Created:</strong> {{ viewItem.createdOn | date:'yyyy-MM-dd HH:mm' }}</div>
-            <div *ngIf="viewItem.modifiedOn"><strong>Modified:</strong> {{ viewItem.modifiedOn | date:'yyyy-MM-dd HH:mm' }}</div>
+            <div><strong>Created:</strong> {{ viewItem.createdOn | date:'dd MMM, yyyy hh:mm a' }}</div>
+            <div *ngIf="viewItem.modifiedOn"><strong>Modified:</strong> {{ viewItem.modifiedOn | date:'dd MMM, yyyy hh:mm a' }}</div>
           </div>
         </div>
-        <div class="modal-footer p-2 border-top">
-          <button type="button" class="btn-lims btn-lims-cancel" (click)="closeViewModal()">Close</button>
+        <div class="modal-footer py-2 bg-light border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeViewModal()">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- DELETE CONFIRMATION MODAL -->
   <div class="modal fade" #deleteModalRef tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" *ngIf="itemToDelete">
-        <div class="modal-header py-2 px-3 border-bottom">
-          <h6 class="modal-title fw-semibold text-danger d-flex align-items-center gap-1">
-            <i class="bi bi-exclamation-triangle me-1"></i> Delete Condition Master
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow" *ngIf="itemToDelete">
+        <div class="modal-header py-2 bg-light border-bottom">
+          <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle text-danger"></i>
+            <span>Delete Condition Master</span>
           </h6>
-          <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
+          <button type="button" class="btn-close" (click)="closeDeleteModal()" aria-label="Close"></button>
         </div>
         <div class="modal-body p-3">
           <p class="mb-2">
             Are you sure you want to delete condition
             <strong>{{ itemToDelete.name }} ({{ itemToDelete.code }})</strong>?
           </p>
-
           <div *ngIf="itemToDelete.referenceCount > 0" class="alert alert-danger py-2 px-3 small d-flex align-items-start gap-2 mb-0">
             <i class="bi bi-shield-x fs-5 text-danger flex-shrink-0"></i>
             <div>
@@ -601,21 +506,19 @@
               It cannot be deleted. You may deactivate it instead.
             </div>
           </div>
-
           <p *ngIf="itemToDelete.referenceCount === 0" class="text-muted small mb-0">
             This action cannot be undone. All technical metadata associated with this condition will be removed.
           </p>
         </div>
-        <div class="modal-footer p-2 border-top">
-          <button type="button" class="btn-lims btn-lims-cancel" (click)="closeDeleteModal()">
+        <div class="modal-footer py-2 bg-light border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeDeleteModal()">
             <i class="bi bi-x-circle me-1"></i> Cancel
           </button>
           <button
             type="button"
-            class="btn-lims btn-lims-remove"
+            class="btn btn-lims btn-lims-remove btn-sm"
             (click)="executeDelete()"
-            [disabled]="itemToDelete.referenceCount > 0"
-          >
+            [disabled]="itemToDelete.referenceCount > 0">
             <i class="bi bi-trash me-1"></i> Delete Condition
           </button>
         </div>

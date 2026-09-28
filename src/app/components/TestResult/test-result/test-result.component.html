@@ -113,7 +113,7 @@
               <td>{{ item.material }}</td>
               <td>{{ item.condition }}</td>
               <td>
-                <ng-container *ngIf="item.tests?.length > 0">
+                <ng-container *ngIf="(item.tests?.length || 0) > 0">
                   <span *ngFor="let test of item.tests" class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.75rem;">
                     {{ test.testName }}
                   </span>

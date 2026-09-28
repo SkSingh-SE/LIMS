@@ -6,11 +6,12 @@ import { OrganizationAdminService, OrganizationAdminItem, OrganizationDependency
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
 import { OrganizationFormComponent } from '../organization-form/organization-form.component';
+import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-organization-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, OrganizationFormComponent],
+  imports: [CommonModule, FormsModule, OrganizationFormComponent, PaginationComponent],
   templateUrl: './organization-list.component.html',
   styleUrls: ['./organization-list.component.css']
 })
@@ -24,6 +25,7 @@ export class OrganizationListComponent implements OnInit {
   totalCount: number = 0;
   pageNo: number = 1;
   pageSize: number = 10;
+  pageSizes: number[] = [10, 25, 50, 100];
   searchTerm: string = '';
   statusFilter: string = 'all';
 
@@ -71,6 +73,13 @@ export class OrganizationListComponent implements OnInit {
     this.loadOrganizations();
   }
 
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = 'all';
+    this.pageNo = 1;
+    this.loadOrganizations();
+  }
+
   onStatusChange(): void {
     this.pageNo = 1;
     this.loadOrganizations();
@@ -78,6 +87,12 @@ export class OrganizationListComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.pageNo = page;
+    this.loadOrganizations();
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+    this.pageNo = 1;
     this.loadOrganizations();
   }
 
@@ -154,9 +169,5 @@ export class OrganizationListComponent implements OnInit {
     this.isDeactivateModalVisible = false;
     this.deactivatingOrg = null;
     this.deactivationDependencies = null;
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.totalCount / this.pageSize) || 1;
   }
 }

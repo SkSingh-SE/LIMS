@@ -45,12 +45,14 @@ export class MaterialSpecificationService {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
 
-  getMaterialSpecificationGradeDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/grade-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  getMaterialSpecificationGradeDropdown(searchTerm: string, pageNumber: number, pageSize: number, specHeaderId: number = 0, productMasterId: number = 0): Observable<any> {
+    let url = `${this.apiUrl}/grade-dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}&specHeaderId=${specHeaderId}`;
+    if (productMasterId) url += `&productMasterId=${productMasterId}`;
+    return this.http.get<any>(url);
   }
 
-  getGradeDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.getMaterialSpecificationGradeDropdown(searchTerm, pageNumber, pageSize);
+  getGradeDropdown(searchTerm: string, pageNumber: number, pageSize: number, specHeaderId: number = 0, productMasterId: number = 0): Observable<any> {
+    return this.getMaterialSpecificationGradeDropdown(searchTerm, pageNumber, pageSize, specHeaderId, productMasterId);
   }
 
   getGradeDropdownByMetalId(searchTerm: string, pageNumber: number, pageSize: number, metalId: number = 0): Observable<any> {

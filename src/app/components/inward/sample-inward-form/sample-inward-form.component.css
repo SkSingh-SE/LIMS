@@ -626,3 +626,223 @@ fieldset legend {
 .max-h-140 { max-height: 140px; }
 .col-w-60 { width: 60px; }
 .col-w-70 { width: 70px; }
+.test-selector-box { min-width: 240px; max-width: 360px; }
+
+/* ─── Universal Requested Test Chips Standard ─── */
+.req-tests-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3.5px solid var(--primary-color, #da261c);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.req-tests-container:hover {
+  border-color: #cbd5e1;
+  border-left-color: var(--primary-color, #da261c);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Top Row: Header & Selector */
+.req-tests-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.req-tests-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.req-tests-header-title {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.req-tests-discipline-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 0.69rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.req-tests-count-badge {
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Test Selector Dropdown */
+.test-selector-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 250px;
+  max-width: 340px;
+  flex-grow: 1;
+  justify-content: flex-end;
+}
+
+.test-selector-icon {
+  position: absolute;
+  left: 9px;
+  font-size: 0.8rem;
+  color: var(--primary-color, #da261c);
+  pointer-events: none;
+  z-index: 2;
+  margin-right: 0 !important;
+}
+
+.test-selector-select {
+  padding-left: 26px !important;
+  font-size: 0.76rem !important;
+  height: 28px !important;
+  border-color: #cbd5e1 !important;
+  border-radius: 6px !important;
+  background-color: #ffffff !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s ease-in-out;
+}
+
+.test-selector-select:hover:not(:disabled) {
+  border-color: var(--primary-color, #da261c) !important;
+}
+
+.test-selector-select:focus {
+  border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.12) !important;
+}
+
+/* Bottom Row: Selected Test Chips List */
+.req-tests-chips-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 28px;
+  padding-top: 2px;
+}
+
+.req-test-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 3px 6px 3px 7px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.25;
+}
+
+.req-test-chip:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.req-test-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-color, #da261c);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.req-test-chip-icon i {
+  margin-right: 0 !important;
+}
+
+.req-test-chip-code {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--primary-color, #da261c);
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.req-test-chip-name {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.req-test-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  font-size: 0.65rem;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+.req-test-chip-remove i {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  line-height: 1 !important;
+}
+
+.req-test-chip-remove:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  transform: scale(1.15);
+}
+
+.req-tests-empty {
+  font-size: 0.74rem;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+

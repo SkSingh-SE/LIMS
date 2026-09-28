@@ -1,0 +1,329 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-check2-square fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Acceptance Criteria Master</h6>
+          <small class="text-muted text-xs">Reusable evaluation and decision configuration (Layer 3: Specification &amp; Compliance)</small>
+        </div>
+      </div>
+      <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create')">
+        <i class="bi bi-plus-circle me-1"></i> Add Acceptance Criteria
+      </button>
+    </div>
+
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-2">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm font-monospace text-uppercase"
+              placeholder="Search code..."
+              [(ngModel)]="filterCode"
+              (keydown.enter)="onSearch()" />
+          </div>
+        </div>
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search acceptance criteria name..."
+            [(ngModel)]="filterName"
+            (keydown.enter)="onSearch()" />
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="filterDecisionRule" (change)="onSearch()">
+            <option value="">All Decision Rules</option>
+            <option *ngFor="let rule of decisionRules" [value]="rule">{{ rule }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="onSearch()">
+            <option value="">All Statuses</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary flex-grow-1" (click)="onSearch()">
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="onSort('code')">
+                Code
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'code' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'code' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="cursor-pointer" (click)="onSort('name')">
+                Criteria Name
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'name' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'name' && sortOrder === 'desc'
+                }"></i>
+              </th>
+              <th class="text-center">Evaluation</th>
+              <th class="text-center">Decision Rule</th>
+              <th class="text-center">Rounding</th>
+              <th class="cursor-pointer text-center col-status" (click)="onSort('isActive')">
+                Status
+                <i class="bi ms-1" [ngClass]="{
+                  'bi-arrow-up': sortByColumn === 'isActive' && sortOrder === 'asc',
+                  'bi-arrow-down': sortByColumn === 'isActive' && sortOrder === 'desc'
+                }"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="acceptanceCriteriaList.length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox display-6 d-block mb-1"></i>
+                No acceptance criteria found matching the criteria.
+              </td>
+            </tr>
+            <tr *ngFor="let item of acceptanceCriteriaList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted font-monospace small">
+                {{ (pageNumber - 1) * pageSize + i + 1 }}
+              </td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center align-items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-view"
+                    title="View Details"
+                    (click)="openModal('view', item.id)">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-edit"
+                    title="Edit Acceptance Criteria"
+                    (click)="openModal('edit', item.id)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-tbl-action btn-tbl-status"
+                    [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate Acceptance Criteria' : 'Activate Acceptance Criteria'"
+                    (click)="toggleStatus(item)">
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border font-monospace fw-semibold">{{ item.code || '-' }}</span>
+              </td>
+              <td class="fw-semibold text-dark">{{ item.name }}</td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border">{{ item.evaluationType || '-' }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border font-monospace">{{ item.decisionRule || '-' }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark border">{{ item.roundingRule || '-' }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="item.isActive ? 'bg-success' : 'bg-danger'">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer bg-white border-top py-2 px-3" *ngIf="totalItems > 0">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
+</div>
+
+<div #modalRef class="modal fade" tabindex="-1" aria-labelledby="acceptanceCriteriaModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header py-2 bg-light border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="acceptanceCriteriaModalLabel">
+          <i class="bi bi-check2-square text-danger"></i>
+          <span>{{ formTitle }}</span>
+        </h6>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="acceptanceCriteriaForm" (ngSubmit)="saveAcceptanceCriteria()">
+        <div class="modal-body p-3">
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-tag me-1"></i> Criteria Identity
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label mb-1">Criteria Code <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm text-uppercase"
+                  placeholder="e.g. ALL_REQUIRED_PASS"
+                  formControlName="code"
+                  maxlength="50"
+                  (input)="onCodeInput()"
+                  [class.is-invalid]="submitted && acceptanceCriteriaForm.get('code')?.invalid" />
+                <app-field-error
+                  [control]="acceptanceCriteriaForm.get('code')"
+                  label="Criteria Code"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label mb-1">Criteria Name <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="e.g. All Required Parameters Must Pass"
+                  formControlName="name"
+                  maxlength="150"
+                  [class.is-invalid]="submitted && acceptanceCriteriaForm.get('name')?.invalid" />
+                <app-field-error
+                  [control]="acceptanceCriteriaForm.get('name')"
+                  label="Criteria Name"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Status <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="isActive">
+                  <option [ngValue]="true">Active</option>
+                  <option [ngValue]="false">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-3">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-sliders me-1"></i> Evaluation Behaviour
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label mb-1">Evaluation Type <span class="text-danger">*</span></label>
+                <select
+                  class="form-select form-select-sm"
+                  formControlName="evaluationType"
+                  [class.is-invalid]="submitted && acceptanceCriteriaForm.get('evaluationType')?.invalid">
+                  <option *ngFor="let type of evaluationTypes" [value]="type">{{ type }}</option>
+                </select>
+                <app-field-error
+                  [control]="acceptanceCriteriaForm.get('evaluationType')"
+                  label="Evaluation Type"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Comparison Type <span class="text-danger">*</span></label>
+                <select
+                  class="form-select form-select-sm"
+                  formControlName="comparisonType"
+                  [class.is-invalid]="submitted && acceptanceCriteriaForm.get('comparisonType')?.invalid">
+                  <option *ngFor="let type of comparisonTypes" [value]="type">{{ type }}</option>
+                </select>
+                <app-field-error
+                  [control]="acceptanceCriteriaForm.get('comparisonType')"
+                  label="Comparison Type"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Decision Rule <span class="text-danger">*</span></label>
+                <select
+                  class="form-select form-select-sm"
+                  formControlName="decisionRule"
+                  [class.is-invalid]="submitted && acceptanceCriteriaForm.get('decisionRule')?.invalid">
+                  <option *ngFor="let rule of decisionRules" [value]="rule">{{ rule }}</option>
+                </select>
+                <app-field-error
+                  [control]="acceptanceCriteriaForm.get('decisionRule')"
+                  label="Decision Rule"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">Rounding Rule <span class="text-danger">*</span></label>
+                <select
+                  class="form-select form-select-sm"
+                  formControlName="roundingRule"
+                  [class.is-invalid]="submitted && acceptanceCriteriaForm.get('roundingRule')?.invalid">
+                  <option *ngFor="let rule of roundingRules" [value]="rule">{{ rule }}</option>
+                </select>
+                <app-field-error
+                  [control]="acceptanceCriteriaForm.get('roundingRule')"
+                  label="Rounding Rule"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-card-text me-1"></i> Ordering &amp; Notes
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label mb-1">Display Order</label>
+                <input
+                  type="number"
+                  class="form-control form-control-sm"
+                  placeholder="0"
+                  formControlName="displayOrder"
+                  min="0"
+                  [class.is-invalid]="submitted && acceptanceCriteriaForm.get('displayOrder')?.invalid" />
+                <app-field-error
+                  [control]="acceptanceCriteriaForm.get('displayOrder')"
+                  label="Display Order"
+                  [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-9">
+                <label class="form-label mb-1">Description</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="Brief description of the evaluation behaviour"
+                  formControlName="description"
+                  maxlength="500" />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <div class="modal-footer py-2 bg-light border-top">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i> {{ isViewMode ? 'Close' : 'Cancel' }}
+          </button>
+          <button *ngIf="!isViewMode" type="submit" class="btn btn-lims btn-lims-save btn-sm">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,14 +1,5 @@
-.modal-backdrop {
-  opacity: 0.5;
-}
-
 .form-label-sm {
   font-size: 0.75rem;
   font-weight: 500;
   color: #475569;
-}
-
-.form-error-msg {
-  font-size: 0.72rem;
-  margin-top: 2px;
 }

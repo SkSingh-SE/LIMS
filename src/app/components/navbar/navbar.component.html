@@ -69,7 +69,7 @@
                 <div class="user-menu-name text-truncate" [title]="loggedInUserName">{{ loggedInUserName }}</div>
                 <div class="d-flex align-items-center gap-1.5 mt-1">
                   <span class="badge user-role-badge">{{ loggedInUserRole || 'Staff' }}</span>
-                  <span *ngIf="loggedInIsAdmin" class="badge bg-warning text-dark extra-small py-0.5 px-1.5 rounded-pill">Admin</span>
+                  <span *ngIf="loggedInIsAdmin && !isAdminRole()" class="badge bg-warning text-dark extra-small py-0.5 px-1.5 rounded-pill">Admin</span>
                 </div>
                 <div *ngIf="loggedInEmail" class="user-menu-email text-muted extra-small text-truncate mt-1" [title]="loggedInEmail">
                   <i class="bi bi-envelope me-1"></i>{{ loggedInEmail }}
@@ -88,15 +88,49 @@
           </div>
           <div class="user-menu-body px-1.5 pb-1" *ngIf="branches().length > 0">
             <a *ngFor="let branch of branches()"
-              class="dropdown-item user-menu-item rounded-3 d-flex align-items-center justify-content-between py-1.5 px-2.5"
+              class="dropdown-item user-menu-item branch-switcher-item rounded-3 d-flex align-items-center justify-content-between py-2 px-2.5"
               role="button"
-              (click)="selectBranch(branch)">
-              <div class="d-flex flex-column">
-                <span class="user-item-title">{{ branch.name }}</span>
-                <span class="user-item-desc text-muted extra-small">{{ branch.address }}</span>
+              (click)="selectBranch(branch)"
+              [class.active]="branch.code === selectedBranch()?.code">
+              <div class="d-flex align-items-center gap-3">
+                <!-- Branch Avatar / Icon -->
+                <div class="branch-avatar" [class.head-office]="branch.isHeadOffice">
+                  <i class="bi" [class]="branch.isHeadOffice ? 'bi-building-fill' : 'bi-building'"></i>
+                  <span class="branch-avatar-badge" *ngIf="branch.isHeadOffice">HO</span>
+                  <span class="branch-avatar-badge" *ngIf="branch.isDefault && !branch.isHeadOffice">Default</span>
+                </div>
+                
+                <!-- Branch Info -->
+                <div class="branch-info">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="branch-name fw-semibold text-truncate" [title]="branch.name">{{ branch.name }}</span>
+                    <span class="branch-code badge bg-light text-dark border extra-small px-2 py-0.5 font-monospace">{{ branch.code }}</span>
+                    <span *ngIf="branch.isHeadOffice" class="badge bg-warning text-dark extra-small px-2 py-0.5"><i class="bi bi-star-fill me-0.5"></i>Head Office</span>
+                    <span *ngIf="branch.isDefault && !branch.isHeadOffice" class="badge bg-info text-dark extra-small px-2 py-0.5"><i class="bi bi-check-circle-fill me-0.5"></i>Default</span>
+                  </div>
+                  <span *ngIf="branch.address" class="branch-address text-muted extra-small d-flex align-items-center gap-1" [title]="branch.address">
+                    <i class="bi bi-geo-alt-fill"></i>{{ branch.address }}
+                  </span>
+                </div>
               </div>
-              <i class="bi bi-check-lg text-success fw-bold" *ngIf="branch.code === selectedBranch()?.code"></i>
+              
+              <!-- Status / Action -->
+              <div class="branch-status d-flex align-items-center gap-2">
+                <span *ngIf="branch.code === selectedBranch()?.code" class="branch-active-indicator">
+                  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  <span class="extra-small fw-medium text-success ms-1">Active</span>
+                </span>
+                <span *ngIf="branch.code !== selectedBranch()?.code" class="branch-switch-btn text-primary extra-small fw-medium" title="Click to switch">
+                  <i class="bi bi-arrow-right-circle me-0.5"></i>Switch
+                </span>
+              </div>
             </a>
+            
+            <!-- Quick Stats Footer -->
+            <div class="branch-stats-footer mt-2 pt-2 border-top d-flex justify-content-between align-items-center text-muted extra-small" *ngIf="branches().length > 1">
+              <span><i class="bi bi-diagram-3 me-1"></i>{{ branches().length }} Branches Available</span>
+              <span *ngIf="selectedBranch()"><i class="bi bi-geo-alt me-1"></i>Current: {{ selectedBranch()!.name }}</span>
+            </div>
           </div>
 
           <div class="user-menu-divider"></div>

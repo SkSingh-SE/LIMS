@@ -34,6 +34,9 @@ export interface LaboratoryTestMethodItemDto {
   id: number;
   laboratoryTestID: number;
   testMethodSpecificationID: number;
+  testMethodSpecificationVersionID?: number | null;
+  methodVersion?: string | null;
+  isSupersededVersion?: boolean;
   methodCode: string;
   methodName?: string;
   displayTitle: string;
@@ -83,6 +86,7 @@ export interface LaboratoryTestDetailDto {
   parameters: LaboratoryTestParameterItemDto[];
   methods: LaboratoryTestMethodItemDto[];
   conditions: LaboratoryTestConditionItemDto[];
+  layouts?: LaboratoryTestLayoutItemDto[];
 }
 
 export interface LaboratoryTestCreateDto {
@@ -120,4 +124,31 @@ export interface LaboratoryTestDropdownDto {
   name: string;
   disciplineID?: number | null;
   disciplineName?: string | null;
+}
+
+export interface LaboratoryTestLayoutItemDto {
+  id: number;
+  laboratoryTestID: number;
+  executionLayoutID: number;
+  layoutCode: string;
+  layoutName: string;
+  rendererType?: string | null;
+  testMethodSpecificationID?: number | null;
+  methodName?: string | null;
+  testMethodSpecificationVersionID?: number | null;
+  versionName?: string | null;
+  priority: number;
+  isDefault: boolean;
+  isActive: boolean;
+}
+
+export interface EffectiveLayoutResponseDto {
+  assignmentID?: number | null;
+  executionLayoutID?: number | null;
+  layoutCode?: string | null;
+  layoutName?: string | null;
+  rendererType?: string | null;
+  resolutionLevel: string;
+  reason: string;
+  priority: number;
 }

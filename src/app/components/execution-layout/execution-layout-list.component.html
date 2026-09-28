@@ -1,0 +1,272 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-layout-text-window-reverse fs-5 text-danger"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Execution Layout</h6>
+          <small class="text-muted text-xs">Configure how test information is presented to analysts (Layer 4: Operational Configuration)</small>
+        </div>
+      </div>
+      <button type="button" class="btn-lims btn-lims-save" (click)="openModal('create')"
+        *hasPermission="['CanCreateExecutionLayout','CanManageExecutionLayout']">
+        <i class="bi bi-plus-circle me-1"></i> New Layout
+      </button>
+    </div>
+
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control form-control-sm" placeholder="Search code, name..."
+              [(ngModel)]="filterSearch" (keydown.enter)="onSearch()" />
+          </div>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" [(ngModel)]="filterStatus" (change)="onSearch()">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary" (click)="onSearch()">
+            <i class="bi bi-filter me-1"></i>Apply
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onReset()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Renderer</th>
+              <th class="text-center">Sections</th>
+              <th class="text-center">Valid</th>
+              <th class="text-center col-status">Status</th>
+              <th>Modified By / Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="layoutList.length === 0">
+              <td colspan="9" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary"></i>
+                <div>No records found.</div>
+              </td>
+            </tr>
+            <tr *ngFor="let item of layoutList; let i = index" [class.table-secondary]="!item.isActive">
+              <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center gap-1">
+                  <button type="button" class="btn-tbl-action btn-tbl-view" title="View Details" (click)="openModal('view', item.id)"><i class="bi bi-eye-fill"></i></button>
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" title="Edit Layout" (click)="openModal('edit', item.id)"
+                    *hasPermission="['CanUpdateExecutionLayout','CanManageExecutionLayout']"><i class="bi bi-pencil-square"></i></button>
+                  <button type="button" class="btn-tbl-action btn-tbl-status" [ngClass]="item.isActive ? 'status-active' : 'status-inactive'"
+                    [title]="item.isActive ? 'Deactivate' : 'Activate'" (click)="toggleStatus(item)">
+                    <i class="bi" [ngClass]="item.isActive ? 'bi-toggle2-on' : 'bi-toggle2-off'"></i>
+                  </button>
+                </div>
+              </td>
+              <td><span class="badge bg-light text-dark border font-monospace">{{ item.code }}</span></td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.rendererType || '-' }}</td>
+              <td class="text-center">{{ item.sectionsCount }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="item.isValid ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'">
+                  {{ item.isValid ? 'Valid' : 'Issues' }}
+                </span>
+              </td>
+              <td class="text-center col-status">
+                <span class="badge" [ngClass]="item.isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (item.modifiedByName || '-') + ' on ' + ((item.modifiedOn | date:'dd MMM, yyyy hh:mm a'))">
+                  <span class="cell-audit-name">{{ item.modifiedByName || '-' }}</span>
+                  <span class="cell-audit-time">&middot; {{ (item.modifiedOn | date:"dd MMM, hh:mm a") }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-footer bg-white py-2 px-3 border-top">
+      <app-pagination [currentPage]="pageNumber" [pageSize]="pageSize" [totalItems]="totalItems" [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)" (pageSizeChange)="onPageSizeChange($event)"></app-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" #modalRef tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2 bg-light border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+          <i class="bi bi-layout-text-window-reverse text-danger"></i>
+          <span>{{ isViewMode ? 'View Execution Layout' : (isEditMode ? 'Edit Execution Layout' : 'New Execution Layout') }}</span>
+        </h6>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="layoutForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <fieldset class="border rounded p-2 mb-2" [disabled]="isViewMode">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1 legend-compact">
+              <i class="bi bi-info-circle me-1"></i> Basic Information
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-2">
+                <label class="form-label">Code <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" formControlName="code" placeholder="LAYOUT_CODE"
+                  [ngClass]="{'is-invalid': (layoutForm.get('code')?.touched || submitted) && layoutForm.get('code')?.invalid}" />
+                <app-field-error [control]="layoutForm.get('code')" label="Code" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm" formControlName="name" placeholder="Layout name"
+                  [ngClass]="{'is-invalid': (layoutForm.get('name')?.touched || submitted) && layoutForm.get('name')?.invalid}" />
+                <app-field-error [control]="layoutForm.get('name')" label="Name" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Renderer Type</label>
+                <select class="form-select form-select-sm" formControlName="rendererType"
+                  [ngClass]="{'is-invalid': (layoutForm.get('rendererType')?.touched || submitted) && layoutForm.get('rendererType')?.invalid}">
+                  <option [ngValue]="null">-- Select --</option>
+                  <option *ngFor="let r of rendererTypes" [ngValue]="r">{{ r }}</option>
+                </select>
+              </div>
+              <div class="col-md-1">
+                <label class="form-label">Order</label>
+                <input type="number" class="form-control form-control-sm" formControlName="displayOrder" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control form-control-sm" formControlName="description" placeholder="Description" />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-2 mb-2">
+            <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1 legend-compact">
+              <i class="bi bi-layers me-1"></i> Sections
+              <button type="button" class="btn btn-lims btn-lims-add btn-sm ms-2" (click)="addSection()" *ngIf="!isViewMode">
+                <i class="bi bi-plus-circle me-1"></i> Add Section
+              </button>
+            </legend>
+            <div formArrayName="sections">
+              <div *ngFor="let sec of sectionsArray.controls; let si = index" [formGroupName]="si" class="section-card mb-2">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-2">
+                    <label class="form-label">Code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="sectionCode" placeholder="SECTION_CODE" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" formControlName="sectionName" placeholder="Section name" />
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Type <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-sm" formControlName="sectionType" (change)="onSectionTypeChanged(si)">
+                      <option *ngFor="let t of sectionTypes" [value]="t">{{ t }}</option>
+                    </select>
+                  </div>
+                  <div class="col-md-1">
+                    <label class="form-label">Order</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="displayOrder" />
+                  </div>
+                  <div class="col-md-2 d-flex gap-2 align-items-center pt-3">
+                    <label class="form-check-label text-xs"><input type="checkbox" formControlName="isVisible" class="form-check-input me-1" />Visible</label>
+                    <label class="form-check-label text-xs"><input type="checkbox" formControlName="isRequired" class="form-check-input me-1" />Required</label>
+                  </div>
+                  <div class="col-md-2 d-flex gap-1 justify-content-end align-items-end">
+                    <button type="button" class="btn-lims btn-lims-add btn-sm" (click)="addItem(si)" *ngIf="!isViewMode" title="Add Item">
+                      <i class="bi bi-plus-circle me-1"></i> Item
+                    </button>
+                    <button type="button" class="btn-lims btn-lims-remove btn-sm" (click)="removeSection(si)" *ngIf="!isViewMode" title="Remove Section">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div formArrayName="items" class="mt-2">
+                  <div *ngFor="let item of getItemsArray(si).controls; let ii = index" [formGroupName]="ii" class="item-row mb-1">
+                    <div class="row g-2 align-items-center">
+                      <div class="col-md-2">
+                        <label class="form-label text-xs mb-1">Ref Type</label>
+                        <select class="form-select form-select-sm" formControlName="referenceType" (change)="onRefTypeChanged(item)">
+                          <option *ngFor="let r of getAllowedReferenceTypes(sec.get('sectionType')?.value)" [value]="r">{{ r }}</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label text-xs mb-1">Target Master Reference</label>
+                        <div *ngIf="item.get('referenceType')?.value === 'None'" class="text-muted text-xs py-1 px-2 border rounded bg-light">
+                          <i class="bi bi-dash-circle me-1"></i> None (No reference binding)
+                        </div>
+                        <app-searchable-dropdown
+                          *ngIf="item.get('referenceType')?.value !== 'None'"
+                          [placeholder]="'Search ' + item.get('referenceType')?.value + '...'"
+                          [fetchDataFn]="getFetchFn(item.get('referenceType')?.value)"
+                          [selectedItem]="getSelectedItem(item)"
+                          [hideLabel]="true"
+                          [smallInput]="true"
+                          [isDisabled]="isViewMode"
+                          (itemSelected)="onRefSelected(item, $event)">
+                        </app-searchable-dropdown>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label text-xs mb-1">Display Label</label>
+                        <input type="text" class="form-control form-control-sm" formControlName="displayLabel" placeholder="Display label" />
+                      </div>
+                      <div class="col-md-1">
+                        <label class="form-label text-xs mb-1">Order</label>
+                        <input type="number" class="form-control form-control-sm" formControlName="displayOrder" />
+                      </div>
+                      <div class="col-md-1">
+                        <label class="form-label text-xs mb-1 d-block">Flags</label>
+                        <div class="d-flex align-items-center gap-1 text-xs">
+                          <label class="form-check-label" title="Visible"><input type="checkbox" formControlName="isVisible" class="form-check-input me-1" />Vis</label>
+                          <label class="form-check-label" title="Editable"><input type="checkbox" formControlName="isEditable" class="form-check-input me-1" />Edit</label>
+                          <label class="form-check-label" title="Required"><input type="checkbox" formControlName="isRequired" class="form-check-input me-1" />Req</label>
+                        </div>
+                      </div>
+                      <div class="col-md-1 d-flex justify-content-end align-items-center pt-3">
+                        <button type="button" class="btn-lims btn-lims-remove btn-sm" (click)="removeItem(si, ii)" *ngIf="!isViewMode" title="Remove Item">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <div class="modal-footer py-2 bg-light border-top" *ngIf="!isViewMode">
+          <button type="button" class="btn btn-lims btn-lims-cancel btn-sm" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-lims btn-lims-save btn-sm">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,379 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <!-- Standard LIMS Card Header -->
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-award text-danger fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-semibold text-dark">{{ formTitle }}</h6>
+          <small class="text-muted text-xs">Configure accredited laboratory test activities, methods, and parameter ranges</small>
+        </div>
+      </div>
+      <a routerLink="/lab-scope" class="btn-lims btn-lims-cancel">
+        <i class="bi bi-arrow-left me-1"></i> Back to List
+      </a>
+    </div>
+
+    <div class="card-body p-2">
+      <form [formGroup]="scopeForm" (ngSubmit)="onSubmit()" novalidate>
+
+        <!-- Fieldset 1: Scope Identity -->
+        <fieldset class="border rounded p-2 mb-2 bg-white">
+          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1 text-sm mb-0">
+            <i class="bi bi-tag me-1"></i> Scope Identity
+          </legend>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <div class="form-field-header">
+                <label class="form-label mb-0">Laboratory Test <span class="text-danger">*</span></label>
+                <a *ngIf="!isViewMode" routerLink="/test/create" target="_blank" class="btn-nav-link" title="Manage Laboratory Tests">
+                  <i class="bi bi-box-arrow-up-right me-1"></i>Manage Tests
+                </a>
+              </div>
+              <app-searchable-dropdown
+                [placeholder]="'Search laboratory test'"
+                [fetchDataFn]="getTestDropdown"
+                (itemSelected)="onTestSelected($event)"
+                [hideLabel]="true"
+                [smallInput]="true"
+                [isDisabled]="isViewMode"
+                [selectedItem]="scopeForm.get('laboratoryTestID')?.value">
+              </app-searchable-dropdown>
+              <app-field-error [control]="scopeForm.get('laboratoryTestID')" label="Laboratory Test" [submitted]="submitted"/>
+            </div>
+            <div class="col-md-3">
+              <div class="form-field-header">
+                <label class="form-label mb-0">Operating Branch <span class="text-danger">*</span></label>
+              </div>
+              <select class="form-select form-select-sm" formControlName="branchID" (change)="onBranchChanged()"
+                [ngClass]="{'is-invalid': submitted && scopeForm.get('branchID')?.invalid}">
+                <option [ngValue]="null">Select Branch</option>
+                <option *ngFor="let b of branchService.branches()" [ngValue]="b.id">{{ b.name }}</option>
+              </select>
+              <app-field-error [control]="scopeForm.get('branchID')" label="Operating Branch" [submitted]="submitted"/>
+            </div>
+            <div class="col-md-2" *ngIf="isEditMode || isViewMode">
+              <div class="form-field-header">
+                <label class="form-label mb-0">Status</label>
+              </div>
+              <select class="form-select form-select-sm" formControlName="isActive">
+                <option [ngValue]="true">Active</option>
+                <option [ngValue]="false">Inactive</option>
+              </select>
+            </div>
+            <div [ngClass]="(isEditMode || isViewMode) ? 'col-md-3' : 'col-md-5'">
+              <div class="form-field-header">
+                <label class="form-label mb-0">Scope Remarks</label>
+              </div>
+              <input type="text" class="form-control form-control-sm" formControlName="scopeRemarks"
+                maxlength="500" placeholder="Remarks about scope coverage" />
+            </div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-md-4">
+              <label class="form-label">Valid From</label>
+              <input type="date" class="form-control form-control-sm" formControlName="validFrom" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Valid Until</label>
+              <input type="date" class="form-control form-control-sm" formControlName="validUntil" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Next Review Date</label>
+              <input type="date" class="form-control form-control-sm" formControlName="nextReviewDate" />
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Fieldset 2: Accreditation Context -->
+        <fieldset class="border rounded p-2 mb-2 bg-white">
+          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1 text-sm mb-0">
+            <i class="bi bi-patch-check me-1"></i> Accreditation Context
+          </legend>
+          <div class="row g-2" *ngIf="accreditation?.certificateNumber; else noAccreditation">
+            <div class="col-md-4">
+              <div class="p-1.5 border rounded bg-light-subtle d-flex align-items-center gap-2">
+                <i class="bi bi-award text-danger fs-5"></i>
+                <div>
+                  <div class="text-muted text-xxs">Accreditation TC Number</div>
+                  <div class="fw-bold font-monospace text-xs text-dark">{{ accreditation.certificateNumber }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-1.5 border rounded bg-light-subtle d-flex align-items-center gap-2">
+                <i class="bi bi-calendar-check text-primary fs-5"></i>
+                <div>
+                  <div class="text-muted text-xxs">Certificate Validity Period</div>
+                  <div class="text-xs text-dark fw-medium">
+                    {{ accreditation.issueDate ? (accreditation.issueDate | date:'dd MMM yyyy') : '…' }} – {{ accreditation.expiryDate ? (accreditation.expiryDate | date:'dd MMM yyyy') : '…' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-1.5 border rounded bg-light-subtle d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-shield-check text-success fs-5"></i>
+                  <div>
+                    <div class="text-muted text-xxs">Accreditation Status</div>
+                    <span class="badge text-xs" [ngClass]="accreditation.isEffective ? 'bg-success' : 'bg-warning text-dark'">
+                      {{ accreditation.isEffective ? 'Certificate Effective' : 'Certificate Inactive' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noAccreditation>
+            <div class="alert alert-warning py-1.5 px-2 mb-0 text-xs d-flex align-items-center gap-1.5 border-0">
+              <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0 fs-6"></i>
+              <span>No active accreditation certificate is registered for this branch. Scope decisions will resolve as <strong>NotAccredited</strong> until a valid certificate exists.</span>
+            </div>
+          </ng-template>
+        </fieldset>
+
+        <!-- Fieldset 3: Methods & Versions -->
+        <fieldset class="border rounded p-2 mb-2 bg-white">
+          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center justify-content-between gap-1 text-sm mb-0 w-100">
+            <div class="d-flex align-items-center gap-1">
+              <i class="bi bi-gear-wide-connected me-1"></i> Methods &amp; Versions ({{ methods.length }})
+            </div>
+            <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add btn-sm" (click)="addMethod()">
+              <i class="bi bi-plus-circle me-1"></i> Add Method
+            </button>
+          </legend>
+          <div formArrayName="methods" class="mt-1">
+            <div *ngFor="let m of methods.controls; let mi = index" [formGroupName]="mi" class="border rounded p-2 mb-2 bg-light-subtle">
+              <div class="row g-2 align-items-end pb-2 mb-2 border-bottom">
+                <div class="col-md-5">
+                  <div class="form-field-header">
+                    <label class="form-label mb-0">Test Method <span class="text-danger">*</span></label>
+                    <a *ngIf="!isViewMode" routerLink="/test-specification/create" target="_blank" class="btn-nav-link" title="Manage Test Methods">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>Manage Methods
+                    </a>
+                  </div>
+                  <app-searchable-dropdown
+                    [placeholder]="'Search test method'"
+                    [fetchDataFn]="getMethodDropdown"
+                    (itemSelected)="onMethodSelected($event, mi)"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [isDisabled]="isViewMode"
+                    [selectedItem]="m.get('testMethodSpecificationID')?.value">
+                  </app-searchable-dropdown>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-field-header">
+                    <label class="form-label mb-0">Method Version</label>
+                  </div>
+                  <select class="form-select form-select-sm" formControlName="testMethodSpecificationVersionID">
+                    <option [ngValue]="null">-- Any version --</option>
+                    <option *ngFor="let v of (versionsMap[mi] || [])" [ngValue]="v.id">{{ versionLabel(v) }}</option>
+                  </select>
+                </div>
+                <div class="col-md-3 d-flex gap-1.5 justify-content-end align-items-end">
+                  <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add btn-sm" (click)="addParameter(mi)">
+                    <i class="bi bi-plus-circle me-1"></i> Add Parameter
+                  </button>
+                  <button *ngIf="!isViewMode && methods.length > 1" type="button" class="btn-lims btn-lims-remove btn-sm" (click)="removeMethod(mi)" title="Remove Method">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Parameters Table inside Method -->
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0 align-middle lims-compact-table bg-white">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="text-center col-sn">#</th>
+                      <th style="min-width: 180px;">Parameter <span class="text-danger">*</span></th>
+                      <th style="min-width: 140px;">Unit <span class="text-danger">*</span></th>
+                      <th style="width: 130px;">Type</th>
+                      <th style="min-width: 240px;" class="text-center">Scope Range</th>
+                      <th style="width: 60px;" class="text-center">ISO</th>
+                      <th style="min-width: 180px;">Equipment</th>
+                      <th *ngIf="!isViewMode" style="width: 40px;" class="text-center col-actions"></th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="parameters">
+                    <tr *ngFor="let p of paramsOf(mi).controls; let pi = index" [formGroupName]="pi">
+                      <td class="text-center text-muted font-monospace text-xs">{{ pi + 1 }}</td>
+                      <td>
+                        <app-searchable-dropdown
+                          [placeholder]="'Search parameter'"
+                          [fetchDataFn]="getParamDropdown"
+                          (itemSelected)="onParamSelected($event, mi, pi)"
+                          [hideLabel]="true"
+                          [smallInput]="true"
+                          [isDisabled]="isViewMode"
+                          [selectedItem]="p.get('parameterID')?.value">
+                        </app-searchable-dropdown>
+                      </td>
+                      <td>
+                        <app-searchable-dropdown
+                          [placeholder]="'Unit'"
+                          [fetchDataFn]="getUnitDropdown"
+                          (itemSelected)="onUnitSelected($event, mi, pi)"
+                          [hideLabel]="true"
+                          [smallInput]="true"
+                          [isDisabled]="isViewMode"
+                          [selectedItem]="p.get('parameterUnitID')?.value">
+                        </app-searchable-dropdown>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm" formControlName="scopeType">
+                          <option *ngFor="let t of scopeTypes" [value]="t">{{ t }}</option>
+                        </select>
+                      </td>
+                      <td>
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <select class="form-select form-select-sm scope-op" formControlName="lowerOperator">
+                            <option *ngFor="let o of lowerOperators" [value]="o">{{ o || '–' }}</option>
+                          </select>
+                          <input type="number" class="form-control form-control-sm scope-val" formControlName="lowerLimitValue" placeholder="Min" />
+                          <span class="text-muted text-xs">~</span>
+                          <select class="form-select form-select-sm scope-op" formControlName="upperOperator">
+                            <option *ngFor="let o of upperOperators" [value]="o">{{ o || '–' }}</option>
+                          </select>
+                          <input type="number" class="form-control form-control-sm scope-val" formControlName="upperLimitValue" placeholder="Max" />
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <input type="checkbox" class="form-check-input cursor-pointer" formControlName="isUnderISO" title="Under ISO 17025 scope" />
+                      </td>
+                      <td>
+                        <app-multi-select-dropdown
+                          [placeholder]="'Select Equipment'"
+                          [fetchDataFn]="getEquipmentDropdown"
+                          (itemsSelected)="onEquipmentsSelected($event, mi, pi)"
+                          [hideLabel]="true"
+                          [smallInput]="true"
+                          [isDisabled]="isViewMode"
+                          [selectedValues]="equipmentIds(mi, pi)">
+                        </app-multi-select-dropdown>
+                      </td>
+                      <td *ngIf="!isViewMode" class="text-center">
+                        <button type="button" class="btn-tbl-action btn-tbl-delete" (click)="removeParameter(mi, pi)" title="Remove Parameter">
+                          <i class="bi bi-trash3-fill"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Fieldset 4: Scope Summary -->
+        <fieldset class="border rounded p-2 mb-2 bg-white">
+          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1 text-sm mb-0">
+            <i class="bi bi-card-checklist me-1"></i> Scope Summary
+          </legend>
+          <div class="row g-2">
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+                <span class="text-muted text-xs">Branch:</span>
+                <span class="fw-semibold text-dark text-xs">{{ branchName() }}</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+                <span class="text-muted text-xs">Total Methods:</span>
+                <span class="badge bg-primary text-xs">{{ summaryMethodCount }}</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+                <span class="text-muted text-xs">Total Parameters:</span>
+                <span class="badge bg-dark text-xs">{{ summaryParamCount }}</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+                <span class="text-muted text-xs">Accreditation:</span>
+                <span class="badge text-xs" [ngClass]="accreditation?.isEffective ? 'bg-success' : 'bg-warning text-dark'">
+                  {{ accreditation?.isEffective ? 'Covered' : (accreditation?.certificateNumber ? 'Not Effective' : 'No Certificate') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Fieldset 5: Audit & Change History -->
+        <fieldset class="border rounded p-2 mb-2 bg-white" *ngIf="(isEditMode || isViewMode) && auditInfo">
+          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1 text-sm mb-0">
+            <i class="bi bi-clock-history me-1"></i> Audit &amp; Change History
+          </legend>
+          <div class="row g-2 text-xs mb-2">
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border">
+                <span class="text-muted d-block text-xxs">Created By</span>
+                <span class="fw-semibold text-dark">{{ auditInfo.createdByName || '-' }}</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border">
+                <span class="text-muted d-block text-xxs">Created On</span>
+                <span>{{ (auditInfo.createdOn | date:'dd MMM yyyy, hh:mm a') || '-' }}</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border">
+                <span class="text-muted d-block text-xxs">Modified By</span>
+                <span class="fw-semibold text-dark">{{ auditInfo.modifiedByName || '-' }}</span>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-1.5 bg-light rounded border">
+                <span class="text-muted d-block text-xxs">Modified On</span>
+                <span>{{ (auditInfo.modifiedOn | date:'dd MMM yyyy, hh:mm a') || '-' }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="table-responsive" *ngIf="changeHistory.length > 0">
+            <table class="table table-sm table-bordered mb-0 align-middle lims-compact-table bg-white">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 100px;">Change</th>
+                  <th style="width: 180px;">Entity</th>
+                  <th>Old Value</th>
+                  <th>New Value</th>
+                  <th style="width: 140px;">Changed By</th>
+                  <th style="width: 160px;">Changed On</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let h of changeHistory">
+                  <td><span class="badge bg-light text-dark border">{{ h.changeType }}</span></td>
+                  <td class="font-monospace text-xs">{{ h.entityName || '-' }}</td>
+                  <td class="text-xs text-muted">{{ h.oldValue || '-' }}</td>
+                  <td class="text-xs">{{ h.newValue || '-' }}</td>
+                  <td class="text-xs">{{ h.changedByName || '-' }}</td>
+                  <td class="text-xs">{{ h.changedOn | date:'dd MMM yyyy, hh:mm a' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-muted text-xs p-1" *ngIf="changeHistory.length === 0">No recorded changes yet.</div>
+        </fieldset>
+
+        <!-- Sticky Action Bar -->
+        <div class="sticky-action-bar d-flex justify-content-end gap-2 py-2 px-3 border-top bg-white rounded-bottom" *ngIf="!isViewMode">
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+          </button>
+          <button type="submit" class="btn-lims btn-lims-save">
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update Lab Scope' : 'Save Lab Scope' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

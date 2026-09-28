@@ -1,0 +1,235 @@
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-patch-check text-danger fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Universal Review / Verification / Approval</h6>
+          <small class="text-muted text-xs">Phase 8 — reviewer sees the exact finalized result, never a mutable reconstruction</small>
+        </div>
+      </div>
+      <div class="d-flex gap-1">
+        <button type="button" class="btn-lims btn-lims-cancel" (click)="openExecution()">
+          <i class="bi bi-arrow-left me-1"></i> Execution
+        </button>
+        <button type="button" class="btn-lims btn-lims-secondary" (click)="openResult()">
+          <i class="bi bi-clipboard2-check me-1"></i> Result
+        </button>
+        <button type="button" class="btn-lims btn-lims-edit" *hasPermission="'CanVerifyUniversalResult'" [disabled]="!result" (click)="onVerify()">
+          <i class="bi bi-eye me-1"></i> Verify
+        </button>
+        <button type="button" class="btn-lims btn-lims-save" *hasPermission="'CanApproveUniversalResult'" [disabled]="!result" (click)="onApprove()">
+          <i class="bi bi-check-circle me-1"></i> Approve
+        </button>
+        <button type="button" class="btn-lims btn-lims-next" [disabled]="!result" (click)="openReport()">
+          <i class="bi bi-arrow-right me-1"></i> Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Execution Selection Bar & Details Header -->
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-5 col-lg-4">
+          <div class="form-field-header">
+            <label class="form-label mb-0">Test Execution</label>
+            <a class="btn-nav-link" routerLink="/universal-test-execution" [queryParams]="{ executionId: executionId, from: 'review' }" *ngIf="executionId" title="Open in Execution Workspace">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Workspace
+            </a>
+          </div>
+          <app-searchable-dropdown
+            [hideLabel]="true"
+            [smallInput]="true"
+            [placeholder]="'Search by ID, Test name, Sample No...'"
+            [fetchDataFn]="getExecutionDropdown"
+            [selectedItem]="selectedExecutionItem"
+            (itemSelected)="onExecutionSelected($event)">
+          </app-searchable-dropdown>
+        </div>
+        <div class="col-md-9 col-lg-10" *ngIf="result">
+          <div class="row g-2 align-items-center">
+            <div class="col-md-3"><small class="text-muted">Sample / Test</small><div class="fw-semibold">{{ result.sampleNo || '-' }} · {{ result.testName || '-' }}</div></div>
+            <div class="col-md-2"><small class="text-muted">Execution</small><div class="fw-semibold">#{{ result.executionNo }} · {{ result.executionStatus }}</div></div>
+            <div class="col-md-3"><small class="text-muted">Snapshot Hash</small><div class="mono-hash">{{ result.snapshotHash || '-' }}</div></div>
+            <div class="col-md-2"><small class="text-muted">Result</small><div><span [ngClass]="statusClass(result.resultStatus)">{{ result.resultStatus }} · Rev {{ result.revisionNo }}</span></div></div>
+            <div class="col-md-2"><small class="text-muted">Overall</small><div><span [ngClass]="verdictClass(result.overallDecision)">{{ result.overallDecision }}</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-2" *ngIf="!result">
+      <div class="alert alert-secondary py-2 mb-0">Open with <span class="mono-hash">?executionId=</span> or <span class="mono-hash">?resultId=</span> after Phase 7 Finalize.</div>
+    </div>
+
+    <div class="card-body p-2" *ngIf="result">
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="w-auto fw-semibold text-danger px-2"><i class="bi bi-table me-1"></i> Results under review (read-only)</legend>
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap"><tr><th class="text-center col-sn">#</th><th>Parameter</th><th>Official Result</th><th>Spec</th><th>Verdict</th><th>U</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let p of params; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td><span class="badge bg-light text-dark border font-monospace">{{ p.parameterCode }}</span> <span class="small">{{ p.parameterName }}</span></td>
+                <td class="font-monospace fw-semibold">{{ p.displayValue ?? '-' }}</td>
+                <td class="small">{{ p.specMin ?? '—' }} / {{ p.specMax ?? '—' }}</td>
+                <td><span [ngClass]="verdictClass(p.verdict)">{{ p.verdict }}</span></td>
+                <td class="small">{{ p.expandedUncertainty ?? '—' }}</td>
+              </tr>
+              <tr *ngIf="params.length === 0"><td colspan="6" class="text-center text-muted py-3">No parameters.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-1"><small class="text-muted">FROZEN = snapshot · RESULT = official values · COMPLIANCE = verdicts · REVIEW = this screen. Reviewer cannot edit historical data; corrections use the controlled rework cycle (new revision, history preserved).</small></div>
+      </fieldset>
+
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="w-auto fw-semibold text-danger px-2"><i class="bi bi-flag me-1"></i> Review findings (auditable, original data never overwritten)</legend>
+        <div class="table-responsive mb-2">
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light text-nowrap"><tr><th class="text-center col-sn">#</th><th>Type</th><th>Description</th><th>Severity</th><th>Blocking</th><th>Status</th><th class="text-center col-actions">Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let f of findings; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td>{{ f.findingType }}</td>
+                <td class="small">{{ f.description }}</td>
+                <td><span class="badge bg-light text-dark border">{{ f.severity }}</span></td>
+                <td>{{ f.isBlocking ? 'Yes' : 'No' }}</td>
+                <td><span class="badge bg-light text-dark border">{{ f.status }}</span></td>
+                <td class="text-center">
+                  <div class="d-flex justify-content-center gap-1">
+                    <button type="button" class="btn-tbl-action btn-tbl-edit" *hasPermission="'CanReviewUniversalResult'" [disabled]="f.status !== 'Open'" (click)="onResolveFinding(f)" title="Resolve finding"><i class="bi bi-check2-square"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="findings.length === 0"><td colspan="7" class="text-center text-muted py-3">No findings recorded.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <form [formGroup]="findingForm" (ngSubmit)="onAddFinding()" *hasPermission="'CanReviewUniversalResult'">
+          <div class="row g-2">
+            <div class="col-md-2">
+              <label class="form-label">Type <span class="text-danger">*</span></label>
+              <select class="form-select form-select-sm" formControlName="findingType" [ngClass]="{'is-invalid': (findingForm.get('findingType')?.touched || submitted) && findingForm.get('findingType')?.invalid}">
+                <option>Observation</option><option>Nonconformity</option><option>Clarification</option><option>Correction</option>
+              </select>
+              <app-field-error [control]="findingForm.get('findingType')" label="Finding type" [submitted]="submitted"></app-field-error>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Description <span class="text-danger">*</span></label>
+              <input class="form-control form-control-sm" formControlName="description" placeholder="Finding detail (min 10 chars)" [ngClass]="{'is-invalid': (findingForm.get('description')?.touched || submitted) && findingForm.get('description')?.invalid}" />
+              <app-field-error [control]="findingForm.get('description')" label="Description" [submitted]="submitted"></app-field-error>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Severity <span class="text-danger">*</span></label>
+              <select class="form-select form-select-sm" formControlName="severity"><option>Critical</option><option>Major</option><option>Minor</option></select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-1">
+              <div class="form-check me-1"><input type="checkbox" class="form-check-input" formControlName="isBlocking" id="fBlocking" /><label class="form-check-label" for="fBlocking">Blocking</label></div>
+              <button type="submit" class="btn btn-add btn-sm"><i class="bi bi-plus-circle me-1"></i> Add</button>
+            </div>
+          </div>
+        </form>
+      </fieldset>
+
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="w-auto fw-semibold text-danger px-2"><i class="bi bi-person-check me-1"></i> Verification &amp; Approval (four-eyes: analyst ≠ verifier ≠ approver)</legend>
+        <div class="row g-2">
+          <div class="col-md-4 col-lg-3">
+            <div class="form-field-header">
+              <label class="form-label mb-0">Reviewer Employee <span class="text-danger">*</span></label>
+              <a class="btn-nav-link" routerLink="/employee" title="Manage Employees"><i class="bi bi-box-arrow-up-right me-1"></i> Manage</a>
+            </div>
+            <app-searchable-dropdown
+              [hideLabel]="true"
+              [smallInput]="true"
+              [placeholder]="'Select Reviewer Employee...'"
+              [fetchDataFn]="getEmployeeDropdown"
+              [selectedItem]="selectedReviewerItem"
+              (itemSelected)="onReviewerSelected($event)">
+            </app-searchable-dropdown>
+          </div>
+          <div class="col-md-8 col-lg-9">
+            <label class="form-label">Review / approval remarks</label>
+            <input class="form-control form-control-sm" [(ngModel)]="actionRemarks" placeholder="Remarks (mandatory for rework/reject)" />
+          </div>
+        </div>
+        <div class="d-flex gap-1 mt-2 flex-wrap">
+          <button type="button" class="btn btn-add btn-sm" *hasPermission="'CanReviewUniversalResult'" (click)="onAssignReviewer()"><i class="bi bi-person-plus me-1"></i> Assign Reviewer</button>
+          <button type="button" class="btn-lims btn-lims-edit" *hasPermission="'CanVerifyUniversalResult'" (click)="onVerify()"><i class="bi bi-eye me-1"></i> Verify</button>
+          <button type="button" class="btn-lims btn-lims-save" *hasPermission="'CanApproveUniversalResult'" (click)="onApprove()"><i class="bi bi-check-circle me-1"></i> Approve</button>
+          <button type="button" class="btn-lims btn-lims-remove" *hasPermission="'CanReviewUniversalResult'" (click)="onRequestRework()"><i class="bi bi-arrow-counterclockwise me-1"></i> Request Rework</button>
+          <button type="button" class="btn-lims btn-lims-remove" *hasPermission="'CanApproveUniversalResult'" (click)="onReject()"><i class="bi bi-x-circle me-1"></i> Reject Approval</button>
+        </div>
+        <div class="mt-1"><small class="text-muted">Approval is tied to revision {{ result.revisionNo }} + snapshot hash. A newer revision invalidates prior approval. Approved results are immutable — corrections create a new revision/review cycle, never a silent UPDATE.</small></div>
+        <div class="mt-1"><small class="text-muted">{{ verifyHint }}</small></div>
+        <div class="mt-1"><small class="text-muted">{{ approveHint }}</small></div>
+      </fieldset>
+
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="w-auto fw-semibold text-danger px-2"><i class="bi bi-diagram-3 me-1"></i> Configuration provenance (read-only)</legend>
+        <div class="small" *ngIf="universalTestGroupId > 0">
+          <span class="text-muted">Planned vs Effective differences are owned by Phase 5 and shown read-only here. </span>
+          <a class="btn-nav-link" [routerLink]="['/sample/test-group', universalTestGroupId]" title="Open owning test group difference audit">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open difference audit for Test Group #{{ universalTestGroupId }}
+          </a>
+        </div>
+        <div class="small text-muted" *ngIf="!(universalTestGroupId > 0)">Difference audit not available.</div>
+      </fieldset>
+
+      <fieldset class="border rounded p-2 mb-0">
+        <legend class="w-auto fw-semibold text-danger px-2"><i class="bi bi-journal-text me-1"></i> Review / Approval Audit (immutable)</legend>
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+            <thead class="table-light"><tr><th>#</th><th>Event</th><th>Actor</th><th>On</th><th>Details</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let a of audits; let i = index">
+                <td class="text-center text-muted">{{ i + 1 }}</td>
+                <td><span class="badge bg-light text-dark border">{{ a.eventType }}</span></td>
+                <td><div class="cell-audit"><span class="cell-audit-name">{{ a.actorName || '-' }}</span></div></td>
+                <td class="small">{{ a.eventOn | date:"dd MMM, hh:mm a" }}</td>
+                <td class="small">{{ a.detailsJson }}</td>
+              </tr>
+              <tr *ngIf="audits.length === 0"><td colspan="5" class="text-center text-muted py-3">No audit events yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- H1: standard finding-resolution modal (replaces window.prompt) -->
+  <div class="modal-backdrop-semi" *ngIf="isResolveModalOpen">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header py-2 bg-light border-bottom">
+          <h6 class="mb-0 fw-bold text-dark">Resolve finding <span *ngIf="resolvingFinding">#{{ resolvingFinding.id ?? resolvingFinding.ID }}</span></h6>
+          <button type="button" class="btn btn-cancel btn-sm" (click)="closeResolveModal()">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
+        </div>
+        <form [formGroup]="resolveForm" (ngSubmit)="confirmResolveFinding()">
+          <div class="modal-body p-2">
+            <label class="form-label">Resolution <span class="text-danger">*</span></label>
+            <textarea class="form-control form-control-sm" rows="3" formControlName="resolution" placeholder="Resolution detail (min 3 chars)"
+              [ngClass]="{'is-invalid': (resolveForm.get('resolution')?.touched || resolveSubmitted) && resolveForm.get('resolution')?.invalid}"></textarea>
+            <app-field-error [control]="resolveForm.get('resolution')" label="Resolution" [submitted]="resolveSubmitted"></app-field-error>
+          </div>
+          <div class="modal-footer py-2 bg-light border-top">
+            <button type="button" class="btn btn-cancel btn-sm" (click)="closeResolveModal()">
+              <i class="bi bi-x-circle me-1"></i> Cancel
+            </button>
+            <button type="submit" class="btn btn-save btn-sm">
+              <i class="bi bi-check-circle me-1"></i> Resolve
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

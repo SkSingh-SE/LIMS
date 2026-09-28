@@ -47,3 +47,7 @@ test-results/.last-run.json
 *.png
 e2e_ui_test.js
 verify_ui.js
+build.log
+build2.log
+screenshot-static.cjs
+*.cjs

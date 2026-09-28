@@ -1,9 +1,9 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
-import { SpecificationMasterService } from '../../../services/specification-master.service';
+import { SpecificationMasterService, SpecificationGradeDto, SpecificationGradeCreateDto, SpecificationGradeUpdateDto } from '../../../services/specification-master.service';
 import { ToastService } from '../../../services/toast.service';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
@@ -21,6 +21,7 @@ export interface SpecificationListItem {
   description?: string;
   isActive: boolean;
   versionCount: number;
+  gradeCount?: number;
   createdOn: string;
   modifiedOn?: string;
 }
@@ -43,8 +44,10 @@ export interface SpecificationListItem {
 export class SpecificationListComponent implements OnInit {
   @ViewChild('modalRef') modalElement!: ElementRef;
   @ViewChild('viewModalRef') viewModalElement!: ElementRef;
+  @ViewChild('gradeModalRef') gradeModalElement!: ElementRef;
   private bsModal!: Modal;
   private bsViewModal!: Modal;
+  private bsGradeModal!: Modal;
 
   // Filter state
   filterCode: string = '';
@@ -75,6 +78,15 @@ export class SpecificationListComponent implements OnInit {
   // View modal state
   viewData: any = null;
 
+  // Grade Management state
+  activeSpecForGrades: any = null;
+  gradesList: SpecificationGradeDto[] = [];
+  includeInactiveGrades: boolean = true;
+  gradeForm!: FormGroup;
+  gradeSubmitted: boolean = false;
+  isGradeEditMode: boolean = false;
+  editingGradeId: number = 0;
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -89,21 +101,57 @@ export class SpecificationListComponent implements OnInit {
     this.router.navigate(['/specification-version'], { queryParams: { specId: item.id } });
   }
 
+  navigateToAddVersion(item: any): void {
+    if (!item?.id) return;
+    this.closeViewModal();
+    this.router.navigate(['/specification-version'], { queryParams: { specId: item.id, action: 'add' } });
+  }
+
   navigateToRequirements(item: any): void {
     if (!item?.id) return;
     this.closeViewModal();
     this.router.navigate(['/specification-requirement'], { queryParams: { specId: item.id } });
   }
 
+  navigateToRequirementsForGrade(grade: SpecificationGradeDto): void {
+    if (!this.activeSpecForGrades?.id || !grade?.id) return;
+    const specId = this.activeSpecForGrades.id;
+    const gradeId = grade.id;
+    this.closeGradeModal();
+    this.router.navigate(['/specification-requirement'], { queryParams: { specId, gradeId } });
+  }
+
+  navigateToRequirementsFromGradeModal(): void {
+    if (!this.activeSpecForGrades?.id) return;
+    const specId = this.activeSpecForGrades.id;
+    this.closeGradeModal();
+    this.router.navigate(['/specification-requirement'], { queryParams: { specId } });
+  }
+
+  navigateToVersionsFromGradeModal(): void {
+    if (!this.activeSpecForGrades?.id) return;
+    const specId = this.activeSpecForGrades.id;
+    this.closeGradeModal();
+    this.router.navigate(['/specification-version'], { queryParams: { specId } });
+  }
+
   ngOnInit(): void {
     this.initForm();
+    this.initGradeForm();
     this.loadOrganizations();
     this.fetchData();
 
     this.route.queryParams.subscribe(params => {
       const specId = params['specId'] ? Number(params['specId']) : null;
+      const action = params['action'];
       if (specId) {
-        this.openViewModal(specId);
+        if (action === 'grade' || params['openGrade'] === 'true') {
+          this.specificationService.getSpecificationById(specId).subscribe(spec => {
+            if (spec) this.openGradesModal(spec);
+          });
+        } else if (action === 'view' || !action) {
+          this.openViewModal(specId);
+        }
       }
     });
   }
@@ -251,10 +299,13 @@ export class SpecificationListComponent implements OnInit {
       this.loadSpecificationData(id);
     }
 
-    if (!this.bsModal && this.modalElement) {
-      this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
+    const modalEl = this.modalElement?.nativeElement || document.getElementById('specificationModal');
+    if (modalEl) {
+      if (!this.bsModal) {
+        this.bsModal = new Modal(modalEl, { backdrop: 'static', keyboard: false });
+      }
+      this.bsModal.show();
     }
-    this.bsModal?.show();
   }
 
   openViewModal(id: number): void {
@@ -262,10 +313,13 @@ export class SpecificationListComponent implements OnInit {
     this.specificationService.getSpecificationById(id).subscribe({
       next: (data) => {
         this.viewData = data;
-        if (!this.bsViewModal && this.viewModalElement) {
-          this.bsViewModal = new Modal(this.viewModalElement.nativeElement, { focus: false });
+        const viewEl = this.viewModalElement?.nativeElement || document.getElementById('specificationViewModal');
+        if (viewEl) {
+          if (!this.bsViewModal) {
+            this.bsViewModal = new Modal(viewEl, { backdrop: 'static', keyboard: false });
+          }
+          this.bsViewModal.show();
         }
-        this.bsViewModal?.show();
       },
       error: () => {
         this.toastService.show('Failed to load specification details.', 'error');
@@ -295,7 +349,15 @@ export class SpecificationListComponent implements OnInit {
 
   closeModal(): void {
     this.submitted = false;
-    this.bsModal?.hide();
+    if (this.bsModal) {
+      this.bsModal.hide();
+    } else {
+      const modalEl = this.modalElement?.nativeElement || document.getElementById('specificationModal');
+      if (modalEl) {
+        const inst = Modal.getInstance(modalEl);
+        inst?.hide();
+      }
+    }
     this.specificationForm.reset({
       id: 0,
       code: '',
@@ -311,8 +373,25 @@ export class SpecificationListComponent implements OnInit {
   }
 
   closeViewModal(): void {
-    this.bsViewModal?.hide();
+    if (this.bsViewModal) {
+      this.bsViewModal.hide();
+    } else {
+      const viewEl = this.viewModalElement?.nativeElement || document.getElementById('specificationViewModal');
+      if (viewEl) {
+        const inst = Modal.getInstance(viewEl);
+        inst?.hide();
+      }
+    }
     this.viewData = null;
+  }
+
+  openGradesFromViewModal(data: any): void {
+    if (!data) return;
+    const specCopy = { ...data };
+    this.closeViewModal();
+    setTimeout(() => {
+      this.openGradesModal(specCopy);
+    }, 150);
   }
 
   isFieldInvalid(path: string): boolean {
@@ -387,4 +466,159 @@ export class SpecificationListComponent implements OnInit {
       }
     });
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRADE LIFECYCLE MANAGEMENT MODAL
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  initGradeForm(): void {
+    this.gradeForm = this.fb.group({
+      id: [0],
+      grade: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
+      remarks: ['', [Validators.maxLength(500)]],
+      isActive: [true]
+    });
+  }
+
+  openGradesModal(spec: any): void {
+    if (!spec?.id) return;
+    this.activeSpecForGrades = spec;
+    this.isGradeEditMode = false;
+    this.editingGradeId = 0;
+    this.gradeSubmitted = false;
+    this.initGradeForm();
+    this.loadGrades(spec.id);
+
+    const gradeEl = this.gradeModalElement?.nativeElement || document.getElementById('gradeManagementModal');
+    if (gradeEl) {
+      if (!this.bsGradeModal) {
+        this.bsGradeModal = new Modal(gradeEl, { backdrop: 'static', keyboard: false });
+      }
+      this.bsGradeModal.show();
+    }
+  }
+
+  loadGrades(specId: number): void {
+    this.specificationService.getGrades(specId, this.includeInactiveGrades).subscribe({
+      next: (data) => {
+        this.gradesList = data || [];
+      },
+      error: () => {
+        this.gradesList = [];
+        this.toastService.show('Failed to load grades for this specification.', 'error');
+      }
+    });
+  }
+
+  onIncludeInactiveGradesChange(): void {
+    if (this.activeSpecForGrades?.id) {
+      this.loadGrades(this.activeSpecForGrades.id);
+    }
+  }
+
+  isGradeFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.gradeForm, path, this.gradeSubmitted);
+  }
+
+  onGradeSubmit(): void {
+    this.gradeSubmitted = true;
+    FormValidationHelper.markAllTouched(this.gradeForm);
+
+    if (!this.gradeForm.valid) {
+      this.toastService.show('Please provide a valid Grade name.', 'warning');
+      return;
+    }
+
+    const val = this.gradeForm.getRawValue();
+    const trimmedGrade = val.grade ? val.grade.trim() : '';
+
+    if (this.isGradeEditMode) {
+      const updatePayload: SpecificationGradeUpdateDto = {
+        id: this.editingGradeId,
+        grade: trimmedGrade,
+        remarks: val.remarks?.trim() || null,
+        isActive: val.isActive
+      };
+
+      this.specificationService.updateGrade(this.editingGradeId, updatePayload).subscribe({
+        next: (res) => {
+          this.toastService.show(res?.message || 'Grade updated successfully.', 'success');
+          this.cancelGradeEdit();
+          this.loadGrades(this.activeSpecForGrades.id);
+        },
+        error: (err) => {
+          this.toastService.show(err?.error?.message || err?.message || 'Failed to update grade.', 'error');
+        }
+      });
+    } else {
+      const createPayload: SpecificationGradeCreateDto = {
+        grade: trimmedGrade,
+        remarks: val.remarks?.trim() || null,
+        isActive: val.isActive
+      };
+
+      this.specificationService.createGrade(this.activeSpecForGrades.id, createPayload).subscribe({
+        next: (res) => {
+          this.toastService.show(res?.message || 'Grade created successfully.', 'success');
+          this.initGradeForm();
+          this.gradeSubmitted = false;
+          this.loadGrades(this.activeSpecForGrades.id);
+        },
+        error: (err) => {
+          this.toastService.show(err?.error?.message || err?.message || 'Failed to create grade.', 'error');
+        }
+      });
+    }
+  }
+
+  editGrade(g: SpecificationGradeDto): void {
+    this.isGradeEditMode = true;
+    this.editingGradeId = g.id;
+    this.gradeSubmitted = false;
+    this.gradeForm.patchValue({
+      id: g.id,
+      grade: g.grade,
+      remarks: g.remarks || '',
+      isActive: g.isActive
+    });
+  }
+
+  cancelGradeEdit(): void {
+    this.isGradeEditMode = false;
+    this.editingGradeId = 0;
+    this.gradeSubmitted = false;
+    this.initGradeForm();
+  }
+
+  toggleGradeStatus(g: SpecificationGradeDto): void {
+    const action = g.isActive ? 'deactivate' : 'activate';
+    this.specificationService.toggleGradeStatus(g.id).subscribe({
+      next: (res) => {
+        this.toastService.show(res?.message || `Grade ${action}d successfully.`, 'success');
+        this.loadGrades(this.activeSpecForGrades.id);
+      },
+      error: (err) => {
+        this.toastService.show(err?.error?.message || err?.message || `Failed to ${action} grade.`, 'error');
+      }
+    });
+  }
+
+  closeGradeModal(): void {
+    if (this.bsGradeModal) {
+      this.bsGradeModal.hide();
+    } else {
+      const gradeEl = this.gradeModalElement?.nativeElement || document.getElementById('gradeManagementModal');
+      if (gradeEl) {
+        const inst = Modal.getInstance(gradeEl);
+        inst?.hide();
+      }
+    }
+    this.activeSpecForGrades = null;
+    this.gradesList = [];
+    this.isGradeEditMode = false;
+    this.editingGradeId = 0;
+    this.gradeSubmitted = false;
+    this.fetchData();
+  }
 }
+

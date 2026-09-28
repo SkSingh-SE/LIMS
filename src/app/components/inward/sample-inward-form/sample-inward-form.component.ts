@@ -27,6 +27,7 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { extractErrorMessage } from '../../../utility/helper/error.helper';
 
 @Component({
   selector: 'app-sample-inward-form',
@@ -59,6 +60,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   billingToOverrideContacts: any[] = [];
   // Holds contact IDs to restore after override customer contacts load in edit mode
   private editRestoreContactIDs: { reporting?: number | null; billing?: number | null } = {};
+  availableUniversalTests: any[] = [];
   dispatchModes: any[] = [];
   selectedDispatchModes: number[] = [];
   sampleNumbers: string[] = [];
@@ -138,6 +140,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
     this.initForm();
     this.fetchDispatchModeDropdown();
+    this.fetchUniversalTests();
 
     if (this.sampleId > 0) {
       this.fetchSampleInwardDetails(this.sampleId);
@@ -770,6 +773,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
               const normalizedSample = {
                 ...sd,
+                productMasterID: sd.productMasterID || null,
+                productMasterName: sd.productMasterName || '',
+                specificationGradeID: sd.specificationGradeID || null,
+                specificationGradeName: sd.specificationGradeName || '',
+                selectedLaboratoryTestIDs: sd.selectedLaboratoryTestIDs || [],
+                selectedLaboratoryTests: sd.selectedLaboratoryTests || [],
                 // Map navigation property names for dropdown rebinding
                 metalClassificationName: sd.metalClassificationName || sd.metalClassification?.name || '',
                 productConditionName: sd.productConditionName || sd.productCondition?.name || '',
@@ -1360,7 +1369,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         this.toastService.show('Report generation has been stopped.', 'success');
       },
       error: (err: any) => {
-        this.toastService.show(err?.error?.message || 'Failed to stop report.', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to stop report.'), 'error');
       }
     });
   }
@@ -1374,7 +1383,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         this.toastService.show('Report stop has been removed.', 'success');
       },
       error: (err: any) => {
-        this.toastService.show(err?.error?.message || 'Failed to unstop report.', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to unstop report.'), 'error');
       }
     });
   }
@@ -1416,6 +1425,12 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       metalClassificationName: [existingSample?.metalClassificationName || ''],
       productConditionID: [existingSample?.productConditionID || ''],
       productConditionName: [existingSample?.productConditionName || ''],
+      productMasterID: [existingSample?.productMasterID || null],
+      productMasterName: [existingSample?.productMasterName || ''],
+      specificationGradeID: [existingSample?.specificationGradeID || null],
+      specificationGradeName: [existingSample?.specificationGradeName || ''],
+      selectedLaboratoryTestIDs: [existingSample?.selectedLaboratoryTestIDs || []],
+      selectedLaboratoryTests: [existingSample?.selectedLaboratoryTests || []],
       specimenOrientationID: [existingSample?.specimenOrientationID || ''],
       specimenOrientationName: [existingSample?.specimenOrientationName || ''],
       remarks: [existingSample?.remarks || ''],
@@ -1450,6 +1465,127 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         : this.bufferedAdditionalDetails[sampleNo] || [];
 
     this.addAdditionalDetailsForSample(sampleNo, additionalDetails);
+  }
+
+  fetchUniversalTests(): void {
+    this.laboratoryTestService.getUniversalDropdown().subscribe({
+      next: (tests) => {
+        this.availableUniversalTests = tests || [];
+      },
+      error: () => {
+        this.laboratoryTestService.getLaboratoryTestDropdown('', 0, 500).subscribe({
+          next: (res: any) => {
+            this.availableUniversalTests = res || [];
+          }
+        });
+      }
+    });
+  }
+
+  getSelectedTestsForSample(index: number): any[] {
+    const sample = this.sampleDetails.at(index);
+    if (!sample) return [];
+    const list = sample.get('selectedLaboratoryTests')?.value;
+    if (Array.isArray(list) && list.length > 0) return list;
+    const ids: number[] = sample.get('selectedLaboratoryTestIDs')?.value || [];
+    if (ids.length > 0 && this.availableUniversalTests.length > 0) {
+      return ids.map(id => {
+        const found = this.availableUniversalTests.find(t => t.id === id);
+        return found
+          ? { id: found.id, laboratoryTestID: found.id, name: found.name, code: found.code, laboratoryTestName: found.name, laboratoryTestCode: found.code }
+          : { id, laboratoryTestID: id, name: 'Test #' + id, code: '', laboratoryTestName: 'Test #' + id, laboratoryTestCode: '' };
+      });
+    }
+    return [];
+  }
+
+  getSampleDisciplineId(index: number): number | null {
+    const sample = this.sampleDetails.at(index);
+    const val = sample?.get('disciplineID')?.value;
+    return val ? Number(val) : null;
+  }
+
+  getSampleDisciplineName(index: number): string {
+    const sample = this.sampleDetails.at(index);
+    return sample?.get('disciplineName')?.value || '';
+  }
+
+  getAvailableTestsForSample(index: number): any[] {
+    const discId = this.getSampleDisciplineId(index);
+    if (!discId) return [];
+    const currentSelectedIds = new Set(this.sampleDetails.at(index)?.get('selectedLaboratoryTestIDs')?.value || []);
+    return this.availableUniversalTests.filter(t => 
+      Number(t.disciplineID) === discId && !currentSelectedIds.has(t.id)
+    );
+  }
+
+  onTestDropdownMouseDown(index: number, event: MouseEvent): void {
+    if (!this.getSampleDisciplineId(index)) {
+      event.preventDefault();
+      const sampleNo = this.sampleDetails.at(index)?.get('sampleNo')?.value || `Sample #${index + 1}`;
+      this.toastService.show(`Please select Discipline for ${sampleNo} first before selecting requested tests.`, 'warning');
+    }
+  }
+
+  addTestToSample(index: number, testId: number): void {
+    const sample = this.sampleDetails.at(index);
+    if (!sample) return;
+    const discId = this.getSampleDisciplineId(index);
+    if (!discId) {
+      const sampleNo = sample.get('sampleNo')?.value || `Sample #${index + 1}`;
+      this.toastService.show(`Please select Discipline for ${sampleNo} first before selecting requested tests.`, 'warning');
+      return;
+    }
+    const currentIds: number[] = [...(sample.get('selectedLaboratoryTestIDs')?.value || [])];
+    if (currentIds.includes(testId)) {
+      this.toastService.show('Test is already added to this sample.', 'info');
+      return;
+    }
+    currentIds.push(testId);
+    sample.get('selectedLaboratoryTestIDs')?.setValue(currentIds);
+
+    const currentTests: any[] = [...(sample.get('selectedLaboratoryTests')?.value || [])];
+    const testMeta = this.availableUniversalTests.find(t => t.id === testId);
+    currentTests.push({
+      id: testId,
+      laboratoryTestID: testId,
+      name: testMeta?.name || 'Test #' + testId,
+      code: testMeta?.code || '',
+      laboratoryTestName: testMeta?.name || 'Test #' + testId,
+      laboratoryTestCode: testMeta?.code || ''
+    });
+    sample.get('selectedLaboratoryTests')?.setValue(currentTests);
+    sample.markAsDirty();
+    this.sampleInwardForm.markAsDirty();
+  }
+
+  removeTestFromSample(sampleIndex: number, testId: number): void {
+    const sample = this.sampleDetails.at(sampleIndex);
+    if (!sample) return;
+    const currentIds: number[] = (sample.get('selectedLaboratoryTestIDs')?.value || []).filter((id: number) => id !== testId);
+    sample.get('selectedLaboratoryTestIDs')?.setValue(currentIds);
+
+    const currentTests: any[] = (sample.get('selectedLaboratoryTests')?.value || []).filter((t: any) => (t.id || t.laboratoryTestID) !== testId);
+    sample.get('selectedLaboratoryTests')?.setValue(currentTests);
+    sample.markAsDirty();
+    this.sampleInwardForm.markAsDirty();
+  }
+
+  onTestSelectChange(sampleIndex: number, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const testId = Number(select.value);
+    if (!testId || testId <= 0) return;
+
+    const discId = this.getSampleDisciplineId(sampleIndex);
+    if (!discId) {
+      select.value = '';
+      const sampleNo = this.sampleDetails.at(sampleIndex)?.get('sampleNo')?.value || `Sample #${sampleIndex + 1}`;
+      this.toastService.show(`Please select Discipline for ${sampleNo} first before selecting requested tests.`, 'warning');
+      return;
+    }
+
+    this.addTestToSample(sampleIndex, testId);
+    select.value = '';
   }
 
 
@@ -1548,10 +1684,29 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
   onDisciplineSelected(item: any, sampleIndex: number): void {
     const sample = this.sampleDetails.at(sampleIndex) as FormGroup;
+    const oldDisciplineId = sample.get('disciplineID')?.value;
+    const newDisciplineId = item?.id ?? null;
+
     sample.patchValue({
-      disciplineID: item?.id ?? null,
+      disciplineID: newDisciplineId,
       disciplineName: item?.name ?? ''
     });
+
+    if (oldDisciplineId && newDisciplineId && Number(oldDisciplineId) !== Number(newDisciplineId)) {
+      const currentTests = this.getSelectedTestsForSample(sampleIndex);
+      const mismatchedTests = currentTests.filter(t => {
+        const meta = this.availableUniversalTests.find(at => at.id === (t.id || t.laboratoryTestID));
+        return meta && meta.disciplineID && Number(meta.disciplineID) !== Number(newDisciplineId);
+      });
+
+      if (mismatchedTests.length > 0) {
+        const names = mismatchedTests.map(t => t.name || t.laboratoryTestName).join(', ');
+        this.toastService.show(
+          `Discipline changed to "${item?.name}". Note: ${mismatchedTests.length} existing test(s) (${names}) do not belong to this discipline. Please review.`,
+          'warning'
+        );
+      }
+    }
   }
 
   removeSample(index: number): void {
@@ -1577,7 +1732,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           this.toastService.show('Sample deleted successfully.', 'success');
         },
         error: (err: any) => {
-          this.toastService.show(err?.error?.message || 'Failed to delete sample.', 'error');
+          this.toastService.show(extractErrorMessage(err, 'Failed to delete sample.'), 'error');
         }
       });
       return;
@@ -1671,7 +1826,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         this.toastService.show('Sample cancelled successfully.', 'success');
       },
       error: (err: any) => {
-        this.toastService.show(err?.error?.message || 'Failed to cancel sample.', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to cancel sample.'), 'error');
         this.showCancelDialog = false;
       }
     });
@@ -2070,13 +2225,15 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
     // Sample details
     value.sampleDetails?.forEach((s: any, i: number) => {
-      formData.append(`sampleDetails[${i}].id`, '0');
+      formData.append(`sampleDetails[${i}].id`, s.id != null ? String(s.id) : '0');
       formData.append(`sampleDetails[${i}].sampleNo`, s.sampleNo || '');
       formData.append(`sampleDetails[${i}].details`, s.details || '');
       formData.append(`sampleDetails[${i}].disciplineID`, s.disciplineID != null ? String(s.disciplineID) : '');
       formData.append(`sampleDetails[${i}].disciplineName`, s.disciplineName || '');
       formData.append(`sampleDetails[${i}].metalClassificationID`, s.metalClassificationID || '');
       formData.append(`sampleDetails[${i}].productConditionID`, s.productConditionID || '');
+      formData.append(`sampleDetails[${i}].productMasterID`, s.productMasterID != null ? String(s.productMasterID) : '');
+      formData.append(`sampleDetails[${i}].specificationGradeID`, s.specificationGradeID != null ? String(s.specificationGradeID) : '');
       formData.append(`sampleDetails[${i}].specimenOrientationID`, s.specimenOrientationID || '');
       formData.append(`sampleDetails[${i}].productFormID`, s.productFormID || '');
       formData.append(`sampleDetails[${i}].remarks`, s.remarks || '');
@@ -2090,6 +2247,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       if (s.file instanceof File) {
         formData.append(`sampleDetails[${i}].file`, s.file);
       }
+      const testIds: number[] = Array.isArray(s.selectedLaboratoryTestIDs) ? s.selectedLaboratoryTestIDs : [];
+      testIds.forEach((tid: number, tIdx: number) => {
+        formData.append(`sampleDetails[${i}].selectedLaboratoryTestIDs[${tIdx}]`, String(tid));
+      });
     });
 
     // BUFFER additional details client-side
@@ -2168,7 +2329,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       },
       error: (err) => {
         console.error('Error saving sample inward:', err);
-        this.toastService.show('Error saving sample inward. Please try again.', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Error saving sample inward. Please try again.'), 'error');
       }
     });
   }
@@ -2214,7 +2375,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
         this.sampleInwardForm.markAsPristine();
         this.toastService.show('Payment info saved successfully.', 'success');
       },
-      error: () => this.toastService.show('Failed to save payment info. Please try again.', 'error'),
+      error: (err) => this.toastService.show(extractErrorMessage(err, 'Failed to save payment info. Please try again.'), 'error'),
     });
   }
 

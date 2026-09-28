@@ -1,10 +1,10 @@
 <div class="modal-backdrop fade show" *ngIf="visible"></div>
 
 <div class="modal fade show d-block" tabindex="-1" role="dialog" *ngIf="visible">
-  <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-    <div class="modal-content shadow-lg border-0">
+  <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable" role="document">
+    <div class="modal-content border-0 shadow">
       <div class="modal-header bg-light py-2 px-3 border-bottom">
-        <h6 class="modal-title fw-semibold text-dark mb-0 d-flex align-items-center">
+        <h6 class="modal-title fw-semibold mb-0 d-flex align-items-center">
           <i class="bi bi-geo-alt-fill text-danger me-2"></i>
           {{ isEditMode ? 'Edit Branch' : 'Add New Branch' }}
         </h6>
@@ -12,58 +12,66 @@
       </div>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="modal-body p-3">
-          <div class="row g-2">
-            <!-- Branch Name -->
-            <div class="col-md-7">
-              <label class="form-label">
-                Branch Name <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control form-control-sm" formControlName="name" placeholder="e.g. Pune Central Lab">
-              <div *ngIf="form.get('name')?.touched && form.get('name')?.invalid" class="text-danger form-error-msg">
-                Branch name is required.
+        <div class="modal-body p-2">
+          <fieldset>
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-geo-alt me-1"></i> Branch Identity
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-7">
+                <div class="form-field-header">
+                  <label class="form-label">Branch Name <span class="text-danger">*</span></label>
+                </div>
+                <input type="text" class="form-control form-control-sm" formControlName="name" maxlength="200" placeholder="e.g. Pune Central Lab"
+                  [ngClass]="{'is-invalid': (form.get('name')?.touched || submitted) && form.get('name')?.invalid}" />
+                <app-field-error [control]="form.get('name')" label="Branch Name" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-5">
+                <div class="form-field-header">
+                  <label class="form-label">Branch Code <span class="text-danger">*</span></label>
+                </div>
+                <input type="text" class="form-control form-control-sm font-monospace text-uppercase" formControlName="code" maxlength="50" placeholder="e.g. BR-PUN-01"
+                  [ngClass]="{'is-invalid': (form.get('code')?.touched || submitted) && form.get('code')?.invalid}" />
+                <app-field-error [control]="form.get('code')" label="Branch Code" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-12">
+                <div class="form-check form-switch py-1">
+                  <input class="form-check-input" type="checkbox" id="headOfficeCheck" formControlName="isHeadOffice" />
+                  <label class="form-check-label form-label text-dark ms-1" for="headOfficeCheck">
+                    <strong>Designate as Head Office</strong> (Only one active Head Office per organization)
+                  </label>
+                </div>
               </div>
             </div>
+          </fieldset>
 
-            <!-- Branch Code -->
-            <div class="col-md-5">
-              <label class="form-label">
-                Branch Code <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control form-control-sm font-monospace" formControlName="code" placeholder="e.g. BR-PUN-01">
-              <div *ngIf="form.get('code')?.touched && form.get('code')?.invalid" class="text-danger form-error-msg">
-                Branch code is required.
+          <fieldset class="mt-2">
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
+              <i class="bi bi-telephone me-1"></i> Address & Contact
+            </legend>
+            <div class="row g-2">
+              <div class="col-md-12">
+                <div class="form-field-header">
+                  <label class="form-label">Branch Physical Address</label>
+                </div>
+                <textarea class="form-control form-control-sm" rows="2" formControlName="address" maxlength="500" placeholder="Physical location / laboratory building address"></textarea>
+              </div>
+              <div class="col-md-6">
+                <div class="form-field-header">
+                  <label class="form-label">Branch Email</label>
+                </div>
+                <input type="email" class="form-control form-control-sm" formControlName="contactEmail" maxlength="200" placeholder="branch@example.com"
+                  [ngClass]="{'is-invalid': (form.get('contactEmail')?.touched || submitted) && form.get('contactEmail')?.invalid}" />
+                <app-field-error [control]="form.get('contactEmail')" label="Branch Email" [submitted]="submitted"></app-field-error>
+              </div>
+              <div class="col-md-6">
+                <div class="form-field-header">
+                  <label class="form-label">Branch Phone / Extension</label>
+                </div>
+                <input type="text" class="form-control form-control-sm" formControlName="contactPhone" maxlength="50" placeholder="+91 20 12345678" />
               </div>
             </div>
-
-            <!-- Head Office Switch -->
-            <div class="col-md-12">
-              <div class="form-check form-switch py-1">
-                <input class="form-check-input" type="checkbox" id="headOfficeCheck" formControlName="isHeadOffice">
-                <label class="form-check-label form-label-sm text-dark ms-1" for="headOfficeCheck">
-                  <strong>Designate as Head Office</strong> (Only one active Head Office per organization)
-                </label>
-              </div>
-            </div>
-
-            <!-- Branch Address -->
-            <div class="col-md-12">
-              <label class="form-label">Branch Physical Address</label>
-              <textarea class="form-control form-control-sm" rows="2" formControlName="address" placeholder="Physical location / laboratory building address"></textarea>
-            </div>
-
-            <!-- Contact Email -->
-            <div class="col-md-6">
-              <label class="form-label">Branch Email</label>
-              <input type="email" class="form-control form-control-sm" formControlName="contactEmail" placeholder="branch@example.com">
-            </div>
-
-            <!-- Contact Phone -->
-            <div class="col-md-6">
-              <label class="form-label">Branch Phone / Extension</label>
-              <input type="text" class="form-control form-control-sm" formControlName="contactPhone" placeholder="+91 20 12345678">
-            </div>
-          </div>
+          </fieldset>
         </div>
 
         <div class="modal-footer bg-light py-2 px-3 border-top">

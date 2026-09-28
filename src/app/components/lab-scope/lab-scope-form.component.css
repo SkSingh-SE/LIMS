@@ -1,0 +1,32 @@
+/* ============================================
+   LAB SCOPE FORM STYLES
+   Theme: Standard LIMS Ultra-High Density
+   ============================================ */
+
+.scope-op {
+  width: 48px;
+  flex: 0 0 auto;
+}
+
+.scope-val {
+  width: 76px;
+  flex: 1 1 auto;
+}
+
+.max-w-desc {
+  max-width: 280px;
+}
+
+.text-xxs {
+  font-size: 0.68rem;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}

@@ -15,11 +15,17 @@ import {
 } from '../../../services/universal-plan.service';
 import { ToastService } from '../../../services/toast.service';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { ProductMasterService } from '../../../services/product-master.service';
+import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { SpecificationMasterService } from '../../../services/specification-master.service';
+import { SpecificationVersionService } from '../../../services/specification-version.service';
+import { extractErrorMessage } from '../../../utility/helper/error.helper';
 
 @Component({
   selector: 'app-universal-plan-workspace',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, SearchableDropdownComponent],
   templateUrl: './universal-plan-workspace.component.html',
   styleUrls: ['./universal-plan-workspace.component.css']
 })
@@ -28,9 +34,17 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
   sampleId?: number;
   workspace: UniversalPlanWorkspaceDto | null = null;
 
-  // Selected Global Configuration
+  // Selected Global Configuration — cascade: Sample → Product → Grade → Spec → Version
+  // Product/Grade/Spec are resolvable in Screen 14 (selection of existing masters);
+  // creation/editing stays in Screens 10/08/09. Version pin respects Screen 11 lifecycle (Active / explicit Superseded).
+  selectedProductMasterId: number | null = null;
+  selectedGradeId: number | null = null;
+  selectedSpecHeaderId: number | null = null;
   selectedSpecVersionId: number = 0;
   selectedBranchId: number = 1;
+  selectedProductItem: any = null;
+  selectedGradeItem: any = null;
+  selectedSpecItem: any = null;
 
   // Search & Filter
   searchTerm: string = '';
@@ -68,8 +82,25 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
     private route: ActivatedRoute,
     private router: Router,
     private planService: UniversalPlanService,
-    private toast: ToastService
+    private toast: ToastService,
+    private productMasterService: ProductMasterService,
+    private materialSpecService: MaterialSpecificationService,
+    private specMasterService: SpecificationMasterService,
+    private specVersionService: SpecificationVersionService
   ) {}
+
+  // ────────────── Cascade helpers (State 1 → 4) ──────────────
+  // Issue #1: Grade is NOT blocked by Product. Product only filters the grade list.
+  // Blank product → all grades; Product selected → grades filtered to that product's mapped grades.
+  get isGradeEnabled(): boolean {
+    return !this.workspace?.isPlanLocked;
+  }
+  get isSpecEnabled(): boolean {
+    return !this.workspace?.isPlanLocked && !!this.selectedGradeId;
+  }
+  get isSpecVersionEnabled(): boolean {
+    return !this.workspace?.isPlanLocked && !!this.selectedSpecHeaderId;
+  }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -114,7 +145,7 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
         },
         error: (err) => {
           this.isLoading = false;
-          const msg = err.error?.message || err.message || 'Failed to retrieve inward samples.';
+          const msg = extractErrorMessage(err, 'Failed to retrieve inward samples.');
           this.toast.show(msg, 'error');
         }
       });
@@ -124,8 +155,14 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
     this.planService.getWorkspace(this.inwardId, this.sampleId).subscribe({
       next: (ws) => {
         this.workspace = ws;
+        this.selectedProductMasterId = ws.productMasterID ?? null;
+        this.selectedGradeId = ws.specificationGradeID ?? null;
+        this.selectedSpecHeaderId = ws.specificationHeaderID ?? null;
         this.selectedSpecVersionId = ws.specificationVersionID || 0;
         this.selectedBranchId = ws.branchID || 1;
+        this.selectedProductItem = ws.productMasterID ? { id: ws.productMasterID, name: ws.productMasterName } : null;
+        this.selectedGradeItem = ws.specificationGradeID ? { id: ws.specificationGradeID, name: ws.gradeName } : null;
+        this.selectedSpecItem = ws.specificationHeaderID ? { id: ws.specificationHeaderID, name: ws.specificationName } : null;
         this.plannedTests = [...ws.plannedTests];
 
         // Extract unique disciplines for filtering
@@ -135,12 +172,15 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
         });
         this.disciplines = ['ALL', ...Array.from(discSet)];
 
+        // Auto-select test list discipline according to current sample's discipline
+        this.autoSelectDisciplineForSample();
+
         this.isLoading = false;
         this.isDirty = false;
       },
       error: (err) => {
         this.isLoading = false;
-        const msg = err.error?.message || err.message || 'Failed to load universal planning workspace.';
+        const msg = extractErrorMessage(err, 'Failed to load universal planning workspace.');
         this.toast.show(msg, 'error');
       }
     });
@@ -153,12 +193,37 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
         return;
       }
     }
+    // Instant discipline hint from already-loaded sample list before fresh load
+    const target = this.workspace?.availableSamples?.find(s => s.sampleID === newSampleId) as any;
+    const targetDisc = target?.sampleDisciplineName as string | undefined;
+    if (targetDisc) {
+      this.selectedDiscipline = targetDisc;
+    } else {
+      this.selectedDiscipline = 'ALL';
+    }
+    this.searchTerm = '';
     this.sampleId = newSampleId;
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { sampleId: newSampleId },
       queryParamsHandling: 'merge'
     });
+  }
+
+  private autoSelectDisciplineForSample(): void {
+    if (!this.workspace) return;
+    const sampleDisc = (this.workspace as any).sampleDisciplineName as string | undefined;
+    if (sampleDisc && this.disciplines.includes(sampleDisc)) {
+      this.selectedDiscipline = sampleDisc;
+    } else if (!this.disciplines.includes(this.selectedDiscipline)) {
+      this.selectedDiscipline = 'ALL';
+    }
+  }
+
+  refreshWorkspace(): void {
+    this.searchTerm = '';
+    this.loadWorkspace();
+    this.toast.show('Test list refreshed for current sample.', 'info');
   }
 
   get filteredAvailableTests(): UniversalTestCardDto[] {
@@ -183,7 +248,170 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
     return this.plannedTests.find(p => p.laboratoryTestID === testId && p.status !== 'Cancelled');
   }
 
+  // ────────────── Sample → Product → Grade → Spec → Version cascade ──────────────
+  getProductFetchFn = (searchTerm: string, pageNo: number, pageSize: number) =>
+    this.productMasterService.getDropdown(searchTerm, pageNo, pageSize);
+
+  getGradeFetchFn = (searchTerm: string, pageNo: number, pageSize: number) => {
+    const hdr = this.selectedSpecHeaderId ?? 0;
+    const prod = this.selectedProductMasterId ?? 0;
+    return this.materialSpecService.getMaterialSpecificationGradeDropdown(searchTerm, pageNo, pageSize, hdr, prod);
+  };
+
+  getSpecFetchFn = (searchTerm: string, pageNo: number, pageSize: number) =>
+    this.specMasterService.getSpecificationDropdown(searchTerm, pageNo, pageSize);
+
+  onProductSelected(item: any): void {
+    if (this.workspace?.isPlanLocked) return;
+    this.selectedProductMasterId = item?.id ?? item?.Id ?? null;
+    this.selectedProductItem = item ?? null;
+    if (!item) {
+      this.selectedGradeId = null;
+      this.selectedGradeItem = null;
+      this.selectedSpecHeaderId = null;
+      this.selectedSpecItem = null;
+      this.selectedSpecVersionId = 0;
+      if (this.workspace) {
+        this.workspace.productMasterID = null as any;
+        this.workspace.productMasterName = null as any;
+        this.workspace.specificationGradeID = null as any;
+        this.workspace.gradeName = null as any;
+        this.workspace.specificationHeaderID = null as any;
+        this.workspace.specificationName = null as any;
+        this.workspace.specificationVersionID = null as any;
+        this.workspace.specificationVersionName = null as any;
+        this.workspace.availableSpecVersions = [];
+        this.workspace.isSupersededSpecVersion = false;
+      }
+    } else {
+      if (this.workspace) {
+        (this.workspace as any).productMasterID = this.selectedProductMasterId ?? undefined;
+        this.workspace.productMasterName = item.name ?? item.Name ?? '';
+      }
+    }
+    this.isDirty = true;
+    if (this.isPreviewDrawerOpen && this.currentPreviewTestId > 0) this.fetchPreview(this.currentPreviewTestId);
+  }
+
+  onGradeSelected(item: any): void {
+    if (this.workspace?.isPlanLocked) return;
+    if (!this.isGradeEnabled && item) return;
+    this.selectedGradeId = item?.id ?? item?.Id ?? null;
+    this.selectedGradeItem = item ?? null;
+    if (item) {
+      const av = item.additionalValues ?? {};
+      const hdr = av['specificationHeaderID'] ?? av['materialSpecificationId'] ?? av['SpecificationHeaderID'] ?? av['MaterialSpecificationId'] ?? item.ParentId ?? 0;
+      const hdrName = av['materialSpecificationName'] ?? av['specDisplayTitle'] ?? av['displayTitle'] ?? av['specificationName'] ?? av['SpecificationName'] ?? '';
+      if (hdr) {
+        this.selectedSpecHeaderId = +hdr;
+        this.selectedSpecItem = { id: +hdr, name: hdrName || String(hdr) };
+        if (this.workspace) {
+          this.workspace.specificationHeaderID = this.selectedSpecHeaderId;
+          this.workspace.specificationName = hdrName || String(hdr);
+        }
+        this.loadSpecVersions(this.selectedSpecHeaderId!);
+      }
+      if (this.workspace) {
+        (this.workspace as any).specificationGradeID = this.selectedGradeId ?? undefined;
+        this.workspace.gradeName = item.name ?? item.Name ?? '';
+      }
+    } else {
+      this.selectedSpecHeaderId = null;
+      this.selectedSpecItem = null;
+      this.selectedSpecVersionId = 0;
+      if (this.workspace) {
+        (this.workspace as any).specificationGradeID = undefined;
+        this.workspace.gradeName = null as any;
+        (this.workspace as any).specificationHeaderID = undefined;
+        this.workspace.specificationName = null as any;
+        (this.workspace as any).specificationVersionID = undefined;
+        this.workspace.specificationVersionName = null as any;
+        this.workspace.availableSpecVersions = [];
+        this.workspace.isSupersededSpecVersion = false;
+      }
+    }
+    this.isDirty = true;
+    if (this.isPreviewDrawerOpen && this.currentPreviewTestId > 0) this.fetchPreview(this.currentPreviewTestId);
+  }
+
+  onSpecSelected(item: any): void {
+    if (this.workspace?.isPlanLocked) return;
+    if (!this.isSpecEnabled && item) {
+      // Allow spec change only after grade — keep guard but permit clearing.
+      if (item) return;
+    }
+    this.selectedSpecHeaderId = item?.id ?? item?.Id ?? null;
+    this.selectedSpecItem = item ?? null;
+    if (this.workspace) {
+      (this.workspace as any).specificationHeaderID = this.selectedSpecHeaderId ?? undefined;
+      this.workspace.specificationName = item?.name ?? item?.Name ?? null;
+    }
+    if (this.selectedGradeId && item) {
+      const gradeHdr = this.selectedGradeItem?.additionalValues?.['specificationHeaderID'] ?? this.selectedGradeItem?.additionalValues?.['materialSpecificationId'];
+      if (gradeHdr && +gradeHdr !== +item.id) {
+        this.selectedGradeId = null;
+        this.selectedGradeItem = null;
+        if (this.workspace) {
+          this.workspace.specificationGradeID = null as any;
+          this.workspace.gradeName = null as any;
+        }
+      }
+    }
+    if (item?.id) this.loadSpecVersions(+item.id);
+    else {
+      this.selectedSpecVersionId = 0;
+      if (this.workspace) {
+        this.workspace.specificationVersionID = null as any;
+        this.workspace.specificationVersionName = null as any;
+        this.workspace.availableSpecVersions = [];
+        this.workspace.isSupersededSpecVersion = false;
+      }
+    }
+    this.isDirty = true;
+    if (this.isPreviewDrawerOpen && this.currentPreviewTestId > 0) this.fetchPreview(this.currentPreviewTestId);
+  }
+
+  private loadSpecVersions(headerId: number): void {
+    this.specVersionService.getDropdownBySpecification(headerId, true).subscribe({
+      next: (list) => {
+        const mapped = (list ?? []).map((v: any) => ({
+          id: v.id ?? v.ID,
+          version: v.version ?? v.Version ?? '',
+          year: v.year ?? v.Year ?? null,
+          status: typeof v.status === 'number' ? (['Draft','Active','Superseded','Withdrawn'][v.status] ?? String(v.status)) : String(v.status ?? ''),
+          isDefault: !!(v.isDefault ?? v.IsDefault),
+          isActive: (typeof v.status === 'number' ? v.status === 1 : String(v.status) === 'Active'),
+          isSuperseded: (typeof v.status === 'number' ? v.status === 2 : String(v.status) === 'Superseded'),
+          effectiveDate: v.effectiveDate ?? v.EffectiveDate,
+          supersededDate: v.supersededDate ?? v.SupersededDate
+        }));
+        if (!this.workspace) return;
+        this.workspace.availableSpecVersions = mapped as any;
+        if (!this.selectedSpecVersionId && mapped.length) {
+          const preferred = mapped.find(m => m.isDefault && m.isActive) ?? mapped.find(m => m.isActive) ?? mapped[0];
+          if (preferred) {
+            this.selectedSpecVersionId = preferred.id;
+            this.workspace.specificationVersionID = preferred.id;
+            this.workspace.specificationVersionName = preferred.version;
+            this.workspace.isSupersededSpecVersion = !!preferred.isSuperseded;
+            this.isDirty = true;
+          }
+        } else if (this.selectedSpecVersionId) {
+          const cur = mapped.find(m => m.id === this.selectedSpecVersionId);
+          if (this.workspace && cur) {
+            this.workspace.specificationVersionName = cur.version;
+            this.workspace.isSupersededSpecVersion = !!cur.isSuperseded;
+          }
+        }
+        if (this.isPreviewDrawerOpen && this.currentPreviewTestId > 0) this.fetchPreview(this.currentPreviewTestId);
+      },
+      error: () => { /* keep current version list on error */ }
+    });
+  }
+
   onSpecVersionChange(newVersionId: number): void {
+    if (this.workspace?.isPlanLocked) return;
+    if (!this.isSpecVersionEnabled) return;
     this.selectedSpecVersionId = +newVersionId;
     this.isDirty = true;
 
@@ -202,6 +430,7 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
   }
 
   onBranchChange(newBranchId: number): void {
+    if (this.workspace?.isPlanLocked) return;
     this.selectedBranchId = +newBranchId;
     this.isDirty = true;
     if (this.workspace) {
@@ -223,12 +452,12 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       return;
     }
 
-    // Call preview to resolve effective config for this test
+    // Call preview to resolve effective config for this test — uses the cascade-pinned routing
     const req = {
       sampleID: this.workspace!.sampleID,
       laboratoryTestID: test.id,
-      specificationHeaderID: this.workspace!.specificationHeaderID,
-      specificationGradeID: this.workspace!.specificationGradeID,
+      specificationHeaderID: this.selectedSpecHeaderId ?? this.workspace!.specificationHeaderID,
+      specificationGradeID: this.selectedGradeId ?? this.workspace!.specificationGradeID,
       specificationVersionID: this.selectedSpecVersionId,
       branchID: this.selectedBranchId
     };
@@ -256,6 +485,11 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
           branchName: preview.branchName,
           departmentID: preview.departmentID,
           departmentName: preview.departmentName,
+          executionLayoutID: preview.executionLayoutID,
+          executionLayoutCode: preview.executionLayoutCode,
+          executionLayoutName: preview.executionLayoutName,
+          rendererType: preview.rendererType,
+          layoutResolutionLevel: preview.layoutResolutionLevel,
           status: 'Pending'
         };
 
@@ -264,7 +498,7 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
         this.toast.show(`Added '${test.name}' to plan.`, 'success');
       },
       error: (err) => {
-        const msg = err.error?.message || err.message || `Failed to resolve configuration for '${test.name}'.`;
+        const msg = extractErrorMessage(err, `Failed to resolve configuration for '${test.name}'.`);
         this.toast.show(msg, 'error');
       }
     });
@@ -300,8 +534,8 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
     const req = {
       sampleID: this.workspace.sampleID,
       laboratoryTestID: testId,
-      specificationHeaderID: this.workspace.specificationHeaderID,
-      specificationGradeID: this.workspace.specificationGradeID,
+      specificationHeaderID: this.selectedSpecHeaderId ?? this.workspace.specificationHeaderID,
+      specificationGradeID: this.selectedGradeId ?? this.workspace.specificationGradeID,
       specificationVersionID: this.selectedSpecVersionId,
       testMethodSpecificationID: planned?.testMethodSpecificationID,
       testMethodSpecificationVersionID: this.selectedMethodVersionId || planned?.testMethodSpecificationVersionID,
@@ -313,10 +547,21 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
         this.activePreview = preview;
         this.selectedMethodVersionId = preview.testMethodSpecificationVersionID;
         this.activePreviewLoading = false;
+
+        const currentPlanned = this.getPlannedItem(testId);
+        if (currentPlanned) {
+          currentPlanned.executionLayoutID = preview.executionLayoutID;
+          currentPlanned.executionLayoutCode = preview.executionLayoutCode;
+          currentPlanned.executionLayoutName = preview.executionLayoutName;
+          currentPlanned.rendererType = preview.rendererType;
+          currentPlanned.layoutResolutionLevel = preview.layoutResolutionLevel;
+          currentPlanned.departmentID = preview.departmentID;
+          currentPlanned.departmentName = preview.departmentName;
+        }
       },
       error: (err) => {
         this.activePreviewLoading = false;
-        const msg = err.error?.message || err.message || 'Failed to preview test configuration.';
+        const msg = extractErrorMessage(err, 'Failed to preview test configuration.');
         this.toast.show(msg, 'error');
       }
     });
@@ -393,7 +638,7 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       },
       error: (err) => {
         this.isSaving = false;
-        const msg = err.error?.message || err.message || 'Failed to save plan draft.';
+        const msg = extractErrorMessage(err, 'Failed to save plan draft.');
         this.toast.show(msg, 'error');
       }
     });
@@ -422,7 +667,7 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       },
       error: (err) => {
         this.isConfirming = false;
-        const msg = err.error?.message || err.message || 'Failed to confirm plan and create test groups.';
+        const msg = extractErrorMessage(err, 'Failed to confirm plan and create test groups.');
         this.toast.show(msg, 'error');
       }
     });
@@ -434,9 +679,9 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       laboratoryTestID: p.laboratoryTestID,
       testMethodSpecificationID: p.testMethodSpecificationID,
       testMethodSpecificationVersionID: p.testMethodSpecificationVersionID,
-      specificationHeaderID: p.specificationHeaderID,
-      specificationGradeID: p.specificationGradeID,
-      specificationVersionID: p.specificationVersionID,
+      specificationHeaderID: p.specificationHeaderID ?? this.selectedSpecHeaderId ?? this.workspace!.specificationHeaderID,
+      specificationGradeID: p.specificationGradeID ?? this.selectedGradeId ?? this.workspace!.specificationGradeID,
+      specificationVersionID: p.specificationVersionID ?? (this.selectedSpecVersionId || undefined),
       branchID: p.branchID || this.selectedBranchId,
       isRetest: false
     }));
@@ -445,8 +690,9 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       sampleTestPlanID: this.workspace!.sampleTestPlanID,
       sampleID: this.workspace!.sampleID,
       branchID: this.selectedBranchId,
-      specificationHeaderID: this.workspace!.specificationHeaderID,
-      specificationGradeID: this.workspace!.specificationGradeID,
+      productMasterID: this.selectedProductMasterId ?? undefined,
+      specificationHeaderID: this.selectedSpecHeaderId ?? this.workspace!.specificationHeaderID,
+      specificationGradeID: this.selectedGradeId ?? this.workspace!.specificationGradeID,
       specificationVersionID: this.selectedSpecVersionId,
       tests: tests
     };
@@ -458,9 +704,9 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       laboratoryTestID: p.laboratoryTestID,
       testMethodSpecificationID: p.testMethodSpecificationID,
       testMethodSpecificationVersionID: p.testMethodSpecificationVersionID,
-      specificationHeaderID: p.specificationHeaderID,
-      specificationGradeID: p.specificationGradeID,
-      specificationVersionID: p.specificationVersionID,
+      specificationHeaderID: p.specificationHeaderID ?? this.selectedSpecHeaderId ?? this.workspace!.specificationHeaderID,
+      specificationGradeID: p.specificationGradeID ?? this.selectedGradeId ?? this.workspace!.specificationGradeID,
+      specificationVersionID: p.specificationVersionID ?? (this.selectedSpecVersionId || undefined),
       branchID: p.branchID || this.selectedBranchId,
       isRetest: false
     }));
@@ -469,8 +715,9 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       sampleTestPlanID: this.workspace!.sampleTestPlanID,
       sampleID: this.workspace!.sampleID,
       branchID: this.selectedBranchId,
-      specificationHeaderID: this.workspace!.specificationHeaderID,
-      specificationGradeID: this.workspace!.specificationGradeID,
+      productMasterID: this.selectedProductMasterId ?? undefined,
+      specificationHeaderID: this.selectedSpecHeaderId ?? this.workspace!.specificationHeaderID,
+      specificationGradeID: this.selectedGradeId ?? this.workspace!.specificationGradeID,
       specificationVersionID: this.selectedSpecVersionId,
       tests: tests
     };
@@ -478,6 +725,24 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
 
   openLinkedMaster(route: string): void {
     window.open(route, '_blank');
+  }
+
+  openTestGroup(utgId: number): void {
+    if (!utgId) return;
+    this.router.navigate(['/sample/test-group', utgId]);
+  }
+
+  openExecution(target: PlannedUniversalTestDto | number): void {
+    if (!target) return;
+    if (typeof target === 'number') {
+      this.router.navigate(['/universal-test-execution'], { queryParams: { utgId: target, from: 'plan' } });
+      return;
+    }
+    const qp: any = { utgId: target.universalTestGroupID, from: 'plan' };
+    if (target.testExecutionID) {
+      qp.executionId = target.testExecutionID;
+    }
+    this.router.navigate(['/universal-test-execution'], { queryParams: qp });
   }
 
   goBack(): void {
@@ -491,6 +756,7 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
   }
 
   openCopyPlanModal(): void {
+    if (this.workspace?.isPlanLocked) return;
     if (!this.workspace || this.plannedTests.length === 0) {
       this.toast.show('There are no planned tests on this sample to copy.', 'warning');
       return;
@@ -553,7 +819,7 @@ export class UniversalPlanWorkspaceComponent implements OnInit, CanComponentDeac
       },
       error: (err) => {
         this.isCopying = false;
-        const msg = err.error?.message || err.message || 'Failed to copy plan to targets.';
+        const msg = extractErrorMessage(err, 'Failed to copy plan to targets.');
         this.toast.show(msg, 'error');
       }
     });

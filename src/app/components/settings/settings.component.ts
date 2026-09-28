@@ -1,3 +1,4 @@
+// LIMS Global Settings Component - High-Density Standard
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -8,6 +9,7 @@ import {
   Validators
 } from '@angular/forms';
 import { SettingsService } from '../../services/settings.service';
+import { BranchService } from '../../services/branch.service';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
 import {
@@ -16,13 +18,16 @@ import {
   gstinValidator,
   panValidator,
   financialYearRangeValidator,
+  dateRangeValidator
 } from '../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 
+import { RouterModule } from '@angular/router';
+import { BreadcrumbComponent } from '../../utility/components/breadcrumb/breadcrumb.component';
+
 @Component({
   selector: 'app-settings',
-
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, BreadcrumbComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
 })
@@ -41,6 +46,8 @@ export class SettingsComponent implements OnInit {
     { key: 4, label: 'GST & Finance', icon: 'bi-receipt' },
     { key: 5, label: 'Report Authority', icon: 'bi-pen' }
   ];
+
+  branches: any[] = [];
 
   // File upload properties
   organizationLogoFile: File | null = null;
@@ -81,7 +88,12 @@ export class SettingsComponent implements OnInit {
   // GST Rate options
   gstRateOptions = [0, 5, 12, 18, 28];
 
-  constructor(private fb: FormBuilder, private settingsService: SettingsService, private toastService: ToastService) {}
+  constructor(
+    private fb: FormBuilder,
+    private settingsService: SettingsService,
+    private branchService: BranchService,
+    private toastService: ToastService
+  ) {}
 
   initialSnapshot: any = null;
 
@@ -90,7 +102,19 @@ export class SettingsComponent implements OnInit {
     this.setupConditionalValidation();
     this.loadSettingsFromApi();
     this.loadFinancialYears();
+    this.loadBranches();
     this.initTabDirtyTracking();
+  }
+
+  private loadBranches(): void {
+    this.branchService.loadUserBranches().subscribe({
+      next: (res: any) => {
+        this.branches = res;
+      },
+      error: () => {
+        console.error('Failed to load branches');
+      }
+    });
   }
 
   private loadSettingsFromApi(): void {
@@ -106,7 +130,10 @@ export class SettingsComponent implements OnInit {
           }
         }
         if (res.nablAccreditation) {
-          this.settingsForm.get('nablAccreditation')?.patchValue(res.nablAccreditation);
+          const nabl = { ...res.nablAccreditation };
+          if (nabl.issueDate) nabl.issueDate = nabl.issueDate.split('T')[0];
+          if (nabl.expiryDate) nabl.expiryDate = nabl.expiryDate.split('T')[0];
+          this.settingsForm.get('nablAccreditation')?.patchValue(nabl);
           if (res.nablAccreditation.nablLogo) {
             this.nablLogoPreview = this.normalizeFileUrl(res.nablAccreditation.nablLogo);
           }
@@ -163,9 +190,13 @@ export class SettingsComponent implements OnInit {
       nablAccreditation: this.fb.group({
         nablEnabled: [true],
         nablTcNumber: ['', [Validators.maxLength(100)]],
+        issueDate: [''],
+        expiryDate: [''],
+        branchId: [null],
+        isActive: [true],
         nablCertificate: [''],
         nablLogo: ['']
-      }),
+      }, { validators: dateRangeValidator('issueDate', 'expiryDate') }),
 
       // Numbering & Identity
       numbering: this.fb.group({
@@ -239,8 +270,14 @@ export class SettingsComponent implements OnInit {
     const nablEnabled = this.settingsForm.get('nablAccreditation.nablEnabled')?.value;
     if (nablEnabled) {
       const tcNumberControl = this.settingsForm.get('nablAccreditation.nablTcNumber');
+      const issueDateControl = this.settingsForm.get('nablAccreditation.issueDate');
+      const expiryDateControl = this.settingsForm.get('nablAccreditation.expiryDate');
       tcNumberControl?.setValidators([Validators.required, noWhitespaceValidator(), Validators.maxLength(100)]);
+      issueDateControl?.setValidators([Validators.required]);
+      expiryDateControl?.setValidators([Validators.required]);
       tcNumberControl?.updateValueAndValidity();
+      issueDateControl?.updateValueAndValidity();
+      expiryDateControl?.updateValueAndValidity();
     }
 
     // Apply initial GST validators based on current value
@@ -480,6 +517,13 @@ export class SettingsComponent implements OnInit {
   clearNablCertificate(): void {
     this.nablCertificateFile = null;
     this.fileErrors['nablCertificate'] = null;
+  }
+
+  triggerFileInput(id: string): void {
+    const fileInput = document.getElementById(id) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
   }
 
   // ============================================

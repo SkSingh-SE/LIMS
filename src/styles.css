@@ -82,7 +82,10 @@ a i {
 .action-transfer-btn i,
 .action-btn i,
 .btn-transfer i,
-.icon-avatar-box i {
+.icon-avatar-box i,
+.param-count-btn i,
+.btn-param-count i,
+.count-badge-btn i {
   margin-right: 0 !important;
   margin-left: 0 !important;
 }
@@ -2173,12 +2176,15 @@ label .text-danger {
 /* ════════════════════════════════════════════════════════════════
    NAV TABS — enhanced
 ════════════════════════════════════════════════════════════════ */
+.nav.nav-tabs,
 .nav-tabs {
   border-bottom: 2px solid #dee2e6;
   gap: 2px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  max-width: 100%;
 }
 
 .nav-tabs .nav-link {
@@ -2971,18 +2977,44 @@ input[type="file"].form-control:hover::file-selector-button {
 ════════════════════════════════════════════════════════════════ */
 
 /* ── Standard nav-tabs (override previous basic definition) ── */
+.nav.nav-tabs,
 .nav-tabs {
   border-bottom: 2px solid #e5e7eb;
   gap: 0;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--neutral-300) transparent;
+  max-width: 100%;
   padding-bottom: 0;
   background: transparent;
 }
-.nav-tabs::-webkit-scrollbar { display: none; }
+.nav.nav-tabs::-webkit-scrollbar,
+.nav-tabs::-webkit-scrollbar {
+  height: 3px;
+  display: block;
+}
+.nav.nav-tabs::-webkit-scrollbar-track,
+.nav-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav.nav-tabs::-webkit-scrollbar-thumb,
+.nav-tabs::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 3px;
+}
+.nav.nav-tabs::-webkit-scrollbar-thumb:hover,
+.nav-tabs::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
 
-.nav-tabs .nav-item { flex-shrink: 0; }
+.nav.nav-tabs .nav-item,
+.nav-tabs .nav-item { flex-shrink: 0 !important; }
+
+.nav.nav-tabs .nav-link,
+.nav-tabs .nav-link { white-space: nowrap !important; }
 
 .nav-tabs .nav-link {
   position: relative;
@@ -4043,6 +4075,326 @@ input[type="checkbox"]:checked {
   transition: color 0.15s ease, opacity 0.15s ease;
 }
 
+/* Global List Group Item Hover Contrast */
+.list-group-item-action:hover {
+  background-color: var(--primary-50, #fef2f2) !important;
+  color: var(--neutral-900, #0f172a);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UNIVERSAL TEST GROUP & CONFIGURATION ADJUSTMENT BADGES (PHASE 4 & 5)
+   Global, reusable badge tokens adhering to design system
+═══════════════════════════════════════════════════════════ */
+.badge-lims-ready {
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-warning {
+  background-color: #fffbeb !important;
+  color: #92400e !important;
+  border: 1px solid #fde68a !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-blocked {
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fecaca !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-drift {
+  background-color: #fff7ed !important;
+  color: #c2410c !important;
+  border: 1px solid #fed7aa !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-unchanged {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-na {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-adjusted {
+  background-color: #f5f3ff !important;
+  color: #5b21b6 !important;
+  border: 1px solid #ddd6fe !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-draft {
+  background-color: #eff6ff !important;
+  color: #1e40af !important;
+  border: 1px solid #bfdbfe !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-applied {
+  background-color: #f0fdfa !important;
+  color: #115e59 !important;
+  border: 1px solid #99f6e4 !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-approved {
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #6ee7b7 !important;
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-lims-scope {
+  background-color: #f0fdf4 !important;
+  color: #166534 !important;
+  border: 1px solid #bbf7d0 !important;
+  font-weight: 500;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+}
+
+/* Phase 7/8 universal result verdict + lifecycle badges (global-first, reused by result & review screens) */
+.verdict-pass {
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #6ee7b7 !important;
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.verdict-fail {
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fca5a5 !important;
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.verdict-marginal {
+  background-color: #fffbeb !important;
+  color: #92400e !important;
+  border: 1px solid #fcd34d !important;
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.verdict-info {
+  background-color: #eff6ff !important;
+  color: #1e40af !important;
+  border: 1px solid #bfdbfe !important;
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.verdict-neutral {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.result-status-draft { background-color: #f8fafc !important; color: #475569 !important; border: 1px solid #cbd5e1 !important; font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.result-status-calculated { background-color: #eff6ff !important; color: #1e40af !important; border: 1px solid #bfdbfe !important; font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.result-status-finalized { background-color: #f0fdfa !important; color: #115e59 !important; border: 1px solid #99f6e4 !important; font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.result-status-underreview { background-color: #fffbeb !important; color: #92400e !important; border: 1px solid #fcd34d !important; font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.result-status-verified { background-color: #eef2ff !important; color: #3730a3 !important; border: 1px solid #c7d2fe !important; font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.result-status-approved { background-color: #ecfdf5 !important; color: #065f46 !important; border: 1px solid #6ee7b7 !important; font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.result-status-rework { background-color: #fef2f2 !important; color: #991b1b !important; border: 1px solid #fca5a5 !important; font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.mono-hash { font-family: ui-monospace, Consolas, monospace; font-size: 0.7rem; }
+
+/* Compliance Margin & Specification Requirement Badges */
+.badge-req-range {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+.badge-margin-safe {
+  background-color: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1px solid #bbf7d0 !important;
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.badge-margin-fail {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca !important;
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.badge-margin-marginal {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.badge-margin-neutral {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  border: 1px solid #e2e8f0 !important;
+  font-family: ui-monospace, Consolas, monospace;
+  font-weight: 500;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.metric-kpi-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.metric-kpi-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.metric-kpi-lbl {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Modal Custom Overlay for High Density LIMS Modals */
+.lims-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.5);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.lims-modal-dialog {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.lims-modal-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+}
+
+.lims-modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.lims-modal-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .btn-nav-link:hover {
   color: var(--primary-hover);
   text-decoration: underline;
@@ -4195,11 +4547,15 @@ input[type="checkbox"]:checked {
    Source: AGENTS.md | ISO 17025 Compliant LIMS Design System
 ═══════════════════════════════════════════════════════════ */
 
-.btn-lims {
+.btn-lims,
+.btn-save,
+.btn-cancel,
+.btn-add,
+.btn-remove {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   font-family: 'Poppins', sans-serif;
   font-size: 0.76rem;
   font-weight: 600;
@@ -4209,15 +4565,21 @@ input[type="checkbox"]:checked {
   line-height: 1.35;
   transition: all 0.15s ease-in-out;
   cursor: pointer;
+  text-decoration: none;
 }
 
-.btn-lims:disabled {
+.btn-lims:disabled,
+.btn-save:disabled,
+.btn-cancel:disabled,
+.btn-add:disabled,
+.btn-remove:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 .btn-lims.btn-lims-save,
-.btn-lims.btn-lims-primary {
+.btn-lims.btn-lims-primary,
+.btn-save {
   background-color: var(--primary-color, #da261c);
   color: #ffffff;
   border-color: var(--primary-color, #da261c);
@@ -4225,7 +4587,8 @@ input[type="checkbox"]:checked {
 }
 
 .btn-lims.btn-lims-save:hover:not(:disabled),
-.btn-lims.btn-lims-primary:hover:not(:disabled) {
+.btn-lims.btn-lims-primary:hover:not(:disabled),
+.btn-save:hover:not(:disabled) {
   background-color: #b81d14;
   border-color: #b81d14;
   color: #ffffff;
@@ -4233,40 +4596,46 @@ input[type="checkbox"]:checked {
 }
 
 .btn-lims.btn-lims-cancel,
-.btn-lims.btn-lims-secondary {
+.btn-lims.btn-lims-secondary,
+.btn-cancel {
   background-color: #ffffff;
   color: #475569;
   border-color: #cbd5e1;
 }
 
 .btn-lims.btn-lims-cancel:hover:not(:disabled),
-.btn-lims.btn-lims-secondary:hover:not(:disabled) {
+.btn-lims.btn-lims-secondary:hover:not(:disabled),
+.btn-cancel:hover:not(:disabled) {
   background-color: #f1f5f9;
   color: #1e293b;
   border-color: #94a3b8;
 }
 
-.btn-lims.btn-lims-add {
+.btn-lims.btn-lims-add,
+.btn-add {
   background-color: rgba(218, 38, 28, 0.05);
   color: var(--primary-color, #da261c);
   border: 1px dashed var(--primary-color, #da261c);
 }
 
-.btn-lims.btn-lims-add:hover:not(:disabled) {
+.btn-lims.btn-lims-add:hover:not(:disabled),
+.btn-add:hover:not(:disabled) {
   background-color: rgba(218, 38, 28, 0.12);
   color: #b81d14;
   border-color: #b81d14;
 }
 
 .btn-lims.btn-lims-remove,
-.btn-lims.btn-lims-delete {
+.btn-lims.btn-lims-delete,
+.btn-remove {
   background-color: rgba(239, 68, 68, 0.08);
   color: #dc2626;
   border-color: rgba(239, 68, 68, 0.2);
 }
 
 .btn-lims.btn-lims-remove:hover:not(:disabled),
-.btn-lims.btn-lims-delete:hover:not(:disabled) {
+.btn-lims.btn-lims-delete:hover:not(:disabled),
+.btn-remove:hover:not(:disabled) {
   background-color: #dc2626;
   color: #ffffff;
   border-color: #dc2626;
@@ -4284,6 +4653,18 @@ input[type="checkbox"]:checked {
   border-color: #2563eb;
 }
 
+.btn-lims.btn-lims-copy {
+  background-color: rgba(13, 148, 136, 0.08);
+  color: #0d9488;
+  border-color: rgba(13, 148, 136, 0.2);
+}
+
+.btn-lims.btn-lims-copy:hover:not(:disabled) {
+  background-color: #0d9488;
+  color: #ffffff;
+  border-color: #0d9488;
+}
+
 .btn-lims.btn-lims-print {
   background-color: #1e293b;
   color: #ffffff;
@@ -4293,6 +4674,48 @@ input[type="checkbox"]:checked {
 .btn-lims.btn-lims-print:hover:not(:disabled) {
   background-color: #0f172a;
   color: #ffffff;
+}
+
+/* Standard Param & Count Badges / Buttons with 6px Gap */
+.param-count-btn,
+.btn-param-count,
+.count-badge-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 2px 8px !important;
+  min-height: 24px !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.74rem !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+}
+
+.param-count-btn:hover:not(:disabled),
+.btn-param-count:hover:not(:disabled),
+.count-badge-btn:hover:not(:disabled) {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #1e293b !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.param-count-btn i,
+.btn-param-count i,
+.count-badge-btn i {
+  margin: 0 !important;
+  font-size: 0.78rem !important;
+  color: #64748b !important;
+  line-height: 1 !important;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -4418,6 +4841,112 @@ input[type="checkbox"]:checked {
   box-shadow: 0 3px 8px rgba(5, 150, 105, 0.35) !important;
 }
 
+/* Global List Group Item Hover Contrast */
+.list-group-item-action:hover {
+  background-color: var(--primary-50, #fef2f2) !important;
+  color: var(--neutral-900, #0f172a);
+}
+
+/* Phase 3 Universal Planning Global Utilities */
+.modal-backdrop-semi {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.badge-layout {
+  font-size: 0.7rem !important;
+  font-family: 'Poppins', sans-serif !important;
+  padding: 0.2rem 0.5rem !important;
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.2px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.badge-layout.badge-layout-assigned,
+.badge-layout-assigned {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid #94a3b8 !important;
+}
+
+.badge-layout.badge-layout-assigned i,
+.badge-layout-assigned i {
+  color: #2563eb !important;
+}
+
+.badge-layout.badge-layout-unassigned,
+.badge-layout-unassigned {
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #f87171 !important;
+}
+
+.badge-layout.badge-layout-unassigned i,
+.badge-layout-unassigned i {
+  color: #dc2626 !important;
+}
+
+/* Universal Planning & Test Execution Lifecycle Status Badges (High Contrast) */
+.badge-status-planned {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #94a3b8 !important;
+  font-weight: 600 !important;
+}
+
+.badge-status-pending {
+  background-color: #fef9c3 !important;
+  color: #854d0e !important;
+  border: 1px solid #facc15 !important;
+  font-weight: 600 !important;
+}
+
+.badge-status-inprogress {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #38bdf8 !important;
+  font-weight: 600 !important;
+}
+
+.badge-status-completed {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+  border: 1px solid #4ade80 !important;
+  font-weight: 600 !important;
+}
+
+.badge-status-verified {
+  background-color: #ede9fe !important;
+  color: #5b21b6 !important;
+  border: 1px solid #a78bfa !important;
+  font-weight: 600 !important;
+}
+
+.badge-status-approved {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+  border: 1px solid #166534 !important;
+  font-weight: 600 !important;
+}
+
+.badge-status-rejected {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border: 1px solid #f87171 !important;
+  font-weight: 600 !important;
+}
+
+.col-w-30 {
+  width: 30px !important;
+}
+
+.col-w-70 {
+  width: 70px !important;
+}
+
 .btn-tbl-action.btn-tbl-status.status-inactive,
 .btn-lims-icon.btn-toggle.status-inactive,
 .btn-lims-icon.btn-toggle:has(.bi-toggle-off),
@@ -4498,6 +5027,21 @@ input[type="checkbox"]:checked {
   border-color: #d97706 !important;
   color: #ffffff !important;
   box-shadow: 0 3px 8px rgba(217, 119, 6, 0.35) !important;
+}
+
+/* 8. Grades / Applicability Button (Indigo) */
+.btn-tbl-action.btn-tbl-grades,
+.btn-lims-icon.btn-grades {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  border-color: rgba(99, 102, 241, 0.28) !important;
+  color: #4f46e5 !important;
+}
+.btn-tbl-action.btn-tbl-grades:hover:not(:disabled),
+.btn-lims-icon.btn-grades:hover:not(:disabled) {
+  background-color: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.35) !important;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -4838,3 +5382,730 @@ input[type="checkbox"]:checked {
   background-color: var(--primary-50, #fef2f2) !important;
   color: var(--neutral-900, #0f172a);
 }
+
+/* ===========================================================================
+   GLOBAL EXECUTION LAYOUT & DYNAMIC RUNTIME STANDARDIZATION (AGENTS.md)
+   =========================================================================== */
+
+/* Standardized Collapsible Section Fieldset */
+.section-fieldset-card.collapsed {
+  padding-bottom: 0.25rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.section-fieldset-card.collapsed legend {
+  margin-bottom: 0 !important;
+}
+
+/* Global Section Fieldset Warning Variant (Option C Unmapped Items) */
+.section-fieldset-warning {
+  border: 1px solid #fde68a !important;
+  border-left: 4px solid #f59e0b !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.05) !important;
+  padding: 0.5rem 0.75rem !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.section-fieldset-warning legend {
+  float: none !important;
+  width: auto !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: #b45309 !important;
+  background: transparent !important;
+  padding: 0 6px !important;
+  margin-left: 6px !important;
+  margin-bottom: 0.25rem !important;
+  letter-spacing: 0.3px !important;
+}
+
+.section-fieldset-warning.collapsed {
+  padding-bottom: 0.25rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.section-fieldset-warning.collapsed legend {
+  margin-bottom: 0 !important;
+}
+
+/* Global Dynamic Layout and Interactive Chart Utilities */
+.ute-chart-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.ute-chart-container {
+  height: 290px;
+  width: 100%;
+  position: relative;
+}
+
+.ute-chart-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.ute-condition-card,
+.ute-calc-card {
+  border-radius: 5px;
+  background-color: #f8fafc;
+}
+
+.badge-mandatory {
+  font-size: 9px;
+  padding: 1px 4px;
+}
+
+.badge-nr {
+  font-size: 9px;
+}
+
+.badge-auto-calc {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PHASE 7 — UNIVERSAL RESULT & COMPLIANCE ENGINE GLOBAL STYLES
+   Screen 17: Verdict Badges, KPI Metrics, Status Chips, Margins
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Verdict Badges (Parameter & Overall Decision) ── */
+.verdict-pass,
+.verdict-fail,
+.verdict-marginal,
+.verdict-info,
+.verdict-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.18rem 0.55rem;
+  border-radius: 50rem;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.verdict-pass {
+  background-color: rgba(22, 163, 74, 0.1);
+  color: #15803d;
+  border: 1px solid rgba(22, 163, 74, 0.28);
+}
+
+.verdict-fail {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+}
+
+.verdict-marginal {
+  background-color: rgba(234, 179, 8, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.verdict-info {
+  background-color: rgba(59, 130, 246, 0.09);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.verdict-neutral {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+/* ── Result Status Chips (lifecycle state) ── */
+.result-status-draft,
+.result-status-calculated,
+.result-status-finalized,
+.result-status-underreview,
+.result-status-verified,
+.result-status-approved,
+.result-status-rework {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.12rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.result-status-draft {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.result-status-calculated {
+  background: rgba(59, 130, 246, 0.09);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.result-status-finalized {
+  background: rgba(22, 163, 74, 0.09);
+  color: #15803d;
+  border: 1px solid rgba(22, 163, 74, 0.25);
+}
+
+.result-status-underreview {
+  background: rgba(234, 179, 8, 0.1);
+  color: #92400e;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.result-status-verified {
+  background: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.result-status-approved {
+  background: rgba(22, 163, 74, 0.14);
+  color: #14532d;
+  border: 1px solid rgba(22, 163, 74, 0.35);
+}
+
+.result-status-rework {
+  background: rgba(220, 38, 38, 0.09);
+  color: #991b1b;
+  border: 1px solid rgba(220, 38, 38, 0.24);
+}
+
+/* ── Metric KPI Box (Executive Summary Strip) ── */
+.metric-kpi-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: 'Poppins', sans-serif;
+  transition: box-shadow 0.15s ease;
+}
+
+.metric-kpi-box:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.metric-kpi-lbl {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.metric-kpi-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.15;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ── Compliance Margin / Delta Badges ── */
+.badge-margin-safe,
+.badge-margin-fail,
+.badge-margin-marginal,
+.badge-margin-neutral {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.badge-margin-safe {
+  background: rgba(22, 163, 74, 0.09);
+  color: #15803d;
+  border: 1px solid rgba(22, 163, 74, 0.22);
+}
+
+.badge-margin-fail {
+  background: rgba(220, 38, 38, 0.09);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.22);
+}
+
+.badge-margin-marginal {
+  background: rgba(234, 179, 8, 0.1);
+  color: #b45309;
+  border: 1px solid rgba(234, 179, 8, 0.28);
+}
+
+.badge-margin-neutral {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+/* ── Specification Requirement Range Badge ── */
+.badge-req-range {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  white-space: nowrap;
+}
+
+/* ── Cryptographic Snapshot Hash Display ── */
+.mono-hash {
+  font-family: 'Courier New', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  color: #334155;
+  word-break: break-all;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ── Universal Lab Report Sheet & NABL Header (ISO 17025 / NABL Compliant Format) ── */
+.ute-report-sheet {
+  max-width: 960px;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  padding: 20px 24px !important;
+}
+
+/* 1. Header with Laboratory Details */
+.ute-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 12px;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.ute-report-lab-block {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+}
+
+.ute-report-lab-logo {
+  max-height: 56px;
+  max-width: 80px;
+  object-fit: contain;
+}
+
+.ute-report-lab-details {
+  font-size: 0.72rem;
+  color: #334155;
+  line-height: 1.35;
+}
+
+.ute-report-lab-name {
+  font-size: 1.22rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+  text-transform: uppercase;
+  margin-bottom: 1px;
+}
+
+.ute-report-lab-subtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 1px;
+}
+
+.ute-report-lab-tagline {
+  font-size: 0.68rem;
+  font-style: italic;
+  color: #64748b;
+  margin-bottom: 3px;
+}
+
+.ute-report-nabl-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  padding: 0 14px;
+  min-width: 175px;
+}
+
+.ute-ilac-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed #0284c7;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #0369a1;
+  text-align: center;
+  line-height: 1.1;
+  background-color: #f0f9ff;
+}
+
+.ute-nabl-emblem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ute-nabl-emblem-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #1e3a8a;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  background-color: #eff6ff;
+}
+
+.ute-nabl-tc-no {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.ute-report-nabl-img {
+  max-height: 44px;
+  max-width: 100px;
+  object-fit: contain;
+}
+
+.ute-report-qr-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  text-align: center;
+}
+
+.ute-report-qr-svg {
+  width: 64px;
+  height: 64px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 2px;
+}
+
+/* 2. Report Identity Banner & Barcode */
+.ute-report-title-banner {
+  background-color: #e8f1fa;
+  color: #1e3a8a;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 1.5px;
+  text-align: center;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  text-transform: uppercase;
+}
+
+.ute-report-id-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-top: none;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  background-color: #ffffff;
+  font-size: 0.75rem;
+}
+
+.ute-report-id-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ute-report-id-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.35;
+}
+
+.ute-report-id-label {
+  font-weight: 600;
+  color: #475569;
+  width: 90px;
+}
+
+.ute-report-id-val {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.ute-report-barcode-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ute-report-barcode-svg {
+  height: 28px;
+  width: 170px;
+}
+
+.ute-report-barcode-text {
+  font-size: 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 1.5px;
+  color: #1e293b;
+  margin-top: 1px;
+}
+
+/* 3. Section Cards (Customer, Sample, Test Details) */
+.ute-report-card {
+  border: 1px solid #cbd5e1;
+  margin-bottom: 8px;
+  background-color: #ffffff;
+}
+
+.ute-report-card-header {
+  background-color: #e8f1fa;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-bottom: 1px solid #cbd5e1;
+  text-transform: uppercase;
+}
+
+.ute-report-card-body {
+  padding: 6px 10px;
+  font-size: 0.73rem;
+}
+
+.ute-report-kv-row {
+  display: flex;
+  margin-bottom: 3px;
+  line-height: 1.35;
+}
+
+.ute-report-kv-label {
+  font-weight: 600;
+  color: #475569;
+  width: 155px;
+  flex-shrink: 0;
+}
+
+.ute-report-kv-sep {
+  width: 12px;
+  text-align: center;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.ute-report-kv-val {
+  color: #0f172a;
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+/* 4. Results Table */
+.ute-report-table-box {
+  border: 1px solid #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.ute-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0;
+  font-size: 0.74rem;
+}
+
+.ute-report-table th {
+  background-color: #e8f1fa !important;
+  color: #1e3a8a !important;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-align: left;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  vertical-align: middle;
+}
+
+.ute-report-table td {
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  vertical-align: middle;
+  color: #0f172a;
+}
+
+.ute-report-scope-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: center;
+  width: 100%;
+}
+
+/* 5. Remarks & Observations */
+.ute-report-remarks-box {
+  border: 1px solid #cbd5e1;
+  margin-bottom: 10px;
+}
+
+.ute-report-remarks-list {
+  margin-bottom: 0;
+  padding-left: 18px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #1e293b;
+}
+
+/* 6. Signatures (3 Distinct Columns) */
+.ute-report-signatures {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  padding: 10px 14px 6px;
+  text-align: center;
+  margin-bottom: 0;
+  background-color: #ffffff;
+}
+
+.ute-report-sig-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.ute-report-sig-role {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.ute-report-sig-sub {
+  font-size: 0.68rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.ute-report-sig-img-container {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.ute-report-sig-img {
+  max-height: 32px;
+  max-width: 110px;
+  object-fit: contain;
+}
+
+.ute-report-sig-blank-line {
+  width: 100px;
+  height: 1px;
+  border-bottom: 1px dashed #94a3b8;
+  margin: 16px auto 4px;
+}
+
+.ute-report-sig-script {
+  font-family: 'Brush Script MT', 'Segoe Script', 'Great Vibes', cursive, sans-serif;
+  font-size: 1.25rem;
+  color: #1e3a8a;
+  transform: rotate(-3deg);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.ute-report-sig-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.ute-report-sig-desig {
+  font-size: 0.7rem;
+  color: #475569;
+}
+
+.ute-report-sig-date {
+  font-size: 0.68rem;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* 7. Footer & End Divider */
+.ute-report-end-line {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: 1px;
+  padding: 3px 0;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  margin-bottom: 6px;
+  background-color: #f8fafc;
+}
+
+.ute-report-footer-disclaimer {
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  font-size: 0.68rem;
+  color: #334155;
+  text-align: center;
+  line-height: 1.4;
+  background-color: #f8fafc;
+}
+
+
+

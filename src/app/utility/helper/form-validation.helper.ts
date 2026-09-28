@@ -1,13 +1,14 @@
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 
 export class FormValidationHelper {
-  static isFieldInvalid(form: FormGroup, path: string, submitted = false): boolean {
+  static isFieldInvalid(form: FormGroup | null | undefined, path: string, submitted = false): boolean {
+    if (!form) return false;
     const control = form.get(path);
     if (!control || control.disabled) return false;
     return control.invalid && (control.touched || control.dirty || submitted);
   }
 
-  static getFieldError(control: AbstractControl | null, label = 'This field'): string | null {
+  static getFieldError(control: AbstractControl | null | undefined, label = 'This field'): string | null {
     if (!control?.errors) return null;
     const e = control.errors;
     if (e['required'])            return `${label} is required`;
@@ -31,7 +32,7 @@ export class FormValidationHelper {
     return 'Invalid value';
   }
 
-  static getGroupError(group: AbstractControl | null): string | null {
+  static getGroupError(group: AbstractControl | null | undefined): string | null {
     if (!group?.errors) return null;
     const e = group.errors;
     if (e['dateRange'])  return 'End date must be after start date';
@@ -39,7 +40,8 @@ export class FormValidationHelper {
     return null;
   }
 
-  static markAllTouched(control: AbstractControl): void {
+  static markAllTouched(control: AbstractControl | null | undefined): void {
+    if (!control) return;
     control.markAsTouched({ onlySelf: true });
     if (control instanceof FormGroup) {
       Object.values(control.controls).forEach(c => FormValidationHelper.markAllTouched(c));
@@ -48,7 +50,8 @@ export class FormValidationHelper {
     }
   }
 
-  static trimFormValues(form: FormGroup): void {
+  static trimFormValues(form: FormGroup | null | undefined): void {
+    if (!form) return;
     Object.keys(form.controls).forEach(key => {
       const control = form.get(key);
       if (control instanceof FormGroup) {

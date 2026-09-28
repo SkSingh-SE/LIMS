@@ -1,0 +1,11 @@
+.max-w-desc {
+  max-width: 320px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.text-xxs {
+  font-size: 0.68rem;
+}

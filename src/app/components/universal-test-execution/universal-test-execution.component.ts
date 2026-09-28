@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import {
@@ -19,12 +19,23 @@ import {
   FormulaPreviewResponseDto,
   ExecutionAttachmentUploadDto
 } from '../../services/universal-test-execution.service';
+import { ExecutionLayoutDto, ExecutionLayoutSectionDto, ExecutionLayoutItemDto } from '../../models/execution-layout.model';
+import { UniversalResultService } from '../../services/universal-result.service';
+import { UniversalReviewService } from '../../services/universal-review.service';
+import { UniversalReportService } from '../../services/universal-report.service';
 import { ToastService } from '../../services/toast.service';
+import { extractErrorMessage } from '../../utility/helper/error.helper';
+import { HasPermissionDirective } from '../../utility/directives/has-permission.directive';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { environment } from '../../../environments/environment';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-universal-test-execution',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HasPermissionDirective, SearchableDropdownComponent],
   templateUrl: './universal-test-execution.component.html',
   styleUrls: ['./universal-test-execution.component.css']
 })
@@ -34,6 +45,26 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   // Test Configuration Category: 10 items
   activeConfigCategory: string = 'parameters';
+  showCategoryModal: boolean = false;
+  categorySearchTerm: string = '';
+
+  readonly categoryKeys: string[] = [
+    'parameters', 'conditions', 'limits', 'formula', 'equipment',
+    'factors', 'uncertainty', 'acceptance', 'attachments', 'remarks'
+  ];
+
+  readonly categoryMeta: Record<string, { title: string; subtitle: string; icon: string; badgeColor: string }> = {
+    parameters: { title: 'Parameters', subtitle: 'Input, Calculated & Derived Variables', icon: 'bi-list-columns text-primary', badgeColor: 'bg-primary' },
+    conditions: { title: 'Conditions / Environment', subtitle: 'Environmental & Test Execution Conditions', icon: 'bi-thermometer-half text-info', badgeColor: 'bg-info text-dark' },
+    limits: { title: 'Specification Limits', subtitle: 'Min / Max / Target & ISO Tolerances', icon: 'bi-speedometer2 text-success', badgeColor: 'bg-success' },
+    formula: { title: 'Formula Builder', subtitle: 'Equations, Mathematical Dependencies & DAG Trace', icon: 'bi-calculator text-primary', badgeColor: 'bg-primary' },
+    equipment: { title: 'Equipment & Instruments', subtitle: 'Instruments, Calibration & Traceability', icon: 'bi-tools text-warning', badgeColor: 'bg-warning text-dark' },
+    factors: { title: 'Factors & Conversions', subtitle: 'Multipliers, Dilution Factors & Units', icon: 'bi-percent text-secondary', badgeColor: 'bg-secondary' },
+    uncertainty: { title: 'Measurement Uncertainty (MU)', subtitle: 'Coverage Factor (k), Basis & ISO 17025 Statement', icon: 'bi-graph-up text-dark', badgeColor: 'bg-dark' },
+    acceptance: { title: 'Acceptance Criteria', subtitle: 'Pass / Fail Rules & Compliance Evaluation Rules', icon: 'bi-check2-circle text-success', badgeColor: 'bg-success' },
+    attachments: { title: 'Attachments & Standards', subtitle: 'Test Methods, SOPs, Standards & Documents', icon: 'bi-paperclip text-primary', badgeColor: 'bg-primary' },
+    remarks: { title: 'Remarks & Notes', subtitle: 'Analyst Notes & General Observations', icon: 'bi-card-text text-secondary', badgeColor: 'bg-secondary' }
+  };
 
   executionForm: FormGroup;
   execution: TestExecutionDto | null = null;
@@ -45,17 +76,29 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   isProcessing: boolean = false;
   isFullscreen: boolean = false;
 
+  // Universal Phase 7 (Results) & Phase 8 (Review) State
+  universalResult: any = null;
+  reviewFindings: any[] = [];
+  reviewAudits: any[] = [];
+  findingForm!: FormGroup;
+  showResultTraces: boolean = false;
+  showResultAudits: boolean = false;
+
+  // Universal Phase 9 (Report) State
+  reportPreviewData: any = null;
+  universalReports: any[] = [];
+  selectedReport: any = null;
+  reportPreviewFormatCode: string = 'DEFAULT';
+  availableReportFormats: any[] = [{ formatCode: 'DEFAULT', formatName: 'Default Universal Report' }];
+
   // Run switcher
   availableRuns: number[] = [1];
   selectedRunNo: number = 1;
 
-  // Formula Builder & Live Preview
+  // Formula Builder & Live Preview — dynamic, snapshot-driven (no hardcoded SOIL_*)
   selectedFormulaParam: SnapshotParameterDto | null = null;
   formulaExpression: string = '';
-  formulaVariables: Record<string, number> = {
-    'SOIL_LL': 42.0,
-    'SOIL_PL': 18.0
-  };
+  formulaVariables: Record<string, number> = {};
   formulaPreviewResult: FormulaPreviewResponseDto | null = null;
   formulaValid: boolean = true;
 
@@ -81,6 +124,11 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   actionModalType: 'verify' | 'approve' | 'reject' = 'verify';
   actionRemarks: string = '';
 
+  // Retest Modal State (Phase 6 Authoritative Audit Requirement)
+  retestModalVisible: boolean = false;
+  retestReasonCode: string = 'ANALYST_DISCRETION';
+  retestJustification: string = '';
+
   // Quick Modals for Adding Configuration Items
   showAddParamModal: boolean = false;
   newParam: any = { code: '', name: '', unit: '', inputType: 'Decimal', decimals: 2, isCalculated: false, formula: '', specMin: null, specMax: null };
@@ -103,18 +151,33 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private executionService: UniversalTestExecutionService,
+    private resultService: UniversalResultService,
+    private reviewService: UniversalReviewService,
+    private reportService: UniversalReportService,
     private toastService: ToastService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private location: Location
   ) {
     this.executionForm = this.fb.group({
-      specimens: this.fb.array([])
+      specimens: this.fb.array([]),
+      remarks: ['']
+    });
+    this.findingForm = this.fb.group({
+      findingType: ['Observation', Validators.required],
+      description: ['', [Validators.required, Validators.minLength(10)]],
+      severity: ['Major', Validators.required],
+      isBlocking: [true]
     });
   }
 
   ngOnInit(): void {
     this.routeSub = this.route.queryParams.subscribe(params => {
       const execId = params['executionId'] || params['id'];
+      const tabParam = params['tab'];
+      if (tabParam) {
+        this.activeWorkspaceTab = tabParam as any;
+      }
       if (execId) {
         this.testExecutionId = +execId;
         this.loadExecutionById(this.testExecutionId);
@@ -127,6 +190,8 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.activeCharts.forEach(c => c.destroy());
+    this.activeCharts.clear();
   }
 
   get specimens(): FormArray {
@@ -141,9 +206,27 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     return observation.get('results') as FormArray;
   }
 
+  get overviewParameters(): any[] {
+    if (this.resultsOverview?.parameters && this.resultsOverview.parameters.length > 0) {
+      return this.resultsOverview.parameters;
+    }
+    return (this.parameters as any[]) || [];
+  }
+
   // ----------------------------------------------------------------
   // Data Loading
   // ----------------------------------------------------------------
+
+  getExecutionDropdown = (term: string, page: number, pageSize: number) => {
+    return this.executionService.getExecutionDropdown(term, page, pageSize);
+  };
+
+  onExecutionDropdownSelected(item: any): void {
+    const id = Number(item?.id ?? 0);
+    if (id > 0 && id !== this.testExecutionId) {
+      this.router.navigate(['/universal-test-execution'], { queryParams: { executionId: id } });
+    }
+  }
 
   loadExecutionById(id: number): void {
     this.isProcessing = true;
@@ -154,7 +237,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isProcessing = false;
-        this.toastService.show(err?.error?.message || 'Failed to load execution details', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to load execution details'), 'error');
       }
     });
   }
@@ -183,7 +266,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isProcessing = false;
-        this.toastService.show(err?.error?.message || 'Failed to start execution', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to start execution'), 'error');
       }
     });
   }
@@ -197,8 +280,30 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     this.selectedRunNo = exec.executionNo || 1;
     this.availableRuns = Array.from({ length: Math.max(1, exec.executionNo || 1) }, (_, i) => i + 1);
 
+    // Sync route queryParams with loaded executionId
+    if (exec.id && (!this.route.snapshot.queryParams['executionId'] || +this.route.snapshot.queryParams['executionId'] !== exec.id)) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { executionId: exec.id },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    }
+
     // Lock if Completed, Verified, Approved
     this.isViewMode = ['Completed', 'Verified', 'Approved'].includes(exec.status);
+
+    // Hydrate condition actuals from snapshot (configured vs actual separate)
+    this.conditionActuals = {};
+    (this.configSnapshot?.conditions || []).forEach(c => {
+      const k = (c as any).conditionMasterID ?? (c as any).conditionDimensionID ?? c.dimensionName;
+      const v = (c as any).selectedExecutionValue ?? (c as any).actualExecutionValue ?? '';
+      this.conditionActuals[String(k)] = String(v ?? '');
+      // also index by name for fallback
+      this.conditionActuals[c.dimensionName] = String(v ?? '');
+    });
+    // Dynamic formulaVariables from input params (no hardcoded SOIL_*)
+    this.formulaVariables = {};
 
     // Initialize Formula Builder with the first calculated parameter
     const firstCalc = this.parameters.find(p => p.isCalculated);
@@ -211,6 +316,13 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
     // Load auxiliary intelligence datasets
     this.loadAuxiliaryData(exec.id);
+
+    // Immediately load universal result and review audits for lifecycle timeline sync
+    this.loadUniversalResult();
+
+    if (this.activeWorkspaceTab === 'entry') {
+      setTimeout(() => this.renderAllGraphs(), 150);
+    }
   }
 
   loadAuxiliaryData(execId: number): void {
@@ -299,7 +411,8 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     }
 
     this.executionForm = this.fb.group({
-      specimens: specimensFA
+      specimens: specimensFA,
+      remarks: [exec?.reviewRemarks || '']
     });
 
     // Auto-calculate any formulas on initial form build
@@ -370,93 +483,101 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   }
 
   // ----------------------------------------------------------------
-  // Real-Time Reactive Formula Evaluation on Client UX
+  // Real-Time Preview — server is authoritative (FormulaEvaluator/NCalc)
+  // Client preview is UX-only, never trusted for persistence.
   // ----------------------------------------------------------------
+  private conditionActuals: Record<string, string> = {};
 
-  onReadingInput(obsGroup: FormGroup): void {
-    this.evaluateObservationGroup(obsGroup);
+  getConditionActual(c: SnapshotConditionDto): string {
+    const k1 = (c as any).conditionMasterID ?? (c as any).conditionDimensionID ?? c.dimensionName;
+    return this.conditionActuals[String(k1)] ?? (c as any).selectedExecutionValue ?? (c as any).actualExecutionValue ?? '';
+  }
+  setConditionActual(c: SnapshotConditionDto, val: string): void {
+    const k1 = (c as any).conditionMasterID ?? (c as any).conditionDimensionID ?? c.dimensionName;
+    this.conditionActuals[String(k1)] = val;
+    // keep snapshot in sync for UI
+    (c as any).selectedExecutionValue = val;
+    (c as any).actualExecutionValue = val;
   }
 
-  evaluateObservationGroup(obsGroup: FormGroup): void {
+  // Helpers for template — dynamic InputType handling (snapshot-driven)
+  isCalculated(p: SnapshotParameterDto): boolean { return !!p.isCalculated; }
+  getParamByCode(code: string): SnapshotParameterDto | undefined { return this.parameters.find(p => p.code === code); }
+  getParamForRes(res: any): SnapshotParameterDto | undefined {
+    const code = res?.get?.('parameterCode')?.value;
+    return code ? this.getParamByCode(code) : undefined;
+  }
+  getRequirementText(p: SnapshotParameterDto): string {
+    if (p.specMin != null && p.specMax != null) return `${p.specMin} – ${p.specMax}`;
+    if (p.specMin != null) return `≥ ${p.specMin}`;
+    if (p.specMax != null) return `≤ ${p.specMax}`;
+    if ((p as any).acceptanceCriteria && (p as any).acceptanceCriteria !== 'Within specification range') {
+      return (p as any).acceptanceCriteria;
+    }
+    if (!this.configSnapshot?.specificationHeaderID || this.configSnapshot?.specificationHeaderID <= 0) {
+      return 'N/A';
+    }
+    return 'No limit defined';
+  }
+
+  getMissingDependencies(p: SnapshotParameterDto): string[] {
+    if (!p.formula) return [];
+    const tokens = (p.formula.match(/\{([A-Za-z0-9_]+)\}/g) || []).map(t => t.replace(/[{}]/g, ''));
+    const availableCodes = new Set(this.parameters.map(param => param.code.toUpperCase()));
+    return tokens.filter(t => !availableCodes.has(t.toUpperCase()));
+  }
+
+  isDependenciesMissing(p: SnapshotParameterDto): boolean {
+    return this.getMissingDependencies(p).length > 0;
+  }
+
+  onReadingInput(obsGroup: FormGroup): void {
+    // Lightweight preview only — do not trust for save, server will re-evaluate via FormulaEvaluator
+    this.previewObservationGroup(obsGroup);
+    this.renderAllGraphs();
+  }
+
+  previewObservationGroup(obsGroup: FormGroup): void {
     const resultsFA = obsGroup.get('results') as FormArray;
     const valMap: Record<string, number> = {};
-
-    // 1. Collect numeric inputs
     resultsFA.controls.forEach(ctrl => {
       const code = ctrl.get('parameterCode')?.value;
       const raw = ctrl.get('rawValue')?.value;
       const isCalc = ctrl.get('isFormulaCalculated')?.value;
-      if (!isCalc && raw !== null && raw !== undefined && raw !== '') {
-        const num = parseFloat(raw);
-        if (!isNaN(num)) {
-          valMap[code] = num;
-          ctrl.patchValue({ numericValue: num }, { emitEvent: false });
-        }
+      const type = this.parameters.find(p => p.code === code)?.inputType;
+      if (!isCalc && raw !== '' && raw != null && (type === 'Decimal' || type === 'Integer')) {
+        const num = parseFloat(String(raw));
+        if (!isNaN(num)) { valMap[code] = num; ctrl.patchValue({ numericValue: num }, { emitEvent: false }); }
+      } else if (!isCalc && raw !== '' && raw != null) {
+        // Non-numeric types keep raw only
+        ctrl.patchValue({ numericValue: null }, { emitEvent: false });
       }
     });
-
-    // 2. Evaluate calculated parameters in topological order
+    // Preview calculated — show blocked if deps missing
     this.parameters.filter(p => p.isCalculated && p.formula).forEach(param => {
       const ctrl = resultsFA.controls.find(c => c.get('parameterCode')?.value === param.code);
-      if (ctrl && param.formula) {
-        try {
-          const evalResult = this.clientFormulaEval(param.formula, valMap);
-          if (evalResult !== null && !isNaN(evalResult)) {
-            const rounded = parseFloat(evalResult.toFixed(param.decimalPrecision || 2));
-            valMap[param.code] = rounded;
-
-            // Compliance limit check
-            let status = 'Pass';
-            if (param.specMin !== null && param.specMin !== undefined && rounded < param.specMin) status = 'Fail';
-            if (param.specMax !== null && param.specMax !== undefined && rounded > param.specMax) status = 'Fail';
-
-            ctrl.patchValue({
-              rawValue: rounded.toString(),
-              numericValue: rounded,
-              calculatedValue: rounded.toString(),
-              resultStatus: status
-            }, { emitEvent: false });
-          }
-        } catch (e) {
-          // Ignore syntax errors in mid-typing
-        }
+      if (!ctrl || !param.formula) return;
+      const deps = (param.formulaDependencies || []);
+      const missing = deps.some(d => valMap[d] == null && !Object.prototype.hasOwnProperty.call(valMap, d));
+      if (missing) {
+        ctrl.patchValue({ rawValue: '', calculatedValue: 'BLOCKED', resultStatus: 'Blocked' }, { emitEvent: false });
+        return;
       }
+      // Simple client preview via server-style substitution trace is not authoritative — just show pending
+      // Real calc happens on SaveObservations server side
     });
   }
 
   evaluateAllReadings(): void {
     this.specimens.controls.forEach(spec => {
       const obsFA = spec.get('observations') as FormArray;
-      obsFA.controls.forEach(obs => {
-        this.evaluateObservationGroup(obs as FormGroup);
-      });
+      obsFA.controls.forEach(obs => this.previewObservationGroup(obs as FormGroup));
     });
+    this.renderAllGraphs();
   }
 
-  clientFormulaEval(formula: string, vars: Record<string, number>): number | null {
-    let expr = formula;
-    for (const k of Object.keys(vars)) {
-      const regex = new RegExp(`\\{${k}\\}`, 'gi');
-      expr = expr.replace(regex, vars[k].toString());
-    }
-
-    // Replace functions if present
-    expr = expr.replace(/ROUND\(([^,]+),([^)]+)\)/gi, 'Math.round($1 * Math.pow(10, $2)) / Math.pow(10, $2)');
-    expr = expr.replace(/ABS\(([^)]+)\)/gi, 'Math.abs($1)');
-    expr = expr.replace(/SQRT\(([^)]+)\)/gi, 'Math.sqrt($1)');
-    expr = expr.replace(/POW\(([^,]+),([^)]+)\)/gi, 'Math.pow($1, $2)');
-
-    // Ensure no unresolved {PARAM} tokens remain
-    if (/\{[A-Za-z0-9_.]+\}/.test(expr)) return null;
-
-    try {
-      // Safe client evaluator for UX preview
-      const result = Function(`'use strict'; return (${expr})`)();
-      return typeof result === 'number' ? result : null;
-    } catch {
-      return null;
-    }
-  }
+  // Kept for backward compat but not authoritative
+  clientFormulaEval = (_formula: string, _vars: Record<string, number>): number | null => null;
 
   // ----------------------------------------------------------------
   // Formula Builder Keypad & Live Preview
@@ -514,12 +635,84 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   // Save, Complete, Verify, Approve Lifecycle
   // ----------------------------------------------------------------
 
+  onRunChange(runNo: number): void {
+    if (!this.universalTestGroupId || !runNo) return;
+    this.isProcessing = true;
+    this.executionService.getExecutionByGroupAndRun(this.universalTestGroupId, runNo).subscribe({
+      next: (exec) => {
+        this.isProcessing = false;
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { executionId: exec.id },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+        this.applyExecutionData(exec);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, `Failed to load Run ${runNo}`), 'error');
+      }
+    });
+  }
+
   save(): void {
     if (this.isViewMode || !this.testExecutionId) return;
     this.isProcessing = true;
 
+    // Build conditions payload from live snapshot actuals (separate from configured)
+    const conditionsPayload = (this.configSnapshot?.conditions || []).map(c => ({
+      conditionDimensionID: (c as any).conditionMasterID ?? (c as any).conditionDimensionID,
+      dimensionName: c.dimensionName,
+      selectedExecutionValue: this.getConditionActual(c)
+    }));
+
+    const rawSpecimens = this.executionForm.getRawValue().specimens || [];
+    const specimensPayload = rawSpecimens.map((spec: any) => ({
+      id: spec.id || 0,
+      sequenceNo: spec.sequenceNo,
+      specimenIdentifier: spec.specimenIdentifier,
+      isDiscarded: !!spec.isDiscarded,
+      observations: (spec.observations || []).map((obs: any) => ({
+        id: obs.id || 0,
+        readingNo: obs.readingNo,
+        parameterResults: (obs.results || obs.parameterResults || []).map((r: any) => {
+          const rawStr = r.rawValue != null ? String(r.rawValue).trim() : null;
+          let numVal: number | null = r.numericValue != null ? Number(r.numericValue) : null;
+          if (numVal == null && rawStr !== null && rawStr !== '' && !isNaN(Number(rawStr))) {
+            numVal = Number(rawStr);
+          }
+          return {
+            id: r.id || 0,
+            parameterMasterID: r.parameterMasterID,
+            parameterCode: r.parameterCode,
+            rawValue: rawStr,
+            numericValue: numVal,
+            calculatedValue: r.calculatedValue != null ? String(r.calculatedValue) : null,
+            isFormulaCalculated: !!r.isFormulaCalculated,
+            resultStatus: r.resultStatus || 'Pass'
+          };
+        })
+      }))
+    }));
+
+    const remarksVal = this.executionForm.get('remarks')?.value || '';
+    const equipmentPayload = (this.configSnapshot?.equipment || []).map(eq => ({
+      equipmentID: eq.equipmentID || 0,
+      equipmentName: eq.name || eq.equipmentName || '',
+      model: eq.model || '',
+      calibrationCertificateNo: eq.calibrationNo || '',
+      calibrationStatus: eq.calibrationStatus || 'Valid'
+    }));
+
     const payload: TestExecutionSaveDto = {
-      specimens: this.executionForm.getRawValue().specimens
+      specimens: specimensPayload,
+      conditions: conditionsPayload as any,
+      actualConditions: conditionsPayload as any,
+      actualEquipment: equipmentPayload as any,
+      equipment: (this.configSnapshot?.equipment || []) as any,
+      remarks: remarksVal,
+      executionRemarks: remarksVal
     };
 
     this.executionService.saveObservations(this.testExecutionId, payload).subscribe({
@@ -530,7 +723,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isProcessing = false;
-        this.toastService.show(err?.error?.message || 'Failed to save observations', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to save observations'), 'error');
       }
     });
   }
@@ -546,7 +739,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isProcessing = false;
-        this.toastService.show(err?.error?.message || 'Failed to complete execution', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to complete execution'), 'error');
       }
     });
   }
@@ -580,16 +773,52 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isProcessing = false;
-        this.toastService.show(err?.error?.message || 'Action failed', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Action failed'), 'error');
       }
     });
   }
 
+  openRetestModal(): void {
+    this.retestReasonCode = 'ANALYST_DISCRETION';
+    this.retestJustification = '';
+    this.retestModalVisible = true;
+  }
+
   retest(): void {
-    if (!this.universalTestGroupId) return;
-    if (confirm('Are you sure you want to initiate a Retest / New Run? Previous results will be preserved.')) {
-      this.startExecution(this.universalTestGroupId, true);
+    this.openRetestModal();
+  }
+
+  confirmRetest(): void {
+    if (!this.testExecutionId) return;
+    if (!this.retestReasonCode) {
+      this.toastService.show('Retest reason code is required', 'warning');
+      return;
     }
+    if (!this.retestJustification || this.retestJustification.trim().length < 20) {
+      this.toastService.show('Retest justification must be at least 20 characters', 'warning');
+      return;
+    }
+
+    this.isProcessing = true;
+    this.executionService.retestExecution(this.testExecutionId, {
+      reasonCode: this.retestReasonCode,
+      justification: this.retestJustification.trim()
+    }).subscribe({
+      next: (newExec) => {
+        this.isProcessing = false;
+        this.retestModalVisible = false;
+        this.toastService.show(`Retest run #${newExec.executionNo} initiated successfully.`, 'success');
+        const newId = (newExec as any)?.id ?? (newExec as any)?.ID ?? (newExec as any)?.Id ?? this.testExecutionId;
+        this.router.navigate(['/universal-test-execution'], { queryParams: { executionId: newId }, replaceUrl: true }).then(() => {
+          this.testExecutionId = newId;
+          this.loadExecutionById(newId);
+        });
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Failed to initiate retest'), 'error');
+      }
+    });
   }
 
   // ----------------------------------------------------------------
@@ -694,7 +923,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         this.toastService.show('Configuration snapshot updated.', 'success');
       },
       error: (err) => {
-        this.toastService.show(err?.error?.message || 'Failed to update configuration', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to update configuration'), 'error');
       }
     });
   }
@@ -714,7 +943,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         this.toastService.show('Attachment recorded successfully.', 'success');
       },
       error: (err) => {
-        this.toastService.show(err?.error?.message || 'Failed to upload attachment', 'error');
+        this.toastService.show(extractErrorMessage(err, 'Failed to upload attachment'), 'error');
       }
     });
   }
@@ -725,50 +954,1111 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   setWorkspaceTab(tab: 'config' | 'entry' | 'results' | 'calculations' | 'review' | 'report' | 'audit'): void {
     this.activeWorkspaceTab = tab;
+    if ((tab === 'results' || tab === 'calculations' || tab === 'review' || tab === 'audit') && this.testExecutionId) {
+      this.loadUniversalResult();
+    }
     if (tab === 'results' && this.testExecutionId) {
       this.executionService.getResultsOverview(this.testExecutionId).subscribe(ov => this.resultsOverview = ov);
     }
     if (tab === 'calculations' && this.testExecutionId) {
       this.executionService.getCalculationTrace(this.testExecutionId).subscribe(tr => this.calcTrace = tr);
     }
+    if (tab === 'report' && this.testExecutionId) {
+      this.loadReportData();
+    }
+    if (tab === 'entry') {
+      setTimeout(() => this.renderAllGraphs(), 150);
+    }
+  }
+
+  openSeparateScreen(tab: 'results' | 'review' | 'report'): void {
+    if (!this.testExecutionId) return;
+    const base = tab === 'results' ? '/universal-result' : tab === 'review' ? '/universal-review' : '/universal-report';
+    const url = `${window.location.origin}${base}?executionId=${this.testExecutionId}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  isTabLocked(tab: string): boolean {
+    const status = this.execution?.status || 'Planned';
+    if (tab === 'config' || tab === 'audit') return false;
+    if (tab === 'entry') return false;
+    if (tab === 'results' || tab === 'calculations') {
+      return status === 'Planned';
+    }
+    if (tab === 'review') {
+      return status === 'Planned' || status === 'InProgress';
+    }
+    if (tab === 'report') {
+      return status !== 'Verified' && status !== 'Approved' && status !== 'Released' && status !== 'Closed' && !(this.universalReports && this.universalReports.length > 0);
+    }
+    return false;
+  }
+
+  loadUniversalResult(): void {
+    if (!this.testExecutionId) return;
+    this.resultService.getByExecution(this.testExecutionId).subscribe({
+      next: (res) => {
+        this.universalResult = res;
+        this.reviewFindings = res?.findings || res?.Findings || [];
+        this.reviewAudits = res?.audits || res?.Audits || [];
+      },
+      error: () => {
+        // Result not created yet
+      }
+    });
+  }
+
+  loadReportData(): void {
+    if (!this.testExecutionId) return;
+    this.reportService.preview(this.testExecutionId, this.reportPreviewFormatCode).subscribe({
+      next: (prev) => {
+        this.reportPreviewData = prev;
+      },
+      error: () => {}
+    });
+    this.reportService.listByExecution(this.testExecutionId).subscribe({
+      next: (list) => {
+        this.universalReports = list || [];
+        if (this.universalReports.length > 0) {
+          this.selectedReport = this.universalReports[0];
+        }
+      },
+      error: () => {}
+    });
+    this.reportService.getAvailableFormats().subscribe({
+      next: (list) => {
+        this.availableReportFormats = list && list.length ? list : [{ formatCode: 'DEFAULT', formatName: 'Default Universal Report' }];
+      },
+      error: () => {
+        this.availableReportFormats = [{ formatCode: 'DEFAULT', formatName: 'Default Universal Report' }];
+      }
+    });
+  }
+
+  previewReportFormat(): void {
+    if (!this.testExecutionId) return;
+    this.reportService.preview(this.testExecutionId, this.reportPreviewFormatCode).subscribe({
+      next: (prev) => {
+        this.reportPreviewData = prev;
+        const d: any = (prev as any)?.data ?? prev ?? {};
+        const n = (d.resultParameters ?? d.ResultParameters ?? []).length;
+        const src = d.reportFormatSource ?? d.ReportFormatSource ?? this.reportPreviewFormatCode;
+        this.toastService.show(`Preview assembled in ${src} format (${n} frozen parameters, no recalculation).`, 'success');
+      },
+      error: (err) => {
+        this.toastService.show(extractErrorMessage(err, 'Format preview failed.'), 'error');
+      }
+    });
+  }
+
+  isSelectedReportVoid(): boolean {
+    const s = (this.selectedReport?.status ?? this.selectedReport?.Status ?? '').toUpperCase();
+    return s === 'VOID';
+  }
+
+  runComplianceEvaluation(): void {
+    if (!this.testExecutionId) return;
+    this.isProcessing = true;
+    this.resultService.evaluate(this.testExecutionId, 'Evaluation triggered from Universal Test Workspace').subscribe({
+      next: (res) => {
+        this.isProcessing = false;
+        this.universalResult = res;
+        this.reviewFindings = res?.findings || res?.Findings || [];
+        this.reviewAudits = res?.audits || res?.Audits || [];
+        this.toastService.show('ISO 17025 Compliance evaluation completed.', 'success');
+        this.setWorkspaceTab('results');
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Compliance evaluation failed.'), 'error');
+      }
+    });
+  }
+
+  finalizeResult(): void {
+    if (!this.universalResult?.id) {
+      this.toastService.show('Please run compliance evaluation first.', 'warning');
+      return;
+    }
+    this.isProcessing = true;
+    const token = this.universalResult.concurrencyToken || this.universalResult.ConcurrencyToken || '';
+    this.resultService.finalize(this.universalResult.id, token, 'Finalized in workspace').subscribe({
+      next: (res) => {
+        this.isProcessing = false;
+        this.universalResult = res;
+        this.reviewFindings = res?.findings || res?.Findings || [];
+        this.reviewAudits = res?.audits || res?.Audits || [];
+        this.toastService.show('Results finalized successfully. Ready for Technical Review.', 'success');
+        if (this.testExecutionId) this.loadExecutionById(this.testExecutionId);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Finalization failed.'), 'error');
+      }
+    });
+  }
+
+  submitReviewVerify(): void {
+    if (!this.universalResult?.id) return;
+    this.isProcessing = true;
+    const token = this.universalResult.concurrencyToken || this.universalResult.ConcurrencyToken || '';
+    this.reviewService.verify(this.universalResult.id, token, this.actionRemarks).subscribe({
+      next: () => {
+        this.isProcessing = false;
+        this.toastService.show('Technical verification completed.', 'success');
+        this.loadUniversalResult();
+        if (this.testExecutionId) this.loadExecutionById(this.testExecutionId);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Verification failed.'), 'error');
+      }
+    });
+  }
+
+  submitReviewApprove(): void {
+    if (!this.universalResult?.id) return;
+    this.isProcessing = true;
+    const token = this.universalResult.concurrencyToken || this.universalResult.ConcurrencyToken || '';
+    this.reviewService.approve(this.universalResult.id, token, this.actionRemarks).subscribe({
+      next: () => {
+        this.isProcessing = false;
+        this.toastService.show('Test approved! Report generation is now unlocked.', 'success');
+        this.loadUniversalResult();
+        if (this.testExecutionId) this.loadExecutionById(this.testExecutionId);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Approval failed.'), 'error');
+      }
+    });
+  }
+
+  submitRework(): void {
+    if (!this.universalResult?.id) return;
+    if (!this.actionRemarks || this.actionRemarks.trim().length < 5) {
+      this.toastService.show('Please provide a reason for rework in remarks.', 'warning');
+      return;
+    }
+    this.isProcessing = true;
+    const token = this.universalResult.concurrencyToken || this.universalResult.ConcurrencyToken || '';
+    this.reviewService.requestRework(this.universalResult.id, token, this.actionRemarks).subscribe({
+      next: () => {
+        this.isProcessing = false;
+        this.toastService.show('Rework requested. Test execution reverted to InProgress.', 'warning');
+        this.loadUniversalResult();
+        if (this.testExecutionId) this.loadExecutionById(this.testExecutionId);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Rework request failed.'), 'error');
+      }
+    });
+  }
+
+  createFinding(): void {
+    if (!this.universalResult?.id || this.findingForm.invalid) {
+      this.findingForm.markAllAsTouched();
+      return;
+    }
+    this.reviewService.createFinding(this.universalResult.id, this.findingForm.value).subscribe({
+      next: () => {
+        this.toastService.show('Review finding recorded.', 'info');
+        this.findingForm.reset({ findingType: 'Observation', severity: 'Major', isBlocking: true });
+        this.loadUniversalResult();
+      },
+      error: (err) => {
+        this.toastService.show(extractErrorMessage(err, 'Failed to record finding.'), 'error');
+      }
+    });
+  }
+
+  resolveFinding(findingId: number): void {
+    const resolution = window.prompt('Enter resolution description:');
+    if (!resolution || !resolution.trim()) return;
+    this.reviewService.resolveFinding(findingId, resolution.trim()).subscribe({
+      next: () => {
+        this.toastService.show('Finding marked as resolved.', 'success');
+        this.loadUniversalResult();
+      },
+      error: (err) => {
+        this.toastService.show(extractErrorMessage(err, 'Failed to resolve finding.'), 'error');
+      }
+    });
+  }
+
+  generateOfficialReport(): void {
+    if (!this.testExecutionId) return;
+    this.isProcessing = true;
+    this.reportService.generate(this.testExecutionId, 'Official test report generation from workspace').subscribe({
+      next: (res) => {
+        this.isProcessing = false;
+        this.toastService.show(`Official report ${res?.reportNo || ''} generated successfully!`, 'success');
+        this.loadReportData();
+        if (this.testExecutionId) this.loadExecutionById(this.testExecutionId);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Report generation failed.'), 'error');
+      }
+    });
+  }
+
+  releaseOfficialReport(reportId: number): void {
+    this.isProcessing = true;
+    this.reportService.release(reportId, 'Released from workspace').subscribe({
+      next: () => {
+        this.isProcessing = false;
+        this.toastService.show('Report officially released.', 'success');
+        this.loadReportData();
+        if (this.testExecutionId) this.loadExecutionById(this.testExecutionId);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.toastService.show(extractErrorMessage(err, 'Release failed.'), 'error');
+      }
+    });
+  }
+
+  downloadReportPdf(report: any): void {
+    const reportId = Number(report?.id || report?.ID || 0);
+    if (!reportId) return;
+    this.toastService.show('Preparing PDF document download...', 'info');
+    this.reportService.download(reportId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${report?.reportNo || report?.ReportNo || 'Official_Test_Report'}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.toastService.show(extractErrorMessage(err, 'PDF download failed.'), 'error');
+      }
+    });
+  }
+
+  get resultParams(): any[] {
+    return this.universalResult?.parameters ?? this.universalResult?.Parameters ?? [];
+  }
+
+  get resultAuditsList(): any[] {
+    return this.universalResult?.audits ?? this.universalResult?.Audits ?? [];
+  }
+
+  get conformingCount(): number {
+    return this.resultParams.filter(p => (p.verdict || '').toUpperCase() === 'PASS').length;
+  }
+
+  get nonConformingCount(): number {
+    return this.resultParams.filter(p => (p.verdict || '').toUpperCase() === 'FAIL').length;
+  }
+
+  get marginalCount(): number {
+    return this.resultParams.filter(p => (p.verdict || '').toUpperCase() === 'MARGINAL').length;
+  }
+
+  get informationalCount(): number {
+    return this.resultParams.filter(p => {
+      const v = (p.verdict || '').toUpperCase();
+      return v === 'INFORMATIONAL' || v === 'NOT_CONFIGURED' || v === 'NOT_EVALUATED';
+    }).length;
+  }
+
+  getRequirementDisplay(p: any): string {
+    if (!p) return '—';
+    const unit = p.unit ? ` ${p.unit}` : '';
+    if (p.specMin != null && p.specMax != null) {
+      return `[${p.specMin} – ${p.specMax}]${unit}`;
+    }
+    if (p.specMin != null) {
+      return `≥ ${p.specMin}${unit}`;
+    }
+    if (p.specMax != null) {
+      return `≤ ${p.specMax}${unit}`;
+    }
+    if (p.specTarget != null) {
+      const tol = p.maxTolerance != null ? ` ± ${p.maxTolerance}` : '';
+      return `${p.specTarget}${tol}${unit}`;
+    }
+    return p.requirementStatus === 'SPECIFICATION_NOT_APPLICABLE' ? 'Standardless / N/A' : (p.specRange || 'Not Configured');
+  }
+
+  getMarginClass(p: any): string {
+    if (!p || p.complianceMargin == null) return '';
+    const v = (p.verdict || '').toUpperCase();
+    if (v === 'PASS') return 'badge-margin-safe';
+    if (v === 'FAIL') return 'badge-margin-fail';
+    if (v === 'MARGINAL') return 'badge-margin-marginal';
+    return 'badge-margin-neutral';
+  }
+
+  copySnapshotHash(hash: string): void {
+    if (!hash) return;
+    navigator.clipboard.writeText(hash).then(() => {
+      this.toastService.show('Snapshot hash copied to clipboard', 'success');
+    });
+  }
+
+  verdictClass(v: string): string {
+    const s = (v || '').toUpperCase();
+    if (s === 'PASS') return 'verdict-pass';
+    if (s === 'FAIL') return 'verdict-fail';
+    if (s === 'MARGINAL') return 'verdict-marginal';
+    if (s === 'INFORMATIONAL' || s === 'NOT_CONFIGURED') return 'verdict-info';
+    return 'verdict-neutral';
+  }
+
+  statusClass(s: string): string {
+    const v = (s || '').toLowerCase().replace(/\s/g, '');
+    if (v === 'draft') return 'result-status-draft';
+    if (v === 'calculated') return 'result-status-calculated';
+    if (v === 'finalized') return 'result-status-finalized';
+    if (v === 'underreview') return 'result-status-underreview';
+    if (v === 'verified') return 'result-status-verified';
+    if (v === 'approved') return 'result-status-approved';
+    return 'result-status-rework';
   }
 
   setConfigCategory(cat: string): void {
     this.activeConfigCategory = cat;
   }
 
+  openCategoryModal(cat: string): void {
+    this.activeConfigCategory = cat;
+    this.showCategoryModal = true;
+  }
+
+  closeCategoryModal(): void {
+    this.showCategoryModal = false;
+  }
+
+  prevCategory(): void {
+    const idx = this.categoryKeys.indexOf(this.activeConfigCategory);
+    const prevIdx = (idx - 1 + this.categoryKeys.length) % this.categoryKeys.length;
+    this.activeConfigCategory = this.categoryKeys[prevIdx];
+  }
+
+  nextCategory(): void {
+    const idx = this.categoryKeys.indexOf(this.activeConfigCategory);
+    const nextIdx = (idx + 1) % this.categoryKeys.length;
+    this.activeConfigCategory = this.categoryKeys[nextIdx];
+  }
+
+  get activeCategoryIndex(): number {
+    return this.categoryKeys.indexOf(this.activeConfigCategory);
+  }
+
+  get categoryPointerTop(): number {
+    const idx = this.activeCategoryIndex;
+    if (idx < 0) return 60;
+    return 42 + (idx * 48) + 14;
+  }
+
+  get currentCategoryMeta(): { title: string; subtitle: string; icon: string; badgeColor: string } {
+    return this.categoryMeta[this.activeConfigCategory] || {
+      title: 'Category Details',
+      subtitle: 'Configuration Details',
+      icon: 'bi-gear',
+      badgeColor: 'bg-primary'
+    };
+  }
+
+  get currentCategoryCount(): string | number {
+    switch (this.activeConfigCategory) {
+      case 'parameters':
+        return this.configSnapshot?.parameters?.length || this.parameters?.length || 0;
+      case 'conditions':
+        return this.configSnapshot?.conditions?.length || 0;
+      case 'limits':
+        return this.parameters?.length || 0;
+      case 'formula':
+        return this.parameters.filter(p => p.isCalculated)?.length || 1;
+      case 'equipment':
+        return this.configSnapshot?.equipment?.length || 0;
+      case 'factors':
+        return this.configSnapshot?.factors?.length || 0;
+      case 'uncertainty':
+        return 1;
+      case 'acceptance':
+        return 1;
+      case 'attachments':
+        return this.configSnapshot?.attachments?.length || 0;
+      case 'remarks':
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
+  get filteredParameters(): SnapshotParameterDto[] {
+    if (!this.categorySearchTerm) return this.parameters;
+    const term = this.categorySearchTerm.toLowerCase();
+    return this.parameters.filter(p =>
+      (p.code || '').toLowerCase().includes(term) ||
+      (p.name || '').toLowerCase().includes(term)
+    );
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapePress(): void {
+    if (this.showCategoryModal) {
+      this.closeCategoryModal();
+    }
+  }
+
+  // Dynamic Lifecycle Timeline Getters
+  get currentStageLevel(): number {
+    const s = (this.execution?.status || this.universalResult?.resultStatus || '').toUpperCase().replace(/\s/g, '');
+    if (s.includes('APPROVED')) return 5;
+    if (s.includes('VERIFIED')) return 4;
+    if (s.includes('COMPLETED') || s.includes('FINALIZED')) return 3;
+    if (s.includes('INPROGRESS') || s.includes('CALCULATED') || s.includes('DRAFT')) return 2;
+    if (s.includes('PLANNED')) return 1;
+    return 2;
+  }
+
+  get isExecutionRejected(): boolean {
+    const s = (this.execution?.status || this.universalResult?.resultStatus || '').toUpperCase();
+    return s.includes('REJECT') || s.includes('REWORK');
+  }
+
+  getAuditFor(eventType: string): any {
+    if (!this.reviewAudits || !this.reviewAudits.length) return null;
+    const key = eventType.toLowerCase();
+    return this.reviewAudits.find(a => (a.eventType || a.EventType || '').toLowerCase().includes(key));
+  }
+
   toggleFullscreen(): void {
     this.isFullscreen = !this.isFullscreen;
   }
 
+  getApiUrl(path: string | undefined | null): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/\\/g, '/').replace(/^\//, '');
+    return `${environment.apiUrl}/${clean}`;
+  }
+
+  hasNablMark(): boolean {
+    const d = this.reportPreviewData?.data;
+    const r = this.selectedReport;
+    return !!(d?.showNablMark || d?.ShowNablMark || d?.isWithinAccreditedScope || d?.IsWithinAccreditedScope || r?.showNablMark || r?.ShowNablMark);
+  }
+
+  getNablLogoUrl(): string {
+    const d = this.reportPreviewData?.data;
+    const r = this.selectedReport;
+    const path = d?.nablLogoPath || d?.NablLogoPath || r?.nablLogoPath || r?.NablLogoPath;
+    if (path) {
+      return this.getApiUrl(path);
+    }
+    return '';
+  }
+
+  getLabLogoUrl(): string {
+    const d = this.reportPreviewData?.data;
+    const path = d?.labLogoPath || d?.LabLogoPath;
+    if (path) {
+      return this.getApiUrl(path);
+    }
+    return '';
+  }
+
   getReportTableRows(): any[] {
+    const d = this.reportPreviewData?.data;
+    const reportParams = d?.resultParameters ?? d?.ResultParameters;
+    if (reportParams?.length) {
+      return reportParams.map((p: any, idx: number) => {
+        const min = p.effectiveMin ?? p.specMin;
+        const max = p.effectiveMax ?? p.specMax;
+        let req = p.requirement ?? p.Requirement ?? p.specRange ?? '—';
+        if (min != null && max != null) {
+          req = `${min} - ${max}`;
+        } else if (min != null) {
+          req = `${min} Min`;
+        } else if (max != null) {
+          req = `${max} Max`;
+        }
+        return {
+          srNo: idx + 1,
+          parameterCode: p.parameterCode || p.code || '',
+          parameterName: p.parameterName || p.ParameterName || p.parameterCode || p.code,
+          testMethod: p.testMethodStandard || p.testMethodName || d?.testMethodStandard || d?.testMethodName || '—',
+          unit: p.unit || p.Unit || '-',
+          finalValue: p.reportedValue ?? p.ReportedValue ?? p.displayValue ?? p.DisplayValue ?? p.complianceValue ?? p.ComplianceValue ?? p.rawValue ?? '—',
+          specRange: req,
+          status: p.verdict ?? p.Verdict ?? p.status ?? '—',
+          uncertainty: p.expandedUncertainty ?? p.uncertainty ?? null
+        };
+      });
+    }
     if (this.resultsOverview?.parameters?.length) {
-      return this.resultsOverview.parameters.map(p => ({
+      return this.resultsOverview.parameters.map((p, idx) => ({
+        srNo: idx + 1,
+        parameterCode: p.parameterCode || '',
         parameterName: p.parameterName,
+        testMethod: this.displayExecutionTestName || '—',
         unit: p.unit || '%',
         finalValue: p.finalValue ?? p.averageValue ?? '—',
         specRange: p.specRange || '—',
-        status: p.status || 'Pass'
+        status: p.status || 'Pass',
+        uncertainty: null
       }));
     }
-    return (this.parameters || []).map(p => {
+    return (this.parameters || []).map((p, idx) => {
       const min = p.specMin !== null && p.specMin !== undefined ? p.specMin : null;
       const max = p.specMax !== null && p.specMax !== undefined ? p.specMax : null;
       let specRange = '—';
       if (min !== null && max !== null) specRange = `${min} - ${max}`;
-      else if (min !== null) specRange = `>= ${min}`;
-      else if (max !== null) specRange = `<= ${max}`;
+      else if (min !== null) specRange = `${min} Min`;
+      else if (max !== null) specRange = `${max} Max`;
       return {
+        srNo: idx + 1,
+        parameterCode: p.code || '',
         parameterName: p.name,
+        testMethod: this.displayExecutionTestName || '—',
         unit: p.unit || '%',
         finalValue: '—',
         specRange: specRange,
-        status: 'PENDING'
+        status: 'PENDING',
+        uncertainty: null
       };
     });
   }
 
   goBack(): void {
-    this.router.navigate(['/testing/queue']);
+    const query = this.route.snapshot.queryParams;
+    const from = query['from'];
+    const returnUrl = query['returnUrl'];
+
+    if (returnUrl) {
+      this.router.navigateByUrl(returnUrl);
+      return;
+    }
+
+    if (from === 'group' && this.universalTestGroupId) {
+      this.router.navigate(['/sample/test-group', this.universalTestGroupId]);
+      return;
+    }
+
+    if (from === 'list') {
+      this.router.navigate(['/sample/test-groups']);
+      return;
+    }
+
+    if (from === 'result' && this.testExecutionId) {
+      this.router.navigate(['/universal-result'], { queryParams: { executionId: this.testExecutionId } });
+      return;
+    }
+
+    if (from === 'review' && this.testExecutionId) {
+      this.router.navigate(['/universal-review'], { queryParams: { executionId: this.testExecutionId } });
+      return;
+    }
+
+    if (from === 'report' && this.testExecutionId) {
+      this.router.navigate(['/universal-report'], { queryParams: { executionId: this.testExecutionId } });
+      return;
+    }
+
+    // Check if the user navigated from within this Angular application session
+    if (window.history.state?.navigationId > 1) {
+      this.location.back();
+      return;
+    }
+
+    // Direct access fallback: parent Universal Test Group if known
+    if (this.universalTestGroupId) {
+      this.router.navigate(['/sample/test-group', this.universalTestGroupId]);
+      return;
+    }
+
+    // Standard Universal workflow queue fallback
+    this.router.navigate(['/sample/test-groups']);
+  }
+
+  // Sample context helpers (which sample is under test)
+  get displaySampleNo(): string {
+    return (this.execution as any)?.sampleNo || '—';
+  }
+
+  get displayCaseNo(): string {
+    return (this.execution as any)?.caseNo || '—';
+  }
+
+  get displayCustomerName(): string {
+    return (this.execution as any)?.customerName || (this.execution as any)?.clientName || '—';
+  }
+
+  get displaySampleDescription(): string {
+    return (this.execution as any)?.sampleDescription || (this.execution as any)?.materialName || '';
+  }
+
+  get displayExecutionTestName(): string {
+    return (this.execution as any)?.testName || this.configSnapshot?.laboratoryTestName || this.configSnapshot?.testName || '—';
+  }
+
+  get displayDisciplineName(): string {
+    return this.configSnapshot?.disciplineName || '—';
+  }
+
+  get displayGradeName(): string {
+    return (this.execution as any)?.gradeName || this.configSnapshot?.gradeName || '—';
+  }
+
+  get displaySpecTitle(): string {
+    return (this.execution as any)?.specificationTitle || this.configSnapshot?.specificationTitle || this.configSnapshot?.specificationName || '';
+  }
+
+  // ----------------------------------------------------------------
+  // Execution Layout & Dynamic Section Engine (Phase B.4)
+  // ----------------------------------------------------------------
+  private activeCharts: Map<string, Chart> = new Map();
+  collapsedSections: Record<number, boolean> = {};
+  isUnmappedCollapsed: boolean = false;
+
+  get hasExecutionLayout(): boolean {
+    return !!(this.configSnapshot?.executionLayout?.sections && this.configSnapshot.executionLayout.sections.length > 0);
+  }
+
+  get layoutSections(): ExecutionLayoutSectionDto[] {
+    if (!this.configSnapshot?.executionLayout?.sections) return [];
+    return [...this.configSnapshot.executionLayout.sections].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  }
+
+  toggleSectionCollapse(secId: number): void {
+    this.collapsedSections[secId] = !this.collapsedSections[secId];
+    if (!this.collapsedSections[secId]) {
+      setTimeout(() => this.renderAllGraphs(), 100);
+    }
+  }
+
+  isSectionCollapsed(sec: ExecutionLayoutSectionDto): boolean {
+    return !!this.collapsedSections[sec.id];
+  }
+
+  toggleUnmappedCollapse(): void {
+    this.isUnmappedCollapsed = !this.isUnmappedCollapsed;
+  }
+
+  // ----------------------------------------------------------------
+  // Unified Parameter Management & Execution Deduplication (Phase B.5)
+  // ----------------------------------------------------------------
+  get unifiedExecutionParameters(): (SnapshotParameterDto & { origin: 'Layout' | 'TestMaster' | 'Added' })[] {
+    const result: (SnapshotParameterDto & { origin: 'Layout' | 'TestMaster' | 'Added' })[] = [];
+    const seenIds = new Set<number>();
+
+    // 1. Gather all layout-mapped parameter IDs in layout section display order
+    const mappedIdsInOrder: number[] = [];
+    if (this.hasExecutionLayout) {
+      this.layoutSections
+        .filter(s => s.sectionType === 'Parameters' || s.sectionType === 'Observations')
+        .forEach(s => {
+          (s.items || [])
+            .filter(it => it.referenceType === 'ParameterMaster' || it.referenceType === 'ParameterMasterID' || !it.referenceType || it.referenceType === 'None')
+            .forEach(it => {
+              if (it.referenceID && !mappedIdsInOrder.includes(it.referenceID)) {
+                mappedIdsInOrder.push(it.referenceID);
+              }
+            });
+        });
+    }
+
+    // 2. Add layout-mapped parameters first (Test Master definition is strictly PRIMARY)
+    for (const mid of mappedIdsInOrder) {
+      const testParam = this.parameters.find(p => p.parameterMasterID === mid);
+      if (testParam && !seenIds.has(testParam.parameterMasterID)) {
+        seenIds.add(testParam.parameterMasterID);
+        result.push({
+          ...testParam,
+          origin: 'Layout'
+        });
+      }
+    }
+
+    // 3. Add remaining test master parameters (unmapped in layout, deduplicated)
+    for (const p of this.parameters) {
+      if (!seenIds.has(p.parameterMasterID)) {
+        seenIds.add(p.parameterMasterID);
+        const originType: 'Layout' | 'TestMaster' | 'Added' = (p as any).isCustomAdded ? 'Added' : 'TestMaster';
+        result.push({
+          ...p,
+          origin: originType
+        });
+      }
+    }
+
+    return result;
+  }
+
+  get hasObservationsSection(): boolean {
+    return this.layoutSections.some(s => s.sectionType === 'Observations');
+  }
+
+  isPrimaryParametersSection(sec: ExecutionLayoutSectionDto): boolean {
+    const paramSections = this.layoutSections.filter(s => s.sectionType === 'Parameters');
+    return paramSections.length > 0 && paramSections[0].id === sec.id;
+  }
+
+  getObservationSectionParameters(sec: ExecutionLayoutSectionDto): (SnapshotParameterDto & { origin?: 'Layout' | 'TestMaster' | 'Added' })[] {
+    const sectionParams = this.getSectionParameters(sec);
+    if (sectionParams.length > 0) {
+      return sectionParams;
+    }
+    // Fallback: If section has no explicit items defined, return all input/non-calculated parameters
+    return this.parameters.filter(p => !p.isCalculated);
+  }
+
+  // ----------------------------------------------------------------
+  // In-Place Add & Remove Parameter Engine (Execution Entry)
+  // ----------------------------------------------------------------
+  showAddExecutionParamModal: boolean = false;
+  newExecutionParam = {
+    code: '',
+    name: '',
+    unit: '',
+    inputType: 'Decimal',
+    decimals: 2,
+    isCalculated: false,
+    formula: '',
+    specMin: null as number | null,
+    specMax: null as number | null,
+    isRequired: false
+  };
+
+  openAddExecutionParamModal(): void {
+    this.newExecutionParam = {
+      code: '',
+      name: '',
+      unit: '',
+      inputType: 'Decimal',
+      decimals: 2,
+      isCalculated: false,
+      formula: '',
+      specMin: null,
+      specMax: null,
+      isRequired: false
+    };
+    this.showAddExecutionParamModal = true;
+  }
+
+  closeAddExecutionParamModal(): void {
+    this.showAddExecutionParamModal = false;
+  }
+
+  confirmAddExecutionParam(): void {
+    if (!this.newExecutionParam.code || !this.newExecutionParam.name) {
+      this.toastService.show('Parameter Code and Name are required.', 'warning');
+      return;
+    }
+
+    const codeUpper = this.newExecutionParam.code.trim().toUpperCase();
+    if (this.parameters.some(p => p.code === codeUpper)) {
+      this.toastService.show(`Parameter with code '${codeUpper}' already exists.`, 'warning');
+      return;
+    }
+
+    const newMasterId = Date.now();
+    const newP: SnapshotParameterDto & { isCustomAdded?: boolean } = {
+      parameterMasterID: newMasterId,
+      code: codeUpper,
+      name: this.newExecutionParam.name.trim(),
+      unit: this.newExecutionParam.unit?.trim() || '',
+      inputType: this.newExecutionParam.inputType,
+      parameterType: this.newExecutionParam.isCalculated ? 'Calculated' : 'Input',
+      decimalPrecision: this.newExecutionParam.decimals ?? 2,
+      isCalculated: this.newExecutionParam.isCalculated,
+      formula: this.newExecutionParam.formula?.trim() || '',
+      formulaDependencies: [],
+      specMin: this.newExecutionParam.specMin != null ? this.newExecutionParam.specMin : undefined,
+      specMax: this.newExecutionParam.specMax != null ? this.newExecutionParam.specMax : undefined,
+      displayOrder: this.parameters.length + 1,
+      isRequired: !!this.newExecutionParam.isRequired,
+      isReportable: true,
+      dropdownOptions: [],
+      isCustomAdded: true
+    };
+
+    this.parameters.push(newP);
+    if (this.configSnapshot) {
+      if (!this.configSnapshot.parameters) this.configSnapshot.parameters = [];
+      this.configSnapshot.parameters.push(newP);
+    }
+
+    // Provision FormControls across all existing specimens and observations
+    this.specimens.controls.forEach(spec => {
+      const obsFA = spec.get('observations') as FormArray;
+      if (obsFA) {
+        obsFA.controls.forEach(obs => {
+          const resFA = obs.get('results') as FormArray;
+          if (resFA) {
+            const resGroup = this.fb.group({
+              id: [0],
+              parameterMasterID: [newMasterId],
+              parameterCode: [newP.code],
+              rawValue: [''],
+              numericValue: [null],
+              calculatedValue: [''],
+              isFormulaCalculated: [newP.isCalculated],
+              resultStatus: ['Pass']
+            });
+            resFA.push(resGroup);
+          }
+        });
+      }
+    });
+
+    this.showAddExecutionParamModal = false;
+    this.evaluateAllReadings();
+    this.toastService.show(`Parameter '${newP.name}' added to execution entry.`, 'success');
+  }
+
+  removeExecutionParam(param: SnapshotParameterDto): void {
+    if (this.isViewMode) return;
+    if (param.isRequired) {
+      this.toastService.show(`Cannot remove mandatory parameter '${param.name}'.`, 'warning');
+      return;
+    }
+
+    const idx = this.parameters.findIndex(p => p.parameterMasterID === param.parameterMasterID);
+    if (idx >= 0) {
+      this.parameters.splice(idx, 1);
+    }
+    if (this.configSnapshot?.parameters) {
+      const snapIdx = this.configSnapshot.parameters.findIndex(p => p.parameterMasterID === param.parameterMasterID);
+      if (snapIdx >= 0) {
+        this.configSnapshot.parameters.splice(snapIdx, 1);
+      }
+    }
+
+    // Remove from observation FormArrays
+    this.specimens.controls.forEach(spec => {
+      const obsFA = spec.get('observations') as FormArray;
+      if (obsFA) {
+        obsFA.controls.forEach(obs => {
+          const resFA = obs.get('results') as FormArray;
+          if (resFA) {
+            const rIdx = resFA.controls.findIndex(c => c.get('parameterMasterID')?.value === param.parameterMasterID);
+            if (rIdx >= 0) {
+              resFA.removeAt(rIdx);
+            }
+          }
+        });
+      }
+    });
+
+    this.evaluateAllReadings();
+    this.toastService.show(`Parameter '${param.name}' removed from execution.`, 'info');
+  }
+
+  // ----------------------------------------------------------------
+  // Preparation Checklist & Calculation Live Value Helpers
+  // ----------------------------------------------------------------
+  preparationChecklist: Record<string, boolean> = {};
+
+  togglePreparationChecklist(key: string): void {
+    this.preparationChecklist[key] = !this.preparationChecklist[key];
+  }
+
+  isPreparationItemChecked(key: string): boolean {
+    return !!this.preparationChecklist[key];
+  }
+
+  getCalculatedValue(param: SnapshotParameterDto): string {
+    for (const spec of this.specimens.controls) {
+      const obsFA = spec.get('observations') as FormArray;
+      if (obsFA) {
+        for (const obs of obsFA.controls) {
+          const resCtrl = this.getResultControl(obs as FormGroup, param.parameterMasterID);
+          const calc = resCtrl?.get('calculatedValue')?.value;
+          if (calc != null && calc !== '' && calc !== '—') return String(calc);
+          const raw = resCtrl?.get('rawValue')?.value;
+          if (raw != null && raw !== '' && raw !== '—') return String(raw);
+        }
+      }
+    }
+    if (this.resultsOverview?.parameters) {
+      const cr = this.resultsOverview.parameters.find(r => r.parameterCode === param.code);
+      if (cr?.finalValue != null && cr.finalValue !== '') return String(cr.finalValue);
+      if (cr?.averageValue != null && cr.averageValue !== '') return String(cr.averageValue);
+    }
+    return '—';
+  }
+
+  getSectionParameters(sec: ExecutionLayoutSectionDto): SnapshotParameterDto[] {
+    if (!sec.items || sec.items.length === 0) return [];
+    const paramIds = sec.items
+      .filter(it => it.referenceType === 'ParameterMaster' || it.referenceType === 'ParameterMasterID' || !it.referenceType || it.referenceType === 'None')
+      .map(it => it.referenceID);
+    return this.parameters.filter(p => paramIds.includes(p.parameterMasterID));
+  }
+
+  get unmappedParameters(): SnapshotParameterDto[] {
+    if (!this.hasExecutionLayout) return [];
+    const allMappedIds = new Set<number>();
+    (this.configSnapshot?.executionLayout?.sections || []).forEach(sec => {
+      // If section is Observations and has no explicit items, it covers all non-calculated parameters
+      if (sec.sectionType === 'Observations' && (!sec.items || sec.items.length === 0)) {
+        this.parameters.filter(p => !p.isCalculated).forEach(p => allMappedIds.add(p.parameterMasterID));
+      } else if (sec.sectionType === 'Parameters' && !this.hasObservationsSection) {
+        this.parameters.forEach(p => allMappedIds.add(p.parameterMasterID));
+      } else {
+        (sec.items || []).forEach(it => {
+          if (it.referenceID) allMappedIds.add(it.referenceID);
+        });
+      }
+    });
+    return this.parameters.filter(p => !allMappedIds.has(p.parameterMasterID));
+  }
+
+  getResultControl(obs: FormGroup, paramMasterId: number): FormGroup | null {
+    const resultsFA = obs.get('results') as FormArray;
+    if (!resultsFA) return null;
+    const ctrl = resultsFA.controls.find(c => c.get('parameterMasterID')?.value === paramMasterId);
+    return ctrl ? (ctrl as FormGroup) : null;
+  }
+
+  getSectionIcon(sectionType: string): string {
+    switch (sectionType) {
+      case 'Preparation': return 'bi-clipboard-check text-info';
+      case 'Conditions': return 'bi-thermometer-half text-info';
+      case 'Equipment': return 'bi-tools text-warning';
+      case 'Parameters': return 'bi-list-columns text-primary';
+      case 'Observations': return 'bi-eye text-primary';
+      case 'Calculations': return 'bi-calculator text-success';
+      case 'Graph': return 'bi-graph-up text-danger';
+      case 'Factors': return 'bi-percent text-secondary';
+      case 'MeasurementUncertainty': return 'bi-compass text-dark';
+      case 'AcceptanceCriteria': return 'bi-check2-circle text-success';
+      case 'Attachments': return 'bi-paperclip text-primary';
+      case 'Remarks': return 'bi-card-text text-secondary';
+      default: return 'bi-layout-text-window text-secondary';
+    }
+  }
+
+  getGraphConfig(sec: ExecutionLayoutSectionDto): { xAxisParam?: SnapshotParameterDto; yAxisParam?: SnapshotParameterDto; seriesParams: SnapshotParameterDto[] } {
+    const xItem = (sec.items || []).find(it => it.referenceType === 'GraphXAxis');
+    const yItem = (sec.items || []).find(it => it.referenceType === 'GraphYAxis');
+    const sItems = (sec.items || []).filter(it => it.referenceType === 'GraphSeries');
+
+    const xAxisParam = this.parameters.find(p => p.parameterMasterID === xItem?.referenceID);
+    const yAxisParam = this.parameters.find(p => p.parameterMasterID === yItem?.referenceID);
+    const seriesParams = this.parameters.filter(p => sItems.some(si => si.referenceID === p.parameterMasterID));
+
+    return { xAxisParam, yAxisParam, seriesParams };
+  }
+
+  renderGraphForSection(sec: ExecutionLayoutSectionDto): void {
+    const canvasId = 'chartCanvas_' + sec.id;
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const graphConfig = this.getGraphConfig(sec);
+    const xParam = graphConfig.xAxisParam;
+    const yParam = graphConfig.yAxisParam;
+
+    const datasets: any[] = [];
+    const colors = ['#da261c', '#2563eb', '#16a34a', '#d97706', '#9333ea', '#0891b2'];
+
+    this.specimens.controls.forEach((spec, sIdx) => {
+      const specId = spec.get('specimenIdentifier')?.value || `Specimen #${sIdx + 1}`;
+      const isDiscarded = spec.get('isDiscarded')?.value;
+      if (isDiscarded) return;
+
+      const obsFA = spec.get('observations') as FormArray;
+      const points: { x: number; y: number }[] = [];
+
+      obsFA.controls.forEach(obs => {
+        let xVal: number | null = null;
+        let yVal: number | null = null;
+
+        if (xParam) {
+          const resCtrl = this.getResultControl(obs as FormGroup, xParam.parameterMasterID);
+          const raw = resCtrl?.get('rawValue')?.value ?? resCtrl?.get('numericValue')?.value;
+          if (raw !== '' && raw != null && !isNaN(Number(raw))) xVal = Number(raw);
+        }
+        if (yParam) {
+          const resCtrl = this.getResultControl(obs as FormGroup, yParam.parameterMasterID);
+          const raw = resCtrl?.get('rawValue')?.value ?? resCtrl?.get('numericValue')?.value;
+          if (raw !== '' && raw != null && !isNaN(Number(raw))) yVal = Number(raw);
+        }
+
+        if (xVal !== null && yVal !== null) {
+          points.push({ x: xVal, y: yVal });
+        }
+      });
+
+      points.sort((a, b) => a.x - b.x);
+
+      const color = colors[sIdx % colors.length];
+      datasets.push({
+        label: specId,
+        data: points,
+        borderColor: color,
+        backgroundColor: color + '20',
+        fill: false,
+        tension: 0.35,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        showLine: true
+      });
+    });
+
+    const existingChart = this.activeCharts.get(canvasId);
+    if (existingChart) {
+      existingChart.destroy();
+      this.activeCharts.delete(canvasId);
+    }
+
+    const chart = new Chart(canvas, {
+      type: 'scatter',
+      data: { datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 250 },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { family: 'Poppins', size: 11 } }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx: any) => `${ctx.dataset.label}: (${ctx.raw.x} ${xParam?.unit || ''}, ${ctx.raw.y} ${yParam?.unit || ''})`
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: {
+              display: true,
+              text: `${xParam?.name || 'X-Axis'} (${xParam?.unit || '—'})`,
+              font: { family: 'Poppins', size: 11, weight: 'bold' }
+            },
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          },
+          y: {
+            title: {
+              display: true,
+              text: `${yParam?.name || 'Y-Axis'} (${yParam?.unit || '—'})`,
+              font: { family: 'Poppins', size: 11, weight: 'bold' }
+            },
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          }
+        }
+      }
+    });
+
+    this.activeCharts.set(canvasId, chart);
+  }
+
+  renderAllGraphs(): void {
+    if (!this.hasExecutionLayout) return;
+    const graphSections = this.layoutSections.filter(s => s.sectionType === 'Graph' || s.presentationStyle === 'InteractiveChart');
+    graphSections.forEach(sec => this.renderGraphForSection(sec));
   }
 }

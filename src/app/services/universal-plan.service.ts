@@ -69,6 +69,11 @@ export interface PlannedUniversalTestDto {
   branchName?: string;
   departmentID?: number;
   departmentName?: string;
+  executionLayoutID?: number;
+  executionLayoutCode?: string;
+  executionLayoutName?: string;
+  rendererType?: string;
+  layoutResolutionLevel?: string;
   status: string;
   testExecutionID?: number;
   executionStatus?: string;
@@ -82,6 +87,8 @@ export interface UniversalPlanSampleSummaryDto {
   gradeName?: string;
   specificationHeaderID?: number;
   specificationName?: string;
+  sampleDisciplineID?: number | null;
+  sampleDisciplineName?: string | null;
   sampleTestPlanID: number;
   planStatus: string;
   planVersion: number;
@@ -119,6 +126,8 @@ export interface UniversalPlanWorkspaceDto {
   sampleID: number;
   sampleNo: string;
   sampleDetails?: string;
+  sampleDisciplineID?: number | null;
+  sampleDisciplineName?: string | null;
   inwardDate: string;
   customerID: number;
   customerName: string;
@@ -169,6 +178,9 @@ export interface PreviewParameterDto {
   resolutionReason?: string;
   specificationLineID?: number;
   sourceSpecificationVersionID?: number;
+
+  // Phase 1C — NABL scope coverage at planning (same validator semantics)
+  scopeStatus?: string;
 }
 
 export interface PreviewConditionDto {
@@ -181,6 +193,22 @@ export interface PreviewConditionDto {
   configuredValue: string;
   hasConfiguration: boolean;
   status: string;
+}
+
+export interface PreviewEquipmentDto {
+  equipmentRequirementMasterID?: number;
+  requirementName: string;
+  equipmentTypeID: number;
+  equipmentTypeName?: string;
+  isMandatory: boolean;
+  equipmentID?: number;
+  equipmentName?: string;
+  equipmentCode?: string;
+  serialNumber?: string;
+  calibrationStatus: string;
+  calibrationDueDate?: string;
+  isValidForExecution: boolean;
+  message?: string;
 }
 
 export interface UniversalPlanValidationSummaryDto {
@@ -206,6 +234,8 @@ export interface UniversalPlanValidationSummaryDto {
   departmentRoutingMessage?: string;
   requiredConditionsPass: boolean;
   requiredConditionsMessage?: string;
+  equipmentPass: boolean;
+  equipmentMessage?: string;
   allPassed: boolean;
   blockingErrors: string[];
   warnings: string[];
@@ -230,6 +260,7 @@ export interface UniversalPlanPreviewResponseDto {
   disciplineID?: number;
   disciplineName?: string;
   testMethodSpecificationID?: number;
+  testMethodCode?: string;
   testMethodName?: string;
   testMethodStandard?: string;
   testMethodSpecificationVersionID?: number;
@@ -249,8 +280,14 @@ export interface UniversalPlanPreviewResponseDto {
   departmentID?: number;
   departmentName?: string;
   departmentRoutingSource: string;
+  executionLayoutID?: number;
+  executionLayoutCode?: string;
+  executionLayoutName?: string;
+  rendererType?: string;
+  layoutResolutionLevel?: string;
   parameters: PreviewParameterDto[];
   conditions: PreviewConditionDto[];
+  equipment: PreviewEquipmentDto[];
   validationSummary: UniversalPlanValidationSummaryDto;
   isConfigurationReady: boolean;
   tenant?: TenantContextDto;
@@ -278,6 +315,7 @@ export interface UniversalPlanSaveDto {
   sampleTestPlanID: number;
   sampleID: number;
   branchID: number;
+  productMasterID?: number;
   specificationHeaderID?: number;
   specificationGradeID?: number;
   specificationVersionID?: number;
@@ -288,6 +326,7 @@ export interface UniversalPlanConfirmDto {
   sampleTestPlanID: number;
   sampleID: number;
   branchID: number;
+  productMasterID?: number;
   specificationHeaderID?: number;
   specificationGradeID?: number;
   specificationVersionID?: number;

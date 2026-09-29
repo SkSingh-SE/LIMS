@@ -1818,6 +1818,7 @@
                           <th>Code</th>
                           <th>Type</th>
                           <th>Unit</th>
+                          <th class="text-center">Computed Result</th>
                           <th class="text-center">Role</th>
                           <th>Specification Limit</th>
                           <th class="text-center">Engine Binding</th>
@@ -1828,9 +1829,9 @@
                           *ngFor="let p of (getSectionParameters(sec).length > 0 ? getSectionParameters(sec) : parameters)">
                           <td class="fw-semibold">{{ p.name }}</td>
                           <td><span class="badge-code">{{ p.code || '—' }}</span></td>
-                          <td><span class="badge bg-light text-secondary border small">{{ p.isCalculated ? 'Calculated'
-                              : (p.inputType || 'Decimal') }}</span></td>
+                          <td><span class="badge bg-light text-secondary border small">{{ p.isCalculated ? 'Calculated' : (p.inputType || 'Decimal') }}</span></td>
                           <td>{{ p.unit || '—' }}</td>
+                          <td class="text-center fw-bold" [ngClass]="{'text-success': getCalculatedValue(p) && getCalculatedValue(p) !== '—', 'text-muted': !getCalculatedValue(p) || getCalculatedValue(p) === '—'}">{{ getCalculatedValue(p) || '—' }}</td>
                           <td class="text-center">
                             <span *ngIf="p.isRequired"
                               class="badge bg-danger-subtle text-danger border border-danger-subtle small me-1">Mandatory</span>

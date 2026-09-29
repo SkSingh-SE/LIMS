@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, OnChanges, SimpleChanges, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ParameterService } from '../../../services/parameter.service';
@@ -7,10 +7,11 @@ import { firstValueFrom } from 'rxjs';
 
 export interface FormulaToken {
   type: 'param' | 'operator' | 'number' | 'paren' | 'function' | 'comma';
-  value: string;      // {P12}, +, 6, (, ABS(, ,
-  display: string;    // Carbon, +, 6, (, ABS, ,
+  value: string;      // {MOULD_VOLUME}, +, 6, (, ABS(, ,
+  display: string;    // Mould Volume, +, 6, (, ABS, ,
   paramId?: number;
   paramName?: string;
+  paramCode?: string;
 }
 
 @Component({
@@ -20,9 +21,9 @@ export interface FormulaToken {
   templateUrl: './formula-builder.component.html',
   styleUrls: ['./formula-builder.component.css']
 })
-export class FormulaBuilderComponent implements OnInit, OnChanges {
+export class FormulaBuilderComponent implements OnInit, OnChanges, OnDestroy {
   @Input() visible = false;
-  @Input() parameterType: string = 'Chemical';
+  @Input() parameterType: string = 'Universal';
   @Input() currentFormula = '';
   @Input() currentFormulaDisplay = '';
 
@@ -30,29 +31,39 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
   @Output() formulaSaved = new EventEmitter<{ formula: string; formulaDisplay: string }>();
   @Output() formulaCleared = new EventEmitter<void>();
 
+  @ViewChild('smartTextarea') smartTextarea?: ElementRef<HTMLTextAreaElement>;
+
   availableParameters: any[] = [];
   filteredParameters: any[] = [];
-  searchTerm = '';
+  filteredSmartParameters: any[] = [];
   
+  searchTerm = '';
+  smartSearchTerm = '';
+  
+  // Interactive Builder Tokens
   tokens: FormulaToken[] = [];
   isValidating = false;
   validationError: string | null = null;
+  validationSuccess: string | null = null;
   isValid = false;
   customNumberInput: string = '';
 
-  // Mode: 'click' or 'smart'
-  currentMode: 'click' | 'smart' = 'click';
+  // Mode: 'smart' (default modern) or 'click' (interactive chips)
+  currentMode: 'smart' | 'click' = 'smart';
   smartFormulaInput: string = '';
+  resolvedFormulaPreview: string = '';
   smartTokens: any[] = [];
-  smartErrors: string[] = [];
-  smartValid = false;
+  smartValidationError: string | null = null;
+  smartValidationSuccess: string | null = null;
+  isSmartValid = false;
 
-  // Operator sets
+  // Basic Operators & Parentheses
   basicOperators = [
     { display: '+', value: '+' },
     { display: '-', value: '-' },
     { display: '×', value: '*' },
-    { display: '÷', value: '/' }
+    { display: '÷', value: '/' },
+    { display: '^', value: '^' }
   ];
 
   parentheses = [
@@ -61,9 +72,10 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
   ];
 
   functions = [
-    { display: 'ABS', value: 'ABS(' },
     { display: 'ROUND', value: 'ROUND(' },
+    { display: 'ABS', value: 'ABS(' },
     { display: 'POW', value: 'POW(' },
+    { display: 'SQRT', value: 'SQRT(' },
     { display: 'MIN', value: 'MIN(' },
     { display: 'MAX', value: 'MAX(' },
     { display: 'MEAN', value: 'MEAN(' },
@@ -71,28 +83,61 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
     { display: 'IF', value: 'if(' }
   ];
 
+  quickSmartOperators = ['+', '-', '*', '/', '^', '(', ')', ','];
+  quickSmartFunctions = ['ROUND', 'ABS', 'POW', 'SQRT', 'MIN', 'MAX', 'MEAN', 'SUM', 'IF'];
+
+  /**
+   * Capture-phase focus trap disabler to prevent parent Bootstrap modal focusin
+   * handler from stealing focus away from child inputs/textareas.
+   */
+  private focusTrapDisabler = (event: FocusEvent) => {
+    if (this.visible && this.elementRef.nativeElement.contains(event.target as Node)) {
+      event.stopImmediatePropagation();
+    }
+  };
+
   constructor(
     private parameterService: ParameterService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private elementRef: ElementRef
   ) {}
 
   ngOnInit(): void {
+    window.addEventListener('focusin', this.focusTrapDisabler, true);
+    window.addEventListener('focus', this.focusTrapDisabler, true);
     if (this.visible) {
-      this.loadParameters();
-      this.parseInitialFormula();
+      this.initModalData();
     }
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('focusin', this.focusTrapDisabler, true);
+    window.removeEventListener('focus', this.focusTrapDisabler, true);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible'] && this.visible) {
-      this.loadParameters();
-      this.parseInitialFormula();
-      this.validationError = null;
-      this.isValid = false;
-      this.currentMode = 'click';
-      this.smartFormulaInput = this.getDisplayString();
-      this.parseSmartInput();
+      this.initModalData();
     }
+  }
+
+  private async initModalData() {
+    this.validationError = null;
+    this.validationSuccess = null;
+    this.isValid = false;
+    this.smartValidationError = null;
+    this.smartValidationSuccess = null;
+    this.isSmartValid = false;
+    this.searchTerm = '';
+    this.smartSearchTerm = '';
+    
+    await this.loadParameters();
+    this.setupInitialFormula();
+
+    // Auto-focus textarea in next tick
+    setTimeout(() => {
+      this.smartTextarea?.nativeElement?.focus();
+    }, 100);
   }
 
   close(): void {
@@ -102,80 +147,134 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
 
   async loadParameters() {
     try {
-      let res;
+      let res: any[];
       if (this.parameterType === 'Chemical') {
-        res = await firstValueFrom(this.parameterService.getChemicalParameterDropdown('', 0, 1000));
+        res = await firstValueFrom(this.parameterService.getChemicalParameterDropdown('', 0, 1500));
       } else if (this.parameterType === 'Mechanical') {
-        res = await firstValueFrom(this.parameterService.getMechanicalParameterDropdown('', 0, 1000));
+        res = await firstValueFrom(this.parameterService.getMechanicalParameterDropdown('', 0, 1500));
       } else {
-        // Universal / All / Reported / Observed
-        res = await firstValueFrom(this.parameterService.getParameterDropdown('', 0, 2000));
+        res = await firstValueFrom(this.parameterService.getParameterDropdown('', 0, 2500));
       }
       
       this.availableParameters = res || [];
-      this.filteredParameters = [...this.availableParameters];
+      this.filterParams();
+      this.filterSmartParams();
     } catch (error) {
-      console.error(error);
-      this.toastService.show('Failed to load parameters', 'error');
+      console.error('Failed to load parameters for formula builder', error);
+      this.toastService.show('Failed to load parameters list', 'error');
     }
   }
 
-  filterParams() {
-    const s = this.searchTerm.toLowerCase();
-    this.filteredParameters = this.availableParameters.filter(p => 
-      (p.name || '').toLowerCase().includes(s) || 
-      (p.displayText || '').toLowerCase().includes(s) ||
-      (p.additionalValues?.Code || p.code || '').toLowerCase().includes(s)
-    );
+  getParamName(param: any): string {
+    if (!param) return '';
+    return (param.additionalValues?.PureName || param.name || param.displayText || `Param ${param.id || param.value || ''}`).trim();
+  }
+
+  getParamCode(param: any): string {
+    if (!param) return '';
+    return (param.additionalValues?.Code || param.code || '').trim();
   }
 
   getParameterToken(param: any): string {
-    const code = (param.additionalValues?.Code || param.code || '').trim();
+    if (!param) return '';
+    const code = this.getParamCode(param);
     if (code) return `{${code}}`;
-    const symbol = (param.additionalValues?.Symbol || param.symbol || '').trim();
-    if (symbol) return `{${symbol}}`;
-    const pureName = (param.additionalValues?.PureName || param.name || param.displayText || '').trim();
-    if (pureName) return `{${pureName.replace(/[\s-]+/g, '_').toUpperCase()}}`;
-    return `{PARAM_${param.id || param.value}}`;
+    const id = param.id || param.value;
+    if (id) return `{P${id}}`;
+    const name = this.getParamName(param);
+    return `{${name.replace(/[^A-Za-z0-9_]/g, '_').toUpperCase()}}`;
   }
 
-  normalizeFormula(formula: string): string {
-    if (!formula) return '';
-    return formula.replace(/\{P(\d+)\}/gi, (match, idStr) => {
-      const id = parseInt(idStr, 10);
-      const found = this.availableParameters.find((p: any) => (p.id || p.value) === id);
-      if (found) {
-        return this.getParameterToken(found);
-      }
-      return match;
+  filterParams() {
+    const s = (this.searchTerm || '').trim().toLowerCase();
+    if (!s) {
+      this.filteredParameters = [...this.availableParameters];
+      return;
+    }
+    this.filteredParameters = this.availableParameters.filter(p => {
+      const name = this.getParamName(p).toLowerCase();
+      const code = this.getParamCode(p).toLowerCase();
+      const symbol = (p.additionalValues?.Symbol || p.symbol || '').toLowerCase();
+      return name.includes(s) || code.includes(s) || symbol.includes(s);
     });
   }
 
-  parseInitialFormula() {
+  filterSmartParams() {
+    const s = (this.smartSearchTerm || '').trim().toLowerCase();
+    if (!s) {
+      this.filteredSmartParameters = [...this.availableParameters];
+      return;
+    }
+    this.filteredSmartParameters = this.availableParameters.filter(p => {
+      const name = this.getParamName(p).toLowerCase();
+      const code = this.getParamCode(p).toLowerCase();
+      const symbol = (p.additionalValues?.Symbol || p.symbol || '').toLowerCase();
+      return name.includes(s) || code.includes(s) || symbol.includes(s);
+    });
+  }
+
+  setupInitialFormula() {
+    const formula = this.currentFormula?.trim() || '';
+    this.smartFormulaInput = formula;
+    this.parseSmartInput();
+
+    // Setup interactive tokens
     this.tokens = [];
-    if (!this.currentFormula) return;
-    
-    const normalized = this.normalizeFormula(this.currentFormula);
-    this.tokens.push({
-      type: 'function',
-      value: normalized,
-      display: this.currentFormulaDisplay || normalized
-    });
+    if (formula) {
+      this.tokens.push({
+        type: 'function',
+        value: formula,
+        display: this.currentFormulaDisplay || formula
+      });
+    }
   }
+
+  setMode(mode: 'smart' | 'click') {
+    this.currentMode = mode;
+    if (mode === 'smart') {
+      if (this.tokens.length > 0) {
+        const formulaStr = this.getFormulaString();
+        if (formulaStr) {
+          this.smartFormulaInput = formulaStr;
+        }
+      }
+      this.parseSmartInput();
+      setTimeout(() => {
+        this.smartTextarea?.nativeElement?.focus();
+      }, 50);
+    } else {
+      if (this.smartFormulaInput) {
+        this.tokens = [{
+          type: 'function',
+          value: this.resolveFormulaExpression(this.smartFormulaInput),
+          display: this.smartFormulaInput
+        }];
+      }
+    }
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Interactive Mode Methods
+  // ══════════════════════════════════════════════════════
 
   addParameterToken(param: any) {
-    const id = param.id || param.value;
-    const name = param.additionalValues?.PureName || param.name || param.displayText;
     const tokenVal = this.getParameterToken(param);
+    const name = this.getParamName(param);
+    const id = param.id || param.value;
+    const code = this.getParamCode(param);
+
     this.tokens.push({
       type: 'param',
-      value: tokenVal, 
+      value: tokenVal,
       display: name,
       paramId: id,
-      paramName: name
+      paramName: name,
+      paramCode: code
     });
+
     this.isValid = false;
-    this.syncSmartInput();
+    this.validationError = null;
+    this.validationSuccess = null;
   }
 
   addOperatorToken(op: any, type: 'operator' | 'paren' | 'function') {
@@ -185,7 +284,8 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
       display: op.display
     });
     this.isValid = false;
-    this.syncSmartInput();
+    this.validationError = null;
+    this.validationSuccess = null;
   }
 
   addCommaToken() {
@@ -195,33 +295,37 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
       display: ','
     });
     this.isValid = false;
-    this.syncSmartInput();
+    this.validationError = null;
+    this.validationSuccess = null;
   }
 
   addCustomNumber() {
-    if (!this.customNumberInput) return;
+    const val = (this.customNumberInput || '').toString().trim();
+    if (!val) return;
     
     this.tokens.push({
       type: 'number',
-      value: this.customNumberInput,
-      display: this.customNumberInput
+      value: val,
+      display: val
     });
     this.customNumberInput = '';
     this.isValid = false;
-    this.syncSmartInput();
+    this.validationError = null;
+    this.validationSuccess = null;
   }
 
   removeToken(index: number) {
     this.tokens.splice(index, 1);
     this.isValid = false;
-    this.syncSmartInput();
+    this.validationError = null;
+    this.validationSuccess = null;
   }
 
   clearTokens() {
     this.tokens = [];
     this.isValid = false;
     this.validationError = null;
-    this.syncSmartInput();
+    this.validationSuccess = null;
   }
 
   getFormulaString(): string {
@@ -232,127 +336,41 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
     return this.tokens.map(t => t.display).join(' ');
   }
 
-  syncSmartInput() {
-    this.smartFormulaInput = this.getDisplayString();
-    this.parseSmartInput();
-  }
-
-  // ── Smart Formula Mode ──
-  setMode(mode: 'click' | 'smart') {
-    this.currentMode = mode;
-    if (mode === 'smart') {
-      this.smartFormulaInput = this.getDisplayString();
-      this.parseSmartInput();
-    }
-  }
-
-  parseSmartInput(): void {
-    const input = this.smartFormulaInput.trim();
-    this.smartTokens = [];
-    this.smartErrors = [];
-    this.smartValid = false;
-    if (!input) return;
-
-    const rawTokens = input.match(/([a-zA-Z_][a-zA-Z0-9_ ]*[a-zA-Z0-9_]|[a-zA-Z_][a-zA-Z0-9_]*|[0-9]*\.?[0-9]+|[+\-*/(),])/g) || [];
-    const operators = new Set(['+', '-', '*', '/', '(', ')', ',']);
-    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
-    const functionNames = new Set(this.functions.map(f => f.display.toUpperCase()));
-
-    for (const raw of rawTokens) {
-      if (operators.has(raw)) { this.smartTokens.push({ token: raw, type: 'operator' }); continue; }
-      if (/^[0-9]*\.?[0-9]+$/.test(raw)) { this.smartTokens.push({ token: raw, type: 'number' }); continue; }
-      if (constants[raw]) { this.smartTokens.push({ token: raw, type: 'number', matched: `= ${constants[raw]}` }); continue; }
-      if (functionNames.has(raw.toUpperCase())) { this.smartTokens.push({ token: raw.toUpperCase(), type: 'function' }); continue; }
-
-      const exact = this.availableParameters.find((p: any) => 
-        (p.name || p.displayText || '').toLowerCase() === raw.toLowerCase() ||
-        (p.additionalValues?.Code || p.code || '').toLowerCase() === raw.toLowerCase()
-      );
-      if (exact) { 
-        const ref = this.getParameterToken(exact);
-        this.smartTokens.push({ token: raw, type: 'param', matched: exact.additionalValues?.PureName || exact.name || exact.displayText, paramRef: ref }); 
-        continue; 
-      }
-
-      const partial = this.availableParameters.find((p: any) => 
-        (p.name || p.displayText || '').toLowerCase().startsWith(raw.toLowerCase()) ||
-        (p.additionalValues?.Code || p.code || '').toLowerCase().startsWith(raw.toLowerCase())
-      );
-      if (partial) {
-        const ref = this.getParameterToken(partial);
-        this.smartTokens.push({ token: raw, type: 'param', matched: `${partial.additionalValues?.PureName || partial.name || partial.displayText}?`, paramRef: ref });
-        this.smartErrors.push(`"${raw}" → did you mean "${partial.additionalValues?.PureName || partial.name || partial.displayText}"?`);
-        continue; 
-      }
-
-      this.smartTokens.push({ token: raw, type: 'unknown' });
-      this.smartErrors.push(`"${raw}" — no matching parameter or function`);
-    }
-
-    let depth = 0;
-    for (const t of this.smartTokens) {
-      if (t.token === '(') depth++;
-      if (t.token === ')') depth--;
-      if (depth < 0) { this.smartErrors.push('Unmatched ")"'); break; }
-    }
-    if (depth > 0) this.smartErrors.push(`${depth} unclosed bracket(s)`);
-
-    this.smartValid = this.smartErrors.length === 0 && this.smartTokens.length > 0;
-  }
-
-  applySmartFormula(): void {
-    if (!this.smartValid) return;
-    const constants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265' };
-    this.tokens = [];
-    for (const t of this.smartTokens) {
-      if (t.type === 'param' && t.paramRef) {
-        this.tokens.push({ type: 'param', value: t.paramRef, display: t.matched || t.token });
-      } else if (t.type === 'number') {
-        const val = constants[t.token] || t.token;
-        this.tokens.push({ type: 'number', value: val, display: val });
-      } else if (t.type === 'operator') {
-        this.tokens.push({ type: t.token === '(' || t.token === ')' ? 'paren' : (t.token === ',' ? 'comma' : 'operator'), value: t.token, display: t.token });
-      } else if (t.type === 'function') {
-        this.tokens.push({ type: 'function', value: t.token + '(', display: t.token });
-      }
-    }
-    this.isValid = false;
-    this.currentMode = 'click';
-    this.validate();
-  }
-
-  insertSmartParam(name: string): void {
-    this.smartFormulaInput = (this.smartFormulaInput + ' ' + name).trim();
-    this.parseSmartInput();
-  }
-
-  async validate() {
+  async validateInteractiveFormula(): Promise<boolean> {
     const expression = this.getFormulaString();
     if (!expression) {
-      this.toastService.show('Formula is empty.', 'error');
-      return;
+      this.validationError = 'Formula is empty.';
+      this.isValid = false;
+      return false;
     }
 
     this.isValidating = true;
     this.validationError = null;
+    this.validationSuccess = null;
     this.isValid = false;
 
     try {
       const res = await firstValueFrom(this.parameterService.validateFormula(expression));
       if (res && res.isValid) {
         this.isValid = true;
+        this.validationSuccess = 'Formula syntax is valid and all parameter tokens are resolved!';
         this.toastService.show('Formula is valid!', 'success');
+        return true;
       } else {
-        this.validationError = res?.error || 'Validation failed';
+        this.isValid = false;
+        this.validationError = res?.error || 'Validation failed.';
+        return false;
       }
     } catch (error: any) {
-      this.validationError = error.error?.error || 'Error connecting to server for validation';
+      this.isValid = false;
+      this.validationError = error.error?.message || error.error?.error || 'Validation request error.';
+      return false;
     } finally {
       this.isValidating = false;
     }
   }
 
-  save() {
+  async saveInteractiveFormula() {
     if (this.tokens.length === 0) {
       this.formulaCleared.emit();
       this.close();
@@ -360,8 +378,8 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
     }
 
     if (!this.isValid) {
-      this.toastService.show('Please validate the formula first before saving.', 'error');
-      return;
+      const ok = await this.validateInteractiveFormula();
+      if (!ok) return;
     }
 
     const formula = this.getFormulaString();
@@ -369,5 +387,223 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
 
     this.formulaSaved.emit({ formula, formulaDisplay });
     this.close();
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Smart Mode Methods
+  // ══════════════════════════════════════════════════════
+
+  onSmartInput(): void {
+    this.parseSmartInput();
+  }
+
+  parseSmartInput(): void {
+    const input = (this.smartFormulaInput || '').trim();
+    this.smartTokens = [];
+    this.smartValidationError = null;
+    this.smartValidationSuccess = null;
+    this.isSmartValid = false;
+
+    if (!input) {
+      this.resolvedFormulaPreview = '';
+      return;
+    }
+
+    this.resolvedFormulaPreview = this.resolveFormulaExpression(input);
+
+    // Parse tokens for visual feedback
+    const tokenRegex = /\{[^{}]+\}|[0-9]*\.?[0-9]+|[+\-*/^(),]|ROUND|ABS|POW|SQRT|MIN|MAX|MEAN|SUM|IF|[a-zA-Z_][a-zA-Z0-9_]*/gi;
+    const matches = this.resolvedFormulaPreview.match(tokenRegex) || [];
+    
+    const opSet = new Set(['+', '-', '*', '/', '^', '(', ')', ',']);
+    const fnSet = new Set(['ROUND', 'ABS', 'POW', 'SQRT', 'MIN', 'MAX', 'MEAN', 'SUM', 'IF']);
+
+    for (const m of matches) {
+      if (m.startsWith('{') && m.endsWith('}')) {
+        const code = m.slice(1, -1);
+        const matchedParam = this.availableParameters.find(p => 
+          this.getParamCode(p).toUpperCase() === code.toUpperCase() ||
+          this.getParameterToken(p).toUpperCase() === m.toUpperCase() ||
+          this.getParamName(p).toUpperCase() === code.toUpperCase()
+        );
+        this.smartTokens.push({
+          token: m,
+          type: 'param',
+          name: matchedParam ? this.getParamName(matchedParam) : code
+        });
+      } else if (opSet.has(m)) {
+        this.smartTokens.push({ token: m, type: 'operator' });
+      } else if (/^[0-9]*\.?[0-9]+$/.test(m)) {
+        this.smartTokens.push({ token: m, type: 'number' });
+      } else if (fnSet.has(m.toUpperCase())) {
+        this.smartTokens.push({ token: m.toUpperCase(), type: 'function' });
+      } else {
+        this.smartTokens.push({ token: m, type: 'text' });
+      }
+    }
+
+    // Check parenthesis balance
+    let depth = 0;
+    for (const ch of input) {
+      if (ch === '(') depth++;
+      if (ch === ')') depth--;
+      if (depth < 0) {
+        this.smartValidationError = 'Unmatched closing parenthesis ")" in formula.';
+        return;
+      }
+    }
+    if (depth > 0) {
+      this.smartValidationError = `${depth} unclosed parenthesis "(" in formula.`;
+      return;
+    }
+  }
+
+  insertTextAtCursor(text: string): void {
+    const textarea = this.smartTextarea?.nativeElement;
+    const current = this.smartFormulaInput || '';
+
+    if (!textarea) {
+      this.smartFormulaInput = (current + ' ' + text).trim();
+      this.parseSmartInput();
+      return;
+    }
+
+    const start = textarea.selectionStart ?? current.length;
+    const end = textarea.selectionEnd ?? current.length;
+
+    const before = current.substring(0, start);
+    const after = current.substring(end);
+
+    const needsSpaceBefore = before.length > 0 && !before.endsWith(' ') && !before.endsWith('(') && !text.startsWith(')') && !text.startsWith(',');
+    const needsSpaceAfter = after.length > 0 && !after.startsWith(' ') && !after.startsWith(')') && !after.startsWith(',') && !text.endsWith('(');
+
+    const insertion = (needsSpaceBefore ? ' ' : '') + text + (needsSpaceAfter ? ' ' : '');
+    this.smartFormulaInput = before + insertion + after;
+
+    this.parseSmartInput();
+
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + insertion.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  }
+
+  insertSmartParam(param: any): void {
+    const token = this.getParameterToken(param);
+    this.insertTextAtCursor(token);
+  }
+
+  insertSmartFunction(fnName: string): void {
+    this.insertTextAtCursor(`${fnName}(`);
+  }
+
+  resolveFormulaExpression(input: string): string {
+    if (!input) return '';
+    let resolved = input.trim();
+
+    // 1. Temporarily protect already enclosed tokens: {TOKEN}
+    const protectedTokens: string[] = [];
+    resolved = resolved.replace(/\{[^{}]+\}/g, (match) => {
+      protectedTokens.push(match);
+      return `__PROT_TOKEN_${protectedTokens.length - 1}__`;
+    });
+
+    // 2. Convert legacy P12 references: e.g. \bP\d+\b
+    resolved = resolved.replace(/\bP(\d+)\b/gi, '{P$1}');
+
+    // 3. Sort available parameters by name length descending so multi-word names match first
+    const sortedParams = [...this.availableParameters].sort((a, b) => {
+      const nameA = this.getParamName(a).length;
+      const nameB = this.getParamName(b).length;
+      return nameB - nameA;
+    });
+
+    // 4. Replace parameter names and codes if not already enclosed
+    for (const param of sortedParams) {
+      const code = this.getParamCode(param);
+      const name = this.getParamName(param);
+      const token = this.getParameterToken(param);
+
+      if (code) {
+        const codeRegex = new RegExp(`\\b${this.escapeRegex(code)}\\b`, 'gi');
+        resolved = resolved.replace(codeRegex, token);
+      }
+      if (name && name.length > 2) {
+        const nameRegex = new RegExp(`\\b${this.escapeRegex(name)}\\b`, 'gi');
+        resolved = resolved.replace(nameRegex, token);
+      }
+    }
+
+    // 5. Restore protected tokens
+    resolved = resolved.replace(/__PROT_TOKEN_(\d+)__/g, (_, idx) => {
+      return protectedTokens[parseInt(idx, 10)] || '';
+    });
+
+    return resolved;
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  async validateSmartFormula(): Promise<boolean> {
+    const input = (this.smartFormulaInput || '').trim();
+    if (!input) {
+      this.smartValidationError = 'Formula cannot be empty.';
+      this.isSmartValid = false;
+      return false;
+    }
+
+    const resolved = this.resolveFormulaExpression(input);
+    this.isValidating = true;
+    this.smartValidationError = null;
+    this.smartValidationSuccess = null;
+    this.isSmartValid = false;
+
+    try {
+      const res = await firstValueFrom(this.parameterService.validateFormula(resolved));
+      if (res && res.isValid) {
+        this.isSmartValid = true;
+        this.smartValidationSuccess = 'Formula syntax is valid and all parameters are verified!';
+        this.toastService.show('Formula is valid!', 'success');
+        return true;
+      } else {
+        this.isSmartValid = false;
+        this.smartValidationError = res?.error || 'Formula validation failed.';
+        return false;
+      }
+    } catch (error: any) {
+      this.isSmartValid = false;
+      this.smartValidationError = error?.error?.message || error?.error?.error || 'Error validating formula with server.';
+      return false;
+    } finally {
+      this.isValidating = false;
+    }
+  }
+
+  async applySmartFormula(): Promise<void> {
+    const input = (this.smartFormulaInput || '').trim();
+    if (!input) {
+      this.formulaCleared.emit();
+      this.close();
+      return;
+    }
+
+    if (!this.isSmartValid) {
+      const isValid = await this.validateSmartFormula();
+      if (!isValid) return;
+    }
+
+    const formula = this.resolveFormulaExpression(input);
+    const formulaDisplay = input;
+
+    this.formulaSaved.emit({ formula, formulaDisplay });
+    this.close();
+  }
+
+  clearSmartFormula(): void {
+    this.smartFormulaInput = '';
+    this.parseSmartInput();
   }
 }

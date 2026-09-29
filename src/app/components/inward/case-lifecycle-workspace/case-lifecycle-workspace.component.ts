@@ -7,7 +7,6 @@ import { ToastService } from '../../../services/toast.service';
 import { PermissionService } from '../../../utility/permission/permission.service';
 import { SampleInwardFormComponent } from '../sample-inward-form/sample-inward-form.component';
 import { ReviewOfRequestFormComponent } from '../review-of-request-form/review-of-request-form.component';
-import { CuttingMachiningPlanTabComponent } from '../cutting-machining-plan-tab/cutting-machining-plan-tab.component';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { CaseSampleSelectorComponent } from './case-sample-selector/case-sample-selector.component';
 
@@ -42,7 +41,6 @@ export interface LifecycleStage {
     FormsModule,
     SampleInwardFormComponent,
     ReviewOfRequestFormComponent,
-    CuttingMachiningPlanTabComponent,
     TestStatusBadgeComponent,
     CaseSampleSelectorComponent
   ]
@@ -91,22 +89,8 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
       pendingAction: 'Configure Test Plan & Review Feasibility'
     },
     {
-      id: 'preparation',
-      stepNumber: 3,
-      label: 'Preparation',
-      shortLabel: 'Prep',
-      icon: 'bi-tools',
-      status: 'pending',
-      isReadOnly: false,
-      isAccessible: false,
-      permission: 'CanReadSampleInward',
-      statusDescription: 'Sample Cutting & Machining',
-      dependencyText: 'Review of Request must be approved & locked',
-      pendingAction: 'Record cutting & machining dimensions'
-    },
-    {
       id: 'testing',
-      stepNumber: 4,
+      stepNumber: 3,
       label: 'Testing',
       shortLabel: 'Testing',
       icon: 'bi-flask',
@@ -115,12 +99,12 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
       isAccessible: false,
       permission: 'CanReadTestResult',
       statusDescription: 'Test Execution & Parameter Entry',
-      dependencyText: 'Sample preparation & review completion',
+      dependencyText: 'Review completion',
       pendingAction: 'Enter test observations and results'
     },
     {
       id: 'reporting',
-      stepNumber: 5,
+      stepNumber: 4,
       label: 'Reporting',
       shortLabel: 'Reports',
       icon: 'bi-file-earmark-text',
@@ -134,7 +118,7 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
     },
     {
       id: 'accounts',
-      stepNumber: 6,
+      stepNumber: 5,
       label: 'Accounts',
       shortLabel: 'Accounts',
       icon: 'bi-receipt',
@@ -147,7 +131,7 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
     },
     {
       id: 'close',
-      stepNumber: 7,
+      stepNumber: 6,
       label: 'Close',
       shortLabel: 'Close',
       icon: 'bi-check2-circle',
@@ -216,20 +200,15 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
     let activeStageIndex = 0;
     if (s.includes('PLAN') || s.includes('REVIEW')) {
       activeStageIndex = 1; // 2. Review & Plan
-    } else if (s.includes('PREP') || s.includes('CUTTING') || s.includes('MACHINING')) {
-      activeStageIndex = 2; // 3. Preparation
     } else if (s.includes('TEST') || s.includes('VERIF')) {
-      activeStageIndex = 3; // 4. Testing
+      activeStageIndex = 2; // 3. Testing
     } else if (s.includes('REPORT') || s.includes('DISPATCH')) {
-      activeStageIndex = 4; // 5. Reporting
+      activeStageIndex = 3; // 4. Reporting
     } else if (s.includes('INVOICE') || s.includes('ACCOUNT') || s.includes('BILLING')) {
-      activeStageIndex = 5; // 6. Accounts
+      activeStageIndex = 4; // 5. Accounts
     } else if (s.includes('CLOSE') || s.includes('COMPLET')) {
-      activeStageIndex = 6; // 7. Close
+      activeStageIndex = 5; // 6. Close
     }
-
-    // Check if preparation is required across all samples (or active stage is preparation)
-    const isPrepRequired = s.includes('PREP') || s.includes('CUTTING') || s.includes('MACHINING') || (this.lifecycleSummary?.samples?.some((sm: any) => sm.preparationRequired || sm.machiningRequired) ?? false);
 
     this.stages = this.stages.map((stage, i) => {
       let stageStatus: 'completed' | 'active' | 'pending' | 'na' = 'pending';
@@ -239,12 +218,7 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
       let completedBy = null;
       let naReason: string | undefined = undefined;
 
-      // Check for Preparation N/A condition (only if not required and case is already beyond prep or at planning without prep)
-      if (stage.id === 'preparation' && !isPrepRequired && activeStageIndex !== 2 && (this.lifecycleSummary?.samples?.length ?? 0) > 0) {
-        stageStatus = 'na';
-        naReason = 'No cutting or machining required for any sample in this case';
-        isAccessible = false;
-      } else if (i < activeStageIndex) {
+      if (i < activeStageIndex) {
         stageStatus = 'completed';
         isAccessible = true;
         isReadOnly = true;
@@ -304,42 +278,13 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
 
             // Smoothly auto-navigate to the next stage
             const s = (this.currentStageStatus || '').toUpperCase();
-            if (s.includes('PREP') || s.includes('CUTTING') || s.includes('MACHINING')) {
-              this.activeStageId = 'preparation';
-              this.activeInlineAction = 'preparation';
-            } else if (s.includes('TEST') || s.includes('VERIF')) {
+            if (s.includes('TEST') || s.includes('VERIF')) {
               this.activeStageId = 'testing';
               this.activeInlineAction = 'testing';
             }
           },
           error: () => {
             this.updateLifecycleStages(this.currentStageStatus);
-            this.activeStageId = 'preparation';
-            this.activeInlineAction = 'preparation';
-          }
-        });
-      }
-    });
-  }
-
-  onPrepCompleted(): void {
-    this.inwardService.getSampleInwardById(this.inwardId).subscribe({
-      next: (data: any) => {
-        this.caseInfo = data;
-        this.currentStageStatus = data?.inwardStatus || data?.status || 'UNDER_TESTING';
-
-        this.inwardService.getLifecycleSummary(this.inwardId).subscribe({
-          next: (summary: any) => {
-            this.lifecycleSummary = summary;
-            if (summary?.inwardStatus) {
-              this.currentStageStatus = summary.inwardStatus;
-            }
-            this.updateLifecycleStages(this.currentStageStatus);
-            this.activeStageId = 'testing';
-            this.activeInlineAction = 'testing';
-          },
-          error: () => {
-            this.updateLifecycleStages(this.currentStageStatus);
             this.activeStageId = 'testing';
             this.activeInlineAction = 'testing';
           }
@@ -347,6 +292,8 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
       }
     });
   }
+
+
 
   selectStage(stageId: string): void {
     if (stageId === 'overview') {

@@ -553,19 +553,37 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         ctrl.patchValue({ numericValue: null }, { emitEvent: false });
       }
     });
-    // Preview calculated — show blocked if deps missing
-    this.parameters.filter(p => p.isCalculated && p.formula).forEach(param => {
-      const ctrl = resultsFA.controls.find(c => c.get('parameterCode')?.value === param.code);
-      if (!ctrl || !param.formula) return;
-      const deps = (param.formulaDependencies || []);
-      const missing = deps.some(d => valMap[d] == null && !Object.prototype.hasOwnProperty.call(valMap, d));
-      if (missing) {
-        ctrl.patchValue({ rawValue: '', calculatedValue: 'BLOCKED', resultStatus: 'Blocked' }, { emitEvent: false });
-        return;
-      }
-      // Simple client preview via server-style substitution trace is not authoritative — just show pending
-      // Real calc happens on SaveObservations server side
-    });
+    // Preview calculated — show blocked if deps missing, else evaluate
+    const calcParams = this.parameters.filter(p => p.isCalculated && p.formula);
+    let evaluatedCount = 1;
+    let passes = 0;
+    while (evaluatedCount > 0 && passes < 3) {
+      evaluatedCount = 0;
+      passes++;
+      calcParams.forEach(param => {
+        const ctrl = resultsFA.controls.find(c => c.get('parameterCode')?.value === param.code);
+        if (!ctrl || !param.formula) return;
+        // Skip if already evaluated in valMap
+        if (valMap[param.code] !== undefined) return;
+
+        const deps = (param.formulaDependencies || []);
+        const missing = deps.some(d => valMap[d] == null && !Object.prototype.hasOwnProperty.call(valMap, d));
+        if (missing) {
+          ctrl.patchValue({ rawValue: '', calculatedValue: 'BLOCKED', resultStatus: 'Blocked' }, { emitEvent: false });
+          return;
+        }
+        
+        // Simple client preview
+        const evaluated = this.clientFormulaEval(param.formula, valMap);
+        if (evaluated !== null) {
+          const decimals = param.decimalPrecision ?? 2;
+          const rounded = Number(Math.round(parseFloat(evaluated + 'e' + decimals)) + 'e-' + decimals);
+          valMap[param.code] = rounded;
+          ctrl.patchValue({ rawValue: rounded.toFixed(decimals), numericValue: rounded }, { emitEvent: false });
+          evaluatedCount++;
+        }
+      });
+    }
   }
 
   evaluateAllReadings(): void {
@@ -573,11 +591,144 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
       const obsFA = spec.get('observations') as FormArray;
       obsFA.controls.forEach(obs => this.previewObservationGroup(obs as FormGroup));
     });
+    this.evaluateCurvePeaks();
     this.renderAllGraphs();
   }
 
-  // Kept for backward compat but not authoritative
-  clientFormulaEval = (_formula: string, _vars: Record<string, number>): number | null => null;
+  evaluateCurvePeaks(): void {
+    const curveParams = this.parameters.filter(p => p.calculationRole === 'CurvePeak');
+    if (curveParams.length === 0) return;
+
+    let xParam: SnapshotParameterDto | undefined;
+    let yParam: SnapshotParameterDto | undefined;
+    
+    const graphSection = this.layoutSections.find(s => s.sectionType === 'Graph' || s.presentationStyle === 'InteractiveChart');
+    if (graphSection) {
+      const gConfig = this.getGraphConfig(graphSection);
+      xParam = gConfig.xAxisParam;
+      yParam = gConfig.yAxisParam;
+    }
+
+    if (!xParam || !yParam) return;
+
+    const points: { x: number, y: number }[] = [];
+    this.specimens.controls.forEach(spec => {
+      if (spec.get('isDiscarded')?.value) return;
+      const obsFA = spec.get('observations') as FormArray;
+      obsFA.controls.forEach(obs => {
+        const xCtrl = this.getResultControl(obs as FormGroup, xParam!.parameterMasterID);
+        const yCtrl = this.getResultControl(obs as FormGroup, yParam!.parameterMasterID);
+        
+        const xRaw = xCtrl?.get('rawValue')?.value ?? xCtrl?.get('numericValue')?.value;
+        const yRaw = yCtrl?.get('rawValue')?.value ?? yCtrl?.get('numericValue')?.value;
+        
+        if (xRaw !== '' && xRaw != null && !isNaN(Number(xRaw)) && yRaw !== '' && yRaw != null && !isNaN(Number(yRaw))) {
+           points.push({ x: Number(xRaw), y: Number(yRaw) });
+        }
+      });
+    });
+
+    if (points.length >= 3) {
+      const peak = this.calculatePolynomialPeak(points);
+      if (peak) {
+         curveParams.forEach(cp => {
+            let val = 0;
+            if (cp.code.toUpperCase().includes('OMC') || (cp.name || '').toUpperCase().includes('MOISTURE')) {
+               val = peak.x;
+            } else if (cp.code.toUpperCase().includes('MDD') || (cp.name || '').toUpperCase().includes('DENSITY')) {
+               val = peak.y;
+            }
+
+            if (val > 0) {
+               const decimals = cp.decimalPrecision ?? 2;
+               const rounded = Number(Math.round(parseFloat(val + 'e' + decimals)) + 'e-' + decimals);
+               
+               this.specimens.controls.forEach(spec => {
+                 const obsFA = spec.get('observations') as FormArray;
+                 obsFA.controls.forEach(obs => {
+                   const ctrl = this.getResultControl(obs as FormGroup, cp.parameterMasterID);
+                   if (ctrl) {
+                     ctrl.patchValue({ rawValue: rounded.toFixed(decimals), numericValue: rounded }, { emitEvent: false });
+                   }
+                 });
+               });
+            }
+         });
+      }
+    }
+  }
+
+  calculatePolynomialPeak(points: { x: number, y: number }[]): { x: number, y: number } | null {
+    const n = points.length;
+    let sumX = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0;
+    let sumY = 0, sumXY = 0, sumX2Y = 0;
+
+    for (let i = 0; i < n; i++) {
+      const x = points[i].x;
+      const y = points[i].y;
+      const x2 = x * x;
+      sumX += x;
+      sumX2 += x2;
+      sumX3 += x2 * x;
+      sumX4 += x2 * x2;
+      sumY += y;
+      sumXY += x * y;
+      sumX2Y += x2 * y;
+    }
+
+    const det = sumX4 * (sumX2 * n - sumX * sumX) - 
+                sumX3 * (sumX3 * n - sumX2 * sumX) + 
+                sumX2 * (sumX3 * sumX - sumX2 * sumX2);
+                
+    if (Math.abs(det) < 1e-10) return null;
+
+    const detA = sumX2Y * (sumX2 * n - sumX * sumX) - 
+                 sumX3 * (sumXY * n - sumY * sumX) + 
+                 sumX2 * (sumXY * sumX - sumY * sumX2);
+                 
+    const detB = sumX4 * (sumXY * n - sumY * sumX) - 
+                 sumX2Y * (sumX3 * n - sumX2 * sumX) + 
+                 sumX2 * (sumX3 * sumY - sumXY * sumX2);
+                 
+    const detC = sumX4 * (sumX2 * sumY - sumXY * sumX) - 
+                 sumX3 * (sumX3 * sumY - sumXY * sumX2) + 
+                 sumX2Y * (sumX3 * sumX - sumX2 * sumX2);
+
+    const a = detA / det;
+    const b = detB / det;
+    const c = detC / det;
+
+    if (a >= 0) return null; // Not a peak (valley or flat)
+
+    const peakX = -b / (2 * a);
+    const peakY = c - (b * b) / (4 * a);
+
+    return { x: peakX, y: peakY };
+  }
+
+  // Basic client evaluator for simple math (live preview only, not authoritative)
+  clientFormulaEval = (formula: string, vars: Record<string, number>): number | null => {
+    try {
+      let expr = formula;
+      for (const [key, val] of Object.entries(vars)) {
+        expr = expr.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val));
+      }
+      expr = expr.replace(/Math\./g, ''); // In case formulas already have Math.
+      expr = expr.replace(/MIN/g, 'Math.min');
+      expr = expr.replace(/MAX/g, 'Math.max');
+      expr = expr.replace(/POW/g, 'Math.pow');
+      expr = expr.replace(/SQRT/g, 'Math.sqrt');
+      expr = expr.replace(/LOG/g, 'Math.log10');
+      expr = expr.replace(/LN/g, 'Math.log');
+      expr = expr.replace(/EXP/g, 'Math.exp');
+      expr = expr.replace(/ABS/g, 'Math.abs');
+      
+      const result = new Function('return ' + expr)();
+      return (typeof result === 'number' && !isNaN(result) && isFinite(result)) ? result : null;
+    } catch {
+      return null;
+    }
+  };
 
   // ----------------------------------------------------------------
   // Formula Builder Keypad & Live Preview

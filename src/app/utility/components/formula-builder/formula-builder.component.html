@@ -1,244 +1,427 @@
-<div *ngIf="visible" class="custom-modal-backdrop">
+<div *ngIf="visible" class="custom-modal-backdrop" (focusin)="$event.stopPropagation()">
   <div class="custom-modal-dialog">
     <div class="custom-modal-content">
-      <div class="custom-modal-header d-flex justify-content-between align-items-center">
-        <h5 class="m-0 text-white">Build Formula ({{ parameterType }})</h5>
-        <button type="button" class="btn-close btn-close-white" (click)="close()"></button>
+      <!-- Modal Header (Clean Theme standard) -->
+      <div class="custom-modal-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="modal-title m-0 text-dark fw-bold d-flex align-items-center">
+          <i class="bi bi-calculator text-theme me-2"></i>
+          Build Formula ({{ parameterType }})
+        </h6>
+        <button type="button" class="btn-close" (click)="close()"></button>
       </div>
 
-      <div class="custom-modal-body bg-light p-3">
+      <div class="custom-modal-body p-3">
         <!-- Mode Tabs -->
         <ul class="nav nav-tabs mb-3">
-          <li class="nav-item cursor-pointer">
-            <a class="nav-link" [class.active]="currentMode === 'click'" (click)="setMode('click')">
-              <i class="bi bi-mouse me-1"></i> Interactive Builder
-            </a>
-          </li>
           <li class="nav-item cursor-pointer">
             <a class="nav-link" [class.active]="currentMode === 'smart'" (click)="setMode('smart')">
               <i class="bi bi-keyboard me-1"></i> Smart Type Mode
             </a>
           </li>
+          <li class="nav-item cursor-pointer">
+            <a class="nav-link" [class.active]="currentMode === 'click'" (click)="setMode('click')">
+              <i class="bi bi-mouse me-1"></i> Interactive Builder
+            </a>
+          </li>
         </ul>
 
-        <div class="row g-3" *ngIf="currentMode === 'click'">
-
-          <!-- Left: Parameter Selection -->
-          <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
-                <h6 class="mb-2 text-muted fw-bold">Available Parameters</h6>
-                <input type="text" class="form-control form-control-sm" placeholder="Search parameters..."
-                  [(ngModel)]="searchTerm" (input)="filterParams()">
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- MODE 1: SMART TYPE MODE (Default / Primary)           -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="row g-3" *ngIf="currentMode === 'smart'">
+          <div class="col-12">
+            <!-- 1. Formula Text Editor Card -->
+            <div class="fb-card card shadow-sm border mb-3">
+              <div class="fb-card-header card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
+                <label class="form-label mb-0 fw-semibold text-dark fs-8 d-flex align-items-center">
+                  <i class="bi bi-pencil-square text-theme me-1"></i> Type / Edit Formula Expression
+                </label>
+                <button *ngIf="smartFormulaInput" type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 fs-8" (click)="clearSmartFormula()">
+                  <i class="bi bi-trash me-1"></i>Clear
+                </button>
               </div>
-              <div class="card-body p-2 param-list-scroll">
+              <div class="fb-card-body card-body p-3">
+                <textarea
+                  #smartTextarea
+                  class="form-control font-monospace smart-formula-textarea mb-2"
+                  rows="3"
+                  [(ngModel)]="smartFormulaInput"
+                  (input)="onSmartInput()"
+                  placeholder="Type formula using parameter names or codes, e.g. ({WET_MASS} - {DRY_MASS}) / {DRY_MASS} * 100 or (Carbon * 1000) / Manganese"
+                ></textarea>
+
+                <div class="d-flex justify-content-between align-items-center text-muted fs-8 mb-2">
+                  <span><i class="bi bi-lightbulb text-warning me-1"></i>Type directly, or click parameters/operators below to insert at cursor.</span>
+                  <span class="font-monospace text-secondary" *ngIf="smartFormulaInput">{{ smartFormulaInput.length }} chars</span>
+                </div>
+
+                <!-- Quick Operators & Functions Toolbar -->
+                <div class="quick-tools-bar d-flex flex-wrap align-items-center gap-2 p-2 bg-light rounded border">
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="text-muted fs-8 fw-semibold me-1">Operators:</span>
+                    <button
+                      *ngFor="let op of quickSmartOperators"
+                      type="button"
+                      class="btn btn-sm btn-outline-dark quick-btn font-monospace"
+                      (click)="insertTextAtCursor(op)"
+                    >
+                      {{ op }}
+                    </button>
+                  </div>
+
+                  <div class="vr mx-1"></div>
+
+                  <div class="d-flex align-items-center gap-1 flex-wrap">
+                    <span class="text-muted fs-8 fw-semibold me-1">Functions:</span>
+                    <button
+                      *ngFor="let fn of quickSmartFunctions"
+                      type="button"
+                      class="btn btn-sm btn-outline-primary quick-btn"
+                      (click)="insertSmartFunction(fn)"
+                    >
+                      {{ fn }}()
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Search & Available Parameters Section -->
+            <div class="fb-card card shadow-sm border mb-3">
+              <div class="fb-card-header card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+                <label class="form-label mb-0 fw-semibold text-dark fs-8 d-flex align-items-center">
+                  <i class="bi bi-tags text-theme me-1"></i> Available Parameters (Click to insert at cursor)
+                </label>
+                <span class="badge bg-light text-secondary border fs-8">
+                  Showing {{ filteredSmartParameters.length }} of {{ availableParameters.length }}
+                </span>
+              </div>
+
+              <!-- Dedicated Search Bar Row -->
+              <div class="fb-search-bar-row p-2 border-bottom bg-light">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white border-end-0 py-1">
+                    <i class="bi bi-search text-muted"></i>
+                  </span>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm border-start-0 ps-0"
+                    placeholder="Search parameters by name, code, or symbol (e.g. MOULD, Wet Mass, Moisture, Carbon)..."
+                    [(ngModel)]="smartSearchTerm"
+                    (input)="filterSmartParams()"
+                  />
+                  <button
+                    *ngIf="smartSearchTerm"
+                    class="btn btn-outline-secondary btn-sm py-0 px-2"
+                    type="button"
+                    (click)="smartSearchTerm = ''; filterSmartParams()"
+                    title="Clear Search"
+                  >
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Parameter Chips Grid -->
+              <div class="fb-card-body card-body p-2 param-chips-scroll-container">
+                <div class="d-flex flex-wrap gap-1">
+                  <button
+                    *ngFor="let p of filteredSmartParameters"
+                    type="button"
+                    class="btn btn-sm btn-light border param-chip-item text-start d-inline-flex align-items-center gap-1 py-1 px-2"
+                    (click)="insertSmartParam(p)"
+                    [title]="'Click to insert ' + getParameterToken(p)"
+                  >
+                    <span class="param-chip-name fw-medium text-dark">{{ getParamName(p) }}</span>
+                    <span *ngIf="getParamCode(p)" class="badge bg-secondary-subtle text-secondary font-monospace ms-1 param-code-tag">
+                      {{ getParamCode(p) }}
+                    </span>
+                    <i class="bi bi-plus-circle-fill text-primary ms-1"></i>
+                  </button>
+
+                  <div *ngIf="filteredSmartParameters.length === 0" class="w-100 text-center text-muted py-4 small">
+                    <i class="bi bi-info-circle me-1"></i> No matching parameters found for "{{ smartSearchTerm }}".
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Formula Interpretation & Real-time Validation Box -->
+            <div class="fb-card card shadow-sm border" *ngIf="smartFormulaInput">
+              <div class="fb-card-header card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-dark fs-8">
+                  <i class="bi bi-eye text-primary me-1"></i> Resolved Formula Expression
+                </span>
+                <span *ngIf="resolvedFormulaPreview" class="badge bg-light text-dark border font-monospace fs-8">
+                  {{ resolvedFormulaPreview }}
+                </span>
+              </div>
+              <div class="fb-card-body card-body p-3">
+                <!-- Visual Tokens -->
+                <div class="d-flex flex-wrap gap-1 align-items-center mb-2" *ngIf="smartTokens.length > 0">
+                  <ng-container *ngFor="let t of smartTokens">
+                    <span *ngIf="t.type === 'param'" class="badge bg-primary-subtle text-primary border border-primary px-2 py-1 fs-8">
+                      {{ t.name }} <small class="text-muted font-monospace ms-1">{{ t.token }}</small>
+                    </span>
+                    <span *ngIf="t.type === 'operator'" class="badge bg-dark text-white px-2 py-1 font-monospace fs-8">
+                      {{ t.token }}
+                    </span>
+                    <span *ngIf="t.type === 'number'" class="badge bg-info-subtle text-dark border border-info px-2 py-1 font-monospace fs-8">
+                      {{ t.token }}
+                    </span>
+                    <span *ngIf="t.type === 'function'" class="badge bg-warning-subtle text-dark border border-warning px-2 py-1 fw-bold fs-8">
+                      {{ t.token }}()
+                    </span>
+                    <span *ngIf="t.type === 'text'" class="badge bg-secondary-subtle text-dark border px-2 py-1 fs-8">
+                      {{ t.token }}
+                    </span>
+                  </ng-container>
+                </div>
+
+                <!-- Validation Status Alerts -->
+                <div *ngIf="smartValidationError" class="alert alert-danger py-2 px-3 mb-0 fs-8 d-flex align-items-center gap-2">
+                  <i class="bi bi-exclamation-triangle-fill text-danger fs-6"></i>
+                  <div><strong>Error:</strong> {{ smartValidationError }}</div>
+                </div>
+
+                <div *ngIf="smartValidationSuccess" class="alert alert-success py-2 px-3 mb-0 fs-8 d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                  <div>{{ smartValidationSuccess }}</div>
+                </div>
+
+                <div *ngIf="!smartValidationError && !smartValidationSuccess" class="text-muted fs-8">
+                  <i class="bi bi-info-circle me-1"></i> Click <strong>Validate</strong> below to verify syntax and token mapping against the server.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- MODE 2: INTERACTIVE BUILDER (Visual Chips Mode)       -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="row g-3" *ngIf="currentMode === 'click'">
+          <!-- Left: Parameter Selection with Search -->
+          <div class="col-md-4">
+            <div class="fb-card card h-100 shadow-sm border">
+              <div class="fb-card-header card-header bg-white border-bottom py-2 px-3 d-flex justify-content-between align-items-center">
+                <label class="form-label mb-0 fw-semibold text-dark fs-8 d-flex align-items-center">
+                  <i class="bi bi-tags text-theme me-1"></i> Available Parameters
+                </label>
+                <span class="badge bg-light text-secondary border fs-8">{{ filteredParameters.length }}</span>
+              </div>
+
+              <!-- Dedicated Search Input Row -->
+              <div class="fb-search-bar-row p-2 border-bottom bg-light">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white border-end-0 py-1"><i class="bi bi-search text-muted"></i></span>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm border-start-0 ps-0"
+                    placeholder="Search parameters..."
+                    [(ngModel)]="searchTerm"
+                    (input)="filterParams()"
+                  />
+                  <button
+                    *ngIf="searchTerm"
+                    class="btn btn-outline-secondary btn-sm py-0 px-2"
+                    type="button"
+                    (click)="searchTerm = ''; filterParams()"
+                    title="Clear Search"
+                  >
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Parameter List Body -->
+              <div class="fb-card-body card-body p-2 param-list-scroll">
                 <div class="list-group list-group-flush">
-                  <button *ngFor="let param of filteredParameters" type="button"
+                  <button
+                    *ngFor="let param of filteredParameters"
+                    type="button"
                     class="list-group-item list-group-item-action param-item-btn d-flex justify-content-between align-items-center py-2 px-2 border-0 rounded mb-1"
-                    (click)="addParameterToken(param)">
+                    (click)="addParameterToken(param)"
+                  >
                     <div class="d-flex flex-column text-truncate me-2">
-                      <span class="small text-truncate fw-medium" [title]="param.name || param.displayText">{{ param.name || param.displayText }}</span>
-                      <span *ngIf="param.additionalValues?.Code || param.code" class="badge bg-light text-secondary border align-self-start font-monospace mt-0.5 param-code-badge">
-                        {{ param.additionalValues?.Code || param.code }}
+                      <span class="small text-truncate fw-medium text-dark" [title]="getParamName(param)">{{ getParamName(param) }}</span>
+                      <span *ngIf="getParamCode(param)" class="badge bg-secondary-subtle text-secondary align-self-start font-monospace mt-0.5 param-code-badge">
+                        {{ getParamCode(param) }}
                       </span>
                     </div>
                     <i class="bi bi-plus-circle-fill text-primary"></i>
                   </button>
                   <div *ngIf="filteredParameters.length === 0" class="text-center text-muted small p-3">
-                    No parameters found.
+                    No parameters found matching "{{ searchTerm }}".
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Middle: Tools (Operators & Functions) -->
+          <!-- Middle: Operators & Functions -->
           <div class="col-md-8">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body">
-
+            <div class="fb-card card h-100 shadow-sm border">
+              <div class="fb-card-body card-body p-3">
                 <!-- Number Input -->
                 <div class="mb-3">
-                  <label class="small text-muted fw-bold mb-1">Add Number Literal</label>
+                  <label class="form-label text-dark fw-semibold fs-8 mb-1">Add Number Literal</label>
                   <div class="input-group input-group-sm w-50">
-                    <input type="number" class="form-control" [(ngModel)]="customNumberInput" placeholder="e.g. 100">
-                    <button class="btn btn-outline-secondary bg-white text-primary fw-bold" type="button"
-                      (click)="addCustomNumber()">Add</button>
+                    <input type="number" class="form-control form-control-sm" [(ngModel)]="customNumberInput" placeholder="e.g. 100, 1000, 3.14">
+                    <button class="btn btn-outline-primary fw-semibold" type="button" (click)="addCustomNumber()">Add Number</button>
                   </div>
                 </div>
 
-                <!-- Basic Operators -->
+                <!-- Operators -->
                 <div class="mb-3">
-                  <label class="small text-muted fw-bold mb-1">Operators</label>
+                  <label class="form-label text-dark fw-semibold fs-8 mb-1">Operators</label>
                   <div class="d-flex flex-wrap gap-2">
-                    <button *ngFor="let op of basicOperators" type="button"
+                    <button
+                      *ngFor="let op of basicOperators"
+                      type="button"
                       class="btn btn-sm btn-outline-dark fw-bold px-3 shadow-sm"
-                      (click)="addOperatorToken(op, 'operator')">
+                      (click)="addOperatorToken(op, 'operator')"
+                    >
                       {{ op.display }}
                     </button>
 
                     <div class="vr mx-1"></div>
 
-                    <button *ngFor="let paren of parentheses" type="button"
+                    <button
+                      *ngFor="let paren of parentheses"
+                      type="button"
                       class="btn btn-sm btn-outline-secondary fw-bold px-3 shadow-sm"
-                      (click)="addOperatorToken(paren, 'paren')">
+                      (click)="addOperatorToken(paren, 'paren')"
+                    >
                       {{ paren.display }}
                     </button>
 
-                    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold px-3 shadow-sm"
-                      (click)="addCommaToken()">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary fw-bold px-3 shadow-sm"
+                      (click)="addCommaToken()"
+                    >
                       , (Comma)
                     </button>
                   </div>
                 </div>
 
                 <!-- Functions -->
-                <div class="mb-3">
-                  <label class="small text-muted fw-bold mb-1">Functions</label>
+                <div class="mb-0">
+                  <label class="form-label text-dark fw-semibold fs-8 mb-1">Functions</label>
                   <div class="d-flex flex-wrap gap-2">
-                    <button *ngFor="let fn of functions" type="button"
-                      class="btn btn-sm btn-outline-primary fw-bold shadow-sm"
-                      (click)="addOperatorToken(fn, 'function')">
+                    <button
+                      *ngFor="let fn of functions"
+                      type="button"
+                      class="btn btn-sm btn-outline-primary fw-semibold shadow-sm"
+                      (click)="addOperatorToken(fn, 'function')"
+                    >
                       {{ fn.display }}()
                     </button>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
 
-          <!-- Bottom: Formula Preview Panel -->
-          <div class="col-12 mt-3">
-            <div class="card shadow-sm border-0"
-              [ngClass]="{'border border-success': isValid, 'border border-danger': validationError}">
-              <div
-                class="card-header bg-white border-bottom-0 d-flex justify-content-between align-items-center pt-3 pb-2">
-                <h6 class="mb-0 text-muted fw-bold">Expression</h6>
-                <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0"
-                  (click)="clearTokens()">
-                  <i class="bi bi-trash"></i> Clear All
+          <!-- Bottom: Expression Preview Panel -->
+          <div class="col-12 mt-2">
+            <div class="fb-card card shadow-sm border" [ngClass]="{'border-success': isValid, 'border-danger': validationError}">
+              <div class="fb-card-header card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="mb-0 text-dark fw-semibold fs-8">Formula Expression</span>
+                <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 fs-8" (click)="clearTokens()">
+                  <i class="bi bi-trash me-1"></i> Clear All
                 </button>
               </div>
 
-              <div class="card-body pt-0 pb-3">
-                <div
-                  class="formula-editor-area p-3 border rounded bg-white min-h-100 d-flex flex-wrap gap-1 align-items-center">
-
+              <div class="fb-card-body card-body p-3">
+                <div class="formula-editor-area p-3 border rounded bg-light d-flex flex-wrap gap-1 align-items-center">
                   <ng-container *ngIf="tokens.length === 0">
-                    <span class="text-muted small fst-italic">Build your formula by clicking items above...</span>
+                    <span class="text-muted small fst-italic">Build your formula by clicking items above or switch to Smart Type Mode...</span>
                   </ng-container>
 
-                  <div *ngFor="let token of tokens; let i = index" class="formula-chip badge d-flex align-items-center"
+                  <div
+                    *ngFor="let token of tokens; let i = index"
+                    class="formula-chip badge d-flex align-items-center"
                     [ngClass]="{
-                         'bg-primary text-white': token.type === 'param',
-                         'bg-dark text-white': token.type === 'operator',
-                         'bg-secondary text-white': token.type === 'paren' || token.type === 'comma',
-                         'bg-info text-dark': token.type === 'number',
-                         'bg-warning text-dark': token.type === 'function'
-                       }">
-                    <span class="px-1" style="font-size: 0.85rem;">{{ token.display }}</span>
-                    <i class="bi bi-x-circle-fill ms-1 cursor-pointer opacity-75 token-close"
-                      (click)="removeToken(i)"></i>
+                      'bg-primary text-white': token.type === 'param',
+                      'bg-dark text-white': token.type === 'operator',
+                      'bg-secondary text-white': token.type === 'paren' || token.type === 'comma',
+                      'bg-info text-dark': token.type === 'number',
+                      'bg-warning text-dark': token.type === 'function'
+                    }"
+                  >
+                    <span class="px-1 formula-chip-text">{{ token.display }}</span>
+                    <i class="bi bi-x-circle-fill ms-1 cursor-pointer opacity-75 token-close" (click)="removeToken(i)"></i>
                   </div>
-
                 </div>
 
                 <!-- Validation Status -->
                 <div class="mt-2 small">
-                  <div *ngIf="validationError" class="text-danger fw-bold">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Error: {{ validationError }}
+                  <div *ngIf="validationError" class="text-danger fw-bold d-flex align-items-center gap-1">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Error: {{ validationError }}
                   </div>
-                  <div *ngIf="isValid" class="text-success fw-bold">
-                    <i class="bi bi-check-circle-fill me-1"></i> Formula is valid!
+                  <div *ngIf="validationSuccess" class="text-success fw-bold d-flex align-items-center gap-1">
+                    <i class="bi bi-check-circle-fill"></i> {{ validationSuccess }}
                   </div>
                   <div *ngIf="!isValid && !validationError && tokens.length > 0" class="text-muted">
-                    <i class="bi bi-info-circle me-1"></i> Needs validation
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Smart Mode -->
-        <div class="row g-3" *ngIf="currentMode === 'smart'">
-          <div class="col-12">
-            <div class="card shadow-sm border-0">
-              <div class="card-body">
-                <div class="mb-3">
-                  <label class="form-label fw-bold"><i class="bi bi-pencil-square me-1"></i>Type Formula</label>
-                  <textarea class="form-control" rows="2" [(ngModel)]="smartFormulaInput" (input)="parseSmartInput()"
-                    placeholder="Type formula using parameter names, e.g. (Carbon * 1000) / Manganese"></textarea>
-                  <small class="text-muted d-block mt-1">
-                    <i class="bi bi-lightbulb me-1"></i>Use exact parameter names or functions.
-                  </small>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label fw-bold text-muted small">
-                    <i class="bi bi-tags me-1"></i>Available Parameters (click to insert)
-                  </label>
-                  <div class="d-flex flex-wrap gap-1" style="max-height: 150px; overflow-y: auto;">
-                    <button *ngFor="let p of availableParameters" type="button"
-                      class="badge bg-light text-dark border p-2" style="font-size: 0.8rem; cursor: pointer;"
-                      (click)="insertSmartParam(p.name || p.displayText)" [title]="'ID: ' + (p.id || p.value)">
-                      {{ p.name || p.displayText }}
-                    </button>
-                  </div>
-                </div>
-
-                <div class="mb-3" *ngIf="smartTokens.length > 0">
-                  <label class="form-label fw-bold small">Validation</label>
-                  <div class="border rounded p-2 bg-light">
-                    <span *ngFor="let t of smartTokens" class="d-inline">
-                      <span *ngIf="t.type === 'param'"
-                        class="badge bg-success-subtle text-success border border-success me-1 mb-1"
-                        [title]="t.matched + ' → ' + t.paramRef">{{ t.token }} <i
-                          class="bi bi-check-circle-fill ms-1"></i></span>
-                      <span *ngIf="t.type === 'number'"
-                        class="badge bg-info-subtle text-info border border-info me-1 mb-1">{{ t.token }}</span>
-                      <span *ngIf="t.type === 'operator' || t.type === 'paren' || t.type === 'comma'"
-                        class="badge bg-secondary-subtle text-dark border me-1 mb-1">{{ t.token }}</span>
-                      <span *ngIf="t.type === 'function'"
-                        class="badge bg-warning-subtle text-dark border border-warning me-1 mb-1">{{ t.token
-                        }}()</span>
-                      <span *ngIf="t.type === 'unknown'"
-                        class="badge bg-danger-subtle text-danger border border-danger me-1 mb-1">{{ t.token }} <i
-                          class="bi bi-x-circle-fill ms-1"></i></span>
-                    </span>
-                  </div>
-                  <div *ngIf="smartErrors.length > 0" class="mt-2">
-                    <div *ngFor="let err of smartErrors" class="text-danger small fw-bold">
-                      <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ err }}
-                    </div>
-                  </div>
-                  <div *ngIf="smartValid" class="mt-2 text-success fw-bold small">
-                    <i class="bi bi-check-circle-fill me-1"></i> Valid format. Click Apply below to build it.
+                    <i class="bi bi-info-circle me-1"></i> Formula modified. Click Validate to verify.
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
       </div>
 
-      <div class="custom-modal-footer p-3 bg-white border-top">
-        <button type="button" class="btn btn-sm btn-secondary me-2 px-4 shadow-sm" (click)="close()">Cancel</button>
-        <button type="button" class="btn btn-sm btn-info me-2 px-4 shadow-sm text-white" (click)="validate()"
-          [disabled]="tokens.length === 0 || isValidating">
+      <!-- Modal Footer (Consistent Action Buttons) -->
+      <div class="custom-modal-footer p-2 px-3 bg-light border-top d-flex justify-content-end gap-2 align-items-center">
+        <button type="button" class="btn btn-sm btn-secondary px-3" (click)="close()">
+          <i class="bi bi-x-circle me-1"></i>Cancel
+        </button>
+
+        <!-- Validate Button -->
+        <button
+          *ngIf="currentMode === 'smart'"
+          type="button"
+          class="btn btn-sm btn-info text-white px-3 shadow-sm"
+          (click)="validateSmartFormula()"
+          [disabled]="!smartFormulaInput?.trim() || isValidating"
+        >
           <span *ngIf="isValidating" class="spinner-border spinner-border-sm me-1"></span>
-          Validate
+          <i *ngIf="!isValidating" class="bi bi-check-circle me-1"></i>Validate
         </button>
-        <button *ngIf="currentMode === 'click'" type="button" class="btn btn-sm btn-primary px-4 shadow-sm" (click)="save()"
-          [disabled]="tokens.length > 0 && !isValid">
+
+        <button
+          *ngIf="currentMode === 'click'"
+          type="button"
+          class="btn btn-sm btn-info text-white px-3 shadow-sm"
+          (click)="validateInteractiveFormula()"
+          [disabled]="tokens.length === 0 || isValidating"
+        >
+          <span *ngIf="isValidating" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!isValidating" class="bi bi-check-circle me-1"></i>Validate
+        </button>
+
+        <!-- Save / Apply Button -->
+        <button
+          *ngIf="currentMode === 'smart'"
+          type="button"
+          class="btn btn-sm btn-success px-4 shadow-sm"
+          (click)="applySmartFormula()"
+          [disabled]="isValidating"
+        >
+          <i class="bi bi-check2-circle me-1"></i> Confirm & Apply Formula
+        </button>
+
+        <button
+          *ngIf="currentMode === 'click'"
+          type="button"
+          class="btn btn-sm btn-success px-4 shadow-sm"
+          (click)="saveInteractiveFormula()"
+          [disabled]="isValidating"
+        >
           <i class="bi bi-check2-circle me-1"></i> Confirm & Save
-        </button>
-        <button *ngIf="currentMode === 'smart'" type="button" class="btn btn-sm btn-success px-4 shadow-sm"
-          (click)="applySmartFormula()" [disabled]="!smartValid">
-          <i class="bi bi-check2-circle me-1"></i> Apply Smart Formula
         </button>
       </div>
     </div>

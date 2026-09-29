@@ -1,114 +1,213 @@
 .custom-modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 2000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(3px);
-  }
-  
-  .custom-modal-dialog {
-    width: 95%;
-    max-width: 900px;
-    max-height: calc(100vh - 2rem);
-    display: flex;
-    flex-direction: column;
-    animation: zoomIn 0.2s ease-out;
-  }
-  
-  .custom-modal-content {
-    background-color: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 2rem);
-  }
-  
-  .custom-modal-header {
-    background-color: var(--primary-color);
-    padding: 12px 16px;
-    flex-shrink: 0;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.55);
+  z-index: 2050;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(2px);
+}
 
-  .custom-modal-body {
-    flex: 1 1 auto;
-    max-height: calc(100vh - 140px);
-    overflow-y: auto !important;
-    overflow-x: hidden;
-  }
-  
-  .custom-modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    flex-shrink: 0;
-  }
-  
-  @keyframes zoomIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  .formula-editor-area {
-    min-height: 80px;
-    background-color: #fafbfc;
-    border: 1px dashed #ced4da;
-  }
-  
-  .formula-chip {
-    font-size: 0.9rem;
-    padding: 6px 10px;
-    margin-bottom: 4px;
-    user-select: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .token-close:hover {
-    opacity: 1 !important;
-    color: #ffcccc;
-  }
-  
-  .cursor-pointer {
-    cursor: pointer;
-  }
-  
-  /* Scrollbar for list */
-  .card-body::-webkit-scrollbar {
-    width: 6px;
-  }
-  .card-body::-webkit-scrollbar-track {
-    background: #f1f1f1; 
-  }
-  .card-body::-webkit-scrollbar-thumb {
-    background: #c1c1c1; 
-    border-radius: 4px;
-  }
-  .card-body::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8; 
-  }
+.custom-modal-dialog {
+  width: 95%;
+  max-width: 920px;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  animation: zoomIn 0.18s ease-out;
+}
 
-  .param-list-scroll {
-    max-height: 350px;
-    overflow-y: auto;
-  }
+.custom-modal-content {
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 2rem);
+}
 
-  .param-item-btn {
-    background: #f8f9fa;
-  }
+.custom-modal-header {
+  flex-shrink: 0;
+}
 
-  .param-code-badge {
-    font-size: 0.68rem;
-  }
+.custom-modal-body {
+  flex: 1 1 auto;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
 
+.custom-modal-footer {
+  flex-shrink: 0;
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Card overrides to defeat global .card .card-header { height: 47px !important } */
+.fb-card .fb-card-header,
+.custom-modal-dialog .card .card-header,
+.custom-modal-dialog .card-header {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  padding: 0.45rem 0.75rem !important;
+  overflow: visible !important;
+  display: flex !important;
+}
+
+.fb-search-bar-row {
+  height: auto !important;
+  min-height: auto !important;
+  display: block !important;
+}
+
+.fb-card-body,
+.custom-modal-dialog .card .card-body,
+.custom-modal-dialog .card-body {
+  position: relative !important;
+  clear: both !important;
+}
+
+.smart-formula-textarea {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  resize: vertical;
+  background-color: #ffffff;
+  border-color: #ced4da;
+}
+
+.smart-formula-textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(218, 38, 28, 0.15);
+}
+
+.quick-tools-bar {
+  border-color: #e9ecef !important;
+}
+
+.quick-btn {
+  font-size: 0.72rem;
+  padding: 1px 8px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.param-chips-scroll-container {
+  max-height: 160px;
+  overflow-y: auto;
+  background-color: #fbfbfc;
+}
+
+.param-chip-item {
+  font-size: 0.75rem;
+  background-color: #ffffff;
+  border-color: #dee2e6 !important;
+  transition: all 0.12s ease-in-out;
+  cursor: pointer;
+}
+
+.param-chip-item:hover {
+  background-color: #eef2ff;
+  border-color: #b9c6f5 !important;
+  transform: translateY(-1px);
+}
+
+.param-chip-name {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.param-code-tag {
+  font-size: 0.65rem;
+  padding: 2px 4px;
+}
+
+.formula-editor-area {
+  min-height: 75px;
+  background-color: #f8f9fa;
+  border: 1px dashed #ced4da;
+}
+
+.formula-chip {
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  margin-bottom: 3px;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.formula-chip-text {
+  font-size: 0.78rem;
+}
+
+.token-close:hover {
+  opacity: 1 !important;
+  color: #ffcccc;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Scrollbar styling */
+.param-list-scroll::-webkit-scrollbar,
+.param-chips-scroll-container::-webkit-scrollbar,
+.custom-modal-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.param-list-scroll::-webkit-scrollbar-track,
+.param-chips-scroll-container::-webkit-scrollbar-track,
+.custom-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+
+.param-list-scroll::-webkit-scrollbar-thumb,
+.param-chips-scroll-container::-webkit-scrollbar-thumb,
+.custom-modal-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1; 
+  border-radius: 3px;
+}
+
+.param-list-scroll::-webkit-scrollbar-thumb:hover,
+.param-chips-scroll-container::-webkit-scrollbar-thumb:hover,
+.custom-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8; 
+}
+
+.param-list-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.param-item-btn {
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0 !important;
+  transition: background-color 0.1s ease;
+}
+
+.param-item-btn:hover {
+  background: #f1f5f9;
+}
+
+.param-code-badge {
+  font-size: 0.66rem;
+}

@@ -31,6 +31,7 @@ export interface SnapshotParameterDto {
   symbol?: string;
   inputType: string;
   parameterType?: string; // 'Input' | 'Calculated' | 'Derived'
+  calculationRole?: string; // e.g., 'CurvePeak'
   decimalPrecision: number;
   isCalculated: boolean;
   formula?: string;

@@ -276,18 +276,7 @@
       </div>
     </div>
 
-    <!-- ── 3. PREPARATION STAGE ── -->
-    <div *ngIf="activeStageId === 'preparation'" class="stage-pane-body">
-      <div *ngIf="inwardId > 0">
-        <app-cutting-machining-plan-tab
-          [inwardId]="inwardId"
-          [isReadOnly]="isStageReadOnly('preparation')"
-          (prepCompleted)="onPrepCompleted()">
-        </app-cutting-machining-plan-tab>
-      </div>
-    </div>
-
-    <!-- ── 4. TESTING STAGE ── -->
+    <!-- ── 3. TESTING STAGE ── -->
     <div *ngIf="activeStageId === 'testing'" class="stage-pane-body">
       <app-case-sample-selector
         [samples]="lifecycleSummary?.samples || []"

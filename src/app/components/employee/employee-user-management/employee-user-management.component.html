@@ -99,7 +99,7 @@
                           <div class="fw-semibold text-dark fs-6">Security lock counter</div>
                         </div>
                       </div>
-                      <span [ngClass]="getFailedAttemptsClass()" class="badge px-3 py-1.5 fs-6">
+                      <span [ngClass]="getFailedAttemptsClass()" class="badge px-3 py-1 fs-6">
                         {{ user?.failedLoginAttempts ?? userForm.get("failedLoginAttempts")?.value ?? 0 }}
                       </span>
                     </div>
@@ -402,7 +402,7 @@
           <div class="col-6 col-md-3">
             <span class="summary-label text-muted d-block">ORGANIZATION</span>
             <div class="summary-value fw-bold text-dark d-flex align-items-center mt-1">
-              <i class="bi bi-building text-secondary me-1.5" style="font-size: 0.85rem;"></i>
+              <i class="bi bi-building text-secondary me-1" style="font-size: 0.85rem;"></i>
               <span>{{ organizationName }}</span>
             </div>
           </div>
@@ -411,7 +411,7 @@
           <div class="col-6 col-md-3 border-start-md">
             <span class="summary-label text-muted d-block">ASSIGNED BRANCHES</span>
             <div class="summary-value fw-bold text-dark d-flex align-items-center mt-1">
-              <i class="bi bi-diagram-3 text-secondary me-1.5" style="font-size: 0.85rem;"></i>
+              <i class="bi bi-diagram-3 text-secondary me-1" style="font-size: 0.85rem;"></i>
               <span>{{ assignedBranches.length }} {{ assignedBranches.length === 1 ? 'Branch' : 'Branches' }}</span>
             </div>
           </div>
@@ -420,7 +420,7 @@
           <div class="col-6 col-md-3 border-start-md">
             <span class="summary-label text-muted d-block">DEFAULT BRANCH</span>
             <div class="summary-value fw-bold text-dark d-flex align-items-center mt-1">
-              <i class="bi bi-geo-alt-fill text-danger me-1.5" style="font-size: 0.85rem;"></i>
+              <i class="bi bi-geo-alt-fill text-danger me-1" style="font-size: 0.85rem;"></i>
               <span class="text-truncate">{{ defaultBranchName }}</span>
             </div>
           </div>
@@ -430,7 +430,7 @@
             <span class="summary-label text-muted d-block">VIEW SCOPE</span>
             <div class="summary-value fw-bold mt-1 d-flex flex-column">
               <div class="d-flex align-items-center" [class.text-primary]="canViewAllBranches" [class.text-dark]="!canViewAllBranches">
-                <i class="bi me-1.5" [ngClass]="canViewAllBranches ? 'bi-globe-americas text-primary' : 'bi-lock text-secondary'" style="font-size: 0.85rem;"></i>
+                <i class="bi me-1" [ngClass]="canViewAllBranches ? 'bi-globe-americas text-primary' : 'bi-lock text-secondary'" style="font-size: 0.85rem;"></i>
                 <span>{{ canViewAllBranches ? 'All Active Branches' : 'Assigned Branches' }}</span>
               </div>
               <small class="text-muted fw-normal mt-0.5" style="font-size: 0.65rem;" *ngIf="canViewAllBranches">
@@ -505,7 +505,7 @@
                   Allows read-only visibility across active branches. Branch-level Create, Edit, Execute, Approve and Delete permissions remain independently controlled.
                 </p>
 
-                <div class="p-1.5 bg-light rounded border-start border-2 border-secondary" style="font-size: 0.67rem; color: #475569;">
+                <div class="p-1 bg-light rounded border-start border-2 border-secondary" style="font-size: 0.67rem; color: #475569;">
                   <i class="bi bi-info-circle text-secondary me-1"></i>
                   This does not grant Create, Edit, Execute, Approve or Delete permissions in branches where the user has no corresponding branch permission.
                 </div>
@@ -763,3 +763,4 @@
     </div>
   </div>
 </div>
+

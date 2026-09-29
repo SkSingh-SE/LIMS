@@ -160,8 +160,8 @@
         <!-- Case Information & Customer Details Card -->
         <div class="col-md-8">
           <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
-            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
-              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
+            <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1">
                 <i class="bi bi-info-circle text-danger"></i> Case Information & Customer Details
               </span>
             </div>
@@ -210,8 +210,8 @@
         <!-- Financial & Accounts Status Card -->
         <div class="col-md-4">
           <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
-            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
-              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
+            <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1">
                 <i class="bi bi-wallet2 text-danger"></i> Billing & Accounts Status
               </span>
             </div>
@@ -306,7 +306,7 @@
           </button>
         </div>
         <div class="alert alert-info py-2 fs-7 mb-0">
-          <i class="bi bi-info-circle me-1.5"></i>
+          <i class="bi bi-info-circle me-1"></i>
           Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for test execution. 
           (Integrated inline parameter entry will render here in Phase 5).
         </div>
@@ -332,7 +332,7 @@
           </button>
         </div>
         <div class="alert alert-info py-2 fs-7 mb-0">
-          <i class="bi bi-info-circle me-1.5"></i>
+          <i class="bi bi-info-circle me-1"></i>
           Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for report generation / dispatch. 
           (QuestPDF report preview & signatory approval will render here in Phase 6).
         </div>
@@ -344,7 +344,7 @@
       <div class="card p-3 shadow-sm border">
         <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
           <span class="fw-bold text-dark fs-7">
-            <i class="bi bi-receipt me-1.5 text-danger"></i> Accounts, Invoicing & Billing Summary
+            <i class="bi bi-receipt me-1 text-danger"></i> Accounts, Invoicing & Billing Summary
           </span>
           <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
         </div>
@@ -379,12 +379,12 @@
       <div class="card p-3 shadow-sm border">
         <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
           <span class="fw-bold text-dark fs-7">
-            <i class="bi bi-check2-circle me-1.5 text-success"></i> Case Closure Verification
+            <i class="bi bi-check2-circle me-1 text-success"></i> Case Closure Verification
           </span>
           <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
         </div>
         <div class="alert alert-success fs-7 mb-0">
-          <i class="bi bi-info-circle me-1.5"></i>
+          <i class="bi bi-info-circle me-1"></i>
           Lifecycle stage 7: Case Close verification & formal closure workflow.
         </div>
       </div>
@@ -393,3 +393,4 @@
   </main>
 
 </div>
+

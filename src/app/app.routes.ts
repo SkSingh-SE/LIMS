@@ -45,8 +45,7 @@ import { ConditionMasterComponent } from './components/condition-master/conditio
 import { SupplierListComponent } from './components/supplier/supplier-list/supplier-list.component';
 import { SupplierFormComponent } from './components/supplier/supplier-form/supplier-form.component';
 import { LaboratoryTestListComponent } from './components/test/laboratory-test-list/laboratory-test-list.component';
-import { TestMethodSpecificationComponent } from './components/test/test-method-specification/test-method-specification.component';
-import { TestMethodSpecificationListComponent } from './components/test/test-method-specification-list/test-method-specification-list.component';
+
 import { OEMFormComponent } from './components/equipment/oem-form/oem-form.component';
 import { OemListComponent } from './components/equipment/oem-list/oem-list.component';
 import { EquipmentFormComponent } from './components/equipment/equipment-form/equipment-form.component';
@@ -360,10 +359,8 @@ export const routes: Routes = [
             { path: 'supplier/create', component: SupplierFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'supplier/edit/:id', component: SupplierFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'supplier/details/:id', component: SupplierFormComponent },
-            { path: 'test-specification', component: TestMethodSpecificationListComponent },
-            { path: 'test-specification/create', component: TestMethodSpecificationComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'test-specification/edit/:id', component: TestMethodSpecificationComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'test-specification/details/:id', component: TestMethodSpecificationComponent },
+
+
             { path: 'lab-scope', loadComponent: () => import('./components/lab-scope/lab-scope-list.component').then(m => m.LabScopeListComponent) },
             { path: 'lab-scope/create', loadComponent: () => import('./components/lab-scope/lab-scope-form.component').then(m => m.LabScopeFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'lab-scope/edit/:id', loadComponent: () => import('./components/lab-scope/lab-scope-form.component').then(m => m.LabScopeFormComponent), canDeactivate: [unsavedChangesGuard] },

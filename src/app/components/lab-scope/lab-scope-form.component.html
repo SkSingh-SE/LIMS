@@ -96,7 +96,7 @@
           </legend>
           <div class="row g-2" *ngIf="accreditation?.certificateNumber; else noAccreditation">
             <div class="col-md-4">
-              <div class="p-1.5 border rounded bg-light-subtle d-flex align-items-center gap-2">
+              <div class="p-1 border rounded bg-light-subtle d-flex align-items-center gap-2">
                 <i class="bi bi-award text-danger fs-5"></i>
                 <div>
                   <div class="text-muted text-xxs">Accreditation TC Number</div>
@@ -105,7 +105,7 @@
               </div>
             </div>
             <div class="col-md-4">
-              <div class="p-1.5 border rounded bg-light-subtle d-flex align-items-center gap-2">
+              <div class="p-1 border rounded bg-light-subtle d-flex align-items-center gap-2">
                 <i class="bi bi-calendar-check text-primary fs-5"></i>
                 <div>
                   <div class="text-muted text-xxs">Certificate Validity Period</div>
@@ -116,7 +116,7 @@
               </div>
             </div>
             <div class="col-md-4">
-              <div class="p-1.5 border rounded bg-light-subtle d-flex align-items-center justify-content-between">
+              <div class="p-1 border rounded bg-light-subtle d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                   <i class="bi bi-shield-check text-success fs-5"></i>
                   <div>
@@ -130,7 +130,7 @@
             </div>
           </div>
           <ng-template #noAccreditation>
-            <div class="alert alert-warning py-1.5 px-2 mb-0 text-xs d-flex align-items-center gap-1.5 border-0">
+            <div class="alert alert-warning py-1 px-2 mb-0 text-xs d-flex align-items-center gap-1 border-0">
               <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0 fs-6"></i>
               <span>No active accreditation certificate is registered for this branch. Scope decisions will resolve as <strong>NotAccredited</strong> until a valid certificate exists.</span>
             </div>
@@ -176,7 +176,7 @@
                     <option *ngFor="let v of (versionsMap[mi] || [])" [ngValue]="v.id">{{ versionLabel(v) }}</option>
                   </select>
                 </div>
-                <div class="col-md-3 d-flex gap-1.5 justify-content-end align-items-end">
+                <div class="col-md-3 d-flex gap-1 justify-content-end align-items-end">
                   <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add btn-sm" (click)="addParameter(mi)">
                     <i class="bi bi-plus-circle me-1"></i> Add Parameter
                   </button>
@@ -278,25 +278,25 @@
           </legend>
           <div class="row g-2">
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+              <div class="p-1 bg-light rounded border d-flex align-items-center justify-content-between">
                 <span class="text-muted text-xs">Branch:</span>
                 <span class="fw-semibold text-dark text-xs">{{ branchName() }}</span>
               </div>
             </div>
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+              <div class="p-1 bg-light rounded border d-flex align-items-center justify-content-between">
                 <span class="text-muted text-xs">Total Methods:</span>
                 <span class="badge bg-primary text-xs">{{ summaryMethodCount }}</span>
               </div>
             </div>
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+              <div class="p-1 bg-light rounded border d-flex align-items-center justify-content-between">
                 <span class="text-muted text-xs">Total Parameters:</span>
                 <span class="badge bg-dark text-xs">{{ summaryParamCount }}</span>
               </div>
             </div>
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border d-flex align-items-center justify-content-between">
+              <div class="p-1 bg-light rounded border d-flex align-items-center justify-content-between">
                 <span class="text-muted text-xs">Accreditation:</span>
                 <span class="badge text-xs" [ngClass]="accreditation?.isEffective ? 'bg-success' : 'bg-warning text-dark'">
                   {{ accreditation?.isEffective ? 'Covered' : (accreditation?.certificateNumber ? 'Not Effective' : 'No Certificate') }}
@@ -313,25 +313,25 @@
           </legend>
           <div class="row g-2 text-xs mb-2">
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border">
+              <div class="p-1 bg-light rounded border">
                 <span class="text-muted d-block text-xxs">Created By</span>
                 <span class="fw-semibold text-dark">{{ auditInfo.createdByName || '-' }}</span>
               </div>
             </div>
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border">
+              <div class="p-1 bg-light rounded border">
                 <span class="text-muted d-block text-xxs">Created On</span>
                 <span>{{ (auditInfo.createdOn | date:'dd MMM yyyy, hh:mm a') || '-' }}</span>
               </div>
             </div>
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border">
+              <div class="p-1 bg-light rounded border">
                 <span class="text-muted d-block text-xxs">Modified By</span>
                 <span class="fw-semibold text-dark">{{ auditInfo.modifiedByName || '-' }}</span>
               </div>
             </div>
             <div class="col-md-3">
-              <div class="p-1.5 bg-light rounded border">
+              <div class="p-1 bg-light rounded border">
                 <span class="text-muted d-block text-xxs">Modified On</span>
                 <span>{{ (auditInfo.modifiedOn | date:'dd MMM yyyy, hh:mm a') || '-' }}</span>
               </div>
@@ -377,3 +377,4 @@
     </div>
   </div>
 </div>
+

@@ -3,7 +3,7 @@
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div>
       <h4 class="page-title mb-0 d-flex align-items-center">
-        <i class="bi bi-box-seam me-2 text-danger"></i>{{ formTitle }}
+        <i class="bi bi-box-seam me-2 text-theme"></i>{{ formTitle }}
       </h4>
       <app-breadcrumb></app-breadcrumb>
     </div>
@@ -20,7 +20,7 @@
 
         <!-- SECTION 1: PRODUCT IDENTITY -->
         <fieldset class="border rounded-3 p-2 mb-3 bg-white">
-          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1 fs-6 mb-0">
+          <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1 fs-6 mb-0">
             <i class="bi bi-box-seam me-1"></i> 1. Product Identity
           </legend>
 
@@ -137,7 +137,7 @@
 
         <!-- SECTION 2: PRODUCT VERSIONS -->
         <fieldset class="border rounded-3 p-2 mb-3 bg-white">
-          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center justify-content-between gap-2 fs-6 mb-0">
+          <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center justify-content-between gap-2 fs-6 mb-0">
             <div class="d-flex align-items-center gap-1">
               <i class="bi bi-layers me-1"></i> 2. Product Versions
               <span class="badge bg-secondary-subtle text-secondary border fs-9 ms-1">{{ versions.length }} Versions</span>
@@ -157,14 +157,14 @@
             <div class="col-12 d-flex align-items-center gap-2 flex-wrap">
               <div
                 *ngFor="let v of versions; let vIdx = index"
-                class="border rounded-3 p-1.5 px-2 cursor-pointer transition-all d-flex align-items-center gap-2"
+                class="border rounded-3 p-1 px-2 cursor-pointer transition-all d-flex align-items-center gap-2"
                 [ngClass]="{
                   'border-danger bg-danger-subtle text-danger fw-semibold shadow-sm': activeVersionIndex === vIdx,
                   'border-light-subtle bg-light text-dark': activeVersionIndex !== vIdx
                 }"
                 (click)="selectVersion(vIdx)"
               >
-                <div class="d-flex align-items-center gap-1.5">
+                <div class="d-flex align-items-center gap-1">
                   <span class="badge" [ngClass]="activeVersionIndex === vIdx ? 'bg-danger text-white' : 'bg-secondary'">
                     V{{ v.versionNumber }}
                   </span>
@@ -249,7 +249,7 @@
 
         <!-- SECTION 3: UNIVERSAL APPLICABILITY -->
         <fieldset class="border rounded-3 p-2 mb-3 bg-white" *ngIf="currentVersion">
-          <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center justify-content-between gap-2 fs-6 mb-0">
+          <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center justify-content-between gap-2 fs-6 mb-0">
             <div class="d-flex align-items-center gap-1">
               <i class="bi bi-diagram-3 me-1"></i> 3. Specification Grade Applicability (Version {{ currentVersion.versionNumber }})
               <span class="badge bg-primary-subtle text-primary border fs-9 ms-1">
@@ -259,7 +259,7 @@
           </legend>
 
           <!-- Universal Architecture Context Alert -->
-          <div class="alert alert-info py-1.5 px-2 text-xs mb-2 d-flex align-items-center gap-2 rounded-2">
+          <div class="alert alert-info py-1 px-2 text-xs mb-2 d-flex align-items-center gap-2 rounded-2">
             <i class="bi bi-info-circle-fill text-info fs-6"></i>
             <span>
               <strong>Universal Architecture:</strong> Product Applicability links this Product Version to authorized Specification Grades.
@@ -429,15 +429,15 @@
 <div class="modal d-block bg-dark bg-opacity-50" *ngIf="showConditionsModal">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow">
-      <div class="modal-header py-2 bg-light">
-        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-1.5 fs-6 mb-0">
-          <i class="bi bi-gear text-danger me-1"></i>
+      <div class="modal-header bg-light py-2 px-3 border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-1 fs-6 mb-0">
+          <i class="bi bi-gear text-theme me-1"></i>
           Product Applicability Conditions for {{ activeApplicabilityForConditions?.gradeName }}
         </h6>
         <button type="button" class="btn-close" (click)="closeConditionsModal()"></button>
       </div>
       <div class="modal-body p-3">
-        <div class="alert alert-light border py-1.5 px-2 text-xs mb-2">
+        <div class="alert alert-light border py-1 px-2 text-xs mb-2">
           <i class="bi bi-info-circle me-1 text-secondary"></i>
           Specify product delivery conditions, surface finish, heat treatment, or product sizes applicable to
           <strong>{{ activeApplicabilityForConditions?.gradeName }}</strong> under this product definition.
@@ -550,8 +550,8 @@
 <div class="modal d-block bg-dark bg-opacity-50" *ngIf="showCustomPrefixModal">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content border-0 shadow">
-      <div class="modal-header py-2 bg-light">
-        <h6 class="modal-title fw-bold text-dark fs-6 mb-0">Add Custom Prefix</h6>
+      <div class="modal-header bg-light py-2 px-3 border-bottom">
+        <h6 class="modal-title fw-bold text-dark fs-6 mb-0"><i class="bi bi-tag text-theme me-1"></i> Add Custom Prefix</h6>
         <button type="button" class="btn-close" (click)="showCustomPrefixModal = false"></button>
       </div>
       <div class="modal-body p-3">
@@ -571,3 +571,4 @@
     </div>
   </div>
 </div>
+

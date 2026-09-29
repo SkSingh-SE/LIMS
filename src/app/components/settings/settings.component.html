@@ -29,14 +29,14 @@
         <!-- Sidebar Navigation -->
         <aside class="settings-sidebar">
           <nav class="sidebar-nav">
-            <div class="sidebar-header px-2 py-1.5 border-bottom bg-light rounded-top">
+            <div class="sidebar-header px-2 py-1 border-bottom bg-light rounded-top">
               <span class="text-xxs fw-bold text-uppercase text-secondary letter-spacing-1">
                 <i class="bi bi-gear-wide-connected me-1"></i> Configuration
               </span>
             </div>
             <ul class="nav-menu list-unstyled mb-0 p-1">
               <li class="nav-menu-item mb-1" *ngFor="let tab of tabs">
-                <button type="button" class="nav-menu-btn d-flex align-items-center w-100 py-1.5 px-2 rounded border-0 text-start"
+                <button type="button" class="nav-menu-btn d-flex align-items-center w-100 py-1 px-2 rounded border-0 text-start"
                   [class.active]="activeTab === tab.key"
                   [class.has-error]="submitted && hasTabErrors(tab.key)"
                   (click)="setActiveTab(tab.key)">
@@ -61,7 +61,7 @@
           <div *ngIf="activeTab === 1" class="settings-tab-pane fade-in-slide">
             <!-- Tab Toolbar Header -->
             <div class="tab-toolbar d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
-              <div class="d-flex align-items-center gap-1.5">
+              <div class="d-flex align-items-center gap-1">
                 <i class="bi bi-building text-danger fs-6"></i>
                 <span class="fw-semibold text-dark text-sm">Organization Details</span>
               </div>
@@ -188,7 +188,7 @@
                   </div>
                   <div class="col-md-4">
                     <label class="form-label mb-0.5">Organization Logo</label>
-                    <div class="file-upload-compact border rounded p-1.5 bg-light-subtle text-center d-flex flex-column justify-content-center align-items-center"
+                    <div class="file-upload-compact border rounded p-1 bg-light-subtle text-center d-flex flex-column justify-content-center align-items-center"
                       [class.has-file]="organizationLogoPreview"
                       [class.file-error]="fileErrors['organizationLogo']">
                       <input type="file" class="file-input-hidden" id="orgLogoInput" accept="image/png,image/jpeg,image/jpg"
@@ -220,7 +220,7 @@
           <div *ngIf="activeTab === 2" class="settings-tab-pane fade-in-slide">
             <!-- Tab Toolbar Header -->
             <div class="tab-toolbar d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
-              <div class="d-flex align-items-center gap-1.5">
+              <div class="d-flex align-items-center gap-1">
                 <i class="bi bi-award text-danger fs-6"></i>
                 <span class="fw-semibold text-dark text-sm">NABL Accreditation Settings</span>
               </div>
@@ -378,7 +378,7 @@
           <div *ngIf="activeTab === 3" class="settings-tab-pane fade-in-slide">
             <!-- Tab Toolbar Header -->
             <div class="tab-toolbar d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
-              <div class="d-flex align-items-center gap-1.5">
+              <div class="d-flex align-items-center gap-1">
                 <i class="bi bi-hash text-danger fs-6"></i>
                 <span class="fw-semibold text-dark text-sm">Numbering Configuration</span>
               </div>
@@ -449,7 +449,7 @@
           <div *ngIf="activeTab === 4" class="settings-tab-pane fade-in-slide">
             <!-- Tab Toolbar Header -->
             <div class="tab-toolbar d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
-              <div class="d-flex align-items-center gap-1.5">
+              <div class="d-flex align-items-center gap-1">
                 <i class="bi bi-receipt text-danger fs-6"></i>
                 <span class="fw-semibold text-dark text-sm">GST &amp; Financial Settings</span>
               </div>
@@ -523,7 +523,7 @@
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Tax Breakdown (Auto)</label>
-                    <div class="d-flex align-items-center gap-1.5 p-1 bg-light rounded border">
+                    <div class="d-flex align-items-center gap-1 p-1 bg-light rounded border">
                       <span class="badge bg-white text-dark border text-xs">CGST: <strong>{{ gstConfig.get('cgst')?.value }}%</strong></span>
                       <span class="badge bg-white text-dark border text-xs">SGST: <strong>{{ gstConfig.get('sgst')?.value }}%</strong></span>
                       <span class="badge bg-white text-dark border text-xs">IGST: <strong>{{ gstConfig.get('igst')?.value }}%</strong></span>
@@ -560,7 +560,7 @@
 
                 <!-- Add/Edit FY Form Drawer -->
                 <div *ngIf="showFYForm" class="fy-form-card border rounded p-2 mb-2 bg-light-subtle" [formGroup]="financialYear">
-                  <div class="d-flex justify-content-between align-items-center mb-1.5 pb-1 border-bottom">
+                  <div class="d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
                     <span class="fw-semibold text-xs text-dark">
                       <i class="bi bi-pencil-square me-1"></i>{{ editingFYId ? 'Edit Financial Year' : 'New Financial Year' }}
                     </span>
@@ -576,7 +576,7 @@
                       <input type="date" class="form-control form-control-sm" formControlName="endDate"
                         [ngClass]="{ 'is-invalid': isFieldInvalid('financialYear', 'endDate') }" />
                     </div>
-                    <div class="col-md-4 d-flex gap-1.5 align-items-end justify-content-end">
+                    <div class="col-md-4 d-flex gap-1 align-items-end justify-content-end">
                       <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="saveFY()">
                         <i class="bi bi-check-circle me-1"></i>{{ editingFYId ? 'Update FY' : 'Save FY' }}
                       </button>
@@ -614,7 +614,7 @@
                             <i class="bi bi-check-circle me-1"></i>Default
                           </span>
                           <button *ngIf="!fy.isCurrent" type="button"
-                            class="btn btn-sm btn-outline-secondary py-0 px-1.5 text-xxs"
+                            class="btn btn-sm btn-outline-secondary py-0 px-1 text-xxs"
                             (click)="setDefaultFY(fy)">
                             Set Default
                           </button>
@@ -650,7 +650,7 @@
           <div *ngIf="activeTab === 5" class="settings-tab-pane fade-in-slide">
             <!-- Tab Toolbar Header -->
             <div class="tab-toolbar d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
-              <div class="d-flex align-items-center gap-1.5">
+              <div class="d-flex align-items-center gap-1">
                 <i class="bi bi-pen text-danger fs-6"></i>
                 <span class="fw-semibold text-dark text-sm">Report Authority Signatures</span>
               </div>
@@ -748,7 +748,7 @@
                         </div>
                       </div>
 
-                      <div class="d-flex gap-1.5 justify-content-end pt-1 border-top">
+                      <div class="d-flex gap-1 justify-content-end pt-1 border-top">
                         <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="addSignatory()"
                           [disabled]="authorizedSignatory.invalid || !(signaturePreview || signatureFile)">
                           <i class="bi bi-check-circle me-1"></i>{{ editingSignatoryIndex >= 0 ? 'Update Signatory' : 'Add Signatory' }}
@@ -830,3 +830,4 @@
     </div>
   </div>
 </div>
+

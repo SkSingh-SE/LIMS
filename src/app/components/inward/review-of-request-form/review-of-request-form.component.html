@@ -22,7 +22,7 @@
     </div>
 
     <!-- Quick Reference Action -->
-    <button type="button" class="btn-lims btn-lims-print btn-sm d-flex align-items-center gap-1.5" (click)="printInwardChallan()" title="Download Inward Receipt Challan PDF">
+    <button type="button" class="btn-lims btn-lims-print btn-sm d-flex align-items-center gap-1" (click)="printInwardChallan()" title="Download Inward Receipt Challan PDF">
       <i class="bi bi-printer"></i>
       <span>Inward Challan</span>
     </button>
@@ -45,7 +45,7 @@
         </div>
 
         <a [routerLink]="['/sample/plan/universal', inwardId]"
-           class="btn-lims btn-lims-primary btn-sm d-flex align-items-center gap-1.5 text-decoration-none">
+           class="btn-lims btn-lims-primary btn-sm d-flex align-items-center gap-1 text-decoration-none">
           <i class="bi bi-gear-wide-connected me-1"></i>
           <span>Open Universal Plan Workspace</span>
         </a>
@@ -56,12 +56,12 @@
         <div *ngFor="let sample of samples; let sIdx = index" class="border rounded-2 p-2.5 bg-light-subtle">
           
           <!-- Sample Metadata Bar -->
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-1.5 border-bottom">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-1 border-bottom">
             <div class="d-flex align-items-center gap-2">
               <span class="badge bg-dark fw-semibold px-2 py-1 fs-8">Sample #{{ sample.sampleNo }}</span>
               <span class="fw-semibold text-dark fs-7.5">{{ sample.details || 'General Sample' }}</span>
             </div>
-            <div class="d-flex align-items-center gap-1.5 flex-wrap fs-8">
+            <div class="d-flex align-items-center gap-1 flex-wrap fs-8">
               <span *ngIf="sample.metalClassificationName" class="badge bg-secondary-subtle text-secondary border">
                 <i class="bi bi-tag me-1"></i>{{ sample.metalClassificationName }}
               </span>
@@ -243,7 +243,7 @@
               <!-- Agency Contact Pill Box -->
               <div class="col-md-6 col-12">
                 <div class="tpi-agency-contact-pill p-2 border rounded-2 bg-light d-flex flex-column justify-content-center">
-                  <div class="d-flex align-items-center gap-1.5 text-muted fs-8 mb-1">
+                  <div class="d-flex align-items-center gap-1 text-muted fs-8 mb-1">
                     <i class="bi bi-person-lines-fill me-1"></i> Agency Contact Information
                   </div>
                   <div class="d-flex align-items-center gap-3 fs-7.5 text-dark fw-medium flex-wrap">
@@ -262,8 +262,8 @@
 
             <!-- Row 2: Structured Inspector Persons Table -->
             <div class="inspector-section mb-3">
-              <div class="d-flex justify-content-between align-items-center mb-1.5">
-                <span class="fw-semibold fs-7.5 text-dark d-flex align-items-center gap-1.5">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-semibold fs-7.5 text-dark d-flex align-items-center gap-1">
                   <i class="bi bi-people-fill text-primary"></i> TPI Inspector Persons / Witness Engineers
                 </span>
                 <button type="button" class="btn-lims btn-lims-add btn-sm" (click)="addTpiPerson(sample.id)">
@@ -311,14 +311,14 @@
             <!-- Row 3: Special Witness Instructions + Save Button -->
             <div class="tpi-footer-bar d-flex align-items-end justify-content-between flex-wrap gap-3 mt-3 pt-2 border-top">
               <div class="flex-grow-1" style="min-width: 280px;">
-                <label class="form-label-sm fw-semibold mb-1 text-dark d-flex align-items-center gap-1.5">
+                <label class="form-label-sm fw-semibold mb-1 text-dark d-flex align-items-center gap-1">
                   <i class="bi bi-chat-left-text text-secondary"></i> Special Witness & Preservation Instructions
                 </label>
                 <input type="text" class="form-control form-control-sm" placeholder="e.g. Preserve broken specimen after tensile test, witness hardness calibration..." formControlName="testInstructions" />
               </div>
               <div>
                 <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="saveTPI(sample.id)">
-                  <i class="bi bi-check-circle me-1.5"></i> Save TPI Details
+                  <i class="bi bi-check-circle me-1"></i> Save TPI Details
                 </button>
               </div>
             </div>
@@ -332,7 +332,7 @@
   <!-- ═══════════════════════ TAB 3: REVIEW & APPROVAL ═══════════════════════ -->
   <div class="tab-pane-content" [class.d-none]="activeTab !== 'approval'">
     <div class="card border rounded-2 shadow-xs p-3 bg-white">
-      <div class="d-flex justify-content-between align-items-center mb-2 pb-1.5 border-bottom">
+      <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
         <div class="d-flex align-items-center gap-2">
           <i class="bi bi-shield-check text-success fs-6"></i>
           <div>
@@ -389,7 +389,7 @@
   <!-- ═══════════════════════ TAB 4: HISTORY ═══════════════════════ -->
   <div class="tab-pane-content" [class.d-none]="activeTab !== 'history'">
     <div class="card border rounded-2 shadow-xs p-3 bg-white">
-      <div class="d-flex justify-content-between align-items-center mb-2 pb-1.5 border-bottom">
+      <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
         <div class="d-flex align-items-center gap-2">
           <i class="bi bi-clock-history text-secondary fs-6"></i>
           <div>
@@ -433,7 +433,7 @@
   <div class="modal-backdrop-custom" *ngIf="showReplanModal">
     <div class="modal-dialog-custom">
       <div class="modal-header-custom">
-        <span class="fw-bold fs-7 text-dark"><i class="bi bi-arrow-counterclockwise text-danger me-1.5"></i> Request Case Re-Plan</span>
+        <span class="fw-bold fs-7 text-dark"><i class="bi bi-arrow-counterclockwise text-danger me-1"></i> Request Case Re-Plan</span>
         <button type="button" class="btn-close-sm" (click)="closeReplanModal()"><i class="bi bi-x"></i></button>
       </div>
       <div class="modal-body-custom fs-7">
@@ -449,3 +449,4 @@
   </div>
 
 </div>
+

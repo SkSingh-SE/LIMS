@@ -13,7 +13,7 @@
           <small class="text-muted text-xs">Phase 7 &middot; Frozen snapshot compliance evaluation without live master drift</small>
         </div>
       </div>
-      <div class="d-flex align-items-center gap-1.5 flex-wrap">
+      <div class="d-flex align-items-center gap-1 flex-wrap">
         <button type="button" class="btn-lims btn-lims-cancel" (click)="openExecution()" title="Back to Execution Workspace">
           <i class="bi bi-arrow-left me-1"></i> Execution
         </button>
@@ -173,7 +173,7 @@
       </div>
 
       <!-- Pinned Cryptographic Snapshot Bar -->
-      <div class="d-flex justify-content-between align-items-center p-1.5 bg-light border rounded mb-2 flex-wrap gap-2 text-xs">
+      <div class="d-flex justify-content-between align-items-center p-1 bg-light border rounded mb-2 flex-wrap gap-2 text-xs">
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-secondary font-monospace"><i class="bi bi-shield-lock me-1"></i>FROZEN SNAPSHOT</span>
           <span class="text-muted">Hash:</span>
@@ -191,7 +191,7 @@
       <!-- 2. Structured Parameter Compliance Table -->
       <fieldset class="border rounded p-2 mb-2 bg-white shadow-xs">
         <legend class="w-auto fw-semibold text-danger px-2 d-flex align-items-center justify-content-between gap-2 py-0">
-          <div class="d-flex align-items-center gap-1.5">
+          <div class="d-flex align-items-center gap-1">
             <i class="bi bi-table text-danger"></i>
             <span>Parameter Results &amp; Compliance Verdicts</span>
             <span class="badge bg-light text-muted border font-monospace text-xs">{{ params.length }} Parameters</span>
@@ -220,7 +220,7 @@
 
                 <!-- 2. Parameter Identification -->
                 <td>
-                  <div class="d-flex align-items-center gap-1.5">
+                  <div class="d-flex align-items-center gap-1">
                     <span class="badge bg-light text-dark border font-monospace text-xs">{{ p.parameterCode }}</span>
                     <span class="fw-semibold text-dark">{{ p.parameterName }}</span>
                   </div>
@@ -330,7 +330,7 @@
               </button>
             </div>
             <div class="mt-2" *ngIf="showCalculationTraces">
-              <div *ngFor="let p of params" class="mb-1.5 p-1.5 bg-light rounded border text-xs font-monospace">
+              <div *ngFor="let p of params" class="mb-1 p-1 bg-light rounded border text-xs font-monospace">
                 <div *ngIf="p.isCalculated" class="d-flex justify-content-between align-items-center mb-0.5">
                   <strong class="text-primary">{{ p.parameterCode }}</strong>
                   <span class="text-muted"><code>{{ p.formula }}</code></span>
@@ -381,7 +381,7 @@
 
       <!-- 4. Remarks & Finalize Section -->
       <fieldset class="border rounded p-2 mb-1 bg-light">
-        <legend class="w-auto fw-semibold text-dark px-2 d-flex align-items-center gap-1.5 py-0">
+        <legend class="w-auto fw-semibold text-dark px-2 d-flex align-items-center gap-1 py-0">
           <i class="bi bi-pencil-square text-secondary"></i>
           <span>Compliance Remarks &amp; Finalization</span>
         </legend>
@@ -399,3 +399,4 @@
     </div>
   </div>
 </div>
+

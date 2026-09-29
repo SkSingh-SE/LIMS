@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -445,7 +445,7 @@ export class UniversalTestExecutionService {
   }
 
   getExecutionByGroup(groupId: number): Observable<TestExecutionDto> {
-    return this.http.get<any>(`${this.apiUrl}/by-group/${groupId}`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/by-group/${groupId}`, { headers: new HttpHeaders().set('X-Silent-Error', 'true') }).pipe(
       map(res => this.normalizeExecution(res?.data ?? res))
     );
   }

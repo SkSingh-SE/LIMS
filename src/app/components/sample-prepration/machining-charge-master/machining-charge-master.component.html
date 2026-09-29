@@ -225,7 +225,7 @@
           <!-- Year-wise Prices -->
           <div class="col-12">
             <fieldset class="fieldset-block p-2 mt-1">
-              <legend class="fieldset-legend d-flex align-items-center gap-1.5">
+              <legend class="fieldset-legend d-flex align-items-center gap-1">
                 <i class="bi bi-cash-stack text-danger"></i> Year-wise Prices <span class="text-danger">*</span>
               </legend>
               <div class="table-responsive">
@@ -340,7 +340,7 @@
                 </table>
               </div>
               <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add btn-sm" (click)="addVersion()">
-                <i class="bi bi-plus-circle me-1.5"></i> Add Year
+                <i class="bi bi-plus-circle me-1"></i> Add Year
               </button>
             </fieldset>
           </div>
@@ -349,14 +349,15 @@
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn-lims btn-lims-cancel me-2" (click)="closeModal()">
-            <i class="bi bi-x-circle me-1.5"></i> Cancel
+            <i class="bi bi-x-circle me-1"></i> Cancel
           </button>
           <button type="submit" class="btn-lims btn-lims-save" [disabled]="form.invalid">
-            <i class="bi bi-check-circle me-1.5"></i> {{ isEditMode ? "Update" : "Save" }}
+            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? "Update" : "Save" }}
           </button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 

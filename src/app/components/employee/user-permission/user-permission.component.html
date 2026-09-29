@@ -35,7 +35,7 @@
             />
           </div>
           
-          <div class="permission-list custom-scrollbar pe-1.5 flex-grow-1">
+          <div class="permission-list custom-scrollbar pe-1 flex-grow-1">
             <!-- Loop Groups -->
             <div *ngFor="let group of filteredAvailableGroups" class="mb-2 group-container">
               <!-- Compact Group Header with Full Width & Balanced X-Padding -->
@@ -76,7 +76,7 @@
               <div *ngIf="isGroupExpanded(group.name)" class="group-items-container mt-1 animation-slide-down">
                 <div
                   *ngFor="let p of group.permissions" 
-                  class="permission-item d-flex align-items-center justify-content-between py-1.5 px-3 mb-1 rounded-2 bg-white border hover-shadow transition-all"
+                  class="permission-item d-flex align-items-center justify-content-between py-1 px-3 mb-1 rounded-2 bg-white border hover-shadow transition-all"
                   [class.border-primary]="isAvailableSelected(p.id)"
                   (click)="!isViewMode && toggleAvailablePermission(p.id)"
                 >
@@ -176,7 +176,7 @@
             ></app-searchable-dropdown>
           </div>
 
-          <div class="permission-list custom-scrollbar pe-1.5 flex-grow-1">
+          <div class="permission-list custom-scrollbar pe-1 flex-grow-1">
             <div *ngFor="let group of filteredAssignedGroups" class="mb-2 group-container">
               <!-- Compact Group Header with Full Width & Balanced X-Padding -->
               <div class="group-header d-flex justify-content-between align-items-center py-2 px-3 rounded-2 border bg-success-subtle border-success-subtle transition-all">
@@ -199,7 +199,7 @@
               <div class="group-items-container mt-1">
                 <div
                   *ngFor="let p of group.permissions" 
-                  class="permission-item d-flex align-items-center justify-content-between py-1.5 px-3 mb-1 rounded-2 bg-white border hover-shadow transition-all"
+                  class="permission-item d-flex align-items-center justify-content-between py-1 px-3 mb-1 rounded-2 bg-white border hover-shadow transition-all"
                   [class.border-danger]="isAssignedSelected(p.id)"
                   (click)="!isViewMode && p.isOverride && toggleAssignedPermission(p.id)"
                 >
@@ -254,3 +254,4 @@
     </div>
   </div>
 </div>
+

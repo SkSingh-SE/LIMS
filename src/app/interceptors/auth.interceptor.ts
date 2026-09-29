@@ -64,9 +64,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return extractErrorMessage(error, fallback);
   };
 
-  // Auto-show toast for all API errors (except 401 which triggers logout)
-  const showErrorToast = (error: HttpErrorResponse, message: string) => {
+  // Auto-show toast for all API errors (except 401 which triggers logout or if X-Silent-Error is passed)
+  const showErrorToast = (error: HttpErrorResponse, message: string, reqObj: any) => {
     if (error.status === 401) return; // handled by logout flow
+    if (reqObj.headers.has('X-Silent-Error')) return; // bypassed by component
     toastService.show(message, 'error');
   };
 
@@ -108,7 +109,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           }
         }
         const message = getErrorMessage(error);
-        showErrorToast(error, message);
+        showErrorToast(error, message, modifiedReq);
         if (error.error && typeof error.error === 'object') {
           error.error.message = message;
         }
@@ -139,7 +140,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       switchMap(() => handleRequest(token!)),
       catchError((error: HttpErrorResponse) => {
         const message = getErrorMessage(error);
-        showErrorToast(error, message);
+        showErrorToast(error, message, req);
         if (error.error && typeof error.error === 'object') {
           error.error.message = message;
         }
@@ -178,7 +179,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
       const message = getErrorMessage(error);
-      showErrorToast(error, message);
+      showErrorToast(error, message, outgoingReq);
       if (error.error && typeof error.error === 'object') {
         error.error.message = message;
       }

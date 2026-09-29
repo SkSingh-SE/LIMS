@@ -11,6 +11,7 @@ import { FormFieldErrorComponent } from '../../../utility/components/form-field-
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 import { FormulaBuilderComponent } from '../../../utility/components/formula-builder/formula-builder.component';
 import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
   selector: 'app-parameter-list',
@@ -23,7 +24,8 @@ import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/brea
     FormFieldErrorComponent,
     PaginationComponent,
     FormulaBuilderComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    SearchableDropdownComponent
   ],
   templateUrl: './parameter-list.component.html',
   styleUrl: './parameter-list.component.css'
@@ -36,6 +38,7 @@ export class ParameterListComponent implements OnInit {
   parameterTypes: string[] = ['Quantitative', 'Qualitative', 'Reported', 'Observed', 'Derived'];
   calculationRoles: string[] = ['Input', 'Calculated', 'Derived'];
   availableUnits: any[] = [];
+  selectedUnitItem: any = null;
 
   // Filter state
   filterCode: string = '';
@@ -87,6 +90,8 @@ export class ParameterListComponent implements OnInit {
       parameterType: ['Quantitative', [Validators.required]],
       calculationRole: ['Input', [Validators.required]],
       parameterUnitID: [null],
+      parameterUnitEquivalentID: [null],
+      unitConversionFactor: [null],
       decimalPrecision: [2, [Validators.min(0), Validators.max(6)]],
       sequence: [null],
       formula: [''],
@@ -105,6 +110,19 @@ export class ParameterListComponent implements OnInit {
       }
     });
 
+  }
+
+  getParameterUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
+    return this.parameterUnitService.getGroupedParameterUnitDropdown(searchTerm, pageNo, pageSize);
+  };
+
+  onParameterUnitSelected(item: any): void {
+    this.selectedUnitItem = item;
+    this.parameterForm.patchValue({
+      parameterUnitID: item?.id && item.id > 0 ? item.id : null,
+      parameterUnitEquivalentID: item?.equivalentId ?? null,
+      unitConversionFactor: item?.conversionFactor ?? null
+    });
   }
 
   loadMetadata(): void {
@@ -189,6 +207,7 @@ export class ParameterListComponent implements OnInit {
 
     if (mode === 'create') {
       this.formTitle = 'Add Universal Parameter';
+      this.selectedUnitItem = null;
       this.parameterForm.reset({
         id: 0,
         code: '',
@@ -197,6 +216,8 @@ export class ParameterListComponent implements OnInit {
         parameterType: 'Quantitative',
         calculationRole: 'Input',
         parameterUnitID: null,
+        parameterUnitEquivalentID: null,
+        unitConversionFactor: null,
         decimalPrecision: 2,
         sequence: null,
         formula: '',
@@ -213,6 +234,26 @@ export class ParameterListComponent implements OnInit {
 
       this.parameterService.getParameterById(item.id).subscribe({
         next: (detail: any) => {
+          if (detail.parameterUnitEquivalentID && (detail.unitName || detail.parameterUnitEquivalent)) {
+            const eqName = detail.parameterUnitEquivalent?.name || detail.unitName;
+            const eqSymbol = detail.parameterUnitEquivalent?.symbol || detail.unitSymbol;
+            this.selectedUnitItem = {
+              id: detail.parameterUnitID,
+              equivalentId: detail.parameterUnitEquivalentID,
+              name: eqSymbol && eqSymbol !== eqName ? `${eqName} (${eqSymbol})` : eqName
+            };
+          } else if (detail.parameterUnitID) {
+            const uName = detail.parameterUnit?.name || detail.unitName;
+            const uSymbol = detail.parameterUnit?.symbol || detail.unitSymbol;
+            this.selectedUnitItem = {
+              id: detail.parameterUnitID,
+              equivalentId: null,
+              name: uSymbol && uSymbol !== uName ? `${uName} (${uSymbol})` : (uName || String(detail.parameterUnitID))
+            };
+          } else {
+            this.selectedUnitItem = null;
+          }
+
           this.parameterForm.patchValue({
             id: detail.id,
             code: detail.code,
@@ -221,6 +262,8 @@ export class ParameterListComponent implements OnInit {
             parameterType: detail.parameterType || 'Quantitative',
             calculationRole: detail.calculationRole || 'Input',
             parameterUnitID: detail.parameterUnitID,
+            parameterUnitEquivalentID: detail.parameterUnitEquivalentID,
+            unitConversionFactor: detail.unitConversionFactor,
             decimalPrecision: detail.decimalPrecision ?? 2,
             sequence: detail.sequence,
             formula: detail.formula,
@@ -314,7 +357,10 @@ export class ParameterListComponent implements OnInit {
       symbol: formVal.symbol?.trim() || null,
       description: formVal.description?.trim() || null,
       formula: formVal.formula?.trim() || null,
-      formulaDisplay: formVal.formulaDisplay?.trim() || formVal.formula?.trim() || null
+      formulaDisplay: formVal.formulaDisplay?.trim() || formVal.formula?.trim() || null,
+      parameterUnitID: formVal.parameterUnitID && formVal.parameterUnitID > 0 ? formVal.parameterUnitID : null,
+      parameterUnitEquivalentID: formVal.parameterUnitEquivalentID && formVal.parameterUnitEquivalentID > 0 ? formVal.parameterUnitEquivalentID : null,
+      unitConversionFactor: formVal.unitConversionFactor ?? null
     };
 
     this.isSaving = true;

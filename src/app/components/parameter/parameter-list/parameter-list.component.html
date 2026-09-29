@@ -214,49 +214,57 @@
 <!-- Add / Edit / View Modal -->
 <div class="modal fade" #modalRef id="parameterModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header py-2 bg-light">
-        <h5 class="modal-title fs-6 fw-semibold text-danger d-flex align-items-center">
-          <i class="bi me-2" [ngClass]="isViewMode ? 'bi-eye' : (isEditMode ? 'bi-pencil-square' : 'bi-plus-circle')"></i>
-          {{ formTitle }}
-        </h5>
-        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+    <div class="modal-content shadow border-0">
+      <!-- Modal Header -->
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fw-medium d-flex align-items-center gap-2 mb-0">
+          <i class="bi" [ngClass]="isViewMode ? 'bi-eye' : (isEditMode ? 'bi-pencil-square' : 'bi-plus-circle')"></i>
+          <span>{{ formTitle }}</span>
+        </label>
+        <button type="button" class="btn-close btn-close-white" (click)="closeModal()" aria-label="Close"></button>
       </div>
 
+      <!-- Modal Body -->
       <div class="modal-body p-3">
         <form [formGroup]="parameterForm" (ngSubmit)="onSubmit()">
           <!-- Section 1: Parameter Identity -->
           <fieldset class="lims-fieldset mb-3">
             <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
-              <i class="bi bi-card-heading me-1"></i> Parameter Identity
+              <i class="bi bi-tag me-1"></i> Parameter Identity
             </legend>
             <div class="row g-2">
               <div class="col-md-3 col-sm-6">
-                <label class="form-label">Parameter Code <span class="text-danger">*</span></label>
+                <div class="form-field-header">
+                  <label class="form-label">Parameter Code <span class="text-danger">*</span></label>
+                </div>
                 <input
                   type="text"
                   class="form-control form-control-sm font-monospace text-uppercase"
                   formControlName="code"
-                  placeholder="e.g. TENSILE_STRENGTH"
+                  placeholder="e.g. DOC, UTS"
                   [readonly]="isViewMode"
                 />
                 <app-field-error [control]="parameterForm.get('code')" [submitted]="submitted"></app-field-error>
               </div>
 
               <div class="col-md-5 col-sm-6">
-                <label class="form-label">Parameter Name <span class="text-danger">*</span></label>
+                <div class="form-field-header">
+                  <label class="form-label">Parameter Name <span class="text-danger">*</span></label>
+                </div>
                 <input
                   type="text"
                   class="form-control form-control-sm"
                   formControlName="name"
-                  placeholder="e.g. Tensile Strength at Peak"
+                  placeholder="e.g. Date of Casting"
                   [readonly]="isViewMode"
                 />
                 <app-field-error [control]="parameterForm.get('name')" [submitted]="submitted"></app-field-error>
               </div>
 
               <div class="col-md-2 col-sm-6">
-                <label class="form-label">Symbol</label>
+                <div class="form-field-header">
+                  <label class="form-label">Symbol</label>
+                </div>
                 <input
                   type="text"
                   class="form-control form-control-sm font-monospace"
@@ -267,7 +275,9 @@
               </div>
 
               <div class="col-md-2 col-sm-6">
-                <label class="form-label">Type <span class="text-danger">*</span></label>
+                <div class="form-field-header">
+                  <label class="form-label">Type <span class="text-danger">*</span></label>
+                </div>
                 <select class="form-select form-select-sm" formControlName="parameterType">
                   <option *ngFor="let pt of parameterTypes" [value]="pt">{{ pt }}</option>
                 </select>
@@ -282,29 +292,36 @@
             </legend>
             <div class="row g-2">
               <div class="col-md-3 col-sm-6">
-                <label class="form-label">Calculation Role <span class="text-danger">*</span></label>
+                <div class="form-field-header">
+                  <label class="form-label">Calculation Role <span class="text-danger">*</span></label>
+                </div>
                 <select class="form-select form-select-sm" formControlName="calculationRole">
                   <option *ngFor="let cr of calculationRoles" [value]="cr">{{ cr }}</option>
                 </select>
               </div>
 
-              <div class="col-md-4 col-sm-8">
-                <div class="form-field-header d-flex justify-content-between align-items-center">
-                  <label class="form-label mb-0">Measurement Unit</label>
-                  <a *ngIf="!isViewMode" class="btn-nav-link small text-danger" (click)="openLinkedMaster('/parameter-unit')">
+              <div class="col-md-5 col-sm-6">
+                <div class="form-field-header">
+                  <label class="form-label">Measurement Unit</label>
+                  <a *ngIf="!isViewMode" class="btn-nav-link" (click)="openLinkedMaster('/parameter-unit')" title="Manage Parameter Units">
                     <i class="bi bi-box-arrow-up-right me-1"></i>Manage Units
                   </a>
                 </div>
-                <select class="form-select form-select-sm mt-1" formControlName="parameterUnitID">
-                  <option [ngValue]="null">-- Select Unit --</option>
-                  <option *ngFor="let u of availableUnits" [ngValue]="u.id">
-                    {{ u.name }} ({{ u.symbol }})
-                  </option>
-                </select>
+                <app-searchable-dropdown
+                  [fetchDataFn]="getParameterUnitDropdown"
+                  [smallInput]="true"
+                  [hideLabel]="true"
+                  [placeholder]="'Search Unit (e.g. kg, mm, MPa)...'"
+                  [selectedItem]="selectedUnitItem"
+                  [isDisabled]="isViewMode"
+                  (itemSelected)="onParameterUnitSelected($event)"
+                ></app-searchable-dropdown>
               </div>
 
-              <div class="col-md-2 col-sm-4">
-                <label class="form-label">Precision (0-6)</label>
+              <div class="col-md-2 col-sm-6">
+                <div class="form-field-header">
+                  <label class="form-label">Precision (0-6)</label>
+                </div>
                 <input
                   type="number"
                   class="form-control form-control-sm"
@@ -315,8 +332,10 @@
                 />
               </div>
 
-              <div class="col-md-2 col-sm-4">
-                <label class="form-label">Sequence</label>
+              <div class="col-md-2 col-sm-6">
+                <div class="form-field-header">
+                  <label class="form-label">Sequence</label>
+                </div>
                 <input
                   type="number"
                   class="form-control form-control-sm"
@@ -326,8 +345,10 @@
                 />
               </div>
 
-              <div class="col-md-11 col-sm-8">
-                <label class="form-label">Description / Guidelines</label>
+              <div class="col-12">
+                <div class="form-field-header">
+                  <label class="form-label">Description / Guidelines</label>
+                </div>
                 <input
                   type="text"
                   class="form-control form-control-sm"
@@ -348,12 +369,14 @@
               <i class="bi bi-calculator me-1"></i> Formula Expression
             </legend>
             <div class="row g-2">
-              <div class="col-md-9">
-                <label class="form-label">Formula <span class="text-danger">*</span></label>
+              <div class="col-md-8">
+                <div class="form-field-header">
+                  <label class="form-label">Formula <span class="text-danger">*</span></label>
+                </div>
                 <div class="input-group input-group-sm">
                   <input
                     type="text"
-                    class="form-control font-monospace"
+                    class="form-control form-control-sm font-monospace"
                     formControlName="formula"
                     placeholder="e.g. {SOIL_LL} - {SOIL_PL}"
                     [readonly]="isViewMode"
@@ -361,20 +384,22 @@
                   <button
                     *ngIf="!isViewMode"
                     type="button"
-                    class="btn btn-outline-primary"
+                    class="btn btn-outline-danger btn-sm d-flex align-items-center"
                     (click)="openFormulaBuilder()"
                     title="Open Interactive Visual Formula Builder"
                   >
                     <i class="bi bi-gear me-1"></i>Build Formula
                   </button>
                 </div>
-                <small class="text-muted d-block mt-1">
+                <small class="text-muted d-block mt-1 fs-8">
                   Use parameter codes enclosed in curly braces, e.g. <code>&#123;SOIL_LL&#125; - &#123;SOIL_PL&#125;</code> or <code>(&#123;P12&#125; * 100) / &#123;P15&#125;</code>.
                 </small>
               </div>
 
-              <div class="col-md-3">
-                <label class="form-label">Formula Display Label</label>
+              <div class="col-md-4">
+                <div class="form-field-header">
+                  <label class="form-label">Formula Display Label</label>
+                </div>
                 <input
                   type="text"
                   class="form-control form-control-sm"
@@ -387,14 +412,14 @@
           </fieldset>
 
           <!-- Active Status (Edit Mode) -->
-          <div *ngIf="isEditMode" class="form-check form-switch mb-2">
+          <div *ngIf="isEditMode" class="form-check form-switch mt-2 mb-1">
             <input
-              class="form-check-input"
+              class="form-check-input cursor-pointer"
               type="checkbox"
               id="isActiveSwitch"
               formControlName="isActive"
             />
-            <label class="form-check-label small" for="isActiveSwitch">
+            <label class="form-check-label small fw-medium text-dark cursor-pointer" for="isActiveSwitch">
               Parameter is Active
             </label>
           </div>
@@ -402,7 +427,7 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="modal-footer py-2 bg-light d-flex justify-content-end gap-2">
+      <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-end gap-2">
         <button
           type="button"
           class="btn-lims btn-lims-cancel"
@@ -413,7 +438,7 @@
         <button
           *ngIf="!isViewMode"
           type="button"
-          class="btn-lims btn-lims-primary"
+          class="btn-lims btn-lims-save"
           [disabled]="isSaving"
           (click)="onSubmit()"
         >

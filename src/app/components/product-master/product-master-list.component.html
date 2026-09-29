@@ -9,7 +9,7 @@
     <!-- Header -->
     <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-box-seam text-danger fs-5"></i>
+        <i class="bi bi-box-seam text-theme fs-5"></i>
         <div>
           <h6 class="mb-0 fw-bold text-dark">Product / Material Master</h6>
           <small class="text-muted text-xs">Manage product definitions, nominal sizes, versions, and applicability</small>
@@ -144,7 +144,7 @@
 
               <!-- Product Name -->
               <td>
-                <div class="d-flex align-items-center gap-1.5">
+                <div class="d-flex align-items-center gap-1">
                   <span *ngIf="item.gradePrefix" class="badge bg-light text-dark border font-monospace">{{ item.gradePrefix }}</span>
                   <a (click)="navigateToDetails(item.id)" class="text-dark fw-semibold text-decoration-none cursor-pointer hover-primary" title="View details">
                     {{ item.productName }}
@@ -250,3 +250,4 @@
     </div>
   </div>
 </div>
+

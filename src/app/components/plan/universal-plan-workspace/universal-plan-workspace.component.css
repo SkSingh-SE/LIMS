@@ -1,9 +1,14 @@
 .universal-plan-container {
   font-family: 'Poppins', sans-serif;
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - var(--nav-height, 50px));
   display: flex;
   flex-direction: column;
   background-color: #f8fafc;
+  padding-bottom: 56px;
+}
+
+.workspace-body {
+  flex: 1 0 auto;
 }
 
 .text-xxs {
@@ -238,13 +243,17 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
-/* Sticky Action Bar */
+/* Fixed Bottom Action Bar (LIMS Standard) */
 .workspace-action-bar {
-  position: sticky;
+  position: fixed;
   bottom: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background-color: #ffffff;
+  z-index: 1030;
   border-top: 2px solid var(--primary-color, #da261c);
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
 }
 
 /* Effective Configuration Preview Drawer (Screen 14E) */

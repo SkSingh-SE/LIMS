@@ -161,7 +161,7 @@
                 </span>
 
                 <!-- Unknown Sample Toggle in Header Line -->
-                <div class="form-check form-switch mb-0 ms-3 d-inline-flex align-items-center gap-1.5 p-0">
+                <div class="form-check form-switch mb-0 ms-3 d-inline-flex align-items-center gap-1 p-0">
                   <input class="form-check-input m-0 cursor-pointer" type="checkbox" formControlName="isUnknownSample"
                     (change)="onUnknownSampleToggle(activeSampleIdx)" id="unknownToggle{{activeSampleIdx}}">
                   <label class="form-check-label extra-small fw-semibold text-secondary cursor-pointer mb-0 user-select-none"
@@ -223,13 +223,13 @@
                   <!-- LAYER 2: Master Classification Header with Quick Explore Button -->
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <span class="fw-semibold text-secondary small d-flex align-items-center">
-                      <i class="bi bi-diagram-3 me-1.5 text-danger"></i> Master Classification & Scope
+                      <i class="bi bi-diagram-3 me-1 text-danger"></i> Master Classification & Scope
                     </span>
                     <button *ngIf="!isViewMode" type="button"
                       class="btn btn-sm btn-lims btn-lims-primary d-inline-flex align-items-center py-0.5 px-2.5 shadow-sm"
                       (click)="openExplorerModal(activeSampleIdx)"
                       title="Explore Configured Tests, Standards & Methods for this sample">
-                      <i class="bi bi-layout-sidebar-reverse me-1.5"></i> Explore Configured Scope
+                      <i class="bi bi-layout-sidebar-reverse me-1"></i> Explore Configured Scope
                     </button>
                   </div>
 
@@ -290,7 +290,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-1">
                           <span class="fw-semibold text-dark small"><i
                               class="bi bi-patch-check text-danger me-2"></i>TPI Inspection</span>
-                          <div class="form-check form-switch mb-0 d-inline-flex align-items-center gap-1.5 p-0">
+                          <div class="form-check form-switch mb-0 d-inline-flex align-items-center gap-1 p-0">
                             <input class="form-check-input m-0 cursor-pointer" type="checkbox"
                               [checked]="getActiveSample().get('tpiRequired')?.value"
                               (change)="onTpiRequiredToggle(activeSampleIdx, $event)" id="tpiCheck_{{activeSampleIdx}}">
@@ -331,25 +331,25 @@
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Preserve broken specimen')"
                               title="Click to toggle 'Preserve broken specimen'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'bi-check-lg' : 'bi-plus'"></i>Preserve
+                              <i class="bi me-1" [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'bi-check-lg' : 'bi-plus'"></i>Preserve
                             </button>
                             <button type="button" class="btn btn-xs preset-chip-btn"
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Provide stress-strain graph')"
                               title="Click to toggle 'Provide stress-strain graph'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'bi-check-lg' : 'bi-plus'"></i>Graph
+                              <i class="bi me-1" [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'bi-check-lg' : 'bi-plus'"></i>Graph
                             </button>
                             <button type="button" class="btn btn-xs preset-chip-btn"
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Impact test at -46°C')"
                               title="Click to toggle 'Impact test at -46°C'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'bi-check-lg' : 'bi-plus'"></i>-46°C
+                              <i class="bi me-1" [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'bi-check-lg' : 'bi-plus'"></i>-46°C
                             </button>
                             <button type="button" class="btn btn-xs preset-chip-btn"
                               [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'btn-danger text-white' : 'btn-outline-secondary'"
                               (click)="toggleInstruction(activeSampleIdx, 'Protect polished surface')"
                               title="Click to toggle 'Protect polished surface'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'bi-check-lg' : 'bi-plus'"></i>Protect
+                              <i class="bi me-1" [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'bi-check-lg' : 'bi-plus'"></i>Protect
                             </button>
                           </div>
                         </div>
@@ -385,25 +385,25 @@
                     </div>
                     <div class="d-flex gap-2 align-items-center">
                       <button *ngIf="!isViewMode && samples.length > 1" type="button"
-                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
                         (click)="copyActivePlanToAllOtherSamples()"
                         title="Copy this sample's plan to all other samples">
                         <i class="bi bi-copy me-1"></i><span>Copy to All Samples</span>
                       </button>
                       <button *ngIf="!isViewMode" type="button"
-                        class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1.5"
+                        class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
                         (click)="clearSamplePlan(activeSampleIdx)"
                         title="Clear all planned tests for this sample">
                         <i class="bi bi-trash3 me-1"></i><span>Clear Plan</span>
                       </button>
                       <button *ngIf="testPlan.get('id')?.value > 0" type="button"
-                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5"
+                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
                         (click)="togglePlanHistory(testPlan.get('id')?.value)"
                         title="View History">
                         <i class="bi bi-clock-history me-1"></i><span>History</span>
                       </button>
                       <button *ngIf="isPlanApproved(testPlan)" type="button"
-                        class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1.5"
+                        class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1"
                         (click)="openReplanModal(testPlan.get('id')?.value)" title="Request Replan">
                         <i class="bi bi-arrow-repeat me-1"></i><span>Replan</span>
                       </button>
@@ -751,7 +751,7 @@
                         [class.border-light-subtle]="hasSelectedTechnique(activeSampleIdx)">
                         <div class="d-flex flex-wrap gap-3 align-items-center">
                           <span class="fw-semibold small text-dark d-flex align-items-center">
-                            <i class="bi bi-funnel text-danger me-1.5"></i>
+                            <i class="bi bi-funnel text-danger me-1"></i>
                             <span>Analytical Techniques <span class="text-danger">*</span>:</span>
                           </span>
                           <label *ngFor="let tech of availableTechniques" class="tech-check-item">
@@ -762,7 +762,7 @@
                             <span>{{ tech.name }}</span>
                           </label>
                           <span *ngIf="!hasSelectedTechnique(activeSampleIdx)" class="extra-small text-danger fw-semibold ms-auto">
-                            <i class="bi bi-exclamation-circle me-1.5"></i>Select at least 1 technique to add/search chemical tests
+                            <i class="bi bi-exclamation-circle me-1"></i>Select at least 1 technique to add/search chemical tests
                           </span>
                         </div>
                       </div>
@@ -968,11 +968,11 @@
                               class="mt-3">
                               <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
                                 <div class="fw-semibold text-secondary small d-flex align-items-center">
-                                  <i class="bi bi-grid-3x3-gap text-danger me-1.5"></i>
+                                  <i class="bi bi-grid-3x3-gap text-danger me-1"></i>
                                   <span>Chemical Element Matrix (Test-Wise Categorized)</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
-                                  <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1.5"
+                                  <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1"
                                     (click)="reloadAllConfiguredSpectroMatrices(activeSampleIdx, planIdx, chemIdx)"
                                     title="Load / Refresh machine spectro matrices for all selected chemical tests">
                                     <i class="bi bi-arrow-repeat me-1"></i><span>Load Spectro Elements</span>
@@ -1010,11 +1010,11 @@
                                         <td colspan="6" class="py-1 px-2 fw-semibold small bg-light-subtle">
                                           <span *ngIf="grp.sourceType === 'Specification'"
                                             class="badge bg-danger-subtle text-danger border border-danger-subtle me-2">
-                                            <i class="bi bi-bookmark-check me-1.5"></i>Specification Grade
+                                            <i class="bi bi-bookmark-check me-1"></i>Specification Grade
                                           </span>
                                           <span *ngIf="grp.sourceType !== 'Specification'"
                                             class="badge bg-info-subtle text-info-emphasis border border-info-subtle me-2">
-                                            <i class="bi bi-cpu me-1.5"></i>Analysis Type
+                                            <i class="bi bi-cpu me-1"></i>Analysis Type
                                           </span>
                                           <span class="text-dark">{{ grp.title }}</span>
                                           <span class="text-muted extra-small ms-2">({{ grp.elements.length }}
@@ -1253,15 +1253,15 @@
           <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <span class="fw-semibold small text-uppercase">
-                <i class="bi bi-collection-play me-1.5 text-danger"></i>Combined Multi-Sample Plan ({{ combinedIdxs.size }} Samples):
+                <i class="bi bi-collection-play me-1 text-danger"></i>Combined Multi-Sample Plan ({{ combinedIdxs.size }} Samples):
               </span>
-              <span *ngFor="let idx of getCombinedIdxsArray()" class="badge bg-danger bg-opacity-75 text-white d-inline-flex align-items-center gap-1.5 py-1 px-2">
+              <span *ngFor="let idx of getCombinedIdxsArray()" class="badge bg-danger bg-opacity-75 text-white d-inline-flex align-items-center gap-1 py-1 px-2">
                 #{{ idx + 1 }} {{ samples.at(idx).get('sampleNo')?.value }}
                 <button type="button" class="btn-close btn-close-white extra-small" (click)="removeFromCombined(idx)" title="Remove from combined batch"></button>
               </span>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small d-inline-flex align-items-center gap-1.5"
+              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small d-inline-flex align-items-center gap-1"
                 (click)="isCombinedMode = false; combinedIdxs.clear(); selectAllChecked = false">
                 <i class="bi bi-x-circle me-1"></i><span>Cancel Combined</span>
               </button>
@@ -1304,8 +1304,8 @@
               </select>
             </div>
             <div class="col-md-3 d-flex justify-content-end">
-              <button type="button" class="btn btn-sm btn-lims btn-lims-primary w-100 py-1.5 extra-small" (click)="openExplorerModal()">
-                <i class="bi bi-layout-sidebar-reverse me-1.5"></i>Explore Configured Scope
+              <button type="button" class="btn btn-sm btn-lims btn-lims-primary w-100 py-1 extra-small" (click)="openExplorerModal()">
+                <i class="bi bi-layout-sidebar-reverse me-1"></i>Explore Configured Scope
               </button>
             </div>
           </div>
@@ -1316,13 +1316,13 @@
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'general' }"
               (click)="combinedActiveTab = 'general'" type="button">
-              <i class="bi bi-gear me-1.5"></i>General Test ({{ getCombinedMethods().length }})
+              <i class="bi bi-gear me-1"></i>General Test ({{ getCombinedMethods().length }})
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'chemical' }"
               (click)="combinedActiveTab = 'chemical'" type="button">
-              <i class="bi bi-droplet me-1.5"></i>Chemical Test ({{ getCombinedChemMethods().length }} tests / {{ getCombinedElements().length }} elements)
+              <i class="bi bi-droplet me-1"></i>Chemical Test ({{ getCombinedChemMethods().length }} tests / {{ getCombinedElements().length }} elements)
             </button>
           </li>
         </ul>
@@ -1405,7 +1405,7 @@
               [class.border-light-subtle]="hasSelectedCombinedTechnique()">
               <div class="d-flex flex-wrap gap-3 align-items-center">
                 <span class="fw-semibold small text-dark d-flex align-items-center">
-                  <i class="bi bi-funnel text-danger me-1.5"></i>
+                  <i class="bi bi-funnel text-danger me-1"></i>
                   <span>Analytical Techniques <span class="text-danger">*</span>:</span>
                 </span>
                 <label *ngFor="let tech of availableTechniques" class="tech-check-item">
@@ -1416,7 +1416,7 @@
                   <span>{{ tech.name }}</span>
                 </label>
                 <span *ngIf="!hasSelectedCombinedTechnique()" class="extra-small text-danger fw-semibold ms-auto">
-                  <i class="bi bi-exclamation-circle me-1.5"></i>Select at least 1 technique to add/search chemical tests
+                  <i class="bi bi-exclamation-circle me-1"></i>Select at least 1 technique to add/search chemical tests
                 </span>
               </div>
             </div>
@@ -1503,11 +1503,11 @@
             <div *ngIf="getCombinedElements().length > 0" class="mt-3">
               <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
                 <div class="fw-semibold text-secondary small d-flex align-items-center">
-                  <i class="bi bi-grid-3x3-gap text-danger me-1.5"></i>
+                  <i class="bi bi-grid-3x3-gap text-danger me-1"></i>
                   <span>Chemical Element Matrix (Test-Wise Categorized)</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <button type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1.5"
+                  <button type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1"
                     (click)="reloadAllConfiguredSpectroMatricesForCombined()"
                     title="Load / Refresh machine spectro matrices for all selected chemical tests">
                     <i class="bi bi-arrow-repeat me-1"></i><span>Load Spectro Elements</span>
@@ -1543,11 +1543,11 @@
                         <td colspan="6" class="py-1 px-2 fw-semibold small bg-light-subtle">
                           <span *ngIf="grp.sourceType === 'Specification'"
                             class="badge bg-danger-subtle text-danger border border-danger-subtle me-2">
-                            <i class="bi bi-bookmark-check me-1.5"></i>Specification Grade
+                            <i class="bi bi-bookmark-check me-1"></i>Specification Grade
                           </span>
                           <span *ngIf="grp.sourceType !== 'Specification'"
                             class="badge bg-info-subtle text-info-emphasis border border-info-subtle me-2">
-                            <i class="bi bi-cpu me-1.5"></i>Analysis Type
+                            <i class="bi bi-cpu me-1"></i>Analysis Type
                           </span>
                           <span class="text-dark">{{ grp.title }}</span>
                           <span class="text-muted extra-small ms-2">({{ grp.elements.length }} elements)</span>
@@ -1606,7 +1606,7 @@
           <!-- Apply Button -->
           <div class="d-flex justify-content-end mt-3 pt-2 border-top">
             <button type="button" class="btn btn-lims btn-lims-save px-4 shadow-sm" (click)="applyCombinedPlan()">
-              <i class="bi bi-check2-all me-1.5"></i>Apply Combined Plan to {{ combinedIdxs.size }} Samples
+              <i class="bi bi-check2-all me-1"></i>Apply Combined Plan to {{ combinedIdxs.size }} Samples
             </button>
           </div>
         </div>

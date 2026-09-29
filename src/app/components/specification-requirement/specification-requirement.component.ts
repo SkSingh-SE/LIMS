@@ -232,10 +232,18 @@ export class SpecificationRequirementComponent implements OnInit {
 
   getStatusBadgeClass(status?: string | number): string {
     const s = String(status !== undefined && status !== null ? status : '').toLowerCase();
-    if (s === 'draft' || s === '0') return 'badge-status-draft';
-    if (s === 'active' || s === '1') return 'badge-status-active';
-    if (s === 'superseded' || s === '2') return 'badge-status-superseded';
-    return 'badge-status-withdrawn';
+    if (s === 'draft' || s === '0') return 'bg-warning-subtle text-warning-emphasis border-warning-subtle';
+    if (s === 'active' || s === '1') return 'bg-success-subtle text-success-emphasis border-success-subtle';
+    if (s === 'superseded' || s === '2') return 'bg-secondary-subtle text-secondary-emphasis border-secondary-subtle';
+    return 'bg-light text-dark border-secondary-subtle';
+  }
+
+  getStatusIcon(status?: string | number): string {
+    const s = String(status !== undefined && status !== null ? status : '').toLowerCase();
+    if (s === 'draft' || s === '0') return 'bi-pencil-fill';
+    if (s === 'active' || s === '1') return 'bi-check-circle-fill';
+    if (s === 'superseded' || s === '2') return 'bi-archive-fill';
+    return 'bi-info-circle-fill';
   }
 
   getStatusLabel(status?: string | number): string {

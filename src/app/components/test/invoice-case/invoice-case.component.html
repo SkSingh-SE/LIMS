@@ -133,12 +133,12 @@
                           <span class="fw-semibold text-secondary text-sm" style="font-size: 0.78rem;">{{ p.get('name')?.value }}</span>
                           <div class="d-flex flex-row align-items-center gap-1 mt-0.5">
                             <span *ngIf="isOverrideRow(i, pi)"
-                                  class="badge bg-warning text-dark px-1.5 py-0.5"
+                                  class="badge bg-warning text-dark px-1 py-0.5"
                                   style="font-size: 0.65rem; cursor: help;"
                                   [title]="getOverrideHint(i, pi)">
                               {{ getOverrideText(i, pi) }}
                             </span>
-                            <span class="badge bg-secondary text-white px-1.5 py-0.5" style="font-size: 0.65rem;">
+                            <span class="badge bg-secondary text-white px-1 py-0.5" style="font-size: 0.65rem;">
                               {{ p.get('groupType')?.value === 'AnalysisType' ? 'Chemical' : 'Mech/Gen' }}
                             </span>
                           </div>
@@ -186,14 +186,14 @@
                         <div class="border rounded p-2 bg-white" style="box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); background-color: #fafbfc !important;">
                           <div class="fw-semibold text-secondary text-xxs mb-2 d-flex align-items-center justify-content-between" style="font-size: 0.72rem;">
                             <span><i class="bi bi-gear-fill me-1"></i>Element-Wise Surcharges (Added on top of base tier)</span>
-                            <span class="badge bg-info-subtle text-info-emphasis px-1.5 py-0.5" style="font-size: 0.65rem;">Override Parameter Rates</span>
+                            <span class="badge bg-info-subtle text-info-emphasis px-1 py-0.5" style="font-size: 0.65rem;">Override Parameter Rates</span>
                           </div>
                           <div class="row g-2">
                             <div *ngFor="let el of getElementWiseList(i, pi); trackBy: trackByElementId" class="col-md-3 col-sm-4 col-6">
                               <div class="input-group input-group-sm">
-                                <span class="input-group-text py-0.5 px-1.5 bg-light border-secondary-subtle" >{{ el.name }}</span>
+                                <span class="input-group-text py-0.5 px-1 bg-light border-secondary-subtle" >{{ el.name }}</span>
                                 <input type="number" 
-                                       class="form-control form-control-sm py-0.5 px-1.5 text-end font-monospace border-secondary-subtle" 
+                                       class="form-control form-control-sm py-0.5 px-1 text-end font-monospace border-secondary-subtle" 
                             
                                        [value]="el.price" 
                                        (input)="updateElementPriceValue(i, pi, el.id, $event)" 
@@ -228,3 +228,4 @@
     </form>
   </div>
 </div>
+

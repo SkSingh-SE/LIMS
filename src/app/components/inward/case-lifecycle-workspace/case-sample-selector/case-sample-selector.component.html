@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
         <span class="sample-selector-title">
-          <i class="bi bi-diagram-3-fill text-danger me-1.5"></i> Sample Lifecycle Progress Matrix
+          <i class="bi bi-diagram-3-fill text-danger me-1"></i> Sample Lifecycle Progress Matrix
         </span>
         <span class="badge bg-secondary-subtle text-secondary border fs-8">{{ samples.length }} Samples</span>
       </div>
@@ -34,7 +34,7 @@
           
           <!-- Sample No & Material Spec -->
           <td>
-            <div class="d-flex align-items-center gap-1.5">
+            <div class="d-flex align-items-center gap-1">
               <i class="bi bi-box-seam text-danger" *ngIf="!sample.isCancelled"></i>
               <i class="bi bi-x-circle text-danger" *ngIf="sample.isCancelled"></i>
               <span class="fw-bold text-dark fs-7.5">{{ sample.sampleNo }}</span>
@@ -117,7 +117,7 @@
 
         <tr *ngIf="!samples || samples.length === 0">
           <td colspan="7" class="text-center py-4 text-muted fs-7">
-            <i class="bi bi-inbox me-1.5"></i> No sample details registered for this case.
+            <i class="bi bi-inbox me-1"></i> No sample details registered for this case.
           </td>
         </tr>
       </tbody>
@@ -125,3 +125,4 @@
   </div>
 
 </div>
+

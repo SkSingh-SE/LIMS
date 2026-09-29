@@ -8,7 +8,7 @@
     <!-- Header -->
     <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-flask-fill text-danger fs-5"></i>
+        <i class="bi bi-flask-fill text-theme fs-5"></i>
         <div>
           <h6 class="mb-0 fw-bold text-dark">{{ formTitle }}</h6>
           <small class="text-muted text-xs">Configure Universal Test Definition, Repertoire Parameters, and Method Specifications</small>
@@ -100,7 +100,7 @@
       <!-- ── TAB 1: IDENTITY & DETAILS ── -->
       <div *ngIf="activeTab === 'header'" class="tab-pane-content">
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center gap-1">
             <i class="bi bi-tag me-1"></i> Primary Identification
           </legend>
 
@@ -206,7 +206,7 @@
       <!-- ── TAB 2: DIRECT PARAMETERS ── -->
       <div *ngIf="activeTab === 'parameters'" class="tab-pane-content">
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center gap-1">
             <i class="bi bi-list-check me-1"></i> Parameter Repertoire
           </legend>
 
@@ -338,7 +338,7 @@
       <!-- ── TAB 3: SUPPORTED TEST METHODS ── -->
       <div *ngIf="activeTab === 'methods'" class="tab-pane-content">
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center gap-1">
             <i class="bi bi-book me-1"></i> Supported Test Methods
           </legend>
 
@@ -466,7 +466,7 @@
       <!-- ── TAB 4: CONDITION DIMENSIONS ── -->
       <div *ngIf="activeTab === 'conditions'" class="tab-pane-content">
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center gap-1">
             <i class="bi bi-sliders me-1"></i> Supported Test Conditions
           </legend>
 
@@ -596,7 +596,7 @@
       <!-- ── TAB 5: LAYOUT ASSIGNMENT (presentation only) ── -->
       <div *ngIf="activeTab === 'layouts'" class="tab-pane-content">
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center gap-1">
             <i class="bi bi-layout-text-window-reverse me-1"></i> Execution Layout Assignment
           </legend>
 
@@ -739,7 +739,7 @@
       <!-- ── TAB 6: AUDIT & LEGACY ── -->
       <div *ngIf="activeTab === 'audit'" class="tab-pane-content">
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center gap-1">
             <i class="bi bi-clock-history me-1"></i> Audit & Legacy Reference
           </legend>
 
@@ -834,3 +834,4 @@
     </div>
   </form>
 </div>
+

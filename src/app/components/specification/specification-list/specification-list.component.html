@@ -9,7 +9,7 @@
     <!-- Header -->
     <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-card-checklist text-danger fs-5"></i>
+        <i class="bi bi-card-checklist text-theme fs-5"></i>
         <div>
           <h6 class="mb-0 fw-bold text-dark">Specification Master</h6>
           <small class="text-muted text-xs">Manage governing specifications, standards, issuing bodies, and versions</small>
@@ -257,13 +257,13 @@
 >
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
     <div class="modal-content">
-      <div class="modal-header card-form-header text-white">
-        <h5 class="modal-title fw-medium d-flex align-items-center" id="specificationModalLabel">
-          <i class="bi bi-card-checklist me-2"></i>{{ formTitle }}
-        </h5>
+      <div class="modal-header bg-light py-2 px-3 border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center" id="specificationModalLabel">
+          <i class="bi bi-card-checklist text-theme me-2"></i>{{ formTitle }}
+        </h6>
         <button
           type="button"
-          class="btn-close btn-close-white"
+          class="btn-close btn-sm"
           aria-label="Close"
           (click)="closeModal()"
         ></button>
@@ -272,7 +272,7 @@
       <form [formGroup]="specificationForm" (ngSubmit)="onSubmit()">
         <div class="modal-body p-3">
           <fieldset class="lims-fieldset mb-3">
-            <legend class="w-auto fw-semibold text-danger d-flex align-items-center">
+            <legend class="w-auto fw-semibold text-theme d-flex align-items-center">
               <i class="bi bi-tag me-1"></i>Specification Master Identity
             </legend>
 
@@ -344,20 +344,20 @@
 
               <!-- Issuing Organization -->
               <div class="col-md-6">
-                <div class="form-field-header">
-                  <label class="form-label">Issuing Organization</label>
+                <div class="form-field-header d-flex justify-content-between align-items-center">
+                  <label class="form-label mb-0">Issuing Organization</label>
+                  <a routerLink="/standard-organization" class="btn-nav-link text-decoration-none" target="_blank" tabindex="-1">
+                    <i class="bi bi-box-arrow-up-right"></i> Manage Orgs
+                  </a>
                 </div>
-                <select
-                  id="specOrgSelect"
-                  class="form-select form-select-sm"
+                <app-searchable-dropdown
                   formControlName="standardOrganizationID"
-                  [ngClass]="{'is-invalid': isFieldInvalid('standardOrganizationID')}"
-                >
-                  <option [ngValue]="null">-- Select Issuing Organization (Optional) --</option>
-                  <option *ngFor="let org of organizationList" [ngValue]="org.id">
-                    {{ org.name }} ({{ org.code }})
-                  </option>
-                </select>
+                  [fetchDataFn]="fetchOrganizationsFn"
+                  [smallInput]="true"
+                  [isInvalid]="isFieldInvalid('standardOrganizationID')"
+                  placeholder="-- Select Issuing Organization (Optional) --"
+                  [hideLabel]="true">
+                </app-searchable-dropdown>
                 <app-field-error
                   [control]="specificationForm.get('standardOrganizationID')"
                   label="Issuing Organization"
@@ -430,13 +430,13 @@
 >
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
     <div class="modal-content">
-      <div class="modal-header card-form-header text-white">
-        <h5 class="modal-title fw-medium d-flex align-items-center" id="specificationViewModalLabel">
-          <i class="bi bi-eye me-2"></i>Specification Master Details
-        </h5>
+      <div class="modal-header bg-light py-2 px-3 border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center" id="specificationViewModalLabel">
+          <i class="bi bi-eye text-theme me-2"></i>Specification Master Details
+        </h6>
         <button
           type="button"
-          class="btn-close btn-close-white"
+          class="btn-close btn-sm"
           aria-label="Close"
           (click)="closeViewModal()"
         ></button>
@@ -445,7 +445,7 @@
       <div class="modal-body p-3" *ngIf="viewData">
         <!-- Identity Summary -->
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center">
             <i class="bi bi-tag me-1"></i>Specification Master Identity
           </legend>
           <div class="row g-2">
@@ -593,16 +593,16 @@
 >
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
     <div class="modal-content">
-      <div class="modal-header card-form-header text-white">
-        <h5 class="modal-title fw-medium d-flex align-items-center" id="gradeModalLabel">
-          <i class="bi bi-tags me-2"></i>Manage Grades / Applicability
-          <span class="badge bg-white text-dark ms-2 font-monospace" *ngIf="activeSpecForGrades">
+      <div class="modal-header bg-light py-2 px-3 border-bottom">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center" id="gradeModalLabel">
+          <i class="bi bi-tags text-theme me-2"></i>Manage Grades / Applicability
+          <span class="badge bg-white text-dark ms-2 font-monospace border" *ngIf="activeSpecForGrades">
             {{ activeSpecForGrades.code }}
           </span>
-        </h5>
+        </h6>
         <button
           type="button"
-          class="btn-close btn-close-white"
+          class="btn-close btn-sm"
           aria-label="Close"
           (click)="closeGradeModal()"
         ></button>
@@ -632,7 +632,7 @@
 
         <!-- Grade Add/Edit Form -->
         <fieldset class="lims-fieldset mb-3">
-          <legend class="w-auto fw-semibold text-danger d-flex align-items-center">
+          <legend class="w-auto fw-semibold text-theme d-flex align-items-center">
             <i class="bi bi-plus-circle me-1" *ngIf="!isGradeEditMode"></i>
             <i class="bi bi-pencil-square me-1" *ngIf="isGradeEditMode"></i>
             {{ isGradeEditMode ? 'Edit Grade / Applicability' : 'Add New Grade / Applicability' }}

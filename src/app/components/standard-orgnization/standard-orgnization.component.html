@@ -4,10 +4,11 @@
     <!-- Standard Card Header -->
     <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-award-fill text-danger fs-5"></i>
+        <i class="bi bi-award-fill text-theme fs-5"></i>
         <div>
           <h6 class="mb-0 fw-bold text-dark">Standard Organization Master</h6>
-          <small class="text-muted text-xs">Publishing authorities & issuing bodies (ISO, ASTM, BIS, DIN, IS, etc.)</small>
+          <small class="text-muted text-xs">Publishing authorities & issuing bodies (ISO, ASTM, BIS, DIN, IS,
+            etc.)</small>
         </div>
       </div>
       <div class="d-flex gap-1">
@@ -23,7 +24,8 @@
         <div class="col-md-5">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" class="form-control form-control-sm" placeholder="Search standard organization name..." [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
+            <input type="text" class="form-control form-control-sm" placeholder="Search standard organization name..."
+              [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" />
           </div>
         </div>
         <div class="col-md-7 d-flex gap-1 justify-content-end align-items-center">
@@ -33,7 +35,8 @@
           <button type="button" class="btn-lims btn-lims-cancel" (click)="resetSearch()">
             <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
           </button>
-          <span class="text-muted small ms-2">Showing <strong>{{ StandardOrganizationList.length }}</strong> of <strong>{{ totalItems }}</strong> records</span>
+          <span class="text-muted small ms-2">Showing <strong>{{ StandardOrganizationList.length }}</strong> of
+            <strong>{{ totalItems }}</strong> records</span>
         </div>
       </div>
     </div>
@@ -61,20 +64,24 @@
               <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
               <td class="text-center col-actions">
                 <div class="d-flex justify-content-center gap-1">
-                  <button type="button" class="btn-tbl-action btn-tbl-view" (click)="openModal('view', item.id)" title="View Details">
+                  <button type="button" class="btn-tbl-action btn-tbl-view" (click)="openModal('view', item.id)"
+                    title="View Details">
                     <i class="bi bi-eye-fill"></i>
                   </button>
-                  <button type="button" class="btn-tbl-action btn-tbl-edit" (click)="openModal('edit', item.id)" title="Edit Standard Organization">
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" (click)="openModal('edit', item.id)"
+                    title="Edit Standard Organization">
                     <i class="bi bi-pencil-square"></i>
                   </button>
-                  <button type="button" class="btn-tbl-action btn-tbl-delete" (click)="deleteFn(item.id)" title="Delete Standard Organization">
+                  <button type="button" class="btn-tbl-action btn-tbl-delete" (click)="deleteFn(item.id)"
+                    title="Delete Standard Organization">
                     <i class="bi bi-trash3-fill"></i>
                   </button>
                 </div>
               </td>
               <td>
-                <div class="d-flex align-items-center gap-1.5">
-                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace text-xs px-2 py-0.5">{{ item.name }}</span>
+                <div class="d-flex align-items-center gap-1">
+                  <span class="badge bg-light text-dark border font-monospace text-xs px-2 py-0.5">{{ item.name
+                    }}</span>
                 </div>
               </td>
               <td class="text-center text-muted small">
@@ -94,45 +101,39 @@
 
     <!-- Pagination Footer -->
     <div class="card-footer bg-white py-2 px-3 border-top" *ngIf="totalItems > 0">
-      <app-pagination
-        [currentPage]="pageNumber"
-        [pageSize]="pageSize"
-        [totalItems]="totalItems"
-        [pageSizes]="pageSizes"
-        (pageChange)="onPageChange($event)"
-        (pageSizeChange)="onPageSizeChange($event)">
+      <app-pagination [currentPage]="pageNumber" [pageSize]="pageSize" [totalItems]="totalItems" [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)" (pageSizeChange)="onPageSizeChange($event)">
       </app-pagination>
     </div>
   </div>
 </div>
 
 <!-- Modal for Create / Edit / View Standard Organization -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-modal="true" role="dialog">
+<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static"
+  data-bs-keyboard="false" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-header bg-light py-2 px-3 border-bottom">
         <h6 class="modal-title fw-semibold text-dark mb-0 d-flex align-items-center">
-          <i class="bi bi-award-fill text-danger me-2"></i>
+          <i class="bi bi-award-fill text-theme me-2"></i>
           {{ formTitle }}
         </h6>
         <button type="button" class="btn-close btn-sm" aria-label="Close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="StandardOrganizationForm" (ngSubmit)="onSubmit()">
         <div class="modal-body p-3">
-          <fieldset>
-            <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1">
-              <i class="bi bi-building me-1"></i> Standard Body Information
-            </legend>
+          <fieldset class="lims-fieldset">
             <div class="row g-2">
               <div class="col-md-12">
                 <div class="form-field-header">
-                  <label for="name" class="form-label">Standard Body / Organization Name <span class="text-danger">*</span></label>
+                  <label for="name" class="form-label">Standard Body / Organization Name <span
+                      class="text-danger">*</span></label>
                 </div>
                 <input type="text" id="name" class="form-control form-control-sm" formControlName="name"
                   placeholder="e.g. ISO, ASTM, BIS, DIN, IS" maxlength="200"
-                  [ngClass]="{'is-invalid': isFieldInvalid('name')}"
-                  [attr.disabled]="isViewMode ? true : null" />
-                <app-field-error [control]="StandardOrganizationForm.get('name')" label="Standard Body Name" [submitted]="submitted"></app-field-error>
+                  [ngClass]="{'is-invalid': isFieldInvalid('name')}" [attr.disabled]="isViewMode ? true : null" />
+                <app-field-error [control]="StandardOrganizationForm.get('name')" label="Standard Body Name"
+                  [submitted]="submitted"></app-field-error>
               </div>
             </div>
           </fieldset>

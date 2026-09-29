@@ -8,7 +8,7 @@
     <!-- Card Header with Title and Add Action Button -->
     <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-layers fs-5 text-danger"></i>
+        <i class="bi bi-layers fs-5 text-theme"></i>
         <div>
           <h6 class="mb-0 fw-bold text-dark">Test Method Version Master</h6>
           <small class="text-muted text-xs">Lifecycle versions, editions, and parameter associations</small>
@@ -174,7 +174,7 @@
       <div class="modal-content border-0 shadow">
         <div class="modal-header py-2 bg-light border-bottom">
           <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-            <i class="bi bi-layers text-danger"></i>
+            <i class="bi bi-layers text-theme"></i>
             <span>{{ formTitle }}</span>
           </h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -183,7 +183,7 @@
           <div class="modal-body p-3">
             <!-- Fieldset 1: Method & Version Identity -->
             <fieldset class="border rounded p-2 mb-3">
-              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
                 <i class="bi bi-bookmark me-1"></i> Method & Version Identity
               </legend>
               <div class="row g-2">
@@ -211,7 +211,7 @@
 
             <!-- Fieldset 2: Lifecycle & Effective Dates -->
             <fieldset class="border rounded p-2 mb-3">
-              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
                 <i class="bi bi-calendar-check me-1"></i> Lifecycle & Dates
               </legend>
               <div class="row g-2">
@@ -251,7 +251,7 @@
 
             <!-- Fieldset 3: Revision Summary & SOP Attachment -->
             <fieldset class="border rounded p-2">
-              <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-1">
+              <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
                 <i class="bi bi-file-earmark-pdf me-1"></i> Revision Notes & Document
               </legend>
               <div class="row g-2">
@@ -296,13 +296,13 @@
       <div class="modal-content border-0 shadow">
         <div class="modal-header py-2 bg-light border-bottom">
           <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-            <i class="bi bi-sliders text-danger"></i>
+            <i class="bi bi-sliders text-theme"></i>
             <span>Map Parameters — {{ selectedVersionForParams?.testMethodCode }} (Version: {{ selectedVersionForParams?.version }})</span>
           </h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body p-3">
-          <div class="alert alert-light border py-1.5 px-2 mb-2 d-flex align-items-center justify-content-between">
+          <div class="alert alert-light border py-1 px-2 mb-2 d-flex align-items-center justify-content-between">
             <span class="text-muted small">
               <i class="bi bi-info-circle text-primary me-1"></i> Map the parameters reported under this standard edition. Units are displayed authoritatively from Parameter Master.
             </span>
@@ -371,3 +371,4 @@
       </div>
     </div>
   </div>
+

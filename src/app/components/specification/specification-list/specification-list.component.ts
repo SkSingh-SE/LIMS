@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -10,6 +11,7 @@ import { FormValidationHelper } from '../../../utility/helper/form-validation.he
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 export interface SpecificationListItem {
   id: number;
@@ -36,7 +38,8 @@ export interface SpecificationListItem {
     ReactiveFormsModule,
     FormFieldErrorComponent,
     PaginationComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    SearchableDropdownComponent
   ],
   templateUrl: './specification-list.component.html',
   styleUrl: './specification-list.component.css'
@@ -178,6 +181,26 @@ export class SpecificationListComponent implements OnInit {
       }
     });
   }
+  fetchOrganizationsFn = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    let list = this.organizationList.map(org => {
+      const displayName = org.code ? `${org.name} (${org.code})` : org.name;
+      return {
+        id: org.id,
+        name: displayName,
+        code: org.code,
+        additionalValues: { fullDisplayName: displayName }
+      };
+    });
+    
+    if (term) {
+      const lower = term.toLowerCase();
+      list = list.filter(o => o.name.toLowerCase().includes(lower) || o.code?.toLowerCase().includes(lower));
+    }
+    
+    // Paginate client-side
+    const start = page * pageSize;
+    return of(list.slice(start, start + pageSize));
+  };
 
   fetchData(): void {
     const filters: any[] = [];

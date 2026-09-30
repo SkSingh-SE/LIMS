@@ -1,151 +1,159 @@
-<div class="container-fluid d-flex flex-column align-items-center">
-    <div class="card basic-data-table w-100">
-        <div
-            class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Equipment List</label>
-            <a routerLink="/equipment/create" class="btn btn-outline-light me-3">
-                <i class="bi bi-plus-lg"></i> Add Equipment
-            </a>
+<div class="container-fluid p-2">
+  <div class="w-100 mb-1">
+    <app-breadcrumb></app-breadcrumb>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-tools text-danger fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-dark">Equipment List</h6>
+          <small class="text-muted text-xs">Manage laboratory instruments, calibration and maintenance</small>
         </div>
-
-        <div class="card-body">
-
-            <!-- Search -->
-            <div class="d-flex justify-content-end mb-2">
-                <div class="w-25 input-group custom-search">
-                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
-                        (keydown.enter)="onSearch()">
-                    <div class="input-group-text pe-auto" (click)="onSearch()">
-                        <i class="bi bi-search"></i>
-                    </div>
-                </div>
-            </div>
-
-
-            <div *ngIf="dataList.length > 0 || filters.length > 0" class="table-responsive ">
-                <table class="table bordered-table  align-middle w-100">
-                    <thead class="table-light">
-                        <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-                            <th *ngFor="let column of columns; let i = index">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal(column.key, $event)"><i
-                                            class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                        </tr>
-
-
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let data of dataList; let i = index" class="text-sm">
-
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/equipment/details', data.id]"
-                                    [state]="{ mode: 'view' }" 
-                                     class="icon-link"
-                                        title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
-                                    </a>
-                                    <a [routerLink]="['/equipment/edit', data.id]" 
-                                    [state]="{ mode: 'edit' }"
-                                    class="icon-link"
-                                        title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-                                    </a>
-    
-
-                                    <a  class="icon-link"
-                                        title="Delete" (click)="deleteFn(data.id)">
-                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                                    </a>
-                                </div>
-                            </td>
-
-
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td class="fw-semibold">
-                                <a [routerLink]="['/equipment/details', data.id]"
-                                   [state]="{ mode: 'view' }"
-                                   class="text-primary text-decoration-none cursor-pointer"
-                                   [title]="'View details for ' + data.name">
-                                    {{ data.name }}
-                                </a>
-                            </td>
-                            <td>{{ data.equipmentNo }}</td>
-                            <td>{{ data.departmentName }}</td>
-                            <td>{{data.equipmentType}}</td>
-                            <td>{{data.oemName}}</td>
-                            <td>{{(data.nextCalibrationDueDate | date: 'MMM dd yyyy') || '-'}}</td>
-                            <td>{{(data.nextMaintenanceDueDate | date: 'MMM dd yyyy') || '-'}}</td>
-                            <td>{{ data.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div *ngIf="dataList.length == 0"
-                class="w-100 h-100 text-center border rounded-3 mb-2">
-                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                    <div class="fw-semibold">No records found</div>
-
-                </div>
-            </div>
-           <!-- Pagination -->
-           <!-- Pagination -->
-           <app-pagination
-             [currentPage]="pageNumber"
-             [pageSize]="pageSize"
-             [totalItems]="totalItems"
-             [pageSizes]="pageSizes"
-             (pageChange)="onPageChange($event)"
-             (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
-           </app-pagination>
-        </div>
+      </div>
+      <div>
+        <a routerLink="/equipment/create" class="btn-lims btn-lims-save">
+          <i class="bi bi-plus-circle me-1"></i> Add Equipment
+        </a>
+      </div>
     </div>
-</div>
 
-<!-- Filter Modal -->
-<div #filterModal class="filter-modal">
-    <div class="card py-2 px-3 shadow position-relative">
-        <!-- Close Button in the Top-Right Corner -->
-        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
-            (click)="closeFilterModal()"></button>
-
-        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-
-        <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="getColumnType(filterColumn) === 'string'" value="Contains">Contains</option>
-            <option *ngIf="getColumnType(filterColumn) === 'date'" value="Between">Between</option>
-            <option value="Equal">Equal</option>
-            <option value="NotEqual">Not Equal</option>
-            <option *ngIf="getColumnType(filterColumn) !== 'string'" value="GreaterThan">Greater Than</option>
-            <option *ngIf="getColumnType(filterColumn) !== 'string'" value="LessThan">Less Than</option>
-        </select>
-
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
-            class="form-control mb-2" [(ngModel)]="filterValue" />
-        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
+    <div class="card-body p-2 bg-light border-bottom">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Search name, number, department..."
+              [(ngModel)]="searchTerm"
+              (keydown.enter)="onSearch()" />
+          </div>
         </div>
-
-        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
+        <div class="col-md-9 d-flex gap-1 justify-content-end">
+          <button type="button" class="btn-lims btn-lims-primary" (click)="onSearch()">
+            <i class="bi bi-filter me-1"></i> Apply
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="resetFilters()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+          </button>
+        </div>
+      </div>
     </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0 align-middle lims-compact-table">
+          <thead class="table-light text-nowrap">
+            <tr>
+              <th class="text-center col-sn">#</th>
+              <th class="text-center col-actions">Actions</th>
+              <th class="cursor-pointer" (click)="applySorting('name')">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Equipment Name</span>
+                  <i class="bi ms-1" [ngClass]="sortByColumn === 'name' ? (sortOrder === 'asc' ? 'bi-sort-up text-danger' : 'bi-sort-down text-danger') : 'bi-arrow-down-up text-muted'"></i>
+                </div>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('equipmentNo')">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Equipment No</span>
+                  <i class="bi ms-1" [ngClass]="sortByColumn === 'equipmentNo' ? (sortOrder === 'asc' ? 'bi-sort-up text-danger' : 'bi-sort-down text-danger') : 'bi-arrow-down-up text-muted'"></i>
+                </div>
+              </th>
+              <th class="cursor-pointer" (click)="applySorting('departmentName')">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Department</span>
+                  <i class="bi ms-1" [ngClass]="sortByColumn === 'departmentName' ? (sortOrder === 'asc' ? 'bi-sort-up text-danger' : 'bi-sort-down text-danger') : 'bi-arrow-down-up text-muted'"></i>
+                </div>
+              </th>
+              <th>Type</th>
+              <th>OEM</th>
+              <th class="text-center cursor-pointer" (click)="applySorting('nextCalibrationDueDate')">
+                <div class="d-flex align-items-center justify-content-center">
+                  <span>Calibration Due</span>
+                  <i class="bi ms-1" [ngClass]="sortByColumn === 'nextCalibrationDueDate' ? (sortOrder === 'asc' ? 'bi-sort-up text-danger' : 'bi-sort-down text-danger') : 'bi-arrow-down-up text-muted'"></i>
+                </div>
+              </th>
+              <th class="text-center">Maintenance Due</th>
+              <th class="cursor-pointer" (click)="applySorting('modifiedOn')">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span>Modified By · Date</span>
+                  <i class="bi ms-1" [ngClass]="sortByColumn === 'modifiedOn' ? (sortOrder === 'asc' ? 'bi-sort-up text-danger' : 'bi-sort-down text-danger') : 'bi-arrow-down-up text-muted'"></i>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of dataList; let i = index">
+              <td class="text-center text-muted col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center gap-1">
+                  <a [routerLink]="['/equipment/details', data.id]"
+                     [state]="{ mode: 'view' }"
+                     class="btn-tbl-action btn-tbl-view"
+                     title="View Equipment Details">
+                    <i class="bi bi-eye-fill"></i>
+                  </a>
+                  <a [routerLink]="['/equipment/edit', data.id]"
+                     [state]="{ mode: 'edit' }"
+                     class="btn-tbl-action btn-tbl-edit"
+                     title="Edit Equipment">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+                  <button type="button"
+                          class="btn-tbl-action btn-tbl-delete"
+                          title="Delete Equipment"
+                          (click)="deleteFn(data.id)">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+                </div>
+              </td>
+              <td>
+                <a [routerLink]="['/equipment/details', data.id]"
+                   [state]="{ mode: 'view' }"
+                   class="fw-semibold text-decoration-none text-dark hover-primary"
+                   [title]="'View details for ' + data.name">
+                  {{ data.name }}
+                </a>
+              </td>
+              <td class="text-nowrap">
+                <span class="badge bg-light text-dark border font-monospace">{{ data.equipmentNo || '—' }}</span>
+              </td>
+              <td class="text-xs">{{ data.departmentName || '—' }}</td>
+              <td class="text-xs">{{ data.equipmentType || '—' }}</td>
+              <td class="text-xs">{{ data.oemName || '—' }}</td>
+              <td class="text-center text-xs text-nowrap">{{ (data.nextCalibrationDueDate | date:'dd MMM, yyyy') || '—' }}</td>
+              <td class="text-center text-xs text-nowrap">{{ (data.nextMaintenanceDueDate | date:'dd MMM, yyyy') || '—' }}</td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (data.modifiedByName || data.modifiedBy || '-') + ' on ' + ((data.modifiedOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ data.modifiedByName || data.modifiedBy || '-' }}</span>
+                  <span class="cell-audit-time">· {{ (data.modifiedOn | date:"dd MMM, hh:mm a") || '—' }}</span>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="dataList.length === 0">
+              <td [attr.colspan]="totalColumns" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-1 text-secondary"></i>
+                <div>No records found.</div>
+                <small class="text-xs">Try adjusting your search criteria or click "Add Equipment" to create one.</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card-footer bg-white py-2 px-3 border-top">
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)">
+      </app-pagination>
+    </div>
+  </div>
 </div>

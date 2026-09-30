@@ -1,5 +1,5 @@
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormsModule } from '@angular/forms';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -7,10 +7,12 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
 import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
 import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-sample-inward-list',
-  imports: [ CommonModule,RouterModule,FormsModule,TestStatusBadgeComponent, PaginationComponent ],
+  imports: [CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, PaginationComponent, BreadcrumbComponent],
   templateUrl: './sample-inward-list.component.html',
   styleUrl: './sample-inward-list.component.css'
 })
@@ -54,11 +56,25 @@ export class SampleInwardListComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [10, 25, 50, 100, 200, 500];
+  pageSizes = [10, 25, 50, 100];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
+  selectedStatus: string = 'all';
+  statusOptions: string[] = [
+    'INWARD_REGISTERED',
+    'UNDER_PLANNING',
+    'UNDER_REVIEW',
+    'SAMPLE_UNDER_PREPARATION',
+    'UNDER_TESTING',
+    'TESTING_COMPLETED',
+    'INWARD_COMPLETED'
+  ];
+
+  get totalColumns(): number {
+    return 10;
+  }
 
   payload = {
     PageNumber: this.pageNumber,
@@ -70,10 +86,10 @@ export class SampleInwardListComponent implements OnInit {
   };
 
   constructor(
-    private fb: FormBuilder, 
     private inwardService: SampleInwardService,
     private statusHelper: StatusHelperService,
-    private roleHelper: RoleHelperService
+    private roleHelper: RoleHelperService,
+    private toastService: ToastService
   ) {
   }
 
@@ -99,7 +115,6 @@ export class SampleInwardListComponent implements OnInit {
   }
 
   fetchData() {
-
     this.inwardService.getAllSampleInward(this.payload).subscribe({
       next: (response) => {
         this.listData = response?.items || [];
@@ -108,12 +123,17 @@ export class SampleInwardListComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        console.error('Error fetching designations:', error);
         this.listData = [];
+        this.toastService.show(error?.error?.message || 'Error loading Sample Inward list.', 'error');
       }
-
     });
+  }
 
+  private syncStatusFilter(): void {
+    this.filters = this.selectedStatus && this.selectedStatus !== 'all'
+      ? [{ column: 'inwardStatus', type: 'Equal', value: this.selectedStatus }]
+      : [];
+    this.payload.filter = this.filters;
   }
 
   applySorting(column: string) {
@@ -189,6 +209,9 @@ export class SampleInwardListComponent implements OnInit {
       this.filters.push(filterData);
     }
 
+    this.payload.filter = this.filters;
+    this.pageNumber = 1;
+    this.payload.PageNumber = 1;
     this.fetchData();
     this.closeFilterModal();
   }
@@ -212,20 +235,44 @@ export class SampleInwardListComponent implements OnInit {
   }
 
   changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
+    this.onPageSizeChange(Number((event.target as HTMLSelectElement).value));
+  }
+
+  onPageSizeChange(newSize: number): void {
+    this.pageSize = newSize;
+    this.pageNumber = 1;
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.fetchData();
   }
 
   onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
+    this.syncStatusFilter();
+    this.pageNumber = 1;
+    this.payload.PageNumber = 1;
+    this.payload.searchTerm = this.searchTerm ? this.searchTerm.trim() : '';
+    this.fetchData();
+  }
+
+  onFilterChange(): void {
+    this.pageNumber = 1;
+    this.payload.PageNumber = 1;
+    this.onSearch();
+  }
+
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.selectedStatus = 'all';
+    this.filters = [];
+    this.payload.filter = this.filters;
+    this.payload.searchTerm = '';
+    this.pageNumber = 1;
+    this.payload.PageNumber = 1;
+    this.sortByColumn = 'modifiedOn';
+    this.sortOrder = 'desc';
+    this.payload.sortByColumn = this.sortByColumn;
+    this.payload.sortOrder = this.sortOrder;
+    this.fetchData();
   }
 
   get totalPages(): number[] {

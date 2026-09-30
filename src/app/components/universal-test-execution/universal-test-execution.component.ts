@@ -32,10 +32,13 @@ import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
+import { DecimalOnlyDirective } from '../../utility/directives/decimal-only.directive';
+import { NumberOnlyDirective } from '../../utility/directives/number-only.directive';
+
 @Component({
   selector: 'app-universal-test-execution',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HasPermissionDirective, SearchableDropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, HasPermissionDirective, SearchableDropdownComponent, DecimalOnlyDirective, NumberOnlyDirective],
   templateUrl: './universal-test-execution.component.html',
   styleUrls: ['./universal-test-execution.component.css']
 })
@@ -72,6 +75,9 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   parameters: SnapshotParameterDto[] = [];
   testExecutionId: number | null = null;
   universalTestGroupId: number | null = null;
+  currentLoadedExecutionId: number = 0;
+  currentExecutionDropdownItem: any = null;
+  private executionLoadSub?: Subscription;
   isViewMode: boolean = false;
   isProcessing: boolean = false;
   isFullscreen: boolean = false;
@@ -173,23 +179,29 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.routeSub = this.route.queryParams.subscribe(params => {
-      const execId = params['executionId'] || params['id'];
+      const execId = Number(params['executionId'] || params['id'] || 0);
       const tabParam = params['tab'];
       if (tabParam) {
         this.activeWorkspaceTab = tabParam as any;
       }
-      if (execId) {
-        this.testExecutionId = +execId;
-        this.loadExecutionById(this.testExecutionId);
+      if (execId > 0) {
+        if (execId !== this.currentLoadedExecutionId) {
+          this.testExecutionId = execId;
+          this.loadExecutionById(execId);
+        }
       } else if (params['utgId']) {
-        this.universalTestGroupId = +params['utgId'];
-        this.loadExecutionByGroup(this.universalTestGroupId);
+        const utgId = Number(params['utgId']);
+        if (utgId > 0 && utgId !== this.universalTestGroupId) {
+          this.universalTestGroupId = utgId;
+          this.loadExecutionByGroup(utgId);
+        }
       }
     });
   }
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.executionLoadSub?.unsubscribe();
     this.activeCharts.forEach(c => c.destroy());
     this.activeCharts.clear();
   }
@@ -221,16 +233,65 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     return this.executionService.getExecutionDropdown(term, page, pageSize);
   };
 
+  resetStateForNewExecution(): void {
+    // 1. Cleanly destroy all Chart.js instances before DOM changes
+    this.activeCharts.forEach(c => c.destroy());
+    this.activeCharts.clear();
+
+    // 2. Clear auxiliary intelligence datasets
+    this.calcTrace = null;
+    this.resultsOverview = null;
+    this.nablScope = null;
+    this.universalResult = null;
+    this.reviewFindings = [];
+    this.reviewAudits = [];
+
+    // 3. Clear report state
+    this.reportPreviewData = null;
+    this.universalReports = [];
+    this.selectedReport = null;
+
+    // 4. Reset conditions, formulas, and checklists
+    this.conditionActuals = {};
+    this.formulaVariables = {};
+    this.selectedFormulaParam = null;
+    this.formulaPreviewResult = null;
+    this.formulaExpression = '';
+    this.preparationChecklist = {};
+    this.collapsedSections = {};
+    this.isUnmappedCollapsed = false;
+
+    // 5. Reset execution form to empty state before rebuild
+    this.executionForm = this.fb.group({
+      specimens: this.fb.array([]),
+      remarks: ['']
+    });
+  }
+
+  private syncCurrentExecutionDropdownItem(exec: TestExecutionDto): void {
+    const testName = exec.testName || (exec as any).universalTestGroup?.laboratoryTest?.name || 'Test';
+    const sampleNo = exec.sampleNo || (exec as any).universalTestGroup?.sampleTestPlan?.sampleDetail?.sampleNo || '-';
+    this.currentExecutionDropdownItem = {
+      id: exec.id,
+      name: `#${exec.id} · ${testName} (Sample: ${sampleNo}, Run #${exec.executionNo || 1})`
+    };
+  }
+
   onExecutionDropdownSelected(item: any): void {
-    const id = Number(item?.id ?? 0);
-    if (id > 0 && id !== this.testExecutionId) {
-      this.router.navigate(['/universal-test-execution'], { queryParams: { executionId: id } });
+    if (!item) return;
+    const id = Number(item.id ?? 0);
+    if (id > 0 && id !== this.currentLoadedExecutionId) {
+      this.router.navigate(['/universal-test-execution'], {
+        queryParams: { executionId: id },
+        queryParamsHandling: 'merge'
+      });
     }
   }
 
   loadExecutionById(id: number): void {
+    this.executionLoadSub?.unsubscribe();
     this.isProcessing = true;
-    this.executionService.getExecution(id).subscribe({
+    this.executionLoadSub = this.executionService.getExecution(id).subscribe({
       next: (exec) => {
         this.isProcessing = false;
         this.applyExecutionData(exec);
@@ -243,8 +304,9 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   }
 
   loadExecutionByGroup(groupId: number): void {
+    this.executionLoadSub?.unsubscribe();
     this.isProcessing = true;
-    this.executionService.getExecutionByGroup(groupId).subscribe({
+    this.executionLoadSub = this.executionService.getExecutionByGroup(groupId).subscribe({
       next: (exec) => {
         this.isProcessing = false;
         this.applyExecutionData(exec);
@@ -272,6 +334,9 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   }
 
   applyExecutionData(exec: TestExecutionDto): void {
+    this.currentLoadedExecutionId = exec.id;
+    this.resetStateForNewExecution();
+
     this.execution = exec;
     this.testExecutionId = exec.id;
     this.universalTestGroupId = exec.universalTestGroupID;
@@ -280,8 +345,11 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     this.selectedRunNo = exec.executionNo || 1;
     this.availableRuns = Array.from({ length: Math.max(1, exec.executionNo || 1) }, (_, i) => i + 1);
 
-    // Sync route queryParams with loaded executionId
-    if (exec.id && (!this.route.snapshot.queryParams['executionId'] || +this.route.snapshot.queryParams['executionId'] !== exec.id)) {
+    this.syncCurrentExecutionDropdownItem(exec);
+
+    // Sync route queryParams with loaded executionId if not already in sync
+    const currentQueryExecId = Number(this.route.snapshot.queryParams['executionId'] || this.route.snapshot.queryParams['id'] || 0);
+    if (exec.id && currentQueryExecId !== exec.id) {
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { executionId: exec.id },
@@ -295,12 +363,15 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
     // Hydrate condition actuals from snapshot (configured vs actual separate)
     this.conditionActuals = {};
-    (this.configSnapshot?.conditions || []).forEach(c => {
-      const k = (c as any).conditionMasterID ?? (c as any).conditionDimensionID ?? c.dimensionName;
-      const v = (c as any).selectedExecutionValue ?? (c as any).actualExecutionValue ?? '';
-      this.conditionActuals[String(k)] = String(v ?? '');
-      // also index by name for fallback
-      this.conditionActuals[c.dimensionName] = String(v ?? '');
+    const sourceConditions = (exec.actualConditions && exec.actualConditions.length > 0)
+      ? exec.actualConditions
+      : (this.configSnapshot?.conditions || []);
+
+    sourceConditions.forEach(c => {
+      const k = (c as any).conditionMasterID ?? (c as any).conditionDimensionID ?? (c as any).dimensionName;
+      const v = (c as any).actualExecutionValue ?? (c as any).selectedExecutionValue ?? (c as any).actualValue ?? '';
+      if (k) this.conditionActuals[String(k)] = String(v ?? '');
+      if ((c as any).dimensionName) this.conditionActuals[(c as any).dimensionName] = String(v ?? '');
     });
     // Dynamic formulaVariables from input params (no hardcoded SOIL_*)
     this.formulaVariables = {};
@@ -319,6 +390,11 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
     // Immediately load universal result and review audits for lifecycle timeline sync
     this.loadUniversalResult();
+
+    // If currently on report tab, reload report data for this execution
+    if (this.activeWorkspaceTab === 'report') {
+      this.loadReportData();
+    }
 
     if (this.activeWorkspaceTab === 'entry') {
       setTimeout(() => this.renderAllGraphs(), 150);
@@ -375,11 +451,14 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
               const calcVal = existingResult?.calculatedValue ?? (existingResult?.isFormulaCalculated ? val : '');
               const status = existingResult?.resultStatus ?? 'Pass';
 
+              // CurvePeak params (MDD/OMC) are isCalculated=true but value comes from UI curve regression,
+              // not a formula string — they must remain enabled so patchValue() & save payload work correctly.
+              const isCurvePeak = param.calculationRole === 'CurvePeak';
               const resGroup = this.fb.group({
                 id: [existingResult?.id || 0],
                 parameterMasterID: [param.parameterMasterID],
                 parameterCode: [param.code],
-                rawValue: [{ value: val, disabled: this.isViewMode || param.isCalculated }],
+                rawValue: [{ value: val, disabled: this.isViewMode || (param.isCalculated && !isCurvePeak) }],
                 numericValue: [existingResult?.numericValue ?? null],
                 calculatedValue: [{ value: calcVal, disabled: true }],
                 isFormulaCalculated: [param.isCalculated],
@@ -426,11 +505,12 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   createDefaultObservationGroup(readingNo: number): FormGroup {
     const resFA = this.fb.array<FormGroup>([]);
     this.parameters.forEach(param => {
+      const isCurvePeakParam = param.calculationRole === 'CurvePeak';
       resFA.push(this.fb.group({
         id: [0],
         parameterMasterID: [param.parameterMasterID],
         parameterCode: [param.code],
-        rawValue: [{ value: '', disabled: this.isViewMode || param.isCalculated }],
+        rawValue: [{ value: '', disabled: this.isViewMode || (param.isCalculated && !isCurvePeakParam) }],
         numericValue: [null],
         calculatedValue: [{ value: '', disabled: true }],
         isFormulaCalculated: [param.isCalculated],
@@ -522,7 +602,9 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   getMissingDependencies(p: SnapshotParameterDto): string[] {
     if (!p.formula) return [];
-    const tokens = (p.formula.match(/\{([A-Za-z0-9_]+)\}/g) || []).map(t => t.replace(/[{}]/g, ''));
+    const cTokens = (p.formula.match(/\{([A-Za-z0-9_]+)\}/g) || []).map(t => t.replace(/[{}]/g, ''));
+    const bTokens = (p.formula.match(/\[([A-Za-z0-9_]+)\]/g) || []).map(t => t.replace(/[\[\]]/g, ''));
+    const tokens = Array.from(new Set([...cTokens, ...bTokens]));
     const availableCodes = new Set(this.parameters.map(param => param.code.toUpperCase()));
     return tokens.filter(t => !availableCodes.has(t.toUpperCase()));
   }
@@ -533,13 +615,14 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   onReadingInput(obsGroup: FormGroup): void {
     // Lightweight preview only — do not trust for save, server will re-evaluate via FormulaEvaluator
-    this.previewObservationGroup(obsGroup);
-    this.renderAllGraphs();
+    this.evaluateAllReadings();
   }
 
   previewObservationGroup(obsGroup: FormGroup): void {
     const resultsFA = obsGroup.get('results') as FormArray;
     const valMap: Record<string, number> = {};
+
+    // 1. Collect inputs from current observation group
     resultsFA.controls.forEach(ctrl => {
       const code = ctrl.get('parameterCode')?.value;
       const raw = ctrl.get('rawValue')?.value;
@@ -553,11 +636,24 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         ctrl.patchValue({ numericValue: null }, { emitEvent: false });
       }
     });
-    // Preview calculated — show blocked if deps missing, else evaluate
+
+    // 2. Merge specimen-level inputs (e.g. from observation 0 or other controls) into valMap
+    this.parameters.filter(p => !p.isCalculated).forEach(p => {
+      if (valMap[p.code] === undefined) {
+        const sCtrl = this.getSpecimenResultControl(0, p.parameterMasterID);
+        const raw = sCtrl?.get('rawValue')?.value ?? sCtrl?.get('numericValue')?.value;
+        if (raw !== '' && raw != null) {
+          const num = parseFloat(String(raw));
+          if (!isNaN(num)) valMap[p.code] = num;
+        }
+      }
+    });
+
+    // 3. Preview calculated — show blocked if deps missing, else evaluate
     const calcParams = this.parameters.filter(p => p.isCalculated && p.formula);
     let evaluatedCount = 1;
     let passes = 0;
-    while (evaluatedCount > 0 && passes < 3) {
+    while (evaluatedCount > 0 && passes < 4) {
       evaluatedCount = 0;
       passes++;
       calcParams.forEach(param => {
@@ -566,7 +662,13 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         // Skip if already evaluated in valMap
         if (valMap[param.code] !== undefined) return;
 
-        const deps = (param.formulaDependencies || []);
+        let deps = (param.formulaDependencies || []);
+        if (deps.length === 0 && param.formula) {
+          const cTokens = (param.formula.match(/\{([A-Za-z0-9_]+)\}/g) || []).map(t => t.replace(/[{}]/g, ''));
+          const bTokens = (param.formula.match(/\[([A-Za-z0-9_]+)\]/g) || []).map(t => t.replace(/[\[\]]/g, ''));
+          deps = Array.from(new Set([...cTokens, ...bTokens]));
+        }
+
         const missing = deps.some(d => valMap[d] == null && !Object.prototype.hasOwnProperty.call(valMap, d));
         if (missing) {
           ctrl.patchValue({ rawValue: '', calculatedValue: 'BLOCKED', resultStatus: 'Blocked' }, { emitEvent: false });
@@ -579,7 +681,12 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
           const decimals = param.decimalPrecision ?? 2;
           const rounded = Number(Math.round(parseFloat(evaluated + 'e' + decimals)) + 'e-' + decimals);
           valMap[param.code] = rounded;
-          ctrl.patchValue({ rawValue: rounded.toFixed(decimals), numericValue: rounded }, { emitEvent: false });
+          ctrl.patchValue({
+            rawValue: rounded.toFixed(decimals),
+            numericValue: rounded,
+            calculatedValue: rounded.toFixed(decimals),
+            resultStatus: 'Pass'
+          }, { emitEvent: false });
           evaluatedCount++;
         }
       });
@@ -587,12 +694,86 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   }
 
   evaluateAllReadings(): void {
+    this.evaluateCbrLoads();
     this.specimens.controls.forEach(spec => {
       const obsFA = spec.get('observations') as FormArray;
       obsFA.controls.forEach(obs => this.previewObservationGroup(obs as FormGroup));
     });
     this.evaluateCurvePeaks();
     this.renderAllGraphs();
+  }
+
+  evaluateCbrLoads(): void {
+    const cbrLoad25Param = this.parameters.find(p => p.code === 'CBR_LOAD_2_5' || p.code === 'PENETRATION_2_5MM_LOAD');
+    const cbrLoad50Param = this.parameters.find(p => p.code === 'CBR_LOAD_5_0' || p.code === 'PENETRATION_5_0MM_LOAD');
+    if (!cbrLoad25Param && !cbrLoad50Param) return;
+
+    const xParam = this.parameters.find(p => p.code === 'PENETRATION' || p.code === 'PENETRATION_DEPTH');
+    const yParam = this.parameters.find(p => p.code === 'LOAD' || p.code === 'PLUNGER_LOAD');
+    if (!xParam || !yParam) return;
+
+    this.specimens.controls.forEach(spec => {
+      if (spec.get('isDiscarded')?.value) return;
+      const obsFA = spec.get('observations') as FormArray;
+      const points: { x: number; y: number }[] = [];
+
+      obsFA.controls.forEach(obs => {
+        const xCtrl = this.getResultControl(obs as FormGroup, xParam.parameterMasterID);
+        const yCtrl = this.getResultControl(obs as FormGroup, yParam.parameterMasterID);
+        const xRaw = xCtrl?.get('rawValue')?.value ?? xCtrl?.get('numericValue')?.value;
+        const yRaw = yCtrl?.get('rawValue')?.value ?? yCtrl?.get('numericValue')?.value;
+        if (xRaw !== '' && xRaw != null && !isNaN(Number(xRaw)) && yRaw !== '' && yRaw != null && !isNaN(Number(yRaw))) {
+          points.push({ x: Number(xRaw), y: Number(yRaw) });
+        }
+      });
+
+      if (points.length < 2) return;
+      points.sort((a, b) => a.x - b.x);
+
+      const interpolateAt = (targetX: number): number | null => {
+        const exact = points.find(p => Math.abs(p.x - targetX) < 0.05);
+        if (exact) return exact.y;
+        for (let i = 0; i < points.length - 1; i++) {
+          if (points[i].x <= targetX && points[i + 1].x >= targetX) {
+            const dx = points[i + 1].x - points[i].x;
+            if (dx === 0) return points[i].y;
+            const t = (targetX - points[i].x) / dx;
+            return points[i].y + t * (points[i + 1].y - points[i].y);
+          }
+        }
+        return null;
+      };
+
+      const load25 = interpolateAt(2.5);
+      const load50 = interpolateAt(5.0);
+
+      obsFA.controls.forEach(obs => {
+        if (cbrLoad25Param && load25 !== null) {
+          const ctrl = this.getResultControl(obs as FormGroup, cbrLoad25Param.parameterMasterID);
+          if (ctrl && (!ctrl.dirty || ctrl.get('rawValue')?.value === '' || ctrl.get('rawValue')?.value == null)) {
+            const dec = cbrLoad25Param.decimalPrecision ?? 2;
+            const rounded = Number(load25.toFixed(dec));
+            ctrl.patchValue({
+              rawValue: rounded.toFixed(dec),
+              numericValue: rounded,
+              calculatedValue: rounded.toFixed(dec)
+            }, { emitEvent: false });
+          }
+        }
+        if (cbrLoad50Param && load50 !== null) {
+          const ctrl = this.getResultControl(obs as FormGroup, cbrLoad50Param.parameterMasterID);
+          if (ctrl && (!ctrl.dirty || ctrl.get('rawValue')?.value === '' || ctrl.get('rawValue')?.value == null)) {
+            const dec = cbrLoad50Param.decimalPrecision ?? 2;
+            const rounded = Number(load50.toFixed(dec));
+            ctrl.patchValue({
+              rawValue: rounded.toFixed(dec),
+              numericValue: rounded,
+              calculatedValue: rounded.toFixed(dec)
+            }, { emitEvent: false });
+          }
+        }
+      });
+    });
   }
 
   evaluateCurvePeaks(): void {
@@ -710,19 +891,28 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   clientFormulaEval = (formula: string, vars: Record<string, number>): number | null => {
     try {
       let expr = formula;
+      // Convert square bracket tokens [KEY] to {KEY}
+      expr = expr.replace(/\[([A-Za-z0-9_]+)\]/g, '{$1}');
       for (const [key, val] of Object.entries(vars)) {
-        expr = expr.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val));
+        expr = expr.replace(new RegExp(`\\{${key}\\}`, 'gi'), String(val));
       }
       expr = expr.replace(/Math\./g, ''); // In case formulas already have Math.
-      expr = expr.replace(/MIN/g, 'Math.min');
-      expr = expr.replace(/MAX/g, 'Math.max');
-      expr = expr.replace(/POW/g, 'Math.pow');
-      expr = expr.replace(/SQRT/g, 'Math.sqrt');
-      expr = expr.replace(/LOG/g, 'Math.log10');
-      expr = expr.replace(/LN/g, 'Math.log');
-      expr = expr.replace(/EXP/g, 'Math.exp');
-      expr = expr.replace(/ABS/g, 'Math.abs');
+
+      // Convert Excel/NCalc if(cond, a, b) to JS ternary ((cond) ? (a) : (b))
+      expr = expr.replace(/\bif\s*\(([^,]+),([^,]+),([^)]+)\)/gi, '(( $1 ) ? ( $2 ) : ( $3 ))');
+
+      expr = expr.replace(/MIN/gi, 'Math.min');
+      expr = expr.replace(/MAX/gi, 'Math.max');
+      expr = expr.replace(/POW/gi, 'Math.pow');
+      expr = expr.replace(/SQRT/gi, 'Math.sqrt');
+      expr = expr.replace(/LOG/gi, 'Math.log10');
+      expr = expr.replace(/LN/gi, 'Math.log');
+      expr = expr.replace(/EXP/gi, 'Math.exp');
+      expr = expr.replace(/ABS/gi, 'Math.abs');
       
+      // If any unresolved variable token remains, cannot evaluate
+      if (/\{[A-Za-z0-9_]+\}/.test(expr)) return null;
+
       const result = new Function('return ' + expr)();
       return (typeof result === 'number' && !isNaN(result) && isFinite(result)) ? result : null;
     } catch {
@@ -792,6 +982,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     this.executionService.getExecutionByGroupAndRun(this.universalTestGroupId, runNo).subscribe({
       next: (exec) => {
         this.isProcessing = false;
+        this.currentLoadedExecutionId = exec.id;
         this.router.navigate([], {
           relativeTo: this.route,
           queryParams: { executionId: exec.id },
@@ -810,6 +1001,10 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   save(): void {
     if (this.isViewMode || !this.testExecutionId) return;
     this.isProcessing = true;
+
+    // Always re-compute CurvePeak values (MDD/OMC) just before saving
+    // so they are guaranteed to be in the form even if graph hasn't re-rendered yet.
+    this.evaluateCurvePeaks();
 
     // Build conditions payload from live snapshot actuals (separate from configured)
     const conditionsPayload = (this.configSnapshot?.conditions || []).map(c => ({
@@ -959,11 +1154,8 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         this.isProcessing = false;
         this.retestModalVisible = false;
         this.toastService.show(`Retest run #${newExec.executionNo} initiated successfully.`, 'success');
-        const newId = (newExec as any)?.id ?? (newExec as any)?.ID ?? (newExec as any)?.Id ?? this.testExecutionId;
-        this.router.navigate(['/universal-test-execution'], { queryParams: { executionId: newId }, replaceUrl: true }).then(() => {
-          this.testExecutionId = newId;
-          this.loadExecutionById(newId);
-        });
+        const newId = Number((newExec as any)?.id ?? (newExec as any)?.ID ?? (newExec as any)?.Id ?? this.testExecutionId);
+        this.router.navigate(['/universal-test-execution'], { queryParams: { executionId: newId }, replaceUrl: true });
       },
       error: (err) => {
         this.isProcessing = false;
@@ -1391,7 +1583,8 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   }
 
   get resultParams(): any[] {
-    return this.universalResult?.parameters ?? this.universalResult?.Parameters ?? [];
+    const allParams = this.universalResult?.parameters ?? this.universalResult?.Parameters ?? [];
+    return allParams.filter((p: any) => p.isReportable !== false && p.IsReportable !== false);
   }
 
   get resultAuditsList(): any[] {
@@ -1457,7 +1650,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     if (s === 'PASS') return 'verdict-pass';
     if (s === 'FAIL') return 'verdict-fail';
     if (s === 'MARGINAL') return 'verdict-marginal';
-    if (s === 'INFORMATIONAL' || s === 'NOT_CONFIGURED') return 'verdict-info';
+    if (s === 'INFORMATIONAL') return 'verdict-info';
     return 'verdict-neutral';
   }
 
@@ -1585,21 +1778,28 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     this.isFullscreen = !this.isFullscreen;
   }
 
+  today: Date = new Date();
+
+  dataOfReportPreview(): any {
+    return this.reportPreviewData?.data ?? this.reportPreviewData?.Data ?? this.reportPreviewData ?? {};
+  }
+
   getApiUrl(path: string | undefined | null): string {
     if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const clean = path.replace(/\\/g, '/').replace(/^\//, '');
-    return `${environment.apiUrl}/${clean}`;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
+    const clean = '/' + path.replace(/\\/g, '/').replace(/^\/+/, '');
+    const base = (environment.baseUrl || environment.apiUrl || '').replace(/\/api\/?$/, '').replace(/\/$/, '');
+    return base + clean;
   }
 
   hasNablMark(): boolean {
-    const d = this.reportPreviewData?.data;
+    const d = this.dataOfReportPreview();
     const r = this.selectedReport;
     return !!(d?.showNablMark || d?.ShowNablMark || d?.isWithinAccreditedScope || d?.IsWithinAccreditedScope || r?.showNablMark || r?.ShowNablMark);
   }
 
   getNablLogoUrl(): string {
-    const d = this.reportPreviewData?.data;
+    const d = this.dataOfReportPreview();
     const r = this.selectedReport;
     const path = d?.nablLogoPath || d?.NablLogoPath || r?.nablLogoPath || r?.NablLogoPath;
     if (path) {
@@ -1609,7 +1809,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   }
 
   getLabLogoUrl(): string {
-    const d = this.reportPreviewData?.data;
+    const d = this.dataOfReportPreview();
     const path = d?.labLogoPath || d?.LabLogoPath;
     if (path) {
       return this.getApiUrl(path);
@@ -1617,9 +1817,33 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  getEquipmentString(): string {
+    const d = this.dataOfReportPreview();
+    const eqList = d?.equipment ?? d?.Equipment;
+    if (eqList && Array.isArray(eqList) && eqList.length > 0) {
+      return eqList.map((e: any) => `${e.equipmentName || e.name || 'Equipment'} (${e.equipmentCode || e.code || 'ID: EQ'})`).join(', ');
+    }
+    return (d?.testEquipment && d.testEquipment !== '—') ? d.testEquipment : ((this.execution as any)?.equipmentName || 'Modified Proctor / Heavy Compaction');
+  }
+
+  getConditionsString(): string {
+    const d = this.dataOfReportPreview();
+    const condList = d?.conditions ?? d?.Conditions;
+    if (condList && Array.isArray(condList) && condList.length > 0) {
+      return condList.map((c: any) => `${c.conditionName || c.name || 'Param'}: ${c.conditionValue || c.value || '-'} ${c.unit || ''}`.trim()).join(' | ');
+    }
+    return (d?.environmentalConditions && d.environmentalConditions !== '—') ? d.environmentalConditions : 'Param: - | Param: - | Param: -';
+  }
+
+  getMethodVersion(): string {
+    const d = this.dataOfReportPreview();
+    return d?.testMethodVersion || '1983';
+  }
+
   getReportTableRows(): any[] {
-    const d = this.reportPreviewData?.data;
-    const reportParams = d?.resultParameters ?? d?.ResultParameters;
+    const d = this.dataOfReportPreview();
+    let reportParams = d?.resultParameters ?? d?.ResultParameters;
+    reportParams = reportParams?.filter((p: any) => p.isReportable !== false && p.IsReportable !== false);
     if (reportParams?.length) {
       return reportParams.map((p: any, idx: number) => {
         const min = p.effectiveMin ?? p.specMin;
@@ -2069,6 +2293,35 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     if (!resultsFA) return null;
     const ctrl = resultsFA.controls.find(c => c.get('parameterMasterID')?.value === paramMasterId);
     return ctrl ? (ctrl as FormGroup) : null;
+  }
+
+  getSpecimenResultControl(specimenIndex: number, paramMasterId: number): FormGroup | null {
+    if (!this.specimens || this.specimens.length <= specimenIndex) return null;
+    const spec = this.specimens.at(specimenIndex) as FormGroup;
+    if (!spec) return null;
+    const obsFA = spec.get('observations') as FormArray;
+    if (!obsFA || obsFA.length === 0) return null;
+    return this.getResultControl(obsFA.at(0) as FormGroup, paramMasterId);
+  }
+
+  onSpecimenParamInput(param: SnapshotParameterDto, resCtrl: FormGroup): void {
+    resCtrl.markAsDirty();
+    const raw = resCtrl.get('rawValue')?.value;
+    const num = (raw !== '' && raw != null) ? parseFloat(String(raw)) : null;
+    resCtrl.patchValue({ numericValue: num, calculatedValue: raw }, { emitEvent: false });
+    
+    // Sync to all observations of the specimen
+    this.specimens.controls.forEach(spec => {
+      const obsFA = spec.get('observations') as FormArray;
+      obsFA.controls.forEach(obs => {
+        const ctrl = this.getResultControl(obs as FormGroup, param.parameterMasterID);
+        if (ctrl && ctrl !== resCtrl) {
+          ctrl.patchValue({ rawValue: raw, numericValue: num, calculatedValue: raw }, { emitEvent: false });
+        }
+      });
+    });
+
+    this.evaluateAllReadings();
   }
 
   getSectionIcon(sectionType: string): string {

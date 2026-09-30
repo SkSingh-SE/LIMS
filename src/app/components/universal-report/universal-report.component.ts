@@ -273,7 +273,8 @@ export class UniversalReportComponent implements OnInit {
 
   paramsOf(view: any): any[] {
     const d = this.dataOf(view);
-    return d?.resultParameters ?? d?.ResultParameters ?? [];
+    const list = d?.resultParameters ?? d?.ResultParameters ?? [];
+    return list.filter((p: any) => p.isReportable !== false && p.IsReportable !== false);
   }
 
   statusClass(s: string): string {
@@ -331,7 +332,8 @@ export class UniversalReportComponent implements OnInit {
 
   getReportTableRows(view: any): any[] {
     const d = this.dataOf(view);
-    const reportParams = d?.resultParameters ?? d?.ResultParameters;
+    let reportParams = d?.resultParameters ?? d?.ResultParameters;
+    reportParams = reportParams?.filter((p: any) => p.isReportable !== false && p.IsReportable !== false);
     if (reportParams?.length) {
       return reportParams.map((p: any, idx: number) => {
         const min = p.effectiveMin ?? p.specMin;

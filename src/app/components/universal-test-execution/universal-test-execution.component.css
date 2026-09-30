@@ -488,7 +488,9 @@
 .col-w-verdict { width: 100px; }
 .col-w-uncertainty { width: 110px; }
 .col-w-filename { max-width: 120px; }
-.ute-report-sheet { max-width: 800px; }
+.col-w-method { width: 180px; }
+.col-w-observed { width: 110px; }
+.col-w-requirement { width: 130px; }
 .ute-modal-backdrop { background: rgba(0, 0, 0, 0.5); }
 
 /* ----------------------------------------------------------------- */
@@ -1012,154 +1014,249 @@
   white-space: nowrap;
 }
 
-/* Universal Report Sheet & NABL Header Styles */
-.ute-report-sheet {
-  max-width: 920px;
-  background-color: #ffffff;
-  color: #1e293b;
-  font-family: 'Poppins', sans-serif;
+/* ================================================================= */
+/* CLEAN ENTRY STRUCTURE PASS — Execution Entry Grid (Screen 16)     */
+/* Poppins · compact 26–28px controls · single-line legends ·        */
+/* muted mono metadata · soft cards · zero visual noise              */
+/* ================================================================= */
+
+/* Entry grid shell */
+main.ute-workspace-content .ute-card {
   border-radius: 8px;
 }
 
-.ute-report-lab-name {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.3px;
+/* Entry grid header: slim title, muted layout pill */
+main.ute-workspace-content .card-header .ute-panel-title {
+  font-size: 0.82rem;
+  letter-spacing: 0.2px;
 }
-
-.ute-report-lab-address {
-  font-size: 0.78rem;
-  color: #64748b;
+.ute-entry-test-name {
+  font-size: 0.82rem;
 }
-
-.ute-report-lab-contact {
-  font-size: 0.72rem;
-  color: #64748b;
-}
-
-.ute-report-title-badge {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--primary-color, #da261c);
-  letter-spacing: 0.5px;
-}
-
-.ute-report-lab-logo {
-  max-height: 54px;
-  max-width: 100px;
-  object-fit: contain;
-}
-
-.ute-nabl-header-box {
-  min-width: 130px;
-  padding: 4px 8px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-
-.ute-nabl-tag {
-  font-size: 0.65rem;
-  letter-spacing: 0.5px;
-  color: var(--primary-color, #da261c);
-}
-
-.ute-nabl-logo-img {
-  max-height: 42px;
-  max-width: 110px;
-  object-fit: contain;
-}
-
-.ute-nabl-cert-no {
-  font-size: 0.75rem;
-  color: #0f172a;
-}
-
-.ute-report-meta-box {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 10px 14px;
-}
-
-.ute-report-meta-item {
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-
-.ute-report-meta-label {
-  font-weight: 600;
+.ute-entry-layout-pill {
+  font-size: 0.68rem;
+  font-weight: 500;
+  background: #f8fafc;
   color: #475569;
-  min-width: 115px;
-  display: inline-block;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.ute-report-meta-val {
-  color: #0f172a;
+/* Section fieldset: tighter, softer */
+main.ute-workspace-content .section-fieldset-card {
+  border-radius: 8px !important;
+  padding: 0.5rem 0.65rem !important;
+  margin-bottom: 0.5rem !important;
+  box-shadow: none !important;
 }
-
-.ute-report-table th {
-  background-color: #f1f5f9 !important;
-  color: #334155;
+main.ute-workspace-content .section-fieldset-card legend {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
+  text-transform: none !important;
+}
+main.ute-workspace-content .ute-section-num {
+  font-size: 0.68rem;
   font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+}
+main.ute-workspace-content .ute-section-title {
   font-size: 0.75rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+/* Hide renderer-style noise badge (DEFAULTGRID / PARAMETERTABLE / …);
+   section-type badge stays as the single muted descriptor */
+main.ute-workspace-content .ute-style-badge {
+  display: none;
+}
+main.ute-workspace-content .ute-section-type-badge {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+main.ute-workspace-content .ute-section-hint {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #64748b;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Conditions: flat cards, quiet Req pill, 28px inputs */
+main.ute-workspace-content .ute-condition-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 6px 8px !important;
+}
+main.ute-workspace-content .ute-condition-name {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+main.ute-workspace-content .ute-req-pill {
+  font-size: 0.66rem;
+  font-weight: 500;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+main.ute-workspace-content .ute-condition-card .input-group-sm > .form-control,
+main.ute-workspace-content .ute-condition-card .input-group-sm > .input-group-text {
+  min-height: 28px;
+  font-size: 0.78rem;
+}
+
+/* Entry tables: compact LIMS density */
+main.ute-workspace-content .ute-table thead th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #334155;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  padding: 6px 10px;
+  padding: 4px 6px;
+  background: #f8fafc;
 }
-
-.ute-report-table td {
+main.ute-workspace-content .ute-table tbody td {
+  font-size: 0.76rem;
+  padding: 3px 6px;
+}
+main.ute-workspace-content .ute-param-name {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+main.ute-workspace-content .ute-param-sub {
+  font-size: 0.66rem;
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+main.ute-workspace-content .ute-table .form-control-sm,
+main.ute-workspace-content .ute-table .form-select-sm,
+main.ute-workspace-content .ute-table .input-group-sm > .form-control,
+main.ute-workspace-content .ute-table .input-group-sm > .input-group-text {
+  min-height: 28px;
   font-size: 0.78rem;
-  padding: 6px 10px;
-  vertical-align: middle;
+}
+main.ute-workspace-content .ute-table input.form-control-sm {
+  font-variant-numeric: tabular-nums;
 }
 
-.ute-report-signature-block {
-  border-top: 1px solid #e2e8f0;
-  padding-top: 18px;
-  margin-top: 24px;
+/* Specimen card header: slim */
+main.ute-workspace-content .ute-specimen-card .card-header {
+  background: #ffffff !important;
+  padding: 4px 8px !important;
 }
-
-.ute-signature-col {
-  flex: 1;
-  padding: 0 10px;
-}
-
-.ute-signature-title {
-  font-size: 0.72rem;
+main.ute-workspace-content .ute-specimen-tag {
+  font-size: 0.7rem;
   font-weight: 600;
+}
+main.ute-workspace-content .ute-count-pill {
+  font-size: 0.68rem;
+  font-weight: 500;
   color: #64748b;
-  text-transform: uppercase;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
-.ute-signature-name {
-  font-size: 0.85rem;
+/* Calculation cards: white, quiet formula, right-aligned value */
+main.ute-workspace-content .ute-calc-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 6px 8px !important;
+}
+main.ute-workspace-content .ute-calc-name {
+  font-size: 0.76rem;
   font-weight: 600;
-  color: #0f172a;
-  margin-top: 2px;
+  color: #1e293b;
+}
+main.ute-workspace-content .ute-calc-unit {
+  font-size: 0.68rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+main.ute-workspace-content .ute-calc-formula {
+  font-size: 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 3px 6px;
+  margin-bottom: 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+main.ute-workspace-content .ute-calc-formula code {
+  color: #475569;
+  font-size: inherit;
+  background: transparent;
+  padding: 0;
+}
+main.ute-workspace-content .ute-eval-pill {
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+main.ute-workspace-content .ute-eval-value {
+  font-size: 0.78rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-.ute-signature-desig {
+/* Chart + remarks */
+main.ute-workspace-content .ute-chart-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px;
+}
+main.ute-workspace-content .ute-chart-canvas {
+  max-height: 320px;
+}
+main.ute-workspace-content .ute-remarks-wrapper textarea {
+  min-height: 56px;
+  font-size: 0.78rem;
+}
+
+/* Preparation checklist rows */
+main.ute-workspace-content .ute-prep-note {
   font-size: 0.72rem;
   color: #64748b;
 }
 
-.ute-signature-date {
-  font-size: 0.68rem;
-  color: #94a3b8;
-  margin-top: 2px;
+/* Specimen parameter inputs in parameters table & calculations cards */
+main.ute-workspace-content .ute-input-compact {
+  max-width: 110px;
+  height: 26px;
+  font-size: 0.78rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 2px 6px;
 }
 
-.ute-report-auth-footer {
-  border-top: 1px dashed #cbd5e1;
-  padding-top: 10px;
-  margin-top: 16px;
-  font-size: 0.68rem;
-  color: #64748b;
+main.ute-workspace-content .ute-input-compact-calc {
+  max-width: 100px;
+  height: 26px;
+  font-size: 0.78rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 2px 6px;
 }

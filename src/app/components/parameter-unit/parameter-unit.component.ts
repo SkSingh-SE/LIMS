@@ -121,7 +121,7 @@ export class ParameterUnitComponent implements OnInit {
           'Length', 'Mass', 'Force', 'Pressure', 'Temperature',
           'Voltage', 'Current', 'Resistance', 'Density', 'Concentration',
           'Percentage', 'Time', 'Area', 'Volume', 'Dimensionless',
-          'Energy', 'Hardness', 'Other'
+          'Speed', 'Energy', 'Hardness', 'Other'
         ];
       }
     });

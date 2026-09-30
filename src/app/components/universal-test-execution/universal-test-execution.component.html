@@ -31,7 +31,10 @@
 
       <div class="ute-search-select-box">
         <app-searchable-dropdown [hideLabel]="true" [smallInput]="true" [placeholder]="'Switch / Search Execution...'"
-          [fetchDataFn]="getExecutionDropdown" (itemSelected)="onExecutionDropdownSelected($event)">
+          [fetchDataFn]="getExecutionDropdown"
+          [selectedItem]="currentExecutionDropdownItem"
+          [reloadKey]="currentLoadedExecutionId"
+          (itemSelected)="onExecutionDropdownSelected($event)">
         </app-searchable-dropdown>
       </div>
 
@@ -119,17 +122,25 @@
       </nav>
     </div>
 
-    <!-- Frozen Snapshot Banner if execution started -->
+    <!-- Frozen/Dynamic Snapshot Banner if execution started -->
     <div *ngIf="execution?.status && execution?.status !== 'Planned'"
       class="ute-frozen-indicator d-flex align-items-center gap-2">
-      <span class="badge bg-dark text-warning border d-flex align-items-center gap-1">
+      
+      <!-- Dynamic Snapshot (InProgress) -->
+      <span *ngIf="execution?.status === 'InProgress'" class="badge bg-primary bg-opacity-10 text-primary border border-primary d-flex align-items-center gap-1">
+        <i class="bi bi-arrow-repeat text-primary"></i>
+        <span>DYNAMIC SNAPSHOT</span>
+      </span>
+
+      <!-- Frozen Snapshot (Completed/Verified/Approved) -->
+      <span *ngIf="execution?.status !== 'InProgress'" class="badge bg-dark text-warning border d-flex align-items-center gap-1">
         <i class="bi bi-lock-fill text-warning"></i>
         <span>SNAPSHOT FROZEN</span>
       </span>
+
       <span *ngIf="configSnapshot?.provenance?.sourceType" class="badge bg-light text-secondary border">
         Source: <strong>{{ configSnapshot?.provenance?.sourceType }}</strong>
-        <span *ngIf="configSnapshot?.provenance?.sourceRevision"> (Rev {{ configSnapshot?.provenance?.sourceRevision
-          }})</span>
+        <span *ngIf="configSnapshot?.provenance?.sourceRevision"> (Rev {{ configSnapshot?.provenance?.sourceRevision }})</span>
       </span>
       <span *ngIf="execution?.isRetest" class="badge bg-warning text-dark border">
         <i class="bi bi-arrow-repeat me-1"></i>Retest Run #{{ execution?.executionNo }}
@@ -1621,13 +1632,14 @@
         <div
           class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2">
-            <span class="ute-panel-title fs-6">
-              <i class="bi bi-grid-3x3 me-1"></i> Execution Entry Grid:
+            <span class="ute-panel-title">
+              <i class="bi bi-grid-3x3 me-1"></i> Execution Entry Grid
             </span>
-            <span class="fw-bold text-dark">{{ execution?.testName || 'Soil Mechanics Atterberg Limits' }}</span>
+            <span class="fw-bold text-dark ute-entry-test-name">{{ execution?.testName || 'Soil Mechanics Atterberg Limits' }}</span>
             <span *ngIf="hasExecutionLayout"
-              class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1">
-              <i class="bi bi-layout-wtf me-1"></i>{{ configSnapshot?.executionLayout?.name ||
+              class="ute-entry-layout-pill ms-1"
+              [title]="configSnapshot?.executionLayout?.name || configSnapshot?.executionLayout?.layoutName || configSnapshot?.executionLayout?.code">
+              <i class="bi bi-layout-text-window-reverse me-1"></i>{{ configSnapshot?.executionLayout?.name ||
               configSnapshot?.executionLayout?.layoutName || configSnapshot?.executionLayout?.code }}
             </span>
           </div>
@@ -1656,19 +1668,19 @@
                   class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between cursor-pointer gap-2 py-0"
                   (click)="sec.isCollapsible ? toggleSectionCollapse(sec.id) : null">
                   <div class="d-flex align-items-center gap-1 flex-wrap">
-                    <span class="ute-section-num badge bg-secondary text-white font-monospace">{{ secIdx + 1 }}</span>
+                    <span class="ute-section-num font-monospace">{{ secIdx + 1 }}</span>
                     <i class="bi me-1" [ngClass]="getSectionIcon(sec.sectionType)"></i>
-                    <span class="text-dark">{{ sec.sectionName }}</span>
-                    <span class="badge bg-light text-muted border font-monospace ute-section-type-badge">{{
+                    <span class="ute-section-title">{{ sec.sectionName }}</span>
+                    <span class="ute-section-type-badge">{{
                       sec.sectionTypeDisplayName || sec.sectionType }}</span>
                     <span *ngIf="sec.presentationStyle"
-                      class="badge bg-primary-subtle text-primary border border-primary-subtle ute-style-badge">{{
+                      class="ute-style-badge">{{
                       sec.presentationStyle }}</span>
                   </div>
                   <div class="d-flex align-items-center gap-1">
-                    <span *ngIf="sec.instructions" class="text-muted small fw-normal d-none d-md-inline me-1"
+                    <span *ngIf="sec.instructions" class="ute-section-hint d-none d-md-inline me-1"
                       [title]="sec.instructions">
-                      <i class="bi bi-info-circle me-1 text-info"></i>{{ sec.instructions }}
+                      <i class="bi bi-info-circle me-1"></i>{{ sec.instructions }}
                     </span>
                     <button *ngIf="sec.isCollapsible" type="button" class="btn-lims-icon btn-lims-secondary"
                       (click)="$event.stopPropagation(); toggleSectionCollapse(sec.id)" title="Toggle Section">
@@ -1711,11 +1723,11 @@
                   <div *ngIf="sec.sectionType === 'Conditions'" class="ute-conditions-wrapper">
                     <div class="row g-2">
                       <div class="col-12 col-md-6 col-lg-4" *ngFor="let c of (configSnapshot?.conditions || [])">
-                        <div class="card border p-2 bg-light ute-condition-card">
-                          <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-semibold text-dark small"><i
-                                class="bi bi-thermometer-half me-1 text-info"></i>{{ c.dimensionName }}</span>
-                            <span class="badge bg-white text-secondary border font-monospace small">Req: {{
+                        <div class="card ute-condition-card">
+                          <div class="d-flex justify-content-between align-items-center mb-1 gap-2">
+                            <span class="ute-condition-name"><i
+                                class="bi bi-thermometer-half me-1"></i>{{ c.dimensionName }}</span>
+                            <span class="ute-req-pill">Req: {{
                               c.configuredOperator || '=' }} {{ c.configuredValue1 }}{{ c.configuredValue2 ? ' – ' +
                               c.configuredValue2 : '' }} {{ c.unit }}</span>
                           </div>
@@ -1780,7 +1792,7 @@
                         protocol before execution.' }}</div>
 
                       <!-- Interactive Protocol Checklist: Dynamic from sec.items if configured -->
-                      <div class="row g-1.5" *ngIf="sec.items && sec.items.length > 0">
+                      <div class="row g-2" *ngIf="sec.items && sec.items.length > 0">
                         <div class="col-12 col-md-6" *ngFor="let it of sec.items; let itIdx = index">
                           <div
                             class="form-check form-check-sm d-flex align-items-center gap-1 p-1 bg-white border rounded">
@@ -1818,7 +1830,7 @@
                           <th>Code</th>
                           <th>Type</th>
                           <th>Unit</th>
-                          <th class="text-center">Computed Result</th>
+                          <th class="text-center">Value / Result</th>
                           <th class="text-center">Role</th>
                           <th>Specification Limit</th>
                           <th class="text-center">Engine Binding</th>
@@ -1827,11 +1839,33 @@
                       <tbody>
                         <tr
                           *ngFor="let p of (getSectionParameters(sec).length > 0 ? getSectionParameters(sec) : parameters)">
-                          <td class="fw-semibold">{{ p.name }}</td>
+                          <td class="ute-param-name">{{ p.name }}</td>
                           <td><span class="badge-code">{{ p.code || '—' }}</span></td>
                           <td><span class="badge bg-light text-secondary border small">{{ p.isCalculated ? 'Calculated' : (p.inputType || 'Decimal') }}</span></td>
                           <td>{{ p.unit || '—' }}</td>
-                          <td class="text-center fw-bold" [ngClass]="{'text-success': getCalculatedValue(p) && getCalculatedValue(p) !== '—', 'text-muted': !getCalculatedValue(p) || getCalculatedValue(p) === '—'}">{{ getCalculatedValue(p) || '—' }}</td>
+                          <td class="text-center">
+                            <ng-container *ngIf="!p.isCalculated">
+                              <ng-container *ngIf="getSpecimenResultControl(0, p.parameterMasterID) as resCtrl; else noCtrl">
+                                <div [formGroup]="resCtrl" class="d-flex align-items-center justify-content-center">
+                                  <input type="text"
+                                    appDecimalOnly
+                                    class="form-control form-control-sm ute-input-compact text-end fw-semibold"
+                                    formControlName="rawValue"
+                                    (input)="onSpecimenParamInput(p, resCtrl)"
+                                    [placeholder]="'0.' + '0'.repeat(p.decimalPrecision || 2)" />
+                                </div>
+                              </ng-container>
+                              <ng-template #noCtrl>
+                                <span class="text-muted">—</span>
+                              </ng-template>
+                            </ng-container>
+                            <ng-container *ngIf="p.isCalculated">
+                              <span class="fw-bold"
+                                [ngClass]="{'text-success': getCalculatedValue(p) && getCalculatedValue(p) !== '—', 'text-muted': !getCalculatedValue(p) || getCalculatedValue(p) === '—'}">
+                                {{ getCalculatedValue(p) || '—' }}
+                              </span>
+                            </ng-container>
+                          </td>
                           <td class="text-center">
                             <span *ngIf="p.isRequired"
                               class="badge bg-danger-subtle text-danger border border-danger-subtle small me-1">Mandatory</span>
@@ -1861,10 +1895,10 @@
                       <div
                         class="card-header bg-light py-1 px-2 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
-                          <span class="badge bg-dark text-white font-monospace">Specimen #{{ sIdx + 1 }}</span>
+                          <span class="badge bg-dark text-white font-monospace ute-specimen-tag">Specimen #{{ sIdx + 1 }}</span>
                           <input type="text" class="form-control form-control-sm w-auto"
                             formControlName="specimenIdentifier" placeholder="Specimen Tag/ID">
-                          <span class="badge bg-light text-muted border small d-none d-md-inline">{{
+                          <span class="badge bg-light text-muted border small d-none d-md-inline ute-count-pill">{{
                             unifiedExecutionParameters.length }} Unified Parameters</span>
                         </div>
                         <div class="d-flex align-items-center gap-1">
@@ -1891,8 +1925,8 @@
                               <th class="text-center col-w-reading">Reading</th>
                               <th *ngFor="let p of unifiedExecutionParameters"
                                 [title]="getRequirementText(p) + ' | ' + p.unit">
-                                <div class="d-flex align-items-center justify-content-between gap-1 flex-wrap mb-0.5">
-                                  <span class="fw-semibold">{{ p.name }}</span>
+                                <div class="d-flex align-items-center justify-content-between gap-1 flex-wrap mb-1">
+                                  <span class="ute-param-name">{{ p.name }}</span>
                                   <div class="d-flex align-items-center gap-1">
                                     <!-- Provenance / Origin Badges -->
                                     <span *ngIf="p.origin === 'Layout'"
@@ -1920,7 +1954,7 @@
                                     </button>
                                   </div>
                                 </div>
-                                <div class="small text-muted font-monospace">
+                                <div class="ute-param-sub">
                                   {{ p.unit ? '(' + p.unit + ')' : '' }} {{ getRequirementText(p) }}
                                 </div>
                               </th>
@@ -1945,7 +1979,7 @@
                                     <ng-container *ngIf="!p.isCalculated">
                                       <div *ngIf="p.inputType==='Decimal' || !p.inputType"
                                         class="input-group input-group-sm">
-                                        <input type="text" class="form-control text-end fw-semibold"
+                                        <input type="text" appDecimalOnly class="form-control text-end fw-semibold"
                                           [class.text-success]="resCtrl.get('resultStatus')?.value === 'Pass'"
                                           [class.text-danger]="resCtrl.get('resultStatus')?.value === 'Fail'"
                                           formControlName="rawValue" (input)="onReadingInput(asFormGroup(obs))"
@@ -1955,7 +1989,7 @@
                                             [ngClass]="resCtrl.get('resultStatus')?.value === 'Pass' ? 'bi-check text-success' : 'bi-x text-danger'"></i>
                                         </span>
                                       </div>
-                                      <input *ngIf="p.inputType==='Integer'" type="number" step="1"
+                                      <input *ngIf="p.inputType==='Integer'" type="text" appNumberOnly
                                         class="form-control form-control-sm text-end fw-semibold"
                                         formControlName="rawValue" [disabled]="isViewMode"
                                         (input)="onReadingInput(asFormGroup(obs))" placeholder="0">
@@ -1995,10 +2029,10 @@
                       <div
                         class="card-header bg-light py-1 px-2 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
-                          <span class="badge bg-dark text-white font-monospace">Specimen #{{ sIdx + 1 }}</span>
+                          <span class="badge bg-dark text-white font-monospace ute-specimen-tag">Specimen #{{ sIdx + 1 }}</span>
                           <input type="text" class="form-control form-control-sm w-auto"
                             formControlName="specimenIdentifier" placeholder="Specimen Tag/ID">
-                          <span class="badge bg-light text-muted border small d-none d-md-inline">{{
+                          <span class="badge bg-light text-muted border small d-none d-md-inline ute-count-pill">{{
                             getObservationSectionParameters(sec).length }} Observation Parameters</span>
                         </div>
                         <div class="d-flex align-items-center gap-1">
@@ -2021,8 +2055,8 @@
                               <th class="text-center col-w-reading">Reading</th>
                               <th *ngFor="let p of getObservationSectionParameters(sec)"
                                 [title]="getRequirementText(p) + ' | ' + p.unit">
-                                <div class="d-flex align-items-center justify-content-between gap-1 flex-wrap mb-0.5">
-                                  <span class="fw-semibold">{{ p.name }}</span>
+                                <div class="d-flex align-items-center justify-content-between gap-1 flex-wrap mb-1">
+                                  <span class="ute-param-name">{{ p.name }}</span>
                                   <div class="d-flex align-items-center gap-1">
                                     <span *ngIf="p.isCalculated" class="badge-type-calc font-monospace ute-tag-micro"
                                       title="Formula-Calculated Parameter">Calc</span>
@@ -2033,7 +2067,7 @@
                                       title="Mandatory Parameter">●</span>
                                   </div>
                                 </div>
-                                <div class="small text-muted font-monospace">
+                                <div class="ute-param-sub">
                                   {{ p.unit ? '(' + p.unit + ')' : '' }} {{ getRequirementText(p) }}
                                 </div>
                               </th>
@@ -2058,7 +2092,7 @@
                                     <ng-container *ngIf="!p.isCalculated">
                                       <div *ngIf="p.inputType==='Decimal' || !p.inputType"
                                         class="input-group input-group-sm">
-                                        <input type="text" class="form-control text-end fw-semibold"
+                                        <input type="text" appDecimalOnly class="form-control text-end fw-semibold"
                                           [class.text-success]="resCtrl.get('resultStatus')?.value === 'Pass'"
                                           [class.text-danger]="resCtrl.get('resultStatus')?.value === 'Fail'"
                                           formControlName="rawValue" (input)="onReadingInput(asFormGroup(obs))"
@@ -2068,7 +2102,7 @@
                                             [ngClass]="resCtrl.get('resultStatus')?.value === 'Pass' ? 'bi-check text-success' : 'bi-x text-danger'"></i>
                                         </span>
                                       </div>
-                                      <input *ngIf="p.inputType==='Integer'" type="number" step="1"
+                                      <input *ngIf="p.inputType==='Integer'" type="text" appNumberOnly
                                         class="form-control form-control-sm text-end fw-semibold"
                                         formControlName="rawValue" [disabled]="isViewMode"
                                         (input)="onReadingInput(asFormGroup(obs))" placeholder="0">
@@ -2104,36 +2138,56 @@
                   <div *ngIf="sec.sectionType === 'Calculations'" class="ute-calculations-wrapper">
                     <div class="row g-2" *ngIf="getSectionParameters(sec).length > 0">
                       <div class="col-12 col-md-6 col-lg-4" *ngFor="let p of getSectionParameters(sec)">
-                        <div class="card border p-2 bg-light ute-calc-card">
-                          <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-semibold text-dark small"><i
-                                class="bi bi-calculator me-1 text-primary"></i>{{ p.name }}</span>
-                            <span class="badge bg-primary text-white font-monospace small">{{ p.unit || '—' }}</span>
+                        <div class="card ute-calc-card">
+                          <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+                            <span class="ute-calc-name"><i
+                                class="bi bi-calculator me-1"></i>{{ p.name }}</span>
+                            <span class="badge bg-light text-muted border ute-calc-unit">{{ p.unit || '—' }}</span>
                           </div>
-                          <div class="text-muted small font-monospace mb-1 p-1 bg-white border rounded">
-                            <code>{{ p.formula || 'Automated Calculation Engine' }}</code>
+                          <div class="ute-calc-formula" [title]="p.formula || (p.isCalculated ? 'Automated Calculation Engine' : 'Curve Extracted / Observed Parameter')">
+                            <code>{{ p.formula || (p.isCalculated ? 'Automated Calculation Engine' : 'Curve Extracted / Observed Parameter') }}</code>
                           </div>
-                          <div class="d-flex justify-content-between align-items-center mb-1">
+                          <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
                             <span class="small text-muted">Spec: {{ getRequirementText(p) }}</span>
-                            <span *ngIf="isDependenciesMissing(p)"
-                              class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                            <span *ngIf="p.isCalculated && isDependenciesMissing(p)"
+                              class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ute-eval-pill">
                               <i class="bi bi-exclamation-triangle me-1"></i>Dependencies Missing
                             </span>
-                            <span *ngIf="!isDependenciesMissing(p)"
-                              class="badge bg-success-subtle text-success border border-success-subtle">
+                            <span *ngIf="p.isCalculated && !isDependenciesMissing(p)"
+                              class="badge bg-success-subtle text-success border border-success-subtle ute-eval-pill">
                               <i class="bi bi-cpu me-1"></i>Real-time Evaluated
                             </span>
+                            <span *ngIf="!p.isCalculated"
+                              class="badge bg-primary-subtle text-primary border border-primary-subtle ute-eval-pill">
+                              <i class="bi bi-pencil-square me-1"></i>Curve / Test Input
+                            </span>
                           </div>
-                          <!-- Live Evaluated Numeric Result -->
+                          <!-- Live Evaluated Numeric Result for Calculated Parameters -->
                           <div class="d-flex justify-content-between align-items-center pt-1 border-top mt-1"
-                            *ngIf="!isDependenciesMissing(p)">
+                            *ngIf="p.isCalculated && !isDependenciesMissing(p)">
                             <span class="small fw-semibold text-secondary">Evaluated Value:</span>
-                            <span class="badge bg-success font-monospace px-2 py-1 fs-6">
+                            <span class="badge bg-success-subtle text-success border ute-eval-value">
                               {{ getCalculatedValue(p) }} {{ p.unit || '' }}
                             </span>
                           </div>
+                          <!-- Direct Value / Input Control for Non-Calculated Parameters in Calculations Section -->
+                          <div class="d-flex justify-content-between align-items-center pt-1 border-top mt-1"
+                            *ngIf="!p.isCalculated">
+                            <span class="small fw-semibold text-secondary">Value / Override:</span>
+                            <div class="d-flex align-items-center gap-1" *ngIf="getSpecimenResultControl(0, p.parameterMasterID) as resCtrl">
+                              <div [formGroup]="resCtrl">
+                                <input type="text"
+                                  appDecimalOnly
+                                  class="form-control form-control-sm ute-input-compact-calc text-end fw-semibold"
+                                  formControlName="rawValue"
+                                  (input)="onSpecimenParamInput(p, resCtrl)"
+                                  [placeholder]="'0.' + '0'.repeat(p.decimalPrecision || 2)" />
+                              </div>
+                              <span class="badge bg-light text-muted border small">{{ p.unit || '' }}</span>
+                            </div>
+                          </div>
                           <div class="p-1 bg-warning-subtle text-dark small rounded border border-warning mt-1"
-                            *ngIf="isDependenciesMissing(p)">
+                            *ngIf="p.isCalculated && isDependenciesMissing(p)">
                             <i class="bi bi-exclamation-circle me-1 text-warning"></i>
                             <strong>Calculation unavailable:</strong> required dependencies not configured ({{
                             getMissingDependencies(p).join(', ') }})
@@ -2298,10 +2352,10 @@
                     <div
                       class="card-header bg-light py-1 px-2 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
                       <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-dark text-white font-monospace">Specimen #{{ sIdx + 1 }}</span>
+                        <span class="badge bg-dark text-white font-monospace ute-specimen-tag">Specimen #{{ sIdx + 1 }}</span>
                         <input type="text" class="form-control form-control-sm w-auto"
                           formControlName="specimenIdentifier" placeholder="Specimen Tag/ID">
-                        <span class="badge bg-light text-muted border small d-none d-md-inline">{{
+                        <span class="badge bg-light text-muted border small d-none d-md-inline ute-count-pill">{{
                           unmappedParameters.length }} Additional Parameters</span>
                       </div>
                       <div class="d-flex align-items-center gap-1">
@@ -2318,8 +2372,8 @@
                           <tr>
                             <th class="text-center col-w-reading">Reading</th>
                             <th *ngFor="let p of unmappedParameters" [title]="getRequirementText(p) + ' | ' + p.unit">
-                              <div class="d-flex align-items-center justify-content-between gap-1 flex-wrap mb-0.5">
-                                <span class="fw-semibold">{{ p.name }}</span>
+                              <div class="d-flex align-items-center justify-content-between gap-1 flex-wrap mb-1">
+                                <span class="ute-param-name">{{ p.name }}</span>
                                 <div class="d-flex align-items-center gap-1">
                                   <span *ngIf="p.isCalculated" class="badge-type-calc font-monospace ute-tag-micro"
                                     title="Formula-Calculated Parameter">Calc</span>
@@ -2330,7 +2384,7 @@
                                     title="Mandatory Parameter">●</span>
                                 </div>
                               </div>
-                              <div class="small text-muted font-monospace">
+                              <div class="ute-param-sub">
                                 {{ p.unit ? '(' + p.unit + ')' : '' }} {{ getRequirementText(p) }}
                               </div>
                             </th>
@@ -2354,7 +2408,7 @@
                                   <ng-container *ngIf="!p.isCalculated">
                                     <div *ngIf="p.inputType==='Decimal' || !p.inputType"
                                       class="input-group input-group-sm">
-                                      <input type="text" class="form-control text-end fw-semibold"
+                                      <input type="text" appDecimalOnly class="form-control text-end fw-semibold"
                                         [class.text-success]="resCtrl.get('resultStatus')?.value === 'Pass'"
                                         [class.text-danger]="resCtrl.get('resultStatus')?.value === 'Fail'"
                                         formControlName="rawValue" (input)="onReadingInput(asFormGroup(obs))"
@@ -2364,7 +2418,7 @@
                                           [ngClass]="resCtrl.get('resultStatus')?.value === 'Pass' ? 'bi-check text-success' : 'bi-x text-danger'"></i>
                                       </span>
                                     </div>
-                                    <input *ngIf="p.inputType==='Integer'" type="number" step="1"
+                                    <input *ngIf="p.inputType==='Integer'" type="text" appNumberOnly
                                       class="form-control form-control-sm text-end fw-semibold"
                                       formControlName="rawValue" [disabled]="isViewMode"
                                       (input)="onReadingInput(asFormGroup(obs))" placeholder="0">
@@ -2409,7 +2463,7 @@
                 <legend
                   class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between gap-2 py-0">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-dark text-white font-monospace">Specimen #{{ sIdx + 1 }}</span>
+                    <span class="badge bg-dark text-white font-monospace ute-specimen-tag">Specimen #{{ sIdx + 1 }}</span>
                     <input type="text" class="form-control form-control-sm w-auto" formControlName="specimenIdentifier"
                       placeholder="Specimen Tag/ID">
                   </div>
@@ -2484,14 +2538,14 @@
                               <input *ngIf="p.inputType==='DateTime'" type="datetime-local"
                                 class="form-control form-control-sm" formControlName="rawValue" [disabled]="isViewMode"
                                 (change)="onReadingInput(asFormGroup(obs))">
-                              <input *ngIf="p.inputType==='Integer'" type="number" step="1"
+                              <input *ngIf="p.inputType==='Integer'" type="text" appNumberOnly
                                 class="form-control form-control-sm text-end fw-semibold" formControlName="rawValue"
                                 [disabled]="isViewMode" (input)="onReadingInput(asFormGroup(obs))" placeholder="0">
                               <textarea *ngIf="p.inputType==='Text'" class="form-control form-control-sm"
                                 formControlName="rawValue" [disabled]="isViewMode" rows="1" placeholder="Enter text"
                                 (input)="onReadingInput(asFormGroup(obs))"></textarea>
                               <div *ngIf="p.inputType==='Decimal' || !p.inputType" class="input-group input-group-sm">
-                                <input type="text" class="form-control text-end fw-semibold"
+                                <input type="text" appDecimalOnly class="form-control text-end fw-semibold"
                                   [class.text-success]="res.get('resultStatus')?.value === 'Pass'"
                                   [class.text-danger]="res.get('resultStatus')?.value === 'Fail'"
                                   formControlName="rawValue" (input)="onReadingInput(asFormGroup(obs))"
@@ -2796,32 +2850,27 @@
                   <tr *ngFor="let p of resultParams; let i = index">
                     <td class="text-center text-muted text-xs">{{ i + 1 }}</td>
                     <td>
-                      <div class="d-flex align-items-center gap-1">
-                        <span class="badge bg-light text-dark border font-monospace text-xs">{{ p.parameterCode
-                          }}</span>
+                      <div class="d-flex align-items-center gap-1" [title]="p.formula ? 'Formula: ' + p.formula : ''">
+                        <span class="badge bg-light text-dark border font-monospace text-xs">{{ p.parameterCode }}</span>
                         <span class="fw-semibold text-dark">{{ p.parameterName }}</span>
-                      </div>
-                      <div class="text-muted text-xs font-monospace" *ngIf="p.formula">
-                        <i class="bi bi-calculator me-1 text-primary"></i><code>{{ p.formula }}</code>
+                        <i class="bi bi-info-circle text-muted text-xs ms-1" *ngIf="p.formula"></i>
                       </div>
                     </td>
                     <td>
                       <div class="d-flex align-items-center gap-1">
-                        <span class="badge bg-light text-secondary border text-xs" *ngIf="!p.isCalculated">Raw</span>
-                        <span class="badge bg-info-subtle text-info border text-xs" *ngIf="p.isCalculated">Calc</span>
-                        <span class="badge bg-danger text-white text-xs" *ngIf="p.isMandatory"
-                          title="Mandatory Parameter">&bull;</span>
-                        <span class="font-monospace text-xs text-muted" *ngIf="p.unit">({{ p.unit }})</span>
+                        <span class="text-secondary" *ngIf="!p.isCalculated" title="Raw Input"><i class="bi bi-input-cursor-text"></i></span>
+                        <span class="text-primary" *ngIf="p.isCalculated" title="Calculated Parameter"><i class="bi bi-calculator"></i></span>
+                        <span class="text-danger" *ngIf="p.isMandatory" title="Mandatory Parameter">*</span>
+                        <span class="text-xs text-muted" *ngIf="p.unit">{{ p.unit }}</span>
                       </div>
                     </td>
-                    <td>
+                    <td class="text-end">
                       <div class="font-monospace small">
                         {{ p.rawValue ?? (p.rawNumericValue != null ? p.rawNumericValue : '—') }}
                       </div>
                       <div class="text-xs text-muted" *ngIf="p.appliedFactorCode">
-                        <span class="badge bg-light text-secondary border">{{ p.appliedFactorCode }}</span>
-                        {{ p.appliedFactorOperation }} &rarr; <span class="fw-semibold font-monospace">{{
-                          p.factoredValue }}</span>
+                        <span class="text-secondary">{{ p.appliedFactorCode }}</span>
+                        {{ p.appliedFactorOperation }} &rarr; <span class="fw-semibold font-monospace">{{ p.factoredValue }}</span>
                       </div>
                     </td>
                     <td class="text-end">
@@ -2836,8 +2885,8 @@
                       <span class="small text-muted font-monospace ms-1" *ngIf="p.unit">{{ p.unit }}</span>
                     </td>
                     <td class="text-center">
-                      <span class="badge-req-range">
-                        {{ getRequirementDisplay(p) }}
+                      <span [ngClass]="getRequirementDisplay(p) === 'Not Configured' ? 'text-muted text-xs' : 'badge-req-range'">
+                        {{ getRequirementDisplay(p) === 'Not Configured' ? 'N/A' : getRequirementDisplay(p) }}
                       </span>
                       <div *ngIf="p.appliedTolerance != null && p.appliedTolerance > 0"
                         class="text-xs text-muted mt-0.5">
@@ -2889,7 +2938,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                   <span class="fw-semibold small text-dark"><i class="bi bi-cpu me-1 text-primary"></i>Formula DAG
                     Evaluation Traces</span>
-                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 text-xs"
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 text-xs text-nowrap flex-shrink-0"
                     (click)="showResultTraces = !showResultTraces">
                     <i class="bi" [ngClass]="showResultTraces ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                     {{ showResultTraces ? 'Hide Traces' : 'Show Traces' }}
@@ -2917,7 +2966,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                   <span class="fw-semibold small text-dark"><i class="bi bi-journal-text me-1 text-danger"></i>Immutable
                     Result Audit Trail</span>
-                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 text-xs"
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 text-xs text-nowrap flex-shrink-0"
                     (click)="showResultAudits = !showResultAudits">
                     <i class="bi" [ngClass]="showResultAudits ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                     {{ showResultAudits ? 'Hide Audits' : 'Show Audits' }}
@@ -3218,7 +3267,7 @@
             <!-- Preview format selector (ephemeral preview, does not affect persisted reports) -->
             <div class="d-flex align-items-center gap-1">
               <label class="form-label mb-0 small text-muted">Preview Format:</label>
-              <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="reportPreviewFormatCode"
+              <select class="form-select form-select-sm w-auto" [(ngModel)]="reportPreviewFormatCode"
                 (change)="previewReportFormat()">
                 <option
                   *ngFor="let f of (availableReportFormats?.length ? availableReportFormats : [{ formatCode: 'DEFAULT', formatName: 'Default Universal Report' }])"
@@ -3265,8 +3314,8 @@
           Preview format selector above only affects the on-screen preview — it does not change persisted reports.
         </div>
 
-        <!-- Report Sheet Container -->
-        <div class="border p-4 bg-white shadow-sm rounded mx-auto ute-report-sheet position-relative mb-4">
+        <!-- Report Sheet Container (8-Section Universal Report Matching Image 2 with Test Results from Image 1) -->
+        <div class="ute-report-sheet mx-auto position-relative my-3">
           <!-- Watermark: VOID > DRAFT > RELEASED (none) -->
           <div *ngIf="selectedReport && isSelectedReportVoid()" class="ute-report-watermark text-danger fw-bold">
             VOID — REPORT NOT VALID FOR USE
@@ -3274,261 +3323,396 @@
           <div
             *ngIf="!selectedReport || (!isSelectedReportVoid() && (selectedReport.status?.toLowerCase() !== 'released' && selectedReport.Status?.toLowerCase() !== 'released'))"
             class="ute-report-watermark">
-            DRAFT / NOT RELEASED
+            {{ reportPreviewData?.watermark ?? 'UNCONTROLLED PREVIEW' }}
           </div>
 
-          <!-- 1. UNIVERSAL HEADER WITH CONDITIONAL NABL LOGO -->
-          <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 gap-3">
-            <!-- Left: Optional Lab Logo -->
-            <div class="d-flex align-items-center" style="width: 250px;">
-              <img *ngIf="getLabLogoUrl()" [src]="getLabLogoUrl()" alt="Laboratory Logo" class="ute-report-lab-logo" />
-              <div *ngIf="!getLabLogoUrl()" class="fw-bold fs-5 text-secondary border px-3 py-2 rounded shadow-sm">
-                [ LAB LOGO ]
+          <!-- 1. Header with Laboratory Details -->
+          <div class="ute-report-header">
+            <!-- Left: Lab Logo & Organization Contact -->
+            <div class="ute-report-lab-block">
+              <div class="d-flex align-items-center" *ngIf="getLabLogoUrl()">
+                <img [src]="getLabLogoUrl()" alt="Laboratory Logo" class="ute-report-lab-logo" />
+              </div>
+              <div class="ute-report-lab-details">
+                <div class="ute-report-lab-name">{{ dataOfReportPreview()?.labName || 'Devine Laboratory' }}</div>
+                <div class="ute-report-lab-subtitle" *ngIf="dataOfReportPreview()?.labSubtitle">{{ dataOfReportPreview()?.labSubtitle }}</div>
+                <div class="ute-report-lab-tagline" *ngIf="dataOfReportPreview()?.labTagline">{{ dataOfReportPreview()?.labTagline }}</div>
+                <div *ngIf="dataOfReportPreview()?.branchAddress || dataOfReportPreview()?.labAddress">{{ dataOfReportPreview()?.branchAddress || dataOfReportPreview()?.labAddress || 'Plot No 1, Industrial Area, Phase 1' }}</div>
+                <div class="d-flex flex-wrap gap-2" *ngIf="dataOfReportPreview()?.labPhone || dataOfReportPreview()?.labEmail || dataOfReportPreview()?.labWebsite">
+                  <span *ngIf="dataOfReportPreview()?.labPhone">Phone: {{ dataOfReportPreview()?.labPhone }}</span>
+                  <span *ngIf="dataOfReportPreview()?.labPhone && (dataOfReportPreview()?.labEmail || dataOfReportPreview()?.labWebsite)">|</span>
+                  <span *ngIf="dataOfReportPreview()?.labEmail">Email: {{ dataOfReportPreview()?.labEmail }}</span>
+                  <span *ngIf="dataOfReportPreview()?.labEmail && dataOfReportPreview()?.labWebsite">|</span>
+                  <span *ngIf="dataOfReportPreview()?.labWebsite">Website: {{ dataOfReportPreview()?.labWebsite }}</span>
+                </div>
               </div>
             </div>
 
-            <!-- Center: Lab Name, Address & Report Subline -->
-            <div class="flex-grow-1 text-center">
-              <h4 class="ute-report-lab-name mb-0">{{ reportPreviewData?.data?.labName ||
-                reportPreviewData?.data?.LabName || 'Devine Laboratory' }}</h4>
-              <div class="ute-report-lab-address mt-0.5">{{ reportPreviewData?.data?.branchAddress ||
-                reportPreviewData?.data?.labAddress || 'Plot No 1, Industrial Area, Phase 1' }}</div>
-              <div class="ute-report-lab-contact"
-                *ngIf="reportPreviewData?.data?.labPhone || reportPreviewData?.data?.labEmail || true">
-                <span><i class="bi bi-telephone me-1"></i>{{ reportPreviewData?.data?.labPhone || '0000000000' }}</span>
-                <span> | </span>
-                <span><i class="bi bi-envelope me-1"></i>{{ reportPreviewData?.data?.labEmail || 'info@lims.com'
-                  }}</span>
-                <span> | <i class="bi bi-globe me-1"></i>www.lims.com</span>
-              </div>
-              <div class="ute-report-title-badge mt-1 font-monospace">
-                TEST CERTIFICATE / REPORT: {{ selectedReport?.reportNo || selectedReport?.ReportNo || (execution?.id ?
-                'URPT-20260928-' + execution?.id : 'URPT-20260928-0002') }}
-                <span> | ULR: {{ selectedReport?.ulrNo || selectedReport?.UlrNo || reportPreviewData?.data?.ulrNo ||
-                  'TC50982600000001' }}</span>
+            <!-- Center: ilac-MRA & NABL Emblem with TC-XXXX -->
+            <div class="ute-report-nabl-block" *ngIf="hasNablMark()">
+              <ng-container *ngIf="getNablLogoUrl(); else defaultNablBadge">
+                <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                  <img [src]="getNablLogoUrl()" alt="NABL Accreditation Logo" class="ute-report-nabl-img mb-1" />
+                  <div class="ute-nabl-tc-no">{{ dataOfReportPreview()?.nablCertNo || 'TC-5098' }}</div>
+                </div>
+              </ng-container>
+              <ng-template #defaultNablBadge>
+                <div class="ute-ilac-badge">
+                  ilac-MRA
+                </div>
+                <div class="ute-nabl-emblem">
+                  <div class="ute-nabl-emblem-badge">
+                    NABL
+                  </div>
+                  <div class="ute-nabl-tc-no">{{ dataOfReportPreview()?.nablCertNo || 'TC-5098' }}</div>
+                </div>
+              </ng-template>
+            </div>
+            <div class="ute-report-nabl-block" *ngIf="!hasNablMark()">
+              <div class="badge bg-secondary-subtle text-secondary border p-2">
+                STANDARD LAB REPORT
               </div>
             </div>
 
-            <!-- Right: NABL Accreditation Mark (Based on NABL Scope) -->
-            <div class="d-flex justify-content-end" style="width: 250px;">
-              <div *ngIf="hasNablMark()" class="ute-nabl-header-box shadow-xs">
-                <span class="ute-nabl-tag fw-bold">NABL ACCREDITED</span>
-                <img *ngIf="getNablLogoUrl()" [src]="getNablLogoUrl()" alt="NABL Logo" class="ute-nabl-logo-img"
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                <div class="text-danger py-2 fw-bold fs-6" [style.display]="!getNablLogoUrl() ? 'block' : 'none'">[ NABL
-                  / ilac LOGO ]</div>
-                <span class="ute-nabl-cert-no font-monospace fw-bold">{{ reportPreviewData?.data?.nablCertNo ||
-                  selectedReport?.nablCertNo || 'TC5098' }}</span>
-              </div>
-              <div *ngIf="!hasNablMark()" class="p-2 border rounded text-center bg-light w-100">
-                <span class="badge bg-secondary-subtle text-secondary border">STANDARD LAB REPORT</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 1. SAMPLE & CUSTOMER IDENTIFICATION -->
-          <div class="ute-report-section-title mt-2">1. SAMPLE & CUSTOMER IDENTIFICATION</div>
-          <div class="ute-report-meta-box mb-3">
-            <div class="row g-2">
-              <div class="col-md-6 col-lg-6">
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Sample ID</span>
-                  <span class="ute-report-meta-val font-monospace fw-semibold">: {{ displaySampleNo }}</span>
-                </div>
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Sample Reg. No.</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.sampleRegNo || 'DMSPL-000001'
-                    }}</span>
-                </div>
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Material / Grade</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.gradeName ||
-                    reportPreviewData?.data?.sampleDescription || execution?.sampleDescription || 'TMT Rebar (Fe 500D)'
-                    }}</span>
-                </div>
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Heat / Batch No.</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.batchNo || 'Heat H-101' }}</span>
-                </div>
-                <div class="d-flex">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Discipline/Group</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.disciplineName || 'Mechanical' }} / {{
-                    reportPreviewData?.data?.departmentName || 'Mechanical Properties' }}</span>
-                </div>
-              </div>
-              <div class="col-md-6 col-lg-6">
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Customer Name</span>
-                  <span class="ute-report-meta-val fw-semibold">: {{ displayCustomerName ||
-                    reportPreviewData?.data?.customerName || 'E2E STEEL WORKS' }}</span>
-                </div>
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Customer Address</span>
-                  <span class="ute-report-meta-val text-truncate"
-                    title="{{ reportPreviewData?.data?.customerAddress || 'Plot 14, Odhav GIDC, Ahmedabad' }}">: {{
-                    reportPreviewData?.data?.customerAddress || 'Plot 14, Odhav GIDC, Ahmedabad' }}</span>
-                </div>
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Customer Ref/PO</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.caseNo || 'PO-2026-8942' }}</span>
-                </div>
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Sample Received</span>
-                  <span class="ute-report-meta-val">: {{ (reportPreviewData?.data?.inwardDate || execution?.startedOn) |
-                    date:'dd-MMM-yyyy' }}</span>
-                </div>
-                <div class="d-flex">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Date of Testing</span>
-                  <span class="ute-report-meta-val">: {{ (execution?.startedOn || reportPreviewData?.data?.dateTested) |
-                    date:'dd-MMM-yyyy' }} to {{ (execution?.completedOn || reportPreviewData?.data?.dateTested) |
-                    date:'dd-MMM-yyyy' }}</span>
-                </div>
-              </div>
+            <!-- Right: QR Code -->
+            <div class="ute-report-qr-block">
+              <svg class="ute-report-qr-svg" viewBox="0 0 100 100">
+                <rect width="100" height="100" fill="#ffffff" />
+                <!-- Position Pattern TL -->
+                <rect x="10" y="10" width="25" height="25" fill="#0f172a" />
+                <rect x="15" y="15" width="15" height="15" fill="#ffffff" />
+                <rect x="18" y="18" width="9" height="9" fill="#0f172a" />
+                <!-- Position Pattern TR -->
+                <rect x="65" y="10" width="25" height="25" fill="#0f172a" />
+                <rect x="70" y="15" width="15" height="15" fill="#ffffff" />
+                <rect x="73" y="18" width="9" height="9" fill="#0f172a" />
+                <!-- Position Pattern BL -->
+                <rect x="10" y="65" width="25" height="25" fill="#0f172a" />
+                <rect x="15" y="70" width="15" height="15" fill="#ffffff" />
+                <rect x="18" y="73" width="9" height="9" fill="#0f172a" />
+                <!-- Inner QR bits -->
+                <rect x="42" y="15" width="6" height="6" fill="#0f172a" />
+                <rect x="52" y="22" width="6" height="6" fill="#0f172a" />
+                <rect x="40" y="40" width="8" height="8" fill="#0f172a" />
+                <rect x="52" y="40" width="8" height="8" fill="#0f172a" />
+                <rect x="40" y="52" width="8" height="8" fill="#0f172a" />
+                <rect x="65" y="45" width="6" height="12" fill="#0f172a" />
+                <rect x="75" y="55" width="12" height="6" fill="#0f172a" />
+                <rect x="45" y="70" width="12" height="6" fill="#0f172a" />
+                <rect x="65" y="75" width="10" height="10" fill="#0f172a" />
+                <rect x="80" y="70" width="8" height="12" fill="#0f172a" />
+              </svg>
             </div>
           </div>
 
-          <!-- 2. TEST METHOD & SPECIFICATION -->
-          <div class="ute-report-section-title">2. TEST METHOD & SPECIFICATION</div>
-          <div class="ute-report-meta-box mb-3">
-            <div class="row g-2">
-              <div class="col-md-6 col-lg-6">
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Test Standard</span>
-                  <span class="ute-report-meta-val fw-semibold">: {{ reportPreviewData?.data?.testMethodStandard ||
-                    reportPreviewData?.data?.testMethodName || displayExecutionTestName || 'IS 1608 (Part 1): 2022'
-                    }}</span>
-                </div>
-                <div class="d-flex">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Test Description</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.testDescription || 'Tensile Test at
-                    Ambient Temp (23°C)' }}</span>
-                </div>
+          <!-- 2. Report Identity Banner & Barcode Block -->
+          <div class="ute-report-title-banner">TEST REPORT</div>
+          <div class="ute-report-id-bar">
+            <!-- Left: Numbers -->
+            <div class="ute-report-id-col">
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Report No.</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ dataOfReportPreview()?.reportNo || selectedReport?.reportNo || selectedReport?.ReportNo || '— (Draft Preview)' }}</span>
               </div>
-              <div class="col-md-6 col-lg-6">
-                <div class="d-flex mb-1">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Governing Spec</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.specificationTitle || 'IS 1786: 2008'
-                    }}</span>
-                </div>
-                <div class="d-flex">
-                  <span class="ute-report-meta-label text-muted" style="width: 140px;">Decision Rule</span>
-                  <span class="ute-report-meta-val">: {{ reportPreviewData?.data?.decisionRule || 'ALL_REQUIRED_PASS'
-                    }}</span>
-                </div>
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">ULR No.</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ dataOfReportPreview()?.ulrNo || selectedReport?.ulrNo || selectedReport?.UlrNo || (hasNablMark() ? '— (Assigned on Release)' : 'Not Applicable (Non-NABL)') }}</span>
               </div>
             </div>
-          </div>
 
-          <!-- 3. UNIVERSAL PARAMETER RESULTS TABLE (Adaptive for Material, Chemical, Mechanical, Soil, etc.) -->
-          <div class="ute-report-section-title">3. TEST RESULTS & CONFORMITY EVALUATION</div>
-          <div class="table-responsive mb-3 border rounded">
-            <table class="table table-sm table-hover table-bordered mb-0 ute-report-table align-middle">
-              <thead>
-                <tr>
-                  <th class="text-center col-sn" style="width: 45px;">#</th>
-                  <th>Test Parameter</th>
-                  <th>Test Method / Standard</th>
-                  <th class="text-center" style="width: 85px;">Unit</th>
-                  <th class="text-end" style="width: 140px;">Observed Value</th>
-                  <th>Specified Requirement</th>
-                  <th class="text-center" style="width: 110px;">Compliance</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let p of getReportTableRows()">
-                  <td class="text-center font-monospace text-muted">{{ p.srNo }}</td>
-                  <td>
-                    <div class="fw-semibold text-dark">{{ p.parameterName }}</div>
-                    <small class="text-muted font-monospace text-xs"
-                      *ngIf="p.parameterCode && p.parameterCode !== p.parameterName">{{ p.parameterCode }}</small>
-                  </td>
-                  <td class="small text-muted">{{ p.testMethod }}</td>
-                  <td class="text-center font-monospace">{{ p.unit }}</td>
-                  <td class="text-end font-monospace fw-bold text-dark">{{ p.finalValue }}</td>
-                  <td class="small">{{ p.specRange }}</td>
-                  <td class="text-center">
-                    <span class="badge" [ngClass]="verdictClass(p.status)">{{ p.status }}</span>
-                  </td>
-                </tr>
-                <tr *ngIf="!getReportTableRows()?.length">
-                  <td colspan="7" class="text-center py-3 text-muted">No test parameters configured for report preview.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- 4. MEASUREMENT UNCERTAINTY & TECHNICAL REMARKS BLOCK (Where Configured) -->
-          <div class="ute-report-section-title">4. MEASUREMENT UNCERTAINTY & REMARKS (Where Applicable)</div>
-          <div class="ute-report-meta-box mb-3 px-3 py-2 text-dark small">
-            <ul class="mb-0 ps-3" style="line-height: 1.6;">
-              <li>
-                <strong>Expanded Uncertainty (U):</strong> ±{{ (reportPreviewData?.data?.measurementUncertainty?.u ??
-                reportPreviewData?.data?.MeasurementUncertainty?.U ?? '3.0') }} % at approx. 95.45% confidence level
-                (coverage factor k = {{ (reportPreviewData?.data?.measurementUncertainty?.coverageFactor ??
-                reportPreviewData?.data?.MeasurementUncertainty?.CoverageFactor ?? '2.0') }}).
-              </li>
-              <li>
-                <strong>Remarks:</strong> {{ reportPreviewData?.data?.remarks || execution?.reviewRemarks || 'Specimen
-                prepared as per standard dimensions. Fracture observed within gauge length.' }}
-              </li>
-            </ul>
-          </div>
-
-
-          <!-- 5. FOUR-EYES AUTHORIZATION & ELECTRONIC SIGNATURES (3 Columns) -->
-          <div class="ute-report-section-title mt-4">5. FOUR-EYES AUTHORIZATION & NABL AUTHENTICATION</div>
-          <div class="d-flex justify-content-between align-items-start ute-report-signature-block text-center mt-2">
-            <div class="ute-signature-col">
-              <div class="ute-signature-title">Tested By:</div>
-              <div class="ute-signature-name">{{ reportPreviewData?.data?.analystName || execution?.executionAnalystName
-                || 'Lab Analyst' }}</div>
-              <div class="ute-signature-desig">Testing Technician / Analyst</div>
-              <div class="ute-signature-date"
-                *ngIf="reportPreviewData?.data?.dateTested || execution?.completedOn || execution?.startedOn">
-                Date: {{ (reportPreviewData?.data?.dateTested || execution?.completedOn || execution?.startedOn) |
-                date:'dd-MMM-yyyy' }}
-              </div>
+            <!-- Center: Barcode Visual -->
+            <div class="ute-report-barcode-block">
+              <svg class="ute-report-barcode-svg" viewBox="0 0 170 28">
+                <rect x="2" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="7" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="11" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="18" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="23" y="2" width="1" height="24" fill="#0f172a" />
+                <rect x="27" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="33" y="2" width="5" height="24" fill="#0f172a" />
+                <rect x="41" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="45" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="51" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="56" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="63" y="2" width="1" height="24" fill="#0f172a" />
+                <rect x="67" y="2" width="3.5" height="24" fill="#0f172a" />
+                <rect x="73" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="78" y="2" width="5" height="24" fill="#0f172a" />
+                <rect x="86" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="90" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="96" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="103" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="108" y="2" width="1" height="24" fill="#0f172a" />
+                <rect x="112" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="118" y="2" width="4.5" height="24" fill="#0f172a" />
+                <rect x="125" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="129" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="135" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="140" y="2" width="4" height="24" fill="#0f172a" />
+                <rect x="147" y="2" width="1.5" height="24" fill="#0f172a" />
+                <rect x="151" y="2" width="3" height="24" fill="#0f172a" />
+                <rect x="157" y="2" width="2" height="24" fill="#0f172a" />
+                <rect x="162" y="2" width="4" height="24" fill="#0f172a" />
+              </svg>
+              <div class="ute-report-barcode-text">{{ dataOfReportPreview()?.ulrNo || dataOfReportPreview()?.reportNo || selectedReport?.reportNo || ('EXEC-' + (execution?.id || testExecutionId)) }}</div>
             </div>
-            <div class="ute-signature-col border-start border-end">
-              <div class="ute-signature-title">Verified By:</div>
-              <div class="ute-signature-name">{{ reportPreviewData?.data?.verifiedByName || execution?.verifiedByName ||
-                'System Admin' }}</div>
-              <div class="ute-signature-desig">Technical Reviewer / Verifier</div>
-              <div class="ute-signature-date" *ngIf="reportPreviewData?.data?.verifiedOn || execution?.verifiedOn">
-                Date: {{ (reportPreviewData?.data?.verifiedOn || execution?.verifiedOn) | date:'dd-MMM-yyyy' }}
+
+            <!-- Right: Dates & Pagination -->
+            <div class="ute-report-id-col">
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Report Date</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ (selectedReport?.generatedOn ? (selectedReport.generatedOn | date:'dd MMM yyyy') : (dataOfReportPreview()?.testCompletedOn | date:'dd MMM yyyy')) || (today | date:'dd MMM yyyy') }}</span>
               </div>
-            </div>
-            <div class="ute-signature-col">
-              <div class="ute-signature-title">Approved By:</div>
-              <div class="ute-signature-name">{{ reportPreviewData?.data?.approvedByName || execution?.approvedByName ||
-                'Authorized Signatory' }}</div>
-              <div class="ute-signature-desig">Quality Manager / Technical Director</div>
-              <div class="ute-signature-date" *ngIf="reportPreviewData?.data?.approvedOn || execution?.approvedOn">
-                Date: {{ (reportPreviewData?.data?.approvedOn || execution?.approvedOn) | date:'dd-MMM-yyyy' }}
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Issue Date</span>
+                <span>: </span>
+                <span class="ute-report-id-val">{{ (selectedReport?.releasedOn ? (selectedReport.releasedOn | date:'dd MMM yyyy') : '— (Pending Release)') }}</span>
+              </div>
+              <div class="ute-report-id-row">
+                <span class="ute-report-id-label">Page No.</span>
+                <span>: </span>
+                <span class="ute-report-id-val">1 of 1</span>
               </div>
             </div>
           </div>
 
-          <!-- 6. AUTHENTICATION FOOTER -->
-          <div
-            class="ute-report-auth-footer d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 pt-2 border-top">
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-qr-code fs-3 text-dark"></i>
-              <div>
-                <div>
-                  <span class="fw-semibold text-dark">Document Hash: </span>
-                  <span class="font-monospace text-dark">{{ (reportPreviewData?.reportDataHash ||
-                    selectedReport?.reportDataHash || reportPreviewData?.data?.snapshotHash ||
-                    '2ba555bdae0b14e70039...') | slice:0:20 }}...</span>
+          <!-- 3. Customer & Sample Information (Side-by-Side 2-Column Cards) -->
+          <div class="row g-2 mb-2">
+            <!-- Left: Customer Details -->
+            <div class="col-md-6 col-lg-6">
+              <div class="ute-report-card h-100">
+                <div class="ute-report-card-header">CUSTOMER DETAILS</div>
+                <div class="ute-report-card-body">
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Customer Name</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val fw-semibold">{{ displayCustomerName || dataOfReportPreview()?.customerName || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Address</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.customerAddress || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Contact Person</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.contactPerson || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Reference</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.customerReference || dataOfReportPreview()?.caseNo || displayCaseNo || '—' }}</span>
+                  </div>
                 </div>
-                <div class="small text-muted"><i class="bi bi-shield-lock-fill text-success me-1"></i>(Immutable ISO
-                  17025 Electronic Report)</div>
               </div>
             </div>
-            <div>
-              <span class="text-muted fw-semibold">Page 1 of 1</span>
+
+            <!-- Right: Sample Details -->
+            <div class="col-md-6 col-lg-6">
+              <div class="ute-report-card h-100">
+                <div class="ute-report-card-header">SAMPLE DETAILS</div>
+                <div class="ute-report-card-body">
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Description</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.sampleDescription || dataOfReportPreview()?.gradeName || execution?.sampleDescription || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Identification</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val font-monospace fw-semibold">{{ displaySampleNo || dataOfReportPreview()?.sampleNo || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row" *ngIf="dataOfReportPreview()?.batchNo">
+                    <span class="ute-report-kv-label">Heat / Batch No.</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.batchNo }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Received Date</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ (dataOfReportPreview()?.sampleReceivedOn || dataOfReportPreview()?.inwardDate || execution?.startedOn | date:'dd MMM yyyy') || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Test Commencement Date</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ (dataOfReportPreview()?.testCommencedOn || execution?.startedOn | date:'dd MMM yyyy') || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Test Completion Date</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ (dataOfReportPreview()?.testCompletedOn || execution?.completedOn || dataOfReportPreview()?.dateTested | date:'dd MMM yyyy') || '—' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sample Condition</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.sampleCondition || 'As Received' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sampling Source</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.samplingSource || 'Customer Supplied' }}</span>
+                  </div>
+                  <div class="ute-report-kv-row">
+                    <span class="ute-report-kv-label">Sampling Plan</span>
+                    <span class="ute-report-kv-sep">:</span>
+                    <span class="ute-report-kv-val">{{ dataOfReportPreview()?.samplingPlan || 'Not Applicable' }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <!-- 4. Test Details -->
+          <div class="ute-report-card">
+            <div class="ute-report-card-header">TEST DETAILS</div>
+            <div class="ute-report-card-body">
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Test Name</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val fw-semibold">{{ dataOfReportPreview()?.laboratoryTestName || displayExecutionTestName || '—' }}</span>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Test Method</span>
+                <span class="ute-report-kv-sep">:</span>
+                <div class="ute-report-kv-val d-flex justify-content-between">
+                  <span>{{ dataOfReportPreview()?.testMethodStandard || dataOfReportPreview()?.testMethodName || displayExecutionTestName || '—' }}</span>
+                  <span class="text-muted pe-4"><strong class="text-dark">Method Version :</strong> {{ getMethodVersion() }}</span>
+                </div>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Discipline</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val">{{ dataOfReportPreview()?.disciplineName || '—' }}</span>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Test Equipment</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val">{{ getEquipmentString() }}</span>
+              </div>
+              <div class="ute-report-kv-row">
+                <span class="ute-report-kv-label">Environmental Conditions</span>
+                <span class="ute-report-kv-sep">:</span>
+                <span class="ute-report-kv-val">{{ getConditionsString() }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Test Results Table (Matching Image 1 format within Image 2 card design) -->
+          <div class="ute-report-table-box">
+            <div class="ute-report-card-header">TEST RESULTS & CONFORMITY EVALUATION</div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover table-bordered mb-0 ute-report-table align-middle">
+                <thead>
+                  <tr>
+                    <th class="text-center col-sn">#</th>
+                    <th>TEST PARAMETER</th>
+                    <th class="text-center col-w-method">TEST METHOD / STANDARD</th>
+                    <th class="text-center col-w-unit">UNIT</th>
+                    <th class="text-center col-w-observed">OBSERVED VALUE</th>
+                    <th class="text-center col-w-requirement">SPECIFIED REQUIREMENT</th>
+                    <th class="text-center col-w-verdict">COMPLIANCE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of getReportTableRows()">
+                    <td class="text-center text-muted font-monospace">{{ p.srNo }}</td>
+                    <td>
+                      <div class="fw-semibold text-dark">{{ p.parameterName }}</div>
+                      <small class="text-muted font-monospace text-xs" *ngIf="p.parameterCode && p.parameterCode !== p.parameterName">{{ p.parameterCode }}</small>
+                    </td>
+                    <td class="text-center text-muted text-xs">{{ p.testMethod }}</td>
+                    <td class="text-center font-monospace">{{ p.unit }}</td>
+                    <td class="text-center font-monospace fw-bold">{{ p.finalValue }}</td>
+                    <td class="text-center text-muted">{{ p.specRange }}</td>
+                    <td class="text-center">
+                      <span class="badge" [ngClass]="verdictClass(p.status)">
+                        {{ p.status }}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!getReportTableRows()?.length">
+                    <td colspan="7" class="text-center py-3 text-muted">No test parameters configured for report preview.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 6. Remarks / Observations -->
+          <div class="ute-report-remarks-box">
+            <div class="ute-report-card-header">REMARKS / OBSERVATIONS</div>
+            <div class="p-2">
+              <ol class="ute-report-remarks-list">
+                <li>The sample {{ (dataOfReportPreview()?.overallDecision === 'FAIL' ? 'does not conform' : 'conforms') }} to the requirements of {{ dataOfReportPreview()?.specificationTitle || dataOfReportPreview()?.testMethodStandard || 'the specified standard' }} for the tested parameters.</li>
+                <li>The results reported are only for the sample tested.</li>
+                <li *ngIf="hasNablMark()">NABL accredited tests are marked as "Yes" under NABL Scope column.</li>
+                <li>This report shall not be reproduced, except in full, without the written approval of {{ dataOfReportPreview()?.labName || 'the laboratory' }}.</li>
+                <li *ngIf="dataOfReportPreview()?.measurementUncertainty?.expandedUncertainty || dataOfReportPreview()?.measurementUncertainty?.value || dataOfReportPreview()?.measurementUncertainty?.u || dataOfReportPreview()?.MeasurementUncertainty?.U">
+                  <strong>Expanded Uncertainty (U):</strong> ±{{ (dataOfReportPreview()?.measurementUncertainty?.expandedUncertainty || dataOfReportPreview()?.measurementUncertainty?.value || dataOfReportPreview()?.measurementUncertainty?.u || dataOfReportPreview()?.MeasurementUncertainty?.U || '3.0') }} {{ dataOfReportPreview()?.measurementUncertainty?.unit || '%' }} at approx. 95.45% confidence level (coverage factor k = {{ (dataOfReportPreview()?.measurementUncertainty?.coverageFactor || dataOfReportPreview()?.MeasurementUncertainty?.CoverageFactor || '2') }}).
+                </li>
+                <li *ngIf="dataOfReportPreview()?.reviewRemarks || dataOfReportPreview()?.approvalRemarks || dataOfReportPreview()?.remarks || execution?.reviewRemarks">
+                  {{ dataOfReportPreview()?.reviewRemarks || dataOfReportPreview()?.approvalRemarks || dataOfReportPreview()?.remarks || execution?.reviewRemarks }}
+                </li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- 7. Signatures (3 Distinct Columns) -->
+          <div class="ute-report-signatures">
+            <!-- Analyst -->
+            <div class="ute-report-sig-col">
+              <div class="ute-report-sig-role">Tested By</div>
+              <div class="ute-report-sig-sub">(Analyst)</div>
+              <div class="ute-report-sig-img-container">
+                <img *ngIf="dataOfReportPreview()?.analystSignaturePath" [src]="getApiUrl(dataOfReportPreview()?.analystSignaturePath)" alt="Signature" class="ute-report-sig-img" />
+                <div *ngIf="!dataOfReportPreview()?.analystSignaturePath" class="ute-report-sig-blank-line"></div>
+              </div>
+              <div class="ute-report-sig-name">{{ dataOfReportPreview()?.analystName || execution?.executionAnalystName || 'System Admin' }}</div>
+              <div class="ute-report-sig-desig">{{ dataOfReportPreview()?.analystDesignation || 'System Administrator' }}</div>
+              <div class="ute-report-sig-date">Date: {{ (dataOfReportPreview()?.testCompletedOn || execution?.completedOn || dataOfReportPreview()?.dateTested || execution?.startedOn | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+
+            <!-- Reviewer / Verifier -->
+            <div class="ute-report-sig-col">
+              <div class="ute-report-sig-role">Verified By</div>
+              <div class="ute-report-sig-sub">(Technical Reviewer)</div>
+              <div class="ute-report-sig-img-container">
+                <img *ngIf="dataOfReportPreview()?.reviewerSignaturePath" [src]="getApiUrl(dataOfReportPreview()?.reviewerSignaturePath)" alt="Signature" class="ute-report-sig-img" />
+                <div *ngIf="!dataOfReportPreview()?.reviewerSignaturePath" class="ute-report-sig-blank-line"></div>
+              </div>
+              <div class="ute-report-sig-name">{{ dataOfReportPreview()?.verifiedByName || execution?.verifiedByName || 'Super Admin' }}</div>
+              <div class="ute-report-sig-desig">{{ dataOfReportPreview()?.reviewerDesignation || 'Technical Reviewer' }}</div>
+              <div class="ute-report-sig-date">Date: {{ (dataOfReportPreview()?.verifiedOn || execution?.verifiedOn | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+
+            <!-- Approver / Signatory -->
+            <div class="ute-report-sig-col">
+              <div class="ute-report-sig-role">Approved By</div>
+              <div class="ute-report-sig-sub">(Authorized Signatory)</div>
+              <div class="ute-report-sig-img-container">
+                <img *ngIf="dataOfReportPreview()?.approverSignaturePath" [src]="getApiUrl(dataOfReportPreview()?.approverSignaturePath)" alt="Signature" class="ute-report-sig-img" />
+                <div *ngIf="!dataOfReportPreview()?.approverSignaturePath" class="ute-report-sig-blank-line"></div>
+              </div>
+              <div class="ute-report-sig-name">{{ dataOfReportPreview()?.approvedByName || execution?.approvedByName || 'signatory' }}</div>
+              <div class="ute-report-sig-desig">{{ dataOfReportPreview()?.approverDesignation || 'Admin' }}</div>
+              <div class="ute-report-sig-date">Date: {{ (dataOfReportPreview()?.approvedOn || execution?.approvedOn | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+          </div>
+
+          <!-- 8. Footer -->
+          <div class="ute-report-end-line">---------- End of Report ----------</div>
+          <div class="ute-report-footer-disclaimer">
+            <span *ngIf="hasNablMark()">
+              This laboratory is accredited by NABL, India in accordance with ISO/IEC 17025:2017 for the tests as specified in the scope of accreditation.<br />
+              The validity of this report can be verified by scanning the QR code or on NABL website (www.nabl-india.org).
+            </span>
+            <span *ngIf="!hasNablMark()">
+              This laboratory report is generated for the tests performed on the supplied sample. The results relate only to the items tested.<br />
+              The validity of this report can be verified by scanning the QR code.
+            </span>
           </div>
         </div>
       </div>

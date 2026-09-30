@@ -3566,18 +3566,19 @@ fieldset.border {
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35) !important;
 }
 
-/* 8. ICON-ONLY ULTRA-COMPACT TABLE ACTIONS (26px x 26px) */
+/* 8. ICON-ONLY ULTRA-COMPACT TABLE ACTIONS (28px x 28px) */
 .btn-lims-icon {
-  width: 26px !important;
-  height: 26px !important;
-  min-height: 26px !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
   padding: 0 !important;
-  border-radius: 50% !important;
+  border-radius: 6px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 0.78rem !important;
-  transition: all 0.2s ease-in-out !important;
+  font-size: 0.84rem !important;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* 9. NEXT / TAB NAVIGATION (Primary Action - Solid Theme) */
@@ -4783,32 +4784,40 @@ input[type="checkbox"]:checked {
 
 /* 1. View Button (Sky Blue) */
 .btn-tbl-action.btn-tbl-view,
-.btn-lims-icon.btn-view {
-  background-color: rgba(2, 132, 199, 0.08) !important;
-  border-color: rgba(2, 132, 199, 0.28) !important;
+.btn-lims-icon.btn-view,
+.btn-lims-icon.btn-lims-view,
+.btn-lims-action-view {
+  background-color: rgba(2, 132, 199, 0.09) !important;
+  border-color: rgba(2, 132, 199, 0.32) !important;
   color: #0284c7 !important;
 }
 .btn-tbl-action.btn-tbl-view:hover:not(:disabled),
-.btn-lims-icon.btn-view:hover:not(:disabled) {
+.btn-lims-icon.btn-view:hover:not(:disabled),
+.btn-lims-icon.btn-lims-view:hover:not(:disabled),
+.btn-lims-action-view:hover:not(:disabled) {
   background-color: #0284c7 !important;
   border-color: #0284c7 !important;
   color: #ffffff !important;
   box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35) !important;
 }
 
-/* 2. Edit Button (Indigo) */
+/* 2. Edit Button (Purple / Lavender) */
 .btn-tbl-action.btn-tbl-edit,
-.btn-lims-icon.btn-edit {
-  background-color: rgba(79, 70, 229, 0.08) !important;
-  border-color: rgba(79, 70, 229, 0.28) !important;
-  color: #4f46e5 !important;
+.btn-lims-icon.btn-edit,
+.btn-lims-icon.btn-lims-edit,
+.btn-lims-action-edit {
+  background-color: rgba(124, 58, 237, 0.09) !important;
+  border-color: rgba(124, 58, 237, 0.32) !important;
+  color: #7c3aed !important;
 }
 .btn-tbl-action.btn-tbl-edit:hover:not(:disabled),
-.btn-lims-icon.btn-edit:hover:not(:disabled) {
-  background-color: #4f46e5 !important;
-  border-color: #4f46e5 !important;
+.btn-lims-icon.btn-edit:hover:not(:disabled),
+.btn-lims-icon.btn-lims-edit:hover:not(:disabled),
+.btn-lims-action-edit:hover:not(:disabled) {
+  background-color: #7c3aed !important;
+  border-color: #7c3aed !important;
   color: #ffffff !important;
-  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.35) !important;
+  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.35) !important;
 }
 
 /* 3. Status Toggle Button (Emerald for Active, Amber for Inactive/Draft) */
@@ -4971,13 +4980,19 @@ input[type="checkbox"]:checked {
 
 /* 4. Delete Button (Crimson / Rose) */
 .btn-tbl-action.btn-tbl-delete,
-.btn-lims-icon.btn-delete {
-  background-color: rgba(225, 29, 72, 0.08) !important;
-  border-color: rgba(225, 29, 72, 0.28) !important;
+.btn-lims-icon.btn-delete,
+.btn-lims-icon.btn-lims-delete,
+.btn-lims-icon.btn-lims-remove,
+.btn-lims-action-delete {
+  background-color: rgba(225, 29, 72, 0.09) !important;
+  border-color: rgba(225, 29, 72, 0.32) !important;
   color: #e11d48 !important;
 }
 .btn-tbl-action.btn-tbl-delete:hover:not(:disabled),
-.btn-lims-icon.btn-delete:hover:not(:disabled) {
+.btn-lims-icon.btn-delete:hover:not(:disabled),
+.btn-lims-icon.btn-lims-delete:hover:not(:disabled),
+.btn-lims-icon.btn-lims-remove:hover:not(:disabled),
+.btn-lims-action-delete:hover:not(:disabled) {
   background-color: #e11d48 !important;
   border-color: #e11d48 !important;
   color: #ffffff !important;

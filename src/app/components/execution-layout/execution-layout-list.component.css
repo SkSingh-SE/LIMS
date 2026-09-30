@@ -15,8 +15,15 @@
 }
 
 .section-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  background-color: #f8fafc;
-  padding: 0.5rem;
+  box-shadow: rgba(0, 0, 0, 0.04) 0px 1px 4px;
+  margin-bottom: 0.85rem !important;
+  transition: box-shadow 0.2s;
+  border-width: 1px 1px 1px !important;
+  border-style: solid solid solid !important;
+  border-color: rgb(203, 213, 225) rgb(203, 213, 225) rgb(203, 213, 225) !important;
+  border-image: none !important;
+  border-left: 4px solid var(--primary-color, #da261c) !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  padding: 0.5rem 0.75rem 0.75rem !important;
 }

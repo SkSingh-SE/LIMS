@@ -288,20 +288,18 @@
             <!-- Actions -->
             <td class="text-center">
               <div class="d-flex align-items-center justify-content-center gap-1">
+                <!-- View Details -->
+                <button type="button" class="btn-tbl-action btn-tbl-view" (click)="openViewRequirement(item)" title="View Requirement Details">
+                  <i class="bi bi-eye"></i>
+                </button>
+
                 <!-- If Draft: Edit & Delete -->
                 <ng-container *ngIf="!item.isLocked && context?.isEditable">
-                  <button type="button" class="btn-lims-icon btn-lims-edit" (click)="openEditRequirement(item)" title="Edit Requirement">
-                    <i class="bi bi-pencil"></i>
+                  <button type="button" class="btn-tbl-action btn-tbl-edit" (click)="openEditRequirement(item)" title="Edit Requirement">
+                    <i class="bi bi-pencil-square"></i>
                   </button>
-                  <button type="button" class="btn-lims-icon btn-lims-remove" (click)="deleteRequirement(item)" title="Delete Requirement">
+                  <button type="button" class="btn-tbl-action btn-tbl-delete" (click)="deleteRequirement(item)" title="Delete Requirement">
                     <i class="bi bi-trash"></i>
-                  </button>
-                </ng-container>
-
-                <!-- If Locked: View -->
-                <ng-container *ngIf="item.isLocked || !context?.isEditable">
-                  <button type="button" class="btn-lims-icon btn-outline-secondary" (click)="openViewRequirement(item)" title="View Requirement Details">
-                    <i class="bi bi-eye"></i>
                   </button>
                 </ng-container>
               </div>

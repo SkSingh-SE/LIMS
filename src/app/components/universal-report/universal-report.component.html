@@ -373,32 +373,37 @@
             </div>
           </div>
 
-          <!-- 5. Test Results Table -->
+          <!-- 5. Test Results Table (Matching Image 1 format within Image 2 card design) -->
           <div class="ute-report-table-box">
-            <div class="ute-report-card-header">TEST RESULTS</div>
+            <div class="ute-report-card-header">TEST RESULTS & CONFORMITY EVALUATION</div>
             <div class="table-responsive">
-              <table class="ute-report-table">
+              <table class="table table-sm table-hover table-bordered mb-0 ute-report-table align-middle">
                 <thead>
                   <tr>
-                    <th class="text-center" style="width: 45px;">S. No.</th>
-                    <th style="width: 250px;">Parameter</th>
-                    <th class="text-center" style="width: 90px;">Result</th>
-                    <th class="text-center" style="width: 70px;">Unit</th>
-                    <th>Requirement / Specification ({{ dataOf(preview)?.specificationTitle || dataOf(preview)?.testMethodStandard || 'Standard' }})</th>
-                    <th class="text-center" style="width: 140px;">Method Detection Limit (if applicable)</th>
-                    <th class="text-center" style="width: 90px;">NABL Scope (Yes / No)</th>
+                    <th class="text-center col-sn" style="width: 45px;">#</th>
+                    <th>TEST PARAMETER</th>
+                    <th class="text-center" style="width: 180px;">TEST METHOD / STANDARD</th>
+                    <th class="text-center" style="width: 80px;">UNIT</th>
+                    <th class="text-center" style="width: 110px;">OBSERVED VALUE</th>
+                    <th class="text-center" style="width: 130px;">SPECIFIED REQUIREMENT</th>
+                    <th class="text-center" style="width: 100px;">COMPLIANCE</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let p of getReportTableRows(preview)">
-                    <td class="text-center font-monospace">{{ p.srNo }}</td>
-                    <td class="fw-semibold">{{ p.parameterName }}</td>
-                    <td class="text-center font-monospace fw-bold">{{ p.finalValue }}</td>
+                    <td class="text-center text-muted font-monospace">{{ p.srNo }}</td>
+                    <td>
+                      <div class="fw-semibold text-dark">{{ p.parameterName }}</div>
+                      <small class="text-muted font-monospace text-xs" *ngIf="p.parameterCode && p.parameterCode !== p.parameterName">{{ p.parameterCode }}</small>
+                    </td>
+                    <td class="text-center text-muted text-xs">{{ p.testMethod }}</td>
                     <td class="text-center font-monospace">{{ p.unit }}</td>
-                    <td>{{ p.specRange }}</td>
-                    <td class="text-center font-monospace text-muted">{{ p.detectionLimit }}</td>
+                    <td class="text-center font-monospace fw-bold">{{ p.finalValue }}</td>
+                    <td class="text-center text-muted">{{ p.specRange }}</td>
                     <td class="text-center">
-                      <span class="ute-report-scope-badge">{{ p.isNabl }}</span>
+                      <span class="badge" [ngClass]="verdictClass(p.status)">
+                        {{ p.status }}
+                      </span>
                     </td>
                   </tr>
                   <tr *ngIf="!getReportTableRows(preview)?.length">
@@ -416,10 +421,10 @@
               <ol class="ute-report-remarks-list">
                 <li>The sample {{ (dataOf(preview)?.overallDecision === 'FAIL' ? 'does not conform' : 'conforms') }} to the requirements of {{ dataOf(preview)?.specificationTitle || dataOf(preview)?.testMethodStandard || 'the specified standard' }} for the tested parameters.</li>
                 <li>The results reported are only for the sample tested.</li>
-                <li>NABL accredited tests are marked as "Yes" under NABL Scope column.</li>
+                <li *ngIf="hasNablMark(preview)">NABL accredited tests are marked as "Yes" under NABL Scope column.</li>
                 <li>This report shall not be reproduced, except in full, without the written approval of {{ dataOf(preview)?.labName || 'the laboratory' }}.</li>
-                <li *ngIf="dataOf(preview)?.measurementUncertainty?.expandedUncertainty || dataOf(preview)?.measurementUncertainty?.value">
-                  <strong>Expanded Uncertainty (U):</strong> ±{{ (dataOf(preview)?.measurementUncertainty?.expandedUncertainty || dataOf(preview)?.measurementUncertainty?.value) }} {{ dataOf(preview)?.measurementUncertainty?.unit || '%' }} at approx. 95.45% confidence level (coverage factor k = {{ (dataOf(preview)?.measurementUncertainty?.coverageFactor || '2') }}).
+                <li *ngIf="dataOf(preview)?.measurementUncertainty?.expandedUncertainty || dataOf(preview)?.measurementUncertainty?.value || dataOf(preview)?.measurementUncertainty?.u || dataOf(preview)?.MeasurementUncertainty?.U">
+                  <strong>Expanded Uncertainty (U):</strong> ±{{ (dataOf(preview)?.measurementUncertainty?.expandedUncertainty || dataOf(preview)?.measurementUncertainty?.value || dataOf(preview)?.measurementUncertainty?.u || dataOf(preview)?.MeasurementUncertainty?.U || '3.0') }} {{ dataOf(preview)?.measurementUncertainty?.unit || '%' }} at approx. 95.45% confidence level (coverage factor k = {{ (dataOf(preview)?.measurementUncertainty?.coverageFactor || dataOf(preview)?.MeasurementUncertainty?.CoverageFactor || '2') }}).
                 </li>
                 <li *ngIf="dataOf(preview)?.reviewRemarks || dataOf(preview)?.approvalRemarks || dataOf(preview)?.remarks">
                   {{ dataOf(preview)?.reviewRemarks || dataOf(preview)?.approvalRemarks || dataOf(preview)?.remarks }}
@@ -473,8 +478,14 @@
           <!-- 8. Footer -->
           <div class="ute-report-end-line">---------- End of Report ----------</div>
           <div class="ute-report-footer-disclaimer">
-            This laboratory is accredited by NABL, India in accordance with ISO/IEC 17025:2017 for the tests as specified in the scope of accreditation.<br />
-            The validity of this report can be verified by scanning the QR code or on NABL website (www.nabl-india.org).
+            <span *ngIf="hasNablMark(preview)">
+              This laboratory is accredited by NABL, India in accordance with ISO/IEC 17025:2017 for the tests as specified in the scope of accreditation.<br />
+              The validity of this report can be verified by scanning the QR code or on NABL website (www.nabl-india.org).
+            </span>
+            <span *ngIf="!hasNablMark(preview)">
+              This laboratory report is generated for the tests performed on the supplied sample. The results relate only to the items tested.<br />
+              The validity of this report can be verified by scanning the QR code.
+            </span>
           </div>
         </div>
       </fieldset>

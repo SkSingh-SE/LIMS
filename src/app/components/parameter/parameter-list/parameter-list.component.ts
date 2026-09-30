@@ -36,7 +36,7 @@ export class ParameterListComponent implements OnInit {
 
   // Metadata / Lookups
   parameterTypes: string[] = ['Quantitative', 'Qualitative', 'Reported', 'Observed', 'Derived'];
-  calculationRoles: string[] = ['Input', 'Calculated', 'Derived'];
+  calculationRoles: string[] = ['Input', 'Calculated', 'Derived', 'CurvePeak'];
   availableUnits: any[] = [];
   selectedUnitItem: any = null;
 

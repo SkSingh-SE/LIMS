@@ -10,8 +10,18 @@ export class DecimalOnlyDirective {
   @HostListener('input', ['$event']) onInput(event: any) {
     let inputValue = this.el.nativeElement.value;
 
-    // Remove all characters except digits and dot
-    inputValue = inputValue.replace(/[^0-9.]/g, '');
+    // Remove all characters except digits, dot, and minus sign
+    inputValue = inputValue.replace(/[^0-9.-]/g, '');
+
+    // Ensure minus sign only appears at the beginning
+    if (inputValue.indexOf('-') > 0) {
+      inputValue = inputValue.replace(/-/g, '');
+      inputValue = '-' + inputValue;
+    }
+    // Allow only one minus sign
+    if (inputValue.split('-').length > 2) {
+      inputValue = '-' + inputValue.replace(/-/g, '');
+    }
 
     // Ensure only one dot exists
     const parts = inputValue.split('.');
@@ -23,7 +33,7 @@ export class DecimalOnlyDirective {
   }
 
   @HostListener('keydown', ['$event']) onKeyDown(event: KeyboardEvent) {
-    const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', '.', 'Home', 'End'];
+    const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', '.', '-', 'Home', 'End'];
     const ctrlCmd = event.ctrlKey || event.metaKey;
 
     // Allow Ctrl/Command combos (copy, paste, etc.)
@@ -44,6 +54,14 @@ export class DecimalOnlyDirective {
     // Prevent entering second dot
     if (event.key === '.' && this.el.nativeElement.value.includes('.')) {
       event.preventDefault();
+    }
+
+    // Prevent entering second minus sign or minus sign not at the start
+    if (event.key === '-') {
+      const cursorPosition = (event.target as HTMLInputElement).selectionStart;
+      if (this.el.nativeElement.value.includes('-') || cursorPosition !== 0) {
+        event.preventDefault();
+      }
     }
   }
 

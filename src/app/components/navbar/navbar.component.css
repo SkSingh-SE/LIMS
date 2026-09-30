@@ -328,9 +328,11 @@
 }
 
 
-/* Increased Icon Size */
-.menu-container .menu-item i {
+/* Increased Icon Size & Spacing */
+.menu-container .menu-item i,
+.menu2-container .menu2-item i {
     font-size: 16px;
+    margin-right: 6px;
 }
 
 /* keep Bootstrap user-profile dropdown minimal */

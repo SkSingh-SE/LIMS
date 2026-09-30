@@ -216,71 +216,28 @@ textarea.form-control {
   color: var(--primary-color, #da261c);
 }
 
-.btn-save {
-  background: var(--primary-color, #da261c);
-  color: #fff;
-  border: none;
-}
-
-.btn-save:hover {
-  background: var(--primary-hover, #b91c1c);
-  color: #fff;
-}
-
-.btn-cancel {
-  color: #6c757d;
-  border: 1px solid #dee2e6;
-  background: #fff;
-}
-
-.btn-cancel:hover {
-  background: #f8f9fa;
-  color: #343a40;
-}
-
-:host ::ng-deep .btn-outline-primary,
-.btn-outline-primary {
-  color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-}
-
-:host ::ng-deep .btn-outline-primary:hover,
-.btn-outline-primary:hover {
-  background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-  color: #fff !important;
-}
-
-/* ─── Dropdown ─── */
-.dropdown-menu {
-  border-radius: 0.4rem;
-  background-color: #fff;
-  font-size: 0.8rem;
-}
-
-.hover-bg:hover {
-  background-color: #f8f9fa;
-  cursor: pointer;
-}
-
-/* ─── Text Helpers ─── */
-.text-sm {
-  font-size: 0.72rem;
-}
-
-.text-uppercase {
-  text-transform: uppercase;
-}
-
 /* ─── Sticky Bottom Bar ─── */
 .sticky-bottom-bar {
   position: sticky;
   bottom: 0;
-  z-index: 100;
+  z-index: 1000;
   background: #fff;
   border-top: 2px solid var(--primary-color, #da261c);
-  padding: 0.4rem 1.5rem;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  padding: 0.5rem 1.5rem;
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.sticky-bottom-bar .btn-save,
+.sticky-bottom-bar .btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sticky-bottom-bar .btn-save:disabled {
+  cursor: not-allowed !important;
+  pointer-events: auto !important;
 }
 
 /* ─── Responsive ─── */
@@ -291,6 +248,7 @@ textarea.form-control {
 
   .sticky-bottom-bar {
     padding: 0.4rem 0.6rem;
+    padding-right: 80px;
   }
 
   fieldset.border {

@@ -531,13 +531,33 @@
 
 <!-- ======================== Sticky Bottom Bar ======================== -->
 <div *ngIf="!isViewMode" class="sticky-bottom-bar">
-  <div class="d-flex justify-content-end align-items-center gap-2">
-    <a routerLink="/customer" class="btn btn-cancel btn-sm">
-      <i class="bi bi-x-lg me-1"></i> Cancel
-    </a>
-    <button type="button" class="btn btn-save btn-sm px-3" (click)="onSubmit()">
-      <i class="bi bi-check2-circle me-1"></i> {{ customerId > 0 ? 'Update' : 'Save' }}
-    </button>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <!-- Validation Status / Missing Fields Indicator -->
+    <div class="d-flex align-items-center gap-2">
+      <span *ngIf="!isFormValidForSubmit()" class="badge bg-warning-subtle text-dark border border-warning d-inline-flex align-items-center gap-1.5 py-1 px-2"
+        [title]="getDisabledReason()">
+        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+        <span><strong>{{ getInvalidFieldNames().length }}</strong> required field(s) pending</span>
+      </span>
+      <span *ngIf="isFormValidForSubmit()" class="badge bg-success-subtle text-success border border-success d-inline-flex align-items-center gap-1.5 py-1 px-2">
+        <i class="bi bi-check-circle-fill text-success"></i>
+        <span>Ready to save</span>
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex align-items-center gap-2">
+      <a routerLink="/customer" class="btn btn-cancel btn-sm">
+        <i class="bi bi-x-circle me-1"></i> Cancel
+      </a>
+      <div class="d-inline-block" [title]="getDisabledReason()">
+        <button type="button" class="btn btn-save btn-sm px-3"
+          [disabled]="!isFormValidForSubmit()"
+          (click)="onSubmit()">
+          <i class="bi bi-check-circle me-1"></i> {{ customerId > 0 ? 'Update' : 'Save' }}
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 

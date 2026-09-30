@@ -467,7 +467,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
   }
 
   /* ===== Form Submission ===== */
-  private isFormValidForSubmit(): boolean {
+  isFormValidForSubmit(): boolean {
     // Validate all top-level controls except contactPersons
     for (const key of Object.keys(this.customerForm.controls)) {
       if (key === 'contactPersons') continue;
@@ -874,6 +874,17 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
     });
 
     return labels;
+  }
+
+  getDisabledReason(): string {
+    if (this.isFormValidForSubmit()) {
+      return this.customerId > 0 ? 'Click to update customer' : 'Click to save customer';
+    }
+    const missing = this.getInvalidFieldNames();
+    if (missing.length === 0) {
+      return 'Form is incomplete or contains invalid fields.';
+    }
+    return `Cannot save — Please complete required fields: ${missing.join(', ')}`;
   }
 
   loadCustomer(): void {

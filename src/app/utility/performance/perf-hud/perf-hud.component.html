@@ -1,7 +1,21 @@
 <div class="lims-perf-hud-container" *ngIf="isVisible()">
 
-  <!-- 1. COLLAPSED FLOATING PILL -->
-  <div class="perf-pill" *ngIf="!isExpanded()" (click)="toggleExpand()" title="Click to open LIMS Performance Analyzer">
+  <!-- 1. COLLAPSED FLOATING PILL (DRAGGABLE) -->
+  <div
+    class="perf-pill"
+    *ngIf="!isExpanded()"
+    cdkDrag
+    cdkDragBoundary="body"
+    [cdkDragFreeDragPosition]="pillPosition"
+    (cdkDragStarted)="onPillDragStart()"
+    (cdkDragEnded)="onPillDragEnd($event)"
+    (click)="onPillClick()"
+    title="Drag to reposition | Click to open LIMS Performance Analyzer"
+  >
+    <div class="perf-pill-drag-grip" cdkDragHandle title="Drag to reposition">
+      <i class="bi bi-grip-vertical"></i>
+    </div>
+
     <div class="perf-pill-status-dot" [ngClass]="latestTransaction()?.status || 'fast'"></div>
     
     <div class="perf-pill-content">
@@ -32,17 +46,27 @@
       </ng-template>
     </div>
 
-    <button type="button" class="perf-pill-expand-btn">
+    <button type="button" class="perf-pill-expand-btn" (click)="toggleExpand(); $event.stopPropagation()">
       <i class="bi bi-chevron-up"></i>
     </button>
   </div>
 
-  <!-- 2. EXPANDED PERFORMANCE DASHBOARD MODAL/DRAWER -->
-  <div class="perf-drawer" *ngIf="isExpanded()">
+  <!-- 2. EXPANDED PERFORMANCE DASHBOARD MODAL/DRAWER (DRAGGABLE VIA HEADER) -->
+  <div
+    class="perf-drawer"
+    *ngIf="isExpanded()"
+    cdkDrag
+    cdkDragBoundary="body"
+    [cdkDragFreeDragPosition]="drawerPosition"
+    (cdkDragEnded)="onDrawerDragEnd($event)"
+  >
     
-    <!-- Header -->
-    <div class="perf-drawer-header">
+    <!-- Header (Drag Handle) -->
+    <div class="perf-drawer-header" cdkDragHandle title="Drag header to move window">
       <div class="perf-drawer-title-group">
+        <div class="perf-drawer-drag-grip" title="Drag window">
+          <i class="bi bi-grip-vertical"></i>
+        </div>
         <div class="perf-logo-badge">
           <i class="bi bi-lightning-charge-fill"></i>
         </div>
@@ -52,7 +76,10 @@
         </div>
       </div>
 
-      <div class="perf-drawer-actions">
+      <div class="perf-drawer-actions" (mousedown)="$event.stopPropagation()">
+        <button type="button" class="perf-btn perf-btn-secondary" (click)="resetPosition()" title="Reset window position">
+          <i class="bi bi-arrows-fullscreen me-1"></i>Reset Pos
+        </button>
         <button type="button" class="perf-btn perf-btn-secondary" (click)="clearData()" title="Clear trace history">
           <i class="bi bi-trash me-1"></i>Clear
         </button>

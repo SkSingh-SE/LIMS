@@ -11,8 +11,8 @@
       <div #menuContainer class="menu-container">
         <div *ngFor="let menu of visibleMenuItems; let i = index" #menuItem class="menu-item header-font"
           (click)="openSubMenu(menu)" [ngClass]="{ active: activeMenu() === menu.title }">
-          <div class="d-flex align-items-center">
-            <i class="bi" [class]="menu.icon"></i>
+          <div class="d-flex align-items-center gap-1.5">
+            <i class="bi me-1.5" [class]="menu.icon"></i>
             <span class="">{{ menu.title }}</span>
           </div>
         </div>
@@ -176,8 +176,8 @@
         class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
         <div *ngFor="let menu of menu2Items" class="menu2-item header-font" (click)="openSubMenu(menu)"
           [ngClass]="{ active: activeMenu() === menu.title }">
-          <div class="d-flex gap-2 align-items-center">
-            <i class="bi" [class]="menu.icon"></i>
+          <div class="d-flex gap-1.5 align-items-center">
+            <i class="bi me-1.5" [class]="menu.icon"></i>
             <span class="">{{ menu.title }}</span>
           </div>
         </div>

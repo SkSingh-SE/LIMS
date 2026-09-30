@@ -4,12 +4,13 @@
 
 .lims-perf-hud-container {
   position: fixed;
-  bottom: 16px;
+  bottom: 60px;
   right: 16px;
   z-index: 99999;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.8rem;
   color: #1e293b;
+  pointer-events: none;
 }
 
 /* --- 1. COLLAPSED FLOATING PILL --- */
@@ -22,15 +23,37 @@
   border-radius: 30px;
   padding: 6px 14px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: grab;
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
   user-select: none;
+  touch-action: none;
+  pointer-events: auto;
 }
 
 .perf-pill:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
   border-color: #cbd5e1;
+}
+
+.perf-pill.cdk-drag-dragging {
+  cursor: grabbing !important;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.25);
+  border-color: var(--primary-color, #da261c);
+  opacity: 0.95;
+  transform: scale(1.03);
+}
+
+.perf-pill-drag-grip {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  margin-right: -2px;
+  cursor: grab;
+}
+
+.perf-pill-drag-grip:hover {
+  color: #475569;
 }
 
 .perf-pill-status-dot {
@@ -140,6 +163,14 @@
   flex-direction: column;
   overflow: hidden;
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.perf-drawer.cdk-drag-dragging {
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color, #da261c);
+  opacity: 0.98;
 }
 
 @keyframes slideUp {
@@ -156,6 +187,25 @@
   background: #0f172a;
   color: #ffffff;
   border-bottom: 1px solid #334155;
+  cursor: grab;
+  user-select: none;
+}
+
+.perf-drawer.cdk-drag-dragging .perf-drawer-header {
+  cursor: grabbing !important;
+}
+
+.perf-drawer-drag-grip {
+  color: #64748b;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  transition: color 0.15s ease;
+}
+
+.perf-drawer-header:hover .perf-drawer-drag-grip {
+  color: #cbd5e1;
 }
 
 .perf-drawer-title-group {

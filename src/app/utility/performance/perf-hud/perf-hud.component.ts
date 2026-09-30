@@ -1,13 +1,14 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DragDropModule, CdkDragEnd } from '@angular/cdk/drag-drop';
 import { PerfTraceService } from '../perf-trace.service';
 import { PerfEventTransaction, PerfApiMetric, PerfSummaryStats } from '../perf-models';
 
 @Component({
   selector: 'app-perf-hud',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './perf-hud.component.html',
   styleUrl: './perf-hud.component.css'
 })
@@ -17,6 +18,11 @@ export class PerfHudComponent {
   public isExpanded = signal<boolean>(false);
   public activeTab = signal<'traces' | 'duplicates' | 'slow' | 'settings'>('traces');
   public selectedTx = signal<PerfEventTransaction | null>(null);
+
+  // Draggable State Management
+  public isPillDragging = false;
+  public pillPosition = { x: 0, y: 0 };
+  public drawerPosition = { x: 0, y: 0 };
 
   // Computed properties
   public config = this.perfService.config;
@@ -92,6 +98,36 @@ export class PerfHudComponent {
       case 'DELETE': return 'perf-method-delete';
       default: return 'perf-method-default';
     }
+  }
+
+  public onPillDragStart(): void {
+    this.isPillDragging = true;
+  }
+
+  public onPillDragEnd(event: CdkDragEnd): void {
+    const offset = event.source.getFreeDragPosition();
+    this.pillPosition = { x: offset.x, y: offset.y };
+    setTimeout(() => {
+      this.isPillDragging = false;
+    }, 100);
+  }
+
+  public onPillClick(): void {
+    if (this.isPillDragging) {
+      this.isPillDragging = false;
+      return;
+    }
+    this.toggleExpand();
+  }
+
+  public onDrawerDragEnd(event: CdkDragEnd): void {
+    const offset = event.source.getFreeDragPosition();
+    this.drawerPosition = { x: offset.x, y: offset.y };
+  }
+
+  public resetPosition(): void {
+    this.pillPosition = { x: 0, y: 0 };
+    this.drawerPosition = { x: 0, y: 0 };
   }
 
   public formatMs(ms?: number): string {

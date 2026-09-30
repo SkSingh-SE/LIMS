@@ -65,6 +65,11 @@ body {
 .tpi-toggle-btn i,
 .btn-nav-link i,
 .badge i,
+.menu-item i,
+.menu-item .bi,
+.menu2-item i,
+.menu2-item .bi,
+.submenu-item i,
 button i,
 a i {
   margin-right: 6px;
@@ -93,8 +98,12 @@ a i {
 .notif-btn i,
 .nav-icon-btn i,
 .nav-circle-btn i,
+.nav-icon i,
+.nav-icon .bi,
 .user-menu-icon-box i,
 .pd-detail-icon-box i,
+.pd-stat-icon i,
+.cmd-result-icon i,
 .spec-delete-btn i,
 .btn-delete-row i,
 .btn-edit-row i,
@@ -126,8 +135,11 @@ i.no-space,
 .btn-icon,
 .btn-nav-icon,
 .nav-circle-btn,
+.nav-icon,
 .user-menu-icon-box,
 .pd-detail-icon-box,
+.pd-stat-icon,
+.cmd-result-icon,
 .notif-btn,
 #btn-back-to-top,
 button.rounded-circle,
@@ -169,8 +181,12 @@ button.rounded-circle,
 .btn-icon i,
 .btn-nav-icon i,
 .nav-circle-btn i,
+.nav-icon i,
+.nav-icon .bi,
 .user-menu-icon-box i,
 .pd-detail-icon-box i,
+.pd-stat-icon i,
+.cmd-result-icon i,
 .notif-btn i,
 #btn-back-to-top i,
 button.rounded-circle i,
@@ -201,8 +217,12 @@ a:has(> i:only-child) i {
 .btn-icon i::before,
 .btn-nav-icon i::before,
 .nav-circle-btn i::before,
+.nav-icon i::before,
+.nav-icon .bi::before,
 .user-menu-icon-box i::before,
 .pd-detail-icon-box i::before,
+.pd-stat-icon i::before,
+.cmd-result-icon i::before,
 .notif-btn i::before,
 #btn-back-to-top i::before,
 button.rounded-circle i::before,
@@ -408,6 +428,12 @@ td .btn-edit-row i::before {
 
 /* Mandatory Global Icon-to-Label Spacing Rule */
 .nav-link i.bi,
+.menu-item i.bi,
+.menu-item .bi,
+.menu2-item i.bi,
+.menu2-item .bi,
+.submenu-item i.bi,
+.submenu-item .bi,
 .btn i.bi,
 button i.bi,
 a.btn i.bi,
@@ -419,6 +445,8 @@ a.btn i.bi,
 .btn-icon i.bi,
 .btn-lims-icon i.bi,
 .btn-nav-icon i.bi,
+.nav-icon i.bi,
+.nav-icon .bi,
 .btn-nav-plus i.bi,
 .btn-field-add i.bi,
 .btn-circle i.bi,
@@ -1612,10 +1640,12 @@ select:focus option:checked {
 .btn-lims-save.disabled {
   background-color: #cbd5e1 !important;
   border-color: #cbd5e1 !important;
-  color: #94a3b8 !important;
+  color: #64748b !important;
   opacity: 0.65;
   box-shadow: none !important;
   transform: none !important;
+  cursor: not-allowed !important;
+  pointer-events: auto !important;
 }
 
 .btn-cancel,

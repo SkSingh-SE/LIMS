@@ -43,8 +43,8 @@ import { NumberOnlyDirective } from '../../utility/directives/number-only.direct
   styleUrls: ['./universal-test-execution.component.css']
 })
 export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
-  // Main Workspace Tab: 'config' | 'entry' | 'results' | 'calculations' | 'review' | 'report' | 'audit'
-  activeWorkspaceTab: 'config' | 'entry' | 'results' | 'calculations' | 'review' | 'report' | 'audit' = 'config';
+  // Main Workspace Tab: 'config' | 'entry' | 'results' | 'review' | 'report' | 'audit'
+  activeWorkspaceTab: 'config' | 'entry' | 'results' | 'review' | 'report' | 'audit' = 'config';
 
   // Test Configuration Category: 10 items
   activeConfigCategory: string = 'parameters';
@@ -1296,15 +1296,13 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   // Utility & Navigation
   // ----------------------------------------------------------------
 
-  setWorkspaceTab(tab: 'config' | 'entry' | 'results' | 'calculations' | 'review' | 'report' | 'audit'): void {
+  setWorkspaceTab(tab: 'config' | 'entry' | 'results' | 'review' | 'report' | 'audit'): void {
     this.activeWorkspaceTab = tab;
-    if ((tab === 'results' || tab === 'calculations' || tab === 'review' || tab === 'audit') && this.testExecutionId) {
+    if ((tab === 'results' || tab === 'review' || tab === 'audit') && this.testExecutionId) {
       this.loadUniversalResult();
     }
     if (tab === 'results' && this.testExecutionId) {
       this.executionService.getResultsOverview(this.testExecutionId).subscribe(ov => this.resultsOverview = ov);
-    }
-    if (tab === 'calculations' && this.testExecutionId) {
       this.executionService.getCalculationTrace(this.testExecutionId).subscribe(tr => this.calcTrace = tr);
     }
     if (tab === 'report' && this.testExecutionId) {
@@ -1326,7 +1324,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     const status = this.execution?.status || 'Planned';
     if (tab === 'config' || tab === 'audit') return false;
     if (tab === 'entry') return false;
-    if (tab === 'results' || tab === 'calculations') {
+    if (tab === 'results') {
       return status === 'Planned';
     }
     if (tab === 'review') {

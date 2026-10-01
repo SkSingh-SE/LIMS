@@ -131,29 +131,22 @@
         </span>
         <span class="ute-tab-text">Results &amp; Compliance</span>
       </button>
-      <button class="ute-tab-btn d-inline-flex align-items-center" [class.active]="activeWorkspaceTab === 'calculations'" [disabled]="isTabLocked('calculations')" (click)="setWorkspaceTab('calculations')">
-        <span class="ute-tab-num d-inline-flex align-items-center justify-content-center">
-          <i *ngIf="isTabLocked('calculations')" class="bi bi-lock-fill"></i>
-          <span *ngIf="!isTabLocked('calculations')">4</span>
-        </span>
-        <span class="ute-tab-text">Calculations</span>
-      </button>
       <button class="ute-tab-btn d-inline-flex align-items-center" [class.active]="activeWorkspaceTab === 'review'" [disabled]="isTabLocked('review')" (click)="setWorkspaceTab('review')">
         <span class="ute-tab-num d-inline-flex align-items-center justify-content-center">
           <i *ngIf="isTabLocked('review')" class="bi bi-lock-fill"></i>
-          <span *ngIf="!isTabLocked('review')">5</span>
+          <span *ngIf="!isTabLocked('review')">4</span>
         </span>
         <span class="ute-tab-text">Review &amp; Approval</span>
       </button>
       <button class="ute-tab-btn d-inline-flex align-items-center" [class.active]="activeWorkspaceTab === 'report'" [disabled]="isTabLocked('report')" (click)="setWorkspaceTab('report')">
         <span class="ute-tab-num d-inline-flex align-items-center justify-content-center">
           <i *ngIf="isTabLocked('report')" class="bi bi-lock-fill"></i>
-          <span *ngIf="!isTabLocked('report')">6</span>
+          <span *ngIf="!isTabLocked('report')">5</span>
         </span>
         <span class="ute-tab-text">Report Preview</span>
       </button>
       <button class="ute-tab-btn d-inline-flex align-items-center" [class.active]="activeWorkspaceTab === 'audit'" (click)="setWorkspaceTab('audit')">
-        <span class="ute-tab-num d-inline-flex align-items-center justify-content-center">7</span>
+        <span class="ute-tab-num d-inline-flex align-items-center justify-content-center">6</span>
         <span class="ute-tab-text">Audit Trail</span>
       </button>
     </nav>
@@ -2052,6 +2045,10 @@
                   </button>
                 </div>
                 <div class="mt-2" *ngIf="showResultTraces">
+                  <div *ngIf="calcTrace?.dependencyDAG" class="p-1 px-2 bg-info-subtle border border-info-subtle rounded text-xs font-monospace mb-2 d-flex align-items-center gap-1">
+                    <strong class="text-info-emphasis">Topological DAG:</strong>
+                    <span class="text-dark">{{ calcTrace?.dependencyDAG }}</span>
+                  </div>
                   <div *ngFor="let p of resultParams" class="mb-1 p-1 bg-light rounded border text-xs font-monospace">
                     <div *ngIf="p.isCalculated" class="d-flex justify-content-between align-items-center mb-0.5">
                       <strong class="text-primary">{{ p.parameterCode }}</strong>
@@ -2112,51 +2109,7 @@
     </main>
 
     <!-- ================================================================= -->
-    <!-- TAB 4: CALCULATIONS (DAG DEPENDENCY TREE & TRACE)                 -->
-    <!-- ================================================================= -->
-    <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'calculations'">
-      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
-        <div class="ute-panel-title border-bottom pb-2 mb-3 fs-6">
-          <i class="bi bi-diagram-3 me-1"></i> Topological Dependency Graph & Calculation Trace
-        </div>
-
-        <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2">
-          <i class="bi bi-info-circle-fill fs-5"></i>
-          <div>
-            <strong>Dependency DAG:</strong>
-            <span class="font-monospace ms-1">{{ calcTrace?.dependencyDAG || 'No formula dependency DAG recorded'
-              }}</span>
-          </div>
-        </div>
-
-        <div class="row g-2">
-          <div class="col-12" *ngFor="let step of calcTrace?.steps || []">
-            <div class="p-3 border rounded bg-light-subtle">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="fw-bold text-dark font-monospace">{{ step.parameterCode }} ({{ step.parameterName
-                  }})</span>
-                <span class="badge-type-calc">Evaluated</span>
-              </div>
-              <div class="small text-muted font-monospace">Formula: {{ step.formula }}</div>
-              <div class="mt-2 p-2 bg-white border rounded font-monospace text-primary fw-bold">
-                Trace: {{ step.substitutionTrace }}
-              </div>
-            </div>
-          </div>
-          <div class="col-12" *ngIf="!calcTrace?.steps?.length">
-            <div class="p-4 border rounded bg-light-subtle text-center text-muted">
-              <i class="bi bi-diagram-2 fs-3 d-block mb-2 text-secondary"></i>
-              <div class="fw-semibold">No Calculated Parameters Evaluated Yet</div>
-              <small class="text-muted">Once observation values are entered in Tab 2 and evaluated, formula evaluation
-                traces and topological dependency steps will display here dynamically.</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- ================================================================= -->
-    <!-- TAB 5: REVIEW & APPROVAL (4-EYES SEGREGATION OF DUTIES)           -->
+    <!-- TAB 4: REVIEW & APPROVAL (4-EYES SEGREGATION OF DUTIES)           -->
     <!-- ================================================================= -->
     <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'review'">
       <div class="card shadow-sm border-0 mb-2 ute-card p-3">
@@ -2337,7 +2290,7 @@
     </main>
 
     <!-- ================================================================= -->
-    <!-- TAB 6: REPORT PREVIEW & PRODUCTION QUEStPDF WORKFLOW              -->
+    <!-- TAB 5: REPORT PREVIEW & PRODUCTION QUESTPDF WORKFLOW              -->
     <!-- ================================================================= -->
     <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'report'">
       <div class="card shadow-sm border-0 mb-2 ute-card p-3">
@@ -2826,7 +2779,7 @@
     </main>
 
     <!-- ================================================================= -->
-    <!-- TAB 7: AUDIT TRAIL                                                -->
+    <!-- TAB 6: AUDIT TRAIL                                                -->
     <!-- ================================================================= -->
     <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'audit'">
       <div class="card shadow-sm border-0 mb-2 ute-card p-3">

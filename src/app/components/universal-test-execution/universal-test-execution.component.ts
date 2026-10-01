@@ -98,6 +98,19 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   reportPreviewFormatCode: string = 'DEFAULT';
   availableReportFormats: any[] = [{ formatCode: 'DEFAULT', formatName: 'Default Universal Report' }];
 
+  // Precomputed memoized report properties (prevents CD thrashing & thread locking)
+  reportData: any = {};
+  reportTableRows: any[] = [];
+  reportLabLogoUrl: string = '';
+  reportNablLogoUrl: string = '';
+  reportEquipmentStr: string = '';
+  reportConditionsStr: string = '';
+  reportMethodVersionStr: string = '1983';
+  reportHasNabl: boolean = false;
+  reportAnalystSigUrl: string = '';
+  reportReviewerSigUrl: string = '';
+  reportApproverSigUrl: string = '';
+
   // Run switcher
   availableRuns: number[] = [1];
   selectedRunNo: number = 1;
@@ -251,6 +264,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     this.reportPreviewData = null;
     this.universalReports = [];
     this.selectedReport = null;
+    this.computeReportPreviewState();
 
     // 4. Reset conditions, formulas, and checklists
     this.conditionActuals = {};
@@ -271,10 +285,9 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   private syncCurrentExecutionDropdownItem(exec: TestExecutionDto): void {
     const testName = exec.testName || (exec as any).universalTestGroup?.laboratoryTest?.name || 'Test';
-    const sampleNo = exec.sampleNo || (exec as any).universalTestGroup?.sampleTestPlan?.sampleDetail?.sampleNo || '-';
     this.currentExecutionDropdownItem = {
       id: exec.id,
-      name: `#${exec.id} · ${testName} (Sample: ${sampleNo}, Run #${exec.executionNo || 1})`
+      name: `#${exec.id} · ${testName}`
     };
   }
 
@@ -395,6 +408,8 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     // If currently on report tab, reload report data for this execution
     if (this.activeWorkspaceTab === 'report') {
       this.loadReportData();
+    } else {
+      this.computeReportPreviewState();
     }
 
     if (this.activeWorkspaceTab === 'entry') {
@@ -1355,8 +1370,11 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     this.reportService.preview(this.testExecutionId, this.reportPreviewFormatCode).subscribe({
       next: (prev) => {
         this.reportPreviewData = prev;
+        this.computeReportPreviewState();
       },
-      error: () => {}
+      error: () => {
+        this.computeReportPreviewState();
+      }
     });
     this.reportService.listByExecution(this.testExecutionId).subscribe({
       next: (list) => {
@@ -1364,6 +1382,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         if (this.universalReports.length > 0) {
           this.selectedReport = this.universalReports[0];
         }
+        this.computeReportPreviewState();
       },
       error: () => {}
     });
@@ -1382,6 +1401,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     this.reportService.preview(this.testExecutionId, this.reportPreviewFormatCode).subscribe({
       next: (prev) => {
         this.reportPreviewData = prev;
+        this.computeReportPreviewState();
         const d: any = (prev as any)?.data ?? prev ?? {};
         const n = (d.resultParameters ?? d.ResultParameters ?? []).length;
         const src = d.reportFormatSource ?? d.ReportFormatSource ?? this.reportPreviewFormatCode;
@@ -1813,72 +1833,52 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
 
   today: Date = new Date();
 
-  dataOfReportPreview(): any {
-    return this.reportPreviewData?.data ?? this.reportPreviewData?.Data ?? this.reportPreviewData ?? {};
-  }
-
-  getApiUrl(path: string | undefined | null): string {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
-    const clean = '/' + path.replace(/\\/g, '/').replace(/^\/+/, '');
-    const base = (environment.baseUrl || environment.apiUrl || '').replace(/\/api\/?$/, '').replace(/\/$/, '');
-    return base + clean;
-  }
-
-  hasNablMark(): boolean {
-    const d = this.dataOfReportPreview();
+  computeReportPreviewState(): void {
+    const d = this.reportPreviewData?.data ?? this.reportPreviewData?.Data ?? this.reportPreviewData ?? {};
+    this.reportData = d;
     const r = this.selectedReport;
-    return !!(d?.showNablMark || d?.ShowNablMark || d?.isWithinAccreditedScope || d?.IsWithinAccreditedScope || r?.showNablMark || r?.ShowNablMark);
-  }
 
-  getNablLogoUrl(): string {
-    const d = this.dataOfReportPreview();
-    const r = this.selectedReport;
-    const path = d?.nablLogoPath || d?.NablLogoPath || r?.nablLogoPath || r?.NablLogoPath;
-    if (path) {
-      return this.getApiUrl(path);
-    }
-    return '';
-  }
+    this.reportHasNabl = !!(d?.showNablMark || d?.ShowNablMark || d?.isWithinAccreditedScope || d?.IsWithinAccreditedScope || r?.showNablMark || r?.ShowNablMark);
 
-  getLabLogoUrl(): string {
-    const d = this.dataOfReportPreview();
-    const path = d?.labLogoPath || d?.LabLogoPath;
-    if (path) {
-      return this.getApiUrl(path);
-    }
-    return '';
-  }
+    const labPath = d?.labLogoPath || d?.LabLogoPath;
+    this.reportLabLogoUrl = labPath ? this.getApiUrl(labPath) : '';
 
-  getEquipmentString(): string {
-    const d = this.dataOfReportPreview();
+    const nablPath = d?.nablLogoPath || d?.NablLogoPath || r?.nablLogoPath || r?.NablLogoPath;
+    this.reportNablLogoUrl = nablPath ? this.getApiUrl(nablPath) : '';
+
+    const analystSig = d?.analystSignaturePath;
+    this.reportAnalystSigUrl = analystSig ? this.getApiUrl(analystSig) : '';
+
+    const reviewerSig = d?.reviewerSignaturePath;
+    this.reportReviewerSigUrl = reviewerSig ? this.getApiUrl(reviewerSig) : '';
+
+    const approverSig = d?.approverSignaturePath;
+    this.reportApproverSigUrl = approverSig ? this.getApiUrl(approverSig) : '';
+
+    // Equipment string
     const eqList = d?.equipment ?? d?.Equipment;
     if (eqList && Array.isArray(eqList) && eqList.length > 0) {
-      return eqList.map((e: any) => `${e.equipmentName || e.name || 'Equipment'} (${e.equipmentCode || e.code || 'ID: EQ'})`).join(', ');
+      this.reportEquipmentStr = eqList.map((e: any) => `${e.equipmentName || e.name || 'Equipment'} (${e.equipmentCode || e.code || 'ID: EQ'})`).join(', ');
+    } else {
+      this.reportEquipmentStr = (d?.testEquipment && d.testEquipment !== '—') ? d.testEquipment : ((this.execution as any)?.equipmentName || 'Modified Proctor / Heavy Compaction');
     }
-    return (d?.testEquipment && d.testEquipment !== '—') ? d.testEquipment : ((this.execution as any)?.equipmentName || 'Modified Proctor / Heavy Compaction');
-  }
 
-  getConditionsString(): string {
-    const d = this.dataOfReportPreview();
+    // Conditions string
     const condList = d?.conditions ?? d?.Conditions;
     if (condList && Array.isArray(condList) && condList.length > 0) {
-      return condList.map((c: any) => `${c.conditionName || c.name || 'Param'}: ${c.conditionValue || c.value || '-'} ${c.unit || ''}`.trim()).join(' | ');
+      this.reportConditionsStr = condList.map((c: any) => `${c.conditionName || c.name || 'Param'}: ${c.conditionValue || c.value || '-'} ${c.unit || ''}`.trim()).join(' | ');
+    } else {
+      this.reportConditionsStr = (d?.environmentalConditions && d.environmentalConditions !== '—') ? d.environmentalConditions : 'Param: - | Param: - | Param: -';
     }
-    return (d?.environmentalConditions && d.environmentalConditions !== '—') ? d.environmentalConditions : 'Param: - | Param: - | Param: -';
-  }
 
-  getMethodVersion(): string {
-    const d = this.dataOfReportPreview();
-    return d?.testMethodVersion || '1983';
-  }
+    // Method version
+    this.reportMethodVersionStr = d?.testMethodVersion || '1983';
 
-  getReportTableRows(): any[] {
-    const d = this.dataOfReportPreview();
+    // Report table rows
     let reportParams = d?.resultParameters ?? d?.ResultParameters;
     reportParams = reportParams?.filter((p: any) => p.isReportable !== false && p.IsReportable !== false);
     if (reportParams?.length) {
-      return reportParams.map((p: any, idx: number) => {
+      this.reportTableRows = reportParams.map((p: any, idx: number) => {
         const min = p.effectiveMin ?? p.specMin;
         const max = p.effectiveMax ?? p.specMax;
         let req = p.requirement ?? p.Requirement ?? p.specRange ?? '—';
@@ -1901,9 +1901,8 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
           uncertainty: p.expandedUncertainty ?? p.uncertainty ?? null
         };
       });
-    }
-    if (this.resultsOverview?.parameters?.length) {
-      return this.resultsOverview.parameters.map((p, idx) => ({
+    } else if (this.resultsOverview?.parameters?.length) {
+      this.reportTableRows = this.resultsOverview.parameters.map((p, idx) => ({
         srNo: idx + 1,
         parameterCode: p.parameterCode || '',
         parameterName: p.parameterName,
@@ -1914,26 +1913,75 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
         status: p.status || 'Pass',
         uncertainty: null
       }));
+    } else {
+      this.reportTableRows = (this.parameters || []).map((p, idx) => {
+        const min = p.specMin !== null && p.specMin !== undefined ? p.specMin : null;
+        const max = p.specMax !== null && p.specMax !== undefined ? p.specMax : null;
+        let specRange = '—';
+        if (min !== null && max !== null) specRange = `${min} - ${max}`;
+        else if (min !== null) specRange = `${min} Min`;
+        else if (max !== null) specRange = `${max} Max`;
+        return {
+          srNo: idx + 1,
+          parameterCode: p.code || '',
+          parameterName: p.name,
+          testMethod: this.displayExecutionTestName || '—',
+          unit: p.unit || '%',
+          finalValue: '—',
+          specRange: specRange,
+          status: 'PENDING',
+          uncertainty: null
+        };
+      });
     }
-    return (this.parameters || []).map((p, idx) => {
-      const min = p.specMin !== null && p.specMin !== undefined ? p.specMin : null;
-      const max = p.specMax !== null && p.specMax !== undefined ? p.specMax : null;
-      let specRange = '—';
-      if (min !== null && max !== null) specRange = `${min} - ${max}`;
-      else if (min !== null) specRange = `${min} Min`;
-      else if (max !== null) specRange = `${max} Max`;
-      return {
-        srNo: idx + 1,
-        parameterCode: p.code || '',
-        parameterName: p.name,
-        testMethod: this.displayExecutionTestName || '—',
-        unit: p.unit || '%',
-        finalValue: '—',
-        specRange: specRange,
-        status: 'PENDING',
-        uncertainty: null
-      };
-    });
+  }
+
+  dataOfReportPreview(): any {
+    return this.reportData || {};
+  }
+
+  getApiUrl(path: string | undefined | null): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
+    const clean = '/' + path.replace(/\\/g, '/').replace(/^\/+/, '');
+    const base = (environment.baseUrl || environment.apiUrl || '').replace(/\/api\/?$/, '').replace(/\/$/, '');
+    return base + clean;
+  }
+
+  hasNablMark(): boolean {
+    return this.reportHasNabl;
+  }
+
+  getNablLogoUrl(): string {
+    return this.reportNablLogoUrl;
+  }
+
+  getLabLogoUrl(): string {
+    return this.reportLabLogoUrl;
+  }
+
+  getEquipmentString(): string {
+    return this.reportEquipmentStr;
+  }
+
+  getConditionsString(): string {
+    return this.reportConditionsStr;
+  }
+
+  getMethodVersion(): string {
+    return this.reportMethodVersionStr;
+  }
+
+  getReportTableRows(): any[] {
+    return this.reportTableRows;
+  }
+
+  trackByParamCode(index: number, item: any): string {
+    return item?.parameterCode || item?.srNo || index.toString();
+  }
+
+  trackByFormatCode(index: number, item: any): string {
+    return item?.formatCode || item?.FormatCode || index.toString();
   }
 
   goBack(): void {

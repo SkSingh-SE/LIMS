@@ -6146,3 +6146,13 @@ input[type="checkbox"]:checked {
   color: #10b981;
   font-weight: 500;
 }
+
+/* ── Global Truncation & Max-Width Helpers ── */
+.max-w-120 { max-width: 120px !important; }
+.max-w-150 { max-width: 150px !important; }
+.max-w-180 { max-width: 180px !important; }
+.max-w-200 { max-width: 200px !important; }
+.max-w-240 { max-width: 240px !important; }
+.max-w-260 { max-width: 260px !important; }
+.max-w-300 { max-width: 300px !important; }
+

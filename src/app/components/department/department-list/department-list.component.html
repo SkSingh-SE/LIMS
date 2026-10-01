@@ -268,7 +268,7 @@
                 {{ d.name }} ({{ d.code }})
               </option>
             </select>
-            <div *ngIf="!departmentForm.get('branchId')?.value" class="text-muted small mt-0.5">
+            <div *ngIf="!departmentForm.get('branchId')?.value" class="text-muted small mt-1">
               Please select a branch first to load supported disciplines.
             </div>
             <app-field-error [control]="departmentForm.get('disciplineId')" label="Discipline" [submitted]="submitted"></app-field-error>

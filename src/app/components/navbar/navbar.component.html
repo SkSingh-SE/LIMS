@@ -50,7 +50,7 @@
             <span class="user-display-name">{{ loggedInUserName }}</span>
             <span class="user-display-role">
               {{ loggedInUserRole }} <span class="role-branch-sep">·</span>
-              <i class="bi bi-geo-alt-fill me-0.5"></i> {{ selectedBranch()?.name || 'No Branch' }}
+              <i class="bi bi-geo-alt-fill me-1"></i> {{ selectedBranch()?.name || 'No Branch' }}
             </span>
           </div>
           <i class="bi bi-chevron-down text-white user-chevron ms-1"></i>
@@ -69,7 +69,7 @@
                 <div class="user-menu-name text-truncate" [title]="loggedInUserName">{{ loggedInUserName }}</div>
                 <div class="d-flex align-items-center gap-1 mt-1">
                   <span class="badge user-role-badge">{{ loggedInUserRole || 'Staff' }}</span>
-                  <span *ngIf="loggedInIsAdmin && !isAdminRole()" class="badge bg-warning text-dark extra-small py-0.5 px-1 rounded-pill">Admin</span>
+                  <span *ngIf="loggedInIsAdmin && !isAdminRole()" class="badge bg-warning text-dark extra-small py-1 px-1 rounded-pill">Admin</span>
                 </div>
                 <div *ngIf="loggedInEmail" class="user-menu-email text-muted extra-small text-truncate mt-1" [title]="loggedInEmail">
                   <i class="bi bi-envelope me-1"></i>{{ loggedInEmail }}
@@ -88,7 +88,7 @@
           </div>
           <div class="user-menu-body px-1 pb-1" *ngIf="branches().length > 0">
             <a *ngFor="let branch of branches()"
-              class="dropdown-item user-menu-item branch-switcher-item rounded-3 d-flex align-items-center justify-content-between py-2 px-2.5"
+              class="dropdown-item user-menu-item branch-switcher-item rounded-3 d-flex align-items-center justify-content-between py-2 px-2"
               role="button"
               (click)="selectBranch(branch)"
               [class.active]="branch.code === selectedBranch()?.code">
@@ -104,9 +104,9 @@
                 <div class="branch-info">
                   <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="branch-name fw-semibold text-truncate" [title]="branch.name">{{ branch.name }}</span>
-                    <span class="branch-code badge bg-light text-dark border extra-small px-2 py-0.5 font-monospace">{{ branch.code }}</span>
-                    <span *ngIf="branch.isHeadOffice" class="badge bg-warning text-dark extra-small px-2 py-0.5"><i class="bi bi-star-fill me-0.5"></i>Head Office</span>
-                    <span *ngIf="branch.isDefault && !branch.isHeadOffice" class="badge bg-info text-dark extra-small px-2 py-0.5"><i class="bi bi-check-circle-fill me-0.5"></i>Default</span>
+                    <span class="branch-code badge bg-light text-dark border extra-small px-2 py-1 font-monospace">{{ branch.code }}</span>
+                    <span *ngIf="branch.isHeadOffice" class="badge bg-warning text-dark extra-small px-2 py-1"><i class="bi bi-star-fill me-1"></i>Head Office</span>
+                    <span *ngIf="branch.isDefault && !branch.isHeadOffice" class="badge bg-info text-dark extra-small px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Default</span>
                   </div>
                   <span *ngIf="branch.address" class="branch-address text-muted extra-small d-flex align-items-center gap-1" [title]="branch.address">
                     <i class="bi bi-geo-alt-fill"></i>{{ branch.address }}
@@ -121,7 +121,7 @@
                   <span class="extra-small fw-medium text-success ms-1">Active</span>
                 </span>
                 <span *ngIf="branch.code !== selectedBranch()?.code" class="branch-switch-btn text-primary extra-small fw-medium" title="Click to switch">
-                  <i class="bi bi-arrow-right-circle me-0.5"></i>Switch
+                  <i class="bi bi-arrow-right-circle me-1"></i>Switch
                 </span>
               </div>
             </a>
@@ -137,7 +137,7 @@
 
           <!-- Action Items -->
           <div class="user-menu-body p-1">
-            <a class="dropdown-item user-menu-item rounded-3 d-flex align-items-center gap-2.5 py-2 px-2.5" role="button" (click)="openProfile()">
+            <a class="dropdown-item user-menu-item rounded-3 d-flex align-items-center gap-2 py-2 px-2" role="button" (click)="openProfile()">
               <div class="user-menu-icon-box icon-profile">
                 <i class="bi bi-person-circle"></i>
               </div>
@@ -147,7 +147,7 @@
               </div>
             </a>
 
-            <a class="dropdown-item user-menu-item rounded-3 d-flex align-items-center gap-2.5 py-2 px-2.5" routerLink="/settings">
+            <a class="dropdown-item user-menu-item rounded-3 d-flex align-items-center gap-2 py-2 px-2" routerLink="/settings">
               <div class="user-menu-icon-box icon-settings">
                 <i class="bi bi-gear-fill"></i>
               </div>
@@ -162,7 +162,7 @@
 
           <!-- Footer: Logout -->
           <div class="user-menu-footer p-1">
-            <a class="dropdown-item user-menu-item user-menu-logout rounded-3 d-flex align-items-center gap-2.5 py-2 px-2.5 text-danger" role="button" (click)="logout()">
+            <a class="dropdown-item user-menu-item user-menu-logout rounded-3 d-flex align-items-center gap-2 py-2 px-2 text-danger" role="button" (click)="logout()">
               <div class="user-menu-icon-box icon-logout">
                 <i class="bi bi-box-arrow-right"></i>
               </div>

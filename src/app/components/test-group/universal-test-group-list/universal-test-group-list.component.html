@@ -97,14 +97,14 @@
               </td>
               <td class="text-center">
                 <span class="badge px-2 py-1" [ngClass]="r.status==='Pending' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle' : r.status==='InProgress' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-success-subtle text-success border border-success-subtle'">{{ r.status }}</span>
-                <div *ngIf="r.hasExecution" class="text-xs text-muted mt-0.5">
+                <div *ngIf="r.hasExecution" class="text-xs text-muted mt-1">
                   <span>{{ r.executionStatus }}</span>
                   <a *ngIf="r.latestExecutionID"
                      class="badge bg-light text-primary border text-xxs text-decoration-none ms-1"
                      (click)="openExecution(r.id, r.latestExecutionID)"
                      role="button"
                      [title]="'View Execution Workspace # ' + r.latestExecutionID">
-                    <i class="bi bi-box-arrow-up-right me-0.5"></i>UT-{{ ('00000' + r.latestExecutionID).slice(-6) }}
+                    <i class="bi bi-box-arrow-up-right me-1"></i>UT-{{ ('00000' + r.latestExecutionID).slice(-6) }}
                   </a>
                 </div>
               </td>

@@ -201,15 +201,15 @@
 
                 <!-- Live Summary Cost Card -->
                 <div class="cm-cost-card mt-2 p-2 rounded border bg-light-subtle">
-                  <div class="d-flex justify-content-between align-items-center fs-11 py-0.5">
+                  <div class="d-flex justify-content-between align-items-center fs-11 py-1">
                     <span class="text-muted">Machining Charges:</span>
                     <span class="fw-semibold text-dark">₹{{ getMachiningSubtotal(sample.id) | number:'1.2-2' }}</span>
                   </div>
-                  <div class="d-flex justify-content-between align-items-center fs-11 py-0.5">
+                  <div class="d-flex justify-content-between align-items-center fs-11 py-1">
                     <span class="text-muted">Cutting Charges:</span>
                     <span class="fw-semibold text-dark">₹{{ getCuttingSubtotal(sample.id) | number:'1.2-2' }}</span>
                   </div>
-                  <div class="d-flex justify-content-between align-items-center fs-11 py-0.5" *ngIf="getOtherSubtotal(sample.id) > 0">
+                  <div class="d-flex justify-content-between align-items-center fs-11 py-1" *ngIf="getOtherSubtotal(sample.id) > 0">
                     <span class="text-muted">Other Cutting:</span>
                     <span class="fw-semibold text-dark">₹{{ getOtherSubtotal(sample.id) | number:'1.2-2' }}</span>
                   </div>

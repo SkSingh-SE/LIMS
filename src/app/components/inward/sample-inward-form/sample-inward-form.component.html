@@ -135,7 +135,7 @@
                 <label class="form-label-sm fw-semibold text-dark mb-1 text-xs-78">
                   <i class="bi bi-send me-1 text-danger"></i> Dispatch Modes <span class="text-danger">*</span>
                 </label>
-                <div class="d-flex flex-wrap gap-2.5">
+                <div class="d-flex flex-wrap gap-2">
                   <div class="form-check me-2" *ngFor="let mode of dispatchModes; index as modeIndex">
                     <input
                       id="dispatchMode-{{ modeIndex }}"
@@ -252,7 +252,7 @@
               <div formArrayName="reportingToCustomers">
                 <div *ngFor="let card of reportingToCustomerControls.controls; let rIdx = index" [formGroupName]="rIdx"
                      class="card border shadow-sm mb-2 bg-white">
-                  <div class="card-header bg-light py-1 px-2.5 d-flex align-items-center justify-content-between">
+                  <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
                     <span class="fw-semibold small text-dark text-truncate me-2 max-w-320"
                           [title]="card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1)))">
                       <i class="bi bi-building me-1 text-danger"></i>
@@ -283,7 +283,7 @@
                     <div class="customer-info-summary-box mt-2 mb-2 p-2 bg-light bg-opacity-75 border rounded-2 text-xs-75">
                       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div class="d-flex align-items-start gap-1 flex-grow-1 min-w-0">
-                          <i class="bi bi-geo-alt-fill text-danger flex-shrink-0 mt-0.5 me-1"></i>
+                          <i class="bi bi-geo-alt-fill text-danger flex-shrink-0 mt-1 me-1"></i>
                           <div class="lh-sm">
                             <strong class="text-dark me-1"> Address: </strong>
                             <span class="text-secondary fw-normal">{{ getFormattedFullCustomerAddress(card) }}</span>
@@ -344,7 +344,7 @@
               <div formArrayName="billingToCustomers">
                 <div *ngFor="let card of billingToCustomerControls.controls; let bIdx = index" [formGroupName]="bIdx"
                      class="card border shadow-sm mb-2 bg-white">
-                  <div class="card-header bg-light py-1 px-2.5 d-flex align-items-center justify-content-between">
+                  <div class="card-header bg-light py-1 px-2 d-flex align-items-center justify-content-between">
                     <span class="fw-semibold small text-dark text-truncate me-2 max-w-320"
                           [title]="card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1)))">
                       <i class="bi bi-building me-1 text-danger"></i>
@@ -375,7 +375,7 @@
                     <div class="customer-info-summary-box mt-2 mb-2 p-2 bg-light bg-opacity-75 border rounded-2 text-xs-75">
                       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div class="d-flex align-items-start gap-1 flex-grow-1 min-w-0">
-                          <i class="bi bi-geo-alt-fill text-danger flex-shrink-0 mt-0.5 me-1"></i>
+                          <i class="bi bi-geo-alt-fill text-danger flex-shrink-0 mt-1 me-1"></i>
                           <div class="lh-sm">
                             <strong class="text-dark me-1"> Address: </strong>
                             <span class="text-secondary fw-normal">{{ getFormattedFullCustomerAddress(card) }}</span>
@@ -500,7 +500,7 @@
                 <i class="bi bi-file-earmark-image-fill text-success fs-6 me-1"></i>
                 <span class="text-secondary">Attached Files: <strong class="text-success fs-6 ms-1">{{ getSampleFilesCount() }}</strong></span>
               </span>
-              <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white shadow-sm px-2.5 py-1 font-poppins text-xs-78 d-flex align-items-center gap-1">
+              <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white shadow-sm px-2 py-1 font-poppins text-xs-78 d-flex align-items-center gap-1">
                 <i class="bi bi-lightning-charge-fill me-1"></i> URGENT TESTING
               </span>
             </div>
@@ -757,22 +757,22 @@
           <!-- Quick attribute insertion tags bar -->
           <div *ngIf="!isViewMode" class="d-flex align-items-center gap-2 mb-2 flex-wrap bg-light p-2 rounded-3 border">
             <span class="text-secondary small fw-semibold text-xs-75">⚡ Quick Add Attribute:</span>
-            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Heat No')">
+            <button type="button" class="btn-lims btn-lims-add py-1 px-2 text-xs-75" (click)="quickAddAdditionalRow('Heat No')">
               + Heat No
             </button>
-            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Batch No')">
+            <button type="button" class="btn-lims btn-lims-add py-1 px-2 text-xs-75" (click)="quickAddAdditionalRow('Batch No')">
               + Batch No
             </button>
-            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Lot No')">
+            <button type="button" class="btn-lims btn-lims-add py-1 px-2 text-xs-75" (click)="quickAddAdditionalRow('Lot No')">
               + Lot No
             </button>
-            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Sealed By')">
+            <button type="button" class="btn-lims btn-lims-add py-1 px-2 text-xs-75" (click)="quickAddAdditionalRow('Sealed By')">
               + Sealed By
             </button>
-            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Witness By')">
+            <button type="button" class="btn-lims btn-lims-add py-1 px-2 text-xs-75" (click)="quickAddAdditionalRow('Witness By')">
               + Witness By
             </button>
-            <button type="button" class="btn-lims btn-lims-add py-0.5 px-2 text-xs-75" (click)="quickAddAdditionalRow('Stamp By')">
+            <button type="button" class="btn-lims btn-lims-add py-1 px-2 text-xs-75" (click)="quickAddAdditionalRow('Stamp By')">
               + Stamp By
             </button>
           </div>
@@ -891,7 +891,7 @@
                     <i class="bi bi-lightning-charge-fill text-danger fs-6"></i>
                     <span>Urgent Testing Priority</span>
                   </label>
-                  <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white me-2 px-2 py-0.5 text-xs-68">
+                  <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white me-2 px-2 py-1 text-xs-68">
                     <i class="bi bi-check-circle-fill me-1"></i> URGENT
                   </span>
                   <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="urgent" id="urgent" />
@@ -902,7 +902,7 @@
                     <i class="bi bi-box-arrow-left text-primary fs-6"></i>
                     <span>Return Tested Sample to Customer</span>
                   </label>
-                  <span *ngIf="sampleInwardForm.get('returnSample')?.value" class="badge bg-primary text-white me-2 px-2 py-0.5 text-xs-68">
+                  <span *ngIf="sampleInwardForm.get('returnSample')?.value" class="badge bg-primary text-white me-2 px-2 py-1 text-xs-68">
                     <i class="bi bi-check-circle-fill me-1"></i> RETURN
                   </span>
                   <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="returnSample" id="returnSample" />
@@ -913,7 +913,7 @@
                     <i class="bi bi-shield-lock-fill text-warning fs-6"></i>
                     <span>Retain Sample (Not to be Destroyed)</span>
                   </label>
-                  <span *ngIf="sampleInwardForm.get('notDestroyed')?.value" class="badge bg-warning text-dark fw-bold me-2 px-2 py-0.5 text-xs-68">
+                  <span *ngIf="sampleInwardForm.get('notDestroyed')?.value" class="badge bg-warning text-dark fw-bold me-2 px-2 py-1 text-xs-68">
                     <i class="bi bi-check-circle-fill me-1"></i> RETAIN
                   </span>
                   <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="notDestroyed" id="notDestroyed" />

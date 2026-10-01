@@ -822,7 +822,7 @@
                   <span class="small text-secondary font-monospace">{{ item.effectiveValue || '—' }}</span>
                 </td>
                 <td>
-                  <span class="small fw-semibold text-dark bg-light px-1 py-0.5 rounded border font-monospace"
+                  <span class="small fw-semibold text-dark bg-light px-1 py-1 rounded border font-monospace"
                         [ngClass]="item.classification === 'CHANGED' ? 'border-warning text-warning-emphasis bg-warning-subtle' : ''">
                     {{ item.adjustedValue || '—' }}
                   </span>
@@ -832,7 +832,7 @@
                         [ngClass]="item.classification === 'CHANGED' ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle' : 'bg-light text-muted border'">
                     {{ item.classification }}
                   </span>
-                  <div class="mt-0.5">
+                  <div class="mt-1">
                     <span class="badge"
                           [ngClass]="item.authorizationStatus === 'Approved' ? 'badge-lims-approved' :
                                      item.authorizationStatus === 'Applied' ? 'badge-lims-applied' :

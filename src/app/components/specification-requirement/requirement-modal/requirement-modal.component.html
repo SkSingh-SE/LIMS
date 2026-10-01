@@ -32,38 +32,38 @@
       <div class="modal-nav-tabs px-3 border-bottom bg-light">
         <ul class="nav nav-tabs border-0 flex-nowrap overflow-x-auto">
           <li class="nav-item">
-            <button class="nav-link py-1 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'definition'" (click)="activeTab = 'definition'">
+            <button class="nav-link py-1 px-2 fs-7 d-flex align-items-center" [class.active]="activeTab === 'definition'" (click)="activeTab = 'definition'">
               <i class="bi bi-hash me-1"></i> 1. Definition
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link py-1 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'limits'" (click)="activeTab = 'limits'">
+            <button class="nav-link py-1 px-2 fs-7 d-flex align-items-center" [class.active]="activeTab === 'limits'" (click)="activeTab = 'limits'">
               <i class="bi bi-sliders me-1"></i> 2. Limits & Tolerances
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link py-1 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'equations'" (click)="activeTab = 'equations'">
+            <button class="nav-link py-1 px-2 fs-7 d-flex align-items-center" [class.active]="activeTab === 'equations'" (click)="activeTab = 'equations'">
               <i class="bi bi-calculator me-1"></i> 3. Equations
               <span *ngIf="form.get('equation')?.value || form.get('minEquation')?.value || form.get('maxEquation')?.value" class="badge rounded-pill bg-success ms-1 fs-8">Configured</span>
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link py-1 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'conditions'" (click)="activeTab = 'conditions'">
+            <button class="nav-link py-1 px-2 fs-7 d-flex align-items-center" [class.active]="activeTab === 'conditions'" (click)="activeTab = 'conditions'">
               <i class="bi bi-funnel me-1"></i> 4. Applicability & Conditions
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link py-1 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'testmethods'" (click)="activeTab = 'testmethods'">
+            <button class="nav-link py-1 px-2 fs-7 d-flex align-items-center" [class.active]="activeTab === 'testmethods'" (click)="activeTab = 'testmethods'">
               <i class="bi bi-clipboard2-pulse me-1"></i> 5. Test Methods
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link py-1 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'instructions'" (click)="activeTab = 'instructions'">
+            <button class="nav-link py-1 px-2 fs-7 d-flex align-items-center" [class.active]="activeTab === 'instructions'" (click)="activeTab = 'instructions'">
               <i class="bi bi-chat-left-text me-1"></i> 6. Instructions & Reporting
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link py-1 px-2.5 fs-7 d-flex align-items-center" [class.active]="activeTab === 'evaluation'" (click)="activeTab = 'evaluation'">
+            <button class="nav-link py-1 px-2 fs-7 d-flex align-items-center" [class.active]="activeTab === 'evaluation'" (click)="activeTab = 'evaluation'">
               <i class="bi bi-check2-all me-1"></i> 7. Summary & Preview
             </button>
           </li>
@@ -76,7 +76,7 @@
 
           <!-- TAB 1: DEFINITION -->
           <div *ngIf="activeTab === 'definition'" class="tab-pane-content">
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-tag-fill me-1"></i> Core Parameter & Universal Definition
               </legend>
@@ -107,7 +107,7 @@
                   <div class="form-field-header">
                     <label class="form-label mb-1 fs-7 fw-semibold">Parameter Unit</label>
                     <span class="badge bg-light text-muted border fs-8">
-                      <i class="bi bi-link-45deg me-0.5"></i>Inherited from Parameter Master
+                      <i class="bi bi-link-45deg me-1"></i>Inherited from Parameter Master
                     </span>
                   </div>
                   <input
@@ -123,7 +123,7 @@
                   <div class="form-field-header">
                     <label class="form-label mb-1 fs-7 fw-semibold">Input Type</label>
                     <span class="badge bg-light text-muted border fs-8">
-                      <i class="bi bi-link-45deg me-0.5"></i>Inherited from Parameter Master
+                      <i class="bi bi-link-45deg me-1"></i>Inherited from Parameter Master
                     </span>
                   </div>
                   <input
@@ -157,7 +157,7 @@
 
           <!-- TAB 2: LIMITS & TOLERANCES -->
           <div *ngIf="activeTab === 'limits'" class="tab-pane-content">
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-arrows-expand me-1"></i> Numeric Range Limits (Standard Min - Max)
               </legend>
@@ -174,7 +174,7 @@
               </div>
             </fieldset>
 
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-primary d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-regex me-1"></i> Relational Limits with Inequality Symbols
               </legend>
@@ -208,7 +208,7 @@
               </div>
             </fieldset>
 
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-secondary d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-plus-slash-minus me-1"></i> Manufacturing & Acceptance Tolerances
               </legend>
@@ -228,27 +228,27 @@
             <!-- Real-time Preview -->
             <div class="p-2 border rounded bg-light d-flex align-items-center justify-content-between">
               <span class="fs-7 fw-semibold text-muted">Configured Limits Preview:</span>
-              <span class="badge bg-danger fs-7 px-2.5 py-1">{{ getLiveLimitSummary() }}</span>
+              <span class="badge bg-danger fs-7 px-2 py-1">{{ getLiveLimitSummary() }}</span>
             </div>
           </div>
 
           <!-- TAB 3: EQUATIONS -->
           <div *ngIf="activeTab === 'equations'" class="tab-pane-content">
             <!-- Section 3.1: Actual Parameter Calculation Equation -->
-            <fieldset class="border rounded p-2.5 mb-2.5 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-cpu me-1"></i> Parameter Calculation Equation (Runtime Observation Formula)
               </legend>
 
               <!-- Master Formula Detected Alert -->
-              <div *ngIf="masterFormula || masterFormulaDisplay" class="alert alert-info py-1 px-2.5 fs-8 mb-2.5 d-flex align-items-center justify-content-between flex-wrap gap-1">
+              <div *ngIf="masterFormula || masterFormulaDisplay" class="alert alert-info py-1 px-2 fs-8 mb-2 d-flex align-items-center justify-content-between flex-wrap gap-1">
                 <div class="d-flex align-items-center flex-wrap gap-1">
                   <i class="bi bi-info-circle-fill text-primary"></i>
                   <strong>Master Formula Available:</strong>
                   <span class="badge bg-white text-dark border font-monospace">{{ masterFormulaDisplay || masterFormula }}</span>
                   <span *ngIf="masterFormulaDisplay && masterFormula && masterFormulaDisplay !== masterFormula" class="text-muted font-monospace">({{ masterFormula }})</span>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 fs-8" (click)="applyMasterFormula()" [disabled]="isLocked || isViewMode" title="Copy Parameter Master formula into requirement equation">
+                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 fs-8" (click)="applyMasterFormula()" [disabled]="isLocked || isViewMode" title="Copy Parameter Master formula into requirement equation">
                   <i class="bi bi-magic me-1"></i> Apply Master Formula
                 </button>
               </div>
@@ -286,7 +286,7 @@
             </fieldset>
 
             <!-- Section 3.2: Dynamic Governing Limits Equations -->
-            <fieldset class="border rounded p-2.5 mb-2.5 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-sliders me-1"></i> Dynamic Governing Limits Equations (Compliance Rules)
               </legend>
@@ -336,7 +336,7 @@
 
           <!-- TAB 4: APPLICABILITY & CONDITIONS -->
           <div *ngIf="activeTab === 'conditions'" class="tab-pane-content">
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-boxes me-1"></i> Product Dimension & Treatment Applicability
               </legend>
@@ -384,7 +384,7 @@
             </fieldset>
 
             <!-- Dynamic Relational Conditions Table -->
-            <fieldset class="border rounded p-2.5 mb-0 bg-white">
+            <fieldset class="border rounded p-2 mb-0 bg-white">
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <div class="d-flex align-items-center gap-2">
                   <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-0 fs-7">
@@ -479,7 +479,7 @@
 
           <!-- TAB 5: TEST METHOD APPLICABILITY -->
           <div *ngIf="activeTab === 'testmethods'" class="tab-pane-content">
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-hospital me-1"></i> Laboratory Test & Testing Department
               </legend>
@@ -500,7 +500,7 @@
             </fieldset>
 
             <!-- Test Method Specifications Mapping -->
-            <fieldset class="border rounded p-2.5 mb-0 bg-white">
+            <fieldset class="border rounded p-2 mb-0 bg-white">
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <legend class="w-auto fw-semibold text-primary d-flex align-items-center gap-1 px-2 mb-0 fs-7">
                   <i class="bi bi-journal-bookmark-fill me-1"></i> Applicable Test Method Standards (ASTM / ISO / IS)
@@ -557,7 +557,7 @@
 
           <!-- TAB 6: INSTRUCTIONS & REPORTING -->
           <div *ngIf="activeTab === 'instructions'" class="tab-pane-content">
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-journal-text me-1"></i> Testing Instructions & Qualitative Conditions
               </legend>
@@ -578,7 +578,7 @@
 
           <!-- TAB 7: SUMMARY & PREVIEW (READ-ONLY) -->
           <div *ngIf="activeTab === 'evaluation'" class="tab-pane-content">
-            <fieldset class="border rounded p-2.5 mb-2 bg-white">
+            <fieldset class="border rounded p-2 mb-2 bg-white">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 px-2 mb-2 fs-7">
                 <i class="bi bi-eye-fill me-1"></i> Consolidated Specification Requirement Preview
               </legend>

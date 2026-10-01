@@ -166,7 +166,7 @@
               </span>
             </div>
 
-            <div class="row g-1.5">
+            <div class="row g-1">
               <div class="col-md-4 col-sm-6">
                 <div class="meta-field-box">
                   <span class="meta-field-label">Case Number</span>
@@ -233,7 +233,7 @@
                 <span class="text-muted fs-7">Amount Received:</span>
                 <span class="fw-semibold text-success fs-7">₹{{ lifecycleSummary.totalReceivedAmount | number:'1.2-2' }}</span>
               </div>
-              <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-0.5">
+              <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
                 <span class="text-muted fs-7">Balance Due:</span>
                 <span class="fw-bold fs-7" [class.text-danger]="lifecycleSummary.balanceDueAmount > 0" [class.text-success]="lifecycleSummary.balanceDueAmount === 0">
                   ₹{{ lifecycleSummary.balanceDueAmount | number:'1.2-2' }}

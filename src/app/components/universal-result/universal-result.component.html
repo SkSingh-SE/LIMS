@@ -121,7 +121,7 @@
               <span [ngClass]="statusClass(result.resultStatus)">{{ result.resultStatus }} &middot; Rev {{ result.revisionNo }}</span>
             </div>
             <div class="d-flex align-items-center gap-2 mb-1">
-              <span [ngClass]="verdictClass(result.overallDecision)" class="fs-6 px-2.5 py-1">
+              <span [ngClass]="verdictClass(result.overallDecision)" class="fs-6 px-2 py-1">
                 <i class="bi me-1" [ngClass]="{
                   'bi-check-circle-fill': result.overallDecision === 'PASS',
                   'bi-x-circle-fill': result.overallDecision === 'FAIL',
@@ -269,7 +269,7 @@
                   <span class="badge-req-range">
                     {{ getRequirementDisplay(p) }}
                   </span>
-                  <div *ngIf="p.appliedTolerance != null && p.appliedTolerance > 0" class="text-xs text-muted mt-0.5">
+                  <div *ngIf="p.appliedTolerance != null && p.appliedTolerance > 0" class="text-xs text-muted mt-1">
                     <span class="badge bg-light text-secondary border">Tol &plusmn;{{ p.appliedTolerance }}</span>
                   </div>
                 </td>
@@ -331,7 +331,7 @@
             </div>
             <div class="mt-2" *ngIf="showCalculationTraces">
               <div *ngFor="let p of params" class="mb-1 p-1 bg-light rounded border text-xs font-monospace">
-                <div *ngIf="p.isCalculated" class="d-flex justify-content-between align-items-center mb-0.5">
+                <div *ngIf="p.isCalculated" class="d-flex justify-content-between align-items-center mb-1">
                   <strong class="text-primary">{{ p.parameterCode }}</strong>
                   <span class="text-muted"><code>{{ p.formula }}</code></span>
                 </div>
@@ -387,11 +387,11 @@
         </legend>
         <div class="row g-2">
           <div class="col-12 col-md-6">
-            <label class="form-label text-xs fw-semibold mb-0.5">Evaluation Remarks</label>
+            <label class="form-label text-xs fw-semibold mb-1">Evaluation Remarks</label>
             <input type="text" class="form-control form-control-sm" [(ngModel)]="remarks" placeholder="Optional evaluation notes / observations">
           </div>
           <div class="col-12 col-md-6">
-            <label class="form-label text-xs fw-semibold mb-0.5">Finalize Sign-off Remarks</label>
+            <label class="form-label text-xs fw-semibold mb-1">Finalize Sign-off Remarks</label>
             <input type="text" class="form-control form-control-sm" [(ngModel)]="finalizeRemarks" placeholder="Optional notes for Technical Reviewer">
           </div>
         </div>

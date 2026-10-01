@@ -52,10 +52,25 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MANDATORY GLOBAL ICON-TO-TEXT SPACING RULE (STRICT)
-   All icons (<i>) placed beside text in buttons, nav tabs,
-   links, badges, and labels MUST maintain explicit 6px spacing.
+   MANDATORY GLOBAL ICON-TO-TEXT SPACING & ALIGNMENT (FLEX + GAP)
+   - Buttons, nav tabs, links, badges use inline-flex with gap: 6px.
+   - When text + icon coexist, 6px spacing is automatically applied.
+   - When an icon is alone (icon-only button/action), gap is 0 and
+     the icon remains perfectly centered without manual overrides.
 ═══════════════════════════════════════════════════════════ */
+.btn,
+.btn-lims,
+.nav-tab-btn,
+.tpi-toggle-btn,
+.btn-nav-link,
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Neutralize individual icon margins within interactive elements so gap handles spacing cleanly */
 .btn i,
 .btn-lims i,
 .nav-tab-btn i,
@@ -63,11 +78,22 @@ body {
 .btn-nav-link i,
 .badge i,
 button i,
-a i {
-  margin-right: 6px !important;
+a.btn i {
+  margin-right: 0;
+  margin-left: 0;
 }
 
-/* Explicit icon-only buttons override (no right margin) */
+/* Headings, legends & labels: always accompanied by text */
+legend i,
+.page-title i,
+.card-title i,
+.modal-title i,
+.section-header i,
+.form-label i {
+  margin-right: 6px;
+}
+
+/* Explicit icon-only buttons safety reset */
 .btn-tbl-action i,
 .btn-lims-icon i,
 .btn-icon i,
@@ -274,25 +300,7 @@ a i {
   background-color: var(--primary-color) !important;
 }
 
-/* Mandatory Global Icon-to-Label Spacing Rule */
-.nav-link i.bi,
-.btn i.bi,
-button i.bi,
-a.btn i.bi,
-.btn-lims i.bi {
-  margin-right: 6px;
-}
-
-/* Explicit icon-only buttons override (no right margin) */
-.btn-icon i.bi,
-.btn-lims-icon i.bi,
-.btn-nav-icon i.bi,
-.btn-nav-plus i.bi,
-.btn-field-add i.bi,
-.btn-circle i.bi,
-.btn-close i.bi {
-  margin-right: 0 !important;
-}
+/* (Note: Icon spacing and icon-only alignment are handled globally via flex + gap at lines 54-85) */
 .theme-color {
   color: var(--primary-color);
 }
@@ -1572,7 +1580,6 @@ select:focus option:checked {
 .btn-lims-add i,
 .btn-stay i,
 .btn-leave i {
-  margin-right: 6px !important;
   display: inline-block !important;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
@@ -3759,7 +3766,7 @@ fieldset.border {
   gap: 6px !important;
 }
 .quick-chip i {
-  margin-right: 4px !important;
+  margin-right: 0 !important;
 }
 .quick-chip:hover {
   transform: translateY(-1.5px);
@@ -3834,40 +3841,23 @@ fieldset.border {
 /* ─── MANDATORY GLOBAL ICON-TO-LABEL SPACING RULE (STRICT) ─── */
 i.bi,
 .bi {
-  margin-right: 6px !important;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-/* Reset margin for icon-only containers, stepper circles & icon-only buttons so icons remain perfectly centered */
-.btn:has(> i.bi:only-child) i.bi,
-.btn:has(> .bi:only-child) .bi,
-button:has(> i.bi:only-child) i.bi,
-button:has(> .bi:only-child) .bi,
-a:has(> i.bi:only-child) i.bi,
-a:has(> .bi:only-child) .bi,
-.icon-link i.bi,
-.icon-link .bi,
-.spec-delete-btn i.bi,
-.spec-delete-btn .bi,
-.btn-lims-icon i.bi,
-.btn-lims-icon .bi,
-.btn-icon i.bi,
-.btn-icon .bi,
-.btn-delete-row i.bi,
-.btn-delete-row .bi,
-.btn-edit-row i.bi,
-.btn-edit-row .bi,
-.step-circle i.bi,
-.step-circle .bi,
-.rounded-circle i.bi,
-.rounded-circle .bi,
-.btn-circle i.bi,
-.btn-circle .bi,
-.notif-btn i.bi,
-.notif-btn .bi,
-.nav-icon-btn i.bi,
-.nav-icon-btn .bi,
-.icon-only i.bi,
-.icon-only .bi,
+/* Safety reset for icon-only containers, stepper circles & icon-only buttons */
+.btn-tbl-action i,
+.btn-lims-icon i,
+.btn-icon i,
+.btn-delete-row i,
+.btn-edit-row i,
+.spec-delete-btn i,
+.step-circle i,
+.rounded-circle i,
+.btn-circle i,
+.notif-btn i,
+.nav-icon-btn i,
+.icon-only i,
 .sorting-icon-up,
 .sorting-icon-down,
 i.bi.no-space,
@@ -4403,7 +4393,6 @@ input[type="checkbox"]:checked {
 
 .btn-nav-link i.bi {
   font-size: 0.72rem;
-  margin-right: 6px !important;
 }
 
 

@@ -4,7 +4,7 @@
     <div class="col-12 col-lg-5">
       <div class="permission-panel card shadow-sm border rounded-3 h-100 bg-white">
         <!-- Card Header with Generous X-Padding -->
-        <div class="permission-panel-header available-header py-2.5 px-3.5 border-bottom d-flex align-items-center justify-content-between gap-3">
+        <div class="permission-panel-header available-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between gap-3">
           <div class="d-flex align-items-center gap-3">
             <div class="header-icon-box bg-danger-subtle text-danger shadow-xs">
               <i class="bi bi-shield-plus fs-5"></i>
@@ -21,7 +21,7 @@
 
         <div class="card-body p-3 bg-light-subtle d-flex flex-column">
           <!-- Compact Search Box -->
-          <div class="input-group input-group-sm mb-2.5 shadow-xs rounded-2 border bg-white search-input-group">
+          <div class="input-group input-group-sm mb-2 shadow-xs rounded-2 border bg-white search-input-group">
             <span class="input-group-text bg-transparent border-0 text-muted ps-3 pe-2">
               <i class="bi bi-search" style="font-size: 0.78rem;"></i>
             </span>
@@ -45,7 +45,7 @@
                 [class.bg-danger-subtle]="isGroupExpanded(group.name)"
                 [class.border-danger-subtle]="isGroupExpanded(group.name)"
               >
-                <div class="d-flex align-items-center gap-2.5 flex-grow-1 cursor-pointer select-none" (click)="toggleGroupExpansion(group.name)">
+                <div class="d-flex align-items-center gap-2 flex-grow-1 cursor-pointer select-none" (click)="toggleGroupExpansion(group.name)">
                   <i
                     class="bi text-danger"
                     style="font-size: 0.75rem; width: 14px;"
@@ -53,7 +53,7 @@
                     [class.bi-chevron-right]="!isGroupExpanded(group.name)"
                   ></i>
                   <span class="fw-semibold text-dark" style="font-size: 0.78rem;">{{ group.name }}</span>
-                  <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5 rounded-pill" style="font-size: 0.65rem;">
+                  <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
                     {{ group.permissions.length }}
                   </span>
                 </div>
@@ -108,7 +108,7 @@
 
     <!-- ════════════ Center Column: Clean Centered Action Buttons ════════════ -->
     <div class="col-12 col-lg-2 d-flex flex-column align-items-center justify-content-center py-2">
-      <div class="transfer-controls-box p-3.5 bg-white border rounded-3 d-flex flex-column align-items-center gap-2.5 shadow-sm">
+      <div class="transfer-controls-box p-3 bg-white border rounded-3 d-flex flex-column align-items-center gap-2 shadow-sm">
         <!-- Single Chevron-Right Icon Button (Assign) -->
         <button
           type="button"
@@ -133,11 +133,11 @@
         
         <!-- Selection Counter Badge Chips -->
         <div class="d-flex flex-column align-items-center mt-1 text-center w-100 gap-1">
-          <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill w-100 shadow-xs" style="font-size: 0.68rem;">
+          <span class="badge bg-light text-dark border px-2 py-1 rounded-pill w-100 shadow-xs" style="font-size: 0.68rem;">
             {{ availableSelection.size }} Selected
           </span>
-          <i class="bi bi-arrow-down-up text-muted my-0.5" style="font-size: 0.72rem;"></i>
-          <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill w-100 shadow-xs" style="font-size: 0.68rem;">
+          <i class="bi bi-arrow-down-up text-muted my-1" style="font-size: 0.72rem;"></i>
+          <span class="badge bg-light text-dark border px-2 py-1 rounded-pill w-100 shadow-xs" style="font-size: 0.68rem;">
             {{ assignedSelection.size }} Selected
           </span>
         </div>
@@ -148,7 +148,7 @@
     <div class="col-12 col-lg-5">
       <div class="permission-panel card shadow-sm border rounded-3 h-100 bg-white">
         <!-- Card Header with Generous X-Padding -->
-        <div class="permission-panel-header granted-header py-2.5 px-3.5 border-bottom d-flex align-items-center justify-content-between gap-3">
+        <div class="permission-panel-header granted-header py-2 px-3 border-bottom d-flex align-items-center justify-content-between gap-3">
           <div class="d-flex align-items-center gap-3">
             <div class="header-icon-box bg-success-subtle text-success shadow-xs">
               <i class="bi bi-person-check fs-5"></i>
@@ -164,7 +164,7 @@
         </div>
 
         <div class="card-body p-3 bg-light-subtle d-flex flex-column">
-          <div class="mb-2.5" *ngIf="allowUserSelection">
+          <div class="mb-2" *ngIf="allowUserSelection">
             <app-searchable-dropdown
               [placeholder]="'Search User...'"
               [labelName]="''"
@@ -180,7 +180,7 @@
             <div *ngFor="let group of filteredAssignedGroups" class="mb-2 group-container">
               <!-- Compact Group Header with Full Width & Balanced X-Padding -->
               <div class="group-header d-flex justify-content-between align-items-center py-2 px-3 rounded-2 border bg-success-subtle border-success-subtle transition-all">
-                <div class="d-flex align-items-center gap-2.5">
+                <div class="d-flex align-items-center gap-2">
                   <i class="bi bi-folder2-open text-success" style="font-size: 0.76rem;"></i>
                   <span class="fw-semibold text-success-emphasis" style="font-size: 0.78rem;">{{ group.name }}</span>
                 </div>
@@ -206,7 +206,7 @@
                   <div class="d-flex align-items-center gap-2 ps-2">
                     <i class="bi bi-shield-check text-success" style="font-size: 0.72rem;"></i>
                     <span class="text-dark fw-semibold" style="font-size: 0.75rem;">{{ p.displayName }}</span>
-                    <span *ngIf="!p.isOverride" class="badge bg-secondary-subtle text-secondary py-0.5 px-2 ms-2 rounded-pill" style="font-size: 0.60rem;">
+                    <span *ngIf="!p.isOverride" class="badge bg-secondary-subtle text-secondary py-1 px-2 ms-2 rounded-pill" style="font-size: 0.60rem;">
                       ROLE IMPLICIT
                     </span>
                   </div>
@@ -239,7 +239,7 @@
   </div>
 
   <!-- Bottom Actions Footer Bar -->
-  <div class="permission-save-bar p-3 px-3.5 mt-3 bg-white border rounded-3 d-flex justify-content-between align-items-center shadow-sm" *ngIf="!isViewMode">
+  <div class="permission-save-bar p-3 px-3 mt-3 bg-white border rounded-3 d-flex justify-content-between align-items-center shadow-sm" *ngIf="!isViewMode">
     <div class="text-muted small d-flex align-items-center gap-2">
       <i class="bi bi-info-circle text-primary fs-5"></i>
       <span style="font-size: 0.76rem;">Changes will update user authorization roles immediately upon save.</span>

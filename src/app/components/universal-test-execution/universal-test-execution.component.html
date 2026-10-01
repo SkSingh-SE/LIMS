@@ -8,7 +8,7 @@
       <span class="fw-semibold text-dark text-xs">Universal Test Execution Engine</span>
       <span class="text-muted text-xs d-none d-sm-inline">| ISO 17025 / NABL Compliant Workflow</span>
     </div>
-    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+    <div class="d-flex align-items-center gap-1 flex-wrap">
       <span class="workflow-step completed"><i class="bi bi-check-circle-fill me-1"></i>Sample Inward</span>
       <i class="bi bi-chevron-right text-muted text-xs"></i>
       <span class="workflow-step completed"><i class="bi bi-check-circle-fill me-1"></i>Sample Plan</span>
@@ -44,7 +44,7 @@
       </button>
 
       <!-- Compact Unified Sample Capsule -->
-      <div class="ute-sample-capsule flex-shrink-0 d-inline-flex align-items-center gap-1.5 bg-light border rounded px-2 py-0.5">
+      <div class="ute-sample-capsule flex-shrink-0 d-inline-flex align-items-center gap-1 bg-light border rounded px-2 py-1">
         <span class="ute-capsule-item text-danger font-monospace fw-semibold text-xs d-inline-flex align-items-center" title="Sample Number">
           <i class="bi bi-upc-scan me-1 text-danger"></i>{{ displaySampleNo }}
         </span>
@@ -52,7 +52,7 @@
         <span class="ute-capsule-item text-secondary font-monospace text-xs" title="Case Number">
           {{ displayCaseNo }}
         </span>
-        <span *ngIf="execution?.id" class="badge bg-dark text-white font-monospace text-xs py-0.5 px-1.5 ms-1">
+        <span *ngIf="execution?.id" class="badge bg-dark text-white font-monospace text-xs py-1 px-1 ms-1">
           UT-{{ ('00000' + execution?.id).slice(-6) }}
         </span>
       </div>
@@ -164,7 +164,7 @@
     </nav>
 
     <!-- Essential Compliance Badges (Single line, right-aligned) -->
-    <div class="d-flex align-items-center gap-1.5 flex-shrink-0 pe-2">
+    <div class="d-flex align-items-center gap-1 flex-shrink-0 pe-2">
       <span *ngIf="configSnapshot?.scope?.scopeStatus" class="badge bg-success-subtle text-success border border-success-subtle text-xs d-inline-flex align-items-center">
         <i class="bi bi-patch-check-fill me-1"></i>Scope: {{ configSnapshot?.scope?.scopeStatus }}
       </span>
@@ -181,13 +181,13 @@
   <!-- SLIM EXECUTION LIFECYCLE BAR                                      -->
   <!-- ================================================================= -->
   <div class="ute-execution-lifecycle-bar bg-white border-bottom px-3 py-1 d-flex align-items-center justify-content-between flex-nowrap">
-    <div class="d-flex align-items-center gap-1.5 overflow-hidden flex-nowrap">
+    <div class="d-flex align-items-center gap-1 overflow-hidden flex-nowrap">
       <span class="text-xs fw-semibold text-muted d-inline-flex align-items-center me-1 flex-shrink-0">
         <i class="bi bi-clock-history me-1 text-danger"></i> Lifecycle:
       </span>
       <div class="d-flex align-items-center gap-1 flex-nowrap ute-lifecycle-pills-row">
         <!-- 1. Planned -->
-        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-1"
               [ngClass]="currentStageLevel > 1 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 1 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 1"></i>
           <i class="bi bi-record-circle me-1" *ngIf="currentStageLevel === 1"></i>
@@ -196,7 +196,7 @@
         <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 2. In Progress -->
-        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-1"
               [ngClass]="currentStageLevel > 2 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 2 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 2"></i>
           <i class="bi bi-play-circle-fill me-1" *ngIf="currentStageLevel === 2"></i>
@@ -205,7 +205,7 @@
         <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 3. Completed -->
-        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-1"
               [ngClass]="currentStageLevel > 3 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 3 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 3"></i>
           <i class="bi bi-record-circle me-1" *ngIf="currentStageLevel === 3"></i>
@@ -214,7 +214,7 @@
         <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 4. Verified -->
-        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-1"
               [ngClass]="currentStageLevel > 4 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 4 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 4"></i>
           <i class="bi bi-record-circle me-1" *ngIf="currentStageLevel === 4"></i>
@@ -223,7 +223,7 @@
         <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 5. Approved -->
-        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-1"
               [ngClass]="currentStageLevel >= 5 && !isExecutionRejected ? 'bg-success text-white' : (isExecutionRejected ? 'bg-danger text-white' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel >= 5 && !isExecutionRejected"></i>
           <i class="bi bi-x-circle-fill me-1" *ngIf="isExecutionRejected"></i>
@@ -261,16 +261,16 @@
         <!-- ============================================================= -->
         <!-- LEFT: 10 CONFIGURATION CATEGORIES NAV LIST (COMPACT & CLEAN)  -->
         <!-- ============================================================= -->
-        <div class="col-12 col-md-4 col-lg-3 col-xl-2.5 ute-col-categories">
+        <div class="col-12 col-md-4 col-lg-3 col-xl-2 ute-col-categories">
           <div class="card shadow-sm border-0 ute-card h-100">
-            <div class="card-header bg-light py-2 px-2.5 border-bottom d-flex align-items-center justify-content-between">
+            <div class="card-header bg-light py-2 px-2 border-bottom d-flex align-items-center justify-content-between">
               <span class="ute-panel-title d-inline-flex align-items-center text-xs fw-bold"><i class="bi bi-sliders me-1 text-danger"></i> CONFIG MODULES</span>
               <span class="badge bg-white text-secondary border font-monospace text-xs">10 Modules</span>
             </div>
-            <div class="list-group list-group-flush ute-category-list p-1.5">
+            <div class="list-group list-group-flush ute-category-list p-1">
               <button *ngFor="let catKey of categoryKeys"
                       type="button"
-                      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center rounded mb-1 px-2 py-1.5 border-0 ute-cat-item"
+                      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center rounded mb-1 px-2 py-1 border-0 ute-cat-item"
                       [class.active]="activeConfigCategory === catKey"
                       (click)="setConfigCategory(catKey)">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden min-w-0">
@@ -291,7 +291,7 @@
         <!-- ============================================================= -->
         <!-- RIGHT: ACTIVE CATEGORY DETAIL PANEL                           -->
         <!-- ============================================================= -->
-        <div class="col-12 col-md-8 col-lg-9 col-xl-9.5 ute-col-detail">
+        <div class="col-12 col-md-8 col-lg-9 col-xl-10 ute-col-detail">
           <div class="card shadow-sm border-0 ute-card ute-category-detail-card h-100">
             <!-- Header of Active Category Detail -->
             <div class="card-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -308,11 +308,11 @@
               </div>
 
               <div class="d-flex align-items-center gap-1">
-                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-0.5 px-2 text-xs" (click)="prevCategory()" title="Previous Category">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-1 px-2 text-xs" (click)="prevCategory()" title="Previous Category">
                   <i class="bi bi-chevron-left me-1"></i> Prev
                 </button>
                 <span class="badge bg-white text-dark border font-monospace text-xs px-2 py-1">{{ activeCategoryIndex + 1 }} / 10</span>
-                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-0.5 px-2 text-xs" (click)="nextCategory()" title="Next Category">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-1 px-2 text-xs" (click)="nextCategory()" title="Next Category">
                   Next <i class="bi bi-chevron-right ms-1"></i>
                 </button>
               </div>

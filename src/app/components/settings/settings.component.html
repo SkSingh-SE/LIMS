@@ -155,12 +155,12 @@
                   <div class="col-md-6">
                     <label class="form-label">ULR Prefix</label>
                     <input type="text" class="form-control form-control-sm" formControlName="ulrPrefix" placeholder="e.g., TC5098" maxlength="50" />
-                    <small class="text-muted text-xxs d-block mt-0.5">Used for ULR number generation on test certificates</small>
+                    <small class="text-muted text-xxs d-block mt-1">Used for ULR number generation on test certificates</small>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Lab Location Code</label>
                     <input type="text" class="form-control form-control-sm" formControlName="labLocationCode" placeholder="e.g., 0 or 25000" maxlength="20" />
-                    <small class="text-muted text-xxs d-block mt-0.5">Location identifier in ULR sequence</small>
+                    <small class="text-muted text-xxs d-block mt-1">Location identifier in ULR sequence</small>
                   </div>
                 </div>
               </fieldset>
@@ -172,7 +172,7 @@
                 </legend>
                 <div class="row g-2">
                   <div class="col-md-8">
-                    <div class="d-flex justify-content-between align-items-center mb-0.5">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label mb-0">
                         Lab Address <span class="text-danger">*</span>
                       </label>
@@ -187,20 +187,20 @@
                     </div>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label mb-0.5">Organization Logo</label>
+                    <label class="form-label mb-1">Organization Logo</label>
                     <div class="file-upload-compact border rounded p-1 bg-light-subtle text-center d-flex flex-column justify-content-center align-items-center"
                       [class.has-file]="organizationLogoPreview"
                       [class.file-error]="fileErrors['organizationLogo']">
                       <input type="file" class="file-input-hidden" id="orgLogoInput" accept="image/png,image/jpeg,image/jpg"
                         (change)="onOrganizationLogoChange($event)" />
                       <div *ngIf="!organizationLogoPreview" class="file-upload-prompt cursor-pointer py-1" (click)="triggerFileInput('orgLogoInput')">
-                        <i class="bi bi-cloud-arrow-up text-danger fs-5 d-block mb-0.5"></i>
+                        <i class="bi bi-cloud-arrow-up text-danger fs-5 d-block mb-1"></i>
                         <span class="text-xs fw-medium text-dark d-block">Click to upload logo</span>
                         <span class="text-muted text-xxs">PNG / JPG, max 2MB</span>
                       </div>
-                      <div *ngIf="organizationLogoPreview" class="file-preview-box d-flex align-items-center gap-2 py-0.5">
+                      <div *ngIf="organizationLogoPreview" class="file-preview-box d-flex align-items-center gap-2 py-1">
                         <img [src]="organizationLogoPreview" alt="Org Logo" class="logo-preview-img rounded border" />
-                        <button type="button" class="btn btn-sm btn-outline-danger p-0.5 rounded-circle" (click)="clearOrganizationLogo()" title="Remove Logo">
+                        <button type="button" class="btn btn-sm btn-outline-danger p-1 rounded-circle" (click)="clearOrganizationLogo()" title="Remove Logo">
                           <i class="bi bi-trash"></i>
                         </button>
                       </div>
@@ -243,7 +243,7 @@
                 <div class="row g-2 align-items-center">
                   <div class="col-md-3">
                     <label class="form-label d-block mb-1">NABL Accreditation</label>
-                    <div class="form-check form-switch switch-primary pt-0.5">
+                    <div class="form-check form-switch switch-primary pt-1">
                       <input type="checkbox" class="form-check-input cursor-pointer" formControlName="nablEnabled" id="nablSwitch" />
                       <label class="form-check-label text-xs fw-medium cursor-pointer ms-1" for="nablSwitch">Enable NABL</label>
                     </div>
@@ -267,7 +267,7 @@
                   </div>
                   <div class="col-md-3" *ngIf="isNablEnabled">
                     <label class="form-label d-block mb-1">Accreditation Status</label>
-                    <div class="d-flex align-items-center gap-3 pt-0.5">
+                    <div class="d-flex align-items-center gap-3 pt-1">
                       <div class="form-check mb-0">
                         <input class="form-check-input cursor-pointer" type="radio" formControlName="isActive" [value]="true" id="statusActive">
                         <label class="form-check-label text-xs cursor-pointer" for="statusActive">Active</label>
@@ -313,28 +313,28 @@
                       [class.file-error]="fileErrors['nablCertificate']">
                       <input type="file" class="file-input-hidden" id="nablCertInput" accept="application/pdf"
                         (change)="onNablCertificateChange($event)" />
-                      <div *ngIf="!nablCertificateFile && !nablCertificateLoadedPath" class="file-upload-prompt cursor-pointer py-0.5" (click)="triggerFileInput('nablCertInput')">
-                        <i class="bi bi-file-earmark-pdf text-danger fs-5 d-block mb-0.5"></i>
+                      <div *ngIf="!nablCertificateFile && !nablCertificateLoadedPath" class="file-upload-prompt cursor-pointer py-1" (click)="triggerFileInput('nablCertInput')">
+                        <i class="bi bi-file-earmark-pdf text-danger fs-5 d-block mb-1"></i>
                         <span class="text-xs fw-medium text-dark d-block">Upload PDF Cert</span>
                         <span class="text-muted text-xxs">PDF only, max 10MB</span>
                       </div>
-                      <div *ngIf="nablCertificateFile" class="file-preview-box d-flex align-items-center justify-content-between w-100 px-1 py-0.5">
+                      <div *ngIf="nablCertificateFile" class="file-preview-box d-flex align-items-center justify-content-between w-100 px-1 py-1">
                         <span class="text-xs text-truncate max-w-150" [title]="nablCertificateFile.name">
                           <i class="bi bi-file-pdf-fill text-danger me-1"></i>{{ nablCertificateFile.name }}
                         </span>
-                        <button type="button" class="btn btn-sm btn-outline-danger p-0.5 rounded-circle" (click)="clearNablCertificate()" title="Remove">
+                        <button type="button" class="btn btn-sm btn-outline-danger p-1 rounded-circle" (click)="clearNablCertificate()" title="Remove">
                           <i class="bi bi-x"></i>
                         </button>
                       </div>
-                      <div *ngIf="!nablCertificateFile && nablCertificateLoadedPath" class="file-preview-box d-flex align-items-center justify-content-between w-100 px-1 py-0.5">
+                      <div *ngIf="!nablCertificateFile && nablCertificateLoadedPath" class="file-preview-box d-flex align-items-center justify-content-between w-100 px-1 py-1">
                         <span class="text-xs text-success fw-medium">
                           <i class="bi bi-check-circle-fill text-success me-1"></i>PDF Uploaded
                         </span>
                         <div class="d-flex align-items-center gap-1">
-                          <a [href]="nablCertificateLoadedPath" target="_blank" class="btn btn-sm btn-outline-secondary p-0.5" title="View PDF">
+                          <a [href]="nablCertificateLoadedPath" target="_blank" class="btn btn-sm btn-outline-secondary p-1" title="View PDF">
                             <i class="bi bi-box-arrow-up-right"></i>
                           </a>
-                          <button type="button" class="btn btn-sm btn-outline-danger p-0.5" (click)="nablCertificateLoadedPath = null" title="Replace">
+                          <button type="button" class="btn btn-sm btn-outline-danger p-1" (click)="nablCertificateLoadedPath = null" title="Replace">
                             <i class="bi bi-arrow-repeat"></i>
                           </button>
                         </div>
@@ -351,14 +351,14 @@
                       [class.file-error]="fileErrors['nablLogo']">
                       <input type="file" class="file-input-hidden" id="nablLogoInput" accept="image/png,image/jpeg,image/jpg"
                         (change)="onNablLogoChange($event)" />
-                      <div *ngIf="!nablLogoPreview" class="file-upload-prompt cursor-pointer py-0.5" (click)="triggerFileInput('nablLogoInput')">
-                        <i class="bi bi-image text-danger fs-5 d-block mb-0.5"></i>
+                      <div *ngIf="!nablLogoPreview" class="file-upload-prompt cursor-pointer py-1" (click)="triggerFileInput('nablLogoInput')">
+                        <i class="bi bi-image text-danger fs-5 d-block mb-1"></i>
                         <span class="text-xs fw-medium text-dark d-block">Upload NABL Logo</span>
                         <span class="text-muted text-xxs">Min 300x300px, max 2MB</span>
                       </div>
-                      <div *ngIf="nablLogoPreview" class="file-preview-box d-flex align-items-center gap-2 py-0.5">
+                      <div *ngIf="nablLogoPreview" class="file-preview-box d-flex align-items-center gap-2 py-1">
                         <img [src]="nablLogoPreview" alt="NABL Logo" class="logo-preview-img rounded border" />
-                        <button type="button" class="btn btn-sm btn-outline-danger p-0.5 rounded-circle" (click)="clearNablLogo()" title="Remove Logo">
+                        <button type="button" class="btn btn-sm btn-outline-danger p-1 rounded-circle" (click)="clearNablLogo()" title="Remove Logo">
                           <i class="bi bi-trash"></i>
                         </button>
                       </div>
@@ -435,7 +435,7 @@
                   <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-info-circle text-primary fs-6"></i>
                     <span class="text-xs text-muted">Generated Report Number Preview:</span>
-                    <code class="px-2 py-0.5 bg-white border rounded text-danger fw-bold font-monospace text-sm">{{ reportNumberExample }}</code>
+                    <code class="px-2 py-1 bg-white border rounded text-danger fw-bold font-monospace text-sm">{{ reportNumberExample }}</code>
                   </div>
                   <small class="text-muted text-xxs">Format: Prefix-Year-Counter</small>
                 </div>
@@ -472,7 +472,7 @@
                 <div class="row g-2 align-items-center">
                   <div class="col-md-3">
                     <label class="form-label d-block mb-1">GST Applicable</label>
-                    <div class="form-check form-switch switch-primary pt-0.5">
+                    <div class="form-check form-switch switch-primary pt-1">
                       <input type="checkbox" class="form-check-input cursor-pointer" formControlName="gstApplicable" id="gstSwitch" />
                       <label class="form-check-label text-xs fw-medium cursor-pointer ms-1" for="gstSwitch">Enable GST</label>
                     </div>
@@ -531,7 +531,7 @@
                   </div>
                   <div class="col-md-2">
                     <label class="form-label d-block mb-1">PI GST</label>
-                    <div class="form-check form-switch switch-primary pt-0.5">
+                    <div class="form-check form-switch switch-primary pt-1">
                       <input type="checkbox" class="form-check-input cursor-pointer" formControlName="piGstApplicable" id="piGstSwitch" />
                       <label class="form-check-label text-xs cursor-pointer ms-1" for="piGstSwitch">Apply on PI</label>
                     </div>
@@ -709,13 +709,13 @@
                           <input type="file" class="file-input-hidden" id="signatureInput" accept="image/png,image/jpeg,image/jpg"
                             (change)="onSignatureChange($event)" />
                           <div *ngIf="!signaturePreview" class="file-upload-prompt cursor-pointer py-1" (click)="triggerFileInput('signatureInput')">
-                            <i class="bi bi-pen text-danger fs-5 d-block mb-0.5"></i>
+                            <i class="bi bi-pen text-danger fs-5 d-block mb-1"></i>
                             <span class="text-xs fw-medium text-dark d-block">Click to upload signature</span>
                             <span class="text-muted text-xxs">PNG / JPG, max 2MB</span>
                           </div>
-                          <div *ngIf="signaturePreview" class="file-preview-box d-flex align-items-center gap-2 py-0.5">
+                          <div *ngIf="signaturePreview" class="file-preview-box d-flex align-items-center gap-2 py-1">
                             <img [src]="signaturePreview" alt="Signature" class="signature-preview-img rounded border" />
-                            <button type="button" class="btn btn-sm btn-outline-danger p-0.5 rounded-circle" (click)="clearSignature()" title="Remove">
+                            <button type="button" class="btn btn-sm btn-outline-danger p-1 rounded-circle" (click)="clearSignature()" title="Remove">
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
@@ -728,7 +728,7 @@
                       <div class="row g-2 mb-2">
                         <div class="col-6">
                           <label class="form-label d-block mb-1">Status</label>
-                          <div class="d-flex align-items-center gap-2 pt-0.5">
+                          <div class="d-flex align-items-center gap-2 pt-1">
                             <div class="form-check mb-0">
                               <input class="form-check-input cursor-pointer" type="radio" formControlName="status" [value]="true" id="sigActive">
                               <label class="form-check-label text-xs cursor-pointer" for="sigActive">Active</label>
@@ -741,7 +741,7 @@
                         </div>
                         <div class="col-6">
                           <label class="form-label d-block mb-1">Applicable For</label>
-                          <div class="form-check pt-0.5 mb-0">
+                          <div class="form-check pt-1 mb-0">
                             <input type="checkbox" class="form-check-input cursor-pointer" formControlName="applicableFor" id="reportApproval" />
                             <label class="form-check-label text-xs cursor-pointer" for="reportApproval">Report Approval</label>
                           </div>
@@ -773,14 +773,14 @@
                       <div class="signatory-card p-2 bg-white border rounded shadow-xs d-flex justify-content-between align-items-center"
                         *ngFor="let sig of signatories; let i = index">
                         <div class="d-flex align-items-center gap-2">
-                          <div class="signature-thumb border rounded p-0.5 bg-light d-flex align-items-center justify-content-center">
+                          <div class="signature-thumb border rounded p-1 bg-light d-flex align-items-center justify-content-center">
                             <img *ngIf="sig.preview || sig.signatureImage" [src]="sig.preview || sig.signatureImage" alt="Signature" class="sig-thumb-img" />
                             <span *ngIf="!sig.preview && !sig.signatureImage" class="text-muted text-xxs">No img</span>
                           </div>
                           <div>
                             <div class="fw-semibold text-xs text-dark">{{ sig.signatoryName }}</div>
                             <div class="text-muted text-xxs">{{ sig.designation }}</div>
-                            <div class="d-flex align-items-center gap-1 mt-0.5">
+                            <div class="d-flex align-items-center gap-1 mt-1">
                               <span class="badge" [ngClass]="sig.status ? 'bg-success-subtle text-success-emphasis border' : 'bg-danger-subtle text-danger-emphasis border'">
                                 {{ sig.status ? 'Active' : 'Inactive' }}
                               </span>

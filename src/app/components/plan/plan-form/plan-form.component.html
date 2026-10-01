@@ -226,7 +226,7 @@
                       <i class="bi bi-diagram-3 me-1 text-danger"></i> Master Classification & Scope
                     </span>
                     <button *ngIf="!isViewMode" type="button"
-                      class="btn btn-sm btn-lims btn-lims-primary d-inline-flex align-items-center py-0.5 px-2.5 shadow-sm"
+                      class="btn btn-sm btn-lims btn-lims-primary d-inline-flex align-items-center py-1 px-2 shadow-sm"
                       (click)="openExplorerModal(activeSampleIdx)"
                       title="Explore Configured Tests, Standards & Methods for this sample">
                       <i class="bi bi-layout-sidebar-reverse me-1"></i> Explore Configured Scope
@@ -1207,12 +1207,12 @@
                                      [title]="utgCtrl.get('testExecutionID')?.value ? 'View Completed Execution (ID: ' + utgCtrl.get('testExecutionID')?.value + ')' : ['Completed', 'Approved', 'Verified'].includes(utgCtrl.get('status')?.value) ? 'View Completed Execution' : 'Open Execution'">
                                     <i class="bi" [ngClass]="['Completed', 'Approved', 'Verified'].includes(utgCtrl.get('status')?.value) || utgCtrl.get('testExecutionID')?.value ? 'bi-clipboard-check' : 'bi-play-circle'"></i>
                                   </a>
-                                  <div *ngIf="utgCtrl.get('testExecutionID')?.value" class="mt-0.5">
+                                  <div *ngIf="utgCtrl.get('testExecutionID')?.value" class="mt-1">
                                     <a class="badge bg-light text-primary border text-xxs text-decoration-none"
                                        [routerLink]="['/universal-test-execution']"
                                        [queryParams]="{ executionId: utgCtrl.get('testExecutionID')?.value, utgId: utgCtrl.get('id')?.value, from: 'plan' }"
                                        [title]="'View Execution Workspace (ID: ' + utgCtrl.get('testExecutionID')?.value + ')'">
-                                      <i class="bi bi-box-arrow-up-right me-0.5"></i>UT-{{ ('00000' + utgCtrl.get('testExecutionID')?.value).slice(-6) }}
+                                      <i class="bi bi-box-arrow-up-right me-1"></i>UT-{{ ('00000' + utgCtrl.get('testExecutionID')?.value).slice(-6) }}
                                     </a>
                                   </div>
                                 </td>
@@ -1261,7 +1261,7 @@
               </span>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small d-inline-flex align-items-center gap-1"
+              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2 extra-small d-inline-flex align-items-center gap-1"
                 (click)="isCombinedMode = false; combinedIdxs.clear(); selectAllChecked = false">
                 <i class="bi bi-x-circle me-1"></i><span>Cancel Combined</span>
               </button>

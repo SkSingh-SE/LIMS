@@ -60,6 +60,12 @@
   letter-spacing: 0.2px;
 }
 
+.ute-header-test-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
 .ute-header-right {
   display: flex;
   align-items: center;
@@ -606,6 +612,136 @@
 
 .ute-tline-content {
   line-height: 1.25;
+}
+
+/* ================================================================= */
+/* MASTER-DETAIL CATEGORY WORKSPACE (TAB 1)                          */
+/* ================================================================= */
+.ute-master-detail-grid {
+  min-height: calc(100vh - 200px);
+}
+
+.ute-category-list .list-group-item {
+  padding: 5px 8px;
+  font-size: 0.76rem;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  background-color: transparent;
+  min-height: 32px;
+}
+
+.ute-category-list .list-group-item:hover {
+  background-color: #fff1f2;
+  border-color: #fecaca;
+  color: var(--primary-color, #da261c);
+}
+
+.ute-category-list .list-group-item.active {
+  background-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.25);
+}
+
+.ute-category-list .list-group-item.active .ute-cat-title {
+  color: #ffffff !important;
+}
+
+.ute-cat-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+
+.ute-category-list .list-group-item.active .ute-cat-icon-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.ute-cat-title {
+  font-size: 0.77rem;
+}
+
+.ute-category-detail-card {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+}
+
+.ute-cat-detail-body {
+  flex: 1;
+  background: #ffffff;
+}
+
+.ute-cat-icon-box {
+  width: 32px;
+  height: 32px;
+  background: #fef2f2;
+  border-color: #fee2e2 !important;
+  color: var(--primary-color, #da261c);
+}
+
+.ute-cat-detail-title {
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+/* ================================================================= */
+/* SLIDE-OVER INSPECTOR DRAWER                                       */
+/* ================================================================= */
+.ute-drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1050;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.ute-inspector-drawer {
+  position: fixed;
+  top: 0;
+  right: -480px;
+  bottom: 0;
+  width: 460px;
+  max-width: 92vw;
+  background: #ffffff;
+  z-index: 1060;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.15);
+  transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ute-inspector-drawer.open {
+  right: 0;
+}
+
+.ute-drawer-header {
+  flex-shrink: 0;
+  background: #f8fafc;
+}
+
+.ute-drawer-body {
+  flex: 1;
+  background: #f8fafc;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ----------------------------------------------------------------- */

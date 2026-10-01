@@ -81,6 +81,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   isViewMode: boolean = false;
   isProcessing: boolean = false;
   isFullscreen: boolean = false;
+  isInspectorDrawerOpen: boolean = false;
 
   // Universal Phase 7 (Results) & Phase 8 (Review) State
   universalResult: any = null;
@@ -1665,12 +1666,28 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     return 'result-status-rework';
   }
 
+  toggleInspectorDrawer(): void {
+    this.isInspectorDrawerOpen = !this.isInspectorDrawerOpen;
+  }
+
+  closeInspectorDrawer(): void {
+    this.isInspectorDrawerOpen = false;
+  }
+
   setConfigCategory(cat: string): void {
-    this.activeConfigCategory = cat;
+    if (this.categoryKeys.includes(cat)) {
+      this.activeConfigCategory = cat;
+      if (cat === 'formula' && !this.selectedFormulaParam) {
+        const firstCalc = this.parameters.find(p => p.isCalculated);
+        if (firstCalc) {
+          this.selectFormulaParameter(firstCalc);
+        }
+      }
+    }
   }
 
   openCategoryModal(cat: string): void {
-    this.activeConfigCategory = cat;
+    this.setConfigCategory(cat);
     this.showCategoryModal = true;
   }
 
@@ -1681,13 +1698,13 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   prevCategory(): void {
     const idx = this.categoryKeys.indexOf(this.activeConfigCategory);
     const prevIdx = (idx - 1 + this.categoryKeys.length) % this.categoryKeys.length;
-    this.activeConfigCategory = this.categoryKeys[prevIdx];
+    this.setConfigCategory(this.categoryKeys[prevIdx]);
   }
 
   nextCategory(): void {
     const idx = this.categoryKeys.indexOf(this.activeConfigCategory);
     const nextIdx = (idx + 1) % this.categoryKeys.length;
-    this.activeConfigCategory = this.categoryKeys[nextIdx];
+    this.setConfigCategory(this.categoryKeys[nextIdx]);
   }
 
   get activeCategoryIndex(): number {
@@ -1710,15 +1727,19 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   }
 
   get currentCategoryCount(): string | number {
-    switch (this.activeConfigCategory) {
+    return this.getCategoryCount(this.activeConfigCategory);
+  }
+
+  getCategoryCount(catKey: string): number {
+    switch (catKey) {
       case 'parameters':
-        return this.configSnapshot?.parameters?.length || this.parameters?.length || 0;
+        return this.parameters?.length || 0;
       case 'conditions':
         return this.configSnapshot?.conditions?.length || 0;
       case 'limits':
         return this.parameters?.length || 0;
       case 'formula':
-        return this.parameters.filter(p => p.isCalculated)?.length || 1;
+        return this.parameters.filter(p => p.isCalculated)?.length || 0;
       case 'equipment':
         return this.configSnapshot?.equipment?.length || 0;
       case 'factors':
@@ -1736,12 +1757,23 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     }
   }
 
+  get inputParametersCount(): number {
+    return this.parameters.filter(p => !p.isCalculated).length;
+  }
+
+  get calculatedParametersCount(): number {
+    return this.parameters.filter(p => p.isCalculated).length;
+  }
+
   get filteredParameters(): SnapshotParameterDto[] {
-    if (!this.categorySearchTerm) return this.parameters;
-    const term = this.categorySearchTerm.toLowerCase();
+    if (!this.categorySearchTerm || !this.categorySearchTerm.trim()) {
+      return this.parameters;
+    }
+    const term = this.categorySearchTerm.toLowerCase().trim();
     return this.parameters.filter(p =>
       (p.code || '').toLowerCase().includes(term) ||
-      (p.name || '').toLowerCase().includes(term)
+      (p.name || '').toLowerCase().includes(term) ||
+      (p.parameterType || '').toLowerCase().includes(term)
     );
   }
 
@@ -1749,6 +1781,9 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
   onEscapePress(): void {
     if (this.showCategoryModal) {
       this.closeCategoryModal();
+    }
+    if (this.isInspectorDrawerOpen) {
+      this.closeInspectorDrawer();
     }
   }
 

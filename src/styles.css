@@ -6122,5 +6122,27 @@ input[type="checkbox"]:checked {
   background-color: #f8fafc;
 }
 
+/* ── Global Workflow Flow & Lifecycle Stepper Bar ── */
+.workflow-flow-banner {
+  min-height: 32px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
 
+.workflow-step {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
 
+.workflow-step.active {
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+}
+
+.workflow-step.completed {
+  color: #10b981;
+  font-weight: 500;
+}

@@ -63,7 +63,7 @@ export class UniversalTestExecutionComponent implements OnInit, OnDestroy {
     formula: { title: 'Formula Builder', subtitle: 'Equations, Mathematical Dependencies & DAG Trace', icon: 'bi-calculator text-primary', badgeColor: 'bg-primary' },
     equipment: { title: 'Equipment & Instruments', subtitle: 'Instruments, Calibration & Traceability', icon: 'bi-tools text-warning', badgeColor: 'bg-warning text-dark' },
     factors: { title: 'Factors & Conversions', subtitle: 'Multipliers, Dilution Factors & Units', icon: 'bi-percent text-secondary', badgeColor: 'bg-secondary' },
-    uncertainty: { title: 'Measurement Uncertainty (MU)', subtitle: 'Coverage Factor (k), Basis & ISO 17025 Statement', icon: 'bi-graph-up text-dark', badgeColor: 'bg-dark' },
+    uncertainty: { title: 'Measurement Uncertainty', subtitle: 'Coverage Factor (k), Basis & ISO 17025 Statement', icon: 'bi-graph-up text-dark', badgeColor: 'bg-dark' },
     acceptance: { title: 'Acceptance Criteria', subtitle: 'Pass / Fail Rules & Compliance Evaluation Rules', icon: 'bi-check2-circle text-success', badgeColor: 'bg-success' },
     attachments: { title: 'Attachments & Standards', subtitle: 'Test Methods, SOPs, Standards & Documents', icon: 'bi-paperclip text-primary', badgeColor: 'bg-primary' },
     remarks: { title: 'Remarks & Notes', subtitle: 'Analyst Notes & General Observations', icon: 'bi-card-text text-secondary', badgeColor: 'bg-secondary' }

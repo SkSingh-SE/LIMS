@@ -66,6 +66,13 @@
   color: #0f172a;
 }
 
+.ute-sample-capsule {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
 .ute-header-right {
   display: flex;
   align-items: center;
@@ -95,7 +102,8 @@
 }
 
 .ute-search-select-box {
-  width: 220px;
+  width: 270px;
+  min-width: 230px;
 }
 
 .ute-run-selector {
@@ -105,19 +113,21 @@
 }
 
 .ute-run-select {
-  width: 80px;
-  height: 26px;
-  padding: 1px 6px;
-  font-size: 0.74rem;
+  width: 82px;
+  height: 28px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
   font-weight: 600;
   border-color: #cbd5e1;
+  border-radius: 4px;
 }
 
 .ute-status-badge {
   font-size: 0.74rem;
   font-weight: 600;
-  padding: 4px 8px;
+  padding: 4px 10px;
   letter-spacing: 0.3px;
+  border-radius: 4px;
 }
 
 .ute-header-actions {
@@ -202,12 +212,39 @@
 .ute-execution-lifecycle-bar {
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
-  padding: 6px 14px;
+  padding: 4px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   overflow-x: auto;
+}
+
+.ute-lifecycle-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ute-lifecycle-pill {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.ute-chevron-sep {
+  font-size: 0.62rem;
+  color: #94a3b8;
+  margin: 0 2px;
+}
+
+.ute-life-current {
+  background-color: #fef2f2 !important;
+  color: var(--primary-color, #da261c) !important;
+  border: 1px solid #fecaca !important;
+  font-weight: 600 !important;
 }
 
 .ute-lifecycle-heading {
@@ -621,9 +658,9 @@
   min-height: calc(100vh - 200px);
 }
 
-.ute-category-list .list-group-item {
+.ute-category-list .list-group-item.ute-cat-item {
   padding: 5px 8px;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   border: 1px solid transparent;
   transition: all 0.15s ease;
   cursor: pointer;
@@ -631,21 +668,25 @@
   min-height: 32px;
 }
 
-.ute-category-list .list-group-item:hover {
-  background-color: #fff1f2;
-  border-color: #fecaca;
+.ute-category-list .list-group-item.ute-cat-item:hover {
+  background-color: #f8fafc;
   color: var(--primary-color, #da261c);
 }
 
-.ute-category-list .list-group-item.active {
-  background-color: var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(218, 38, 28, 0.25);
+.ute-category-list .list-group-item.ute-cat-item.active,
+.ute-cat-item.active {
+  background-color: #fef2f2 !important;
+  color: var(--primary-color, #da261c) !important;
+  border-left: 3.5px solid var(--primary-color, #da261c) !important;
+  border-color: #fecaca !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(218, 38, 28, 0.08);
 }
 
-.ute-category-list .list-group-item.active .ute-cat-title {
-  color: #ffffff !important;
+.ute-category-list .list-group-item.ute-cat-item.active .ute-cat-title,
+.ute-cat-item.active .ute-cat-title {
+  color: var(--primary-color, #da261c) !important;
+  font-weight: 600 !important;
 }
 
 .ute-cat-icon-badge {
@@ -662,13 +703,16 @@
   transition: all 0.15s ease;
 }
 
-.ute-category-list .list-group-item.active .ute-cat-icon-badge {
-  background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+.ute-category-list .list-group-item.ute-cat-item.active .ute-cat-icon-badge,
+.ute-cat-item.active .ute-cat-icon-badge {
+  background: #ffffff !important;
+  color: var(--primary-color, #da261c) !important;
+  border: 1px solid #fecaca !important;
 }
 
 .ute-cat-title {
-  font-size: 0.77rem;
+  font-size: 0.76rem;
+  color: #334155;
 }
 
 .ute-category-detail-card {
@@ -1395,4 +1439,473 @@ main.ute-workspace-content .ute-input-compact-calc {
   font-size: 0.78rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   padding: 2px 6px;
+}
+
+/* ================================================================= */
+/* FULL WORKSPACE DESIGN PASS — header · lifecycle · stepper · tabs  */
+/* 1/3/4/5/6 · drawer · modals · sticky bar (design-only, Screen 16) */
+/* Poppins · 0.72–0.82rem · 26–28px controls · var(--primary-color)  */
+/* ================================================================= */
+
+/* ---- Master header: flat, slim, quiet ---- */
+.ute-master-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+  padding: 4px 12px !important;
+}
+.ute-header-test-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.ute-master-header .badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.ute-master-header .ute-search-select-box {
+  width: 310px;
+  min-width: 260px;
+}
+.ute-master-header .ute-run-select,
+.ute-master-header .ute-search-select-box .form-control-sm {
+  min-height: 28px;
+  font-size: 0.76rem;
+}
+.ute-status-badge {
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px;
+  border-radius: 4px;
+}
+
+/* ---- Workflow banner: compact ---- */
+.workflow-flow-banner {
+  font-size: 0.72rem;
+  padding: 3px 12px !important;
+}
+.workflow-flow-banner .fw-semibold {
+  font-size: 0.76rem;
+}
+
+/* ---- Stepper tabs: slimmer, calm ---- */
+.ute-tabs-stepper-row {
+  background: #ffffff;
+}
+.ute-tabs-stepper {
+  background: #ffffff !important;
+}
+.ute-tab-btn {
+  font-size: 0.76rem !important;
+  padding: 6px 12px !important;
+  margin-bottom: 0 !important;
+  border-radius: 0 !important;
+}
+.ute-tab-btn.active {
+  box-shadow: none !important;
+}
+.ute-tab-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---- Lifecycle bar: compact pills, brand-red current ---- */
+.ute-execution-lifecycle-bar {
+  padding: 4px 12px !important;
+  gap: 6px;
+}
+.ute-execution-lifecycle-bar .badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+.ute-life-current {
+  background: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--primary-color, #da261c) !important;
+}
+.ute-execution-lifecycle-bar .bi-chevron-right {
+  font-size: 0.65rem;
+}
+
+/* ---- Tab 1: categories + detail ---- */
+.ute-col-categories {
+  flex: 0 0 280px !important;
+  width: 280px !important;
+  max-width: 280px !important;
+}
+.ute-col-detail {
+  flex: 1 1 0% !important;
+  width: calc(100% - 280px) !important;
+  max-width: calc(100% - 280px) !important;
+  min-width: 0 !important;
+}
+@media (max-width: 991.98px) {
+  .ute-col-categories,
+  .ute-col-detail {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+.ute-col-categories .card-header,
+.ute-category-detail-card > .card-header {
+  padding: 6px 12px !important;
+}
+
+.ute-cat-item {
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 0.75rem !important;
+  color: #334155;
+  border: 1px solid transparent !important;
+  transition: all 0.12s ease-in-out;
+}
+.ute-cat-item:hover {
+  background-color: #f8fafc !important;
+  color: var(--primary-color, #da261c);
+}
+.ute-cat-item.active {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+  border-left: 3.5px solid var(--primary-color, #da261c) !important;
+  color: var(--primary-color, #da261c) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(218, 38, 28, 0.08);
+}
+
+.ute-cat-icon-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ute-cat-item.active .ute-cat-icon-badge {
+  background: #ffffff;
+  color: var(--primary-color, #da261c);
+  border: 1px solid #fecaca;
+}
+
+.ute-cat-icon-box {
+  width: 32px;
+  height: 32px;
+}
+.ute-cat-detail-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+.ute-cat-detail-body .form-control-sm,
+.ute-cat-detail-body .form-select-sm,
+.ute-cat-detail-body .input-group-sm > .form-control,
+.ute-cat-detail-body .input-group-sm > .input-group-text {
+  min-height: 28px;
+  font-size: 0.76rem;
+}
+.ute-filter-220 {
+  width: 240px;
+  max-width: 100%;
+}
+.ute-td-formula {
+  color: #475569;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* ================================================================= */
+/* CLEAN DESIGN PASS 3 — contrast fix · theme-blue purge · formula   */
+/* workspace (image review: active-row contrast, blue selection)     */
+/* Theme-safe: var(--primary-*) only — no hardcoded brand blue       */
+/* ================================================================= */
+
+/* ---- 1. Category active row: enforce readable theme ink ---- */
+.ute-category-list .list-group-item.list-group-item-action.active {
+  background-color: var(--primary-50, #fef2f2);
+  border-left: 3.5px solid var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+}
+.ute-category-list .list-group-item.list-group-item-action.active .ute-cat-title,
+.ute-category-list .list-group-item.list-group-item-action.active .category-desc {
+  color: var(--primary-color, #da261c);
+}
+.ute-category-list .list-group-item.list-group-item-action.active .badge {
+  background: #ffffff;
+  color: var(--primary-color, #da261c);
+  border: 1px solid var(--primary-200, #fecaca);
+}
+
+/* ---- 2. Formula Builder list: theme selection, never blue ---- */
+.ute-formula-list .list-group-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.ute-formula-list .list-group-item.list-group-item-action.active {
+  background-color: var(--primary-50, #fef2f2);
+  border: 1px solid var(--primary-200, #fecaca);
+  border-left: 3px solid var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+  box-shadow: none;
+}
+.ute-formula-list .list-group-item.list-group-item-action.active .fw-semibold,
+.ute-formula-list .list-group-item.list-group-item-action.active small {
+  color: var(--primary-color, #da261c);
+}
+.ute-formula-list .list-group-item.list-group-item-action.active .ute-unit-pill {
+  background: #ffffff;
+  color: var(--primary-color, #da261c);
+  border-color: var(--primary-200, #fecaca);
+}
+.ute-unit-pill {
+  font-size: 0.68rem;
+  font-weight: 500;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+/* ---- 3. Formula workspace: soft card, theme code pill ---- */
+.ute-formula-workspace {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.ute-formula-code-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--primary-color, #da261c);
+  background: var(--primary-50, #fef2f2);
+  border: 1px solid var(--primary-200, #fecaca);
+  border-radius: 4px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+/* ---- 4. Keypad: uniform 28px mono keys, theme hover ---- */
+.ute-keypad-grid .btn {
+  min-height: 28px;
+  min-width: 34px;
+  font-size: 0.72rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.ute-keypad-grid .btn:hover {
+  border-color: var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+  background: var(--primary-50, #fef2f2);
+}
+
+/* ---- 5. Evaluation preview: quiet mono box ---- */
+.ute-eval-preview-box {
+  font-size: 0.72rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-height: 32px;
+}
+.ute-eval-preview-box .text-success {
+  font-weight: 700;
+}
+
+/* ---- 6. FROZEN pill: soft amber (scoped — specimen tags untouched) ---- */
+.ute-tabs-stepper-row .badge.bg-dark.text-warning {
+  background-color: #fffbeb !important;
+  color: #92400e !important;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+.ute-keypad-grid .btn {
+  min-height: 26px;
+  font-size: 0.72rem;
+  border-radius: 4px;
+}
+.ute-formula-code-box {
+  font-size: 0.74rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ute-formula-code-box code {
+  color: #334155;
+  font-size: inherit;
+  background: transparent;
+  padding: 0;
+}
+
+/* ---- Results tab: KPI + compliance table ---- */
+.ute-decision-pill {
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 6px;
+}
+.ute-compliance-val {
+  font-size: 0.85rem;
+}
+.ute-frozen-bar {
+  font-size: 0.68rem;
+}
+.ute-frozen-bar .mono-hash {
+  font-size: 0.66rem;
+  word-break: break-all;
+}
+.ute-trace-box,
+.ute-audit-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 6px 8px;
+}
+.ute-trace-toggle,
+.ute-audit-toggle {
+  min-height: 26px;
+  font-size: 0.7rem;
+}
+
+/* ---- Review tab: step cards + findings ---- */
+.ute-review-step-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+.ute-review-step-title {
+  font-size: 0.78rem;
+}
+.ute-review-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+.ute-findings-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 8px 10px;
+}
+.ute-findings-title {
+  font-size: 0.76rem;
+}
+.ute-findings-box .form-control-sm,
+.ute-findings-box .form-select-sm {
+  min-height: 28px;
+  font-size: 0.76rem;
+}
+
+/* ---- Report tab ---- */
+.ute-report-title {
+  font-size: 0.82rem;
+}
+.ute-report-note {
+  font-size: 0.72rem;
+}
+
+/* ---- Audit tab ---- */
+.ute-audit-title {
+  font-size: 0.82rem;
+}
+
+/* ---- Inspector drawer polish ---- */
+.ute-inspector-drawer {
+  font-size: 0.76rem;
+}
+.ute-drawer-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.ute-drawer-header h6 {
+  font-size: 0.82rem;
+}
+.ute-drawer-body .card-header {
+  padding: 4px 8px !important;
+}
+.ute-drawer-body .form-control-sm,
+.ute-drawer-body .form-select-sm {
+  min-height: 28px;
+  font-size: 0.76rem;
+}
+
+/* ---- Modals: clean light headers ---- */
+.ute-modal-backdrop .modal-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 6px 12px !important;
+}
+.ute-modal-backdrop .modal-title {
+  font-size: 0.82rem;
+  color: #1e293b;
+}
+.ute-modal-backdrop .modal-body .form-control-sm,
+.ute-modal-backdrop .modal-body .form-select-sm {
+  min-height: 28px;
+  font-size: 0.76rem;
+}
+.ute-modal-backdrop .modal-footer {
+  border-top: 1px solid #e2e8f0 !important;
+  padding: 6px 12px !important;
+}
+
+/* ---- Sticky action bar: slimmer ---- */
+.ute-sticky-action-bar {
+  height: 46px !important;
+  padding: 0 12px !important;
+}
+.ute-sticky-action-bar .text-muted.small {
+  font-size: 0.72rem;
+}
+
+/* ---- Shared workspace tables ---- */
+.ute-workspace-content fieldset.border legend,
+.ute-workspace-content fieldset.rounded legend {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color, #da261c);
+  letter-spacing: 0.3px;
+  padding: 0 8px;
+  margin-left: 10px;
+  margin-bottom: 0;
+  float: none;
+  width: auto;
+}
+.ute-workspace-content .alert {
+  font-size: 0.74rem;
+}
+.ute-workspace-content .table {
+  font-size: 0.76rem;
+}
+.ute-workspace-content .table thead th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 4px 6px;
+}
+.ute-workspace-content .table tbody td {
+  padding: 4px 6px;
+  vertical-align: middle;
 }

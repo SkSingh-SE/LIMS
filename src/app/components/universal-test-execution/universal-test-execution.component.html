@@ -5,30 +5,30 @@
   <!-- ================================================================= -->
   <div class="workflow-flow-banner d-flex align-items-center justify-content-between px-3 py-1 bg-white border-bottom flex-wrap gap-2">
     <div class="d-flex align-items-center gap-2">
-      <span class="fw-semibold text-dark small">Universal Test Execution Engine</span>
-      <span class="text-muted small">| ISO 17025 / NABL Compliant Workflow</span>
+      <span class="fw-semibold text-dark text-xs">Universal Test Execution Engine</span>
+      <span class="text-muted text-xs d-none d-sm-inline">| ISO 17025 / NABL Compliant Workflow</span>
     </div>
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <span class="workflow-step completed"><i class="bi bi-check-circle me-1"></i>Sample Inward</span>
-      <i class="bi bi-chevron-right text-muted small"></i>
-      <span class="workflow-step completed"><i class="bi bi-check-circle me-1"></i>Sample Plan</span>
-      <i class="bi bi-chevron-right text-muted small"></i>
+    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+      <span class="workflow-step completed"><i class="bi bi-check-circle-fill me-1"></i>Sample Inward</span>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
+      <span class="workflow-step completed"><i class="bi bi-check-circle-fill me-1"></i>Sample Plan</span>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
       <span class="workflow-step" [class.completed]="currentStageLevel > 1"><i class="bi bi-scissors me-1"></i>Sample Prep</span>
-      <i class="bi bi-chevron-right text-muted small"></i>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
       <span class="workflow-step" [class.completed]="currentStageLevel > 2" [class.active]="currentStageLevel === 2 || currentStageLevel === 1">
-        <i class="bi bi-play-circle me-1"></i>Test Execution
+        <i class="bi bi-play-circle-fill me-1"></i>Test Execution
       </span>
-      <i class="bi bi-chevron-right text-muted small"></i>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
       <span class="workflow-step" [class.completed]="currentStageLevel > 4" [class.active]="currentStageLevel === 4">
-        <i class="bi bi-patch-check me-1"></i>Verification
+        <i class="bi bi-patch-check-fill me-1"></i>Verification
       </span>
-      <i class="bi bi-chevron-right text-muted small"></i>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
       <span class="workflow-step" [class.completed]="currentStageLevel >= 5" [class.active]="currentStageLevel === 5">
         <i class="bi bi-shield-check me-1"></i>Approval
       </span>
-      <i class="bi bi-chevron-right text-muted small"></i>
+      <i class="bi bi-chevron-right text-muted text-xs"></i>
       <span class="workflow-step" [class.completed]="selectedReport != null">
-        <i class="bi bi-file-earmark-check me-1"></i>Report
+        <i class="bi bi-file-earmark-check-fill me-1"></i>Report
       </span>
     </div>
   </div>
@@ -36,30 +36,30 @@
   <!-- ================================================================= -->
   <!-- TOP MASTER HEADER (Streamlined Enterprise LIMS Header)            -->
   <!-- ================================================================= -->
-  <header class="ute-master-header bg-white border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2">
+  <header class="ute-master-header bg-white border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-1.5">
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <button class="btn btn-sm btn-lims btn-lims-cancel px-2 py-1 d-inline-flex align-items-center" (click)="goBack()" title="Back to Test Groups Queue">
+      <button class="btn-lims btn-lims-cancel btn-sm" (click)="goBack()" title="Back to Test Groups Queue">
         <i class="bi bi-arrow-left me-1"></i> Queue
       </button>
 
-      <div class="d-flex align-items-center gap-1">
-        <span class="badge bg-light text-dark border font-monospace px-2 py-1 d-inline-flex align-items-center">
-          <i class="bi bi-upc-scan text-danger me-1"></i>Sample: {{ displaySampleNo }}
+      <div class="ute-sample-capsule d-inline-flex align-items-center gap-1 bg-light border rounded px-1.5 py-0.5">
+        <span class="badge bg-white text-danger border border-danger-subtle font-monospace text-xs d-inline-flex align-items-center">
+          <i class="bi bi-upc-scan me-1 text-danger"></i>Sample: {{ displaySampleNo }}
         </span>
-        <span class="badge bg-light text-dark border font-monospace px-2 py-1 d-inline-flex align-items-center">
+        <span class="badge bg-white text-dark border font-monospace text-xs d-inline-flex align-items-center">
           Case: {{ displayCaseNo }}
         </span>
-        <span *ngIf="execution?.id" class="badge bg-light text-primary border font-monospace px-2 py-1 d-inline-flex align-items-center">
+        <span *ngIf="execution?.id" class="badge bg-dark text-white font-monospace text-xs d-inline-flex align-items-center">
           UT-{{ ('00000' + execution?.id).slice(-6) }}
         </span>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
-        <strong class="text-dark d-inline-flex align-items-center ute-header-test-title">
-          <i class="bi bi-flask me-1 text-danger"></i>{{ displayExecutionTestName }}
-        </strong>
-        <span class="text-muted small d-none d-md-inline">&bull; {{ displayCustomerName }}</span>
-        <span *ngIf="displayGradeName !== '—'" class="badge bg-light text-dark border px-2 py-1">Grade: {{ displayGradeName }}</span>
+      <div class="d-inline-flex align-items-center gap-1.5 flex-wrap">
+        <span class="ute-header-test-title text-dark fw-bold d-inline-flex align-items-center">
+          <i class="bi bi-flask-fill me-1 text-danger"></i>{{ displayExecutionTestName }}
+        </span>
+        <span class="text-muted small d-none d-lg-inline">&bull; {{ displayCustomerName }}</span>
+        <span *ngIf="displayGradeName !== '—'" class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle text-xs">Grade: {{ displayGradeName }}</span>
       </div>
     </div>
 
@@ -95,19 +95,22 @@
               'badge-status-rejected': execution?.status === 'Rejected'
             }">
         <i class="bi bi-record-circle me-1" *ngIf="execution?.status === 'InProgress'"></i>
+        <i class="bi bi-check-circle-fill me-1" *ngIf="execution?.status === 'Approved' || execution?.status === 'Verified'"></i>
         {{ execution?.status || 'InProgress' }}
       </span>
 
       <!-- Action Buttons -->
-      <button class="btn btn-sm btn-lims-icon btn-lims-secondary d-inline-flex align-items-center justify-content-center" (click)="loadExecutionById(testExecutionId!)" [disabled]="!testExecutionId || isProcessing" title="Refresh">
-        <i class="bi bi-arrow-clockwise"></i>
-      </button>
-      <button class="btn btn-sm btn-lims-icon btn-lims-secondary d-inline-flex align-items-center justify-content-center" (click)="toggleFullscreen()" title="Toggle Fullscreen">
-        <i class="bi" [ngClass]="isFullscreen ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
-      </button>
-      <button class="btn btn-sm btn-lims btn-lims-secondary px-2 py-1 d-inline-flex align-items-center" (click)="toggleInspectorDrawer()" title="Toggle Summary & Trace Inspector">
-        <i class="bi bi-layout-sidebar-inset-reverse me-1 text-danger"></i> Inspector
-      </button>
+      <div class="d-flex align-items-center gap-1">
+        <button class="btn-lims-icon btn-lims-secondary" (click)="loadExecutionById(testExecutionId!)" [disabled]="!testExecutionId || isProcessing" title="Refresh">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn-lims-icon btn-lims-secondary" (click)="toggleFullscreen()" title="Toggle Fullscreen">
+          <i class="bi" [ngClass]="isFullscreen ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
+        </button>
+        <button class="btn-lims btn-lims-secondary btn-sm d-inline-flex align-items-center" (click)="toggleInspectorDrawer()" title="Toggle Summary & Trace Inspector">
+          <i class="bi bi-layout-sidebar-inset-reverse me-1 text-danger"></i> Inspector
+        </button>
+      </div>
     </div>
   </header>
 
@@ -152,21 +155,21 @@
     </nav>
 
     <!-- Context Chips & Snapshot Badges (Right side of stepper) -->
-    <div class="d-flex align-items-center gap-1 py-1 px-2">
-      <span *ngIf="configSnapshot?.provenance?.sourceType" class="badge bg-light text-secondary border px-2 py-1">
-        Source: {{ configSnapshot?.provenance?.sourceType }}
+    <div class="d-flex align-items-center gap-1.5 py-1 px-2 flex-wrap">
+      <span *ngIf="configSnapshot?.provenance?.sourceType" class="badge bg-light text-secondary border px-2 py-1 text-xs d-inline-flex align-items-center">
+        <i class="bi bi-diagram-2 me-1 text-secondary"></i>Source: {{ configSnapshot?.provenance?.sourceType }}
       </span>
-      <span *ngIf="configSnapshot?.testMethodName" class="badge bg-light text-dark border px-2 py-1 d-inline-flex align-items-center">
-        <i class="bi bi-journal-text me-1 text-danger"></i>{{ configSnapshot?.testMethodName }}
+      <span *ngIf="configSnapshot?.testMethodName" class="badge bg-light text-dark border px-2 py-1 text-xs d-inline-flex align-items-center">
+        <i class="bi bi-journal-code text-danger me-1"></i>{{ configSnapshot?.testMethodName }}
         <span *ngIf="configSnapshot?.testMethodVersion" class="fw-bold ms-1">({{ configSnapshot?.testMethodVersion }})</span>
       </span>
-      <span *ngIf="configSnapshot?.scope?.scopeStatus" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-        Scope: {{ configSnapshot?.scope?.scopeStatus }}
+      <span *ngIf="configSnapshot?.scope?.scopeStatus" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 text-xs d-inline-flex align-items-center">
+        <i class="bi bi-patch-check-fill me-1"></i>Scope: {{ configSnapshot?.scope?.scopeStatus }}
       </span>
-      <span *ngIf="configSnapshot?.accreditation?.accreditationStatus" class="badge bg-success text-white px-2 py-1">
-        NABL: {{ configSnapshot?.accreditation?.accreditationStatus }}
+      <span *ngIf="configSnapshot?.accreditation?.accreditationStatus" class="badge bg-success text-white px-2 py-1 text-xs d-inline-flex align-items-center">
+        <i class="bi bi-shield-fill-check me-1"></i>NABL: {{ configSnapshot?.accreditation?.accreditationStatus }}
       </span>
-      <span *ngIf="execution?.status && execution?.status !== 'Planned'" class="badge bg-dark text-warning border px-2 py-1 d-inline-flex align-items-center">
+      <span *ngIf="execution?.status && execution?.status !== 'Planned'" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 text-xs font-monospace d-inline-flex align-items-center">
         <i class="bi bi-lock-fill text-warning me-1"></i>FROZEN
       </span>
     </div>
@@ -177,48 +180,48 @@
   <!-- ================================================================= -->
   <div class="ute-execution-lifecycle-bar bg-light border-bottom px-3 py-1 d-flex align-items-center justify-content-between flex-wrap gap-2">
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <span class="small fw-semibold text-muted d-inline-flex align-items-center">
-        <i class="bi bi-clock-history me-1 text-danger"></i> Lifecycle State:
+      <span class="text-xs fw-semibold text-muted d-inline-flex align-items-center">
+        <i class="bi bi-clock-history me-1 text-danger"></i> Lifecycle:
       </span>
-      <div class="d-flex align-items-center gap-1 flex-wrap">
+      <div class="d-flex align-items-center gap-1 flex-wrap ute-lifecycle-pills-row">
         <!-- 1. Planned -->
-        <span class="badge d-inline-flex align-items-center px-2 py-1"
-              [ngClass]="currentStageLevel > 1 ? 'bg-success-subtle text-success border' : (currentStageLevel === 1 ? 'bg-primary text-white' : 'bg-light text-muted border')">
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+              [ngClass]="currentStageLevel > 1 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 1 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 1"></i>
           <i class="bi bi-record-circle me-1" *ngIf="currentStageLevel === 1"></i>
           1. Planned
         </span>
-        <i class="bi bi-chevron-right text-muted small"></i>
+        <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 2. In Progress -->
-        <span class="badge d-inline-flex align-items-center px-2 py-1"
-              [ngClass]="currentStageLevel > 2 ? 'bg-success-subtle text-success border' : (currentStageLevel === 2 ? 'bg-primary text-white' : 'bg-light text-muted border')">
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+              [ngClass]="currentStageLevel > 2 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 2 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 2"></i>
           <i class="bi bi-play-circle-fill me-1" *ngIf="currentStageLevel === 2"></i>
           2. In Progress
         </span>
-        <i class="bi bi-chevron-right text-muted small"></i>
+        <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 3. Completed -->
-        <span class="badge d-inline-flex align-items-center px-2 py-1"
-              [ngClass]="currentStageLevel > 3 ? 'bg-success-subtle text-success border' : (currentStageLevel === 3 ? 'bg-primary text-white' : 'bg-light text-muted border')">
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+              [ngClass]="currentStageLevel > 3 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 3 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 3"></i>
           <i class="bi bi-record-circle me-1" *ngIf="currentStageLevel === 3"></i>
           3. Completed
         </span>
-        <i class="bi bi-chevron-right text-muted small"></i>
+        <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 4. Verified -->
-        <span class="badge d-inline-flex align-items-center px-2 py-1"
-              [ngClass]="currentStageLevel > 4 ? 'bg-success-subtle text-success border' : (currentStageLevel === 4 ? 'bg-primary text-white' : 'bg-light text-muted border')">
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
+              [ngClass]="currentStageLevel > 4 ? 'bg-success-subtle text-success border border-success-subtle' : (currentStageLevel === 4 ? 'ute-life-current' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel > 4"></i>
           <i class="bi bi-record-circle me-1" *ngIf="currentStageLevel === 4"></i>
           4. Verified
         </span>
-        <i class="bi bi-chevron-right text-muted small"></i>
+        <i class="bi bi-chevron-right text-muted ute-chevron-sep"></i>
 
         <!-- 5. Approved -->
-        <span class="badge d-inline-flex align-items-center px-2 py-1"
+        <span class="badge ute-lifecycle-pill d-inline-flex align-items-center px-2 py-0.5"
               [ngClass]="currentStageLevel >= 5 && !isExecutionRejected ? 'bg-success text-white' : (isExecutionRejected ? 'bg-danger text-white' : 'bg-light text-muted border')">
           <i class="bi bi-check-circle-fill me-1" *ngIf="currentStageLevel >= 5 && !isExecutionRejected"></i>
           <i class="bi bi-x-circle-fill me-1" *ngIf="isExecutionRejected"></i>
@@ -228,9 +231,9 @@
     </div>
 
     <!-- Active Stage Metadata info -->
-    <div class="d-flex align-items-center gap-2 small text-muted flex-wrap">
-      <span *ngIf="execution?.executionAnalystName">
-        <i class="bi bi-person me-1"></i>Analyst: <strong class="text-dark">{{ execution?.executionAnalystName }}</strong>
+    <div class="d-flex align-items-center gap-2 text-xs text-muted flex-wrap">
+      <span *ngIf="execution?.executionAnalystName" class="d-inline-flex align-items-center">
+        <i class="bi bi-person me-1 text-secondary"></i>Analyst: <strong class="text-dark ms-1">{{ execution?.executionAnalystName }}</strong>
       </span>
       <span *ngIf="execution?.startedOn">
         &bull; Started: <strong class="text-dark">{{ execution?.startedOn | date:'dd-MMM HH:mm' }}</strong>
@@ -254,28 +257,28 @@
       <div class="row g-2 ute-master-detail-grid">
 
         <!-- ============================================================= -->
-        <!-- LEFT: 10 CONFIGURATION CATEGORIES NAV LIST (COMPACT SINGLE-LINE)-->
+        <!-- LEFT: 10 CONFIGURATION CATEGORIES NAV LIST (COMPACT & CLEAN)  -->
         <!-- ============================================================= -->
-        <div class="col-12 col-lg-3 col-xl-2 ute-col-categories">
+        <div class="col-12 col-md-4 col-lg-3 col-xl-2.5 ute-col-categories">
           <div class="card shadow-sm border-0 ute-card h-100">
-            <div class="card-header bg-white py-2 px-2 border-bottom d-flex align-items-center justify-content-between">
-              <span class="ute-panel-title d-inline-flex align-items-center"><i class="bi bi-sliders me-1 text-danger"></i> CATEGORIES</span>
-              <span class="badge bg-light text-dark border">10 Modules</span>
+            <div class="card-header bg-light py-2 px-2.5 border-bottom d-flex align-items-center justify-content-between">
+              <span class="ute-panel-title d-inline-flex align-items-center text-xs fw-bold"><i class="bi bi-sliders me-1 text-danger"></i> CONFIG MODULES</span>
+              <span class="badge bg-white text-secondary border font-monospace text-xs">10 Modules</span>
             </div>
-            <div class="list-group list-group-flush ute-category-list p-1">
+            <div class="list-group list-group-flush ute-category-list p-1.5">
               <button *ngFor="let catKey of categoryKeys"
                       type="button"
-                      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center rounded mb-1 px-2 py-1 border-0"
+                      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center rounded mb-1 px-2 py-1.5 border-0 ute-cat-item"
                       [class.active]="activeConfigCategory === catKey"
                       (click)="setConfigCategory(catKey)">
-                <div class="d-flex align-items-center gap-2 text-truncate">
+                <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden min-w-0">
                   <span class="ute-cat-icon-badge d-inline-flex align-items-center justify-content-center">
                     <i class="bi" [ngClass]="categoryMeta[catKey].icon"></i>
                   </span>
-                  <span class="fw-semibold text-truncate ute-cat-title">{{ categoryMeta[catKey].title }}</span>
+                  <span class="fw-semibold text-truncate ute-cat-title" [title]="categoryMeta[catKey].title">{{ categoryMeta[catKey].title }}</span>
                 </div>
-                <span class="badge rounded-pill ms-1"
-                      [ngClass]="activeConfigCategory === catKey ? 'bg-white text-danger fw-bold' : 'bg-light text-dark border'">
+                <span class="badge rounded-pill ms-1 font-monospace text-xs"
+                      [ngClass]="activeConfigCategory === catKey ? 'bg-danger text-white fw-bold' : 'bg-light text-muted border'">
                   {{ getCategoryCount(catKey) }}
                 </span>
               </button>
@@ -286,28 +289,28 @@
         <!-- ============================================================= -->
         <!-- RIGHT: ACTIVE CATEGORY DETAIL PANEL                           -->
         <!-- ============================================================= -->
-        <div class="col-12 col-lg-9 col-xl-10 ute-col-detail">
+        <div class="col-12 col-md-8 col-lg-9 col-xl-9.5 ute-col-detail">
           <div class="card shadow-sm border-0 ute-card ute-category-detail-card h-100">
             <!-- Header of Active Category Detail -->
-            <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="card-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
               <div class="d-flex align-items-center gap-2">
-                <div class="ute-cat-icon-box rounded bg-light border d-inline-flex align-items-center justify-content-center">
+                <div class="ute-cat-icon-box rounded bg-white border d-inline-flex align-items-center justify-content-center shadow-xs">
                   <i class="bi fs-6" [ngClass]="currentCategoryMeta.icon"></i>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                  <h6 class="mb-0 fw-bold ute-cat-detail-title">{{ currentCategoryMeta.title }}</h6>
-                  <span class="badge" [ngClass]="currentCategoryMeta.badgeColor">{{ currentCategoryCount }}</span>
-                  <span class="badge bg-light text-secondary border d-inline-flex align-items-center"><i class="bi bi-lock me-1"></i>Snapshot-Locked</span>
-                  <span class="text-muted small d-none d-lg-inline">&bull; {{ currentCategoryMeta.subtitle }}</span>
+                  <h6 class="mb-0 fw-bold ute-cat-detail-title text-dark">{{ currentCategoryMeta.title }}</h6>
+                  <span class="badge font-monospace text-xs" [ngClass]="currentCategoryMeta.badgeColor">{{ currentCategoryCount }}</span>
+                  <span class="badge bg-white text-secondary border text-xs d-inline-flex align-items-center shadow-xs"><i class="bi bi-lock-fill text-warning me-1"></i>Snapshot-Locked</span>
+                  <span class="text-muted text-xs d-none d-lg-inline">&bull; {{ currentCategoryMeta.subtitle }}</span>
                 </div>
               </div>
 
               <div class="d-flex align-items-center gap-1">
-                <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-0 d-inline-flex align-items-center" (click)="prevCategory()" title="Previous Category">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-0.5 px-2 text-xs" (click)="prevCategory()" title="Previous Category">
                   <i class="bi bi-chevron-left me-1"></i> Prev
                 </button>
-                <span class="text-muted small px-1 fw-semibold">{{ activeCategoryIndex + 1 }} / 10</span>
-                <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-0 d-inline-flex align-items-center" (click)="nextCategory()" title="Next Category">
+                <span class="badge bg-white text-dark border font-monospace text-xs px-2 py-1">{{ activeCategoryIndex + 1 }} / 10</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center py-0.5 px-2 text-xs" (click)="nextCategory()" title="Next Category">
                   Next <i class="bi bi-chevron-right ms-1"></i>
                 </button>
               </div>
@@ -325,7 +328,7 @@
                     <span class="badge bg-info-subtle text-info border border-info-subtle">Calculated: {{ calculatedParametersCount }}</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
-                    <div class="input-group input-group-sm" style="width: 220px;">
+                    <div class="input-group input-group-sm ute-filter-220">
                       <span class="input-group-text bg-light border-end-0 py-0"><i class="bi bi-search text-muted"></i></span>
                       <input type="text" class="form-control form-control-sm border-start-0 py-0" [(ngModel)]="categorySearchTerm" placeholder="Filter parameters..." />
                     </div>
@@ -357,14 +360,14 @@
                         <td><span class="badge bg-light text-dark border font-monospace">{{ param.code }}</span></td>
                         <td class="fw-semibold">{{ param.name }}</td>
                         <td>
-                          <span [ngClass]="param.isCalculated ? 'badge bg-info text-dark' : 'badge bg-primary-subtle text-primary'">
+                          <span [ngClass]="param.isCalculated ? 'badge bg-info-subtle text-info border' : 'badge bg-primary-subtle text-primary border'">
                             {{ param.isCalculated ? 'Calculated' : (param.parameterType || 'Input') }}
                           </span>
                         </td>
                         <td>{{ param.unit || '—' }}</td>
                         <td class="text-center">{{ param.decimalPrecision }}</td>
                         <td>{{ param.inputType }}</td>
-                        <td class="font-monospace text-primary small">{{ param.formula || '—' }}</td>
+                        <td class="font-monospace small ute-td-formula">{{ param.formula || '—' }}</td>
                         <td class="small">
                           <span *ngIf="param.specMin !== null || param.specMax !== null" class="fw-semibold">
                             {{ param.specMin ?? '—' }} / {{ param.specMax ?? '—' }} {{ param.unit }}
@@ -474,7 +477,7 @@
                 <div class="row g-2">
                   <div class="col-md-5">
                     <label class="form-label small fw-semibold mb-1">Select Calculated Parameter:</label>
-                    <div class="list-group">
+                    <div class="list-group ute-formula-list d-flex flex-column gap-1">
                       <ng-container *ngFor="let calcP of parameters">
                         <button *ngIf="calcP.isCalculated"
                                 type="button"
@@ -485,18 +488,18 @@
                             <div class="fw-semibold small">{{ calcP.code }}</div>
                             <small class="text-muted d-block">{{ calcP.name }}</small>
                           </div>
-                          <span class="badge bg-light text-dark border">{{ calcP.unit || '-' }}</span>
+                          <span class="badge ute-unit-pill">{{ calcP.unit || '-' }}</span>
                         </button>
                       </ng-container>
                     </div>
                   </div>
                   <div class="col-md-7">
-                    <div class="border rounded p-2 bg-light">
-                      <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="ute-formula-workspace">
+                      <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
                         <label class="form-label small mb-0 fw-bold">Formula Expression:</label>
-                        <span class="badge bg-primary" *ngIf="selectedFormulaParam">{{ selectedFormulaParam.code }}</span>
+                        <span class="ute-formula-code-pill" *ngIf="selectedFormulaParam">{{ selectedFormulaParam.code }}</span>
                       </div>
-                      <div class="font-monospace p-2 bg-white border rounded small mb-2 text-primary fw-semibold text-break">
+                      <div class="ute-formula-code-box mb-2">
                         <code>{{ selectedFormulaParam?.formula || formulaExpression || 'Select a calculated parameter' }}</code>
                       </div>
 
@@ -504,7 +507,7 @@
                       <div class="d-flex flex-wrap gap-1 mb-2">
                         <button *ngFor="let btn of keypadButtons"
                                 type="button"
-                                class="btn btn-outline-secondary btn-sm py-0 px-1 font-monospace"
+                                class="btn btn-outline-secondary btn-sm font-monospace"
                                 (click)="insertKeypadToken(btn)">
                           {{ btn }}
                         </button>
@@ -512,7 +515,7 @@
 
                       <div class="border-top pt-2 mt-2">
                         <div class="small fw-semibold mb-1"><i class="bi bi-eye me-1"></i> Real-time Evaluation Preview:</div>
-                        <div class="alert alert-secondary py-1 px-2 mb-0 small font-monospace">
+                        <div class="ute-eval-preview-box mb-0">
                           <div *ngIf="formulaPreviewResult?.isValid" class="text-success fw-bold">
                             = {{ formulaPreviewResult?.result }} {{ selectedFormulaParam?.unit }} (Valid)
                           </div>
@@ -607,26 +610,24 @@
 
               <!-- 7. UNCERTAINTY (MU) -->
               <div *ngIf="activeConfigCategory === 'uncertainty'">
-                <div class="card border-0 bg-light p-2">
-                  <div class="row g-2">
-                    <div class="col-md-6">
-                      <div class="p-2 bg-white border rounded">
-                        <small class="text-muted d-block">Uncertainty Type</small>
-                        <strong class="small">Expanded Uncertainty (k=2, 95.45% Confidence)</strong>
-                      </div>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <div class="p-3 bg-light border rounded h-100">
+                      <div class="text-xs text-muted mb-1 d-flex align-items-center"><i class="bi bi-shield-check me-1 text-primary"></i> Uncertainty Type</div>
+                      <div class="fw-bold text-dark text-sm">Expanded Uncertainty (k=2, 95.45% Confidence)</div>
                     </div>
-                    <div class="col-md-6">
-                      <div class="p-2 bg-white border rounded">
-                        <small class="text-muted d-block">Reported Value &amp; Basis</small>
-                        <strong class="small text-primary">&plusmn; 2.50 % &bull; Type B Evaluation</strong>
-                      </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="p-3 bg-light border rounded h-100">
+                      <div class="text-xs text-muted mb-1 d-flex align-items-center"><i class="bi bi-graph-up me-1 text-danger"></i> Reported Value &amp; Basis</div>
+                      <div class="fw-bold text-danger text-sm font-monospace">&plusmn; 2.50 % <span class="badge bg-primary-subtle text-primary border ms-1 font-sans">Type B Evaluation</span></div>
                     </div>
-                    <div class="col-12">
-                      <div class="p-2 bg-white border rounded">
-                        <small class="text-muted d-block mb-1">ISO 17025 Compliance Statement</small>
-                        <div class="small text-secondary">
-                          The reported expanded measurement uncertainty is stated as the standard measurement uncertainty multiplied by the coverage factor k = 2, which for a normal distribution corresponds to a coverage probability of approximately 95.45%.
-                        </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="p-3 bg-light border rounded">
+                      <div class="text-xs text-muted mb-1 d-flex align-items-center"><i class="bi bi-file-earmark-check me-1 text-success"></i> ISO 17025 Compliance Statement</div>
+                      <div class="text-secondary text-xs lh-base">
+                        The reported expanded measurement uncertainty is stated as the standard measurement uncertainty multiplied by the coverage factor k = 2, which for a normal distribution corresponds to a coverage probability of approximately 95.45%.
                       </div>
                     </div>
                   </div>
@@ -635,23 +636,23 @@
 
               <!-- 8. ACCEPTANCE CRITERIA -->
               <div *ngIf="activeConfigCategory === 'acceptance'">
-                <div class="card border-0 bg-light p-2">
-                  <div class="row g-2">
-                    <div class="col-md-6">
-                      <label class="form-label small fw-semibold">Decision Rule:</label>
-                      <div class="p-2 bg-white border rounded small fw-bold text-dark">
-                        All Parameters Must Pass (Strict ISO 17025 Binary Acceptance)
-                      </div>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <div class="p-3 bg-light border rounded h-100">
+                      <div class="text-xs text-muted mb-1 d-flex align-items-center"><i class="bi bi-check2-circle text-success me-1"></i> Decision Rule</div>
+                      <div class="fw-bold text-dark text-sm">All Parameters Must Pass (Strict ISO 17025 Binary Acceptance)</div>
                     </div>
-                    <div class="col-md-6">
-                      <label class="form-label small fw-semibold">Rounding Rule &amp; Precision:</label>
-                      <div class="p-2 bg-white border rounded small font-monospace">
-                        Round to nearest 0.01 (2 Decimals)
-                      </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="p-3 bg-light border rounded h-100">
+                      <div class="text-xs text-muted mb-1 d-flex align-items-center"><i class="bi bi-calculator text-primary me-1"></i> Rounding Rule &amp; Precision</div>
+                      <div class="font-monospace fw-bold text-dark text-sm">Round to nearest 0.01 (2 Decimals)</div>
                     </div>
-                    <div class="col-12">
-                      <label class="form-label small fw-semibold">Compliance Rule Statement:</label>
-                      <div class="p-2 bg-white border rounded small text-secondary">
+                  </div>
+                  <div class="col-12">
+                    <div class="p-3 bg-light border rounded">
+                      <div class="text-xs text-muted mb-1 d-flex align-items-center"><i class="bi bi-info-circle text-primary me-1"></i> Compliance Rule Statement</div>
+                      <div class="text-secondary text-xs lh-base">
                         Pass verdict is granted only if every individual reportable parameter measurement falls strictly within configured specification tolerance limits. Marginal readings require supervisor review.
                       </div>
                     </div>
@@ -700,11 +701,13 @@
 
               <!-- 10. REMARKS -->
               <div *ngIf="activeConfigCategory === 'remarks'">
-                <div class="card border-0 bg-light p-2">
-                  <label class="form-label small fw-semibold">General Test Remarks &amp; Notes:</label>
-                  <textarea class="form-control form-control-sm flex-grow-1 mb-2" rows="3" [disabled]="isViewMode"
+                <div class="p-3 bg-light border rounded">
+                  <label class="form-label text-xs fw-semibold mb-1 d-flex align-items-center gap-1">
+                    <i class="bi bi-card-text text-danger"></i> General Test Remarks &amp; Notes:
+                  </label>
+                  <textarea class="form-control form-control-sm mb-2" rows="3" [disabled]="isViewMode"
                             placeholder="Enter general observations, standard conditions, or sample remarks...">Sample in workable condition. Test performed as per IS standard method. All observations recorded.</textarea>
-                  <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="d-flex gap-2">
                       <span class="badge bg-white text-dark border">Execution Run #{{ execution?.executionNo || 1 }}</span>
                       <span class="badge bg-white text-secondary border">Status: {{ execution?.status || 'InProgress' }}</span>
@@ -1769,13 +1772,13 @@
     <!-- TAB 3: RESULTS & COMPLIANCE ENGINE (PHASE 7)                     -->
     <!-- ================================================================= -->
     <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'results'">
-      <div class="card shadow-sm border-0 mb-2 ute-card p-2.5">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-2">
         <!-- Title & Action Bar -->
         <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-clipboard2-check text-danger fs-5"></i>
             <div>
-              <div class="ute-panel-title m-0 fs-6 fw-bold">Universal Result &amp; Compliance Engine</div>
+              <div class="ute-panel-title m-0 fw-bold">Universal Result &amp; Compliance Engine</div>
               <small class="text-muted text-xs">Phase 7 &middot; Frozen snapshot compliance evaluation without live
                 master drift</small>
             </div>
@@ -1843,7 +1846,7 @@
                     &middot; Rev {{ universalResult.revisionNo }}</span>
                 </div>
                 <div class="d-flex align-items-center gap-2 mb-1">
-                  <span [ngClass]="verdictClass(universalResult.overallDecision)" class="fs-6 px-2.5 py-1">
+                  <span [ngClass]="verdictClass(universalResult.overallDecision)" class="ute-decision-pill px-2 py-1">
                     <i class="bi me-1" [ngClass]="{
                       'bi-check-circle-fill': universalResult.overallDecision === 'PASS',
                       'bi-x-circle-fill': universalResult.overallDecision === 'FAIL',
@@ -1898,7 +1901,7 @@
 
           <!-- Pinned Cryptographic Snapshot Bar -->
           <div
-            class="d-flex justify-content-between align-items-center p-1 bg-light border rounded mb-2 flex-wrap gap-2 text-xs">
+            class="d-flex justify-content-between align-items-center p-1 bg-light border rounded mb-2 flex-wrap gap-2 ute-frozen-bar">
             <div class="d-flex align-items-center gap-2">
               <span class="badge bg-secondary font-monospace"><i class="bi bi-shield-lock me-1"></i>FROZEN
                 SNAPSHOT</span>
@@ -1920,7 +1923,7 @@
           </div>
 
           <!-- 2. Structured Parameter Compliance Table -->
-          <fieldset class="border rounded p-2 mb-2 bg-white shadow-xs">
+          <fieldset class="border rounded p-2 mb-2 bg-white shadow-sm">
             <legend
               class="w-auto fw-semibold text-danger px-2 d-flex align-items-center justify-content-between gap-2 py-0">
               <div class="d-flex align-items-center gap-1">
@@ -1932,7 +1935,7 @@
             </legend>
 
             <div class="table-responsive">
-              <table class="table table-sm table-hover table-bordered mb-0 align-middle lims-compact-table fs-8">
+              <table class="table table-sm table-hover table-bordered mb-0 align-middle lims-compact-table">
                 <thead class="table-light text-nowrap">
                   <tr>
                     <th class="text-center col-sn">#</th>
@@ -1974,7 +1977,7 @@
                       </div>
                     </td>
                     <td class="text-end">
-                      <span class="fw-bold font-monospace fs-6" [ngClass]="{
+                      <span class="fw-bold font-monospace ute-compliance-val" [ngClass]="{
                               'text-success': p.verdict === 'PASS',
                               'text-danger': p.verdict === 'FAIL',
                               'text-warning-emphasis': p.verdict === 'MARGINAL',
@@ -1989,7 +1992,7 @@
                         {{ getRequirementDisplay(p) === 'Not Configured' ? 'N/A' : getRequirementDisplay(p) }}
                       </span>
                       <div *ngIf="p.appliedTolerance != null && p.appliedTolerance > 0"
-                        class="text-xs text-muted mt-0.5">
+                        class="text-xs text-muted mt-1">
                         <span class="badge bg-light text-secondary border">Tol &plusmn;{{ p.appliedTolerance }}</span>
                       </div>
                     </td>
@@ -2034,11 +2037,11 @@
           <!-- 3. Collapsible Panels: Calculation Traces & Audit Logs -->
           <div class="row g-2 mb-2">
             <div class="col-12 col-md-6">
-              <div class="border rounded p-2 bg-white">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="fw-semibold small text-dark"><i class="bi bi-cpu me-1 text-primary"></i>Formula DAG
+              <div class="ute-trace-box">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                  <span class="fw-semibold small text-dark"><i class="bi bi-cpu me-1"></i>Formula DAG
                     Evaluation Traces</span>
-                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 text-xs text-nowrap flex-shrink-0"
+                  <button type="button" class="btn btn-sm btn-outline-secondary text-xs text-nowrap flex-shrink-0 ute-trace-toggle"
                     (click)="showResultTraces = !showResultTraces">
                     <i class="bi" [ngClass]="showResultTraces ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                     {{ showResultTraces ? 'Hide Traces' : 'Show Traces' }}
@@ -2050,7 +2053,7 @@
                     <span class="text-dark">{{ calcTrace?.dependencyDAG }}</span>
                   </div>
                   <div *ngFor="let p of resultParams" class="mb-1 p-1 bg-light rounded border text-xs font-monospace">
-                    <div *ngIf="p.isCalculated" class="d-flex justify-content-between align-items-center mb-0.5">
+                    <div *ngIf="p.isCalculated" class="d-flex justify-content-between align-items-center gap-2 mb-1">
                       <strong class="text-primary">{{ p.parameterCode }}</strong>
                       <span class="text-muted"><code>{{ p.formula }}</code></span>
                     </div>
@@ -2066,11 +2069,11 @@
             </div>
 
             <div class="col-12 col-md-6">
-              <div class="border rounded p-2 bg-white">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="fw-semibold small text-dark"><i class="bi bi-journal-text me-1 text-danger"></i>Immutable
+              <div class="ute-audit-box">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                  <span class="fw-semibold small text-dark"><i class="bi bi-journal-text me-1"></i>Immutable
                     Result Audit Trail</span>
-                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 text-xs text-nowrap flex-shrink-0"
+                  <button type="button" class="btn btn-sm btn-outline-secondary text-xs text-nowrap flex-shrink-0 ute-audit-toggle"
                     (click)="showResultAudits = !showResultAudits">
                     <i class="bi" [ngClass]="showResultAudits ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                     {{ showResultAudits ? 'Hide Audits' : 'Show Audits' }}
@@ -2112,35 +2115,35 @@
     <!-- TAB 4: REVIEW & APPROVAL (4-EYES SEGREGATION OF DUTIES)           -->
     <!-- ================================================================= -->
     <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'review'">
-      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
-        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 flex-wrap gap-2">
-          <div class="ute-panel-title m-0 fs-6">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-2">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 flex-wrap gap-2">
+          <div class="ute-panel-title m-0">
             <i class="bi bi-shield-check me-1"></i> Technical Review & Authorized Sign-Off
           </div>
-          <span class="badge bg-light text-secondary border fs-8">
+          <span class="badge bg-light text-secondary border">
             <i class="bi bi-person-check me-1"></i> ISO 17025 Four-Eyes Segregation of Duties
           </span>
         </div>
 
         <!-- Four-Eyes Review Actions Grid -->
-        <div class="row g-3 mb-4">
+        <div class="row g-2 mb-2">
           <!-- Step 1: Technical Verification -->
           <div class="col-md-6">
-            <div class="p-3 border rounded h-100 bg-white shadow-xs">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="fw-semibold text-dark mb-0 fs-7.5">1. Technical Verification</h6>
+            <div class="ute-review-step-card h-100">
+              <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                <h6 class="fw-semibold text-dark mb-0 ute-review-step-title">1. Technical Verification</h6>
                 <span class="badge"
                   [ngClass]="execution?.status === 'Verified' || execution?.status === 'Approved' ? 'bg-success' : 'bg-secondary'">
                   {{ execution?.status === 'Verified' || execution?.status === 'Approved' ? 'Verified' : 'Pending
                   Verification' }}
                 </span>
               </div>
-              <p class="small text-muted fs-8 mb-2">Technical peer reviewer verifies observation validity, test method
+              <p class="small text-muted mb-2 ute-review-hint">Technical peer reviewer verifies observation validity, test method
                 adherence, and equipment calibration.</p>
 
-              <div class="mb-2.5">
-                <label class="form-label small fs-8 text-secondary">Reviewer Remarks:</label>
-                <textarea class="form-control form-control-sm fs-8" rows="2" [(ngModel)]="actionRemarks"
+              <div class="mb-2">
+                <label class="form-label small text-secondary">Reviewer Remarks:</label>
+                <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="actionRemarks"
                   placeholder="Enter technical verification notes..."></textarea>
               </div>
 
@@ -2155,7 +2158,7 @@
                   <i class="bi bi-arrow-return-left me-1"></i> Request Rework
                 </button>
                 <span *ngIf="execution?.status === 'Verified' || execution?.status === 'Approved'"
-                  class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2 fs-8">
+                  class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2">
                   <i class="bi bi-check-circle-fill me-1"></i> Verified on {{ execution?.verifiedOn | date:'dd-MMM-yyyy
                   HH:mm' }}
                 </span>
@@ -2165,19 +2168,19 @@
 
           <!-- Step 2: Final Authorized Approval -->
           <div class="col-md-6">
-            <div class="p-3 border rounded h-100 bg-white shadow-xs">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="fw-semibold text-dark mb-0 fs-7.5">2. Authorized Signatory Approval</h6>
+            <div class="ute-review-step-card h-100">
+              <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                <h6 class="fw-semibold text-dark mb-0 ute-review-step-title">2. Authorized Signatory Approval</h6>
                 <span class="badge" [ngClass]="execution?.status === 'Approved' ? 'bg-success' : 'bg-secondary'">
                   {{ execution?.status === 'Approved' ? 'Approved & Locked' : 'Pending Approval' }}
                 </span>
               </div>
-              <p class="small text-muted fs-8 mb-2">Laboratory technical manager or authorized signatory approves final
+              <p class="small text-muted mb-2 ute-review-hint">Laboratory technical manager or authorized signatory approves final
                 lab certificate generation.</p>
 
-              <div class="mb-2.5">
-                <label class="form-label small fs-8 text-secondary">Approval Remarks:</label>
-                <textarea class="form-control form-control-sm fs-8" rows="2" [(ngModel)]="actionRemarks"
+              <div class="mb-2">
+                <label class="form-label small text-secondary">Approval Remarks:</label>
+                <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="actionRemarks"
                   placeholder="Enter approval authorization notes..."></textarea>
               </div>
 
@@ -2187,7 +2190,7 @@
                   <i class="bi bi-shield-check me-1"></i> Approve & Unlock Report
                 </button>
                 <span *ngIf="execution?.status === 'Approved'"
-                  class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2 fs-8">
+                  class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2">
                   <i class="bi bi-shield-lock-fill me-1"></i> Approved & Locked on {{ execution?.approvedOn |
                   date:'dd-MMM-yyyy HH:mm' }}
                 </span>
@@ -2197,16 +2200,16 @@
         </div>
 
         <!-- Technical Review Findings & Non-Conformances -->
-        <div class="border rounded p-3 bg-light-subtle">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-semibold text-dark fs-7.5"><i class="bi bi-flag me-1 text-danger"></i> Review Findings &
+        <div class="ute-findings-box">
+          <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+            <span class="fw-semibold text-dark ute-findings-title"><i class="bi bi-flag me-1"></i> Review Findings &
               Discrepancies</span>
             <span class="badge bg-secondary">{{ reviewFindings.length || 0 }} Finding(s)</span>
           </div>
 
           <!-- Findings Table -->
           <div *ngIf="reviewFindings?.length; else noFindingsTpl" class="table-responsive mb-3">
-            <table class="table table-sm table-bordered bg-white align-middle mb-0 fs-8">
+            <table class="table table-sm table-bordered table-hover bg-white align-middle mb-0 lims-compact-table">
               <thead class="table-light">
                 <tr>
                   <th class="text-center col-w-sn">#</th>
@@ -2239,7 +2242,7 @@
                     </span>
                   </td>
                   <td class="text-center">
-                    <button *ngIf="!f.isResolved" class="btn-lims btn-lims-save btn-sm py-0.5 px-1 fs-9"
+                    <button *ngIf="!f.isResolved" class="btn-lims btn-lims-save btn-sm"
                       (click)="resolveFinding(f.id)">
                       Resolve
                     </button>
@@ -2250,7 +2253,7 @@
             </table>
           </div>
           <ng-template #noFindingsTpl>
-            <div class="alert alert-light border p-2 mb-3 fs-8 text-muted">
+            <div class="alert alert-light border p-2 mb-3 text-muted">
               <i class="bi bi-check-circle-fill text-success me-1"></i> No review discrepancies or non-conformances
               recorded.
             </div>
@@ -2259,24 +2262,24 @@
           <!-- Inline Add Finding Form -->
           <form [formGroup]="findingForm" (ngSubmit)="createFinding()" class="row g-2 align-items-end">
             <div class="col-md-3">
-              <label class="form-label small fs-8 text-secondary mb-1">Finding Type</label>
-              <select class="form-select form-select-sm fs-8" formControlName="findingType">
+              <label class="form-label small text-secondary mb-1">Finding Type</label>
+              <select class="form-select form-select-sm" formControlName="findingType">
                 <option value="Observation">Observation</option>
                 <option value="Discrepancy">Discrepancy</option>
                 <option value="Non-Conformance">Non-Conformance</option>
               </select>
             </div>
             <div class="col-md-2">
-              <label class="form-label small fs-8 text-secondary mb-1">Severity</label>
-              <select class="form-select form-select-sm fs-8" formControlName="severity">
+              <label class="form-label small text-secondary mb-1">Severity</label>
+              <select class="form-select form-select-sm" formControlName="severity">
                 <option value="Minor">Minor</option>
                 <option value="Major">Major</option>
                 <option value="Critical">Critical</option>
               </select>
             </div>
             <div class="col-md-5">
-              <label class="form-label small fs-8 text-secondary mb-1">Finding Description</label>
-              <input class="form-control form-control-sm fs-8" formControlName="description"
+              <label class="form-label small text-secondary mb-1">Finding Description</label>
+              <input class="form-control form-control-sm" formControlName="description"
                 placeholder="Describe the review discrepancy or observation..." />
             </div>
             <div class="col-md-2">
@@ -2293,10 +2296,10 @@
     <!-- TAB 5: REPORT PREVIEW & PRODUCTION QUESTPDF WORKFLOW              -->
     <!-- ================================================================= -->
     <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'report'">
-      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-2">
         <!-- Top Action & Status Bar -->
-        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 flex-wrap gap-2">
-          <div class="ute-panel-title m-0 fs-6">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 flex-wrap gap-2">
+          <div class="ute-panel-title m-0 ute-report-title">
             <i class="bi bi-file-earmark-pdf me-1"></i> QuestPDF Laboratory Test Certificate & Report Engine
           </div>
           <div class="d-flex align-items-center gap-1 flex-wrap">
@@ -2341,7 +2344,7 @@
 
         <!-- Generated Report Banner if official report exists -->
         <div *ngIf="selectedReport"
-          class="alert alert-success d-flex justify-content-between align-items-center p-2 mb-3 fs-8 border">
+          class="alert alert-success d-flex justify-content-between align-items-center gap-2 p-2 mb-2 border ute-report-note">
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <i class="bi bi-check-circle-fill text-success fs-6"></i>
             <div>
@@ -2782,12 +2785,12 @@
     <!-- TAB 6: AUDIT TRAIL                                                -->
     <!-- ================================================================= -->
     <main class="ute-workspace-content" *ngIf="activeWorkspaceTab === 'audit'">
-      <div class="card shadow-sm border-0 mb-2 ute-card p-3">
-        <div class="ute-panel-title border-bottom pb-2 mb-3 fs-6">
+      <div class="card shadow-sm border-0 mb-2 ute-card p-2">
+        <div class="ute-panel-title border-bottom pb-2 mb-2 ute-audit-title">
           <i class="bi bi-clock-history me-1"></i> Immutable Chronological Audit Trail
         </div>
 
-        <table class="table table-sm table-striped ute-table">
+        <table class="table table-sm table-striped table-bordered ute-table lims-compact-table align-middle mb-0">
           <thead class="table-light">
             <tr>
               <th>Timestamp (UTC)</th>
@@ -2875,7 +2878,7 @@
   <div class="modal fade show d-block ute-modal-backdrop" *ngIf="actionModalVisible" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
-        <div class="modal-header py-2 px-3 bg-light">
+        <div class="modal-header bg-light py-2 px-3 border-bottom">
           <h6 class="modal-title fw-semibold ute-panel-title">{{ actionModalTitle }}</h6>
           <button type="button" class="btn-close" (click)="actionModalVisible = false"></button>
         </div>
@@ -2902,9 +2905,9 @@
   <div class="modal fade show d-block ute-modal-backdrop" *ngIf="retestModalVisible" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow">
-        <div class="modal-header py-2 px-3 bg-light">
+        <div class="modal-header bg-light py-2 px-3 border-bottom">
           <h6 class="modal-title fw-semibold ute-panel-title">
-            <i class="bi bi-arrow-repeat me-1 text-primary"></i> Initiate Authorized Retest / New Run
+            <i class="bi bi-arrow-repeat me-1"></i> Initiate Authorized Retest / New Run
           </h6>
           <button type="button" class="btn-close" (click)="retestModalVisible = false"></button>
         </div>

@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ReportTemplateService {
-  private base = '/api/report-template';
+  private base = `${environment.apiUrl}/report-template`;
   constructor(private http: HttpClient) {}
 
   saveTemplate(body: any): Observable<any> {

@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface BranchInfo {
   id: number;
@@ -35,7 +36,7 @@ export class BranchService {
   }
 
   loadUserBranches(): Observable<BranchInfo[]> {
-    return this.http.get<BranchInfo[]>('/api/Branch/user-branches').pipe(
+    return this.http.get<BranchInfo[]>(`${environment.apiUrl}/Branch/user-branches`).pipe(
       tap(branchList => {
         this.branches.set(branchList);
         const storedId = localStorage.getItem(this.storageKey);

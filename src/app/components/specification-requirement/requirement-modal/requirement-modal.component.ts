@@ -473,9 +473,11 @@ export class RequirementModalComponent implements OnInit, OnChanges {
 
   onTestMethodSpecificationSelected(row: any, spec: any): void {
     if (spec) {
+      const realSpecId = spec.additionalValues?.testMethodSpecificationId || spec.additionalValues?.TestMethodSpecificationId || spec.id;
+      const displayName = spec.additionalValues?.displayTitle || spec.additionalValues?.testMethodStandard || spec.name || spec.testMethodStandard;
       row.patchValue({
-        testMethodSpecificationID: spec.id,
-        testMethodSpecificationName: spec.name || spec.testMethodStandard
+        testMethodSpecificationID: realSpecId,
+        testMethodSpecificationName: displayName
       });
     } else {
       row.patchValue({

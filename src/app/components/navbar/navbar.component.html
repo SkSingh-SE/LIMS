@@ -2,8 +2,8 @@
   <div class="nav-content navbar-background" style="position: relative;">
     <!-- Logo -->
     <div class="nav-logo border-end bg-white px-2">
-      <a class="navbar-brand d-flex align-items-center py-2 px-3" href="#">
-        <img src="LIMS.png" alt="Logo" width="50" height="40" />
+      <a class="navbar-brand d-flex align-items-center py-1 px-2" href="#">
+        <img src="LIMS.png" alt="Logo" width="40" height="30" />
       </a>
     </div>
     <!-- Menu cell: browser gives this the exact 1fr pixel width -->
@@ -11,9 +11,9 @@
       <div #menuContainer class="menu-container">
         <div *ngFor="let menu of visibleMenuItems; let i = index" #menuItem class="menu-item header-font"
           (click)="openSubMenu(menu)" [ngClass]="{ active: activeMenu() === menu.title }">
-          <div class="d-flex align-items-center">
+          <div class="menu-item-content d-flex align-items-center gap-1.5">
             <i class="bi" [class]="menu.icon"></i>
-            <span class="">{{ menu.title }}</span>
+            <span>{{ menu.title }}</span>
           </div>
         </div>
       </div>
@@ -21,11 +21,11 @@
     <!-- Right Section -->
     <div #navRight class="nav-right-cell d-flex align-items-center gap-2">
       <!-- Search Icon Button (always visible, no inline input) -->
-      <button class="btn btn-light rounded-circle h-auto menu-search-btn" (click)="toggleSearch()">
+      <button class="btn nav-circle-btn menu-search-btn" (click)="toggleSearch()" title="Search">
         <i class="bi bi-search"></i>
       </button>
-      <!-- Down Arrow Icon -->
-      <button class="btn btn-light rounded-circle h-auto" data-bs-toggle="collapse" (click)="menuOpenClose()">
+      <!-- Down Arrow / Collapse Icon Button -->
+      <button class="btn nav-circle-btn" data-bs-toggle="collapse" (click)="menuOpenClose()" title="Toggle Extra Menu">
         <i class="bi"
           [ngClass]="{ 'rotate-up bi-chevron-up': !isMenu2Open(), 'rotate-down bi-chevron-down': isMenu2Open() }"></i>
       </button>
@@ -35,7 +35,7 @@
       <div class="me-2 user-dropdown-wrapper">
         <button class="btn user-avatar-btn border-0 d-flex align-items-center gap-2" type="button" id="userDropdown"
           data-bs-toggle="dropdown" aria-expanded="false">
-          <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" />
+          <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle" alt="Profile" (error)="onProfileImageError()" />
           <div *ngIf="!profileImageUrl" class="user-initials-circle">{{ loggedInUserInitials }}</div>
           <div class="user-name-display d-none d-lg-flex flex-column align-items-start text-start">
             <span class="user-display-name">{{ loggedInUserName }}</span>
@@ -49,15 +49,15 @@
           <div class="user-menu-header p-3">
             <div class="d-flex align-items-center gap-3">
               <div class="position-relative flex-shrink-0">
-                <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle-lg" alt="Profile" />
+                <img *ngIf="profileImageUrl" [src]="profileImageUrl" class="user-avatar-circle-lg" alt="Profile" (error)="onProfileImageError()" />
                 <div *ngIf="!profileImageUrl" class="user-initials-circle-lg">{{ loggedInUserInitials }}</div>
                 <span class="status-indicator-dot online" title="Active Session"></span>
               </div>
               <div class="user-info-text min-w-0">
                 <div class="user-menu-name text-truncate" [title]="loggedInUserName">{{ loggedInUserName }}</div>
                 <div class="d-flex align-items-center gap-1.5 mt-1">
-                  <span class="badge user-role-badge">{{ loggedInUserRole || 'Staff' }}</span>
-                  <span *ngIf="loggedInIsAdmin" class="badge bg-warning text-dark extra-small py-0.5 px-1.5 rounded-pill">Admin</span>
+                  <span class="badge user-role-badge">{{ loggedInUserRole || (loggedInIsAdmin ? 'Admin' : 'Staff') }}</span>
+                  <span *ngIf="loggedInIsAdmin && !isRoleAdmin()" class="badge bg-warning text-dark extra-small py-0.5 px-1.5 rounded-pill">Admin</span>
                 </div>
                 <div *ngIf="loggedInEmail" class="user-menu-email text-muted extra-small text-truncate mt-1" [title]="loggedInEmail">
                   <i class="bi bi-envelope me-1"></i>{{ loggedInEmail }}
@@ -169,20 +169,24 @@
   <div class="collapse w-100" [ngClass]="{ show: isMenu2Open() }" id="menu2"
     *ngIf="menu2Items && menu2Items.length > 0">
     <div class="menu2-outer d-flex align-items-center bg-theme">
-      <button class="btn btn-sm menu2-scroll-btn" (click)="scrollMenu2('left')">
+      <button class="btn menu2-scroll-btn" (click)="scrollMenu2('left')"
+        *ngIf="hasMenu2Overflow()" [disabled]="!canScrollMenu2Left()" [class.btn-disabled]="!canScrollMenu2Left()" title="Scroll Left">
         <i class="bi bi-chevron-left text-white"></i>
       </button>
-      <div #menu2Scroll
-        class="card card-body menu2-container d-flex flex-row gap-2 align-items-center justify-content-start bg-theme">
+
+      <div #menu2Scroll (scroll)="onMenu2Scroll()"
+        class="menu2-container d-flex flex-row align-items-center justify-content-start bg-theme">
         <div *ngFor="let menu of menu2Items" class="menu2-item header-font" (click)="openSubMenu(menu)"
           [ngClass]="{ active: activeMenu() === menu.title }">
-          <div class="d-flex gap-2 align-items-center">
+          <div class="menu2-item-content d-flex align-items-center gap-1.5">
             <i class="bi" [class]="menu.icon"></i>
-            <span class="">{{ menu.title }}</span>
+            <span>{{ menu.title }}</span>
           </div>
         </div>
       </div>
-      <button class="btn btn-sm menu2-scroll-btn" (click)="scrollMenu2('right')">
+
+      <button class="btn menu2-scroll-btn" (click)="scrollMenu2('right')"
+        *ngIf="hasMenu2Overflow()" [disabled]="!canScrollMenu2Right()" [class.btn-disabled]="!canScrollMenu2Right()" title="Scroll Right">
         <i class="bi bi-chevron-right text-white"></i>
       </button>
     </div>

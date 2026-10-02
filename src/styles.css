@@ -52,19 +52,20 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MANDATORY GLOBAL ICON-TO-TEXT SPACING RULE (STRICT)
-   All icons (<i>) placed beside text in buttons, nav tabs,
-   links, badges, and labels MUST maintain explicit 6px spacing.
+   MANDATORY GLOBAL ICON-TO-TEXT SPACING SYSTEM (FLEX GAP FIRST)
+   - Containers with icon + text use flexbox with gap: 6px (gap-1.5).
+   - Single icons with NO text (icon-only buttons) maintain 0 margin
+     so they remain 100% centered without off-center shifts.
 ═══════════════════════════════════════════════════════════ */
-.btn i,
-.btn-lims i,
-.nav-tab-btn i,
-.tpi-toggle-btn i,
-.btn-nav-link i,
-.badge i,
-button i,
-a i {
-  margin-right: 6px !important;
+.btn,
+.btn-lims,
+.nav-tab-btn,
+.tpi-toggle-btn,
+.btn-nav-link,
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Explicit icon-only buttons override (no right margin) */
@@ -77,8 +78,35 @@ a i {
 .btn-close i,
 .btn-remove.p-1 i,
 .btn-outline-danger.p-1 i,
-.icon-only i {
+.icon-only i,
+.nav-circle-btn i,
+.notif-btn i,
+i.bi:only-child,
+.bi:only-child {
   margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Flex gap containers: suppress icon margin so gap handles spacing cleanly */
+[class*="gap-"] > i.bi,
+[class*="gap-"] > .bi,
+.d-flex[class*="gap-"] > i,
+.d-inline-flex[class*="gap-"] > i,
+.btn > i.bi,
+.btn > .bi,
+.btn-lims > i.bi,
+.btn-lims > .bi,
+.badge > i.bi,
+.badge > .bi,
+.nav-tab-btn > i.bi,
+.btn-nav-link > i.bi {
+  margin-right: 0 !important;
+}
+
+/* Fallback for legacy non-flex inline icons preceding text */
+i.bi:not(:only-child):not(:last-child),
+.bi:not(:only-child):not(:last-child) {
+  margin-right: 6px;
 }
 
 .content-container {
@@ -265,24 +293,11 @@ a i {
   background-color: var(--primary-color) !important;
 }
 
-/* Mandatory Global Icon-to-Label Spacing Rule */
-.nav-link i.bi,
-.btn i.bi,
-button i.bi,
-a.btn i.bi,
-.btn-lims i.bi {
-  margin-right: 6px;
-}
-
-/* Explicit icon-only buttons override (no right margin) */
-.btn-icon i.bi,
-.btn-lims-icon i.bi,
-.btn-nav-icon i.bi,
-.btn-nav-plus i.bi,
-.btn-field-add i.bi,
-.btn-circle i.bi,
-.btn-close i.bi {
-  margin-right: 0 !important;
+/* Navigation link icon spacing via flex gap */
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .theme-color {
   color: var(--primary-color);
@@ -1521,7 +1536,6 @@ select:focus option:checked {
 .btn-lims-add i,
 .btn-stay i,
 .btn-leave i {
-  margin-right: 6px !important;
   display: inline-block !important;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
@@ -3783,10 +3797,16 @@ fieldset.border {
   color: #ffffff !important;
 }
 
-/* ─── MANDATORY GLOBAL ICON-TO-LABEL SPACING RULE (STRICT) ─── */
-i.bi,
-.bi {
-  margin-right: 6px !important;
+/* ─── MANDATORY GLOBAL ICON-TO-LABEL SPACING SYSTEM (STRICT) ───
+   Icon spacing is controlled via parent flexbox `gap: 6px` or `gap-1.5`.
+   Single icons with no text have ZERO margin so they stay perfectly centered.
+─── */
+i.bi:only-child,
+.bi:only-child,
+:only-child > i.bi,
+:only-child > .bi {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
 }
 
 /* Reset margin for icon-only containers, stepper circles & icon-only buttons so icons remain perfectly centered */
@@ -4041,7 +4061,6 @@ input[type="checkbox"]:checked {
 
 .btn-nav-link i.bi {
   font-size: 0.72rem;
-  margin-right: 6px !important;
 }
 
 

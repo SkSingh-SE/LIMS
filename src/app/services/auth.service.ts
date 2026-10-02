@@ -92,7 +92,7 @@ export class AuthService {
   updateProfileImagePath(path: string): void {
     const userData = this.getUserData();
     if (userData) {
-      userData.profileImagePath = path;
+      userData.profileImagePath = path ? path.replace(/\\/g, '/') : path;
       localStorage.setItem('userData', JSON.stringify(userData));
     }
   }

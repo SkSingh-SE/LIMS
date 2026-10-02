@@ -161,8 +161,34 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
   private loadProfileImage(userData: any): void {
     if (userData.profileImagePath) {
-      this.profileImageUrl = environment.baseUrl + userData.profileImagePath;
+      this.profileImageUrl = this.formatProfileImageUrl(userData.profileImagePath);
     }
+  }
+
+  formatProfileImageUrl(path: string | null | undefined): string | null {
+    if (!path) return null;
+    if (path.startsWith('data:') || path.startsWith('blob:')) return path;
+
+    // Normalize Windows backslashes to forward slashes and strip leading slashes
+    const cleanPath = path.replace(/\\/g, '/').replace(/^\/+/, '');
+
+    // In local development, route '/Uploads/...' through Angular proxy (secure: false)
+    // to bypass untrusted self-signed SSL cert errors (ERR_CERT_AUTHORITY_INVALID)
+    if (!environment.production && cleanPath.toLowerCase().startsWith('uploads/')) {
+      return '/' + cleanPath;
+    }
+
+    const base = (environment.baseUrl || '').replace(/\/+$/, '');
+    return `${base}/${cleanPath}`;
+  }
+
+  onProfileImageError(): void {
+    this.profileImageUrl = null;
+  }
+
+  isRoleAdmin(): boolean {
+    const role = (this.loggedInUserRole || '').trim().toLowerCase();
+    return role.includes('admin');
   }
 
   triggerProfileImageUpload(): void {
@@ -251,7 +277,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
         const imagePath = res.profileImagePath || res.path || res.filePath;
         if (imagePath) {
           this.authService.updateProfileImagePath(imagePath);
-          this.profileImageUrl = environment.baseUrl + imagePath;
+          this.profileImageUrl = this.formatProfileImageUrl(imagePath);
           this.toastService.show('Profile image updated successfully', 'success');
         }
         this.isUploadingImage.set(false);
@@ -297,6 +323,9 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   menuItems: MenuItem[] = getAllMenuItems();
   visibleMenuItems: MenuItem[] = [...this.menuItems];
   menu2Items: MenuItem[] = [];
+  hasMenu2Overflow = signal(false);
+  canScrollMenu2Left = signal(false);
+  canScrollMenu2Right = signal(false);
   subMenus = signal<MenuItem[]>([]);
   isSubMenuOpen = signal(false);
   activeMenu = signal<string | null>(null);
@@ -445,6 +474,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
       let usedWidth = 0;
       const visible: MenuItem[] = [];
       const overflow: MenuItem[] = [];
+      const itemGap = 8;
 
       this.menuItems.forEach((item, index) => {
         const el = menuEls[index]?.nativeElement;
@@ -452,9 +482,11 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
           ? el.getBoundingClientRect().width
           : Math.max(100, item.title.length * 10 + 40);
 
-        if (usedWidth + width <= availableWidth || visible.length === 0) {
+        const neededWidth = visible.length > 0 ? (width + itemGap) : width;
+
+        if (usedWidth + neededWidth <= availableWidth || visible.length === 0) {
           visible.push(item);
-          usedWidth += width;
+          usedWidth += neededWidth;
         } else {
           overflow.push(item);
         }
@@ -476,6 +508,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
       }
 
       this.cdr.markForCheck();
+      setTimeout(() => this.checkMenu2Scroll(), 100);
     });
   }
 
@@ -483,6 +516,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
   @HostListener('window:resize')
   onResize() {
     this.distributeMenuItems();
+    this.checkMenu2Scroll();
   }
 
   // -----------------------------
@@ -559,7 +593,10 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
 
   menuOpenClose() {
     this.isMenu2Open.set(!this.isMenu2Open());
-    setTimeout(() => this.updateNavbarHeight(), 300);
+    setTimeout(() => {
+      this.updateNavbarHeight();
+      this.checkMenu2Scroll();
+    }, 300);
   }
 
   openProfile() { this.isProfileOpen.set(true); }
@@ -676,11 +713,35 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     }
   }
 
+  checkMenu2Scroll(): void {
+    const el = this.menu2Scroll?.nativeElement;
+    if (!el) {
+      this.hasMenu2Overflow.set(false);
+      this.canScrollMenu2Left.set(false);
+      this.canScrollMenu2Right.set(false);
+      return;
+    }
+    const hasOverflow = el.scrollWidth > el.clientWidth + 2;
+    this.hasMenu2Overflow.set(hasOverflow);
+    if (hasOverflow) {
+      this.canScrollMenu2Left.set(el.scrollLeft > 2);
+      this.canScrollMenu2Right.set(el.scrollLeft < (el.scrollWidth - el.clientWidth - 2));
+    } else {
+      this.canScrollMenu2Left.set(false);
+      this.canScrollMenu2Right.set(false);
+    }
+  }
+
+  onMenu2Scroll(): void {
+    this.checkMenu2Scroll();
+  }
+
   scrollMenu2(direction: 'left' | 'right') {
     const el = this.menu2Scroll?.nativeElement;
     if (el) {
       const scrollAmount = 200;
       el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+      setTimeout(() => this.checkMenu2Scroll(), 250);
     }
   }
 

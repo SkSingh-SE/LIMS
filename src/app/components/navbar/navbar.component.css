@@ -15,7 +15,7 @@
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    height: 60px;
+    height: 48px;
     width: 100%;
 }
 
@@ -41,40 +41,41 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     padding: 0 8px;
     white-space: nowrap;
     overflow: hidden;
     width: 100%;
 }
-/* Keep menu2-container left aligned for zoom compatibility */
-.menu2-container {
-    flex-grow: 1;
-    padding: 6px 8px;
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 8px;
-    overflow: hidden;
-}
 
 /* Updated Menu Item Styling */
 .menu-container .menu-item {
-    text-align: center;
+    display: inline-flex;
     align-items: center;
-    color: white;
-    padding: 5px 8px;
-    transition: background 0.3s ease-in-out, color 0.3s;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
     cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
-.menu2-container .menu2-item {
-    text-align: center;
+
+.menu-container .menu-item i {
+    font-size: 13.5px;
+    line-height: 1;
+    margin-right: 0 !important;
+}
+
+.menu-container .menu-item .menu-item-content {
+    display: flex;
     align-items: center;
-    color: white;
-    padding: 5px 8px;
-    transition: background 0.3s ease-in-out, color 0.3s;
-    cursor: pointer;
+    gap: 5px;
 }
+
 
 /* ── Submenu Bar ─────────────────────────────────────────── */
 .submenu-container {
@@ -312,26 +313,27 @@
     padding-left: 20px;
 }
 
-/* Hover and Active State */
-.menu-container .menu-item:hover,
+/* Hover and Active State matching Given Reference Design */
+.menu-container .menu-item:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border-radius: 6px;
+}
+
 .menu-container .menu-item.active {
-    background-color: rgba(255, 255, 255, 0.92);
-    border-radius: 5px;
-    color: black;
+    background-color: #ffffff !important;
+    color: var(--primary-color) !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
 }
 
-.menu2-container .menu2-item:hover,
-.menu2-container .menu2-item.active {
-    background-color: rgba(255, 255, 255, 0.92);
-    border-radius: 5px;
-    color: black;
+.menu-container .menu-item.active i,
+.menu-container .menu-item.active span {
+    color: var(--primary-color) !important;
 }
 
 
-/* Increased Icon Size */
-.menu-container .menu-item i {
-    font-size: 16px;
-}
 
 /* keep Bootstrap user-profile dropdown minimal */
 .dropdown-menu {
@@ -387,55 +389,124 @@
     flex-shrink: 0;
 }
 
-.menu2-container .menu2-item {
-    min-width: 60px;
-    max-width: 260px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-/* ── Menu2 outer wrapper with scroll arrows ────────────── */
+/* ── Menu2 outer wrapper & container ─────────────────────── */
 .menu2-outer {
     width: 100%;
-    padding: 0;
-}
-
-.menu2-scroll-btn {
-    flex-shrink: 0;
-    border: none;
-    background: transparent;
-    padding: 4px 6px;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.menu2-scroll-btn:hover {
-    opacity: 1;
+    padding: 3px 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    position: relative;
 }
 
 .menu2-container {
+    flex-grow: 1;
+    padding: 0 4px;
+    display: flex;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    flex-wrap: nowrap !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 .menu2-container::-webkit-scrollbar {
     display: none;
 }
 
+/* Menu2 Item: exactly matching Menu 1 (.menu-item) */
 .menu2-container .menu2-item {
+    display: inline-flex;
+    align-items: center;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
     flex-shrink: 0;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.menu2-container .menu2-item i {
+    font-size: 13.5px;
+    line-height: 1;
+    margin-right: 0 !important;
+}
+
+.menu2-container .menu2-item .menu2-item-content {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.menu2-container .menu2-item:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border-radius: 6px;
+}
+
+.menu2-container .menu2-item.active {
+    background-color: #ffffff !important;
+    color: var(--primary-color) !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+}
+
+.menu2-container .menu2-item.active i,
+.menu2-container .menu2-item.active span {
+    color: var(--primary-color) !important;
+}
+
+/* Scroll Buttons for Menu2 */
+.menu2-scroll-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 11px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0 4px;
+}
+
+.menu2-scroll-btn:hover:not(:disabled):not(.btn-disabled) {
+    background: rgba(255, 255, 255, 0.38);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.menu2-scroll-btn:disabled,
+.menu2-scroll-btn.btn-disabled {
+    opacity: 0.2;
+    cursor: default;
+    pointer-events: none;
+    transform: none;
 }
 
 /* ── User Profile Button & Dropdown ───────────────────── */
 .user-avatar-btn {
     cursor: pointer;
-    border-radius: 8px;
-    padding: 4px 8px !important;
+    border-radius: 6px;
+    padding: 2px 6px !important;
     transition: background 0.2s;
 }
 
@@ -444,29 +515,29 @@
 }
 
 .user-initials-circle {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: #fff;
     color: var(--primary-color);
     font-family: 'Poppins', sans-serif;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
 .user-avatar-circle {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 1.5px solid rgba(255,255,255,0.4);
     flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
 .user-initials-circle-lg {
@@ -544,7 +615,42 @@
     color: var(--primary-color) !important;
 }
 
-/* ── Search Icon Button ────────────────────────────────── */
+/* ── Search Icon Button & Nav Circle Buttons ───────────── */
+.nav-circle-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.nav-circle-btn:hover {
+    background: rgba(255, 255, 255, 0.32) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: #ffffff !important;
+}
+
+.nav-circle-btn i {
+    font-size: 12px;
+    color: #ffffff !important;
+    margin: 0 !important;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .menu-search-btn {
     flex-shrink: 0;
 }

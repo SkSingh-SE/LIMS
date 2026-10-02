@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
-import { FormBuilder, FormsModule } from '@angular/forms';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
 import { CalibrationAgencyService } from '../../../services/calibration-agency.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
+import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-calibration-agency',
-  imports: [ CommonModule,RouterModule,FormsModule, PaginationComponent ],
+  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent, BreadcrumbComponent],
   templateUrl: './calibration-agency.component.html',
   styleUrl: './calibration-agency.component.css'
 })
@@ -47,11 +48,15 @@ export class CalibrationAgencyComponent implements OnInit {
   pageNumber = 1;
   pageSize = 10;
   totalItems = 0;
-  pageSizes = [10, 25, 50, 100, 200, 500];
+  pageSizes = [10, 25, 50, 100];
 
   sortByColumn: string = 'modifiedOn';
   sortOrder: string = 'desc';
   searchTerm: string = '';
+
+  get totalColumns(): number {
+    return 8;
+  }
 
   payload = {
     PageNumber: this.pageNumber,
@@ -62,8 +67,7 @@ export class CalibrationAgencyComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private calibrationService: CalibrationAgencyService, private toastService: ToastService) {
-   
+  constructor(private calibrationService: CalibrationAgencyService, private toastService: ToastService) {
   }
 
   ngOnInit() {
@@ -80,8 +84,8 @@ export class CalibrationAgencyComponent implements OnInit {
         this.pageNumber = response?.pageNumber || 1;
       },
       error: (error) => {
-        console.error('Error fetching designations:', error);
         this.dataList = [];
+        this.toastService.show(error?.error?.message || 'Error loading Calibration Agency list.', 'error');
       }
 
     });
@@ -184,20 +188,36 @@ export class CalibrationAgencyComponent implements OnInit {
   }
 
   changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
+    this.onPageSizeChange(Number((event.target as HTMLSelectElement).value));
+  }
+
+  onPageSizeChange(newSize: number): void {
+    this.pageSize = newSize;
+    this.pageNumber = 1;
     this.payload.PageNumber = this.pageNumber;
     this.payload.PageSize = this.pageSize;
     this.fetchData();
   }
 
   onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
+    this.pageNumber = 1;
+    this.payload.PageNumber = 1;
+    this.payload.searchTerm = this.searchTerm ? this.searchTerm.trim() : '';
+    this.fetchData();
+  }
+
+  resetFilters(): void {
+    this.searchTerm = '';
+    this.filters = [];
+    this.payload.filter = this.filters;
+    this.payload.searchTerm = '';
+    this.pageNumber = 1;
+    this.payload.PageNumber = 1;
+    this.sortByColumn = 'modifiedOn';
+    this.sortOrder = 'desc';
+    this.payload.sortByColumn = this.sortByColumn;
+    this.payload.sortOrder = this.sortOrder;
+    this.fetchData();
   }
 
   get totalPages(): number[] {

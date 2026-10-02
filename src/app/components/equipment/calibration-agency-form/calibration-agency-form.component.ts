@@ -9,17 +9,19 @@ import { environment } from '../../../../environments/environment';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { BreadcrumbComponent } from '../../../utility/components/breadcrumb/breadcrumb.component';
 
 @Component({
   selector: 'app-calibration-agency-form',
 
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink, BreadcrumbComponent],
   templateUrl: './calibration-agency-form.component.html',
   styleUrl: './calibration-agency-form.component.css'
 })
 export class CalibrationAgencyFormComponent implements CanComponentDeactivate, OnInit {
   saved = false;
   isSubmitting = false;
+  submitted = false;
   calibrationForm!: FormGroup
   isViewMode: boolean = false;
   isEditMode: boolean = false;
@@ -100,6 +102,7 @@ export class CalibrationAgencyFormComponent implements CanComponentDeactivate, O
     })
   }
   onSubmit(): void {
+    this.submitted = true;
     if (this.calibrationForm.valid) {
       const raw = this.calibrationForm.getRawValue();
       const formData = new FormData();
@@ -159,6 +162,7 @@ export class CalibrationAgencyFormComponent implements CanComponentDeactivate, O
     }
     else {
       this.calibrationForm.markAllAsTouched();
+      this.toastService.show('Please fill in all required fields correctly', 'warning');
     }
   }
 

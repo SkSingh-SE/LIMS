@@ -10,7 +10,7 @@ import { MeetingAgenda } from '../models/meeting-agenda';
 export class MeetingAgendaService {
     private apiUrl = environment.apiUrl + '/Nabl/MeetingAgenda';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,8 @@ export class MeetingAgendaService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getNextMeetingNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-meeting-no`);
     }
 }

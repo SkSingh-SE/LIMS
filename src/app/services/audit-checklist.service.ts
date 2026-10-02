@@ -10,7 +10,7 @@ import { AuditChecklist } from '../models/audit-checklist';
 export class AuditChecklistService {
     private apiUrl = environment.apiUrl + '/Nabl/AuditChecklist';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,11 @@ export class AuditChecklistService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getScheduleSession(scheduleItemId: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/schedule-session/${scheduleItemId}`);
+    }
+    getNextChecklistNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-checklistNo-no`);
     }
 }

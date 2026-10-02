@@ -6,21 +6,23 @@ import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-hea
 import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-footer.component';
 import { NablSignatureBlockComponent } from '../../nabl-signature-block/nabl-signature-block.component';
 import { PrintFrameComponent } from '../../print-frame/print-frame.component';
-
+import { TestRequestNabl } from '../../../../models/testRequestNablModel';
 @Component({
     selector: 'app-test-request-nabl-preview',
     standalone: true,
-    imports: [CommonModule, NablPrintHeaderComponent, NablPrintFooterComponent, NablSignatureBlockComponent, PrintFrameComponent],
+    imports: [CommonModule, NablPrintHeaderComponent, NablPrintFooterComponent, NablSignatureBlockComponent, PrintFrameComponent,],
     templateUrl: './test-request-preview.component.html',
     styleUrl: './test-request-preview.component.css'
 })
+
 export class TestRequestNablPreviewComponent implements OnInit {
     sampleId: number = 0;
     data: any = null;
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
+    testRequest: TestRequestNabl | null = null;
     private orientationDetected = false;
-
+    dispatchModeOptions = ['Email', 'Courier', 'WhatsApp', 'Self Pickup', 'Speed Post'];
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -71,6 +73,9 @@ export class TestRequestNablPreviewComponent implements OnInit {
     setOrientation(o: 'portrait' | 'landscape'): void {
         this.orientation = o;
         this.orientationManual = true;
+    }
+    isDispatchModeChecked(mode: string, selectedModes: string[] | null | undefined): boolean {
+        return selectedModes?.includes(mode) ?? false;
     }
 
     resetToAuto(): void {

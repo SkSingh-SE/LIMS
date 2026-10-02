@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,57 +46,122 @@
 
   <app-print-frame [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="headerInfo.formatNo"
-        [mainTitle]="'AUDIT SCHEDULE & PLAN'"
-        [docNo]="headerInfo.docNo"
-        [issueNo]="headerInfo.issueNo"
-        [issueDate]="headerInfo.issueDate"
-        [revNo]="headerInfo.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'AUDIT SCHEDULE & PLAN'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
+
+      <!-- II. AUDIT SCHEDULE & PLAN DETAILS -->
       <div class="doc-section mb-3">
-        <div class="sec-title">AUDIT SCHEDULE</div>
-        <table class="table table-bordered inner-table text-center align-middle">
-          <thead>
-            <tr class="tbl-head">
-              <th style="width:60px">Sr. No.</th>
-              <th style="width:150px">Audit Type</th>
-              <th style="width:100px">Period</th>
-              <th>Area / Department</th>
-              <th>Proposed Auditor(s)</th>
-              <th style="width:150px">Schedule Date</th>
-              <th>Scope of Audit</th>
-            </tr>
-          </thead>
+        <div class="sec-title">I. AUDIT SCHEDULE &amp; PLAN DETAILS</div>
+
+        <table class="table table-bordered inner-table">
           <tbody>
-            <tr *ngFor="let item of data; let i = index">
-              <td>{{ i + 1 }}</td>
-              <td>{{ item.auditType }}</td>
-              <td>{{ item.period }}</td>
-              <td class="text-start">{{ item.areaDepartment }}</td>
-              <td class="text-start">{{ item.auditorName }}</td>
-              <td>{{ item.scheduleDate | date: "dd/MM/yyyy" }}</td>
-              <td class="text-start">{{ item.scope }}</td>
+
+            <tr>
+              <td class="lbl" style="width:25%">Audit Plan No.</td>
+              <td style="width:25%">{{ data.planNo }}</td>
+
+              <td class="lbl" style="width:25%">Audit Type</td>
+              <td style="width:25%">{{ data.auditType }}</td>
             </tr>
-            <!-- Empty rows for filling space -->
-            <tr *ngIf="data.length < 10">
-              <td colspan="7" [style.height.px]="40 * (10 - data.length)"></td>
+
+            <tr>
+              <td class="lbl">Planning Year</td>
+              <td>{{ data.auditYear }}</td>
+
+              <td class="lbl">Lead Auditor</td>
+              <td>{{ data.leadAuditorName }}</td>
             </tr>
+
+            <tr>
+              <td class="lbl">Schedule From</td>
+              <td>{{ data.scheduleDateFrom | date:'dd.MM.yyyy' }}</td>
+
+              <td class="lbl">Schedule To</td>
+              <td>{{ data.scheduleDateTo | date:'dd.MM.yyyy' }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Audit Criteria</td>
+              <td colspan="3">{{ data.auditCriteria }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Scope of Audit</td>
+              <td colspan="3">{{ data.auditScope }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Audit Objective</td>
+              <td colspan="3">{{ data.auditObjective }}</td>
+            </tr>
+
+
           </tbody>
         </table>
       </div>
+
+
+      <!-- III. AUDIT SCHEDULE -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. AUDIT SCHEDULE</div>
+
+        <table class="table table-bordered inner-table">
+
+          <thead>
+            <tr class="tbl-head">
+              <th style="width:60px">SR. NO.</th>
+              <th>AREA / DEPARTMENT</th>
+              <th>ISO CLAUSES</th>
+              <th>SCHEDULE DATE</th>
+              <th>PROPOSED AUDITOR(S)</th>
+              <th>AUDITEE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            <tr *ngFor="let item of data.scheduleItems; let i = index">
+
+              <td>{{ i + 1 }}</td>
+
+              <td>
+                {{ item.departmentName }}
+              </td>
+              <td>
+                {{ getIsoClauseNames(item.isoClauses) }}
+              </td>
+              <td>
+                {{ item.scheduleDate | date:'dd.MM.yyyy' }}
+              </td>
+
+              <td>
+                {{ item.auditorName }}
+              </td>
+
+              <td>
+                {{ item.auditeeName }}
+              </td>
+
+              <td>
+                {{ item.status }}
+              </td>
+
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'Quality Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

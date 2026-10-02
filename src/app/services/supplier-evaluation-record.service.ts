@@ -10,7 +10,7 @@ import { SupplierEvaluationRecord, SupplierEvaluationRecordListResponse, Supplie
 export class SupplierEvaluationRecordService {
     private apiUrl = environment.apiUrl + '/Nabl/SupplierEvaluation';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<SupplierEvaluationRecordListResponse> {
         return this.http.post<SupplierEvaluationRecordListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,53 @@ export class SupplierEvaluationRecordService {
 
     delete(id: number): Observable<SupplierEvaluationRecordResponse> {
         return this.http.delete<SupplierEvaluationRecordResponse>(`${this.apiUrl}/delete/${id}`);
+    }
+    getAllSuppliers(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/allsupplierlist`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
+    }
+    getSupplierEvaluationDetails(supplierName: string, fromDate: string, toDate: string) {
+        return this.http.get<any>(`${this.apiUrl}/supplier-evaluation-details`, {
+            params: {
+                supplierName: supplierName,
+                fromDate: fromDate,
+                toDate: toDate
+            }
+        });
+    }
+    getReceivedItems(poNo: string, supplierName: string) {
+        return this.http.get<any>(`${this.apiUrl}/receive-items-details/`, {
+            params: {
+                poNo: poNo,
+                supplierName: supplierName
+            }
+        });
+    }
+    getPoItemsDetailsByPoNo(poNo: string, supplierName: string) {
+        return this.http.get<any>(`${this.apiUrl}/po-items-details/`, {
+            params: {
+                poNo: poNo,
+                supplierName: supplierName
+            }
+        });
+    }
+    getIndentByPo(indentNo: string) {
+        return this.http.get<any>(`${this.apiUrl}/indent-details/`, {
+            params: {
+                indentNo: indentNo
+            }
+        });
+    }
+    getInspectionPlanDetailByinspectionPlanNo(inspectionPlanNo: string) {
+        return this.http.get<any>(`${this.apiUrl}/inspectionplan-details/`, {
+            params: {
+                inspectionPlanNo: inspectionPlanNo
+            }
+        });
     }
 }

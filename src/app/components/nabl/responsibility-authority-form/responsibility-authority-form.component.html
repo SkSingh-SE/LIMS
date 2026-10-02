@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="raForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="raForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -30,7 +30,7 @@
               <div class="col-md-3">
                 <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
                   [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
-                  [isDisabled]="isViewMode"
+                  [isDisabled]="isViewMode"[required]="true"
                   [selectedItem]="raForm.get('designationId')?.value"></app-searchable-dropdown>
                 <span
                   *ngIf="raForm.get('designationId')?.invalid && raForm.get('designationId')?.touched"
@@ -79,50 +79,23 @@
                 <span *ngIf="raForm.get('authorities')?.invalid && raForm.get('authorities')?.touched"
                   class="text-danger text-sm">Authorities are required.</span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section III: Approval & Acceptance -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('approval')">
-            <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Approval & Acceptance</span>
-          </div>
-          <div *ngIf="openSections['approval']" class="section-body">
-            <p class="text-muted mb-3">Official approval signatures and employee acceptance tracking.</p>
-            <div class="row gy-3 mb-3">
-              <div class="col-md-4">
-                <label class="form-label">Prepared By (General Manager)</label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Issued By (Quality Manager)</label>
-                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Name" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Reviewed & Approved By (Managing Director)</label>
-                <input type="text" class="form-control" formControlName="reviewedApprovedBy" placeholder="Name" />
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-12">
-                <div class="form-check">
+              <div class="form-check">
                   <input class="form-check-input" type="checkbox" formControlName="employeeAccepted"
                     id="employeeAccepted" />
                   <label class="form-check-label" for="employeeAccepted">
                     I hereby accept the responsibilities & authorities assigned to me.
                   </label>
                 </div>
-              </div>
             </div>
           </div>
         </div>
+        
+        <app-nabl-signature-section [parentForm]="raForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="goBack()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="raForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

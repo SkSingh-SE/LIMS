@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,55 +46,172 @@
 
   <app-print-frame [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="headerInfo.formatNo"
-        [mainTitle]="'TRAINED INTERNAL AUDITORS LIST'"
-        [docNo]="headerInfo.docNo"
-        [issueNo]="headerInfo.issueNo"
-        [issueDate]="headerInfo.issueDate"
-        [revNo]="headerInfo.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'TRAINED INTERNAL AUDITORS LIST'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
+
+      <!-- II. Auditor Information -->
       <div class="doc-section mb-3">
-        <div class="sec-title">AUDITORS LIST</div>
-        <table class="table table-bordered inner-table text-center align-middle">
-          <thead>
-            <tr class="tbl-head">
-              <th style="width:60px">Sr. No.</th>
-              <th>Name of Auditor</th>
-              <th>Qualification / Competence</th>
-              <th style="width:150px">Training Date</th>
-              <th style="width:120px">Exam Score</th>
-              <th>Remarks</th>
-            </tr>
-          </thead>
+        <div class="sec-title">II. AUDITOR INFORMATION</div>
+
+        <table class="table table-bordered inner-table">
           <tbody>
-            <tr *ngFor="let item of data; let i = index">
-              <td>{{ i + 1 }}</td>
-              <td class="text-start">{{ item.auditorName }}</td>
-              <td class="text-start">{{ item.qualification }}</td>
-              <td>{{ item.trainingDate | date: "dd/MM/yyyy" }}</td>
-              <td>{{ item.examScore }}</td>
-              <td class="text-start">{{ item.remarks }}</td>
+            <tr>
+              <td class="lbl" style="width:25%">Employee</td>
+              <td style="width:25%">{{ data.employeeName }}</td>
+
+              <td class="lbl" style="width:25%">Department</td>
+              <td style="width:25%">{{ data.departmentName }}</td>
             </tr>
-            <!-- Empty rows for filling space -->
-            <tr *ngIf="data.length < 10">
-              <td colspan="6" [style.height.px]="40 * (10 - data.length)"></td>
+
+            <tr>
+              <td class="lbl">Designation</td>
+              <td colspan="3">
+                {{ data.designation }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- III. Auditor Training & Certification -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. AUDITOR TRAINING & CERTIFICATION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+
+            <tr>
+              <td class="lbl" style="width:25%">Lead Auditor Course</td>
+              <td style="width:25%">
+                {{ data.leadAuditorCourse ? 'Yes' : 'No' }}
+              </td>
+
+              <td class="lbl" style="width:25%">Internal Auditor Course</td>
+              <td style="width:25%">
+                {{ data.internalAuditorCourse ? 'Yes' : 'No' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Certificate No.</td>
+              <td>{{ data.certificateNo }}</td>
+
+              <td class="lbl">Training Organization</td>
+              <td>{{ data.trainingOrganization }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Certificate Issue Date</td>
+              <td>
+                {{ data.certificateIssueDate | date:'dd.MM.yyyy' }}
+              </td>
+
+              <td class="lbl">Certificate Expiry Date</td>
+              <td>
+                {{ data.certificateExpiryDate | date:'dd.MM.yyyy' }}
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- IV. Audit Competency & Authorization -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. AUDIT COMPETENCY & AUTHORIZATION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width:25%">
+                ISO Clauses
+              </td>
+
+              <td style="width:25%">
+                {{ isoClausesText || '-' }}
+              </td>
+
+              <td class="lbl" style="width:25%">
+                Authorized Areas
+              </td>
+
+              <td style="width:25%">
+                {{ authorizedAreasText || '-' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Authorization Date
+              </td>
+
+              <td>
+                {{ data.authorizationDate | date:'dd.MM.yyyy' }}
+              </td>
+
+              <td class="lbl">
+                Valid Upto
+              </td>
+
+              <td>
+                {{ data.authorizationValidUpto | date:'dd.MM.yyyy' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Audit Experience (Years)
+              </td>
+
+              <td colspan="3">
+                {{ data.auditExperience }}
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- V. Authorization Details -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. AUTHORIZATION DETAILS</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+
+            <tr>
+              <td class="lbl" style="width:25%">
+                Authorized By
+              </td>
+
+              <td colspan="3">
+                {{ data.authorizedByName }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Remarks
+              </td>
+
+              <td colspan="3">
+                {{ data.remarks }}
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'Quality Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

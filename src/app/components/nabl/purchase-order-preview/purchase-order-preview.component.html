@@ -43,9 +43,11 @@
         mainTitle="Purchase Order"
         [formatNo]="record()?.formatNo || 'F-22'"
         [issueNo]="record()?.issueNo || '01'"
+         [docNo]="'DMSPL / Level-04 / Format / ' + (record()?.formatNo || 'F-22')"
         [revNo]="record()?.revNo || '00'"
         [issueDate]="record()?.date || ''"
-      ></app-nabl-print-header>
+      [revDate]="'--'">
+      </app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
@@ -55,25 +57,25 @@
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 20%">PO Number</td>
+              <td class="lbl" style="width: 20%">Doc Number</td>
               <td style="width: 30%">{{ record()?.documentNo }}</td>
               <td class="lbl" style="width: 20%">PO Date</td>
-              <td style="width: 30%">{{ record()?.date | date: "dd/MM/yyyy" }}</td>
+              <td style="width: 30%">{{ record()?.poDate | date: "dd/MM/yyyy" }}</td>
             </tr>
             <tr>
-              <td class="lbl">Vendor Name</td>
+              <td class="lbl">Supplier Name</td>
               <td>{{ record()?.supplierName }}</td>
-              <td class="lbl">Ref Indent</td>
-              <td>{{ record()?.indentNo || "--" }}</td>
+              <td class="lbl">Reference Indent No.</td>
+              <td>{{ record()?.referenceIndentName || "--" }}</td>
             </tr>
             <tr>
-              <td class="lbl">Vendor Address</td>
+              <td class="lbl">Supplier Address</td>
               <td>{{ record()?.supplierAddress }}</td>
               <td class="lbl">Order Type</td>
-              <td>{{ record()?.poType }}</td>
+              <td>{{ record()?.orderType }}</td>
             </tr>
             <tr *ngIf="record()?.gstNo">
-              <td class="lbl">Vendor GST</td>
+              <td class="lbl">Supplier GST</td>
               <td colspan="3">{{ record()?.gstNo }}</td>
             </tr>
           </tbody>
@@ -141,16 +143,16 @@
       <!-- Section IV: Terms & Conditions -->
       <div class="doc-section mb-3">
         <div class="sec-title">IV. TERMS & CONDITIONS</div>
-        <div class="sec-body" [innerHTML]="record()?.termsAndConditions"></div>
+        <div class="sec-body" [innerHTML]="record()?.tearmCondition"></div>
       </div>
     </ng-container>
 
     <ng-container footer>
       <app-nabl-print-footer
-        [preparedByName]="record()?.preparedBy || 'Store In-Charge'"
-        [reviewedApprovedByName]="record()?.authorizedBy || 'Managing Director'"
-        issuedByName="Quality Manager"
-      ></app-nabl-print-footer>
+        [preparedByName]="record()?.preparedBy || ''"
+          [issuedByName]="record()?.reviewedBy || ''"
+          [reviewedApprovedByName]="record()?.approvedBy || ''">
+      </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

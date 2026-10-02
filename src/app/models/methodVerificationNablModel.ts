@@ -1,19 +1,20 @@
-export interface VerificationParameter {
-    parameter: string;
-    acceptanceCriteria: string;
-    observedValue: string;
-    result: 'Pass' | 'Fail';
-    remarks?: string;
+export interface CRMParameter {
+    crmSampleId: string;
+    certificateNo: string;
+    referenceValue: number;
+    unit: string;
+    measurementUncertainty: string;
 }
 
 export interface VerificationData {
-    sampleId: string;
-    reading1: number;
-    reading2: number;
-    reading3: number;
-    mean: number;
-    sd: number;
-    rsd: number;
+    crmSampleId: string;
+    referenceValue: number;
+    unit: number;
+    observationValue: number;
+    difference: number;
+    recovery: number;
+    status: string;
+
 }
 
 export interface MethodVerificationNabl {
@@ -25,13 +26,25 @@ export interface MethodVerificationNabl {
     documentNo: string;
 
     testMethodName: string;
+    testMethodCode: string;
+    revIssue: string;
+    verificationDate: string | Date;
+    calibrationDueDate: string | Date;
     referenceStandard: string;
-    equipmentUsed: string;
-    matrix: string;
-    range: string;
+    equipmentId: string;
+    equipmentName: string;
+    verificationStatus: string;
+    humidity: string;
+    temperature: string;
+    verifiedBy: string;
+    reasonNotVerified: string;
+    recoveryMin: string;
+    recoveryMax: string;
+    rsdMax: string;
+    biasMax: string;
 
-    performanceParameters: VerificationParameter[];
-    rawData: VerificationData[];
+    crmParameters: CRMParameter[];
+    verificationData: VerificationData[];
 
     conclusion: string; // e.g., "The method is verified as fit for purpose."
 

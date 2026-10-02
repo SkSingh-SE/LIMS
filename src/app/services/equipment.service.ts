@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
+import { HttpHeaders } from '@angular/common/http';
 @Injectable({
   providedIn: 'root',
 })
 export class EquipmentService {
   private apiUrl = environment.apiUrl + '/EquipmentMaster';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAllEquipments(filter: any): Observable<any> {
     return this.http.post<any>(this.apiUrl + '/list', filter);
@@ -39,9 +39,20 @@ export class EquipmentService {
   updateEquipment(payload: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/update`, payload);
   }
+  reviewCalibration(
+    calibrationId: number,
+    reason: string
+  ): Observable<any> {
 
-  reviewCalibration(id: number): Observable<any> {
-    return this.http.patch<any>(`${this.apiUrl}/calibration/${id}/review`, {});
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.patch<any>(
+      `${this.apiUrl}/calibration/${calibrationId}/review`,
+      JSON.stringify(reason),
+      { headers }
+    );
   }
 
   deleteEquipment(id: number): Observable<any> {

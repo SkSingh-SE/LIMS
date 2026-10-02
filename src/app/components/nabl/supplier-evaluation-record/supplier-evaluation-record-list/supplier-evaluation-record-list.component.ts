@@ -6,6 +6,7 @@ import { SupplierEvaluationRecordService } from '../../../../services/supplier-e
 import { SupplierEvaluationRecord } from '../../../../models/supplierEvaluationRecordModel';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { ToastService } from '../../../../services/toast.service';
 
 @Component({
     selector: 'app-supplier-evaluation-record-list',
@@ -19,54 +20,50 @@ export class SupplierEvaluationRecordListComponent implements OnInit {
     totalRecords = 0;
     pageSize = 10;
     pageNumber = 1;
+    searchTerm = '';
 
     columns: any[] = [
-        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
-        { key: 'date', header: 'Date', type: 'date', sortable: true },
-        { key: 'supplierName', header: 'Supplier Name', type: 'text', sortable: true },
-        { key: 'percentageScore', header: 'Score %', type: 'number', sortable: true },
-        { key: 'recommendation', header: 'Recommendation', type: 'badge', sortable: true }
+        { key: 'supplierName', header: 'Supplier Name', label: 'Supplier Name', type: 'text', sortable: true },
+        { key: 'registerNo', header: 'Register No', type: 'string', label: 'Register No', filter: true },
+        { key: 'evaluationDate', header: 'Date', type: 'date', label: 'Evaluation Date', sortable: true },
+        { key: 'percentageScore', header: 'Score %', type: 'number', label: 'Percentage Score', sortable: true },
+        { key: 'recommendation', header: 'Recommendation', type: 'badge', label: 'Recommendation', sortable: true },
+        { key: 'presentStatus', header: 'Present Status', type: 'text', label: 'Present Status (Enlisted/Delisted)', sortable: true }
     ];
 
     constructor(
         private service: SupplierEvaluationRecordService,
-        private router: Router
+        private router: Router,
+        private toastService: ToastService
     ) { }
 
     ngOnInit(): void {
         this.loadRecords();
     }
 
-    loadRecords(event?: any) {
-        const params = {
-            PageNumber: event?.pageIndex ? event.pageIndex + 1 : this.pageNumber,
-            PageSize: event?.pageSize || this.pageSize,
-            searchTerm: event?.searchTerm || ''
-        };
 
-        this.service.getAll(params).pipe(
-            catchError(error => {
-                alert('Error loading records');
-                return of(null);
-            })
-        ).subscribe(response => {
-            if (response && response.success) {
-                this.records = response.items.map(item => ({
-                    ...item,
-                    badgeColor: this.getBadgeColor(item.recommendation)
-                }));
-                this.totalRecords = response.totalRecords;
+
+    loadRecords(params: any = {}): void {
+        const queryParams = {
+            searchTerm: params.searchTerm || '',
+            ...params
+        };
+        this.service.getAll(queryParams).subscribe({
+            next: (res) => {
+                this.records = res.items || [];
+                this.records = res.items || [];
+                this.totalRecords = res.totalRecords || 0;
+            },
+            error: () => {
+                this.records = [];
+                this.totalRecords = 0;
             }
         });
     }
-
-    getBadgeColor(recommendation: string): string {
-        switch (recommendation) {
-            case 'Approved': return 'success';
-            case 'Conditionally Approved': return 'warning';
-            case 'Rejected': return 'danger';
-            default: return 'primary';
-        }
+   
+    onPageChange(params: any): void {
+        this.searchTerm = params.searchTerm || '';
+        this.loadRecords(params);
     }
 
     onCreate() {
@@ -83,12 +80,13 @@ export class SupplierEvaluationRecordListComponent implements OnInit {
 
     onDelete(id: number) {
         if (confirm('Are you sure you want to delete this record?')) {
-            this.service.delete(id).subscribe(res => {
-                if (res.success) {
-                    alert('Record deleted successfully');
+            this.service.delete(id).subscribe({
+                next: () => {
+                    this.toastService.show('Supplier Evaluation Record deleted successfully', 'success');
                     this.loadRecords();
-                } else {
-                    alert('Failed to delete');
+                },
+                error: (err) => {
+                    this.toastService.show(err?.error?.message || 'Failed to delete record', 'error');
                 }
             });
         }

@@ -9,7 +9,8 @@
         [isLoading]="false"
         [baseRoute]="'/supplier-evaluation'"
         [addRoute]="'/supplier-evaluation/create'"
-        (onPageChange)="loadRecords($event)"
+          [disableEditForDelisted]="true"
+        (onPageChange)="onPageChange($event)"
         (onDelete)="onDelete($event)"
       ></app-nabl-register-table>
     </div>

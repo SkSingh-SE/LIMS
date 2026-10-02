@@ -10,7 +10,7 @@ import { NonConformingWork } from '../models/non-conforming-work';
 export class NonConformingWorkService {
     private apiUrl = environment.apiUrl + '/Nabl/NonConformingWork';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,17 @@ export class NonConformingWorkService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getActionNo() {
+
+        return this.http.get<any>(`${this.apiUrl}/next-action-no`);
+    }
+    getPrintAll(params: any = {}): Observable<any> {
+        return this.http.post<any>(this.apiUrl + '/nc-print-list', params || {});
+    }
+    getAuditChecklistNcrData(checklistItemId: number): Observable<any> {
+        return this.http.get<any>(
+            `${this.apiUrl}/audit-checklist-ncr/${checklistItemId}`
+        );
     }
 }

@@ -39,7 +39,12 @@ export class RetestingOfRetainedSamplePreviewComponent implements OnInit {
     fetchData() {
         this.service.getById(this.recordId).subscribe({
             next: (resp) => {
+
                 this.data = resp;
+
+                // Build print data
+                this.buildRetestingPrintData();
+
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {
@@ -48,7 +53,47 @@ export class RetestingOfRetainedSamplePreviewComponent implements OnInit {
             }
         });
     }
+    groupedRetestingLogs: any[] = [];
 
+    buildRetestingPrintData(): void {
+
+        this.groupedRetestingLogs = [];
+
+        if (!this.data?.initialTestingLogs?.length ||
+            !this.data?.retestingLogs?.length) {
+            return;
+        }
+
+        this.data.initialTestingLogs.forEach((initial: any) => {
+
+            const logs = this.data.retestingLogs
+                .filter((x: any) => x.initialTestLogId === initial.id)
+                .sort((a: any, b: any) => {
+
+                    return new Date(a.dateOfRetesting).getTime() -
+                        new Date(b.dateOfRetesting).getTime();
+
+                });
+
+            if (logs.length === 0) {
+                return;
+            }
+
+            this.groupedRetestingLogs.push({
+
+                sampleId: initial.sampleId,
+
+                previousTestDate: initial.latestTestDate ?? initial.dateOfTesting,
+
+                previousTestedBy: initial.testedByName,
+
+                logs: logs
+
+            });
+
+        });
+
+    }
     private autoDetectOrientation(): void {
         if (this.orientationManual || this.orientationDetected) return;
         this.orientationDetected = true;

@@ -9,8 +9,8 @@ import { CustomerFeedback } from '../models/customer-feedback';
 })
 export class CustomerFeedbackService {
     private apiUrl = environment.apiUrl + '/Nabl/CustomerFeedback';
-
-    constructor(private http: HttpClient) {}
+    private readonly Default_Note_Clause = "Thank you for choosing 'DIVINE METALLURGICAL SERVICES PVT. LTD.' for your testing needs. We are committed to delivering the highest level of service and ensuring that your experience with us is seamless. Your feedback is incredibly valuable and helps us improve. If there's any aspect of our service that didn't meet your expectations, please let us know so we can make it right."
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,8 @@ export class CustomerFeedbackService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getDefaultNoteClause(): string {
+        return this.Default_Note_Clause;
     }
 }

@@ -7,5 +7,6 @@
   [data]="data()"
   [totalItems]="totalItems()"
   [isLoading]="false"
+  (onDelete)="deleteRecord($event)"
   (onPageChange)="onPageChange($event)"
 ></app-nabl-register-table>

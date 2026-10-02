@@ -6,6 +6,7 @@ import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-hea
 import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-footer.component';
 import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 import { ToastService } from '../../../../services/toast.service';
+import { QualityControlPlan } from '../../../../models/qualityControlPlanModel';
 
 @Component({
     selector: 'app-quality-control-plan-preview',
@@ -15,8 +16,7 @@ import { ToastService } from '../../../../services/toast.service';
     styleUrl: './quality-control-plan-preview.component.css'
 })
 export class QualityControlPlanPreviewComponent implements OnInit {
-    recordId: number = 0;
-    data: any = null;
+    data = signal<QualityControlPlan | null>(null);
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -31,15 +31,17 @@ export class QualityControlPlanPreviewComponent implements OnInit {
 
     ngOnInit() {
         this.route.paramMap.subscribe(params => {
-            this.recordId = Number(params.get('id'));
-            if (this.recordId > 0) this.fetchData();
+            const id = Number(params.get('id'));
+            if (id) {
+            } this.fetchData(id);
+
         });
     }
 
-    fetchData() {
-        this.service.getById(this.recordId).subscribe({
+    fetchData(id: number) {
+        this.service.getById(id).subscribe({
             next: (resp) => {
-                this.data = resp;
+                this.data.set(resp);
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {

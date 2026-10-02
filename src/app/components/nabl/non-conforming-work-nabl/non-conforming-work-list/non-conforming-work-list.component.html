@@ -1,10 +1,12 @@
 <app-nabl-register-table
   [title]="title"
   [addRoute]="addRoute"
+  [printList]="printList"
   [baseRoute]="baseRoute"
   [columns]="columns"
   [data]="data()"
   [totalItems]="totalItems()"
   [isLoading]="false"
   (onPageChange)="onPageChange($event)"
+  (onDelete)="deleteRecord($event)"
 ></app-nabl-register-table>

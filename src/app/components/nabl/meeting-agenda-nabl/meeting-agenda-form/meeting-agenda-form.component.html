@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="agendaForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="agendaForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -70,10 +70,39 @@
             <div class="row gy-3">
               <div class="col-md-3">
                 <label class="form-label">
+                  Meeting No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="meetingNo" />
+                <div *ngIf="agendaForm.get('meetingNo')?.invalid && agendaForm.get('meetingNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  meeting no is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
                   Meeting Date
                   <span class="text-danger">*</span>
                 </label>
                 <input type="date" class="form-control" formControlName="meetingDate" />
+                <div *ngIf="agendaForm.get('meetingDate')?.invalid && agendaForm.get('meetingDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  meeting date is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Meeting Type
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="meetingType">
+                  <option value="">Select Meeting Type</option>
+                  <option *ngFor="let type of meetingTypes " [value]="type">{{type}}</option>
+                </select>
+                <div *ngIf="agendaForm.get('meetingType')?.invalid && agendaForm.get('meetingType')?.touched"
+                  class="text-danger text-sm mt-1">
+                  meeting type is required
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
@@ -81,20 +110,32 @@
                   <span class="text-danger">*</span>
                 </label>
                 <input type="time" class="form-control" formControlName="meetingTime" />
+                <div *ngIf="agendaForm.get('meetingTime')?.invalid && agendaForm.get('meetingTime')?.touched"
+                  class="text-danger text-sm mt-1">
+                  meeting time is required
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
-                  Venue
+                  Meeting Venue
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="venue" />
+                <input type="text" class="form-control" formControlName="meetingVenue" placeholder="meeting venue" />
+                <div *ngIf="agendaForm.get('meetingVenue')?.invalid && agendaForm.get('meetingVenue')?.touched"
+                  class="text-danger text-sm mt-1">
+                  meeting venue is required
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Chairperson
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="chairperson" />
+                <input type="text" class="form-control" formControlName="chairpersonName" placeholder="chairperson" />
+                <div *ngIf="agendaForm.get('chairpersonName')?.invalid && agendaForm.get('chairpersonName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  chairperson is required
+                </div>
               </div>
             </div>
           </div>
@@ -102,45 +143,85 @@
 
         <!-- Section III: Attendees -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('attendees')">
-            <i class="bi" [ngClass]="openSections['attendees'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Proposed Attendees</span>
+          <div class="section-header" (click)="toggleSection('participants')">
+            <i class="bi" [ngClass]="openSections['participants'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Participants</span>
           </div>
-          <div *ngIf="openSections['attendees']" class="section-body">
-            <div formArrayName="attendees">
-              <div *ngFor="let attendee of attendees.controls; let i = index" [formGroupName]="i" class="row gy-2 mb-2 align-items-end">
-                <div class="col-md-6">
-                  <label class="form-label" *ngIf="i === 0">
-                    Name
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" formControlName="name" />
-                </div>
-                <div class="col-md-5">
-                  <label class="form-label" *ngIf="i === 0">
-                    Designation
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" formControlName="designation" />
-                </div>
-                <div class="col-md-1">
-                  <button
-                    *ngIf="!isViewMode && attendees.length > 1"
-                    type="button"
-                    class="btn btn-remove btn-sm mb-1"
-                    (click)="removeAttendee(i)"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
+          <div *ngIf="openSections['participants']" class="section-body">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Employee Name</th>
+                    <th>Designation</th>
+                    <th>Department</th>
+                    <th>Attendance</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="participants">
+                  <tr *ngFor="let param of participants.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="name"
+                        [readonly]="isViewMode" placeholder="employee name" [ngClass]="{
+      'is-invalid': param.get('name')?.touched && param.get('name')?.invalid
+    }" />
+                      <small class="text-danger" *ngIf="param.get('name')?.invalid && (param.get('name')?.touched)">
+                        employee name is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="designation"
+                        [readonly]="isViewMode" placeholder="designation" [ngClass]="{
+      'is-invalid': param.get('designation')?.touched && param.get('designation')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('designation')?.invalid && (param.get('designation')?.touched)">
+                        designation is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="department"
+                        [readonly]="isViewMode" placeholder="department" [ngClass]="{
+      'is-invalid': param.get('department')?.touched && param.get('department')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('department')?.invalid && (param.get('department')?.touched)">
+                        department is required.
+                      </small>
+                    </td>
+                    <td>
+                      <select class="form-select" formControlName="attendance" [ngClass]="{
+      'is-invalid': param.get('attendance')?.touched && param.get('attendance')?.invalid
+    }">
+                        <option value="">Select Attendance</option>
+                        <option *ngFor="let attendance of attendances" [value]="attendance">{{attendance}}</option>
+                      </select>
+                      <small class="text-danger"
+                        *ngIf="param.get('attendance')?.invalid && (param.get('attendance')?.touched)">
+                        attendance is required.
+                      </small>
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm mb-1" (click)="removeAttendee(i)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAttendee()">
+          </div>
+          <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+            <button type="button" class="btn btn-primary btn-sm mt-2" (click)="addAttendee()">
               <i class="bi bi-plus"></i>
               Add Attendee
             </button>
           </div>
         </div>
+
 
         <!-- Section IV: Agenda Items -->
         <div class="accordion-section mb-3">
@@ -149,41 +230,69 @@
             <span class="fw-bold ms-2">IV. Agenda Items</span>
           </div>
           <div *ngIf="openSections['agendaItems']" class="section-body">
-            <div formArrayName="agendaItems">
-              <div *ngFor="let item of agendaItems.controls; let i = index" [formGroupName]="i" class="row gy-2 mb-2 align-items-end">
-                <div class="col-md-11">
-                  <label class="form-label" *ngIf="i === 0">
-                    Agenda Item
-                    <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" formControlName="item" />
-                </div>
-                <div class="col-md-1">
-                  <button
-                    *ngIf="!isViewMode && agendaItems.length > 1"
-                    type="button"
-                    class="btn btn-remove btn-sm mb-1"
-                    (click)="removeAgendaItem(i)"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Agenda Item</th>
+                    <th>Presenter</th>
+                    <th>Remarks</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="agendaItems">
+                  <tr *ngFor="let param of agendaItems.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="agendaItem"
+                        [readonly]="isViewMode" placeholder="agenda item" [ngClass]="{
+      'is-invalid': param.get('agendaItem')?.touched && param.get('agendaItem')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('agendaItem')?.invalid && (param.get('agendaItem')?.touched)">
+                        agenda item is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="presenter"
+                        [readonly]="isViewMode" placeholder="presenter" [ngClass]="{
+      'is-invalid': param.get('presenter')?.touched && param.get('presenter')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('presenter')?.invalid && (param.get('presenter')?.touched)">
+                        presenter is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="remarks"
+                        [readonly]="isViewMode" placeholder="remarks" />
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm mb-1" (click)="removeAgendaItem(i)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAgendaItem()">
+          </div>
+          <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+            <button type="button" class="btn btn-primary btn-sm mt-2" (click)="addAgendaItem()">
               <i class="bi bi-plus"></i>
               Add Item
             </button>
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="agendaForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="agendaForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Notice" : "Save Notice" }}
           </button>
         </div>

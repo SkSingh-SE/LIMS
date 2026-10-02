@@ -54,22 +54,20 @@
 
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/equipment/details', data.id]"
-                                    [state]="{ mode: 'view' }" 
-                                     class="icon-link"
-                                        title="View">
+                                    <a [routerLink]="['/equipment/details', data.id]" [state]="{ mode: 'view' }"
+                                        class="icon-link" title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/equipment/edit', data.id]" 
-                                    [state]="{ mode: 'edit' }"
-                                    class="icon-link"
-                                        title="Edit">
+                                    <a [routerLink]="['/equipment/edit', data.id]" [state]="{ mode: 'edit' }"
+                                        class="icon-link" title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-    
+                                    <a [routerLink]="['/equipment-history-card/preview', data.id]" class="icon-link"
+                                        title="Equipment History Print">
+                                        <i class="bi bi-list-task fs-5 text-info"></i>
+                                    </a>
 
-                                    <a  class="icon-link"
-                                        title="Delete" (click)="deleteFn(data.id)">
+                                    <a class="icon-link" title="Delete" (click)="deleteFn(data.id)">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
@@ -78,10 +76,9 @@
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td class="fw-semibold">
-                                <a [routerLink]="['/equipment/details', data.id]"
-                                   [state]="{ mode: 'view' }"
-                                   class="text-primary text-decoration-none cursor-pointer"
-                                   [title]="'View details for ' + data.name">
+                                <a [routerLink]="['/equipment/details', data.id]" [state]="{ mode: 'view' }"
+                                    class="text-primary text-decoration-none cursor-pointer"
+                                    [title]="'View details for ' + data.name">
                                     {{ data.name }}
                                 </a>
                             </td>
@@ -91,28 +88,24 @@
                             <td>{{data.oemName}}</td>
                             <td>{{(data.nextCalibrationDueDate | date: 'MMM dd yyyy') || '-'}}</td>
                             <td>{{(data.nextMaintenanceDueDate | date: 'MMM dd yyyy') || '-'}}</td>
-                            <td>{{ data.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
+                            <td>{{ data.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            <div *ngIf="dataList.length == 0"
-                class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="dataList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
 
                 </div>
             </div>
-           <!-- Pagination -->
-           <!-- Pagination -->
-           <app-pagination
-             [currentPage]="pageNumber"
-             [pageSize]="pageSize"
-             [totalItems]="totalItems"
-             [pageSizes]="pageSizes"
-             (pageChange)="onPageChange($event)"
-             (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
-           </app-pagination>
+            <!-- Pagination -->
+            <!-- Pagination -->
+            <app-pagination [currentPage]="pageNumber" [pageSize]="pageSize" [totalItems]="totalItems"
+                [pageSizes]="pageSizes" (pageChange)="onPageChange($event)"
+                (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
         </div>
     </div>
 </div>

@@ -14,25 +14,29 @@
     </div>
 
     <div class="card-body p-4">
-      <form [formGroup]="inspectionForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="inspectionForm.disabled">
+      <form [formGroup]="inspectionForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('header')" style="cursor: pointer;">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('header')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">I. Document Control Information</span>
           </div>
           <div *ngIf="openSections['header']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-23">
+                <label class="form-label fw-semibold text-dark small">Form Number <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-23">
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Issue No <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold text-dark small">Issue No <span
+                    class="text-danger">*</span></label>
                 <input type="text" class="form-control bg-light" formControlName="issueNo" readonly placeholder="Auto">
               </div>
               <div class="col-md-3">
@@ -44,8 +48,10 @@
                 <input type="date" class="form-control bg-light" formControlName="date" readonly>
               </div>
               <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Inspection Plan Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="documentNo" placeholder="DMSPL-IP-YYYY-XXX">
+                <label class="form-label fw-semibold text-dark small">Doc Number <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="documentNo"
+                  placeholder="DMSPL-IP-YYYY-XXX">
               </div>
             </div>
           </div>
@@ -53,31 +59,69 @@
 
         <!-- Section II: Product Details -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('product')" style="cursor: pointer;">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('product')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['product'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">II. Product / Service Details</span>
           </div>
           <div *ngIf="openSections['product']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Product / Service Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="productName">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Plan No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="planNo">
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Product / Service Code <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="productCode">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Product / Service Name <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="productName"
+                  placeholder="product/service name">
+                <div *ngIf="inspectionForm.get('productName')?.invalid && inspectionForm.get('productName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  product is required
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Category <span class="text-danger">*</span></label>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Product / Service Code <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="productCode"
+                  placeholder="product/service code">
+                <div *ngIf="inspectionForm.get('productName')?.invalid && inspectionForm.get('productName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  product code is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Category <span
+                    class="text-danger">*</span></label>
                 <select class="form-select shadow-sm" formControlName="category">
-                    <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+                  <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
                 </select>
+                <div *ngIf="inspectionForm.get('category')?.invalid && inspectionForm.get('category')?.touched"
+                  class="text-danger text-sm mt-1">
+                  category is required
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Inspection Stage <span class="text-danger">*</span></label>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Inspection Stage <span
+                    class="text-danger">*</span></label>
                 <select class="form-select shadow-sm" formControlName="inspectionStage">
-                    <option *ngFor="let s of stages" [value]="s">{{ s }}</option>
+                  <option *ngFor="let s of stages" [value]="s">{{ s }}</option>
                 </select>
+                <div
+                  *ngIf="inspectionForm.get('inspectionStage')?.invalid && inspectionForm.get('inspectionStage')?.touched"
+                  class="text-danger text-sm mt-1">
+                  inspection stage is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Risk Level</label>
+                <select class="form-select shadow-sm" formControlName="risklevel">
+                  <option *ngFor="let s of risks" [value]="s">{{ s }}</option>
+                </select>
+                <div *ngIf="inspectionForm.get('risklevel')?.invalid && inspectionForm.get('risklevel')?.touched"
+                  class="text-danger text-sm mt-1">
+                  risklevel is required
+                </div>
               </div>
             </div>
           </div>
@@ -85,7 +129,8 @@
 
         <!-- Section III: Inspection Parameters -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('parameters')" style="cursor: pointer;">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('parameters')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['parameters'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">III. Inspection Parameters</span>
           </div>
@@ -97,6 +142,7 @@
                     <th style="width: 50px;">SN</th>
                     <th>Parameter Name <span class="text-danger">*</span></th>
                     <th>Requirement <span class="text-danger">*</span></th>
+                    <th>Reference Standard <span class="text-danger">*</span></th>
                     <th>Method of Check <span class="text-danger">*</span></th>
                     <th>Frequency <span class="text-danger">*</span></th>
                     <th>Acceptance Criteria <span class="text-danger">*</span></th>
@@ -107,22 +153,56 @@
                   <tr *ngFor="let param of parameters.controls; let i = index" [formGroupName]="i">
                     <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
                     <td>
-                      <textarea class="form-control form-control-sm border-dashed" formControlName="parameterName" rows="2"></textarea>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="parameterName"
+                        rows="2" [readonly]="isViewMode" placeholder="parameter name"></textarea>
+                      <small class="text-danger"
+                        *ngIf="param.get('parameterName')?.invalid && (param.get('parameterName')?.touched)">
+                        parameter name is required.
+                      </small>
                     </td>
                     <td>
-                      <textarea class="form-control form-control-sm border-dashed" formControlName="requirement" rows="2"></textarea>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="requirement"
+                        rows="2" [readonly]="isViewMode" placeholder="requirement"></textarea>
+                      <small class="text-danger"
+                        *ngIf="param.get('requirement')?.invalid && (param.get('requirement')?.touched)">
+                        requirement is required.
+                      </small>
                     </td>
                     <td>
-                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="methodOfCheck">
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="referenceStandard"
+                        rows="2" [readonly]="isViewMode" placeholder="reference standard"></textarea>
+                      <small class="text-danger"
+                        *ngIf="param.get('referenceStandard')?.invalid && (param.get('referenceStandard')?.touched)">
+                        reference standard is required.
+                      </small>
                     </td>
                     <td>
-                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="frequency">
+                      <input type="text" class="form-control form-control-sm border-dashed"
+                        formControlName="methodOfCheck" [readonly]="isViewMode" placeholder="method of check">
+                      <small class="text-danger"
+                        *ngIf="param.get('methodOfCheck')?.invalid && (param.get('methodOfCheck')?.touched)">
+                        method of check is required.
+                      </small>
                     </td>
                     <td>
-                      <textarea class="form-control form-control-sm border-dashed" formControlName="acceptanceCriteria" rows="2"></textarea>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="frequency"
+                        [readonly]="isViewMode" placeholder="frequency">
+                      <small class="text-danger"
+                        *ngIf="param.get('frequency')?.invalid && (param.get('frequency')?.touched)">
+                        frequency is required.
+                      </small>
+                    </td>
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="acceptanceCriteria"
+                        rows="2" [readonly]="isViewMode" placeholder="acceptance criteria"></textarea>
+                      <small class="text-danger"
+                        *ngIf="param.get('acceptanceCriteria')?.invalid && (param.get('acceptanceCriteria')?.touched)">
+                        acceptance criteria is required.
+                      </small>
                     </td>
                     <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-remove btn-sm border-0" (click)="removeParameter(i)" [disabled]="parameters.length <= 1">
+                      <button type="button" class="btn btn-remove btn-sm border-0" (click)="removeParameter(i)"
+                        [disabled]="parameters.length <= 1">
                         <i class="bi bi-trash"></i>
                       </button>
                     </td>
@@ -140,7 +220,8 @@
 
         <!-- Section IV: Remarks -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('signatories')" style="cursor: pointer;">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('signatories')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['signatories'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">IV. Remarks</span>
           </div>
@@ -148,7 +229,8 @@
             <div class="row g-3">
               <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-semibold text-dark small">General Remarks</label>
-                <quill-editor formControlName="remarks" [modules]="quillModules" placeholder="Enter special instructions or remarks..."></quill-editor>
+                <quill-editor formControlName="remarks" [modules]="quillModules"
+                  placeholder="Enter special instructions or remarks..."></quill-editor>
               </div>
             </div>
           </div>
@@ -158,8 +240,9 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
-          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm" [disabled]="inspectionForm.invalid">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm"
+            (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm">
             <i class="bi bi-check2-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Inspection Plan
           </button>
         </div>

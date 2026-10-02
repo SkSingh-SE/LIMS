@@ -8,7 +8,6 @@ import { ToastService } from '../../../services/toast.service';
 
 @Component({
     selector: 'app-supplier-confidentiality-list',
-
     imports: [CommonModule, RouterModule, NablRegisterTableComponent],
     templateUrl: './supplier-confidentiality-list.component.html'
 })
@@ -22,7 +21,7 @@ export class SupplierConfidentialityListComponent implements OnInit {
         { key: 'supplierName', label: 'Supplier Name', type: 'string' },
         { key: 'contactPerson', label: 'Contact Person', type: 'string' },
         { key: 'agreementDate', label: 'Agreement Date', type: 'date' },
-        { key: 'validUntil', label: 'Valid Until', type: 'date' },
+        { key: 'agreementValidUpto', label: 'Valid Until', type: 'date' },
         { key: 'status', label: 'Status', type: 'string' }
     ];
 
@@ -33,7 +32,14 @@ export class SupplierConfidentialityListComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        this.loadRecords();
+        this.loadRecords({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
     loadRecords(params: any = {}): void {
@@ -75,7 +81,15 @@ export class SupplierConfidentialityListComponent implements OnInit {
         if (confirm('Are you sure you want to delete this agreement?')) {
             this.service.delete(id).subscribe({
                 next: () => {
-                    this.loadRecords({ PageNumber: 1, PageSize: 10 });
+                    this.toastService.show('Supplier confidentiality agreement deleted successfully', 'success');
+                    this.loadRecords({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'desc',
+                        filter: []
+                    });
                 },
                 error: (err) => {
                     this.toastService.show(err?.error?.message || 'Failed to delete record', 'error');

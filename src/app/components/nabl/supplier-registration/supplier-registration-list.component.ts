@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { SupplierRegistrationService } from '../../../services/supplier-registration.service';
 import { SupplierRegistration } from '../../../models/supplierRegistrationModel';
 import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-table/nabl-register-table.component';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
     selector: 'app-supplier-registration-list',
@@ -17,7 +18,7 @@ export class SupplierRegistrationListComponent implements OnInit {
     searchTerm = '';
 
     columns: RegisterColumn[] = [
-        { key: 'formatNo', label: 'Format No', type: 'string' },
+        { key: 'formCode', label: 'Format No', type: 'string' },
         { key: 'supplierName', label: 'Supplier Name', type: 'string' },
         { key: 'contactPerson', label: 'Contact Person', type: 'string' },
         { key: 'mobileNo', label: 'Mobile', type: 'string' },
@@ -27,11 +28,19 @@ export class SupplierRegistrationListComponent implements OnInit {
 
     constructor(
         private service: SupplierRegistrationService,
-        private router: Router
+        private router: Router,
+        private toastService: ToastService
     ) { }
 
     ngOnInit(): void {
-        this.loadRecords();
+        this.loadRecords({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
     loadRecords(params: any = {}): void {
@@ -71,7 +80,15 @@ export class SupplierRegistrationListComponent implements OnInit {
     onDelete(id: number): void {
         if (confirm('Are you sure you want to delete this registration record?')) {
             this.service.delete(id).subscribe(() => {
-                this.loadRecords({ PageNumber: 1, PageSize: 10 });
+                this.toastService.show('delete supplier registration record', 'success');
+                this.loadRecords({
+                    PageNumber: 1,
+                    PageSize: 10,
+                    searchTerm: '',
+                    sortByColumn: 'id',
+                    sortOrder: 'desc',
+                    filter: []
+                });
             });
         }
     }

@@ -11,6 +11,8 @@ export interface CompetenceRequirement {
     approvedBy: string;
     isExternal?: boolean;
     relatedActivity?: string; // For external
+    preparedBy: string;
+    reviewedBy: string;
 }
 
 export interface CompetenceRequirementResponse {

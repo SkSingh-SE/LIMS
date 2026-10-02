@@ -10,7 +10,7 @@ import { EquipmentHistoryRecord, EquipmentHistoryListResponse, EquipmentHistoryR
 export class EquipmentHistoryService {
     private apiUrl = environment.apiUrl + '/Nabl/EquipmentHistory';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<EquipmentHistoryListResponse> {
         return this.http.post<EquipmentHistoryListResponse>(this.apiUrl + '/list', params || {});
@@ -35,5 +35,9 @@ export class EquipmentHistoryService {
 
     getByEquipmentId(equipmentId: number): Observable<EquipmentHistoryListResponse> {
         return this.http.post<EquipmentHistoryListResponse>(this.apiUrl + '/list', { equipmentId });
+    }
+    getequipmentById(equipmentId: number): Observable<any | undefined> {
+        return this.http.get<any>(`${this.apiUrl}/equipment-history/${equipmentId}`
+        );
     }
 }

@@ -19,13 +19,11 @@
   <div class="toolbar-right">
     <!-- Orientation Toggle -->
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
@@ -46,13 +44,9 @@
 
   <app-print-frame *ngIf="matrix" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-          [formatNo]="matrix.formatNo"
-          [mainTitle]="'RESPONSIBILITY & AUTHORITY MATRIX'"
-          [docNo]="'DMSPL / Level-04 / Format / ' + matrix.formatNo"
-          [issueNo]="matrix.issueNo"
-          [issueDate]="matrix.date"
-          [revNo]="matrix.revNo">
+      <app-nabl-print-header [formatNo]="matrix.formCode || 'F-4'" [mainTitle]="'RESPONSIBILITY & AUTHORITY MATRIX'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + matrix.formCode" [issueNo]="matrix.issueNo" [issueDate]="matrix.date"
+        [revNo]="matrix.revNo">
       </app-nabl-print-header>
     </ng-container>
 
@@ -101,10 +95,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-          [preparedByName]="matrix.preparedBy"
-          [issuedByName]="matrix.issuedBy"
-          [reviewedApprovedByName]="matrix.reviewedApprovedBy">
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''">
       </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>

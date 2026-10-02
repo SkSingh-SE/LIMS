@@ -14,9 +14,9 @@ export class PtIlcPlanListComponent implements OnInit {
     columns: RegisterColumn[] = [
         { key: 'documentNo', type: 'string', label: 'Document No', filter: true },
         { key: 'laboratoryId', type: 'string', label: 'Lab ID (CAB ID)', filter: true },
-        { key: 'periodOfParticipation', type: 'string', label: 'Period', filter: true },
+        { key: 'laboratoryName', type: 'string', label: 'Laboratory Name', filter: true },
+        { key: 'fieldOfAccreditation', type: 'string', label: 'Field Of Accreditation', filter: true },
         { key: 'date', type: 'date', label: 'Date', filter: true },
-        { key: 'status', type: 'string', label: 'Status', filter: true }
     ];
 
     listData: any[] = [];

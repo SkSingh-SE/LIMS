@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="complaintForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="complaintForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -73,7 +73,12 @@
                   Month & Year
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="monthYear" placeholder="e.g. Dec-25" />
+                <input type="month" class="form-control" formControlName="monthYear" placeholder="e.g. Dec-25" />
+                <div
+                  *ngIf="complaintForm.get('monthYear')?.touched && complaintForm.get('monthYear')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  month year is required.
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
@@ -81,13 +86,23 @@
                   <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control" formControlName="complaintNo" placeholder="e.g. 04" />
+                <div
+                  *ngIf="complaintForm.get('complaintNo')?.touched && complaintForm.get('complaintNo')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  complaint no is required.
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Date of Complaint
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="dateOfComplaint" />
+                <input type="date" class="form-control" formControlName="complaintDate" />
+                <div
+                  *ngIf="complaintForm.get('complaintDate')?.touched && complaintForm.get('complaintDate')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  complaint date is required.
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
@@ -95,6 +110,11 @@
                   <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control" formControlName="complainantName" placeholder="Client Name" />
+                <div
+                  *ngIf="complaintForm.get('complainantName')?.touched && complaintForm.get('complainantName')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  complaint name is required.
+                </div>
               </div>
             </div>
           </div>
@@ -108,24 +128,23 @@
           </div>
           <div *ngIf="openSections['details']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-6">
+              <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-bold">
                   Details of Complaint
                   <span class="text-danger">*</span>
                 </label>
-                <quill-editor
-                  formControlName="detailsOfComplaint"
-                  [modules]="quillModules"
-                  placeholder="Describe the complaint..."
-                ></quill-editor>
+                <quill-editor formControlName="complaintDescription" [modules]="quillModules"
+                  placeholder="Describe the complaint..."></quill-editor>
+                <div
+                  *ngIf="complaintForm.get('complaintDescription')?.touched && complaintForm.get('complaintDescription')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  complaint details is required.
+                </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-bold">Validation of Complaint</label>
-                <quill-editor
-                  formControlName="validationOfComplaint"
-                  [modules]="quillModules"
-                  placeholder="Initial validation findings..."
-                ></quill-editor>
+                <quill-editor formControlName="validationOfComplaint" [modules]="quillModules"
+                  placeholder="Initial validation findings..."></quill-editor>
               </div>
             </div>
           </div>
@@ -138,12 +157,9 @@
             <span class="fw-bold ms-2">IV. Investigation Outcome</span>
           </div>
           <div *ngIf="openSections['investigation']" class="section-body">
-            <div class="col-12">
-              <quill-editor
-                formControlName="outcomeOfInvestigation"
-                [modules]="quillModules"
-                placeholder="Root cause and investigation results..."
-              ></quill-editor>
+            <div class="col-12 d-flex flex-column">
+              <quill-editor formControlName="outcomeOfInvestigation" [modules]="quillModules"
+                placeholder="Root cause and investigation results..."></quill-editor>
             </div>
           </div>
         </div>
@@ -156,29 +172,34 @@
           </div>
           <div *ngIf="openSections['action']" class="section-body">
             <div class="row gy-3">
-              <div class="col-12">
+              <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-bold">Corrective Actions Taken</label>
-                <quill-editor formControlName="correctiveActionsTaken" [modules]="quillModules"></quill-editor>
+                <quill-editor formControlName="correctiveAction" [modules]="quillModules"></quill-editor>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Reference No & Date (Customer Response)</label>
-                <input type="text" class="form-control" formControlName="referenceNoDate" />
+                <label class="form-label">Reference Date (Customer Response)<span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="referenceNoDate" />
+                <div
+                  *ngIf="complaintForm.get('referenceNoDate')?.touched && complaintForm.get('referenceNoDate')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  reference date is required.
+                </div>
               </div>
-              <div class="col-md-6">
+              <!-- <div class="col-md-6">
                 <label class="form-label">QM Signature / Name</label>
                 <input type="text" class="form-control" formControlName="signatureQM" />
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="complaintForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="complaintForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Entry" : "Save Entry" }}
           </button>
         </div>

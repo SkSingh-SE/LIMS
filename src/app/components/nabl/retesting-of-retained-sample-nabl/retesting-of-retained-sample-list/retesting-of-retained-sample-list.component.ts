@@ -12,11 +12,14 @@ import { ToastService } from '../../../../services/toast.service';
 })
 export class RetestingOfRetainedSampleListComponent implements OnInit {
     columns: RegisterColumn[] = [
-        { key: 'documentNo', type: 'string', label: 'Document No', filter: true },
-        { key: 'originalSampleId', type: 'string', label: 'Original Sample ID / TRN', filter: true },
-        { key: 'sampleName', type: 'string', label: 'Sample Name', filter: true },
-        { key: 'dateOfRetesting', type: 'date', label: 'Date of Retesting', filter: true },
-        { key: 'status', type: 'string', label: 'Status', filter: true }
+        { key: 'planNo', type: 'string', label: 'Plan No', filter: true },
+        { key: 'qcActivity', type: 'string', label: 'Qc Activity', filter: true },
+        { key: 'departmentName', type: 'string', label: 'Department Name', filter: true },
+        { key: 'testMethodName', type: 'string', label: 'TestMethod Name', filter: true },
+        { key: 'frequencyType', type: 'string', label: 'Frequency Type', filter: true },
+        { key: 'responsibleEmployee', type: 'string', label: 'Responsible Employee', filter: true },
+        // { key: 'dateOfRetesting', type: 'date', label: 'Date of Retesting', filter: true },
+        // { key: 'status', type: 'string', label: 'Status', filter: true }
     ];
 
     listData: any[] = [];

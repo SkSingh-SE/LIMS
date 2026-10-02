@@ -10,7 +10,7 @@ import { ProductInspection, ProductInspectionListResponse, ProductInspectionResp
 export class ProductInspectionService {
     private apiUrl = environment.apiUrl + '/Nabl/ProductInspection';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<ProductInspectionListResponse> {
         return this.http.post<ProductInspectionListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,8 @@ export class ProductInspectionService {
 
     delete(id: number): Observable<ProductInspectionResponse> {
         return this.http.delete<ProductInspectionResponse>(`${this.apiUrl}/delete/${id}`);
+    }
+    loadNextPlanNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-plan-no`);
     }
 }

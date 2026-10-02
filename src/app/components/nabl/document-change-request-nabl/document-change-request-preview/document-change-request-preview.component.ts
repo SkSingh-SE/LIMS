@@ -19,6 +19,8 @@ export class DocumentChangeRequestPreviewComponent implements OnInit {
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
+    isoClausesText: string = '';
+
 
     constructor(
         private route: ActivatedRoute,

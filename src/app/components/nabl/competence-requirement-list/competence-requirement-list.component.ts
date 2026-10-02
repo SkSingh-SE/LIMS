@@ -15,10 +15,11 @@ export class CompetenceRequirementListComponent implements OnInit {
 
   columns: RegisterColumn[] = [
     { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
-    { key: 'positionName', type: 'string', label: 'Position / Activity', filter: true },
-    { key: 'minimumEducation', type: 'string', label: 'Minimum Education', filter: true },
-    { key: 'minimumExperience', type: 'string', label: 'Minimum Experience', filter: true },
-    { key: 'approvedBy', type: 'string', label: 'Approved By', filter: true }
+    { key: 'positionName', type: 'string', label: 'Position', filter: true },
+    { key: 'relatedActivity', type: 'string', label: 'Activity', filter: true },
+    // { key: 'minimumEducation', type: 'string', label: 'Minimum Education', filter: true },
+    { key: 'approvedBy', type: 'string', label: 'Approved By', filter: true },
+    { key: 'date', type: 'date', label: 'Date', filter: true },
   ];
 
   requirements: any[] = [];

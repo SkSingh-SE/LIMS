@@ -13,16 +13,16 @@ export interface SupplierConfidentiality {
     address: string;
 
     agreementDate: Date | string;
-    validUntil: Date | string;
+    agreementValidUpto: Date | string;
 
     // Review & Approval
     reviewedBy: string;
     reviewedDate: Date | string;
     approvedBy: string;
-    approvalDate: Date | string;
+    approvedDate: Date | string;
 
     status: 'active' | 'expired' | 'terminated';
-    remarks?: string;
+    confidentialItems?: string;
 
     // Audit Fields
     createdBy?: string;
@@ -30,6 +30,7 @@ export interface SupplierConfidentiality {
     modifiedBy?: string;
     modifiedOn?: Date | string;
     isActive?: boolean;
+    preparedBy: string;
 }
 
 export interface SupplierConfidentialityResponse {

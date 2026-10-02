@@ -3,8 +3,16 @@ export interface AttendanceParticipant {
     id?: number;
     slNo: number;
     participantName: string;
+    typesofParticipant: string;
+    participantId: number;
+    designation: string;
+    evaluation: string;
+    evaluationId: number;
+    status: string;
     feedback: 'Good' | 'Satisfactory' | 'Not Good';
-    signature?: string; // Base64 or path
+    uploadReferenceID?: number; // ID returned from file upload API
+    filePath?: string; // Path returned from file upload API
+    fileName?: string; // Original file name
 }
 
 export interface TrainingAttendance {
@@ -13,27 +21,38 @@ export interface TrainingAttendance {
     issueNo: string;
     revNo: string;
     date: Date | string;
+    planDate: Date | string;
 
     // Specific fields
-    trainingProgramTitle: string;
-    trainingVenue: string;
-    facultyName: string;
-    dateTime: string; // e.g., "03/09/25 & 4:00 pm"
+    trainingPlanName: string;
+    trainingTopic: string;
+    month: string;
+    trainingPlanId: number;
+    planningYear: number;
+    venueMode: string;
+    trainerName: string;
+    trainingDatetime: string; // e.g., "03/09/25 & 4:00 pm"
+    audience: string; // e.g., "03/09/25 & 4:00 pm"
+    agency: string; // e.g., "03/09/25 & 4:00 pm"
+    providerAgencyName: string; // e.g., "03/09/25 & 4:00 pm"
 
     participants: AttendanceParticipant[];
-    remarks?: string;
+    genearalRemarks?: string;
     facultySignature?: string;
+    questionSet?: string;
 
     // Approval
     preparedBy?: string;
     issuedBy?: string;
     reviewedApprovedBy?: string;
-
+    approvedBy?: string;
+    reviewedBy?: string;
     createdBy?: string;
     createdOn?: Date | string;
     modifiedBy?: string;
     modifiedOn?: Date | string;
     isActive?: boolean;
+    evaluationRequired?: boolean;
 }
 
 export interface TrainingAttendanceResponse {

@@ -14,25 +14,29 @@
     </div>
 
     <div class="card-body p-4">
-      <form [formGroup]="materialForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="materialForm.disabled">
+      <form [formGroup]="materialForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('header')" style="cursor: pointer;">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('header')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2 ">I. Document Control Information</span>
           </div>
           <div *ngIf="openSections['header']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-24">
+                <label class="form-label fw-semibold text-dark small">Form Number <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-24">
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Issue No <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold text-dark small">Issue No <span
+                    class="text-danger">*</span></label>
                 <input type="text" class="form-control bg-light" formControlName="issueNo" readonly>
               </div>
               <div class="col-md-3">
@@ -43,9 +47,11 @@
                 <label class="form-label fw-semibold text-dark small">Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control bg-light" formControlName="date" readonly>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Record Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="documentNo" placeholder="DMSPL-IM-YYYY-XXX">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Doc Number <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="documentNo"
+                  placeholder="DMSPL-IM-YYYY-XXX">
               </div>
             </div>
           </div>
@@ -53,146 +59,402 @@
 
         <!-- Section II: Material & Receipt Details -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('material')" style="cursor: pointer;">
-            <i class="bi" [ngClass]="openSections['material'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2 ">II. Material & Receipt Information</span>
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('referenceDetails')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['referenceDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">II. Reference Details</span>
           </div>
-          <div *ngIf="openSections['material']" class="section-body p-3 border border-top-0 rounded-bottom">
+          <div *ngIf="openSections['referenceDetails']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Material Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="materialName">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Material Code <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="materialCode">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Supplier Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="supplierName">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Purchase Order No <span
+                    class="text-danger">*</span></label>
+                <!-- <input type="text" class="form-control shadow-sm" formControlName="planNo"> -->
+                <select class="form-select form-select-sm" formControlName="poNo" (change)="onPoNoChange($event)">
+                  <option value="" disabled>Select Plan No</option>
+                  <option *ngFor="let poNo of PurchaseOrderNoList" [value]="poNo.id || poNo.Id">
+                    {{ poNo.name || poNo.Name }}
+                  </option>
+                </select>
+                <div *ngIf="materialForm.get('poNo')?.invalid && materialForm.get('poNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  po no is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Batch No <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="batchNo">
+                <label class="form-label fw-semibold text-dark small">Indent No <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="indentNoPoNo" readonly
+                  placeholder="indent no">
+                <div *ngIf="materialForm.get('indentNoPoNo')?.invalid && materialForm.get('indentNoPoNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  indent no is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Lot No.</label>
-                <input type="text" class="form-control shadow-sm" formControlName="lotNo">
+                <label class="form-label fw-semibold text-dark small">Inspection Plan No <span
+                    class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="inspectionPlanNo"
+                  (change)="onPlanNoChange($event)">
+                  <option value="" disabled>Select Inspection Plan No</option>
+                  <option *ngFor="let planNo of planNoList" [value]="planNo.id || planNo.Id">
+                    {{ planNo.name || planNo.Name }}
+                  </option>
+                </select>
+                <div
+                  *ngIf="materialForm.get('inspectionPlanNo')?.invalid && materialForm.get('inspectionPlanNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  inspection plan no is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Quantity Received <span class="text-danger">*</span></label>
-                <input type="number" class="form-control shadow-sm" formControlName="quantityReceived">
+                <label class="form-label fw-semibold text-dark small">Supplier Name <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="supplierName" readonly
+                  placeholder="supplier name">
+                <div *ngIf="materialForm.get('supplierName')?.invalid && materialForm.get('supplierName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  supplier name is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Unit <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="unitOfMeasure">
+                <label class="form-label fw-semibold text-dark small">Email<span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="email" readonly placeholder="email">
+                <div *ngIf="materialForm.get('email')?.invalid && materialForm.get('email')?.touched"
+                  class="text-danger text-sm mt-1">
+                  email is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Invoice No <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="invoiceNo">
+                <label class="form-label fw-semibold text-dark small">Phone No <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="phoneNo" readonly
+                  placeholder="phone no">
+                <div *ngIf="materialForm.get('phoneNo')?.invalid && materialForm.get('phoneNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  phone no is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">GRN No.</label>
-                <input type="text" class="form-control shadow-sm" formControlName="grnNo">
+                <label class="form-label fw-semibold text-dark small">Address <span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="address" readonly
+                  placeholder="address">
+                <div *ngIf="materialForm.get('address')?.invalid && materialForm.get('address')?.touched"
+                  class="text-danger text-sm mt-1">
+                  address is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">GST No.</label>
+                <input type="text" class="form-control shadow-sm" formControlName="gstNo" readonly placeholder="gst no">
+                <div *ngIf="materialForm.get('gstNo')?.invalid && materialForm.get('gstNo')?.touched"
+                  class="text-danger text-sm mt-1">
+                  gst no is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">PO Type</label>
+                <input type="text" class="form-control shadow-sm" formControlName="orderType" readonly
+                  placeholder="po type">
+                <div *ngIf="materialForm.get('orderType')?.invalid && materialForm.get('orderType')?.touched"
+                  class="text-danger text-sm mt-1">
+                  po type is required
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Section III: Inspection Results -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('results')" style="cursor: pointer;">
-            <i class="bi" [ngClass]="openSections['results'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2 ">III. Inspection Parameters & Observations</span>
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('receivedItem')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['receivedItem'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">III. Received Items Table</span>
           </div>
-          <div *ngIf="openSections['results']" class="section-body p-0 border border-top-0 rounded-bottom">
+          <div *ngIf="openSections['receivedItem']" class="section-body p-0 border border-top-0 rounded-bottom">
             <div class="table-responsive">
               <table class="table table-bordered align-middle sm-table mb-0">
                 <thead class="table-light align-middle text-center">
                   <tr>
                     <th style="width: 50px;">SN</th>
-                    <th>Parameter Name <span class="text-danger">*</span></th>
-                    <th>Standard Requirement <span class="text-danger">*</span></th>
-                    <th>Observation <span class="text-danger">*</span></th>
-                    <th style="width: 120px;">Result <span class="text-danger">*</span></th>
-                    <th style="width: 50px;" *ngIf="!isViewMode"></th>
+                    <th>Material/Description</th>
+                    <th>Material Code </th>
+                    <th>Ordered Qty </th>
+                    <th>Unit </th>
+                    <th>Received Qty</th>
+                    <th>Batch No </th>
+                    <th>Lot No </th>
+                    <th>Invoice No</th>
+                    <th>Expiry Date </th>
+                    <th>COA Available </th>
+                    <!-- <th style="width: 120px;">Result</th> -->
                   </tr>
                 </thead>
-                <tbody formArrayName="results">
-                  <tr *ngFor="let res of resultsArray.controls; let i = index" [formGroupName]="i">
+                <tbody formArrayName="itemsParameters">
+                  <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
                     <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+
                     <td>
-                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="parameterName">
+                      <input type="text" class="form-control form-control-sm border-dashed"
+                        formControlName="materialName" readonly>
+                    </td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed"
+                        formControlName="materialCode" placeholder="material code"  [readOnly]="isViewMode">
+                    </td>
+
+                    <td>
+                      <input type="number" class="form-control form-control-sm border-dashed" formControlName="orderedQty"
+                        readonly>
+                    </td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="unit"
+                        readonly>
                     </td>
                     <td>
-                      <textarea class="form-control form-control-sm border-dashed" formControlName="requirement" rows="1"></textarea>
+                      <input type="number" class="form-control form-control-sm border-dashed"
+                        formControlName="receviceQty" (input)="validateReceivedQuantity(i)" placeholder="received qty" [readOnly]="isViewMode">
                     </td>
                     <td>
-                      <textarea class="form-control form-control-sm border-dashed" formControlName="observation" rows="1"></textarea>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="batchNo"
+                        placeholder="batch no" [readOnly]="isViewMode">
                     </td>
+
                     <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="lotNo"
+                        placeholder="lot no"[readOnly]="isViewMode">
+                    </td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed" formControlName="invoiceNo"
+                        placeholder="invoice no" [readOnly]="isViewMode">
+                    </td>
+
+                    <td>
+                      <input type="date" class="form-control form-control-sm border-dashed"
+                        formControlName="expiryDate" [readOnly]="isViewMode">
+                    </td>
+
+                    <td>
+                      <select class="form-select form-select-sm border-dashed" formControlName="coaAvailable">
+                        <option *ngFor="let r of coaAvailable" [value]="r">{{ r }}</option>
+                      </select>
+                    </td>
+
+                    <!-- <td>
                       <select class="form-select form-select-sm border-dashed" formControlName="result">
                         <option *ngFor="let r of results" [value]="r">{{ r }}</option>
                       </select>
-                    </td>
-                    <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-remove btn-sm border-0" (click)='removeResult(i)' [disabled]="resultsArray.length <= 1">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </td>
+                    </td> -->
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
-              <button type="button" class="btn btn-add btn-sm px-3" (click)="addResult()">
-                <i class="bi bi-plus-circle me-1"></i> Add Parameter Result
-              </button>
+
+          </div>
+        </div>
+        <!-- Section III: Inspection Results -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('inspectionPlan')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['inspectionPlan'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Inspection Parameters & Observations</span>
+          </div>
+
+          <div *ngIf="openSections['inspectionPlan']" class="section-body p-0 border border-top-0 rounded-bottom">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Parameter Name</th>
+                    <th>Requirement</th>
+                    <th>Reference Standard</th>
+                    <th>Method of Check</th>
+                    <th>Frequency</th>
+                    <th>Acceptance Criteria</th>
+                    <!-- <th>Result</th> -->
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="inspectionParameters">
+                  <tr *ngFor="let res of parameters.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+
+                    <td>
+                      <input type="text" class="form-control form-control-sm border-dashed"
+                        formControlName="parameterName" readonly>
+                    </td>
+
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="requirement"
+                        rows="1" readonly></textarea>
+                    </td>
+
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="referenceStandard"
+                        rows="1" readonly></textarea>
+                    </td>
+
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="methodOfCheck"
+                        rows="1" readonly></textarea>
+                    </td>
+
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="frequency" rows="1"
+                        readonly></textarea>
+                    </td>
+
+                    <td>
+                      <textarea class="form-control form-control-sm border-dashed" formControlName="acceptanceCriteria"
+                        rows="1" readonly></textarea>
+                    </td>
+
+                    <!-- <td>
+                      <select class="form-select form-select-sm border-dashed" formControlName="result">
+                        <option *ngFor="let r of results" [value]="r">{{ r }}</option>
+                      </select>
+                    </td> -->
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
         <!-- Section IV: Outcome & Remarks -->
         <div class="accordion-section mb-4">
-          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top" (click)="toggleSection('outcome')" style="cursor: pointer;">
-            <i class="bi" [ngClass]="openSections['outcome'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2 ">IV. Inspection Outcome & Signatories</span>
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('inspectionDetails')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['inspectionDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">V. Inspection Plan Details</span>
           </div>
-          <div *ngIf="openSections['outcome']" class="section-body p-3 border border-top-0 rounded-bottom">
+          <div *ngIf="openSections['inspectionDetails']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
+
               <div class="col-md-4">
-                <label class="form-label fw-semibold text-dark small">Final Status <span class="text-danger">*</span></label>
-                <select class="form-select shadow-sm" formControlName="inspectionStatus">
+                <label class="form-label fw-semibold text-dark small">Product / Service Name<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="productName" readonly
+                  placeholder="product/service name">
+                <div *ngIf="materialForm.get('productName')?.invalid && materialForm.get('productName')?.touched"
+                  class="text-danger text-sm mt-1">
+                  product name is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Product / Service Code<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="productCode" readonly
+                  placeholder="product/service code">
+                <div *ngIf="materialForm.get('productCode')?.invalid && materialForm.get('productCode')?.touched"
+                  class="text-danger text-sm mt-1">
+                  product code is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Category<span class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="category" readonly
+                  placeholder="category">
+                <div *ngIf="materialForm.get('category')?.invalid && materialForm.get('category')?.touched"
+                  class="text-danger text-sm mt-1">
+                  category is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Inspection Stage<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="inspectionStage" readonly
+                  placeholder="inspection stage">
+                <div
+                  *ngIf="materialForm.get('inspectionStage')?.invalid && materialForm.get('inspectionStage')?.touched"
+                  class="text-danger text-sm mt-1">
+                  inspection stage is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Risk Level<span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="riskLevel" readonly
+                  placeholder="risk level">
+                <div *ngIf="materialForm.get('riskLevel')?.invalid && materialForm.get('riskLevel')?.touched"
+                  class="text-danger text-sm mt-1">
+                  riskLevel is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Final Status <span
+                    class="text-danger">*</span></label>
+                <select class="form-select shadow-sm" formControlName="inspectionResult">
                   <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
                 </select>
               </div>
+            </div>
+          </div>
+        </div>
+        <!-- Section IV: Outcome & Remarks -->
+        <div class="accordion-section mb-4">
+          <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
+            (click)="toggleSection('outcome')" style="cursor: pointer;">
+            <i class="bi" [ngClass]="openSections['outcome'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2 ">VI. Inspection Outcome & Signatories</span>
+          </div>
+          <div *ngIf="openSections['outcome']" class="section-body p-3 border border-top-0 rounded-bottom">
+            <div class="row g-3">
               <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-semibold text-dark small">Deviations Observed</label>
-                <quill-editor formControlName="deviations" [modules]="quillModules" placeholder="Enter deviations if any..."></quill-editor>
+                <quill-editor formControlName="deviations" [modules]="quillModules"
+                  placeholder="Enter deviations if any..."></quill-editor>
               </div>
               <div class="col-12 d-flex flex-column">
                 <label class="form-label fw-semibold text-dark small">Corrective Actions</label>
-                <quill-editor formControlName="correctiveActions" [modules]="quillModules" placeholder="Enter corrective actions taken..."></quill-editor>
+                <quill-editor formControlName="correctiveActions" [modules]="quillModules"
+                  placeholder="Enter corrective actions taken..."></quill-editor>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Inspected By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="inspectedBy">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Inspected By <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="inspectionBy"
+                  placeholder="inspected by">
+                <div *ngIf="materialForm.get('inspectionBy')?.invalid && materialForm.get('inspectionBy')?.touched"
+                  class="text-danger text-sm mt-1">
+                  inspection by is required
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-dark small">Verified By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="verifiedBy">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Verified By <span
+                    class="text-danger">*</span></label>
+                <input type="text" class="form-control shadow-sm" formControlName="receivedBy"
+                  placeholder="verified by">
+                <div *ngIf="materialForm.get('receivedBy')?.invalid && materialForm.get('receivedBy')?.touched"
+                  class="text-danger text-sm mt-1">
+                 received by is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-dark small">Storage Condition </label>
+                <input type="text" class="form-control shadow-sm" formControlName="storageLocation"
+                  placeholder="storage condition">
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-semibold text-dark small">General Remarks</label>
+                <quill-editor formControlName="generalRemarks" [modules]="quillModules"
+                  placeholder="Enter general remarks..."></quill-editor>
               </div>
             </div>
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="materialForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
-          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm" [disabled]="materialForm.invalid">
+          <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm"
+            (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save px-4 fw-semibold shadow-sm">
             <i class="bi bi-check2-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Record
           </button>
         </div>

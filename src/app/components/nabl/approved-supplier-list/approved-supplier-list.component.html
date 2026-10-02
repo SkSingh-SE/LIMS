@@ -6,5 +6,10 @@
   [isLoading]="false"
   baseRoute="/approved-supplier"
   addRoute="/approved-supplier/create"
-  (onPageChange)="onPageChange($event)"
+   [printList]="printList"
+  [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
+    (onPageChange)="onPageChange($event)"
+  (onDelete)="deleteApprovedSupplier($event)"
 ></app-nabl-register-table>

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -9,6 +9,7 @@ import { NablFormsHelper } from '../../../utility/nabl-helpers/nabl-forms.helper
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { MyEvaluationsService } from '../../../services/my-evaluations.service';
 
 @Component({
   selector: 'app-training-effectiveness-form',
@@ -24,13 +25,21 @@ export class TrainingEffectivenessFormComponent implements CanComponentDeactivat
   recordId: number = 0;
   isEditMode = false;
   isViewMode = false;
-  formTitle = 'Create Training Effectiveness Record';
+  formTitle = 'Training Effectiveness Record';
   formNumbers: string[] = NablFormsHelper.getFormNumbers();
-
+  attendanceId: number | null = null;
+  trainingPlanId: number | null = null;
+  questionSetId: number | null = null;
+  participantName: string | null = null;
+  participantId: number | null = null;
+  status: string | null = null;
+  designation: string | null = null;
   openSections: { [key: string]: boolean } = {
-    employee: true,
-    pre: true,
-    post: true,
+    participant: true,
+    training: true,
+    questions: true,
+    result: true,
+    header: true,
     evaluation: true
   };
 
@@ -43,7 +52,7 @@ export class TrainingEffectivenessFormComponent implements CanComponentDeactivat
   };
 
   evaluationModes = ['Observation', 'Questionnaire', 'Practical Test', 'Retesting'];
-
+  today = new Date().toISOString().split('T')[0];
   assessmentParameters = [
     'Knowledge Acquisition',
     'Practical Skills',
@@ -56,6 +65,7 @@ export class TrainingEffectivenessFormComponent implements CanComponentDeactivat
   constructor(
     private fb: FormBuilder,
     private trainingEffectivenessService: TrainingEffectivenessService,
+    private myEvaluationService: MyEvaluationsService,
     private router: Router,
     private route: ActivatedRoute,
     private datePipe: DatePipe,
@@ -63,94 +73,293 @@ export class TrainingEffectivenessFormComponent implements CanComponentDeactivat
     private unsavedChangesService: UnsavedChangesService) { }
 
   ngOnInit(): void {
+
     this.initForm();
+
+    // -----------------------------------------
+    // View / Edit / Create Mode
+    // -----------------------------------------
+
+    // -----------------------------------------
+    // Route ID
+    // -----------------------------------------
+    this.route.params.subscribe(params => {
+
+      this.recordId = params['id']
+        ? Number(params['id'])
+        : 0;
+
+    });
     this.route.url.subscribe(url => {
-      const path = url[url.length - 2]?.path;
-      if (path === 'details') {
+
+      const path = url[url.length - 1]?.path;
+
+      if (path === 'details' || path === 'view') {
+
         this.isViewMode = true;
-        this.formTitle = 'View Training Effectiveness Record';
+        this.formTitle = 'Training Effectiveness Record';
+
         this.effectivenessForm.disable();
+
       } else if (path === 'edit') {
+
         this.isEditMode = true;
-        this.formTitle = 'Edit Training Effectiveness Record';
+        this.formTitle = ' Training Effectiveness Record';
       }
     });
 
-    this.route.params.subscribe(params => {
-      this.recordId = +params['id'];
-      if (this.recordId) {
+
+    // -----------------------------------------
+    // Query Parameters
+    // -----------------------------------------
+    this.route.queryParams.subscribe(params => {
+
+      this.trainingPlanId = params['trainingPlanId']
+        ? Number(params['trainingPlanId'])
+        : null;
+
+      this.attendanceId = params['attendanceId']
+        ? Number(params['attendanceId'])
+        : null;
+      this.participantId = params['participantId']
+        ? Number(params['participantId'])
+        : null;
+
+      this.questionSetId = params['questionSetId']
+        ? Number(params['questionSetId'])
+        : null;
+
+      this.participantName = params['participantName']
+        ? params['participantName']
+        : null;
+
+      this.designation = params['designation']
+        ? params['designation']
+        : null;
+
+      this.status = params['status']
+        ? params['status']
+        : null;
+
+
+      // -----------------------------------------
+      // Patch Context IDs
+      // -----------------------------------------
+      this.effectivenessForm.patchValue({
+
+        trainingPlanId: this.trainingPlanId,
+
+        attendanceId: this.attendanceId,
+
+        questionSetId: this.questionSetId,
+        participantId: this.participantId,
+
+        participantName: this.participantName,
+
+        designation: this.designation,
+
+        status: this.status
+
+      });
+
+
+      // -----------------------------------------
+      // Load details from Backend
+      // -----------------------------------------
+      if (this.attendanceId &&
+        this.trainingPlanId &&
+        this.questionSetId) {
+
+        this.loadEffectivenessContext();
+
+      } else if (this.recordId) {
+        this.isViewMode = true;
         this.loadData();
-      } else {
-        this.addDefaultAssessments();
+
       }
+
     });
+
+
+
   }
 
   initForm(): void {
     this.effectivenessForm = this.fb.group({
+
       id: [0],
       formatNo: ['F-10', Validators.required],
       issueNo: ['01', Validators.required],
       revNo: ['00', Validators.required],
-      date: [new Date().toISOString().split('T')[0], Validators.required],
-      employeeName: ['', Validators.required],
-      courseTitle: ['', Validators.required],
+      date: [this.today],
+
+      attendanceId: [null],
+      participantId: [null],
+      trainingPlanId: [null],
+      questionSetId: [null],
+
+      trainingPlan: ['', Validators.required],
       trainingDate: ['', Validators.required],
-      trainerName: ['', Validators.required],
-      organization: [''],
-      preAssessment: this.fb.array([]),
-      postAssessment: this.fb.array([]),
-      evaluationDate: [new Date().toISOString().split('T')[0]],
-      evaluationMode: ['Observation'],
-      evaluatorName: [''],
-      isEffective: [true],
-      recommendations: ['']
+      planningYear: [''],
+      month: [''],
+      agency: [''],
+      providerName: [''],
+      trainingVenue: [''],
+      facultyName: [''],
+      trainingDatetime: [''],
+      questionSet: [''],
+      participantName: ['', Validators.required],
+      designation: ['', Validators.required],
+      status: ['Present'],
+      result: [],
+      totalQuestions: [],
+      correctAnswers: [],
+      evaluationDate: [this.today],
+      questions: this.fb.array([]),
+    });
+    this.effectivenessForm.get('date')?.disable();
+    this.effectivenessForm.get('evaluationDate')?.disable();
+    this.effectivenessForm.get('formatNo')?.disable();
+  }
+
+  get questions(): FormArray {
+    return this.effectivenessForm.get('questions') as FormArray;
+  }
+
+  loadEffectivenessContext(): void {
+
+    if (
+      !this.attendanceId ||
+      !this.trainingPlanId ||
+      !this.questionSetId
+    ) {
+      return;
+    }
+    this.trainingEffectivenessService.getEvaluationContext(
+      this.attendanceId,
+      this.trainingPlanId,
+      this.questionSetId
+    ).subscribe({
+
+      next: (res: any) => {
+
+        console.log(
+          'Training Effectiveness Context:',
+          res
+        );
+
+        // Training Plan details
+        this.effectivenessForm.patchValue({
+
+          trainingPlanId: this.trainingPlanId,
+
+          attendanceId: this.attendanceId,
+
+          questionSetId: this.questionSetId,
+
+          trainingPlan: res?.trainingPlan,
+
+          planningYear: res?.planningYear,
+
+          month: res?.month,
+
+          agency: res.agency,
+
+          providerName: res?.providerName,
+
+          questionSet: res.questionSet,
+
+          trainingVenue: res?.trainingVenue,
+
+          facultyName: res?.facultyName,
+
+          trainingDatetime: res?.trainingDatetime,
+          status: "Present",
+          trainingDate: NablFormsHelper.formatDateForInput(res?.trainingDate),
+
+        });
+
+
+        // Questions from QuestionSetJson
+        if (res.questions && Array.isArray(res.questions)) {
+
+          this.loadQuestions(res.questions);
+
+        }
+
+      },
+
+      error: (error: any) => {
+
+        console.error(
+          'Error loading effectiveness context:',
+          error
+        );
+
+        this.toastService.show(
+          error?.error?.message ||
+          'Failed to load training effectiveness details',
+          'error'
+        );
+
+      }
+
     });
   }
+  loadQuestions(questionList: any[]): void {
 
-  get preAssessment(): FormArray {
-    return this.effectivenessForm.get('preAssessment') as FormArray;
-  }
+    this.questions.clear();
 
-  get postAssessment(): FormArray {
-    return this.effectivenessForm.get('postAssessment') as FormArray;
-  }
-
-  addDefaultAssessments(): void {
-    if (!this.isViewMode) {
-      this.assessmentParameters.slice(0, 3).forEach(param => {
-        this.preAssessment.push(this.fb.group({
-          criterion: [param, Validators.required],
-          score: [5, [Validators.required, Validators.min(1), Validators.max(10)]]
-        }));
-        this.postAssessment.push(this.fb.group({
-          criterion: [param, Validators.required],
-          score: [5, [Validators.required, Validators.min(1), Validators.max(10)]]
-        }));
-      });
+    if (!questionList || questionList.length === 0) {
+      return;
     }
-  }
 
+    questionList.forEach((question: any) => {
+
+      this.questions.push(
+        this.createQuestion(question)
+      );
+
+    });
+  }
+  createQuestion(question: any): FormGroup {
+
+    return this.fb.group({
+
+      questionNo: [question.questionNo],
+
+      question: [question.question],
+
+      optionA: [question.optionA],
+
+      optionB: [question.optionB],
+
+      optionC: [question.optionC],
+
+      optionD: [question.optionD],
+
+      // Participant ka answer
+      selectedAnswer: [null, Validators.required]
+
+    });
+  }
   loadData(): void {
     this.trainingEffectivenessService.getById(this.recordId).subscribe({
       next: (data: any) => {
         if (data) {
-          this.preAssessment.clear();
-          this.postAssessment.clear();
+          this.questions.clear();
+          data.questions.forEach((question: any) => {
+            this.questions.push(this.fb.group({
+              question: [question.question, Validators.required],
+              optionA: [question.optionA, Validators.required],
+              optionB: [question.optionB, Validators.required],
+              optionC: [question.optionC, Validators.required],
+              optionD: [question.optionD, Validators.required],
+              selectedAnswer: [question.selectedAnswer, Validators.required]
 
-          data.preAssessment?.forEach((assessment: any) => {
-            this.preAssessment.push(this.fb.group({
-              criterion: [assessment.criterion, Validators.required],
-              score: [assessment.score, [Validators.required, Validators.min(1), Validators.max(10)]]
             }));
           });
-
-          data.postAssessment?.forEach((assessment: any) => {
-            this.postAssessment.push(this.fb.group({
-              criterion: [assessment.criterion, Validators.required],
-              score: [assessment.score, [Validators.required, Validators.min(1), Validators.max(10)]]
-            }));
-          });
+          this.effectivenessForm.disable();
 
           const formValues = { ...data };
           if (data.trainingDate) formValues.trainingDate = this.formatDate(data.trainingDate);
@@ -192,11 +401,11 @@ export class TrainingEffectivenessFormComponent implements CanComponentDeactivat
     const formData = this.effectivenessForm.getRawValue();
 
     if (this.isEditMode) {
-      this.trainingEffectivenessService.update(this.recordId, formData).subscribe({
+      this.myEvaluationService.update(this.recordId, formData).subscribe({
         next: (res: any) => {
           this.saved = true;
           if (res.success) {
-            this.router.navigate(['/training-effectiveness']);
+            this.router.navigate(['/my-evaluations']);
           }
         },
         error: (err: any) => {
@@ -204,12 +413,11 @@ export class TrainingEffectivenessFormComponent implements CanComponentDeactivat
         }
       });
     } else {
-      this.trainingEffectivenessService.create(formData).subscribe({
-        next: (res: any) => {
+      this.myEvaluationService.create(formData).subscribe({
+        next: (response: any) => {
           this.saved = true;
-          if (res.success) {
-            this.router.navigate(['/training-effectiveness']);
-          }
+          this.toastService.show('my evaluations created successfully', 'success');
+          this.router.navigate(['/my-evaluations']);
         },
         error: (err: any) => {
           this.toastService.show(err?.error?.message || 'Failed to create training effectiveness record', 'error');
@@ -219,7 +427,7 @@ export class TrainingEffectivenessFormComponent implements CanComponentDeactivat
   }
 
   onCancel(): void {
-    this.router.navigate(['/training-effectiveness']);
+    this.router.navigate(['/my-evaluations']);
   }
 
   canDeactivate(): Observable<boolean> | boolean {

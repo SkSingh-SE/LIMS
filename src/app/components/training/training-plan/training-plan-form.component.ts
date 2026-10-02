@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -12,11 +12,16 @@ import { noWhitespaceValidator } from '../../../utility/validators/custom-valida
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { YearHelper } from '../../../utility/helper/year.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { NablSignatureSectionComponent } from '../../nabl/nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../../services/nabl-header.service';
+import { QuestionSetMasterService } from '../../../services/question-set-master.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { QualityControlPlanService } from '../../../services/quality-control-plan.service';
 
 @Component({
   selector: 'app-training-plan-form',
 
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormFieldErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormFieldErrorComponent, NablSignatureSectionComponent, SearchableDropdownComponent],
   templateUrl: './training-plan-form.component.html',
   styleUrl: './training-plan-form.component.css',
   providers: [DatePipe]
@@ -41,6 +46,7 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
   months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   agencies = ['Internal', 'External'];
 
+  today = new Date().toISOString().split('T')[0];
   constructor(
     private fb: FormBuilder,
     private trainingPlanService: TrainingPlanService,
@@ -48,10 +54,20 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
     private route: ActivatedRoute,
     private datePipe: DatePipe,
     private toastService: ToastService,
-    private unsavedChangesService: UnsavedChangesService) { }
+    private unsavedChangesService: UnsavedChangesService,
+    private nablHeaderService: NablHeaderService,
+    private questionService: QuestionSetMasterService,
+    private qcControlPlanservice: QualityControlPlanService
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
+    this.nablHeaderService.getFormDefaults('TrainingPlan').subscribe({
+      next: (defaults) => {
+        this.planForm.patchValue({ formatNo: defaults.formCode });
+      },
+      error: () => { }
+    });
     this.route.url.subscribe(url => {
       const path = url[url.length - 2]?.path;
       if (path === 'details') {
@@ -73,53 +89,90 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
   }
 
   initForm(): void {
-    const today = new Date().toISOString().split('T')[0];
+
     this.planForm = this.fb.group({
       id: [0],
-      formatNo: ['F-8', Validators.required],
-      documentNo: ['', [Validators.required, noWhitespaceValidator()]],
+      formatNo: ['F-8'],
+      documentNo: ['F-8'],
       issueNo: ['01', Validators.required],
       revNo: ['00', Validators.required],
-      date: [today, Validators.required],
-      issueDate: [today, Validators.required],
+      date: [this.today, Validators.required],
+      issueDate: [this.today, Validators.required],
       revDate: [''],
       planningYear: [new Date().getFullYear(), Validators.required],
-      planDate: [today, Validators.required],
+      planDate: [this.today, Validators.required],
       totalBudget: [0],
       approvalStatus: ['Draft', Validators.required],
-      courses: this.fb.array([])
+      // courses: this.fb.array([]),
+      preparedDate: [this.today],
+      evaluationRequired: [false],
+      preparedBy: [''],
+      approvedBy: [null],
+      approvedDate: [''],
+      reviewedBy: [null],
+      reviewedDate: [''],
+      trainingTopic: ['', Validators.required],
+      questionSetId: [null],
+      questionSetName: [null],
+      agencyId: [''],
+      provider: [''],
+      duration: ['1', Validators.required],
+      targetAudience: ['', Validators.required],
+      planMonth: [],
+      agency: ['Internal', Validators.required],
+      completionRemarks: ['']
+
+
     });
   }
+  onEvaluationRequiredChange(): void {
 
-  get courses(): FormArray {
-    return this.planForm.get('courses') as FormArray;
+    const evaluationRequired =
+      this.planForm.get('evaluationRequired')?.value;
+
+    const questionSetControl =
+      this.planForm.get('questionSetId');
+
+    if (evaluationRequired) {
+
+      questionSetControl?.setValidators([
+        Validators.required
+      ]);
+
+    } else {
+
+      questionSetControl?.clearValidators();
+      questionSetControl?.setValue(null);
+
+    }
+
+    questionSetControl?.updateValueAndValidity();
   }
-
   loadData(): void {
     this.trainingPlanService.getById(this.planId).subscribe({
       next: (data) => {
         if (data) {
-          this.courses.clear();
-          data.courses?.forEach(course => {
-            this.courses.push(this.fb.group({
-              courseCode: [course.courseCode, Validators.required],
-              courseName: [course.courseName, Validators.required],
-              provider: [course.provider],
-              duration: [course.duration, Validators.required],
-              targetAudience: [course.targetAudience],
-              tentativeMonth: [course.tentativeMonth],
-              agency: [course.agency || 'Internal'],
-              remarks: [course.remarks]
-            }));
-          });
+
+          // data.courses?.forEach(course => {
+          //   this.courses.push(this.fb.group({
+          //     courseCode: [course.courseCode, Validators.required],
+          //     courseName: [course.courseName, Validators.required],
+          //     provider: [course.provider],
+          //     duration: [course.duration, Validators.required],
+          //     targetAudience: [course.targetAudience],
+          //     tentativeMonth: [course.tentativeMonth],
+          //     agency: [course.agency || 'Internal'],
+          //     remarks: [course.remarks]
+          //   }));
+          // });
 
           const formValues = { ...data };
           if (data.issueDate) formValues.issueDate = this.formatDate(data.issueDate);
           if (data.revDate) formValues.revDate = this.formatDate(data.revDate);
 
           // Set current date for standardization
-          formValues.date = new Date().toISOString().split('T')[0];
-
+          formValues.date = NablFormsHelper.formatDateForInput(formValues.date);
+          formValues.PlannedDate = NablFormsHelper.formatDateForInput(formValues.PlannedDate);
           // Versioning Logic
           if (this.isEditMode) {
             const currentRev = parseInt(data.revNo || '0');
@@ -134,32 +187,62 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
       }
     });
   }
+  getQuestionSets = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.questionService.getQuestionSetsDropdown(term, page, pageSize);
+  }
 
+  onQuestionSelected(item: any) {
+    if (!item) { this.planForm.patchValue({ questionSetId: null }); return; }
+    this.planForm.patchValue({ questionSetId: item.id, questionSetName: item.name });
+  }
+  openQuestionSetMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+  getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.qcControlPlanservice.getEmployeesDropdown(term, page, pageSize);
+  }
+  onEmployeeSelected(item: any) {
+    if (!item) { this.planForm.patchValue({ agencyId: null }); return; }
+    this.planForm.patchValue({ agencyId: item.id, provider: item.name });
+  }
   formatDate(dateStr: string | Date): string {
     return this.datePipe.transform(dateStr, 'yyyy-MM-dd') || '';
   }
+  onAgencyChange(): void {
 
-  addCourse(): void {
-    if (!this.isViewMode) {
-      this.courses.push(this.fb.group({
-        courseCode: ['', [Validators.required, noWhitespaceValidator()]],
-        courseName: ['', [Validators.required, noWhitespaceValidator()]],
-        provider: [''],
-        duration: [1, Validators.required],
-        targetAudience: [''],
-        tentativeMonth: [''],
-        agency: ['Internal'],
-        remarks: ['']
-      }));
+    const agency = this.planForm.get('agency')?.value;
+
+    const agencyIdControl = this.planForm.get('agencyId');
+    const providerNameControl = this.planForm.get('provider');
+
+    if (agency === 'Internal') {
+
+      // Internal → Dropdown
+      agencyIdControl?.setValidators([
+        Validators.required
+      ]);
+
+      providerNameControl?.clearValidators();
+
+      // External textbox ki old value clear
+      providerNameControl?.setValue(null);
+
+    } else if (agency === 'External') {
+
+      // External → Textbox
+      providerNameControl?.setValidators([
+        Validators.required
+      ]);
+
+      agencyIdControl?.clearValidators();
+
+      // Internal dropdown ki old ID clear
+      agencyIdControl?.setValue(null);
     }
-  }
 
-  removeCourse(index: number): void {
-    if (!this.isViewMode) {
-      this.courses.removeAt(index);
-    }
+    agencyIdControl?.updateValueAndValidity();
+    providerNameControl?.updateValueAndValidity();
   }
-
   isFieldInvalid(path: string): boolean {
     return FormValidationHelper.isFieldInvalid(this.planForm, path, this.submitted);
   }
@@ -171,16 +254,22 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
       this.toastService.show('Please fill all required fields correctly.', 'warning');
       return;
     }
-
     const formData = this.planForm.getRawValue();
-
+    formData.duration = this.planForm.value.duration.toString(); // Ensure duration is a string for consistency with the model
+    formData.preparedDate = this.today; // Set prepared date to today
+    formData.PlannedDate = this.today; // Set planned date to today for standardization
+    if (formData.approvedDate === '' || !formData.approvedDate) {
+      formData.approvedDate = null;
+    }
+    if (formData.reviewedDate === '' || !formData.reviewedDate) {
+      formData.reviewedDate = null;
+    }
     if (this.isEditMode) {
       this.trainingPlanService.update(this.planId, formData).subscribe({
         next: (res) => {
           this.saved = true;
-          if (res.success) {
-            this.router.navigate(['/training-plan']);
-          }
+          this.toastService.show('Training plan updated successfully', 'success');
+          this.router.navigate(['/training-plan']);
         },
         error: (err: any) => {
           this.toastService.show(err?.error?.message || 'Failed to update training plan', 'error');
@@ -190,9 +279,8 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
       this.trainingPlanService.create(formData).subscribe({
         next: (res) => {
           this.saved = true;
-          if (res.success) {
-            this.router.navigate(['/training-plan']);
-          }
+          this.toastService.show('Training plan created successfully', 'success');
+          this.router.navigate(['/training-plan']);
         },
         error: (err: any) => {
           this.toastService.show(err?.error?.message || 'Failed to create training plan', 'error');

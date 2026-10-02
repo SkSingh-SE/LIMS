@@ -10,39 +10,37 @@ export interface ReferenceMaterial {
   revDate?: Date | string;
 
   // Material Details
-  materialName: string;
-  materialCode: string;
-  category: string;
+  rmName: string;
+  rmCode: string;
   type: 'chemical' | 'physical' | 'biological' | 'instrumental';
-  grade: string;
   manufacturer: string;
-  manufacturerCode?: string;
+  supplier: string;
+  materialDescription: string;
+  matrixType: string;
   batchNo: string;
   lotNo?: string;
-
+  parameters: Parameters[];
   // Technical Specifications
   specifications: string;
-  purity?: number; // percentage
-  concentration?: string;
-  physicalState: 'solid' | 'liquid' | 'gas';
-  storageConditions: string;
-  shelfLife: number; // in months
-  expiryDate: Date | string;
-
   // Certification Details
   certificateOfAnalysis: boolean;
   certificateNo?: string;
   certifiedBy?: string;
+  unitOfMeasure?: string;
   certificationDate?: Date | string;
+  validityDate?: Date | string;
   traceability?: string;
 
-  // Inventory Details
-  currentStock: number;
-  unitOfMeasure: string;
-  minimumStock: number;
-  maximumStock: number;
-  reorderLevel: number;
+  initialQuantity: number;
+  availableQuantity: number;
+  minimumQuantity: number;
   storageLocation: string;
+  itemCode: string;
+  itemId: string;
+  itemName: string;
+  preparedBy: string;
+  reviewedBy: string;
+  approvedBy: string;
 
   // Usage Details
   usageFrequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'as-needed';
@@ -60,7 +58,16 @@ export interface ReferenceMaterial {
   modifiedOn?: Date | string;
   isActive?: boolean;
 }
+export interface Parameters {
+  parameterName: string;
+  certifiedValue: number;
+  lowerLimit: number;
+  upperLimit: number;
+  unit: string;
+  measurementUncertainty: number;
+  remarks: string;
 
+}
 export interface ReferenceMaterialResponse {
   status: number;
   message: string;

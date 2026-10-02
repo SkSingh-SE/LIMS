@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,68 +36,250 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'NON-CONFORMING WORK'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'NON-CONFORMING WORK'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
-      <!-- Basic Info -->
+
+      <!-- ===================== -->
+      <!-- Basic Information -->
+      <!-- ===================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">BASIC INFORMATION</div>
         <table class="table table-bordered inner-table">
           <tbody>
+
             <tr>
-              <td class="lbl" style="width: 30%">Date / Month &amp; Year</td>
-              <td>{{ data.dateMonthYear }}</td>
+              <td class="lbl" style="width:20%">NCR No</td>
+              <td>{{data.ncNo}}</td>
+
+              <td class="lbl" style="width:20%">Department</td>
+              <td>{{data.departmentName}}</td>
             </tr>
+
+            <tr>
+              <td class="lbl">Date</td>
+              <td>{{data.ncDate | date:'dd.MM.yyyy'}}</td>
+
+              <td class="lbl">Source</td>
+              <td>{{data.source}}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Reported By</td>
+              <td>{{data.reportedByEmployeeName}}</td>
+
+              <td class="lbl">Priority</td>
+              <td>{{data.priority}}</td>
+            </tr>
+
           </tbody>
         </table>
       </div>
 
-      <!-- Non-Conformance Detail -->
+      <!-- ===================== -->
+      <!-- Description -->
+      <!-- ===================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">NON-CONFORMANCE DETAIL</div>
-        <div class="sec-body" [innerHTML]="data.ncDetail"></div>
+        <div class="sec-title">
+          DESCRIPTION
+        </div>
+
+        <div class="sec-body" [innerHTML]="data.description">
+        </div>
       </div>
 
-      <!-- Root Cause Analysis -->
+      <!-- ===================== -->
+      <!-- Immediate Action -->
+      <!-- ===================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">ROOT CAUSE ANALYSIS</div>
-        <div class="sec-body" [innerHTML]="data.rootCauseAnalysis"></div>
+        <div class="sec-title">
+          IMMEDIATE ACTION
+        </div>
+
+        <div class="sec-body" [innerHTML]="data.immediateAction">
+        </div>
       </div>
 
+      <!-- ===================== -->
+      <!-- Investigation -->
+      <!-- ===================== -->
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">
+          INVESTIGATION
+        </div>
+
+        <div class="sec-body" [innerHTML]="data.investigation?.investigationDetails">
+        </div>
+      </div>
+
+      <!-- ===================== -->
+      <!-- Root Cause -->
+      <!-- ===================== -->
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">
+          ROOT CAUSE
+        </div>
+
+        <div class="sec-body" [innerHTML]="data.investigation?.rootCause">
+        </div>
+      </div>
+
+      <!-- ===================== -->
       <!-- Corrective Action -->
+      <!-- ===================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">CORRECTIVE ACTION</div>
-        <div class="sec-body" [innerHTML]="data.correctiveAction"></div>
+        <div class="sec-title">
+          CORRECTIVE ACTION
+        </div>
+
+        <div class="sec-body" [innerHTML]="data.correctiveAction?.correctiveAction">
+        </div>
       </div>
 
-      <!-- NC Closer Date -->
+      <!-- ===================== -->
+      <!-- Verification -->
+      <!-- ===================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">CLOSURE</div>
+        <div class="sec-title">
+          VERIFICATION
+        </div>
+
         <table class="table table-bordered inner-table">
+
           <tbody>
+
             <tr>
-              <td class="lbl" style="width: 30%">NC Closer Date</td>
-              <td>{{ data.closerDate | date: "dd.MM.yyyy" }}</td>
+              <td class="lbl" style="width:20%">Verification Date</td>
+              <td style="width:30%">
+                {{ data.verification?.verificationDate | date:'dd.MM.yyyy' }}
+              </td>
+
+              <td class="lbl" style="width:20%">Verified By</td>
+              <td style="width:30%">
+                {{ data.verification?.verifiedByEmployeeName }}
+              </td>
             </tr>
+
+            <tr>
+              <td class="lbl">
+                Verification Method
+              </td>
+
+              <td colspan="3">
+                <div [innerHTML]="data.verification?.verificationMethod"></div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Observation
+              </td>
+
+              <td colspan="3">
+                <div [innerHTML]="data.verification?.observation"></div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Result
+              </td>
+
+              <td>
+                {{ data.verification?.result }}
+              </td>
+
+              <td class="lbl">
+                Remarks
+              </td>
+
+              <td>
+                <div [innerHTML]="data.verification?.remarks"></div>
+              </td>
+            </tr>
+
           </tbody>
+
         </table>
       </div>
+
+      <!-- ===================== -->
+      <!-- Closure -->
+      <!-- ===================== -->
+
+      <div class="doc-section">
+
+        <div class="sec-title">
+          CLOSURE
+        </div>
+
+        <table class="table table-bordered inner-table">
+
+          <tbody>
+
+            <tr>
+
+              <td class="lbl" style="width:25%">
+                Closure Date
+              </td>
+
+              <td>
+                {{data.closure?.closureDate | date:'dd.MM.yyyy'}}
+              </td>
+
+              <td class="lbl" style="width:25%">
+                Closed By
+              </td>
+
+              <td>
+                {{data.closure?.closedByEmployeeName}}
+              </td>
+
+            </tr>
+
+            <tr>
+
+              <td class="lbl">
+                Status
+              </td>
+
+              <td colspan="3">
+                {{data.closure?.status}}
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+        <div class="mt-2">
+
+          <strong>Final Remarks</strong>
+
+          <div [innerHTML]="data.closure?.finalRemarks">
+          </div>
+
+        </div>
+
+      </div>
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'TD/QM'"
-        [preparedByRole]="'Signature Of TD/QM'"
-      ></app-nabl-print-footer>
+      <ng-container footer>
+        <app-nabl-print-footer [preparedByName]="''" [issuedByName]="''" [reviewedApprovedByName]="''">
+        </app-nabl-print-footer>
+      </ng-container>
     </ng-container>
   </app-print-frame>
 </div>

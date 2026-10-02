@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="docForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="docForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -35,6 +35,27 @@
                 </label>
                 <input type="text" class="form-control" formControlName="docNo" />
               </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Issue No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="issueNo" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="date" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">
+                  Rev No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="revNo" />
+              </div>
             </div>
           </div>
         </div>
@@ -47,73 +68,354 @@
           </div>
           <div *ngIf="openSections['docDetails']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-2">
-                <label class="form-label">Sr. No.</label>
-                <input type="number" class="form-control" formControlName="srNo" />
-              </div>
-              <div class="col-md-10">
-                <label class="form-label">
-                  Document Name
+              <div class="col-md-3">
+                <label class="form-label">Document Code.
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="documentName" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Controlled Document No.
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="documentNo" />
+                <input type="text" class="form-control" placeholder="document code" formControlName="documentCode" />
+                <div *ngIf="docForm.get('documentCode')?.invalid && docForm.get('documentCode')?.touched"
+                  class="text-danger text-sm mt-1">
+                  document code is required
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
-                  Issue No.
+                  Document Type
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="issueNo" />
+                <select class="form-select" formControlName="documentType">
+                  <option *ngFor="let documentType of documentTypes" [value]="documentType">{{documentType}}</option>
+                </select>
               </div>
               <div class="col-md-3">
                 <label class="form-label">
-                  Issue Date
+                  Document Title
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="text" class="form-control" formControlName="documentTitle" placeholder="document title" />
+                <div *ngIf="docForm.get('documentTitle')?.invalid && docForm.get('documentTitle')?.touched"
+                  class="text-danger text-sm mt-1">
+                  document title is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label">
-                  Rev No.
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="revNo" />
+                <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
+                  [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                  (itemSelected)="onDepartmentSelected($event)" [selectedItem]="docForm.get('departmentId')?.value"
+                  [isDisabled]="isViewMode || hasReview">
+                </app-searchable-dropdown>
+                <div *ngIf="docForm.get('departmentId')?.invalid && docForm.get('departmentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department id is required
+                </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label">
-                  Rev Date
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="revDate" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Copy Holder
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="copyHolder" />
+                <app-searchable-dropdown [required]="true" [fetchDataFn]="getEmployees"
+                  [placeholder]="'Search Document Owner'" [labelName]="'Document Owner'"
+                  (itemSelected)="onEmployeeSelected($event)" [selectedItem]="docForm.get('documentOwnerId')?.value"
+                  [isDisabled]="isViewMode || hasReview">
+                </app-searchable-dropdown>
+                <div *ngIf="docForm.get('documentOwnerId')?.invalid && docForm.get('documentOwnerId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  document owner is required
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('versionReview')">
+            <i class="bi" [ngClass]="openSections['versionReview']
+        ? 'bi-chevron-down'
+        : 'bi-chevron-right'">
+            </i>
+
+            <span class="fw-bold ms-2">III. Version & Review</span>
+          </div>
+
+          <div *ngIf="openSections['versionReview']" class="section-body">
+            <div class="row gy-3">
+
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document Issue No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="currentIssue" [readonly]="isViewMode" />
+                <div *ngIf="docForm.get('currentIssue')?.invalid && docForm.get('currentIssue')?.touched"
+                  class="text-danger text-sm mt-1">
+                  current issue is required
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document Revision No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="currentRevision" [readonly]="isViewMode" />
+                <div *ngIf="docForm.get('currentRevision')?.invalid && docForm.get('currentRevision')?.touched"
+                  class="text-danger text-sm mt-1">
+                  current revision is required
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">
+                  Effective Date
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="date" class="form-control" formControlName="effectiveDate"
+                  (change)="calculateNextReviewDate()" [readonly]="isViewMode" />
+                <div *ngIf="docForm.get('effectiveDate')?.invalid && docForm.get('effectiveDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  effective date is required
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">
+                  Review Frequency
+                  <span class="text-danger">*</span>
+                </label>
+
+                <select class="form-select" formControlName="reviewFrequency" (change)="calculateNextReviewDate()"
+                  [attr.disabled]="isViewMode ? true : null">
+                  <option value="">Select Review Frequency</option>
+                  <option *ngFor="let frequency of reviewFrequencies" [value]="frequency">
+                    {{ frequency }}
+                  </option>
+                </select>
+                <div *ngIf="docForm.get('reviewFrequency')?.invalid && docForm.get('reviewFrequency')?.touched"
+                  class="text-danger text-sm mt-1">
+                  review frequency is required
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Next Review Date
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="date" class="form-control" formControlName="nextReviewDate" />
+
+                <div *ngIf="docForm.get('nextReviewDate')?.invalid && docForm.get('nextReviewDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  next review date is required
+                </div>
+              </div>
+
+              <div class="col-md-9">
+                <label class="form-label">Storage Location</label>
+
+                <input type="text" class="form-control" formControlName="storageLocation"
+                  placeholder="Enter storage location" [readonly]="isViewMode" />
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('controlledCopies')">
+            <i class="bi" [ngClass]="openSections['controlledCopies'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Controlled Copy Distribution</span>
+          </div>
+          <div *ngIf="openSections['controlledCopies']" class="section-body">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Holder Name</th>
+                    <th>Department</th>
+                    <th>Location</th>
+                    <th>Date Issued</th>
+                    <th style="width: 50px;" *ngIf="!isViewMode">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="controlledCopies">
+                  <tr *ngFor="let param of controlledCopies.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="holderName"
+                        [readonly]="isViewMode || hasReview" placeholder="holder name" [ngClass]="{
+      'is-invalid': param.get('holderName')?.touched && param.get('holderName')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('holderName')?.invalid && (param.get('holderName')?.touched)">
+                        holder name is required.
+                      </small>
+                    </td>
+                    <td>
+                      <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true" [hideLabel]="true"
+                        [fetchDataFn]="getDepartments" [selectedItem]="param.get('departmentId')?.value"
+                        [isDisabled]="isViewMode || hasReview"
+                        (itemSelected)="onControlledCopyDepartmentSelected($event, i)">
+                      </app-searchable-dropdown>
+                      <small class="text-danger" *ngIf="
+          param.get('departmentId')?.invalid &&
+          param.get('departmentId')?.touched
+        " class="text-danger text-sm mt-1">
+                        Department is required
+                      </small>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="location"
+                        [readonly]="isViewMode || hasReview" placeholder="location" [ngClass]="{
+      'is-invalid': param.get('location')?.touched && param.get('location')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('location')?.invalid && (param.get('location')?.touched)">
+                        location is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="date" class="form-control form-control-sm" formControlName="dateIssued"
+                        [readonly]="isViewMode || hasReview" placeholder="date issued" [ngClass]="{
+      'is-invalid': param.get('dateIssued')?.touched && param.get('dateIssued')?.invalid
+    }" />
+                      <small class="text-danger"
+                        *ngIf="param.get('dateIssued')?.invalid && (param.get('dateIssued')?.touched)">
+                        date issued is required.
+                      </small>
+                    </td>
+                    <td *ngIf="!isViewMode && !hasReview" class="text-center">
+                      <button type="button" class="btn btn-remove btn-sm mb-1" (click)="removecontrolledCopies(i)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="p-2 bg-light border-top" *ngIf="!isViewMode && !hasReview">
+            <button type="button" class="btn btn-primary btn-sm mt-2" (click)="addcontrolledCopies()">
+              <i class="bi bi-plus"></i>
+              Add Row
+            </button>
+          </div>
+        </div>
+
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('attachment')">
+            <i class="bi" [ngClass]="
+        openSections['attachment']
+          ? 'bi-chevron-down'
+          : 'bi-chevron-right'
+      ">
+            </i>
+
+            <span class="fw-bold ms-2">
+              V. Attachment
+            </span>
+          </div>
+
+          <div *ngIf="openSections['attachment']" class="section-body">
+            <div class="row">
+              <div class="col-md-6">
+
+                <label class="form-label">
+                  Document Attachment
+                  <span class="text-danger">*</span>
+                </label>
+
+                <!-- Upload Box -->
+                <div *ngIf="!docForm.get('fileName')?.value" class="attachment-upload-box"
+                  [class.attachment-disabled]="isViewMode" [class.attachment-invalid]="
+            docForm.get('fileName')?.invalid &&
+            docForm.get('fileName')?.touched
+          ">
+
+                  <i class="bi bi-cloud-arrow-up attachment-upload-icon"></i>
+
+                  <div class="fw-semibold mt-2">
+                    Drag & Drop File
+                  </div>
+
+                  <div class="text-muted my-1">
+                    OR
+                  </div>
+
+                  <label for="documentAttachment" class="btn btn-outline-primary btn-sm"
+                    [class.disabled]="isViewMode || hasReview">
+                    Choose File
+                  </label>
+
+                  <input id="documentAttachment" type="file" class="d-none" accept=".pdf,.doc,.docx"
+                    [disabled]="isViewMode || hasReview" (change)="onAttachmentChange($event)" />
+
+                  <div class="text-muted small mt-2">
+                    Allowed file types: PDF, DOC and DOCX. Maximum size: 5 MB
+                  </div>
+                </div>
+
+                <!-- Selected / Saved File -->
+                <div *ngIf="docForm.get('fileName')?.value" class="attachment-file-box">
+
+                  <button type="button" class="attachment-file-name" [disabled]="!docForm.get('filePath')?.value"
+                    [title]="docForm.get('fileName')?.value" (click)="openAttachment()">
+
+                    <i class="bi bi-file-earmark-fill me-2"></i>
+
+                    <span class="text-truncate">
+                      {{ docForm.get('fileName')?.value }}
+                    </span>
+                  </button>
+
+                  <button *ngIf="!isViewMode && !hasReview" type="button" class="btn btn-link text-danger p-0"
+                    title="Remove attachment" (click)="removeAttachment()">
+
+                    <i class="bi bi-trash-fill"></i>
+                  </button>
+                </div>
+
+                <!-- Validation Message -->
+                <div *ngIf="
+            docForm.get('fileName')?.invalid &&
+            docForm.get('fileName')?.touched
+          " class="text-danger text-sm mt-1">
+                  Attachment is required
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
         <app-nabl-signature-section [parentForm]="docForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
-          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="docForm.invalid">
-            {{ isEditMode ? "Update Entry" : "Save Entry" }}
+
+          <!-- Cancel -->
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">
+            Cancel
           </button>
+
+
+          <!-- CREATE MODE -->
+          <button *ngIf="!isEditMode" type="submit" class="btn btn-save">
+            Save Entry
+          </button>
+
+
+          <!-- EDIT MODE + REVIEW NOT CREATED -->
+          <button *ngIf="isEditMode && !hasReview" type="submit" class="btn btn-save">
+            Update Entry
+          </button>
+
+
+          <!-- EDIT MODE + REVIEW NOT CREATED -->
+          <button *ngIf="isEditMode && !hasReview" type="button" class="btn btn-success"
+            (click)="onCreateDocumentReview()">
+            Create Document Review
+          </button>
+
         </div>
+
       </form>
     </div>
   </div>

@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CustomerFeedbackService } from '../../../../services/customer-feedback.service';
 import { NablRegisterTableComponent, RegisterColumn } from '../../nabl-register-table/nabl-register-table.component';
-
+import { ToastService } from '../../../../services/toast.service';
 @Component({
     selector: 'app-customer-feedback-list',
     standalone: true,
@@ -17,23 +17,34 @@ export class CustomerFeedbackListComponent implements OnInit {
     baseRoute = '/customer-feedback';
 
     columns: RegisterColumn[] = [
-        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
-        { key: 'date', label: 'Date', type: 'date', width: '120px', filter: true },
-        { key: 'customerName', label: 'Customer Name', type: 'string', filter: true },
-        { key: 'contactPerson', label: 'Contact Person', type: 'string', filter: true }
+        { key: 'companyName', type: 'string', label: 'Company Name', filter: true },
+        { key: 'contactPerson', type: 'string', label: 'Contact Person', filter: true },
+        { key: 'email', label: 'Email', type: 'string', filter: true },
+        { key: 'mobileNo', label: 'Mobile No', type: 'string', filter: true },
+        { key: 'feedbackDate', label: 'feedback Date', type: 'date', width: '120px', filter: true },
+        { key: 'reportedBy', label: 'Reported By', type: 'string', filter: true }
     ];
 
     data = signal<any[]>([]);
     totalItems = signal(0);
 
-    constructor(private service: CustomerFeedbackService) { }
+    constructor(private service: CustomerFeedbackService,
+        private toastService: ToastService
+    ) { }
 
     ngOnInit() {
-        this.fetchData();
+        this.fetchData({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
-    fetchData(params: any = {}) {
-        this.service.getAll().subscribe({
+    fetchData(params: any) {
+        this.service.getAll(params).subscribe({
             next: (resp) => {
                 this.data.set(resp.items || []);
                 this.totalItems.set(resp.totalRecords || 0);
@@ -43,7 +54,26 @@ export class CustomerFeedbackListComponent implements OnInit {
             }
         });
     }
-
+    deleteRecord(id: number) {
+        if (confirm('Are you sure you want to delete this record?')) {
+            this.service.delete(id).subscribe({
+                next: (res) => {
+                    this.toastService.show('Record deleted successfully', 'success');
+                    this.fetchData({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'desc',
+                        filter: []
+                    });
+                },
+                error: (err) => {
+                    this.toastService.show(err.message || 'Error deleting record', 'error');
+                }
+            });
+        }
+    }
     onPageChange(params: any) {
         this.fetchData(params);
     }

@@ -32,4 +32,22 @@ export class IncomingMaterialService {
     delete(id: number): Observable<IncomingMaterialResponse> {
         return this.http.delete<IncomingMaterialResponse>(`${this.apiUrl}/delete/${id}`);
     }
+    getAllPlanNoDetails(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/planNoList`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
+    }
+    getAllPONoetails(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/pONoList`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
+    }
 }

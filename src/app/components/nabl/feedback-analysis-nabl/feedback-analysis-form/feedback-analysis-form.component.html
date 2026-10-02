@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="analysisForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="analysisForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -64,44 +64,433 @@
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('analysisDetails')">
             <i class="bi" [ngClass]="openSections['analysisDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Analysis Details</span>
+            <span class="fw-bold ms-2">II. Analysis Information</span>
           </div>
           <div *ngIf="openSections['analysisDetails']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-8">
+              <div class="col-md-3">
                 <label class="form-label">
-                  Period of Analysis
+                  Analysis No.
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="period" placeholder="e.g. April 2024 to March 2025" />
+                <input type="text" class="form-control" formControlName="analysisNo" placeholder="analysis no." />
+                <div
+                  *ngIf="analysisForm.get('analysisNo')?.touched && analysisForm.get('analysisNo')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  analysis no is required.
+                </div>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label">
-                  Total Feedback Received
+                  Analysis Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="number" class="form-control" formControlName="totalFeedbackReceived" />
+                <input type="date" class="form-control" formControlName="analysisDate" placeholder="analysis date" />
+                <div
+                  *ngIf="analysisForm.get('analysisDate')?.touched && analysisForm.get('analysisDate')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  analysis date is required.
+                </div>
               </div>
-
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Analysis Summary
-                  <span class="text-danger">*</span>
-                </label>
-                <quill-editor formControlName="analysisSummary" [modules]="quillModules"></quill-editor>
+              <div class="col-md-3">
+                <app-searchable-dropdown [placeholder]="'Search Customer'" [required]="true" [labelName]="'Customer'"
+                  [fetchDataFn]="getCustomers" (itemSelected)="onCustomerSelected($event)"
+                  [selectedItem]="analysisForm.get('customerID')?.value" [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+                <div
+                  *ngIf="analysisForm.get('customerID')?.touched && analysisForm.get('customerID')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  customer is required.
+                </div>
               </div>
-
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Action Taken / Preventive Actions
-                  <span class="text-danger">*</span>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Contact Person
                 </label>
-                <quill-editor formControlName="actionsTaken" [modules]="quillModules"></quill-editor>
+                <input type="text" class="form-control" formControlName="contactPerson" placeholder="contact person"
+                  readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Email
+                </label>
+                <input type="text" class="form-control" formControlName="email" placeholder="email" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Mobile No.
+                </label>
+                <input type="text" class="form-control" formControlName="mobileNo" placeholder="mobile no." readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Feedback Date
+                </label>
+                <input type="date" class="form-control" formControlName="feedbackDate" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Address
+                </label>
+                <input type="text" class="form-control" formControlName="address" placeholder="address" readonly />
               </div>
             </div>
           </div>
         </div>
 
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('feedbackSummary')">
+            <i class="bi" [ngClass]="openSections['feedbackSummary'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Feedback Summary</span>
+          </div>
+          <div *ngIf="openSections['feedbackSummary']" class="section-body">
+            <div class="row gy-3">
+              <div class="table-responsive">
+                <table class="table table-bordered table-sm align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th width="120px">Feedback Parameter</th>
+                      <th width="50px" class="text-center">
+                        Rating (1-5)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="feedbackRatings">
+
+                    <tr *ngFor="let item of feedbackRatings.controls; let i=index" [formGroupName]="i">
+
+                      <td>
+                        <input class="form-control form-control-sm border-0 bg-white" formControlName="parameterName"
+                          readonly>
+                      </td>
+
+                      <td>
+                        <input class="form-control form-control-sm text-center border-0 bg-white"
+                          formControlName="rating" readonly>
+                      </td>
+
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Average Rating
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" formControlName="averageRating" placeholder="average rating"
+                  readonly />
+                <div
+                  *ngIf="analysisForm.get('averageRating')?.touched && analysisForm.get('averageRating')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  average rating is required.
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Overall Grade
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="overallGrade" placeholder="overall grade"
+                  readonly />
+                <div
+                  *ngIf="analysisForm.get('overallGrade')?.touched && analysisForm.get('overallGrade')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  overall grade is required.
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('comments')">
+            <i class="bi" [ngClass]="openSections['comments'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Comments From Customer</span>
+          </div>
+          <div *ngIf="openSections['comments']" class="section-body">
+            <div class="row gy-3">
+
+              <div class="col-4 d-flex flex-column">
+                <label class="form-label fw-bold">
+                  Suggestions / Observations
+                </label>
+                <quill-editor formControlName="suggestions" [modules]="quillModules"></quill-editor>
+              </div>
+
+              <div class="col-4 d-flex flex-column">
+                <label class="form-label fw-bold">
+                  New Test Requirement
+                </label>
+                <quill-editor formControlName="newRequirement" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-4 d-flex flex-column">
+                <label class="form-label fw-bold">
+                  Customer Remarks
+                </label>
+                <quill-editor formControlName="customerRemarks" [modules]="quillModules"></quill-editor>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('qualityAnalysis')">
+            <i class="bi" [ngClass]="openSections['qualityAnalysis'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">
+              VI. Quality Manager Analysis (To be filled by Laboratory)
+            </span>
+          </div>
+
+          <div *ngIf="openSections['qualityAnalysis']" class="section-body">
+            <div class="row gy-3">
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Overall Customer Satisfaction
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="overallCustomerSatisfaction">
+                  <option value="">Select</option>
+                  <option *ngFor="let item of satisfactionList" [value]="item">
+                    {{item}}
+                  </option>
+                </select>
+                <div
+                  *ngIf="analysisForm.get('overallCustomerSatisfaction')?.touched && analysisForm.get('overallCustomerSatisfaction')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  overall customer satisfaction is required.
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Positive Observations</label>
+                <textarea class="form-control" rows="3" formControlName="positiveObservations"
+                  placeholder="positive observations"></textarea>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Issues Identified</label>
+                <textarea class="form-control" rows="3" formControlName="issuesIdentified"
+                  placeholder="issues identified"></textarea>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Root Cause <span class="text-danger">*</span></label>
+                <textarea class="form-control" rows="3" formControlName="rootCause" placeholder="root cause"></textarea>
+                <div
+                  *ngIf="analysisForm.get('rootCause')?.touched && analysisForm.get('rootCause')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  root cause is required.
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Improvement Opportunity</label>
+                <textarea class="form-control" rows="3" formControlName="improvementOpportunity"
+                  placeholder="improvement opportunity"></textarea>
+              </div>
+
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Corrective Action Required
+                </label>
+
+                <div class="mt-2">
+
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" value="Yes" formControlName="correctiveActionRequired">
+
+                    <label class="form-check-label">Yes</label>
+                  </div>
+
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" value="No" formControlName="correctiveActionRequired">
+
+                    <label class="form-check-label">No</label>
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Action Details <span class="text-danger">*</span></label>
+                <textarea class="form-control" rows="3" formControlName="actionDetails"
+                  placeholder="action details"></textarea>
+                <div
+                  *ngIf="analysisForm.get('actionDetails')?.touched && analysisForm.get('actionDetails')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  action details is required.
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Responsible Person</label>
+                <!-- <select class="form-select" formControlName="responsiblePerson">
+                  <option value="">Select Person</option>
+                  <option *ngFor="let item of responsiblePersonList" [value]="item">
+                    {{item}}
+                  </option>
+                </select> -->
+                <input type="text" class="form-control" formControlName="responsiblePerson"
+                  placeholder="responsible person">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Target Completion Date</label>
+                <input type="date" class="form-control" formControlName="targetCompletionDate">
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-section mb-3">
+
+          <div class="section-header" (click)="toggleSection('verification')">
+            <i class="bi" [ngClass]="openSections['verification'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+
+            <span class="fw-bold ms-2">
+              VII. Effectiveness Verification (To be filled after action)
+            </span>
+          </div>
+
+          <div *ngIf="openSections['verification']" class="section-body">
+
+            <div class="row gy-3">
+
+              <div class="col-md-4">
+                <label class="form-label">Action Taken <span class="text-danger">*</span></label>
+                <textarea class="form-control" rows="3" formControlName="actionTaken"
+                  placeholder="action taken"></textarea>
+                <div
+                  *ngIf="analysisForm.get('actionTaken')?.touched && analysisForm.get('actionTaken')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  action taken is required.
+                </div>
+              </div>
+
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Effectiveness Status
+                </label>
+
+                <div class="mt-2">
+
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" value="Effective"
+                      formControlName="effectivenessStatus">
+
+                    <label class="form-check-label">
+                      Effective
+                    </label>
+                  </div>
+
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" value="Not Effective"
+                      formControlName="effectivenessStatus">
+
+                    <label class="form-check-label">
+                      Not Effective
+                    </label>
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Verification Remarks <span class="text-danger">*</span>
+                </label>
+
+                <textarea class="form-control" rows="3" formControlName="verificationRemarks"
+                  placeholder="verification remarks"></textarea>
+                <div
+                  *ngIf="analysisForm.get('verificationRemarks')?.touched && analysisForm.get('verificationRemarks')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  verification remarks is required.
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Verification Date
+                </label>
+
+                <input type="date" class="form-control" formControlName="verificationDate">
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="accordion-section">
+
+          <div class="section-header" (click)="toggleSection('conclusion')">
+            <i class="bi" [ngClass]="openSections['conclusion'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+
+            <span class="fw-bold ms-2">
+              VIII. Final Conclusion
+            </span>
+
+          </div>
+
+          <div *ngIf="openSections['conclusion']" class="section-body">
+
+            <div class="row gy-3">
+
+              <div class="col-md-8">
+
+                <label class="form-label">
+                  Overall Conclusion <span class="text-danger">*</span>
+                </label>
+
+                <textarea class="form-control" rows="3" formControlName="overallConclusion"
+                  placeholder="overall conclusion"></textarea>
+                <div
+                  *ngIf="analysisForm.get('overallConclusion')?.touched && analysisForm.get('overallConclusion')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  overall conclusion is required.
+                </div>
+
+              </div>
+
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Final Status <span class="text-danger">*</span>
+                </label>
+
+                <select class="form-select" formControlName="finalStatus">
+
+                  <option value="">Select Status</option>
+
+                  <option *ngFor="let item of finalStatusList" [value]="item">
+                    {{item}}
+                  </option>
+
+                </select>
+                <div
+                  *ngIf="analysisForm.get('finalStatus')?.touched && analysisForm.get('finalStatus')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  final status is required.
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
         <!-- Section: Related Forms -->
         <div class="accordion-section mb-3" *ngIf="relatedFeedback">
           <div class="section-header" (click)="toggleSection('relatedForms')">
@@ -115,7 +504,8 @@
                   <span class="badge bg-secondary me-2">F-37</span>
                   <strong>Customer Feedback</strong>
                   <span class="text-muted ms-2">{{ relatedFeedback.documentNo || 'N/A' }}</span>
-                  <span class="badge ms-2" [ngClass]="'bg-' + (relatedFeedback.status === 'Approved' ? 'success' : relatedFeedback.status === 'Rejected' ? 'danger' : 'info')">
+                  <span class="badge ms-2"
+                    [ngClass]="'bg-' + (relatedFeedback.status === 'Approved' ? 'success' : relatedFeedback.status === 'Rejected' ? 'danger' : 'info')">
                     {{ relatedFeedback.status }}
                   </span>
                 </div>
@@ -127,13 +517,13 @@
           </div>
         </div>
 
-        
+
         <app-nabl-signature-section [parentForm]="analysisForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="analysisForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Analysis" : "Save Analysis" }}
           </button>
         </div>

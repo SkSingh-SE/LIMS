@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { SkillMatrixService } from '../../../services/skill-matrix.service';
@@ -13,19 +13,20 @@ import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { NablHeaderService } from '../../../services/nabl-header.service';
+import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
 
 @Component({
     selector: 'app-skill-matrix-form',
 
-    imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent],
+    imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, SearchableDropdownComponent, NablSignatureSectionComponent],
     templateUrl: './skill-matrix-form.component.html',
     styleUrl: './skill-matrix-form.component.css'
 })
 export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     isSubmitting = false;
     matrixForm!: FormGroup;
-    matrixId: number = 0;
+    recordId: number = 0;
     isEditMode: boolean = false;
     isViewMode: boolean = false;
     formTitle = 'Create Skill Matrix';
@@ -39,6 +40,15 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         footer: true
     };
 
+    leveltypes = [
+        'Level 1 - Beginner',
+        'Level 2 - Trained',
+        'Level 3 - Competent',
+        'Level 4 - Expert'
+    ]
+
+    today = new Date().toISOString().split('T')[0];
+
     constructor(
         private fb: FormBuilder,
         private skillMatrixService: SkillMatrixService,
@@ -47,150 +57,177 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         private router: Router,
         private route: ActivatedRoute,
         private toastService: ToastService
-    , private unsavedChangesService: UnsavedChangesService,
+        , private unsavedChangesService: UnsavedChangesService,
         private nablHeaderService: NablHeaderService) { }
 
     ngOnInit(): void {
-        this.initForm();
-        this.nablHeaderService.getFormDefaults('SkillMatrix').subscribe({
-            next: (defaults) => {
-                this.matrixForm.patchValue({ formatNo: defaults.formCode });
-            },
-            error: () => {}
-        });
-        this.loadDesignations();
 
-        this.route.paramMap.subscribe(params => {
-            this.matrixId = Number(params.get('id'));
-            if (this.matrixId > 0) {
-                this.loadData();
-            }
-        });
+        const state = history.state as {
+            employeeId?: number;
+            mode?: string;
+        };
 
-        const state = history.state as { mode?: string };
         const url = this.router.url;
 
-        if (state && state.mode === 'view') {
-            this.formTitle = 'Skill Matrix Details';
-            this.isViewMode = true;
-            this.matrixForm.disable();
-        } else if (url.includes('/skill-matrix/details/')) {
-            this.formTitle = 'Skill Matrix Details';
-            this.isViewMode = true;
-            this.matrixForm.disable();
-        } else if (state && state.mode === 'edit') {
-            this.formTitle = 'Edit Skill Matrix';
+        // =========================
+        // SET MODE FIRST
+        // =========================
+
+        if (url.includes('/skill-matrix/edit/')) {
+
+            this.formTitle = 'Edit Skill Matrix Decision';
+
             this.isEditMode = true;
             this.isViewMode = false;
-        } else if (url.includes('/skill-matrix/edit/')) {
-            this.formTitle = 'Edit Skill Matrix';
-            this.isEditMode = true;
-            this.isViewMode = false;
-        } else {
-            this.formTitle = 'Create Skill Matrix';
+
+        }
+        else if (url.includes('/skill-matrix/details/')) {
+
+            this.formTitle = 'Skill Matrix Details';
+
+            this.isEditMode = false;
+            this.isViewMode = true;
+
+        }
+        else {
+
+            this.formTitle = 'Create Skill Matrix Decision';
+
             this.isEditMode = false;
             this.isViewMode = false;
         }
-    }
 
-    loadDesignations() {
-        this.designationService.getDesignationDropdown('', 1, 100).subscribe(res => {
-            this.designations = res?.items || [];
-        });
-    }
+        // =========================
+        // INIT FORM
+        // =========================
 
-    getDesignations = (term: string, page: number, pageSize: number): Observable<any[]> => {
-        return this.designationService.getDesignationDropdown(term, page, pageSize) as Observable<any[]>;
-    };
+        this.initForm();
 
-    onDesignationSelected(item: any): void {
-        if (!item) {
-            this.matrixForm.patchValue({ designationId: null, designationName: '', title: '' });
+        // =========================
+        // EXISTING HEADER DEFAULTS
+        // =========================
+
+        this.nablHeaderService
+            .getFormDefaults('SkillMatrixDecision')
+            .subscribe({
+                next: (defaults) => {
+
+                    this.matrixForm.patchValue({
+                        formatNo: defaults.formCode
+                    });
+
+                },
+                error: () => { }
+            });
+
+        // =========================
+        // EDIT
+        // =========================
+
+        if (this.isEditMode) {
+
+            this.route.paramMap.subscribe(params => {
+
+                this.recordId = Number(params.get('id'));
+
+                if (this.recordId > 0) {
+                    this.loadData();
+                }
+
+            });
+
             return;
         }
-        this.matrixForm.patchValue({
-            designationId: item.id,
-            designationName: item.name,
-            title: item.name
-        });
-        // Auto-load employees
-        this.employeeService.getAllEmployees({ designationId: item.id }).subscribe(resp => {
-            const emps = resp?.items || [];
-            this.employeeSkills.clear();
-            emps.forEach((e: any) => {
-                this.addEmployeeSkill({
-                    employeeId: e.id,
-                    employeeName: e.name,
-                    designationName: e.designationName,
-                    skills: {}
-                });
+
+        // =========================
+        // VIEW
+        // =========================
+
+        if (this.isViewMode) {
+
+            this.route.paramMap.subscribe(params => {
+
+                this.recordId = Number(params.get('id'));
+
+                if (this.recordId > 0) {
+                    this.loadData();
+                }
+
             });
-        });
-    }
 
-    toggleSection(section: string): void {
-        this.openSections[section] = !this.openSections[section];
-    }
+            return;
+        }
 
+        // =========================
+        // CREATE
+        // =========================
+
+        if (state?.employeeId) {
+
+            this.loadEmployeeFromList(state.employeeId);
+        }
+    }
     initForm() {
         this.matrixForm = this.fb.group({
             id: [0],
-            formatNo: ['F-6'],
-            designationId: [null, Validators.required],
-            designationName: [''],
-            issueNo: [''],
-            date: ['', Validators.required],
-            revNo: [''],
-            title: ['', Validators.required],
-            decision: [''],
-            skills: this.fb.array([], Validators.required),
+            formatNo: ['F-6A'],
+            designationId: ['', Validators.required],
+            designationName: ['', Validators.required],
+            issueNo: ['00'],
+            date: [this.today, Validators.required],
+            revNo: ['01'],
+            averageRequiredSkillLevel: [''],
+            averageRequiredSkill: [''],
             employeeSkills: this.fb.array([]),
+            employeeName: [''],
+            employeeId: ["", Validators.required],
             preparedBy: [''],
-            issuedBy: [''],
-            reviewedApprovedBy: ['']
+            reviewedBy: [null],
+            approvedBy: [null],
+            reviewedDate: [''],
+            approvedDate: [''],
+            preparedDate: [this.today],
         });
 
         // System-managed fields — always readonly
         this.matrixForm.get('issueNo')?.disable();
         this.matrixForm.get('revNo')?.disable();
         this.matrixForm.get('formatNo')?.disable();
+        this.matrixForm.get('designationName')?.disable();
+        this.matrixForm.get('date')?.disable();
     }
 
-    get skills(): FormArray {
-        return this.matrixForm.get('skills') as FormArray;
-    }
 
     get employeeSkills(): FormArray {
         return this.matrixForm.get('employeeSkills') as FormArray;
     }
 
-    get employeeSkillsGroups(): FormGroup[] {
-        return this.employeeSkills.controls as FormGroup[];
-    }
 
-    addSkill(name: string = '') {
-        this.skills.push(this.fb.control(name, Validators.required));
-    }
 
-    addEmployeeSkill(emp: EmployeeSkill) {
-        const group = this.fb.group({
-            employeeId: [emp.employeeId],
-            employeeName: [emp.employeeName],
-            designationName: [emp.designationName],
-            skills: [emp.skills]
-        });
-        this.employeeSkills.push(group);
-    }
+
 
     loadData(): void {
-        this.skillMatrixService.getById(this.matrixId).subscribe({
+        this.skillMatrixService.getById(this.recordId).subscribe({
             next: (data) => {
                 if (data) {
                     this.matrixForm.patchValue(data);
-                    this.skills.clear();
-                    data.skills.forEach(s => this.addSkill(s));
+                    this.matrixForm.patchValue({
+                        date: NablFormsHelper.formatDateForInput(data.date),
+                    });
+
                     this.employeeSkills.clear();
-                    data.employeeSkills.forEach(e => this.addEmployeeSkill(e));
+                    data.employeeSkills.forEach((skill: any) => {
+                        this.employeeSkills.push(this.fb.group({
+                            skillName: [{ value: skill.skillName, disabled: true }],
+                            skillLevel: [{ value: skill.skillLevel, disabled: true }],
+                            level: skill.level,
+                            required: [{ value: skill.required, disabled: true }],
+                        }));
+
+                    });
+                    if (this.isViewMode) {
+                        this.matrixForm.disable();
+                    }
                 }
             },
             error: (error) => {
@@ -201,58 +238,310 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         });
     }
 
-    onSubmit(): void {
-        if (this.matrixForm.valid) {
-            const formData = this.matrixForm.getRawValue();
-            formData.skills = this.skills.value;
-            formData.employeeSkills = this.employeeSkills.value;
+    getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.skillMatrixService.getEmployeeSkillMatrixDropdown(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
+    };
+    averageRequiredSkill: number = 0;
+    averageRequiredSkillLevel: string = '';
+    onEmployeeSelected(item: any): void {
 
-            this.isSubmitting = true;
-            if (this.isEditMode) {
-                formData.id = this.matrixId;
-                this.skillMatrixService.update(formData).subscribe({
-                    next: (response) => {
-                      this.isSubmitting = false;
-                      this.saved = true;
-                        this.toastService.show('Skill matrix updated successfully', 'success');
-                        this.router.navigate(['/skill-matrix/preview', this.matrixId]);
-                    },
-                    error: (error) => {
-                        this.isSubmitting = false;
-                        this.toastService.show('Error updating skill matrix', 'error');
-                    }
-                });
-            } else {
-                this.skillMatrixService.create(formData).subscribe({
-                    next: (response) => {
-                      this.isSubmitting = false;
-                      this.saved = true;
-                        this.toastService.show('Skill matrix created successfully', 'success');
-                        this.router.navigate(['/skill-matrix/preview', response.id]);
-                    },
-                    error: (error) => {
-                        this.isSubmitting = false;
-                        this.toastService.show('Error creating skill matrix', 'error');
-                    }
-                });
-            }
+        // Employee deselect / null
+        if (!item || !item.id) {
+
+            this.matrixForm.patchValue({
+                employeeId: null,
+                employeeName: null,
+                designationId: null,
+                designationName: null
+            });
+
+            this.employeeSkills.clear();
+
+            this.averageRequiredSkill = 0;
+            this.averageRequiredSkillLevel = '';
+
+            return;
         }
+
+        // Selected employee
+        this.matrixForm.patchValue({
+            employeeId: item.id,
+            employeeName: item.name
+        });
+
+        const employeeId = item.id;
+
+        this.skillMatrixService.getByDesignationId(employeeId).subscribe({
+
+            next: (data: any) => {
+
+                // Clear previous employee skills
+                this.employeeSkills.clear();
+
+                // No skill data found
+                if (!data || !data.skills || data.skills.length === 0) {
+
+                    this.matrixForm.patchValue({
+                        designationId: null,
+                        designationName: null
+                    });
+
+                    this.averageRequiredSkill = 0;
+                    this.averageRequiredSkillLevel = '';
+
+                    return;
+                }
+
+                // Set designation data
+                this.matrixForm.patchValue({
+                    designationId: data.designationId,
+                    designationName: data.designationName
+                });
+
+                // Load skills
+                data.skills.forEach((skill: any) => {
+
+                    const isRequired = skill.required === true;
+
+                    const skillGroup = this.fb.group({
+
+                        // Read-only skill name
+                        skillName: [
+                            {
+                                value: skill.skillName || '',
+                                disabled: true
+                            }
+                        ],
+
+                        // Read-only required skill level
+                        skillLevel: [
+                            {
+                                value: skill.leveltype || '',
+                                disabled: true
+                            }
+                        ],
+
+                        // Read-only required status
+                        required: [
+                            {
+                                value: isRequired,
+                                disabled: true
+                            }
+                        ],
+
+                        // Editable employee's actual level
+                        // Mandatory only if Required = true
+                        level: [
+                            null,
+                            isRequired ? [Validators.required] : []
+                        ]
+                    });
+
+                    // Recalculate average whenever level changes
+                    skillGroup.get('level')?.valueChanges.subscribe(() => {
+                        this.calculateAverageRequiredSkill();
+                    });
+
+                    this.employeeSkills.push(skillGroup);
+                });
+
+                // Initial average calculation
+                this.calculateAverageRequiredSkill();
+            },
+
+            error: (error: any) => {
+
+                console.error('Failed to load employee skills:', error);
+
+                this.employeeSkills.clear();
+
+                this.matrixForm.patchValue({
+                    designationId: null,
+                    designationName: null
+                });
+
+                this.averageRequiredSkill = 0;
+                this.averageRequiredSkillLevel = '';
+
+                this.toastService.show(
+                    error?.error?.message || 'Failed to load employee skills',
+                    'error'
+                );
+            }
+        });
+    }
+
+    calculateAverageRequiredSkill(): void {
+
+        const levelMap: { [key: string]: number } = {
+            'Level 1 - Beginner': 1,
+            'Level 2 - Trained': 2,
+            'Level 3 - Competent': 3,
+            'Level 4 - Expert': 4
+        };
+
+        // Sirf Required = true wale skills
+        const requiredSkills = this.employeeSkills.controls.filter(skill =>
+            skill.get('required')?.value === true
+        );
+
+        // Required skills nahi hain
+        if (requiredSkills.length === 0) {
+
+            this.matrixForm.patchValue({
+                averageRequiredSkill: null,
+                averageRequiredSkillLevel: null
+            });
+
+            return;
+        }
+
+        // Required skills ke selected levels
+        const selectedLevels = requiredSkills
+            .map(skill => {
+
+                const level = skill.get('level')?.value;
+
+                return levelMap[level] || 0;
+            })
+            .filter(value => value > 0);
+
+        // Abhi koi level select nahi hua
+        if (selectedLevels.length === 0) {
+
+            this.matrixForm.patchValue({
+                averageRequiredSkill: null,
+                averageRequiredSkillLevel: null
+            });
+
+            return;
+        }
+
+        // Total
+        const total = selectedLevels.reduce(
+            (sum, value) => sum + value,
+            0
+        );
+
+        // Average calculate
+        const average = total / selectedLevels.length;
+
+        // Final Result Level
+        let resultLevel = '';
+
+        if (average < 1.5) {
+
+            resultLevel = 'Level 1 - Beginner';
+
+        } else if (average < 2.5) {
+
+            resultLevel = 'Level 2 - Trained';
+
+        } else if (average < 3.5) {
+
+            resultLevel = 'Level 3 - Competent';
+
+        } else {
+
+            resultLevel = 'Level 4 - Expert';
+        }
+
+        // Form fields me value set karo
+        this.matrixForm.patchValue({
+            averageRequiredSkill: Number(average.toFixed(2)),
+            averageRequiredSkillLevel: resultLevel
+        });
+    }
+    toggleSection(section: string): void {
+        this.openSections[section] = !this.openSections[section];
+    }
+    private loadEmployeeFromList(employeeId: number): void {
+
+        this.employeeService
+            .getEmployeeById(employeeId)
+            .subscribe({
+
+                next: (employee: any) => {
+
+                    if (!employee) {
+                        return;
+                    }
+                    const item = {
+                        id: employee.id,
+                        name: employee.name
+                    };
+                    // Set selected employee
+                    this.onEmployeeSelected(item);
+                },
+
+                error: (error: any) => {
+
+                    console.error(
+                        'Failed to load employee:',
+                        error
+                    );
+
+                    this.toastService.show(
+                        error?.error?.message ||
+                        'Failed to load employee',
+                        'error'
+                    );
+                }
+            });
+    }
+
+    onSubmit(): void {
+        if (this.matrixForm.invalid) {
+            this.matrixForm.markAllAsTouched();
+            return;
+        }
+
+        const formData = this.matrixForm.getRawValue();
+        formData.preparedDate = this.today;
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
+
+        if (this.isEditMode) {
+            formData.id = this.recordId;
+            this.skillMatrixService.update(formData).subscribe({
+                next: (response) => {
+                    this.saved = true;
+                    this.toastService.show('Skill matrix updated successfully', 'success');
+                    this.router.navigate(['/skill-matrix']);
+                },
+                error: (error: any) => {
+                    this.toastService.show('Error updating skill matrix', 'error');
+                }
+            });
+        } else {
+            this.skillMatrixService.create(formData).subscribe({
+                next: (response) => {
+                    this.saved = true;
+                    this.toastService.show('Skill matrix created successfully', 'success');
+                    this.router.navigate(['/skill-matrix']);
+                },
+                error: (error: any) => {
+                    this.toastService.show('Error creating skill matrix', 'error');
+                }
+            });
+        }
+
     }
 
     goBack(): void {
         this.router.navigate(['/skill-matrix']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.matrixForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.matrixForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.matrixForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.matrixForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

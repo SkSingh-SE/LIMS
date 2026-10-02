@@ -16,20 +16,17 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -43,67 +40,98 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'MINUTES OF MANAGEMENT REVIEW MEETING'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'MINUTES OF MANAGEMENT REVIEW MEETING'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <!-- Meeting Info -->
       <div class="doc-section mb-3">
-        <div class="sec-title">MEETING INFORMATION</div>
+        <div class="sec-title">I. MEETING INFORMATION</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 25%">Date of Meeting</td>
-              <td style="width: 25%">{{ data.meetingDate | date: "dd.MM.yyyy" }}</td>
-              <td class="lbl" style="width: 25%">Chairperson</td>
-              <td style="width: 25%">{{ data.chairperson }}</td>
+              <td class="lbl" style="width: 15%">Meeting No</td>
+              <td style="width: 25%">{{ data.meetingNo }}</td>
+              <td class="lbl" style="width: 15%">Meeting Date</td>
+              <td style="width: 25%">{{ data.meetingDate  | date:'dd.MM.yyyy'}}</td>
             </tr>
             <tr>
-              <td class="lbl">Review Period</td>
-              <td colspan="3">{{ data.reviewPeriod }}</td>
+              <td class="lbl" style="width: 25%">Meeting Type</td>
+              <td style="width: 25%">{{ data.meetingType }}</td>
+              <td class="lbl" style="width: 25%">Meeting Time</td>
+              <td style="width: 25%">{{ data.meetingTime }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 25%">Meeting Venue</td>
+              <td style="width: 25%">{{ data.meetingVenue }}</td>
+              <td class="lbl" style="width: 25%">Chairperson</td>
+              <td style="width: 25%">{{ data.chairpersonName }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Discussions & Decisions -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">III. DISCUSSIONS & DECISIONS</div>
-        <table class="table table-bordered inner-table align-middle">
+        <div class="sec-title">II. PARTISIPANTS</div>
+        <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head text-center">
-              <th style="width: 200px">Agenda Item</th>
-              <th>Discussion</th>
-              <th>Decision / Recommendation</th>
+              <th style="width: 50px;">SN</th>
+              <th>Employee Name</th>
+              <th>Designation</th>
+              <th>Department</th>
+              <th>Signature</th>
+
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of data.discussions">
-              <td class="fw-bold">{{ item.agendaItem }}</td>
-              <td><div class="ql-editor" [innerHTML]="item.discussion"></div></td>
-              <td><div class="ql-editor" [innerHTML]="item.decision"></div></td>
+            <tr *ngFor="let participant of data.participantItems; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ participant.name }}</td>
+              <td>{{ participant.designation }}</td>
+              <td>{{ participant.department }}</td>
+              <td></td>
+
             </tr>
           </tbody>
         </table>
       </div>
-
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. AGENDA ITEMS</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr class="tbl-head">
+              <th style="width: 40px;">SN</th>
+              <th  style="width: 250px;">Agenda Item</th>
+              <th>Discussion</th>
+              <th>Decision Taken</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let agenda of data.agendaList; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td>{{ agenda.agendaItem }}</td>
+              <td>{{ agenda.discussion }}</td>
+              <td>{{ agenda.decisiontaken }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <!-- Action Items -->
       <div class="doc-section mb-3">
-        <div class="sec-title">IV. ACTION ITEMS</div>
+        <div class="sec-title">IV. ACTION Plan</div>
         <table class="table table-bordered inner-table align-middle">
           <thead>
             <tr class="tbl-head text-center">
-              <th style="width: 60px">Sr. No.</th>
-              <th>Action Point</th>
-              <th style="width: 150px">Responsibility</th>
+              <th style="width: 40px">SN</th>
+              <th>Action Required</th>
+              <th style="width: 180px">Responsible Person</th>
               <th style="width: 120px">Target Date</th>
+              <th style="width: 100px">Priority</th>
+              <th style="width: 80px">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -112,6 +140,19 @@
               <td>{{ item.action }}</td>
               <td class="text-center">{{ item.responsibility }}</td>
               <td class="text-center">{{ item.targetDate | date: "dd.MM.yyyy" }}</td>
+              <td class="text-center">{{ item.priority }}</td>
+              <td class="text-center">{{ item.status }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. Final Conclusion</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 120px;">Overall Conclusion</td>
+              <td colspan="4" [innerHTML]="data.overallConclusion"></td>
             </tr>
           </tbody>
         </table>
@@ -119,12 +160,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'Quality Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

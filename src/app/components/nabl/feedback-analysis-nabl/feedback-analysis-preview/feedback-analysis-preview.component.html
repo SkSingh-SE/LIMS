@@ -16,20 +16,17 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -43,53 +40,136 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'CUSTOMER FEEDBACK ANALYSIS'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'CUSTOMER FEEDBACK ANALYSIS'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <div class="doc-section mb-3">
-        <div class="sec-title">ANALYSIS DETAILS</div>
+        <div class="sec-title">I. ANALYSIS INFORMATION</div>
         <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td class="lbl" style="width: 30%">Period of Analysis</td>
-              <td style="width: 35%">{{ data.period }}</td>
-              <td class="lbl" style="width: 20%">Total Feedback Received</td>
-              <td style="width: 15%">{{ data.totalFeedbackReceived }}</td>
+              <td class="lbl" style="width: 15%">Analysis No.</td>
+              <td>{{ data.analysisNo }}</td>
+              <td class="lbl" style="width: 15%">Analysis Date</td>
+              <td>{{ data.analysisDate | date:'dd.MM.yyyy' }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 15%">Customer</td>
+              <td>{{ data.customerName }}</td>
+              <td class="lbl" style="width: 15%">Contact Person</td>
+              <td>{{ data.contactPerson }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 15%">Mobile No.</td>
+              <td>{{ data.mobileNo }}</td>
+              <td class="lbl" style="width: 15%">Feedback Date</td>
+              <td>{{ data.feedbackDate | date:'dd.MM.yyyy' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="doc-section mb-3">
-        <div class="sec-title">1. ANALYSIS SUMMARY</div>
-        <div class="sec-body" [innerHTML]="data.analysisSummary"></div>
+        <div class="sec-title">II. FEEDBACK SUMMARY</div>
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 15%">Average Rating</td>
+              <td>{{ data.averageRating }}</td>
+              <td class="lbl" style="width: 15%">Overall Grade</td>
+              <td>{{ data.overallGrade }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">Comments From Customer</div>
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr>
+              <td class="lbl">Suggestions / Observations</td>
+              <td class="lbl">New Test Requirement</td>
+              <td class="lbl">Customer Remarks</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td [innerHTML]="data.suggestions || '-'"></td>
+              <td [innerHTML]="data.newRequirement || '-'"></td>
+              <td [innerHTML]="data.customerRemarks || '-'"></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div class="doc-section mb-3">
-        <div class="sec-title">2. ACTION TAKEN / PREVENTIVE ACTIONS</div>
-        <div class="sec-body" [innerHTML]="data.actionsTaken"></div>
+        <div class="sec-title">III. Quality Manager Analysis (To be filled by Laboratory)</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Overall Customer Satisfaction</td>
+              <td>{{ data.overallCustomerSatisfaction }}</td>
+              <td class="lbl" style="width: 15%">Root Cause</td>
+              <td>{{ data.rootCause }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 20%">Action Details</td>
+              <td colspan="3">{{ data.actionDetails }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="mt-5 text-center">
-        <p><em>End of Report</em></p>
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. Effectiveness Verification (To be filled after action)</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Action Taken</td>
+              <td>{{ data.actionTaken }}</td>
+              <td class="lbl" style="width: 20%">Effectiveness Status</td>
+              <td>{{ data.effectivenessStatus }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 20%">Verification Remarks</td>
+              <td colspan="3">{{ data.verificationRemarks }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. Final Conclusion</div>
+
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr>
+              <td class="lbl" style="width: 60%">Overall Conclusion</td>
+              <td class="lbl" style="width: 20%">Final Status</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ data.overallConclusion }}</td>
+              <td>{{ data.finalStatus }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- <div class="mt-5 text-center">
+        <p><em>End of Report</em></p>
+      </div> -->
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'General Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

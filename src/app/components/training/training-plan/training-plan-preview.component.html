@@ -1,98 +1,129 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-cancel btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn btn-save btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
 
-  <app-print-frame *ngIf="plan" orientation="landscape">
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Training Plan Preview
+    </span>
+  </div>
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+  <app-print-frame *ngIf="plan" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-          [formatNo]="'F-8'"
-          mainTitle="TRAINING PLAN"
-          [docNo]="plan.documentNo || 'DMSPL / Level-04 / Format / F-8'"
-          [issueNo]="plan.issueNo || '01'"
-          [revNo]="plan.revNo || '00'">
+      <app-nabl-print-header [formatNo]="'F-8'" mainTitle="TRAINING PLAN" [docNo]="'DMSPL / Level-04 / Format / F-8'"
+        [issueNo]="plan.issueNo || '01'" [revNo]="plan.revNo || '00'" [revDate]="plan.date" [issueDate]="plan.date">
       </app-nabl-print-header>
     </ng-container>
-
     <ng-container body>
-      <!-- Summary Info -->
-      <table class="table table-bordered border-2 border-dark mb-3 info-table">
-        <tbody>
-          <tr>
-            <td class="label-cell border-2 border-dark" style="width: 15%;">YEAR</td>
-            <td class="border-2 border-dark fw-bold" style="width: 35%;">{{ plan.planningYear }}</td>
-            <td class="label-cell border-2 border-dark" style="width: 15%;">DATE</td>
-            <td class="border-2 border-dark fw-bold" style="width: 35%;">{{ plan.planDate | date:'dd.MM.yyyy' }}</td>
-          </tr>
-        </tbody>
-      </table>
 
-      <!-- Training Courses Table -->
-      <div class="table-responsive">
-        <table class="table table-bordered border-2 border-dark table-sm text-center align-middle mb-0">
-          <thead class="bg-light">
-            <tr class="small text-uppercase fw-bold">
-              <th style="width: 60px;">S.No.</th>
-              <th>Training Description</th>
-              <th style="width: 120px;">Month</th>
-              <th style="width: 180px;">Agency<br>(Internal/ External)</th>
-              <th style="width: 200px;">To be attended by</th>
-            </tr>
-          </thead>
+      <!-- I. TRAINING PLANS -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. TRAINING PLANS</div>
+
+        <table class="table table-bordered inner-table">
           <tbody>
-            <tr *ngFor="let course of plan.courses; let i = index">
-              <td>{{ i + 1 }}</td>
-              <td class="text-start px-2">
-                <div class="fw-medium">{{ course.courseName }}</div>
-                <div *ngIf="course.remarks" class="small text-muted mt-1 italic">{{ course.remarks }}</div>
-              </td>
-              <td>{{ course.tentativeMonth || '-' }}</td>
-              <td>{{ course.agency || 'Internal' }}</td>
-              <td>{{ course.targetAudience }}</td>
-            </tr>
-            <tr *ngIf="!plan.courses || plan.courses.length === 0">
-              <td colspan="5" class="py-4 text-muted italic">No training courses planned for this year.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
 
-      <!-- Note -->
-      <div class="mt-3 fw-bold small">
-        NOTE: - Training plan may be vary based on availability of external training and requirements of Organization
-      </div>
-
-      <!-- Signatures -->
-      <div class="mt-4 pt-4">
-        <table class="table table-bordered border-2 border-dark text-center mb-0 signatories-table">
-          <tbody>
+            <!-- Plan Description -->
             <tr>
-              <td style="width: 33.33%; height: 60px;" class="align-middle">
-                <div class="fw-bold border-bottom mb-1 bg-light">Prepared By:-</div>
-                <div>{{ plan.createdBy }}</div>
+              <td class="lbl" style="width: 15%">Plan Description</td>
+              <td colspan="3">
+                {{ plan.trainingTopic }}
               </td>
-              <td style="width: 33.33%;" class="align-middle">
-                <div class="fw-bold border-bottom mb-1 bg-light">Approved By:-</div>
-                <div>(Quality Manager)</div>
+            </tr>
+
+            <!-- Planning Year + Month -->
+            <tr>
+              <td class="lbl" style="width: 15%">Planning Year</td>
+              <td style="width: 35%">
+                {{ plan.planningYear }}
               </td>
-              <td style="width: 33.33%;" class="align-middle">
-                <div class="fw-bold border-bottom mb-1 bg-light">Reviewed & Approved By:-</div>
-                <div>(Managing Director)</div>
+
+              <td class="lbl" style="width: 15%">Month</td>
+              <td style="width: 35%">
+                {{ plan.planMonth }}
+              </td>
+            </tr>
+
+            <!-- Audience -->
+            <tr>
+              <td class="lbl">To be Attended By</td>
+              <td colspan="3">
+                {{ plan.targetAudience }}
+              </td>
+            </tr>
+
+            <!-- Agency + Provider -->
+            <tr>
+              <td class="lbl">Agency</td>
+              <td>
+                {{ plan.agency }}
+              </td>
+
+              <td class="lbl">Provider/Agency Name</td>
+              <td>
+                {{ plan.provider }}
+              </td>
+            </tr>
+
+            <!-- Evaluation Required + Question Set -->
+            <tr>
+              <td class="lbl">Evaluation Required</td>
+              <td>
+                {{ plan.evaluationRequired ? 'Yes' : 'No' }}
+              </td>
+
+              <td class="lbl">Question Set</td>
+              <td>
+                {{ plan.questionSetName || '-' }}
+              </td>
+            </tr>
+            <tr>
+              <td colspan="4">
+
+                <span><b> NOTE:</b> - Training plan may be vary based on availability of external training and
+                  requirements of
+                  Organization</span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="plan.preparedBy || ''" [issuedByName]="plan.approvedBy || ''"
+        [reviewedApprovedByName]="plan.reviewedBy || ''">
+        ></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

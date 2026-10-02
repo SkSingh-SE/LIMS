@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,72 +36,85 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [issueNo]="data.issueNo"
-        [revNo]="data.revNo"
-        [title]="data.title"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data()?.formatNo || 'F-28'" [docNo]="'DMSPL / Level-04 / Format / F-28'"
+        [issueDate]="data()?.date || ''" [revDate]="data()?.date || ''"
+        [mainTitle]="'TEST METHOD LIST & EXTERNAL DOCUMENT LIST'" [issueNo]="data()?.issueNo|| '01'"
+        [revNo]="data()?.revNo || '01'" [title]="data()?.testMethodTitle"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
       <!-- Main Table -->
       <div class="doc-section mb-3">
         <div class="sec-title">
-          {{ data.listType === "Test Method" ? "TEST METHOD LIST" : "EXTERNAL DOCUMENT LIST" }}
+          TEST METHOD LIST
         </div>
         <table class="table table-bordered inner-table align-middle">
           <thead>
             <tr class="tbl-head text-center small">
-              <th style="width: 60px">SR. NO.</th>
-              <th style="width: 200px">
-                {{ data.listType === "Test Method" ? "SPECIFICATION CODE" : "DOCUMENT IDENTIFICATION" }}
-              </th>
-              <th>
-                {{ data.listType === "Test Method" ? "DETAILS" : "TITLE" }}
-              </th>
-              <th *ngIf="data.listType === 'External Document'">Requirement</th>
-              <th *ngIf="data.listType === 'External Document'" style="width: 120px">Latest Issue No./Rev No.</th>
-              <th *ngIf="data.listType === 'External Document'" style="width: 120px">Month/ Year of Latest Issue</th>
+              <th style="width:60px">Sr.</th>
+              <th>Test Method Name</th>
+              <th>Test Method Specification Code</th>
+              <th>Reference Standard</th>
+              <th>Issue/Rev</th>
+              <th>Effective Date</th>
+              <th>Status</th>
+              <th>Verified</th>
+              <th>Validated</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let entry of data.entries; let i = index">
-              <td class="text-center">{{ entry.srNo }}</td>
-              <td class="ps-2 fw-medium">{{ entry.specificationCode }}</td>
-              <td class="ps-2">{{ entry.details }}</td>
-              <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.requirement }}</td>
-              <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.latestIssueRev }}</td>
-              <td *ngIf="data.listType === 'External Document'" class="text-center">{{ entry.monthYear }}</td>
+            <tr *ngFor="let entry of data()?.testMethod; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="ps-2">{{ entry.methodName }}</td>
+              <td class="ps-2">{{ entry.specificationCode }}</td>
+              <td class="ps-2">{{ entry.referenceStandard }}</td>
+              <td class="ps-2">{{ entry.revisionNo }}</td>
+              <td class="ps-2">{{ entry.effectiveDate | date }}</td>
+              <td class="ps-2">{{ entry.status }}</td>
+              <td class="ps-2"> {{ entry.isVerified ? 'Yes' : 'No' }}</td>
+              <td class="ps-2"> {{ entry.isValidated ? 'Yes' : 'No' }}</td>
             </tr>
-            <!-- Fill remaining space if data is small -->
-            <ng-container *ngIf="data.entries.length < 10">
-              <tr *ngFor="let item of [].constructor(10 - data.entries.length); let i = index">
-                <td class="text-center">&nbsp;</td>
-                <td></td>
-                <td></td>
-                <td *ngIf="data.listType === 'External Document'"></td>
-                <td *ngIf="data.listType === 'External Document'"></td>
-                <td *ngIf="data.listType === 'External Document'"></td>
-              </tr>
-            </ng-container>
+          </tbody>
+        </table>
+      </div>
+      <div class="doc-section mb-3">
+        <div class="sec-title">
+          EXTERNAL ORIGIN DOCUMENT LIST
+        </div>
+        <table class="table table-bordered inner-table align-middle">
+          <thead>
+            <tr class="tbl-head text-center small">
+              <th style="width:60px">Sr.</th>
+              <th>Document Identification</th>
+              <th>Title / Description</th>
+              <th>Requirement</th>
+              <th>Document Type</th>
+              <th>Issue/Rev</th>
+              <th>Issue Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of data()?.docEntries; let i = index">
+              <td class="text-center">{{ i + 1 }}</td>
+              <td class="ps-2 fw-medium">{{ entry.docId }}</td>
+              <td class="ps-2">{{ entry.description }}</td>
+              <td class="ps-2">{{ entry.docSource }}</td>
+              <td class="ps-2">{{ entry.docType }}</td>
+              <td class="ps-2">{{ entry.issue }}</td>
+              <td class="ps-2">{{ entry.monthYear | date }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Signature Block -->
-      <div class="mt-4">
-        <app-nabl-signature-block
-          [signatories]="[
-            { name: data.preparedBy, designation: 'Prepared By' },
-            { name: data.reviewedBy, designation: 'Technical Manager' },
-          ]"
-        ></app-nabl-signature-block>
-      </div>
     </ng-container>
+    <!-- Signature Block -->
+
 
     <ng-container footer>
-      <app-nabl-print-footer></app-nabl-print-footer>
+
+      <app-nabl-print-footer [preparedByName]="data()?.preparedBy || ''" [issuedByName]="data()?.reviewedBy || ''"
+        [reviewedApprovedByName]="data()?.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

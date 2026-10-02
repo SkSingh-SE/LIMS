@@ -16,7 +16,7 @@ export class ResponsibilityAuthorityListComponent implements OnInit {
 
   columns: RegisterColumn[] = [
     { key: 'designationName', type: 'string', label: 'Designation', filter: true },
-    { key: 'formatNo', type: 'string', label: 'Form Number', filter: true },
+    { key: 'documentNo', type: 'string', label: 'Document Number', filter: true },
     { key: 'issueNo', type: 'string', label: 'Issue No', filter: true },
     { key: 'date', type: 'date', label: 'Date', filter: true },
     { key: 'revNo', type: 'string', label: 'Rev No', filter: true }

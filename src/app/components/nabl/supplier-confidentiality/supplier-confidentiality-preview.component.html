@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,12 +36,9 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="record()" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-          [formatNo]="record()?.formatNo || 'F-2'"
-          [mainTitle]="'SUPPLIER CONFIDENTIALITY AGREEMENT'"
-          [docNo]="record()?.documentNo || ''"
-          [issueNo]="record()?.issueNo || '01'"
-          [revNo]="record()?.revNo || '00'">
+      <app-nabl-print-header [formatNo]="record()?.formatNo || 'F-2'" [mainTitle]="'SUPPLIER CONFIDENTIALITY AGREEMENT'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + (record()?.formatNo || 'F-2')" [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'">
       </app-nabl-print-header>
     </ng-container>
 
@@ -75,31 +69,39 @@
         <div class="sec-title">AGREEMENT</div>
         <div class="sec-body">
           <p class="mb-4">
-            This Confidentiality Agreement (the "Agreement") is entered into on <strong>{{ record()?.agreementDate | date: 'dd/MM/yyyy' }}</strong>
+            This Confidentiality Agreement (the "Agreement") is entered into on <strong>{{ record()?.agreementDate |
+              date: 'dd/MM/yyyy' }}</strong>
             between <strong>Divine Metallurgical Services Pvt. Ltd. (DMSPL)</strong> and the Supplier named above.
           </p>
 
           <h6 class="fw-bold mb-2">1. Purpose</h6>
           <p class="mb-3">
-            The Supplier may be provided with or have access to certain proprietary and confidential information of DMSPL or its customers during the course of providing products or services.
+            The Supplier may be provided with or have access to certain proprietary and confidential information of
+            DMSPL or its customers during the course of providing products or services.
           </p>
 
           <h6 class="fw-bold mb-2">2. Confidential Information</h6>
           <p class="mb-3">
-            "Confidential Information" includes, but is not limited to, test results, customer names, technical data, drawings, specifications, processes, and any other information marked as confidential or which by its nature should be considered confidential.
+            "Confidential Information" includes, but is not limited to, test results, customer names, technical data,
+            drawings, specifications, processes, and any other information marked as confidential or which by its nature
+            should be considered confidential.
           </p>
 
           <h6 class="fw-bold mb-2">3. Obligations of the Supplier</h6>
           <ul class="mb-4">
-            <li>To hold all Confidential Information in strict confidence and not to disclose it to any third party without prior written consent from DMSPL.</li>
+            <li>To hold all Confidential Information in strict confidence and not to disclose it to any third party
+              without prior written consent from DMSPL.</li>
             <li>To use the Confidential Information solely for the purpose of fulfilling its obligations to DMSPL.</li>
-            <li>To protect Confidential Information with at least the same degree of care as it uses for its own similar information.</li>
-            <li>To ensure that its employees or subcontractors who have access to Confidential Information are bound by similar confidentiality obligations.</li>
+            <li>To protect Confidential Information with at least the same degree of care as it uses for its own similar
+              information.</li>
+            <li>To ensure that its employees or subcontractors who have access to Confidential Information are bound by
+              similar confidentiality obligations.</li>
           </ul>
 
           <h6 class="fw-bold mb-2">4. Duration</h6>
           <p class="mb-4">
-            This agreement remains valid until <strong>{{ record()?.validUntil | date: 'dd/MM/yyyy' }}</strong>. The obligations of confidentiality shall survive the termination or expiration of this agreement.
+            This agreement remains valid until <strong>{{ record()?.agreementValidUpto | date: 'dd/MM/yyyy' }}</strong>.
+            The obligations of confidentiality shall survive the termination or expiration of this agreement.
           </p>
         </div>
       </div>
@@ -125,10 +127,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-          [preparedByName]="record()?.reviewedBy || 'Quality Manager'"
-          [issuedByName]="'Quality Manager'"
-          [reviewedApprovedByName]="record()?.approvedBy || 'Director'">
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''">
       </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>

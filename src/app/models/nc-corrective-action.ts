@@ -1,6 +1,9 @@
 export interface NcCorrectiveAction {
     id: number;
     date: string;
+    correctiveActionDate: string;
+    verifiedDate: string;
+    implementedDate: string;
     ncNo: string;
     clauseNo: string;
     section: string;

@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="feedbackForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="feedbackForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -68,26 +68,102 @@
           </div>
           <div *ngIf="openSections['customerInfo']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label">
-                  Customer Name
+                  Name of Company
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="customerName" />
+                <input type="text" class="form-control" formControlName="companyName" placeholder="company name" />
+                <div
+                  *ngIf="feedbackForm.get('companyName')?.touched && feedbackForm.get('companyName')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  company name is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">
-                  Contact Person
+                  Address
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="contactPerson" />
+                <input type="text" class="form-control" formControlName="companyAddress"
+                  placeholder="company address" />
+                <div
+                  *ngIf="feedbackForm.get('companyAddress')?.touched && feedbackForm.get('companyAddress')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  company address is required.
+                </div>
               </div>
-              <div class="col-md-2">
+              <div class="col-md-4">
                 <label class="form-label">
-                  Date
+                  Contact Person Name
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="date" />
+                <input type="text" class="form-control" formControlName="contactPerson" placeholder="contact person" />
+                <div
+                  *ngIf="feedbackForm.get('contactPerson')?.touched && feedbackForm.get('contactPerson')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  contact person is required.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Designation
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="designation" placeholder="designation" />
+                <div
+                  *ngIf="feedbackForm.get('designation')?.touched && feedbackForm.get('designation')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  designation is required.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Email
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="email" placeholder="email" />
+                <span *ngIf="feedbackForm.get('email')?.hasError('required') && feedbackForm.get('email')?.touched"
+                  class="text-danger text-sm">
+                  email Id is required.
+                </span>
+
+                <!-- Invalid Email -->
+                <span
+                  *ngIf="feedbackForm.get('email')?.hasError('email') && !feedbackForm.get('email')?.hasError('required') && feedbackForm.get('email')?.touched"
+                  class="text-danger text-sm">
+                  Please enter a valid email address.
+                </span>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Mobile No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="mobileNo"
+                  oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="mobile no" />
+                <span
+                  *ngIf="feedbackForm.get('mobileNo')?.hasError('required') && feedbackForm.get('mobileNo')?.touched"
+                  class="text-danger text-sm">
+                  mobile number is required.
+                </span>
+                <span
+                  *ngIf="feedbackForm.get('mobileNo')?.hasError('pattern') && !feedbackForm.get('mobileNo')?.hasError('required') && feedbackForm.get('mobileNo')?.touched"
+                  class="text-danger text-sm">
+                  mobile number must be 10-13 digits.
+                </span>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Feedback Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="feedbackDate" />
+                <div
+                  *ngIf="feedbackForm.get('feedbackDate')?.touched && feedbackForm.get('feedbackDate')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  feedback date is required.
+                </div>
               </div>
             </div>
           </div>
@@ -101,24 +177,16 @@
           </div>
           <div *ngIf="openSections['ratings']" class="section-body">
             <div formArrayName="ratings">
-              <div
-                *ngFor="let r of ratingsArray.controls; let i = index"
-                [formGroupName]="i"
-                class="row mb-2 align-items-center rating-row py-2 border-bottom"
-              >
+              <div *ngFor="let r of ratingsArray.controls; let i = index" [formGroupName]="i"
+                class="row mb-2 align-items-center rating-row py-2 border-bottom">
                 <div class="col-md-8">
                   <span class="fw-medium">{{ r.get("parameter")?.value }}</span>
                 </div>
                 <div class="col-md-4">
                   <div class="d-flex gap-3">
                     <div *ngFor="let val of [1, 2, 3, 4, 5]" class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        [id]="'rating_' + i + '_' + val"
-                        [value]="val"
-                        formControlName="rating"
-                      />
+                      <input class="form-check-input" type="radio" [id]="'rating_' + i + '_' + val" [value]="val"
+                        formControlName="rating" />
                       <label class="form-check-label" [for]="'rating_' + i + '_' + val">{{ val }}</label>
                     </div>
                   </div>
@@ -136,25 +204,47 @@
           </div>
           <div *ngIf="openSections['comments']" class="section-body">
             <div class="row gy-3">
-              <div class="col-12">
-                <label class="form-label fw-bold">Comments</label>
-                <quill-editor formControlName="comments" [modules]="quillModules"></quill-editor>
-              </div>
-              <div class="col-12">
-                <label class="form-label fw-bold">Suggestions for Improvement</label>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-bold">Your Suggestions/Observations</label>
                 <quill-editor formControlName="suggestions" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label fw-bold">Any New Test Requirement</label>
+                <quill-editor formControlName="commentsSuggestions" [modules]="quillModules"></quill-editor>
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label">Note<span class="text-danger">*</span></label>
+                <quill-editor class="w-100" formControlName="note" [modules]="quillModules"
+                  [readOnly]="isViewMode"></quill-editor>
+                <div
+                  *ngIf="feedbackForm.get('note')?.touched && feedbackForm.get('note')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  note is required.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Reported By
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="reportedBy" placeholder="reported by" />
+                <div
+                  *ngIf="feedbackForm.get('reportedBy')?.touched && feedbackForm.get('reportedBy')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  reported by is required.
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        
-        <app-nabl-signature-section [parentForm]="feedbackForm"></app-nabl-signature-section>
+
+        <!-- <app-nabl-signature-section [parentForm]="feedbackForm"></app-nabl-signature-section> -->
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="feedbackForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Feedback" : "Save Feedback" }}
           </button>
         </div>

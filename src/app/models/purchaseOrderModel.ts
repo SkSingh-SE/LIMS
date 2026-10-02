@@ -21,10 +21,12 @@ export interface PurchaseOrder {
     supplierName: string;
     supplierAddress: string;
     gstNo?: string;
+    poDate: Date | string;
 
     // Order Details
-    indentNo?: string;
-    poType: 'Regular' | 'Rate Contract' | 'Service';
+    referenceIndentNo?: string;
+    referenceIndentName?: string;
+    orderType: 'Regular' | 'Rate Contract' | 'Service';
     currency: string;
 
     // Items
@@ -34,12 +36,17 @@ export interface PurchaseOrder {
     grandTotal: number;
 
     // Terms & Conditions
-    termsAndConditions: string;
+    tearmCondition: string;
     deliveryDate: Date | string;
     paymentTerms: string;
 
     // Signatories
     preparedBy: string;
+    preparedDate: Date | string;
+    approvedBy: string;
+    approvedDate: Date | string;
+    reviewedBy: string;
+    reviewedDate: Date | string;
     authorizedBy: string;
 
     // Status

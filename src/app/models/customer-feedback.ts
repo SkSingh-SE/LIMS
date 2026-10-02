@@ -8,6 +8,7 @@ export interface CustomerFeedback {
     customerName: string;
     contactPerson: string;
     date: string | Date;
+    feedbackDate: string | Date;
     ratings: FeedbackRating[];
     comments: string;
     suggestions: string;

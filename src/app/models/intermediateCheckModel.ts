@@ -6,6 +6,8 @@ export interface IntermediateCheckRecord {
   issueNo: string;
   revNo: string;
   date: Date | string;
+  nextCalibrationDueDate: Date | string;
+  lastCalibrationDate: Date | string;
   issueDate: Date | string;
   revDate?: Date | string;
 
@@ -20,7 +22,7 @@ export interface IntermediateCheckRecord {
   equipmentNo: string;
 
   // Daily Check Records (28-31 days depending on month)
-  dailyRecords: IntermediateCheckDailyRecord[];
+  intermediateCheckLogs: IntermediateCheckDailyRecord[];
   totalChecksPerformed: number;
 
   // Summary
@@ -41,13 +43,15 @@ export interface IntermediateCheckRecord {
 }
 
 export interface IntermediateCheckDailyRecord {
-  date: Date | string;
-  checkStatus: 'ok' | 'deviation' | 'not-performed';
-  equipmentCondition: string;
-  observations?: string;
-  correctiveAction?: string;
-  checkedBy: string;
-  checkTime?: string;
+  checkDate: Date | string;
+  checkType: string;
+  referenceStandard: string;
+  referenceValue?: number;
+  observedValue?: number;
+  acceptanceCriteria: number;
+  auditeeId?: number;
+  result?: string;
+  auditeeName?: string;
 }
 
 export interface IntermediateCheckResponse {

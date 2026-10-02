@@ -9,8 +9,13 @@ import { PtIlcPlan, PtIlcPlanListResponse, PtIlcPlanResponse } from '../models/p
 })
 export class PtIlcPlanService {
     private apiUrl = environment.apiUrl + '/Nabl/PtIlcPlan';
+    private readonly Default_Note_Clause = "Laboratory should ensure that PT plan covers the groups/ sub-groups, analytic/ parameter and materials/ matrices under each discipline"
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
+ 
+    getDefaultNoteClause(): string{
+        return this.Default_Note_Clause;
+    }
 
     getAll(params?: any): Observable<PtIlcPlanListResponse> {
         return this.http.post<PtIlcPlanListResponse>(this.apiUrl + '/list', params || {});

@@ -12,6 +12,7 @@ export interface SkillMatrix {
     formatNo: string; // F-6 or F-6A
     issueNo: string;
     date: string;
+    employeeName: string;
     revNo: string;
     title: string;
     decision?: string;
@@ -27,6 +28,9 @@ export interface SkillMatrix {
     modifiedBy?: string;
     modifiedOn?: string;
     isActive?: boolean;
+    approvedBy?: string;
+    reviewedBy?:string;
+    
 }
 
 export interface SkillMatrixResponse {

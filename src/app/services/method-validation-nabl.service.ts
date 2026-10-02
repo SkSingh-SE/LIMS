@@ -10,7 +10,7 @@ import { MethodValidationNabl, MethodValidationNablListResponse, MethodValidatio
 export class MethodValidationNablService {
     private apiUrl = environment.apiUrl + '/Nabl/MethodValidation';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<MethodValidationNablListResponse> {
         return this.http.post<MethodValidationNablListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,17 @@ export class MethodValidationNablService {
 
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
+    }
+    getTestMethodList(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/alltestmethodlist`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
+    }
+    getTestMethodDetails(testmethodCode: string): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/testMethodDetails/${testmethodCode}`);
     }
 }

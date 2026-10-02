@@ -1,0 +1,327 @@
+<div class="card shadow-lg m-2">
+
+    <!-- ================= HEADER ================= -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+        <label class="fw-medium">F-6: Skill Matrix</label>
+        <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </button>
+    </div>
+
+    <div class="card-body">
+
+        <form [formGroup]="roleWiseSkillsMasterForm" (ngSubmit)="onSubmit()">
+
+            <!-- ===================================================== -->
+            <!-- ROLE INFORMATION -->
+            <!-- ===================================================== -->
+
+            <div class="form-section mb-4">
+
+                <div class="section-title">
+                    <span>ROLE INFORMATION</span>
+                </div>
+
+                <div class="row g-3">
+
+                    <!-- Role Wise Skill No -->
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            Role-Wise Skill No
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text" class="form-control" formControlName="roleWiseSkillNo"
+                            placeholder="Enter Role-Wise Skill No" maxlength="100" [ngClass]="{
+                                   'is-invalid':
+                                   roleWiseSkillsMasterForm.get('roleWiseSkillNo')?.touched &&
+                                   roleWiseSkillsMasterForm.get('roleWiseSkillNo')?.invalid
+                               }" />
+
+                        <div *ngIf="
+                            roleWiseSkillsMasterForm.get('roleWiseSkillNo')?.touched &&
+                            roleWiseSkillsMasterForm.get('roleWiseSkillNo')?.invalid
+                            " class="text-danger text-sm mt-1">
+
+                            Role-Wise Skill No is required.
+                        </div>
+                    </div>
+
+
+                    <!-- Date -->
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            Date
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="date" class="form-control" formControlName="date" [ngClass]="{
+                                   'is-invalid':
+                                   roleWiseSkillsMasterForm.get('date')?.touched &&
+                                   roleWiseSkillsMasterForm.get('date')?.invalid
+                               }" [readonly]="isViewMode" />
+
+                        <div *ngIf="
+                            roleWiseSkillsMasterForm.get('date')?.touched &&
+                            roleWiseSkillsMasterForm.get('date')?.invalid
+                            " class="text-danger text-sm mt-1">
+
+                            Date is required.
+                        </div>
+                    </div>
+
+                    <!-- Department -->
+                    <!-- <div class="col-md-4">
+
+                        <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
+                            [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                            (itemSelected)="onDepartmentSelected($event)" [selectedItem]="
+                                roleWiseSkillsMasterForm.get('departmentId')?.value
+                            " [isDisabled]="isViewMode">
+                        </app-searchable-dropdown>
+
+                        <div *ngIf="
+                            roleWiseSkillsMasterForm.get('departmentId')?.invalid &&
+                            roleWiseSkillsMasterForm.get('departmentId')?.touched
+                            " class="text-danger text-sm mt-1">
+
+                            Department is required.
+                        </div>
+
+                    </div> -->
+
+
+                    <!-- Designation -->
+                    <div class="col-md-4">
+
+                        <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
+                            [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
+                            [isDisabled]="isViewMode" [required]="true" [selectedItem]="
+                                roleWiseSkillsMasterForm.get('designationId')?.value
+                            ">
+                        </app-searchable-dropdown>
+
+                        <div *ngIf="
+                            roleWiseSkillsMasterForm.get('designationId')?.invalid &&
+                            roleWiseSkillsMasterForm.get('designationId')?.touched
+                            " class="text-danger text-sm mt-1">
+
+                            Designation is required.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- REQUIRED SKILLS / ACTIVITIES -->
+            <!-- ===================================================== -->
+
+            <div class="form-section mb-4">
+
+                <div class="section-title">
+                    <span>REQUIRED SKILLS / ACTIVITIES</span>
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered align-middle mb-0">
+
+                        <thead class="table-light text-center">
+
+                            <tr>
+                                <th style="width: 70px;">
+                                    No.
+                                </th>
+
+                                <th>
+                                    Skill / Activity
+                                </th>
+                                <th>Levels</th>
+                                <th>Required</th>
+
+                                <th style="width: 90px;" *ngIf="!isViewMode">
+
+                                    Action
+
+                                </th>
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody formArrayName="skills">
+
+                            <tr *ngFor="
+                                let skill of skills.controls;
+                                let i = index
+                                " [formGroupName]="i">
+
+                                <!-- Serial Number -->
+                                <td class="text-center fw-semibold text-secondary">
+
+                                    {{ i + 1 }}
+
+                                </td>
+
+
+                                <!-- Skill -->
+                                <td>
+
+                                    <input type="text" class="form-control" formControlName="skillName"
+                                        placeholder="Enter Skill / Activity" [readonly]="isViewMode" [ngClass]="{
+                                            'is-invalid':
+                                            skill.get('skillName')?.touched &&
+                                            skill.get('skillName')?.invalid
+                                        }" />
+
+                                    <div *ngIf="
+                                        skill.get('skillName')?.touched &&
+                                        skill.get('skillName')?.invalid
+                                        " class="text-danger text-sm mt-1">
+
+                                        Skill / Activity is required.
+
+                                    </div>
+
+                                </td>
+                                <td>
+
+                                    <select class="form-select" formControlName="leveltype" [disabled]="isViewMode"
+                                        [ngClass]="{
+                                        'is-invalid':
+                                        skill.get('leveltype')?.touched &&
+                                        skill.get('leveltype')?.invalid
+                                    }">
+
+                                        <option [ngValue]="null" disabled>Select Level</option>
+                                        <option *ngFor="let level of leveltypes" [value]="level">
+                                            {{ level }}
+                                        </option>
+
+                                    </select>
+
+                                    <div *ngIf="
+                                        skill.get('leveltype')?.touched &&
+                                        skill.get('leveltype')?.invalid
+                                        " class="text-danger text-sm mt-1">
+
+                                        Level is required.
+
+                                    </div>
+                                </td>
+                                <td>
+
+                                    <div class="form-check form-switch d-flex justify-content-center">
+
+                                        <input class="form-check-input" type="checkbox" formControlName="required"
+                                            [readonly]="isViewMode" />
+
+                                    </div>
+                                </td>
+
+                                <!-- Action -->
+                                <td *ngIf="!isViewMode" class="text-center">
+
+                                    <button type="button" class="btn btn-remove btn-sm" title="Remove Skill"
+                                        (click)="removeSkill(i)">
+
+                                        <i class="bi bi-trash"></i>
+
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- No Skills -->
+                            <tr *ngIf="skills.length === 0">
+
+                                <td [attr.colspan]="isViewMode ? 2 : 3" class="text-center text-muted py-4">
+
+                                    No skills / activities added.
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+
+                    <!-- Add Skill -->
+                    <div class="skill-action-bar" *ngIf="!isViewMode">
+
+                        <button type="button" class="btn btn-primary btn-sm" (click)="addSkills()">
+
+                            <i class="bi bi-plus-lg me-1"></i>
+
+                            Add Skill / Activity
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- REMARKS -->
+            <!-- ===================================================== -->
+
+            <div class="form-section mb-4">
+
+                <div class="section-title">
+                    <span>REMARKS</span>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-12">
+
+                        <textarea class="form-control" rows="3" formControlName="remarks" placeholder="Enter Remarks"
+                            [readonly]="isViewMode">
+                        </textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- FOOTER ACTION -->
+            <!-- ===================================================== -->
+
+            <div class="d-flex justify-content-end gap-2 mt-3 mb-2">
+
+
+                <a [routerLink]="['/role-wise-skills-master']" class="btn btn-cancel">
+
+                    Cancel
+
+                </a>
+
+                <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-4">
+
+                    <i class="bi bi-save me-1"></i>
+                    Save
+
+                </button>
+
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

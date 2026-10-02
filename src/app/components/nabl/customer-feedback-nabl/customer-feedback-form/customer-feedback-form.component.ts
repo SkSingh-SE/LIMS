@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -10,7 +10,7 @@ import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
-
+import { ToastService } from '../../../../services/toast.service';
 @Component({
     selector: 'app-customer-feedback-form',
     standalone: true,
@@ -19,7 +19,7 @@ import { NablHeaderService } from '../../../../services/nabl-header.service';
     styleUrl: './customer-feedback-form.component.css'
 })
 export class CustomerFeedbackFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     feedbackForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
@@ -28,12 +28,12 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
     formNumbers = NablFormsHelper.getFormNumbers();
 
     feedbackParameters = [
-        'Quality of Test Results',
-        'Timely Delivery of Reports',
-        'Technical Competence of Staff',
-        'Response to Queries',
-        'Behavior of Lab Personnel',
-        'Overall Service'
+        'Response to your inquiry',
+        'Quality of Testing',
+        'Testing Time',
+        'Quality of Reporting',
+        'Communication',
+        'Complaint Handling'
     ];
 
     openSections: { [key: string]: boolean } = {
@@ -50,20 +50,22 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
             ['clean']
         ]
     };
-
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
         private service: CustomerFeedbackService
-    , private unsavedChangesService: UnsavedChangesService,
-        private nablHeaderService: NablHeaderService) {
+        , private unsavedChangesService: UnsavedChangesService,
+        private nablHeaderService: NablHeaderService,
+        private toastService: ToastService
+    ) {
         this.initForm();
         this.nablHeaderService.getFormDefaults('CustomerFeedback').subscribe({
             next: (defaults) => {
                 this.feedbackForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
     }
 
@@ -85,24 +87,34 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
     private initForm() {
         this.feedbackForm = this.fb.group({
             formatNo: ['F-47'],
-            docNo: [''],
+            docNo: ['F-47'],
             issueNo: ['03'],
-            issueDate: ['', Validators.required],
+            issueDate: [''],
             revNo: ['00'],
-            revDate: ['--', Validators.required],
+            revDate: [null],
 
-            customerName: ['', Validators.required],
+            companyName: ['', Validators.required],
+            reportedBy: ['', Validators.required],
+            companyAddress: ['', Validators.required],
             contactPerson: ['', Validators.required],
-            date: ['', Validators.required],
+            email: ['', [Validators.required, Validators.email]],
+            mobileNo: ['', [Validators.required, Validators.pattern('^[0-9]{10,12}$')]],
+            designation: ['', Validators.required],
+            date: [this.today, Validators.required],
+            feedbackDate: [this.today, Validators.required],
             ratings: this.fb.array(this.feedbackParameters.map(p => this.fb.group({
-                parameter: [p, Validators.required],
-                rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]]
+                parameter: [p],
+                rating: [null]
             }))),
-            comments: [''],
+            commentsSuggestions: [''],
+            note: [this.service.getDefaultNoteClause(), Validators.required],
             suggestions: [''],
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            reviewedBy: [null],
+            approvedBy: [null],
+            reviewedDate: [''],
+            approvedDate: [''],
+            preparedDate: [this.today],
         });
 
         // System-managed fields — always readonly
@@ -110,6 +122,7 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
         this.feedbackForm.get('issueNo')?.disable();
         this.feedbackForm.get('revNo')?.disable();
         this.feedbackForm.get('formatNo')?.disable();
+        this.feedbackForm.get('date')?.disable();
     }
 
     get ratingsArray() {
@@ -121,6 +134,10 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
             if (data) {
                 // Clear and rebuild ratings array if number of parameters differs (unlikely here but safe)
                 this.feedbackForm.patchValue(data);
+                this.feedbackForm.patchValue({
+                    date: NablFormsHelper.formatDateForInput(data.date),
+                    feedbackDate: NablFormsHelper.formatDateForInput(data.feedbackDate),
+                });
                 // Lock form if not in editable status
                 const status = (data as any).status;
                 if (status && status !== 'Draft' && status !== 'Rejected') {
@@ -142,30 +159,56 @@ export class CustomerFeedbackFormComponent implements CanComponentDeactivate, On
         this.openSections[section] = !this.openSections[section];
     }
 
-    onSubmit() {
-        if (this.feedbackForm.valid) {
-            if (this.isEditMode) {
-                this.service.update(this.recordId, this.feedbackForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            } else {
-                this.service.create(this.feedbackForm.getRawValue()).subscribe(() => { this.saved = true; this.onCancel(); });
-            }
+    onSubmit(): void {
+        if (this.feedbackForm.invalid) {
+            this.feedbackForm.markAllAsTouched();
+            return;
+        }
+
+        const formData = this.feedbackForm.getRawValue();
+        formData.preparedDate = this.today;
+        formData.approvedDate = formData.approvedBy ? this.today : null;
+        formData.reviewedDate = formData.reviewedBy ? this.today : null;
+        if (formData.closerDate == "") {
+            formData.closerDate = null;
+        }
+
+        if (this.isEditMode) {
+            this.service.update(this.recordId, formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/customer-feedback']);
+                    this.toastService.show('customer feedback updated successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to update record', 'error'); }
+            });
+        } else {
+            this.service.create(formData).subscribe({
+                next: () => {
+                    this.saved = true;
+                    this.router.navigate(['/customer-feedback']);
+                    this.toastService.show('customer feedback created successfully', 'success')
+                },
+                error: (error: any) => { this.toastService.show(error?.error?.message || 'Failed to create record', 'error'); }
+            });
         }
     }
+
 
     onCancel() {
         this.router.navigate(['/customer-feedback']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.feedbackForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.feedbackForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.feedbackForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.feedbackForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

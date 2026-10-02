@@ -32,6 +32,9 @@ export interface InductionTrainingRecord {
     performanceLevel: string;
 
     trainerComments: string;
+    preparedBy: string;
+    reviewedBy: string;
+    approvedBy: string;
 }
 
 export interface InductionTrainingResponse {

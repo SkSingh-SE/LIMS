@@ -11,27 +11,42 @@ export interface ApprovedSupplier {
     supplierName: string;
     contactDetails: string; // Contact person + No
     productsServicesSupplied: string;
+    contactPerson: string;
+    mobileNo: string;
+    email: string;
+    serviceProviderName: string;
+    gstNo: string;
+    address: string;
+
 
     // Registration/Approval Info
-    registrationNo?: string;
+    registerNo?: string;
     approvalDate: Date | string;
     validUpTo?: Date | string;
 
     // Evaluation Info
-    lastEvaluationDate?: Date | string;
+    lastReviewDate?: Date | string;
+    agreementDate?: Date | string;
     lastScore?: number;
-    performanceGrade?: 'A' | 'B' | 'C' | 'D';
+    performanceRating?: 'A' | 'B' | 'C' | 'D';
+    isPresentStatus: boolean;
+    productApproved:boolean;
 
     // Status
     isBlacklisted: boolean;
+    blacklistDate?: Date | string;
+    blacklistReason?: string;
     remarks?: string;
-
+    preparedBy: string; // General Manager
+    reviewedBy?: string;
+    approvedBy?: string;
     // Audit Fields
     createdBy?: string;
     createdOn?: Date | string;
     modifiedBy?: string;
     modifiedOn?: Date | string;
     isActive?: boolean;
+    enlistmentDate: Date | string;
 }
 
 export interface ApprovedSupplierResponse {

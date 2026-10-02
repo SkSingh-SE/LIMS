@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,14 +46,9 @@
 
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'COMPLAINT REGISTER'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'COMPLAINT REGISTER'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo" [revDate]="data.date"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
@@ -68,15 +60,15 @@
           <tbody>
             <tr>
               <td class="lbl" style="width: 25%">Month &amp; Year</td>
-              <td style="width: 25%">{{ data.monthYear }}</td>
+              <td style="width: 25%">{{ data.monthYear | date: "MMM, yyyy"}}</td>
               <td class="lbl" style="width: 25%">Complaint No.</td>
               <td style="width: 25%">{{ data.complaintNo }}</td>
             </tr>
             <tr>
-              <td class="lbl">Date</td>
-              <td>{{ data.dateOfComplaint | date: "dd.MM.yyyy" }}</td>
-              <td class="lbl">Complainant</td>
-              <td>{{ data.complainantName }}</td>
+              <!-- <td class="lbl">Date</td>
+              <td>{{ data.dateOfComplaint | date: "dd.MM.yyyy" }}</td> -->
+              <td class="lbl">Complaint</td>
+              <td colspan="3">{{ data.complainantName }}</td>
             </tr>
           </tbody>
         </table>
@@ -85,7 +77,7 @@
       <!-- Details of Complaint -->
       <div class="doc-section mb-3">
         <div class="sec-title">DETAILS OF COMPLAINT</div>
-        <div class="sec-body" [innerHTML]="data.detailsOfComplaint"></div>
+        <div class="sec-body" [innerHTML]="data.complaintDescription"></div>
       </div>
 
       <!-- Validation of Complaint -->
@@ -103,7 +95,7 @@
       <!-- Corrective Actions Taken -->
       <div class="doc-section mb-3">
         <div class="sec-title">CORRECTIVE ACTIONS TAKEN</div>
-        <div class="sec-body" [innerHTML]="data.correctiveActionsTaken"></div>
+        <div class="sec-body" [innerHTML]="data.correctiveAction"></div>
       </div>
 
       <!-- Customer Response Reference -->
@@ -113,7 +105,7 @@
           <tbody>
             <tr>
               <td class="lbl" style="width: 30%">Reference No &amp; Date (Customer Response)</td>
-              <td>{{ data.referenceNoDate }}</td>
+              <td>{{ data.referenceNoDate | date:"dd.MM.yyyy" }}</td>
             </tr>
           </tbody>
         </table>
@@ -122,11 +114,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'Quality Manager'"
-        [preparedByRole]="'Signature of QM'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

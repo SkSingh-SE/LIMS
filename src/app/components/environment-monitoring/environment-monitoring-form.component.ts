@@ -1,4 +1,4 @@
-import { Component, OnInit, signal , HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -9,11 +9,14 @@ import { YearHelper } from '../../utility/helper/year.helper';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../services/unsaved-changes.service';
+import { SearchableDropdownComponent } from '../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { NablSignatureSectionComponent } from '../nabl/nabl-signature-section/nabl-signature-section.component';
+import { NablHeaderService } from '../../services/nabl-header.service';
 
 @Component({
   selector: 'app-environment-monitoring-form',
 
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, SearchableDropdownComponent, NablSignatureSectionComponent],
   templateUrl: './environment-monitoring-form.component.html',
   styleUrl: './environment-monitoring-form.component.css',
   providers: [DatePipe]
@@ -62,11 +65,18 @@ export class EnvironmentMonitoringFormComponent implements CanComponentDeactivat
     private environmentService: EnvironmentMonitoringService,
     private router: Router,
     private route: ActivatedRoute,
-    private datePipe: DatePipe
-  , private unsavedChangesService: UnsavedChangesService) { }
+    private datePipe: DatePipe,
+    private unsavedChangesService: UnsavedChangesService,
+    private nablHeaderService: NablHeaderService) { }
 
   ngOnInit(): void {
     this.initForm();
+    this.nablHeaderService.getFormDefaults('EnvironmentMonitoring').subscribe({
+      next: (defaults) => {
+        this.monitorForm.patchValue({ FormCode: defaults.formCode });
+      },
+      error: () => { }
+    });
     this.route.url.subscribe(url => {
       const path = url[url.length - 2]?.path;
       if (path === 'details') {
@@ -88,35 +98,52 @@ export class EnvironmentMonitoringFormComponent implements CanComponentDeactivat
       }
     });
 
-    this.monitorForm.get('month')?.valueChanges.subscribe(() => this.generateDailyRecords());
-    this.monitorForm.get('year')?.valueChanges.subscribe(() => this.generateDailyRecords());
+    this.monitorForm.get('monitoringMonth')?.valueChanges.subscribe(() => this.generateDailyRecords());
+    this.monitorForm.get('monitoringYear')?.valueChanges.subscribe(() => this.generateDailyRecords());
   }
 
   initForm(): void {
     const today = new Date().toISOString().split('T')[0];
     this.monitorForm = this.fb.group({
       id: [0],
-      formatNo: ['F-12', Validators.required],
+      FormCode: ['F-12', Validators.required],
       issueNo: ['01', Validators.required],
       revNo: ['00', Validators.required],
       date: [today, Validators.required],
       roomName: ['', Validators.required],
-      month: [new Date().getMonth() + 1, Validators.required],
-      year: [new Date().getFullYear(), Validators.required],
-      tempObjective: ['25 +/- 2', Validators.required],
-      humidityObjective: ['45-65', Validators.required],
+      monitoringMonth: [new Date().getMonth() + 1, Validators.required],
+      monitoringYear: [new Date().getFullYear(), Validators.required],
+      temperature: ['', Validators.required],
+      humidity: ['', Validators.required],
       dailyRecords: this.fb.array([]),
-      generalRemarks: ['']
+      generalRemarks: [''],
+      preparedBy: [''],
+      preparedDate: [today],
+      reviewedBy: [''],
+      reviewedDate: [''],
+      approvedBy: [''],
+      approvedDate: ['']
     });
   }
+
+  getroomOptions = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    // Mock implementation - replace with actual service call
+    return this.environmentService.getRoomOptions(term, page, pageSize);
+  };
 
   get dailyRecords(): FormArray {
     return this.monitorForm.get('dailyRecords') as FormArray;
   }
 
+  onRoomSelect(item: any): void {
+    this.monitorForm.patchValue({ Id: item?.id || 0 });
+    this.monitorForm.patchValue({ roomName: item?.name || '' });
+    this.monitorForm.get('labRoomId')?.setValue(item?.id || 0);
+    this.monitorForm.get('roomName')?.setValue(item?.name || '');
+  }
   generateDailyRecords(): void {
-    const month = this.monitorForm.get('month')?.value;
-    const year = this.monitorForm.get('year')?.value;
+    const month = this.monitorForm.get('monitoringMonth')?.value;
+    const year = this.monitorForm.get('monitoringYear')?.value;
     if (!month || !year) return;
 
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -186,7 +213,10 @@ export class EnvironmentMonitoringFormComponent implements CanComponentDeactivat
     }
 
     const formData = this.monitorForm.getRawValue();
-
+    formData.monitoringMonth = Number(formData.monitoringMonth);
+    formData.monitoringYear = Number(formData.monitoringYear);
+    formData.temperature = Number(formData.temperature);
+    formData.humidity = Number(formData.humidity);
     if (this.isEditMode) {
       this.environmentService.update(this.recordId, formData).subscribe({
         next: (res: any) => {

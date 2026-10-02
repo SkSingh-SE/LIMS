@@ -1,0 +1,390 @@
+.form-section {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.section-title {
+    padding: 10px 15px;
+    border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 14px;
+    color: black;
+    border-left: 4px solid black;
+}
+
+.form-section>.row,
+.form-section>.table-responsive {
+    padding: 15px;
+}
+
+
+/* =========================================================
+   QUESTIONS CONTAINER
+   ========================================================= */
+
+.questions-container {
+    width: 100%;
+}
+
+
+/* =========================================================
+   QUESTION CARD
+   ========================================================= */
+
+.question-card {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 14px;
+    margin: 15px;
+    background: #fff;
+}
+
+
+/* =========================================================
+   QUESTION HEADER
+   ========================================================= */
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.question-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #0d6efd;
+}
+
+
+/* =========================================================
+   QUESTION TEXTAREA
+   ========================================================= */
+
+.question-input {
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+}
+
+
+/* =========================================================
+   OPTIONS GRID
+   2 OPTIONS PER ROW
+   ========================================================= */
+
+.options-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    column-gap: 30px;
+    row-gap: 18px;
+
+    margin-top: 18px;
+}
+
+
+/* =========================================================
+   OPTION BOX
+   ========================================================= */
+
+.option-box {
+    width: 100%;
+    min-width: 0;
+}
+
+
+/* =========================================================
+   OPTION INPUT GROUP
+   RADIO + LABEL + TEXTAREA
+   ALL IN SAME ROW
+   ========================================================= */
+
+.option-input-group {
+    width: 100%;
+    min-width: 0;
+
+    display: flex;
+    align-items: stretch;
+
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   RADIO AREA
+   ========================================================= */
+
+.option-radio {
+    width: 45px;
+    min-width: 45px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #f8f9fa;
+    border-right: 1px solid #ced4da;
+}
+
+
+/* =========================================================
+   OPTION LETTER
+   ========================================================= */
+
+.option-label {
+    width: 45px;
+    min-width: 45px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 600;
+
+    background: #f8f9fa;
+
+    border-right: 1px solid #ced4da;
+}
+
+
+/* =========================================================
+   OPTION TEXTAREA
+   IMPORTANT:
+   TEXTAREA REMAINS BESIDE RADIO + LETTER
+   ========================================================= */
+
+.option-textarea {
+    flex: 1 1 auto;
+
+    width: 100%;
+    min-width: 0;
+
+    min-height: 60px;
+
+    border: 0;
+    border-radius: 0;
+
+    resize: vertical;
+
+    padding: 8px 10px;
+
+    line-height: 1.4;
+}
+
+
+/* Remove default focus border from textarea
+   because parent has border */
+
+.option-textarea:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+
+/* =========================================================
+   OPTION VALIDATION
+   ========================================================= */
+
+.option-input-group:focus-within {
+    border-color: #86b7fe;
+}
+
+
+/* =========================================================
+   VALIDATION TEXT
+   ========================================================= */
+
+.text-sm {
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   ADD QUESTION BAR
+   ========================================================= */
+
+.skill-action-bar {
+    padding: 10px 15px;
+    border-top: 1px solid #dee2e6;
+    background: #f8f9fa;
+}
+
+
+/* =========================================================
+   REMOVE BUTTON
+   ========================================================= */
+
+.btn-remove {
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background: transparent;
+}
+
+.btn-remove:hover {
+    background: #dc3545;
+    color: #fff;
+}
+
+
+/* =========================================================
+   FORM FOOTER
+   ========================================================= */
+
+.form-footer {
+    border-top: 1px solid #dee2e6;
+    padding-top: 15px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.table th {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* =========================================================
+   RESULT CONFIGURATION
+   ========================================================= */
+
+.result-config-container {
+    padding: 15px;
+}
+
+
+/* =========================================================
+   RESULT CONFIGURATION TABLE
+   ========================================================= */
+
+.result-config-table {
+    width: 100%;
+    margin-bottom: 0;
+    border: 1px solid #dee2e6;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
+
+.result-config-table thead th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 13px;
+    color: #212529;
+    vertical-align: middle;
+    padding: 10px;
+}
+
+
+/* =========================================================
+   TABLE BODY
+   ========================================================= */
+
+.result-config-table tbody td {
+    vertical-align: middle;
+    padding: 10px;
+}
+
+
+/* =========================================================
+   READONLY FIELDS
+   ========================================================= */
+
+.result-readonly-field {
+    background-color: #f1f3f5;
+    cursor: default;
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   INTERPRETATION INPUT
+   ========================================================= */
+
+.result-config-table .form-control {
+    min-height: 38px;
+}
+
+
+/* =========================================================
+   VALIDATION TEXT
+   ========================================================= */
+
+.result-config-table .text-sm {
+    font-size: 12px;
+}
+
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 992px) {
+
+    .options-grid {
+        column-gap: 20px;
+    }
+
+    .question-card {
+        margin: 12px;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    /* One option per row on mobile */
+    .options-grid {
+        grid-template-columns: 1fr;
+        row-gap: 15px;
+    }
+
+    .question-card {
+        margin: 10px;
+        padding: 12px;
+    }
+
+    .form-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-footer .d-flex {
+        justify-content: flex-end;
+    }
+
+    .result-config-container {
+        padding: 10px;
+    }
+
+    .result-config-table {
+        min-width: 650px;
+    }
+}

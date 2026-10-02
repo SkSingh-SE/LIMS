@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="auditorForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="auditorForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -64,53 +64,246 @@
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('auditorDetails')">
             <i class="bi" [ngClass]="openSections['auditorDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Internal Auditor Details</span>
+            <span class="fw-bold ms-2">II. Auditor Information</span>
           </div>
           <div *ngIf="openSections['auditorDetails']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-6">
-                <label class="form-label">
-                  Auditor Name
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="auditorName" />
+
+              <div class="col-4">
+                <app-searchable-dropdown [required]="true" [fetchDataFn]="getEmployees"
+                  [placeholder]="'Search Employee'" [labelName]="'Employee'" [isDisabled]="isViewMode"
+                  (itemSelected)="onEmployeeSelected($event)" [selectedItem]="auditorForm.get('employeeId')?.value">
+                </app-searchable-dropdown>
+                <div *ngIf="auditorForm.get('employeeId')?.invalid && auditorForm.get('employeeId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  employee is required
+                </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">
-                  Qualification
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="qualification" />
+              <div class="col-4">
+                <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
+                  [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                  (itemSelected)="onDepartmentSelected($event)" [selectedItem]="auditorForm.get('departmentId')?.value"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+                <div *ngIf="auditorForm.get('departmentId')?.invalid && auditorForm.get('departmentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department is required
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">
-                  Training Date
+                  Designation
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="trainingDate" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Exam Score
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="number" class="form-control" formControlName="examScore" placeholder="e.g. 85" min="0" max="100" />
-              </div>
-              <div class="col-md-12">
-                <label class="form-label">Remarks</label>
-                <textarea class="form-control" formControlName="remarks" rows="3"></textarea>
+                <input type="text" class="form-control" formControlName="designation" placeholder="designation" />
+                <div *ngIf="auditorForm.get('designation')?.invalid && auditorForm.get('designation')?.touched"
+                  class="text-danger text-sm mt-1">
+                  designation is required
+                </div>
               </div>
             </div>
           </div>
         </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('auditorTraining')">
+            <i class="bi" [ngClass]="openSections['auditorTraining'] ? 'bi-chevron-down' : 'bi-chevron-right'">
+            </i>
+            <span class="fw-bold ms-2">III. Auditor Training & Certification</span>
+          </div>
 
-        
+          <div *ngIf="openSections['auditorTraining']" class="section-body">
+            <div class="row gy-3">
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Lead Auditor Course
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select form-select-sm" formControlName="leadAuditorCourse">
+                  <option [ngValue]="true">Yes</option>
+                  <option [ngValue]="false">No</option>
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Auditor Course
+                  <span class="text-danger">*</span>
+                </label>
+
+                <select class="form-select form-select-sm" formControlName="internalAuditorCourse">
+
+                  <option [ngValue]="true">Yes</option>
+                  <option [ngValue]="false">No</option>
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Certificate No.
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control" formControlName="certificateNo" placeholder="certificate no" />
+
+                <div *ngIf="auditorForm.get('certificateNo')?.invalid &&
+                 auditorForm.get('certificateNo')?.touched" class="text-danger text-sm mt-1">
+                  certificate no is required
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Training Organization
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control" formControlName="trainingOrganization"
+                  placeholder="training organization" />
+
+                <div *ngIf="auditorForm.get('trainingOrganization')?.invalid &&
+                 auditorForm.get('trainingOrganization')?.touched" class="text-danger text-sm mt-1">
+                  training organization is required
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Certificate Issue Date
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="date" class="form-control" formControlName="certificateIssueDate" />
+
+                <div *ngIf="auditorForm.get('certificateIssueDate')?.invalid &&
+                 auditorForm.get('certificateIssueDate')?.touched" class="text-danger text-sm mt-1">
+                  certificate issue date is required
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  Certificate Expiry Date
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="date" class="form-control" formControlName="certificateExpiryDate" />
+
+                <div *ngIf="auditorForm.get('certificateExpiryDate')?.invalid &&
+                 auditorForm.get('certificateExpiryDate')?.touched" class="text-danger text-sm mt-1">
+                  certificate expiry date is required
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('auditorCompentency')">
+            <i class="bi" [ngClass]="openSections['auditorCompentency'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Audit Competency & Authorization</span>
+          </div>
+          <div *ngIf="openSections['auditorCompentency']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-6">
+                <app-multi-select-dropdown [labelName]="'ISO Clauses (Select All that apply)'"
+                  [placeholder]="'Select ISO Clauses'" [fetchDataFn]="getISOClauses"
+                  (itemsSelected)="onISOClausesSelected($event)" [selectedValues]="selectedISOClauseIds"
+                  [isDisabled]="isViewMode">
+                </app-multi-select-dropdown>
+
+                <div *ngIf="isoClauses.invalid && isoClauses.touched" class="text-danger text-sm mt-1">
+                  at least one ISO clause is required
+                </div>
+              </div>
+              <div class="col-md-6">
+                <app-multi-select-dropdown [labelName]="'Authorized Areas (Departments / Processes)'"
+                  [placeholder]="'Select Department'" [fetchDataFn]="getAuthorizedDepartments"
+                  (itemsSelected)="onAuthrizedDept($event)" [selectedValues]="selectedDepartmentIds"
+                  [isDisabled]="isViewMode">
+                </app-multi-select-dropdown>
+
+                <div *ngIf="departmentList.invalid && departmentList.touched" class="text-danger text-sm mt-1">
+                  at least one authorized department is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Authorization Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="authorizationDate" />
+                <div *ngIf="auditorForm.get('authorizationDate')?.invalid &&
+                 auditorForm.get('authorizationDate')?.touched" class="text-danger text-sm mt-1">
+                  authorization date is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Valid Upto
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="authorizationValidUpto" />
+                <div *ngIf="auditorForm.get('authorizationValidUpto')?.invalid &&
+                 auditorForm.get('authorizationValidUpto')?.touched" class="text-danger text-sm mt-1">
+                  valid upto is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">
+                  Audit Experience (In Years)
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" formControlName="auditExperience"
+                  placeholder="audit experience" />
+                <div *ngIf="auditorForm.get('auditExperience')?.invalid &&
+                 auditorForm.get('auditExperience')?.touched" class="text-danger text-sm mt-1">
+                  audit experience is required
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('authorizationDetails')">
+            <i class="bi" [ngClass]="openSections['authorizationDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'">
+            </i>
+            <span class="fw-bold ms-2">V. Authorization Details</span>
+          </div>
+
+          <div *ngIf="openSections['authorizationDetails']" class="section-body">
+            <div class="row gy-3">
+
+              <div class="col-md-4">
+                <app-searchable-dropdown [required]="true" [fetchDataFn]="getEmployees"
+                  [placeholder]="'Search Employee'" [labelName]="'Authorized By'" [isDisabled]="isViewMode"
+                  (itemSelected)="onAuthorizedBySelected($event)"
+                  [selectedItem]="auditorForm.get('authorizedById')?.value">
+                </app-searchable-dropdown>
+
+                <div *ngIf="auditorForm.get('authorizedById')?.invalid &&
+                 auditorForm.get('authorizedById')?.touched" class="text-danger text-sm mt-1">
+                  authorized by is required
+                </div>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">
+                  Remarks
+                </label>
+
+                <textarea class="form-control" formControlName="remarks" rows="3" placeholder="remarks"></textarea>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         <app-nabl-signature-section [parentForm]="auditorForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="auditorForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Record" : "Save Record" }}
           </button>
         </div>

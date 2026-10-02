@@ -16,6 +16,9 @@ export interface DocumentChangeRequest {
     docNo: string;
     headerIssueNo: string | number;
     headerIssueDate: string | Date;
+    requestDate: string | Date;
+    effectiveDate: string | Date;
+    nextReviewDate: string | Date;
     headerRevNo: string | number;
     headerRevDate: string | Date;
 }

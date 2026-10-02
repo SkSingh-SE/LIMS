@@ -1,11 +1,30 @@
-export interface RetestParameter {
+export interface InitialTestingLogs {
     srNo: number;
-    parameterTested: string;
-    originalResult: string;
-    retestResult: string;
-    acceptableLimits: string;
+    dateOfTesting: string;
+    sampleId: string;
+    resultPrefix: string;
+    resultValue: number;
+    initialEmployeeId: number;
+    initialEmployeeName: string;
+    initialEmployeeSelected: string;
+    initialRemarks: string; // Satisfactory / Not Satisfactory
+}
+export interface RetestingLogs {
+    srNo: number;
+    qcMonth: string;
+    dateOfRetesting: string;
+    sampleId: string;
+    previousPrefix: string;
+    previousValue: number;
+    retestPrefix: string;
+    retestValue: number;
+    difference: number;
+    acceptableLimit: number;
     deviation: string;
-    status: string; // Satisfactory / Not Satisfactory
+    resultStatus: string; // Satisfactory / Not Satisfactory
+    testedById: number; // Satisfactory / Not Satisfactory
+    testedByName: string; // Satisfactory / Not Satisfactory
+    remarks: string; // Satisfactory / Not Satisfactory
 }
 
 export interface RetestingOfRetainedSample {
@@ -25,7 +44,8 @@ export interface RetestingOfRetainedSample {
     dateOfRetesting: string;
 
     // Retest Parameters
-    parameters: RetestParameter[];
+    retestingLogs: RetestingLogs[];
+    initialTestingLogs:InitialTestingLogs[];
 
     // Review & Signatures
     remarks: string;

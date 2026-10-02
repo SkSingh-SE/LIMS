@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentChangeRequestService } from '../../../../services/document-change-request.service';
 import { NablRegisterTableComponent, RegisterColumn } from '../../nabl-register-table/nabl-register-table.component';
-
+import { ToastService } from '../../../../services/toast.service';
 @Component({
     selector: 'app-document-change-request-list',
     standalone: true,
@@ -17,24 +17,34 @@ export class DocumentChangeRequestListComponent implements OnInit {
     baseRoute = '/document-change-request';
 
     columns: RegisterColumn[] = [
-        { key: 'date', label: 'Date', type: 'date', width: '120px', filter: true },
-        { key: 'documentTitle', label: 'Document Title', type: 'string', filter: true },
-        { key: 'documentNo', label: 'Doc No.', type: 'string', width: '150px', filter: true },
-        { key: 'initiatedBy', label: 'Initiated By', type: 'string', filter: true },
-        { key: 'approvedBy', label: 'Approved By', type: 'string', filter: true }
+        { key: 'requestNo', label: 'Change Request No', type: 'string', filter: true },
+        { key: 'changeType', label: 'Type of Change', type: 'string', filter: true },
+        { key: 'documentName', label: 'Document Name', type: 'string', filter: true },
+        { key: 'requestDate', label: 'Request Date', type: 'date', width: '120px', filter: true },
+        { key: 'priority', label: 'Priority', type: 'string', width: '150px', filter: true },
+        { key: 'reviewedByName', label: 'Requested By', type: 'string', filter: true },
     ];
 
     data = signal<any[]>([]);
     totalItems = signal(0);
 
-    constructor(private service: DocumentChangeRequestService) { }
+    constructor(private service: DocumentChangeRequestService,
+        private toastService: ToastService
+    ) { }
 
     ngOnInit() {
-        this.fetchData();
+        this.fetchData({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
     fetchData(params: any = {}) {
-        this.service.getAll().subscribe({
+        this.service.getAll(params).subscribe({
             next: (resp) => {
                 this.data.set(resp.items || []);
                 this.totalItems.set(resp.totalRecords || 0);
@@ -44,7 +54,26 @@ export class DocumentChangeRequestListComponent implements OnInit {
             }
         });
     }
-
+    deleteRecord(id: number) {
+        if (confirm('Are you sure you want to delete this record?')) {
+            this.service.delete(id).subscribe({
+                next: (res) => {
+                    this.toastService.show('Record deleted successfully', 'success');
+                    this.fetchData({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'desc',
+                        filter: []
+                    });
+                },
+                error: (err) => {
+                    this.toastService.show(err.message || 'Error deleting record', 'error');
+                }
+            });
+        }
+    }
     onPageChange(params: any) {
         this.fetchData(params);
     }

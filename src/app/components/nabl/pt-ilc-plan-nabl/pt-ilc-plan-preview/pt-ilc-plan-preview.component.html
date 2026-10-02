@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,14 +36,11 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'PROFICIENCY TESTING / ILC PLAN'"
-        [docNo]="'DMSPL / Level-04 / Format / ' + data.formatNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.date"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+
+      <app-nabl-print-header [formatNo]="data()?.formatNo || 'F-36'" [mainTitle]="'PROFICIENCY TESTING / ILC PLAN'"
+        [docNo]="'DMSPL / Level-04 / Format /F-36 '" [issueNo]="data()?.issueNo || '01'"
+        [issueDate]="data()?.date || ''" [revNo]="data()?.revNo || '01'"
+        [revDate]="data()?.date || ''"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
@@ -57,15 +51,20 @@
           <tbody>
             <tr>
               <td class="lbl" style="width: 30%">Laboratory ID (CAB ID)</td>
-              <td class="fw-bold" style="width: 20%">{{ data.laboratoryId }}</td>
-              <td class="lbl" style="width: 30%">Period of Participation</td>
-              <td style="width: 20%">{{ data.periodOfParticipation }}</td>
+              <td class="fw-bold" style="width: 20%">{{ data()?.laboratoryId }}</td>
             </tr>
             <tr>
               <td class="lbl">Laboratory Name</td>
-              <td>{{ data.laboratoryName }}</td>
+              <td>{{ data()?.laboratoryName }}</td>
+            </tr>
+            <tr>
               <td class="lbl">Field of Accreditation</td>
-              <td>{{ data.fieldOfAccreditation }}</td>
+              <td>{{ data()?.fieldOfAccreditation }}</td>
+            </tr>
+            <tr>
+              <td class="lbl" style="width: 30%">Period of Participation</td>
+              <td style="width: 20%">{{ data()?.periodStartDate | date:'dd/MM/yyyy' }} - {{ data()?.periodEndDate |
+                date:'dd/MM/yyyy' }}</td>
             </tr>
           </tbody>
         </table>
@@ -77,51 +76,58 @@
         <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head">
-              <th rowspan="2" style="width: 50px">S.N.</th>
-              <th rowspan="2">Accredited Discipline(s)</th>
-              <th rowspan="2">Group(s)/Subgroups</th>
-              <th colspan="2">PT/ILC Activities Plan</th>
-              <th colspan="2">Status and Result</th>
-              <th colspan="2">Remarks</th>
+              <th rowspan="2" style="width: 30px">S.N.</th>
+              <th rowspan="2" style="width:140px; min-width:140px;">Accredited Discipline(s)</th>
+              <th rowspan="2" style="width:165px; min-width:150px;">Group(s)/Subgroups</th>
+              <th [attr.colspan]="maxYearCount">PT/ILC Activities Plan</th>
+              <th [attr.colspan]="maxYearCount">Status and Result</th>
+              <th [attr.colspan]="maxYearCount">Remarks</th>
             </tr>
             <tr class="tbl-head">
-              <th>1st Year</th>
-              <th>2nd Year</th>
-              <th>1st Year</th>
-              <th>2nd Year</th>
-              <th>1st Year</th>
-              <th>2nd Year</th>
+              <th *ngFor="let item of getColumns(); let i=index">
+                {{ i + 1 }} Year
+              </th>
+
+              <th *ngFor="let item of getColumns(); let i=index">
+                {{ i + 1 }} Year
+              </th>
+
+              <th *ngFor="let item of getColumns(); let i=index">
+                {{ i + 1 }} Year
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let entry of data.entries; let i = index" class="text-center">
+            <tr *ngFor="let entry of data()?.activities; let i = index" class="text-center">
               <td>{{ i + 1 }}</td>
               <td class="text-start">{{ entry.accreditedDiscipline }}</td>
               <td>{{ entry.groupSubgroup }}</td>
-              <td>{{ entry.ptActivityYear1 }}</td>
-              <td>{{ entry.ptActivityYear2 }}</td>
-              <td>{{ entry.statusYear1 }}</td>
-              <td>{{ entry.statusYear2 }}</td>
-              <td>{{ entry.remarksYear1 }}</td>
-              <td>{{ entry.remarksYear2 }}</td>
+              <td *ngFor="let item of getColumns(); let j=index">
+                {{ entry.years[j]?.ptActivity}}
+              </td>
+
+              <td *ngFor="let item of getColumns(); let j=index">
+                {{ entry.years[j]?.status }}
+              </td>
+
+              <td *ngFor="let item of getColumns(); let j=index">
+                {{ entry.years[j]?.remarks }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Notes -->
-      <div class="doc-section mb-3" *ngIf="data.notes">
+      <div class="doc-section mb-3" *ngIf="data()?.note">
         <div class="sec-title">III. NOTES</div>
-        <div class="sec-body">{{ data.notes }}</div>
+        <div class="sec-body">{{ data()?.note }}</div>
       </div>
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [preparedByName]="data.preparedBy"
-        [issuedByName]="data.issuedBy"
-        [reviewedApprovedByName]="data.reviewedApprovedBy"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data()?.preparedBy || ''" [issuedByName]="data()?.reviewedBy || ''"
+        [reviewedApprovedByName]="data()?.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="auditForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="auditForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -47,7 +47,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -66,65 +66,337 @@
             <i class="bi" [ngClass]="openSections['planDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">II. Audit Schedule & Plan Details</span>
           </div>
+
           <div *ngIf="openSections['planDetails']" class="section-body">
             <div class="row gy-3">
-              <div class="col-md-4">
+
+              <div class="col-md-3">
+                <label class="form-label">
+                  Audit Plan No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="planNo" />
+              </div>
+
+              <div class="col-md-3">
                 <label class="form-label">
                   Audit Type
                   <span class="text-danger">*</span>
                 </label>
+
                 <select class="form-select" formControlName="auditType">
-                  <option value="Internal Audit">Internal Audit</option>
-                  <option value="Surveillance Audit">Surveillance Audit</option>
-                  <option value="Special Audit">Special Audit</option>
+
+                  <option *ngFor="let auditType of auditTypes" [value]="auditType">
+                    {{ auditType }}
+                  </option>
+
                 </select>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="form-label">
-                  Period of Audit
+                  Planning Year
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="period" placeholder="e.g. 2024-25" />
+
+                <select class="form-select" formControlName="auditYear">
+                  <option [ngValue]="null">Select Year</option>
+
+                  <option *ngFor="let y of yearOptions" [ngValue]="y">
+                    {{ y }}
+                  </option>
+                </select>
+
+                <div *ngIf="
+      auditForm.get('auditYear')?.invalid &&
+      auditForm.get('auditYear')?.touched
+    " class="text-danger text-sm mt-1">
+                  planning year is required
+                </div>
               </div>
-              <div class="col-md-4">
+
+
+              <!-- Lead Auditor -->
+              <div class="col-md-3">
+                <app-searchable-dropdown [required]="true" [fetchDataFn]="getAuditors"
+                  [placeholder]="'Search Lead Auditors'" [labelName]="'Lead Auditor'" [isDisabled]="isViewMode"
+                  (itemSelected)="onAuditorsSelected($event)" [selectedItem]="auditForm.get('leadAuditorId')?.value">
+                </app-searchable-dropdown>
+
+                <div *ngIf="
+      auditForm.get('leadAuditorId')?.invalid &&
+      auditForm.get('leadAuditorId')?.touched
+    " class="text-danger text-sm mt-1">
+                  lead auditor is required
+                </div>
+              </div>
+
+
+              <!-- Schedule From -->
+              <div class="col-md-3">
                 <label class="form-label">
-                  Area / Department
+                  Schedule From
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="areaDepartment" />
+
+                <input type="date" class="form-control" formControlName="scheduleDateFrom" />
+
+                <div *ngIf="
+      auditForm.get('scheduleDateFrom')?.invalid &&
+      auditForm.get('scheduleDateFrom')?.touched
+    " class="text-danger text-sm mt-1">
+                  schedule from date is required
+                </div>
               </div>
+
+
+              <!-- Schedule To -->
+              <div class="col-md-3">
+                <label class="form-label">
+                  Schedule To
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="date" class="form-control" formControlName="scheduleDateTo" />
+
+                <div *ngIf="
+      auditForm.get('scheduleDateTo')?.invalid &&
+      auditForm.get('scheduleDateTo')?.touched
+    " class="text-danger text-sm mt-1">
+                  schedule to date is required
+                </div>
+              </div>
+
+
+              <!-- Audit Criteria -->
               <div class="col-md-6">
                 <label class="form-label">
-                  Auditor Name
+                  Audit Criteria
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="auditorName" />
+
+                <textarea class="form-control" formControlName="auditCriteria" rows="3">
+  </textarea>
+
+                <div *ngIf="
+      auditForm.get('auditCriteria')?.invalid &&
+      auditForm.get('auditCriteria')?.touched
+    " class="text-danger text-sm mt-1">
+                  audit criteria is required
+                </div>
               </div>
+
+
+              <!-- Scope of Audit -->
               <div class="col-md-6">
-                <label class="form-label">
-                  Schedule Date
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="scheduleDate" />
-              </div>
-              <div class="col-md-12">
                 <label class="form-label">
                   Scope of Audit
                   <span class="text-danger">*</span>
                 </label>
-                <textarea class="form-control" formControlName="scope" rows="3"></textarea>
+
+                <textarea class="form-control" formControlName="auditScope" rows="3">
+  </textarea>
+
+                <div *ngIf="
+      auditForm.get('auditScope')?.invalid &&
+      auditForm.get('auditScope')?.touched
+    " class="text-danger text-sm mt-1">
+                  scope of audit is required
+                </div>
               </div>
+
+
+              <!-- Audit Objective -->
+              <div class="col-md-6">
+                <label class="form-label">
+                  Audit Objective
+                  <span class="text-danger">*</span>
+                </label>
+
+                <textarea class="form-control" formControlName="auditObjective" rows="3">
+  </textarea>
+
+                <div *ngIf="
+      auditForm.get('auditObjective')?.invalid &&
+      auditForm.get('auditObjective')?.touched
+    " class="text-danger text-sm mt-1">
+                  audit objective is required
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">
+                  Remarks
+                </label>
+
+                <textarea class="form-control" formControlName="remarks" rows="3">
+        </textarea>
+              </div>
+
             </div>
           </div>
         </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('scheduleItems')">
+            <i class="bi" [ngClass]="openSections['scheduleItems'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">III. Schedule Items</span>
+          </div>
+          <div *ngIf="openSections['scheduleItems']" class="section-body">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+                <thead class="table-light align-middle text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th>Department</th>
+                    <th>ISO Clauses</th>
+                    <th>Schedule Date</th>
+                    <th>Auditor</th>
+                    <th>Auditee</th>
+                    <th>Status</th>
+                    <th>Checklist</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="scheduleItems">
+                  <tr *ngFor="let param of scheduleItems.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td>
+                      <app-searchable-dropdown [hideLabel]="true" [placeholder]="'Search Department'"
+                        [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event, i)"
+                        [selectedItem]="param.get('departmentId')?.value" [isDisabled]="isScheduleItemLocked(param)">
+                      </app-searchable-dropdown>
 
-        
+                      <small class="text-danger" *ngIf="
+      param.get('departmentId')?.invalid &&
+      param.get('departmentId')?.touched
+    ">
+                        department is required.
+                      </small>
+                    </td>
+                    <td>
+                      <app-multi-select-dropdown [hideLabel]="true" [placeholder]="'Select ISO Clauses'"
+                        [fetchDataFn]="getISOClauses" (itemsSelected)="onISOClausesSelected($event, i)"
+                        [selectedValues]="getSelectedISOClauseIds(i)" [isDisabled]="isScheduleItemLocked(param)">
+                      </app-multi-select-dropdown>
+
+                      <small class="text-danger" *ngIf="
+      getRowISOClauses(i).invalid &&
+      getRowISOClauses(i).touched
+    ">
+                        at least one ISO clause is required.
+                      </small>
+                    </td>
+                    <!-- Schedule Date -->
+                    <td>
+                      <input type="date" class="form-control" formControlName="scheduleDate"
+                        [min]="auditForm.get('scheduleDateFrom')?.value" [max]="auditForm.get('scheduleDateTo')?.value"
+                        (change)="onScheduleDateChange(i)" [readOnly]="
+      param.get('status')?.value === 'InProgress' ||
+      param.get('status')?.value === 'Completed'
+    " />
+
+                      <small class="text-danger" *ngIf="
+      param.get('scheduleDate')?.hasError('required') &&
+      param.get('scheduleDate')?.touched
+    ">
+                        schedule date is required.
+                      </small>
+
+                      <small class="text-danger" *ngIf="
+      param.get('scheduleDate')
+        ?.hasError('beforeScheduleFrom')
+    ">
+                        date cannot be before Schedule From.
+                      </small>
+
+                      <small class="text-danger" *ngIf="
+      param.get('scheduleDate')
+        ?.hasError('afterScheduleTo')
+    ">
+                        date cannot be after Schedule To.
+                      </small>
+                    </td>
+
+                    <!-- Auditor -->
+                    <td>
+                      <ng-container *ngIf="param.get('showAuditorDropdown')?.value">
+
+                        <app-searchable-dropdown [hideLabel]="true" [placeholder]="
+    canLoadEligibleAuditors(i)
+      ? 'Select Auditor'
+      : 'Select Department, Clauses & Date'
+  " [fetchDataFn]="getEligibleAuditors(i)" (itemSelected)="onAuditorSelected($event, i)"
+                          [selectedItem]="param.get('auditorId')?.value" [isDisabled]="
+        isScheduleItemLocked(param) ||
+        !canLoadEligibleAuditors(i)
+    ">
+                        </app-searchable-dropdown>
+                      </ng-container>
+
+                      <small class="text-danger" *ngIf="
+      param.get('auditorId')?.invalid &&
+      param.get('auditorId')?.touched
+    ">
+                        eligible auditor is required.
+                      </small>
+                    </td>
+                    <!-- Auditee -->
+                    <td>
+                      <app-searchable-dropdown [hideLabel]="true" [placeholder]="'Search Auditee'"
+                        [fetchDataFn]="getEmployees" (itemSelected)="
+                  onAuditeeSelected($event, i)
+                " [selectedItem]="
+                  param.get('auditeeId')?.value
+                " [isDisabled]="isScheduleItemLocked(param)">
+                      </app-searchable-dropdown>
+
+                      <small class="text-danger" *ngIf="
+                  param.get('auditeeId')?.invalid &&
+                  param.get('auditeeId')?.touched
+                ">
+                        auditee is required.
+                      </small>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="text-center">
+                      {{ param.get('status')?.value || 'Scheduled' }}
+                    </td>
+
+                    <!-- Checklist -->
+                    <td class="text-center">
+                      <button type="button" class="btn btn-primary btn-sm" *ngIf="param.get('id')?.value"
+                        (click)="openChecklist(param)">
+
+                        {{ getChecklistButtonLabel(param) }}
+
+                      </button>
+                    </td>
+
+                    <!-- Delete -->
+                    <!-- <td *ngIf="!isViewMode" class="text-center">
+
+                      <button type="button" class="btn btn-remove btn-sm mb-1" (click)="removeScheduleItem(i)">
+
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td> -->
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="p-2 bg-light border-top" *ngIf="!isViewMode">
+            <button type="button" class="btn btn-primary btn-sm mt-2" (click)="addScheduleItem()">
+              <i class="bi bi-plus"></i>
+              Add Schedule Item
+            </button>
+          </div>
+        </div>
         <app-nabl-signature-section [parentForm]="auditForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="auditForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Plan" : "Save Plan" }}
           </button>
         </div>

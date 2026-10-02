@@ -8,21 +8,12 @@
           <i class="bi bi-arrow-left me-1"></i>
           Back to List
         </button>
-        <button
-          *ngIf="!isViewMode"
-          type="button"
-          (click)="onSubmit()"
-          [disabled]="checklistForm.invalid"
-          class="btn btn-sm btn-save d-flex align-items-center"
-        >
-          <i class="bi bi-check-circle me-1"></i>
-          {{ isEditMode ? "Update Checklist" : "Save Checklist" }}
-        </button>
+
       </div>
     </div>
 
     <div class="card-body">
-      <form [formGroup]="checklistForm" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="checklistForm">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -60,7 +51,7 @@
                   Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="issueDate" />
+                <input type="date" class="form-control" formControlName="date" />
               </div>
               <div class="col-md-2">
                 <label class="form-label">
@@ -83,130 +74,279 @@
             <div class="row gy-3">
               <div class="col-md-3">
                 <label class="form-label">
+                  Checklist No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="checklistNo" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Audit Plan No
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="auditPlanNo" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  ISO Clasues
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="isoClause" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
                   Audit Date
                   <span class="text-danger">*</span>
                 </label>
-                <input type="date" class="form-control" formControlName="auditDate" />
+                <input type="date" class="form-control" formControlName="auditDate" readonly />
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Area / Dept
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="areaDepartment" />
+                <input type="text" class="form-control" formControlName="departmentName" readonly />
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Auditor Name
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="auditorName" />
+                <input type="text" class="form-control" formControlName="auditorName" readonly />
               </div>
               <div class="col-md-3">
                 <label class="form-label">
                   Auditee Name
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="auditeeName" />
+                <input type="text" class="form-control" formControlName="auditeeName" readonly />
               </div>
             </div>
           </div>
         </div>
-
         <!-- Section III: Checklist Items -->
         <div class="accordion-section mb-3">
           <div class="section-header d-flex justify-content-between" (click)="toggleSection('checklistItems')">
+
             <div class="d-flex align-items-center">
-              <i class="bi" [ngClass]="openSections['checklistItems'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi" [ngClass]="
+          openSections['checklistItems']
+            ? 'bi-chevron-down'
+            : 'bi-chevron-right'
+        ">
+              </i>
+
               <span>III. Checklist & Observations</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addItem(); $event.stopPropagation()">
+
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add"
+              (click)="addItem(); $event.stopPropagation()">
+
               <i class="bi bi-plus-lg me-1"></i>
               Add Item
             </button>
           </div>
+
           <div *ngIf="openSections['checklistItems']" class="section-body">
-            <div formArrayName="items">
-              <div
-                *ngFor="let item of items.controls; let i = index"
-                [formGroupName]="i"
-                class="border p-3 mb-3 rounded bg-light position-relative"
-              >
-                <button
-                  *ngIf="!isViewMode && items.length > 1"
-                  type="button"
-                  class="btn btn-remove btn-sm position-absolute top-0 end-0 m-2"
-                  (click)="removeItem(i)"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-                <div class="row gy-3">
-                  <div class="col-md-2">
-                    <label class="form-label">
-                      Clause No
-                      <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" class="form-control" formControlName="clauseNo" />
-                  </div>
-                  <div class="col-md-8">
-                    <label class="form-label">
-                      Requirement
-                      <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" class="form-control" formControlName="requirement" />
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">
-                      Compliance
-                      <span class="text-danger">*</span>
-                    </label>
-                    <select class="form-select" formControlName="compliance">
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                      <option value="NA">NA</option>
-                    </select>
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label fw-bold">
-                      Observation
-                      <span class="text-danger">*</span>
-                    </label>
-                    <quill-editor formControlName="observation" [modules]="quillModules"></quill-editor>
-                  </div>
-                </div>
-              </div>
+
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle sm-table mb-0">
+
+                <thead class="table-light text-center">
+                  <tr>
+                    <th style="width: 50px;">SN</th>
+                    <th style="width: 150px;">ISO Clause</th>
+                    <th>Audit Question</th>
+                    <th style="width: 180px;">Finding Type</th>
+                    <th>Objective Evidence</th>
+                    <th>Remarks</th>
+                    <th style="width: 130px;">NCR No</th>
+                    <th style="width: 140px;">NCR Action</th>
+                    <th *ngIf="!isViewMode" style="width: 60px;">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="items">
+                  <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+
+                    <!-- SN -->
+                    <td class="text-center fw-bold text-secondary">
+                      {{ i + 1 }}
+                    </td>
+
+                    <!-- ISO Clause -->
+                    <td>
+                      <select class="form-select" formControlName="isoClauseId" (change)="onClauseSelected(i)"
+                        [class.locked-field]="isChecklistItemLocked(item)">
+
+                        <option [ngValue]="null">Select Clause</option>
+
+                        <option *ngFor="let clause of availableIsoClauses" [ngValue]="clause.clauseId">
+                          {{ clause.clauseName }}
+                        </option>
+                      </select>
+
+                      <small class="text-danger" *ngIf="
+      item.get('isoClauseId')?.invalid &&
+      item.get('isoClauseId')?.touched
+    ">
+                        ISO clause is required.
+                      </small>
+                    </td>
+
+                    <!-- Audit Question -->
+                    <td>
+                      <input type="text" class="form-control" formControlName="auditQuestion"
+                        [class.locked-field]="isChecklistItemLocked(item)" placeholder="Enter audit question" /> <small
+                        class="text-danger" *ngIf="
+                  item.get('auditQuestion')?.invalid &&
+                  item.get('auditQuestion')?.touched
+                ">
+                        Audit question is required.
+                      </small>
+                    </td>
+
+                    <!-- Finding Type -->
+                    <td>
+                      <select class="form-select" formControlName="findingType"
+                        [class.locked-field]="isChecklistItemLocked(item)">
+
+                        <option value="">Select Finding</option>
+                        <option value="Compliant">Compliant</option>
+                        <option value="Observation">Observation</option>
+                        <option value="Minor NC">Minor NC</option>
+                        <option value="Major NC">Major NC</option>
+                      </select>
+
+                      <small class="text-danger" *ngIf="
+                  item.get('findingType')?.invalid &&
+                  item.get('findingType')?.touched
+                ">
+                        Finding type is required.
+                      </small>
+                    </td>
+
+                    <!-- Objective Evidence -->
+                    <td>
+                      <textarea class="form-control" rows="2" formControlName="objectiveEvidence"
+                        [class.locked-field]="isChecklistItemLocked(item)" placeholder="Enter objective evidence">
+</textarea>
+                      <small class="text-danger" *ngIf="
+                  item.get('objectiveEvidence')?.invalid &&
+                  item.get('objectiveEvidence')?.touched
+                ">
+                        Objective evidence is required.
+                      </small>
+                    </td>
+
+                    <!-- Remarks -->
+                    <td>
+                      <textarea class="form-control" rows="2" formControlName="remarks" placeholder="Enter remarks">
+              </textarea>
+                    </td>
+                    <!-- NCR No -->
+                    <td class="text-center">
+                      <span *ngIf="item.get('ncNo')?.value; else noNcrNo">
+                        {{ item.get('ncNo')?.value }}
+                      </span>
+
+                      <ng-template #noNcrNo>
+                        -
+                      </ng-template>
+                    </td>
+
+                    <!-- NCR Action -->
+                    <td class="text-center">
+
+                      <!-- 1. Checklist item abhi save nahi hua -->
+                      <span *ngIf="
+      !item.get('id')?.value &&
+      (
+        item.get('findingType')?.value === 'Minor NC' ||
+        item.get('findingType')?.value === 'Major NC'
+      )
+    " class="text-warning">
+                        Save first
+                      </span>
+
+
+                      <!-- 2. Item saved hai but NCR abhi raise nahi hua -->
+                      <button *ngIf="
+      item.get('id')?.value &&
+      !item.get('ncId')?.value &&
+      (
+        item.get('findingType')?.value === 'Minor NC' ||
+        item.get('findingType')?.value === 'Major NC'
+      )
+    " type="button" class="btn btn-danger btn-sm" (click)="raiseNcr(item)">
+                        Raise NCR
+                      </button>
+
+
+                      <!-- 3. NCR created hai but abhi Completed nahi hai -->
+                      <button *ngIf="
+      item.get('ncId')?.value &&
+      item.get('ncStatus')?.value !== 'Completed'
+    " type="button" class="btn btn-primary btn-sm" (click)="continueNcr(item)">
+                        Continue NCR
+                      </button>
+
+
+                      <!-- 4. NCR completely close ho gaya -->
+                      <button *ngIf="
+      item.get('ncId')?.value &&
+      item.get('ncStatus')?.value === 'Completed'
+    " type="button" class="btn btn-info btn-sm" (click)="viewNcr(item)">
+                        View NCR
+                      </button>
+
+
+                      <!-- 5. Finding type me NCR required hi nahi hai -->
+                      <span *ngIf="
+      !item.get('ncId')?.value &&
+      item.get('findingType')?.value !== 'Minor NC' &&
+      item.get('findingType')?.value !== 'Major NC'
+    ">
+                        -
+                      </span>
+
+                    </td>
+                    <!-- Action -->
+                    <td *ngIf="!isViewMode" class="text-center">
+
+                      <button *ngIf="
+      !item.get('id')?.value
+      ||
+      (
+        item.get('id')?.value &&
+        !item.get('ncId')?.value &&
+        (
+          item.get('findingType')?.value === 'Minor NC' ||
+          item.get('findingType')?.value === 'Major NC'
+        )
+      )
+    " type="button" class="btn btn-remove btn-sm" (click)="removeItem(i)" [disabled]="items.length === 1">
+
+                        <i class="bi bi-trash"></i>
+                      </button>
+
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <!-- Section: Related Forms -->
-        <div class="accordion-section mb-3" *ngIf="relatedAuditPlan">
-          <div class="section-header" (click)="toggleSection('relatedForms')">
-            <i class="bi" [ngClass]="openSections['relatedForms'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span>Related Forms</span>
-          </div>
-          <div *ngIf="openSections['relatedForms']" class="section-body">
-            <div class="card border-start border-primary border-3 mb-2">
-              <div class="card-body py-2 d-flex justify-content-between align-items-center">
-                <div>
-                  <span class="badge bg-secondary me-2">F-39</span>
-                  <strong>Audit Plan</strong>
-                  <span class="text-muted ms-2">{{ relatedAuditPlan.documentNo || 'N/A' }}</span>
-                  <span class="badge ms-2" [ngClass]="'bg-' + (relatedAuditPlan.status === 'Approved' ? 'success' : relatedAuditPlan.status === 'Rejected' ? 'danger' : 'info')">
-                    {{ relatedAuditPlan.status }}
-                  </span>
-                </div>
-                <a [routerLink]="['/audit-plan/details', relatedAuditPlan.id]" class="btn btn-sm btn-add">
-                  <i class="bi bi-box-arrow-up-right me-1"></i>View
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      
         <app-nabl-signature-section [parentForm]="checklistForm"></app-nabl-signature-section>
-
+        <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn btn-save">
+            {{ isEditMode ? "Update Plan" : "Save Plan" }}
+          </button>
+        </div>
       </form>
     </div>
   </div>

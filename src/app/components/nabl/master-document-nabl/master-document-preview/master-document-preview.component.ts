@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { MasterDocumentService } from '../../../../services/master-document.service';
 import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-header.component';
 import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-footer.component';
@@ -14,15 +14,8 @@ import { PrintFrameComponent } from '../../print-frame/print-frame.component';
     styleUrl: './master-document-preview.component.css'
 })
 export class MasterDocumentPreviewComponent implements OnInit {
-    data: any[] = [];
-    headerInfo: any = {
-        formatNo: 'F-43',
-        docNo: 'DMSPL / Level-04 / Format / F-43',
-        issueNo: '03',
-        issueDate: '01.10.2021',
-        revNo: '00',
-        revDate: '--'
-    };
+    recordId: number = 0;
+    data: any = null;
     orientation: 'portrait' | 'landscape' = 'landscape';
     orientationManual = false;
     private orientationDetected = false;
@@ -30,20 +23,20 @@ export class MasterDocumentPreviewComponent implements OnInit {
     constructor(
         private service: MasterDocumentService,
         private router: Router,
+        private route: ActivatedRoute,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
-        this.fetchData();
+        this.route.paramMap.subscribe(params => {
+            this.recordId = Number(params.get('id'));
+            if (this.recordId > 0) this.fetchData();
+        });
     }
 
     fetchData() {
-        this.service.getAll().subscribe(resp => {
+        this.service.getById(this.recordId).subscribe(resp => {
             this.data = resp;
-            if (resp.length > 0) {
-                this.headerInfo.formatNo = resp[0].formatNo;
-                this.headerInfo.docNo = resp[0].docNo;
-            }
             setTimeout(() => this.autoDetectOrientation(), 300);
         });
     }

@@ -10,7 +10,7 @@ import { QualityControlPlan, QualityControlPlanListResponse, QualityControlPlanR
 export class QualityControlPlanService {
     private apiUrl = environment.apiUrl + '/Nabl/QualityControlPlan';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<QualityControlPlanListResponse> {
         return this.http.post<QualityControlPlanListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,15 @@ export class QualityControlPlanService {
 
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
+    }
+    getEmployeesDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/employeesdropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+    getReferenceOptions(referenceType: string) {
+        return this.http.get<any>(`${this.apiUrl}/ReferenceOptions/${referenceType}`
+        );
+    }
+     getNextPlanNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-qc-plan-no`);
     }
 }

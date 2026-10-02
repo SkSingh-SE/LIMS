@@ -10,14 +10,14 @@ import { IntermediateCheckRecord, IntermediateCheckListResponse, IntermediateChe
 export class IntermediateCheckService {
     private apiUrl = environment.apiUrl + '/Nabl/IntermediateCheck';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<IntermediateCheckListResponse> {
         return this.http.post<IntermediateCheckListResponse>(this.apiUrl + '/list', params || {});
     }
 
-    getById(id: number): Observable<IntermediateCheckRecord | null> {
-        return this.http.get<IntermediateCheckRecord>(`${this.apiUrl}/details/${id}`);
+    getById(id: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
 
     create(data: IntermediateCheckRecord): Observable<IntermediateCheckResponse> {
@@ -33,11 +33,22 @@ export class IntermediateCheckService {
         return this.http.delete<IntermediateCheckResponse>(`${this.apiUrl}/delete/${id}`);
     }
 
-    getByEquipmentId(equipmentId: number): Observable<IntermediateCheckListResponse> {
-        return this.http.post<IntermediateCheckListResponse>(this.apiUrl + '/list', { equipmentId });
+    getByEquipmentId(equipmentId: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}//equipment-details/${equipmentId}`);
     }
 
     getPendingChecks(): Observable<IntermediateCheckListResponse> {
         return this.http.post<IntermediateCheckListResponse>(this.apiUrl + '/list', { status: 'pending' });
+    }
+    getAllEquipments(searchTearm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+        let url =
+            `${this.apiUrl}/equipmentslist` +
+            `?searchTearm=${(searchTearm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
 }

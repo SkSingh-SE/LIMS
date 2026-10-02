@@ -10,7 +10,7 @@ import { CrmConsumptionRecord, CrmConsumptionListResponse, CrmConsumptionRespons
 export class CrmConsumptionService {
     private apiUrl = environment.apiUrl + '/Nabl/CrmConsumption';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<CrmConsumptionListResponse> {
         return this.http.post<CrmConsumptionListResponse>(this.apiUrl + '/list', params || {});
@@ -39,5 +39,11 @@ export class CrmConsumptionService {
 
     getByPeriod(month: number, year: number): Observable<CrmConsumptionListResponse> {
         return this.http.post<CrmConsumptionListResponse>(this.apiUrl + '/list', { consumptionMonth: month, consumptionYear: year });
+    }
+    addConsumptionLog(payload: any) {
+        return this.http.post(`${this.apiUrl}/add-consumption`, payload)
+    }
+    save(data: CrmConsumptionRecord): Observable<CrmConsumptionResponse> {
+        return this.http.post<CrmConsumptionResponse>(`${this.apiUrl}/save`, data);
     }
 }

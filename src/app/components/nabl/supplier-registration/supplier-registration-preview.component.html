@@ -13,19 +13,16 @@
   </div>
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            *ngIf="orientationManual" title="Auto-detect">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" *ngIf="orientationManual" title="Auto-detect">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -39,170 +36,175 @@
 <div class="nabl-preview-page">
   <app-print-frame *ngIf="record()" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="record()?.formatNo || 'F-19'"
-        [mainTitle]="'SUPPLIER REGISTRATION FORM'"
-        [docNo]="'DMSPL / Level-04 / Format / F-19'"
-        [issueNo]="record()?.issueNo || '01'"
-        [revNo]="record()?.revNo || '00'"
-        [issueDate]="record()?.date || ''"
-        [revDate]="record()?.date || ''"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="record()?.formatNo || 'F-19'" [mainTitle]="'SUPPLIER REGISTRATION FORM'"
+        [docNo]="'DMSPL / Level-04 / Format / F-19'" [issueNo]="record()?.issueNo || '01'"
+        [revNo]="record()?.revNo || '00'" [issueDate]="record()?.date || ''"
+        [revDate]="record()?.date || ''"></app-nabl-print-header>
     </ng-container>
 
-    <ng-container body>
-      <!-- I. Supplier Basic Information -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">I. SUPPLIER BASIC INFORMATION</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%;">Supplier Name</td>
-              <td colspan="3" class="fw-bold">{{ record()?.supplierName }}</td>
-            </tr>
-            <tr>
-              <td class="lbl" style="width: 25%;">Address</td>
-              <td colspan="3">{{ record()?.address }}</td>
-            </tr>
-            <tr>
-              <td class="lbl" style="width: 25%;">Contact Person</td>
-              <td style="width: 25%;">{{ record()?.contactPerson }}</td>
-              <td class="lbl" style="width: 25%;">Designation</td>
-              <td style="width: 25%;">{{ record()?.designation }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Mobile No.</td>
-              <td>{{ record()?.mobileNo }}</td>
-              <td class="lbl">Email ID</td>
-              <td>{{ record()?.email }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Website</td>
-              <td colspan="3">{{ record()?.website || "-" }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+   <ng-container body>
+  <div class="doc-section mb-3">
+    <table class="table table-bordered inner-table supplier-form-table">
+      <tbody>
+        <tr>
+          <td class="lbl" style="width: 35%;">Name of Supplier</td>
+          <td>{{ record()?.supplierName }}</td>
+        </tr>
 
-      <!-- II. Nature of Business & Registration -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">II. NATURE OF BUSINESS &amp; REGISTRATION</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%;">Nature of Business</td>
-              <td style="width: 25%;">{{ record()?.natureOfBusiness }}</td>
-              <td class="lbl" style="width: 25%;">GST No.</td>
-              <td style="width: 25%;">{{ record()?.gstNo }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">PAN No.</td>
-              <td>{{ record()?.panNo }}</td>
-              <td class="lbl">ISO Certified?</td>
-              <td>{{ record()?.isoCertified ? "Yes (" + record()?.isoDetails + ")" : "No" }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Products/Services Offered</td>
-              <td colspan="3">{{ record()?.productsServicesOffered }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <tr>
+          <td class="lbl">Address</td>
+          <td>{{ record()?.address }}</td>
+        </tr>
 
-      <!-- III. Bank Details -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">III. BANK DETAILS</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%;">Bank Name</td>
-              <td style="width: 25%;">{{ record()?.bankDetails?.bankName }}</td>
-              <td class="lbl" style="width: 25%;">Account No.</td>
-              <td style="width: 25%;">{{ record()?.bankDetails?.accountNo }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">IFSC Code</td>
-              <td>{{ record()?.bankDetails?.ifscCode }}</td>
-              <td class="lbl">Branch</td>
-              <td>{{ record()?.bankDetails?.branch }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <tr>
+          <td class="lbl">Contact Details</td>
+          <td>
+            {{ record()?.mobileNo }}
+            <span *ngIf="record()?.email"> / {{ record()?.email }}</span>
+          </td>
+        </tr>
 
-      <!-- IV. Document Checklist -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">IV. DOCUMENT CHECKLIST</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td style="width: 33%;">
-                <i class="bi" [ngClass]="record()?.documentsSubmitted?.gstCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
-                <span class="ms-2">GST Certificate</span>
-              </td>
-              <td style="width: 33%;">
-                <i class="bi" [ngClass]="record()?.documentsSubmitted?.panCard ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
-                <span class="ms-2">PAN Card</span>
-              </td>
-              <td style="width: 34%;">
-                <i class="bi" [ngClass]="record()?.documentsSubmitted?.isoCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
-                <span class="ms-2">ISO Certificate</span>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <i class="bi" [ngClass]="record()?.documentsSubmitted?.cancelledCheque ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
-                <span class="ms-2">Cancelled Cheque</span>
-              </td>
-              <td>
-                <i class="bi" [ngClass]="record()?.documentsSubmitted?.msmeCertificate ? 'bi-check-square-fill text-success' : 'bi-square'"></i>
-                <span class="ms-2">MSME Certificate</span>
-              </td>
-              <td></td>
-            </tr>
-            <tr *ngIf="record()?.documentsSubmitted?.otherDocs">
-              <td class="lbl">Other Docs</td>
-              <td colspan="2">{{ record()?.documentsSubmitted?.otherDocs }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <tr>
+          <td class="lbl">Description of Items / Services to be supplied</td>
+          <td>{{ record()?.productsServicesOffered }}</td>
+        </tr>
 
-      <!-- V. Evaluation Status -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">V. EVALUATION STATUS</div>
-        <table class="table table-bordered inner-table">
-          <tbody>
-            <tr>
-              <td class="lbl" style="width: 25%;">Registration Status</td>
-              <td colspan="3">
-                <span class="badge" [ngClass]="{
-                    'bg-warning': record()?.registrationStatus === 'Pending',
-                    'bg-success': record()?.registrationStatus === 'Approved',
-                    'bg-danger': record()?.registrationStatus === 'Rejected'
-                  }">
-                  {{ record()?.registrationStatus }}
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <td class="lbl">Verification Remarks</td>
-              <td colspan="3">
-                <div [innerHTML]="record()?.remarks"></div>
-                <div *ngIf="!record()?.remarks" class="text-muted fst-italic">No remarks recorded.</div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </ng-container>
+        <tr>
+          <td class="lbl">If, Monopoly</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.monopolyCert ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Yes
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.monopolyCert ? 'bi-check-square-fill' : 'bi-square'"></i>
+              No
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">If Popular Brand</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.popularBrandCert ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Yes
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.popularBrandCert ? 'bi-check-square-fill' : 'bi-square'"></i>
+              No
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">ISO 17025 / NABL accredited</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.isoCertificate ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Yes
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.isoCertificate ? 'bi-check-square-fill' : 'bi-square'"></i>
+              No
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Workmanship</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.workmanshipCert ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Good
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.workmanshipCert ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Poor
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Delivery Record</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.deliveryRecord ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Good
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.deliveryRecord ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Poor
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Price</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.price ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Competitive
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.price ? 'bi-check-square-fill' : 'bi-square'"></i>
+              High
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Supplier Confidentiality Agreement Signed? (Yes/No)</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.supplierConfidentiality ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Yes
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.supplierConfidentiality ? 'bi-check-square-fill' : 'bi-square'"></i>
+              No
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Supplier to be Approved?</td>
+          <td>
+            <span class="check-box">
+              <i class="bi" [ngClass]="record()?.documentsSubmitted?.supplierApproved ? 'bi-check-square-fill' : 'bi-square'"></i>
+              Yes
+            </span>
+            <span class="check-box">
+              <i class="bi" [ngClass]="!record()?.documentsSubmitted?.supplierApproved ? 'bi-check-square-fill' : 'bi-square'"></i>
+              No
+            </span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Reason if Supplier is Not approved</td>
+          <td>
+            <span [innerHTML]="record()?.documentsSubmitted?.reasonNotApproved || '-'"></span>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Prepared By</td>
+          <td>{{ record()?.preparedBy }}</td>
+        </tr>
+
+        <tr>
+          <td class="lbl">Date</td>
+          <td>{{ record()?.date | date:'dd-MM-yyyy' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [preparedByName]="record()?.recordedBy || 'Admin'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="record()?.verifiedBy || 'Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="record()?.preparedBy || ''" [issuedByName]="record()?.reviewedBy || ''"
+        [reviewedApprovedByName]="record()?.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 </div>

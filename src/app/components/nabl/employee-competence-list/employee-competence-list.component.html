@@ -69,12 +69,14 @@
                 </div>
               </td>
               <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td>{{ item.documentNo }}</td>
               <td>{{ item.employeeName }}</td>
               <td>{{ item.designationName }}</td>
               <td>{{ item.evaluationDate | date:"dd MMM, yyyy" }}</td>
+              <td>{{ item.evaluationDoneBy }}</td>            
               <td>{{ item.overallRating }}</td>
-              <td>{{ item.evaluationDoneBy }}</td>            </tr>
-          </tbody>
+            </tr>
+            </tbody>
         </table>
       </div>
 

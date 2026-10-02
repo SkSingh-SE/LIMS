@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,77 +46,136 @@
 
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'AUDIT CHECKLIST & OBSERVATION'"
-        [docNo]="data.docNo"
-        [issueNo]="data.issueNo"
-        [issueDate]="data.issueDate"
-        [revNo]="data.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'AUDIT CHECKLIST & OBSERVATION'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
+
+      <!-- =========================================================
+       I. AUDIT DETAILS
+  ========================================================== -->
       <div class="doc-section mb-3">
-        <div class="sec-title">AUDIT INFORMATION</div>
+        <div class="sec-title">I. AUDIT DETAILS</div>
+
         <table class="table table-bordered inner-table">
           <tbody>
+
             <tr>
-              <td class="lbl" style="width:25%">Audit Date</td>
-              <td style="width:25%">{{ data.auditDate | date: "dd/MM/yyyy" }}</td>
-              <td class="lbl" style="width:25%">Area / Dept</td>
-              <td style="width:25%">{{ data.areaDepartment }}</td>
+              <td class="lbl" style="width:25%">Checklist No.</td>
+              <td style="width:25%">
+                {{ data.checklistNo || '' }}
+              </td>
+
+              <td class="lbl" style="width:25%">Audit Plan No.</td>
+              <td style="width:25%">
+                {{ data.auditPlanNo || '' }}
+              </td>
             </tr>
+
             <tr>
-              <td class="lbl">Auditor</td>
-              <td>{{ data.auditorName }}</td>
-              <td class="lbl">Auditee</td>
-              <td>{{ data.auditeeName }}</td>
+              <td class="lbl">ISO Clauses</td>
+              <td>
+                {{ data.isoClause || '' }}
+              </td>
+
+              <td class="lbl">Audit Date</td>
+              <td>
+                {{ data.auditDate ? (data.auditDate | date:"dd/MM/yyyy") : '' }}
+              </td>
             </tr>
+
+            <tr>
+              <td class="lbl">Area / Dept</td>
+              <td>
+                {{ data.departmentName || '' }}
+              </td>
+
+              <td class="lbl">Auditor Name</td>
+              <td>
+                {{ data.auditorName || '' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Auditee Name</td>
+              <td colspan="3">
+                {{ data.auditeeName || '' }}
+              </td>
+            </tr>
+
           </tbody>
         </table>
       </div>
 
+
+      <!-- =========================================================
+       II. CHECKLIST & OBSERVATIONS
+  ========================================================== -->
       <div class="doc-section mb-3">
-        <div class="sec-title">CHECKLIST ITEMS</div>
+        <div class="sec-title">II. CHECKLIST &amp; OBSERVATIONS</div>
+
         <table class="table table-bordered inner-table">
           <thead>
             <tr class="tbl-head">
-              <th style="width:60px">Sr. No.</th>
-              <th style="width:100px">Clause No.</th>
-              <th style="width:300px">Requirement</th>
-              <th>Observation</th>
-              <th style="width:100px">Compliance (Yes/No/NA)</th>
+
+              <th style="width:60px">SN</th>
+              <th>ISO Clause</th>
+              <th>Audit Question</th>
+              <th>Finding Type</th>
+              <th>Objective Evidence</th>
+              <th>Remarks</th>
+
+              <th style="width:100px">NCR No.</th>
+
             </tr>
           </thead>
+
           <tbody>
+
             <tr *ngFor="let item of data.items; let i = index">
-              <td class="text-center">{{ i + 1 }}</td>
-              <td class="text-center">{{ item.clauseNo }}</td>
-              <td>{{ item.requirement }}</td>
-              <td>
-                <div class="ql-editor" [innerHTML]="item.observation"></div>
-              </td>
+
               <td class="text-center">
-                <strong>{{ item.compliance }}</strong>
+                {{ i + 1 }}
               </td>
-            </tr>
-            <!-- Filling space -->
-            <tr *ngIf="data.items.length < 5">
-              <td colspan="5" [style.height.px]="100 * (5 - data.items.length)"></td>
+
+              <td class="text-center">
+                {{ item.isoClauseName || '' }}
+              </td>
+
+              <td>
+                {{ item.auditQuestion || '' }}
+              </td>
+
+              <td class="text-center">
+                {{ item.findingType || '' }}
+              </td>
+
+              <td>
+                <div *ngIf="item.objectiveEvidence" class="ql-editor" [innerHTML]="item.objectiveEvidence">
+                </div>
+              </td>
+
+              <td>
+                <div *ngIf="item.remarks" class="ql-editor" [innerHTML]="item.remarks">
+                </div>
+              </td>
+
+              <td class="text-center">
+                {{ item.ncNo || '-' }}
+              </td>
+
             </tr>
           </tbody>
         </table>
       </div>
+
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'Auditor'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Auditee'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

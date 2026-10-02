@@ -10,7 +10,7 @@ import { AuditPlan } from '../models/audit-plan';
 export class AuditPlanService {
     private apiUrl = environment.apiUrl + '/Nabl/AuditPlan';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,30 @@ export class AuditPlanService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getAuditorsDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/auditorsdropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+    getNextPlanNo() {
+        return this.http.get<any>(`${this.apiUrl}/next-auditplan-no`);
+    }
+    getEligibleAuditors(
+        departmentId: number,
+        isoClauseIds: number[],
+        scheduleDate: string
+    ): Observable<any[]> {
+
+        const clauses = isoClauseIds.join(',');
+
+        return this.http.get<any[]>(
+            `${this.apiUrl}/eligible-auditors`,
+            {
+                params: {
+                    departmentId: departmentId,
+                    isoClauseIds: clauses,
+                    scheduleDate: scheduleDate
+                }
+            }
+        );
     }
 }

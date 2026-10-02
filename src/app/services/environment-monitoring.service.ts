@@ -28,7 +28,9 @@ export class EnvironmentMonitoringService {
         data.id = id;
         return this.http.post<EnvironmentMonitoringResponse>(`${this.apiUrl}/save`, data);
     }
-
+    getRoomOptions(searchTerm: string, pageNo: number, pageSize: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/room-dropdown?searchTerm=${searchTerm}&pageNo=${pageNo}&pageSize=${pageSize}`);
+    }
     delete(id: number): Observable<EnvironmentMonitoringResponse> {
         return this.http.delete<EnvironmentMonitoringResponse>(`${this.apiUrl}/delete/${id}`);
     }

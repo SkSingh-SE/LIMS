@@ -10,7 +10,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="changeForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="changeForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
@@ -40,34 +40,8 @@
                   Issue No
                   <span class="text-danger">*</span>
                 </label>
-                <input type="text" class="form-control" formControlName="headerIssueNo" />
+                <input type="text" class="form-control" formControlName="issueNo" />
               </div>
-              <div class="col-md-2">
-                <label class="form-label">
-                  Date
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="date" class="form-control" formControlName="headerIssueDate" />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">
-                  Rev No
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="headerRevNo" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section II: Document Basic Info -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('docInfo')">
-            <i class="bi" [ngClass]="openSections['docInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Document Basic Information</span>
-          </div>
-          <div *ngIf="openSections['docInfo']" class="section-body">
-            <div class="row gy-3">
               <div class="col-md-2">
                 <label class="form-label">
                   Date
@@ -75,30 +49,9 @@
                 </label>
                 <input type="date" class="form-control" formControlName="date" />
               </div>
-              <div class="col-md-6">
+              <div class="col-md-2">
                 <label class="form-label">
-                  Document Title
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="documentTitle" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">
-                  Doc. No.
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="documentNo" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">
-                  Current Issue No.
-                  <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" formControlName="issueNo" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">
-                  Current Rev. No.
+                  Rev No
                   <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control" formControlName="revNo" />
@@ -107,34 +60,220 @@
           </div>
         </div>
 
+        <!-- Section II: Document Basic Info -->
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('requestDetails')">
+            <i class="bi" [ngClass]="openSections['requestDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Request Details</span>
+          </div>
+          <div *ngIf="openSections['requestDetails']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Change Request No.
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" formControlName="requestNo" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Request Date
+                  <span class="text-danger">*</span>
+                </label>
+                <input type="date" class="form-control" formControlName="requestDate" />
+                <div *ngIf="changeForm.get('requestDate')?.invalid && changeForm.get('requestDate')?.touched"
+                  class="text-danger text-sm mt-1">
+                  request date is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Priority
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="priority">
+                  <option *ngFor="let priority of priorities" [value]="priority">{{priority}}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('docInfo')">
+            <i class="bi" [ngClass]="openSections['docInfo'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">II. Document Information</span>
+          </div>
+          <div *ngIf="openSections['docInfo']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">Document <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" formControlName="documentId" (change)="onDocumentChange()">
+                  <option [ngValue]="null">
+                    Select Document
+                  </option>
+                  <option *ngFor="let document of documentList" [ngValue]="document.id || document.Id">
+                    {{ document.name || document.Name }}
+                  </option>
+                </select>
+                <div *ngIf="changeForm.get('documentId')?.invalid && changeForm.get('documentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  document is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document Type
+                </label>
+                <input type="text" class="form-control" formControlName="documentType" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Department
+                </label>
+                <input type="text" class="form-control" formControlName="departmentDoc" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Current Issue No.
+                </label>
+                <input type="text" class="form-control" formControlName="currentIssue" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Current Rev. No.
+                </label>
+                <input type="text" class="form-control" formControlName="currentRevision" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Effective Date </label>
+                <input type="date" class="form-control" formControlName="effectiveDate" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Next Review Date
+                </label>
+                <input type="date" class="form-control" formControlName="nextReviewDate" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Document Owner
+                </label>
+                <input type="text" class="form-control" formControlName="documentOwner" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-section mb-3">
+          <div class="section-header" (click)="toggleSection('changeRequestDetails')">
+            <i class="bi" [ngClass]="openSections['changeRequestDetails'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+            <span class="fw-bold ms-2">IV. Change Request Details</span>
+          </div>
+          <div *ngIf="openSections['changeRequestDetails']" class="section-body">
+            <div class="row gy-3">
+              <div class="col-md-3">
+                <label class="form-label">
+                  Type of Change
+                  <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" formControlName="changeType">
+                  <option *ngFor="let changeType of changeTypes" [value]="changeType">{{changeType}}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Reason For Change
+                  <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" formControlName="reasonForChange" rows="3"></textarea>
+                <div *ngIf="changeForm.get('reasonForChange')?.invalid && changeForm.get('reasonForChange')?.touched"
+                  class="text-danger text-sm mt-1">
+                  reason for change is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Description of Change
+                  <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" formControlName="descriptionOfChange" rows="3"></textarea>
+                <div
+                  *ngIf="changeForm.get('descriptionOfChange')?.invalid && changeForm.get('descriptionOfChange')?.touched"
+                  class="text-danger text-sm mt-1">
+                  description of change is required
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  Impact of Change
+                  <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" formControlName="impactOfChange" rows="3"></textarea>
+                <div *ngIf="changeForm.get('impactOfChange')?.invalid && changeForm.get('impactOfChange')?.touched"
+                  class="text-danger text-sm mt-1">
+                  impact of change is required
+                </div>
+              </div>
+              <div class="col-12 d-flex flex-column">
+                <label class="form-label">
+                  Reference (If Any)
+                </label>
+                <quill-editor formControlName="reference" [modules]="quillModules"></quill-editor>
+                <!-- <input type="text" class="form-control" formControlName="reference" /> -->
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         <!-- Section III: Changes & Justification -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('changes')">
-            <i class="bi" [ngClass]="openSections['changes'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+          <div class="section-header" (click)="toggleSection('requestBy')">
+            <i class="bi" [ngClass]="openSections['requestBy'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">III. Changes Required & Justification</span>
           </div>
-          <div *ngIf="openSections['changes']" class="section-body">
+          <div *ngIf="openSections['requestBy']" class="section-body">
             <div class="row gy-3">
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Changes Required
-                  <span class="text-danger">*</span>
-                </label>
-                <quill-editor formControlName="changesRequired" [modules]="quillModules"></quill-editor>
+              <div class="col-4">
+                <app-searchable-dropdown [required]="true" [fetchDataFn]="getEmployees"
+                  [placeholder]="'Search Request By'" [labelName]="'Reviewer By'" [isDisabled]="isViewMode"
+                  (itemSelected)="onEmployeeSelected($event)" [selectedItem]="changeForm.get('reviewedById')?.value">
+                </app-searchable-dropdown>
+                <div *ngIf="changeForm.get('reviewedById')?.invalid && changeForm.get('reviewedById')?.touched"
+                  class="text-danger text-sm mt-1">
+                  reviewer by is required
+                </div>
               </div>
-              <div class="col-12">
-                <label class="form-label fw-bold">
-                  Justification
-                  <span class="text-danger">*</span>
-                </label>
-                <quill-editor formControlName="justification" [modules]="quillModules"></quill-editor>
+              <div class="col-4">
+                <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
+                  [labelName]="'Department'" [fetchDataFn]="getDepartments"
+                  (itemSelected)="onDepartmentSelected($event)" [selectedItem]="changeForm.get('departmentId')?.value"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+                <div *ngIf="changeForm.get('departmentId')?.invalid && changeForm.get('departmentId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  department is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
+                  [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
+                  [isDisabled]="isViewMode" [required]="true"
+                  [selectedItem]="changeForm.get('designationId')?.value"></app-searchable-dropdown>
+                <span *ngIf="changeForm.get('designationId')?.invalid && changeForm.get('designationId')?.touched"
+                  class="text-danger text-sm">Designation is required.</span>
+                <div *ngIf="changeForm.get('designation')?.invalid && changeForm.get('designation')?.touched"
+                  class="text-danger text-sm mt-1">
+                  designation is required
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Section IV: Approval & Action -->
-        <div class="accordion-section mb-3">
+        <!-- <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('approval')">
             <i class="bi" [ngClass]="openSections['approval'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">IV. Approval & Action Taken</span>
@@ -161,15 +300,12 @@
               </div>
             </div>
           </div>
-        </div>
-
-        
-        <app-nabl-signature-section [parentForm]="changeForm"></app-nabl-signature-section>
+        </div> -->
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="changeForm.invalid">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Update Request" : "Save Request" }}
           </button>
         </div>

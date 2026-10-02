@@ -15,8 +15,12 @@ export class TrainingPlanListComponent implements OnInit {
 
   columns: RegisterColumn[] = [
     { key: 'documentNo', label: 'Document No', type: 'string', filter: true },
+    { key: 'trainingTopic', label: 'Plan Decription', type: 'string', filter: true },
     { key: 'planningYear', label: 'Year', type: 'number', filter: true },
-    { key: 'approvalStatus', label: 'Status', type: 'string', filter: true }
+    { key: 'agency', label: 'Agency', type: 'string', filter: true },
+    { key: 'provider', label: 'Provider/Agency Name', type: 'string', filter: true },
+    { key: 'evaluationRequired', label: 'Evaluation Required', type: 'string', filter: true },
+    { key: 'questionSetName', label: 'Question Set', type: 'string', filter: true },
   ];
 
   trainingPlans: any[] = [];
@@ -58,17 +62,17 @@ export class TrainingPlanListComponent implements OnInit {
     if (confirm('Are you sure you want to delete this training plan?')) {
       this.trainingPlanService.delete(id).subscribe({
         next: (response) => {
-          if (response.success) {
-            this.toastService.show('Training plan deleted successfully', 'success');
-            this.fetchData({
-              PageNumber: 1,
-              PageSize: 10,
-              searchTerm: '',
-              sortByColumn: 'id',
-              sortOrder: 'desc',
-              filter: []
-            });
-          }
+
+          this.toastService.show('Training plan deleted successfully', 'success');
+          this.fetchData({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+          });
+
         },
         error: (error: any) => {
           console.error('Error deleting training plan:', error);

@@ -6,5 +6,9 @@
   [isLoading]="false"
   baseRoute="/incoming-material"
   addRoute="/incoming-material/create"
+     [showSerialNumber]="true"
+    [showActions]="true"
+    [showPagination]="true"
   (onPageChange)="onPageChange($event)"
+  (onDelete)="deleteIncomingMaterial($event)"  
 ></app-nabl-register-table>

@@ -9,7 +9,7 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="requestForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="requestForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information -->
         <div class="accordion-section mb-3">
@@ -27,26 +27,24 @@
                 </datalist>
               </div>
               <div class="col-md-3">
-                <label class="form-label">Document No. <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="documentNo" placeholder="DMSPL/..." />
-              </div>
-              <div class="col-md-2">
                 <label class="form-label">Issue No.</label>
                 <input type="text" class="form-control bg-light" formControlName="issueNo" readonly />
               </div>
-              <div class="col-md-2">
+              <div class="col-md-3">
                 <label class="form-label">Rev No.</label>
                 <input type="text" class="form-control bg-light" formControlName="revNo" readonly />
               </div>
-              <div class="col-md-4">
-                <label class="form-label">List Type <span class="text-danger">*</span></label>
-                <select class="form-select" formControlName="listType">
-                  <option *ngFor="let type of listTypes" [value]="type">{{ type }}</option>
-                </select>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control bg-light" formControlName="date" readonly>
               </div>
-              <div class="col-md-8">
-                <label class="form-label">Title / Header <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="title" placeholder="Enter report title" />
+              <div class="col-md-3">
+                <label class="form-label">Document No. <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="documentNo" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="testMethodTitle" />
               </div>
             </div>
           </div>
@@ -54,91 +52,198 @@
 
         <!-- Section II: List Entries -->
         <div class="accordion-section mb-3">
-          <div class="section-header d-flex justify-content-between align-items-center" (click)="toggleSection('entries')">
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('testMethod')">
             <div>
-              <i class="bi" [ngClass]="openSections['entries'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-              <span class="fw-bold ms-2">II. List Entries</span>
+              <i class="bi" [ngClass]="openSections['testMethod'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">II. List Of Test Methods</span>
             </div>
-            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addEntry(); $event.stopPropagation()">
-              <i class="bi bi-plus-lg me-1"></i> Add Entry
+
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2"
+              (click)="addEntry(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i> Add Method
             </button>
           </div>
-          <div *ngIf="openSections['entries']" class="section-body p-0">
+
+          <div *ngIf="openSections['testMethod']" class="section-body p-0">
             <div class="table-responsive">
               <table class="table table-hover align-middle m-0">
                 <thead class="bg-light">
                   <tr>
-                    <th class="ps-3 py-2 small fw-bold text-muted" style="width: 60px">Sr.</th>
-                    <th class="py-2 small fw-bold text-muted" style="width: 200px">
-                      {{ requestForm.get('listType')?.value === 'Test Method' ? 'Specification Code' : 'Document ID' }}
-                    </th>
-                    <th class="py-2 small fw-bold text-muted">
-                      {{ requestForm.get('listType')?.value === 'Test Method' ? 'Details of Method' : 'Title / Description' }}
-                    </th>
-                    <th *ngIf="requestForm.get('listType')?.value === 'External Document'" class="py-2 small fw-bold text-muted">Requirement</th>
-                    <th *ngIf="requestForm.get('listType')?.value === 'External Document'" class="py-2 small fw-bold text-muted" style="width: 120px">Issue/Rev</th>
-                    <th *ngIf="requestForm.get('listType')?.value === 'External Document'" class="py-2 small fw-bold text-muted" style="width: 120px">Month/Year</th>
-                    <th *ngIf="!isViewMode" class="py-2" style="width: 50px"></th>
+                    <th style="width:60px">Sr.</th>
+                    <th>Test Method Name</th>
+                    <th>Test Method Specification Code</th>
+                    <th>Reference Standard</th>
+                    <th>Issue/Rev</th>
+                    <th>Effective Date</th>
+                    <th>Status</th>
+                    <th>Verified</th>
+                    <th>Validated</th>
+                    <th *ngIf="!isViewMode" style="width:60px">Action</th>
                   </tr>
                 </thead>
-                <tbody formArrayName="entries">
-                  <tr *ngFor="let entry of entries.controls; let i = index" [formGroupName]="i">
-                    <td class="ps-3 text-center small fw-bold">{{ entry.get('srNo')?.value }}</td>
+
+                <tbody formArrayName="testMethod">
+                  <tr *ngFor="let entry of testMethod.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold text-secondary">{{ i + 1 }}</td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="methodName">
+                      <small class="text-danger"
+                        *ngIf="entry.get('methodName')?.invalid && entry.get('methodName')?.touched">
+                        Method Name is required.
+                      </small>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="specificationCode">
+                      <small class="text-danger"
+                        *ngIf="entry.get('specificationCode')?.invalid && entry.get('specificationCode')?.touched">
+                        Test Method Specification Code is required.
+                      </small>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="referenceStandard">
+                      <small class="text-danger"
+                        *ngIf="entry.get('referenceStandard')?.invalid && entry.get('referenceStandard')?.touched">
+                        Reference Standard is required.
+                      </small>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="revisionNo">
+                      <small class="text-danger"
+                        *ngIf="entry.get('revisionNo')?.invalid && entry.get('revisionNo')?.touched">
+                        Issue/Rev is required.
+                      </small>
+                    </td>
+                    <td><input type="date" class="form-control form-control-sm" formControlName="effectiveDate">
+                      <small class="text-danger"
+                        *ngIf="entry.get('effectiveDate')?.invalid && entry.get('effectiveDate')?.touched">
+                        Effective Date is required.
+                      </small>
+                    </td>
+
                     <td>
-                      <input type="text" class="form-control form-control-sm" formControlName="specificationCode" />
+                      <select class="form-select form-select-sm" formControlName="status">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
                     </td>
-                    <td>
-                      <textarea class="form-control form-control-sm" formControlName="details" rows="1"></textarea>
+
+                    <td class="text-center">
+                      <span class="badge bg-light text-success border">
+                        {{ entry.get('isVerified')?.value ? 'Completed' : 'Pending' }}
+                      </span>
                     </td>
-                    <td *ngIf="requestForm.get('listType')?.value === 'External Document'">
-                      <input type="text" class="form-control form-control-sm" formControlName="requirement" />
+
+                    <td class="text-center">
+                      <span class="badge bg-light text-success border">
+                        {{ entry.get('isValidated')?.value ? 'Completed' : 'Pending' }}
+                      </span>
                     </td>
-                    <td *ngIf="requestForm.get('listType')?.value === 'External Document'">
-                      <input type="text" class="form-control form-control-sm" formControlName="latestIssueRev" />
-                    </td>
-                    <td *ngIf="requestForm.get('listType')?.value === 'External Document'">
-                      <input type="text" class="form-control form-control-sm" formControlName="monthYear" />
-                    </td>
+
                     <td *ngIf="!isViewMode" class="text-center">
-                      <button type="button" class="btn btn-sm text-danger" (click)="removeEntry(i)" [disabled]="entries.length === 1">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeEntry(i)"
+                        [disabled]="testMethod.length === 1">
                         <i class="bi bi-trash3"></i>
                       </button>
                     </td>
                   </tr>
                 </tbody>
+
               </table>
             </div>
           </div>
         </div>
-
-        <!-- Section III: Responsibility & Signatures -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('signatures')">
-            <i class="bi" [ngClass]="openSections['signatures'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Responsibility &amp; Signatures</span>
+          <div class="section-header d-flex justify-content-between align-items-center"
+            (click)="toggleSection('externalDoc')">
+            <div>
+              <i class="bi" [ngClass]="openSections['externalDoc'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <span class="fw-bold ms-2">III. List Of External Origin Documents</span>
+            </div>
+
+            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2"
+              (click)="addDocEntry(); $event.stopPropagation()">
+              <i class="bi bi-plus-lg me-1"></i> Add Document
+            </button>
           </div>
-          <div *ngIf="openSections['signatures']" class="section-body">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Prepared By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="preparedBy" placeholder="Name" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Issued By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="issuedBy" placeholder="Quality Manager" />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Reviewed &amp; Approved By <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="reviewedBy" placeholder="Managing Director" />
-              </div>
+
+          <div *ngIf="openSections['externalDoc']" class="section-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle m-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th style="width:60px">Sr.</th>
+                    <th>Document Identification</th>
+                    <th>Title / Description</th>
+                    <th>Requirement</th>
+                    <th>Document Type</th>
+                    <th>Issue/Rev</th>
+                    <th>Issue Date</th>
+                    <th *ngIf="!isViewMode" style="width:60px">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="docEntries">
+                  <tr *ngFor="let entry of docEntries.controls; let i = index" [formGroupName]="i">
+                    <td class="text-center fw-bold">{{ i + 1 }}</td>
+
+                    <td> <input type="text" class="form-control form-control-sm" formControlName="docId" />
+                      <small class="text-danger"
+                        *ngIf="entry.get('docId')?.invalid && entry.get('docId')?.touched">
+                        Document Identification is required.
+                      </small>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="description">
+                      <small class="text-danger"
+                        *ngIf="entry.get('description')?.invalid && entry.get('description')?.touched">
+                        Description is required.
+                      </small>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm" formControlName="docSource">
+                      <small class="text-danger"
+                        *ngIf="entry.get('docSource')?.invalid && entry.get('docSource')?.touched">
+                        Document Source is required.
+                      </small>
+                    </td>
+
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="docType">
+                        <option value="">Select</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Guideline">Guideline</option>
+                        <option value="Manual">Manual</option>
+                        <option value="Procedure">Procedure</option>
+                      </select>
+                    </td>
+
+                    <td><input type="text" class="form-control form-control-sm" formControlName="issue">
+                      <small class="text-danger" *ngIf="entry.get('issue')?.invalid && entry.get('issue')?.touched">
+                        Issue/Rev is required.
+                      </small>
+                    </td>
+                    <td>
+                      <input type="date" class="form-control form-control-sm" formControlName="monthYear">
+                      <small class="text-danger"
+                        *ngIf="entry.get('monthYear')?.invalid && entry.get('monthYear')?.touched">
+                        Month/Year is required.
+                      </small>
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeDocEntry(i)"
+                        [disabled]="docEntries.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
             </div>
           </div>
         </div>
+        <!-- Section III: Responsibility & Signatures -->
+        <app-nabl-signature-section [parentForm]="requestForm"></app-nabl-signature-section>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="requestForm.invalid || false">
+          <button type="submit" class="btn btn-save">
             {{ isEditMode ? 'Update' : 'Save' }}
           </button>
         </div>

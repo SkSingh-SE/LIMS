@@ -8,12 +8,12 @@ import { DesignationResponse } from '../models/designationModel';
   providedIn: 'root'
 })
 export class DesignationService {
-  private apiUrl = environment.apiUrl +"/DesignationMaster"; // Replace with actual API
+  private apiUrl = environment.apiUrl + "/DesignationMaster"; // Replace with actual API
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-  getAllDesignations(filter:any): Observable<DesignationResponse> {
-    return this.http.post<DesignationResponse>(this.apiUrl+"/list", filter);
+  getAllDesignations(filter: any): Observable<DesignationResponse> {
+    return this.http.post<DesignationResponse>(this.apiUrl + "/list", filter);
   }
 
   getDesignationById(id: number): Observable<any> {
@@ -31,8 +31,8 @@ export class DesignationService {
   deleteDesignation(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
   }
-
-  getDesignationDropdown(searchTerm:string,pageNumber:number, pageSize:number): Observable<any> {
+  getDesignationDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
+
 }

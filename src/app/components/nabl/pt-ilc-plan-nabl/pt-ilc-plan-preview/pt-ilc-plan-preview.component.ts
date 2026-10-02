@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectorRef, Signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { PtIlcPlanService } from '../../../../services/pt-ilc-plan.service';
 import { NablPrintHeaderComponent } from '../../nabl-print-header/nabl-print-header.component';
@@ -7,6 +7,7 @@ import { NablPrintFooterComponent } from '../../nabl-print-footer/nabl-print-foo
 import { NablSignatureBlockComponent } from '../../nabl-signature-block/nabl-signature-block.component';
 import { PrintFrameComponent } from '../../print-frame/print-frame.component';
 import { ToastService } from '../../../../services/toast.service';
+import { PtIlcPlan } from '../../../../models/ptIlcPlanModel';
 
 @Component({
     selector: 'app-pt-ilc-plan-preview',
@@ -17,12 +18,11 @@ import { ToastService } from '../../../../services/toast.service';
 })
 export class PtIlcPlanPreviewComponent implements OnInit {
     recordId: number = 0;
-    data: any = null;
-
+    data = signal<PtIlcPlan | null>(null);
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
-
+    maxYearCount = 1;
     constructor(
         private route: ActivatedRoute,
         private router: Router,
@@ -37,11 +37,19 @@ export class PtIlcPlanPreviewComponent implements OnInit {
             if (this.recordId > 0) this.fetchData();
         });
     }
-
+    getColumns() {
+        return Array(this.maxYearCount).fill(0);
+    }
     fetchData() {
         this.service.getById(this.recordId).subscribe({
             next: (resp) => {
-                this.data = resp;
+                if (!resp) {
+                    return;
+                }
+                this.data.set(resp);
+                this.maxYearCount = Math.max(
+                    ...resp.activities.map((x: any) => x.years.length || 1));
+
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
             error: (err) => {

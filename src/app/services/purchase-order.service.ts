@@ -10,7 +10,7 @@ import { PurchaseOrder, PurchaseOrderListResponse, PurchaseOrderResponse } from 
 export class PurchaseOrderService {
     private apiUrl = environment.apiUrl + '/Nabl/PurchaseOrder';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<PurchaseOrderListResponse> {
         return this.http.post<PurchaseOrderListResponse>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,23 @@ export class PurchaseOrderService {
 
     delete(id: number): Observable<PurchaseOrderResponse> {
         return this.http.delete<PurchaseOrderResponse>(`${this.apiUrl}/delete/${id}`);
+    }
+    getLoadIndentNo(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/indentNoList`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
+    }
+    getAllSuppliers(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+        return this.http.get<any[]>(`${this.apiUrl}/approvedSupplierlist`, {
+            params: {
+                searchTerm: searchTerm,
+                pageNo: pageNo,
+                pageSize: pageSize
+            }
+        });
     }
 }

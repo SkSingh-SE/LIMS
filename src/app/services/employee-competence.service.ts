@@ -10,19 +10,17 @@ import { EmployeeCompetenceReport, EmployeeCompetenceReportResponse, CompetenceE
 export class EmployeeCompetenceService {
     private apiUrl = environment.apiUrl + '/Nabl/EmployeeCompetence';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(filter: any): Observable<EmployeeCompetenceReportResponse> {
         return this.http.post<EmployeeCompetenceReportResponse>(this.apiUrl + '/list', filter);
     }
 
-    getByEmployeeId(employeeId: number): Observable<EmployeeCompetenceReportResponse> {
-        return this.http.post<EmployeeCompetenceReportResponse>(this.apiUrl + '/list', {
-            PageNumber: 1, PageSize: 100, sortByColumn: 'ID', sortOrder: 'desc',
-            filter: [{ column: 'employeeId', type: 'Equal', value: String(employeeId), value2: null }]
-        });
-    }
 
+    getByEmployeeId(employeeId: number): Observable<any | undefined> {
+        return this.http.get<any>(`${this.apiUrl}/employee-competence/${employeeId}`
+        );
+    }
     getById(id: number): Observable<EmployeeCompetenceReport | undefined> {
         return this.http.get<EmployeeCompetenceReport>(`${this.apiUrl}/details/${id}`);
     }
@@ -52,5 +50,23 @@ export class EmployeeCompetenceService {
             { name: 'Technical Competency for testing activities as per skill Requirement matrix', rating: '' },
             { name: "Working with equipment's & maintenance", rating: '' },
         ];
+    }
+    getEmployeesDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/employeesdropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    }
+    getEmployeesForCompetenceReportDropdown(searchTerm: string, pageNumber: number, pageSize: number, recordId?: number | null): Observable<any[]> {
+
+        let url = `${this.apiUrl}/competence-report` + `?searchTerm=${(searchTerm || '')}` + `&pageNo=${pageNumber}` + `&pageSize=${pageSize}`;
+
+        if (recordId != null) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
+    }
+    getEmployeesDesignation(employeeId: number): Observable<string> {
+        return this.http.get(
+            `${this.apiUrl}/employee-designation/${employeeId}`,
+            { responseType: 'text' }
+        );
     }
 }

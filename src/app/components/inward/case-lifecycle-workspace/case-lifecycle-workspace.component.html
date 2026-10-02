@@ -33,8 +33,8 @@
             <i class="bi bi-collection me-1"></i>{{ lifecycleSummary.activeSampleCount }} Samples
           </span>
           <span class="kpi-sep">·</span>
-          <span class="kpi-mini-item" title="Allocated Tests (General + Chemical)">
-            <i class="bi bi-flask me-1"></i>{{ lifecycleSummary.totalTests }} Tests
+          <span class="kpi-mini-item" title="Allocated Tests (Universal + Legacy)">
+            <i class="bi bi-flask me-1"></i>{{ lifecycleSummary.totalUniversalTests || lifecycleSummary.totalTests }} Tests
           </span>
           <span class="kpi-sep">·</span>
           <span class="kpi-mini-item" title="Billing Status">
@@ -264,19 +264,62 @@
       </div>
     </div>
 
-    <!-- ── 2. REVIEW & PLAN STAGE ── -->
-    <div *ngIf="activeStageId === 'review-plan'" class="stage-pane-body">
+    <!-- ── 2. PLAN STAGE (Universal Screen 14) ── -->
+    <div *ngIf="activeStageId === 'plan'" class="stage-pane-body">
+      <fieldset class="border rounded p-2 mb-2 bg-white">
+        <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
+          <i class="bi bi-clipboard-check me-1"></i> Universal Test Planning
+        </legend>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <span class="text-muted fs-7">Planned freezes per sample (12 Gates). Pending: {{ lifecycleSummary?.universalPendingTests || 0 }} | Total UTG: {{ lifecycleSummary?.totalUniversalTests || 0 }}</span>
+          <button type="button" class="btn-lims btn-lims-save" (click)="openUniversalPlan()">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open Universal Plan Workspace
+          </button>
+        </div>
+      </fieldset>
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'plan'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
+    </div>
+
+    <!-- ── 3. REVIEW STAGE ── -->
+    <div *ngIf="activeStageId === 'review' || activeStageId === 'review-plan'" class="stage-pane-body">
       <div *ngIf="inwardId > 0">
         <app-review-of-request-form
           [embeddedInwardId]="inwardId"
           [isEmbeddedMode]="true"
-          [isEmbeddedReadOnly]="isStageReadOnly('review-plan')"
+          [isEmbeddedReadOnly]="isStageReadOnly('review')"
           (reviewCompleted)="onReviewCompleted($event)">
         </app-review-of-request-form>
       </div>
     </div>
 
-    <!-- ── 3. TESTING STAGE ── -->
+    <!-- ── 4. PREPARATION STAGE (Optional) ── -->
+    <div *ngIf="activeStageId === 'preparation'" class="stage-pane-body">
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'preparation'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
+      <fieldset class="border rounded p-2 mb-2 bg-white" *ngIf="getSelectedSample()">
+        <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
+          <i class="bi bi-scissors me-1"></i> Preparation: {{ getSelectedSample()?.sampleNo }}
+        </legend>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.preparationStatus">{{ getSelectedSample()?.preparationStatus }}</span>
+          <span class="text-muted fs-7" *ngIf="!getSelectedSample()?.preparationRequired">No cutting/machining required — stage auto N/A.</span>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCloseInlineForm()">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- ── 5. TESTING STAGE (Universal Execution) ── -->
     <div *ngIf="activeStageId === 'testing'" class="stage-pane-body">
       <app-case-sample-selector
         [samples]="lifecycleSummary?.samples || []"
@@ -285,24 +328,98 @@
         (sampleAction)="onSampleAction($event)">
       </app-case-sample-selector>
 
-      <div *ngIf="selectedSampleId && activeInlineAction === 'testing'" class="inline-form-panel">
-        <div class="inline-form-header">
-          <span class="inline-form-title">
-            <i class="bi bi-flask"></i> Testing Execution: {{ getSelectedSample()?.sampleNo }}
-          </span>
-          <button type="button" class="btn btn-sm btn-outline-secondary py-0" (click)="onCloseInlineForm()">
-            <i class="bi bi-x"></i> Close
+      <fieldset class="border rounded p-2 mb-2 bg-white" *ngIf="getSelectedSample()">
+        <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
+          <i class="bi bi-flask me-1"></i> Testing Execution: {{ getSelectedSample()?.sampleNo }}
+        </legend>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.latestExecutionStatus">{{ getSelectedSample()?.latestExecutionStatus }}</span>
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.universalTestCount">{{ getSelectedSample()?.universalTestCount }} UTG</span>
+          <button type="button" class="btn-lims btn-lims-save" (click)="openExecution(getSelectedSample())">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open Execution Workspace
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCloseInlineForm()">
+            <i class="bi bi-x-circle me-1"></i> Close
           </button>
         </div>
-        <div class="alert alert-info py-2 fs-7 mb-0">
-          <i class="bi bi-info-circle me-1"></i>
-          Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for test execution. 
-          (Integrated inline parameter entry will render here in Phase 5).
-        </div>
-      </div>
+      </fieldset>
     </div>
 
-    <!-- ── 5. REPORTING STAGE ── -->
+    <!-- ── 6. RESULT STAGE (Phase 7 Compliance) ── -->
+    <div *ngIf="activeStageId === 'result'" class="stage-pane-body">
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'result'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
+      <fieldset class="border rounded p-2 mb-2 bg-white" *ngIf="getSelectedSample()">
+        <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
+          <i class="bi bi-graph-up me-1"></i> Result Evaluation & Compliance: {{ getSelectedSample()?.sampleNo }}
+        </legend>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.universalResultStatus">Result: {{ getSelectedSample()?.universalResultStatus }}</span>
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.universalOverallDecision">Decision: {{ getSelectedSample()?.universalOverallDecision }}</span>
+          <button type="button" class="btn-lims btn-lims-save" (click)="openResult(getSelectedSample())">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open Result & Compliance
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCloseInlineForm()">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- ── 7. VERIFICATION STAGE (Four-Eyes) ── -->
+    <div *ngIf="activeStageId === 'verification'" class="stage-pane-body">
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'verification'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
+      <fieldset class="border rounded p-2 mb-2 bg-white" *ngIf="getSelectedSample()">
+        <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
+          <i class="bi bi-patch-check me-1"></i> Verification & Approval: {{ getSelectedSample()?.sampleNo }}
+        </legend>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.universalResultStatus">Result: {{ getSelectedSample()?.universalResultStatus }}</span>
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.universalOverallDecision">Decision: {{ getSelectedSample()?.universalOverallDecision }}</span>
+          <button type="button" class="btn-lims btn-lims-save" (click)="openVerification(getSelectedSample())">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open Review / Approval
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCloseInlineForm()">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- ── 8. APPROVAL STAGE (Authorized Signatory) ── -->
+    <div *ngIf="activeStageId === 'approval'" class="stage-pane-body">
+      <app-case-sample-selector
+        [samples]="lifecycleSummary?.samples || []"
+        [activeTab]="'approval'"
+        [selectedSampleId]="selectedSampleId"
+        (sampleAction)="onSampleAction($event)">
+      </app-case-sample-selector>
+      <fieldset class="border rounded p-2 mb-2 bg-white" *ngIf="getSelectedSample()">
+        <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
+          <i class="bi bi-award me-1"></i> Authorized Approval: {{ getSelectedSample()?.sampleNo }}
+        </legend>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.latestExecutionStatus">{{ getSelectedSample()?.latestExecutionStatus }}</span>
+          <button type="button" class="btn-lims btn-lims-save" (click)="openApproval(getSelectedSample())">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open Approval
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCloseInlineForm()">
+            <i class="bi bi-x-circle me-1"></i> Close
+          </button>
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- ── 9. REPORTING STAGE (Release + Dispatch + Amendment) ── -->
     <div *ngIf="activeStageId === 'reporting'" class="stage-pane-body">
       <app-case-sample-selector
         [samples]="lifecycleSummary?.samples || []"
@@ -311,21 +428,21 @@
         (sampleAction)="onSampleAction($event)">
       </app-case-sample-selector>
 
-      <div *ngIf="selectedSampleId && activeInlineAction === 'reporting'" class="inline-form-panel">
-        <div class="inline-form-header">
-          <span class="inline-form-title">
-            <i class="bi bi-file-earmark-text"></i> Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}
-          </span>
-          <button type="button" class="btn btn-sm btn-outline-secondary py-0" (click)="onCloseInlineForm()">
-            <i class="bi bi-x"></i> Close
+      <fieldset class="border rounded p-2 mb-2 bg-white" *ngIf="getSelectedSample()">
+        <legend class="w-auto px-2 fw-semibold text-theme d-flex align-items-center gap-1">
+          <i class="bi bi-file-earmark-text me-1"></i> Report Release & Dispatch: {{ getSelectedSample()?.sampleNo }}
+        </legend>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge bg-light text-dark border" *ngIf="getSelectedSample()?.universalReportStatus">{{ getSelectedSample()?.universalReportStatus }}</span>
+          <span class="badge bg-light text-dark border font-monospace" *ngIf="getSelectedSample()?.universalReportNo">{{ getSelectedSample()?.universalReportNo }}</span>
+          <button type="button" class="btn-lims btn-lims-save" (click)="openReport(getSelectedSample())">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open Report Workspace
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="onCloseInlineForm()">
+            <i class="bi bi-x-circle me-1"></i> Close
           </button>
         </div>
-        <div class="alert alert-info py-2 fs-7 mb-0">
-          <i class="bi bi-info-circle me-1"></i>
-          Sample <strong>{{ getSelectedSample()?.sampleNo }}</strong> selected for report generation / dispatch. 
-          (QuestPDF report preview & signatory approval will render here in Phase 6).
-        </div>
-      </div>
+      </fieldset>
     </div>
 
     <!-- ── 6. ACCOUNTS & BILLING STAGE ── -->

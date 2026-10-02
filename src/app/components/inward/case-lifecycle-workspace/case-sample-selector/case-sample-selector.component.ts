@@ -26,13 +26,42 @@ export class CaseSampleSelectorComponent {
     return { label: 'Received', class: 'badge-completed', icon: 'bi-check-circle-fill' };
   }
 
-  getReviewPlanStageInfo(sample: any): { label: string; class: string; icon: string; countText?: string } {
+  getPlanStageInfo(sample: any): { label: string; class: string; icon: string; countText?: string } {
     if (sample.isCancelled) return { label: '—', class: 'badge-muted', icon: 'bi-dash' };
-    const total = (sample.generalTestCount || 0) + (sample.chemicalTestCount || 0);
+    const totalU = sample.universalTestCount || 0;
+    const legacy = (sample.generalTestCount || 0) + (sample.chemicalTestCount || 0);
+    const total = totalU + legacy;
     if (total > 0) {
-      return { label: 'Planned', class: 'badge-completed', icon: 'bi-check-circle-fill', countText: `${total} Tests` };
+      const pend = sample.universalPendingCount || 0;
+      if (pend > 0) return { label: 'Planned', class: 'badge-completed', icon: 'bi-check-circle-fill', countText: `${total} Tests` };
+      return { label: 'Submitted', class: 'badge-completed', icon: 'bi-check-circle-fill', countText: `${total} Tests` };
     }
-    return { label: 'In Review', class: 'badge-active', icon: 'bi-clock-fill' };
+    return { label: 'Queue', class: 'badge-pending', icon: 'bi-hourglass' };
+  }
+
+  getReviewPlanStageInfo(sample: any): { label: string; class: string; icon: string; countText?: string } {
+    return this.getPlanStageInfo(sample);
+  }
+
+  getResultStageInfo(sample: any): { label: string; class: string; icon: string } {
+    if (sample.isCancelled) return { label: '—', class: 'badge-muted', icon: 'bi-dash' };
+    const res = (sample.universalResultStatus || '').toLowerCase();
+    const dec = (sample.universalOverallDecision || '').toUpperCase();
+    if (res.includes('approv') || res.includes('verif') || res.includes('final')) return { label: 'Evaluated', class: 'badge-completed', icon: 'bi-check-circle-fill' };
+    if (res.includes('calculat') || res) return { label: dec || 'Evaluated', class: 'badge-active', icon: 'bi-graph-up' };
+    const exec = (sample.latestExecutionStatus || '').toLowerCase();
+    if (exec.includes('complet')) return { label: 'Pending', class: 'badge-active', icon: 'bi-clock-fill' };
+    return { label: 'Queue', class: 'badge-pending', icon: 'bi-hourglass' };
+  }
+
+  getVerificationStageInfo(sample: any): { label: string; class: string; icon: string } {
+    if (sample.isCancelled) return { label: '—', class: 'badge-muted', icon: 'bi-dash' };
+    const exec = (sample.latestExecutionStatus || '').toLowerCase();
+    const res = (sample.universalResultStatus || '').toLowerCase();
+    if (exec.includes('approv') || res.includes('approv')) return { label: 'Approved', class: 'badge-completed', icon: 'bi-check-circle-fill' };
+    if (exec.includes('verif') || res.includes('verif') || res.includes('final')) return { label: 'Verified', class: 'badge-completed', icon: 'bi-check-circle-fill' };
+    if (exec.includes('complet') || res) return { label: 'Pending', class: 'badge-active', icon: 'bi-clock-fill' };
+    return { label: 'Queue', class: 'badge-pending', icon: 'bi-hourglass' };
   }
 
   getPrepStageInfo(sample: any): { label: string; class: string; icon: string } {
@@ -48,8 +77,12 @@ export class CaseSampleSelectorComponent {
 
   getTestingStageInfo(sample: any): { label: string; class: string; icon: string } {
     if (sample.isCancelled) return { label: '—', class: 'badge-muted', icon: 'bi-dash' };
-    if (sample.isTestingCompleted || sample.testResultStatus === 'Completed') {
+    const exec = (sample.latestExecutionStatus || '').toLowerCase();
+    if (exec.includes('approv') || exec.includes('verif') || exec.includes('complet') || sample.isTestingCompleted) {
       return { label: 'Completed', class: 'badge-completed', icon: 'bi-check-circle-fill' };
+    }
+    if (exec.includes('progress') || (sample.universalTestCount || 0) > (sample.universalPendingCount || 0)) {
+      return { label: 'Testing', class: 'badge-active', icon: 'bi-flask' };
     }
     if (sample.testResultStatus === 'In Progress' || sample.testResultStatus === 'UNDER_TESTING') {
       return { label: 'Testing', class: 'badge-active', icon: 'bi-flask' };
@@ -59,7 +92,11 @@ export class CaseSampleSelectorComponent {
 
   getReportingStageInfo(sample: any): { label: string; class: string; icon: string } {
     if (sample.isCancelled) return { label: '—', class: 'badge-muted', icon: 'bi-dash' };
-    if (sample.reportHeaderId) {
+    const uRep = (sample.universalReportStatus || '').toUpperCase();
+    if (uRep === 'RELEASED') return { label: 'Released', class: 'badge-completed', icon: 'bi-file-earmark-check-fill' };
+    if (uRep === 'GENERATED') return { label: 'Generated', class: 'badge-active', icon: 'bi-file-earmark-text' };
+    if (uRep === 'VOID') return { label: 'Void', class: 'badge-muted', icon: 'bi-slash-circle' };
+    if (sample.reportHeaderId || sample.universalReportId) {
       return { label: 'Generated', class: 'badge-completed', icon: 'bi-file-earmark-check-fill' };
     }
     return { label: 'Pending', class: 'badge-pending', icon: 'bi-hourglass' };
@@ -70,24 +107,44 @@ export class CaseSampleSelectorComponent {
       return { action: 'inward', label: 'View Sample', icon: 'bi-eye' };
     }
 
+    if (this.activeTab === 'plan') {
+      return { action: 'plan', label: (sample.universalTestCount || 0) > 0 ? 'View Plan' : 'Plan Tests', icon: 'bi-clipboard-plus' };
+    }
+
+    if (this.activeTab === 'preparation') {
+      return { action: 'preparation', label: 'Prep Status', icon: 'bi-scissors' };
+    }
+
     if (this.activeTab === 'testing') {
       return {
         action: 'testing',
-        label: sample.isTestingCompleted ? 'View Results' : 'Enter Results',
-        icon: sample.isTestingCompleted ? 'bi-eye' : 'bi-pencil-square'
+        label: sample.latestExecutionId ? 'Open Execution' : 'Enter Results',
+        icon: sample.latestExecutionId ? 'bi-box-arrow-up-right' : 'bi-pencil-square'
       };
+    }
+
+    if (this.activeTab === 'result') {
+      return { action: 'result', label: 'Evaluate', icon: 'bi-graph-up' };
+    }
+
+    if (this.activeTab === 'verification') {
+      return { action: 'verification', label: 'Verify', icon: 'bi-patch-check' };
+    }
+
+    if (this.activeTab === 'approval') {
+      return { action: 'approval', label: 'Approve', icon: 'bi-award' };
     }
 
     if (this.activeTab === 'reporting') {
       return {
         action: 'reporting',
-        label: sample.reportHeaderId ? 'View Report' : 'Draft Report',
-        icon: sample.reportHeaderId ? 'bi-file-earmark-text' : 'bi-plus-circle'
+        label: sample.universalReportId || sample.reportHeaderId ? 'View Report' : 'Draft Report',
+        icon: sample.universalReportId || sample.reportHeaderId ? 'bi-file-earmark-text' : 'bi-plus-circle'
       };
     }
 
     // Default for Overview: Context-aware smart action
-    const totalTests = (sample.generalTestCount || 0) + (sample.chemicalTestCount || 0);
+    const totalTests = (sample.generalTestCount || 0) + (sample.chemicalTestCount || 0) + (sample.universalTestCount || 0);
     if (totalTests === 0) {
       return { action: 'review-plan', label: 'Plan Tests', icon: 'bi-clipboard-plus' };
     }

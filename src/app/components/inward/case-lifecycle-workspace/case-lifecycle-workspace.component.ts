@@ -72,76 +72,147 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
       isReadOnly: false,
       isAccessible: true,
       permission: 'CanReadSampleInward',
-      statusDescription: 'Sample Inward Registration',
+      statusDescription: 'Sample Inward Registration (Customer, PO, Samples)',
       pendingAction: 'View / Edit Sample Receipt Details'
     },
     {
-      id: 'review-plan',
+      id: 'plan',
       stepNumber: 2,
-      label: 'Review & Plan',
-      shortLabel: 'Review',
-      icon: 'bi-shield-check',
+      label: 'Plan',
+      shortLabel: 'Plan',
+      icon: 'bi-clipboard-check',
       status: 'active',
       isReadOnly: false,
       isAccessible: true,
       permission: 'CanReadReview',
-      statusDescription: 'Technical Review & Test Planning',
-      pendingAction: 'Configure Test Plan & Review Feasibility'
+      statusDescription: 'Universal Test Planning (Screen 14, 12 Gates, Freeze)',
+      dependencyText: 'Inward completion',
+      pendingAction: 'Plan tests per sample & freeze configuration'
+    },
+    {
+      id: 'review',
+      stepNumber: 3,
+      label: 'Review',
+      shortLabel: 'Review',
+      icon: 'bi-shield-check',
+      status: 'pending',
+      isReadOnly: false,
+      isAccessible: true,
+      permission: 'CanReadReview',
+      statusDescription: 'Review of Request + Effective Config + Adjustment',
+      dependencyText: 'Plan submission',
+      pendingAction: 'Approve feasibility & adjustments'
+    },
+    {
+      id: 'preparation',
+      stepNumber: 4,
+      label: 'Prep',
+      shortLabel: 'Prep',
+      icon: 'bi-scissors',
+      status: 'pending',
+      isReadOnly: false,
+      isAccessible: true,
+      permission: 'CanReadSampleInward',
+      statusDescription: 'Sample Preparation (Optional Cutting/Machining)',
+      dependencyText: 'Review approval',
+      pendingAction: 'Complete specimen preparation if required'
     },
     {
       id: 'testing',
-      stepNumber: 3,
-      label: 'Testing',
-      shortLabel: 'Testing',
+      stepNumber: 5,
+      label: 'Execution',
+      shortLabel: 'Exec',
       icon: 'bi-flask',
       status: 'pending',
       isReadOnly: false,
       isAccessible: false,
       permission: 'CanReadTestResult',
-      statusDescription: 'Test Execution & Parameter Entry',
-      dependencyText: 'Review completion',
-      pendingAction: 'Enter test observations and results'
+      statusDescription: 'Test Execution (Phase 6 Snapshot Freeze + DAG)',
+      dependencyText: 'Review approval',
+      pendingAction: 'Enter observations & complete execution'
+    },
+    {
+      id: 'result',
+      stepNumber: 6,
+      label: 'Result',
+      shortLabel: 'Result',
+      icon: 'bi-graph-up',
+      status: 'pending',
+      isReadOnly: false,
+      isAccessible: false,
+      permission: 'CanReadTestResult',
+      statusDescription: 'Result Evaluation & Compliance (Phase 7 DAG + MU)',
+      dependencyText: 'Execution completion',
+      pendingAction: 'Evaluate compliance & finalize result'
+    },
+    {
+      id: 'verification',
+      stepNumber: 7,
+      label: 'Verify',
+      shortLabel: 'Verify',
+      icon: 'bi-patch-check',
+      status: 'pending',
+      isReadOnly: false,
+      isAccessible: false,
+      permission: 'CanReadTestResult',
+      statusDescription: 'Technical Verification Four-Eyes (Phase 8)',
+      dependencyText: 'Result finalization',
+      pendingAction: 'Verify result with findings lifecycle'
+    },
+    {
+      id: 'approval',
+      stepNumber: 8,
+      label: 'Approval',
+      shortLabel: 'Appr',
+      icon: 'bi-award',
+      status: 'pending',
+      isReadOnly: false,
+      isAccessible: false,
+      permission: 'CanReadTestResult',
+      statusDescription: 'Authorized Approval (Phase 8 Signatory)',
+      dependencyText: 'Verification completion',
+      pendingAction: 'Approve execution for reporting'
     },
     {
       id: 'reporting',
-      stepNumber: 4,
-      label: 'Reporting',
-      shortLabel: 'Reports',
+      stepNumber: 9,
+      label: 'Report',
+      shortLabel: 'Report',
       icon: 'bi-file-earmark-text',
       status: 'pending',
       isReadOnly: false,
       isAccessible: false,
       permission: 'CanReadReport',
-      statusDescription: 'QuestPDF Report & Approvals',
-      dependencyText: 'All test results must be completed & verified',
-      pendingAction: 'Generate and approve test report'
+      statusDescription: 'Report Generation & Release + Amendment (Phase 9 NABL/ULR)',
+      dependencyText: 'Approval completion',
+      pendingAction: 'Generate, release, dispatch & amend report'
     },
     {
       id: 'accounts',
-      stepNumber: 5,
-      label: 'Accounts',
-      shortLabel: 'Accounts',
+      stepNumber: 10,
+      label: 'Billing',
+      shortLabel: 'Bill',
       icon: 'bi-receipt',
       status: 'pending',
       isReadOnly: false,
       isAccessible: true,
       permission: 'CanReadAccount',
-      statusDescription: 'Billing, Invoices & Payment',
-      pendingAction: 'Generate Proforma/Tax Invoice and reconcile payment'
+      statusDescription: 'Billing & Invoice (Proforma/Tax + Payment)',
+      pendingAction: 'Generate invoice and reconcile payment'
     },
     {
       id: 'close',
-      stepNumber: 6,
-      label: 'Close',
+      stepNumber: 11,
+      label: 'Dispatch',
       shortLabel: 'Close',
       icon: 'bi-check2-circle',
       status: 'pending',
       isReadOnly: false,
       isAccessible: false,
       permission: 'CanReadAccount',
-      statusDescription: 'Formal Case Closure',
-      dependencyText: 'Report dispatched & payment reconciled',
-      pendingAction: 'Close case lifecycle'
+      statusDescription: 'Dispatch & Case Closure',
+      dependencyText: 'Report released & payment reconciled',
+      pendingAction: 'Dispatch case & close lifecycle'
     }
   ];
 
@@ -195,19 +266,39 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
 
   updateLifecycleStages(status: string): void {
     const s = (status || '').toUpperCase();
+    const sum: any = this.lifecycleSummary || {};
+    const totalU: number = sum.totalUniversalTests || sum.TotalUniversalTests || 0;
+    const inProg: number = sum.universalInProgressTests ?? sum.UniversalInProgressTests ?? 0;
+    const comp: number = sum.universalCompletedTests ?? sum.UniversalCompletedTests ?? 0;
+    const ver: number = sum.universalVerifiedTests ?? sum.UniversalVerifiedTests ?? 0;
+    const appr: number = sum.universalApprovedTests ?? sum.UniversalApprovedTests ?? 0;
+    const hasReleased: boolean = !!(sum.hasReleasedUniversalReport ?? sum.HasReleasedUniversalReport ?? sum.hasTaxInvoice);
+    const hasInvoice: boolean = !!(sum.hasTaxInvoice ?? sum.HasTaxInvoice);
+    const prepRequired: boolean = (sum.samples || []).some((x: any) => x.preparationRequired);
 
-    // Map InwardStatus to the 7-step index (0-based)
+    // Map InwardStatus + Universal aggregates to the 11-step index (0-based, guide flow)
     let activeStageIndex = 0;
-    if (s.includes('PLAN') || s.includes('REVIEW')) {
-      activeStageIndex = 1; // 2. Review & Plan
-    } else if (s.includes('TEST') || s.includes('VERIF')) {
-      activeStageIndex = 2; // 3. Testing
-    } else if (s.includes('REPORT') || s.includes('DISPATCH')) {
-      activeStageIndex = 3; // 4. Reporting
-    } else if (s.includes('INVOICE') || s.includes('ACCOUNT') || s.includes('BILLING')) {
-      activeStageIndex = 4; // 5. Accounts
-    } else if (s.includes('CLOSE') || s.includes('COMPLET')) {
-      activeStageIndex = 5; // 6. Close
+    if (s.includes('CLOSE') || s.includes('CASE_CLOSED') || s.includes('DISPATCHED')) {
+      activeStageIndex = 10;
+    } else if (s.includes('INVOICE') || s.includes('ACCOUNT') || s.includes('BILLING') || s.includes('PAYMENT') || (hasReleased && hasInvoice)) {
+      activeStageIndex = 9;
+    } else if (s.includes('REPORT') || s.includes('DISPATCH') || s.includes('RELEASED') || hasReleased) {
+      activeStageIndex = 8;
+    } else if (s.includes('APPROV') || appr > 0) {
+      activeStageIndex = 7;
+    } else if (s.includes('VERIF') || ver > 0) {
+      activeStageIndex = 6;
+    } else if (s.includes('RESULT') || s.includes('COMPLIANCE') || s.includes('EVALUAT') || comp > 0) {
+      activeStageIndex = 5;
+    } else if (s.includes('TEST') || s.includes('EXECUT') || s.includes('UNDER_TESTING') || inProg > 0) {
+      activeStageIndex = 4;
+    } else if (s.includes('PREP')) {
+      activeStageIndex = 3;
+    } else if (s.includes('REVIEW') || s.includes('UNDER_REVIEW') || s.includes('REVIEW_COMPLETED') || (totalU > 0 && (inProg + comp + ver + appr) === 0)) {
+      const pendingU: number = sum.universalPendingTests ?? sum.UniversalPendingTests ?? 0;
+      activeStageIndex = pendingU > 0 ? 1 : 2;
+    } else if (s.includes('PLAN') || s.includes('UNDER_PLANNING') || totalU > 0) {
+      activeStageIndex = 1;
     }
 
     this.stages = this.stages.map((stage, i) => {
@@ -233,11 +324,19 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
         isReadOnly = false;
       }
 
+      // Preparation is optional: mark N/A when no sample needs it
+      if (stage.id === 'preparation' && !prepRequired && stageStatus !== 'completed') {
+        stageStatus = 'na';
+        isAccessible = true;
+        isReadOnly = true;
+        naReason = 'No sample requires cutting/machining';
+      }
+
       // Check dates / actors from caseInfo / summary
       if (stage.id === 'inward') {
         completedOn = this.caseInfo?.collectionTime || this.caseInfo?.createdOn;
         completedBy = this.caseInfo?.createdBy;
-      } else if (stage.id === 'review-plan' && (stageStatus === 'completed' || activeStageIndex > 1)) {
+      } else if ((stage.id === 'review' || (stage as any).id === 'review-plan') && (stageStatus === 'completed' || activeStageIndex > 2)) {
         completedOn = this.caseInfo?.reviewedOn;
         completedBy = this.caseInfo?.reviewedBy;
       }
@@ -260,6 +359,62 @@ export class CaseLifecycleWorkspaceComponent implements OnInit {
         this.activeStageId = activeStage.id;
       }
     }
+  }
+
+  openUniversalPlan(): void {
+    this.router.navigate(['/sample/plan/universal', this.inwardId]);
+  }
+
+  openExecution(sample?: any): void {
+    const id = sample?.latestExecutionId || sample?.latestUniversalTestGroupId;
+    if (sample?.latestExecutionId) {
+      this.router.navigate(['/universal-test-execution'], { queryParams: { executionId: sample.latestExecutionId } });
+    } else if (sample?.latestUniversalTestGroupId) {
+      this.router.navigate(['/sample/test-group', sample.latestUniversalTestGroupId]);
+    } else {
+      this.router.navigate(['/sample/test-groups'], { queryParams: { inwardId: this.inwardId } });
+    }
+  }
+
+  openResult(sample?: any): void {
+    const execId = sample?.latestExecutionId;
+    if (execId) {
+      this.router.navigate(['/universal-test-execution'], { queryParams: { executionId: execId, tab: 'results' } });
+    } else {
+      this.toast.show('No execution found for result evaluation yet.', 'warning');
+    }
+  }
+
+  openVerification(sample?: any): void {
+    const execId = sample?.latestExecutionId;
+    if (execId) {
+      this.router.navigate(['/universal-review'], { queryParams: { executionId: execId } });
+    } else {
+      this.toast.show('No execution found for verification yet.', 'warning');
+    }
+  }
+
+  openApproval(sample?: any): void {
+    const execId = sample?.latestExecutionId;
+    if (execId) {
+      this.router.navigate(['/universal-review'], { queryParams: { executionId: execId } });
+    } else {
+      this.toast.show('No execution found for approval yet.', 'warning');
+    }
+  }
+
+  openReport(sample?: any): void {
+    const execId = sample?.latestExecutionId;
+    if (execId) {
+      this.router.navigate(['/universal-report'], { queryParams: { executionId: execId } });
+    } else {
+      this.toast.show('No execution found for reporting yet.', 'warning');
+    }
+  }
+
+  isStageReadOnlyCompat(stageId: string): boolean {
+    if (stageId === 'review-plan') return this.isStageReadOnly('review');
+    return this.isStageReadOnly(stageId);
   }
 
   onReviewCompleted(res?: any): void {

@@ -18,13 +18,15 @@
     <table class="table table-sm table-hover sample-selector-table mb-0">
       <thead>
         <tr>
-          <th style="min-width: 170px;">Sample / Material</th>
-          <th class="text-center" style="width: 100px;">1. Inward</th>
-          <th class="text-center" style="width: 130px;">2. Review & Plan</th>
-          <th class="text-center" style="width: 100px;">3. Prep</th>
-          <th class="text-center" style="width: 110px;">4. Testing</th>
-          <th class="text-center" style="width: 110px;">5. Reporting</th>
-          <th class="text-end" style="width: 130px;">Action</th>
+          <th class="col-sample">Sample / Material</th>
+          <th class="text-center col-stage">1. Inward</th>
+          <th class="text-center col-stage">2. Plan</th>
+          <th class="text-center col-stage">3. Prep</th>
+          <th class="text-center col-stage">4. Exec</th>
+          <th class="text-center col-stage">5. Result</th>
+          <th class="text-center col-stage">6. Verify</th>
+          <th class="text-center col-stage">7. Report</th>
+          <th class="text-end col-action">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -40,7 +42,7 @@
               <span class="fw-bold text-dark fs-7">{{ sample.sampleNo }}</span>
             </div>
             <div class="d-flex align-items-center gap-1 mt-1">
-              <span class="text-dark fw-medium fs-8 text-truncate" style="max-width: 130px;" [title]="sample.productName">
+              <span class="text-dark fw-medium fs-8 text-truncate sample-product-name" [title]="sample.productName">
                 {{ sample.productName || 'Sample' }}
               </span>
               <span class="badge bg-light text-secondary border fs-8" *ngIf="sample.gradeName" [title]="sample.gradeName">
@@ -57,18 +59,18 @@
             </span>
           </td>
 
-          <!-- Stage 2: Review & Plan -->
+          <!-- Stage 2: Plan (Universal) -->
           <td class="text-center">
-            <span class="matrix-pill" [ngClass]="getReviewPlanStageInfo(sample).class">
-              <i class="bi" [ngClass]="getReviewPlanStageInfo(sample).icon"></i>
-              <span>{{ getReviewPlanStageInfo(sample).label }}</span>
+            <span class="matrix-pill" [ngClass]="getPlanStageInfo(sample).class">
+              <i class="bi" [ngClass]="getPlanStageInfo(sample).icon"></i>
+              <span>{{ getPlanStageInfo(sample).label }}</span>
             </span>
-            <div class="d-flex justify-content-center gap-1 mt-1" *ngIf="sample.generalTestCount || sample.chemicalTestCount">
-              <span class="badge-mini bg-primary-subtle text-primary border" [title]="sample.generalTestCount + ' General Tests'">
-                <i class="bi bi-gear me-1"></i>{{ sample.generalTestCount }}
+            <div class="d-flex justify-content-center gap-1 mt-1" *ngIf="sample.universalTestCount || sample.generalTestCount || sample.chemicalTestCount">
+              <span class="badge-mini bg-primary-subtle text-primary border" *ngIf="sample.universalTestCount" [title]="sample.universalTestCount + ' Universal Tests'">
+                <i class="bi bi-diagram-3 me-1"></i>{{ sample.universalTestCount }}
               </span>
-              <span class="badge-mini bg-success-subtle text-success border" [title]="sample.chemicalTestCount + ' Chemical Tests'">
-                <i class="bi bi-flask me-1"></i>{{ sample.chemicalTestCount }}
+              <span class="badge-mini bg-secondary-subtle text-secondary border" *ngIf="sample.generalTestCount || sample.chemicalTestCount" [title]="(sample.generalTestCount + sample.chemicalTestCount) + ' Legacy Tests'">
+                <i class="bi bi-gear me-1"></i>{{ sample.generalTestCount + sample.chemicalTestCount }}
               </span>
             </div>
           </td>
@@ -89,14 +91,33 @@
             </span>
           </td>
 
-          <!-- Stage 5: Reporting -->
+          <!-- Stage 5: Result -->
+          <td class="text-center">
+            <span class="matrix-pill" [ngClass]="getResultStageInfo(sample).class">
+              <i class="bi" [ngClass]="getResultStageInfo(sample).icon"></i>
+              <span>{{ getResultStageInfo(sample).label }}</span>
+            </span>
+            <div class="text-muted fs-8 mt-1 text-truncate" *ngIf="sample.universalOverallDecision" [title]="sample.universalOverallDecision">
+              {{ sample.universalOverallDecision }}
+            </div>
+          </td>
+
+          <!-- Stage 6: Verification (+Approval) -->
+          <td class="text-center">
+            <span class="matrix-pill" [ngClass]="getVerificationStageInfo(sample).class">
+              <i class="bi" [ngClass]="getVerificationStageInfo(sample).icon"></i>
+              <span>{{ getVerificationStageInfo(sample).label }}</span>
+            </span>
+          </td>
+
+          <!-- Stage 6: Reporting -->
           <td class="text-center">
             <span class="matrix-pill" [ngClass]="getReportingStageInfo(sample).class">
               <i class="bi" [ngClass]="getReportingStageInfo(sample).icon"></i>
               <span>{{ getReportingStageInfo(sample).label }}</span>
             </span>
-            <div class="text-muted fs-8 mt-1 text-truncate" *ngIf="sample.reportNo" [title]="sample.reportNo">
-              {{ sample.reportNo }}
+            <div class="text-muted fs-8 mt-1 text-truncate" *ngIf="sample.universalReportNo || sample.reportNo" [title]="sample.universalReportNo || sample.reportNo">
+              {{ sample.universalReportNo || sample.reportNo }}
             </div>
           </td>
 
@@ -116,7 +137,7 @@
         </tr>
 
         <tr *ngIf="!samples || samples.length === 0">
-          <td colspan="7" class="text-center py-4 text-muted fs-7">
+          <td colspan="9" class="text-center py-4 text-muted fs-7">
             <i class="bi bi-inbox me-1"></i> No sample details registered for this case.
           </td>
         </tr>

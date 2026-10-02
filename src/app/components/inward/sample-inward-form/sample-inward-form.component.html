@@ -180,61 +180,34 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- ROW 2: ACCOUNTANT (Type 'A', Golden badge) -->
-                <ng-container *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
-                  <tr *ngIf="isAccountantContact(i)" class="table-warning bg-opacity-10">
-                    <td class="text-center">
-                      <span class="badge bg-warning text-dark fw-bold px-2 py-1 text-xs-68" title="Accountant">A</span>
-                    </td>
-                    <td class="fw-semibold text-dark">{{ contact.get("name")?.value || "-" }}</td>
-                    <td>📞 {{ contact.get("mobileNo")?.value || "-" }}</td>
-                    <td>✉ {{ contact.get("emailId")?.value || "-" }}</td>
-                    <td class="text-center">
-                      <span *ngIf="contact.get('sendBill')?.value" class="text-success fw-bold fs-6" title="Send Bill Allowed">
-                        <i class="bi bi-check-circle-fill"></i>
-                      </span>
-                      <span *ngIf="!contact.get('sendBill')?.value" class="text-muted fs-6" title="Send Bill Not Allowed">
-                        <i class="bi bi-dash-circle"></i>
-                      </span>
-                    </td>
-                    <td class="text-center">
-                      <span *ngIf="contact.get('sendReport')?.value" class="text-success fw-bold fs-6" title="Send Report Allowed">
-                        <i class="bi bi-check-circle-fill"></i>
-                      </span>
-                      <span *ngIf="!contact.get('sendReport')?.value" class="text-muted fs-6" title="Send Report Not Allowed">
-                        <i class="bi bi-dash-circle"></i>
-                      </span>
-                    </td>
-                  </tr>
-                </ng-container>
-
-                <!-- ROW 3+: SUB-CONTACTS (Type 'C', Secondary badge) -->
-                <ng-container *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i">
-                  <tr *ngIf="!isAccountantContact(i)">
-                    <td class="text-center">
-                      <span class="badge bg-secondary text-white fw-bold px-2 py-1 text-xs-68" title="Contact Person">C</span>
-                    </td>
-                    <td class="fw-medium text-dark">{{ contact.get("name")?.value || "-" }}</td>
-                    <td>📞 {{ contact.get("mobileNo")?.value || "-" }}</td>
-                    <td>✉ {{ contact.get("emailId")?.value || "-" }}</td>
-                    <td class="text-center">
-                      <span *ngIf="contact.get('sendBill')?.value" class="text-success fw-bold fs-6" title="Send Bill Allowed">
-                        <i class="bi bi-check-circle-fill"></i>
-                      </span>
-                      <span *ngIf="!contact.get('sendBill')?.value" class="text-muted fs-6" title="Send Bill Not Allowed">
-                        <i class="bi bi-dash-circle"></i>
-                      </span>
-                    </td>
-                    <td class="text-center">
-                      <span *ngIf="contact.get('sendReport')?.value" class="text-success fw-bold fs-6" title="Send Report Allowed">
-                        <i class="bi bi-check-circle-fill"></i>
-                      </span>
-                      <span *ngIf="!contact.get('sendReport')?.value" class="text-muted fs-6" title="Send Report Not Allowed">
-                        <i class="bi bi-dash-circle"></i>
-                      </span>
-                    </td>
-                  </tr>
-                </ng-container>
+                <tr *ngFor="let contact of contactControls.controls; let i = index" [formGroupName]="i"
+                    [ngClass]="{ 'table-warning bg-opacity-10': isAccountantContact(i) }">
+                  <td class="text-center">
+                    <span *ngIf="isAccountantContact(i)" class="badge bg-warning text-dark fw-bold px-2 py-1 text-xs-68" title="Accountant">A</span>
+                    <span *ngIf="!isAccountantContact(i)" class="badge bg-secondary text-white fw-bold px-2 py-1 text-xs-68" title="Contact Person">C</span>
+                  </td>
+                  <td [ngClass]="isAccountantContact(i) ? 'fw-semibold text-dark' : 'fw-medium text-dark'">
+                    {{ contact.get("name")?.value || "-" }}
+                  </td>
+                  <td>📞 {{ contact.get("mobileNo")?.value || "-" }}</td>
+                  <td>✉ {{ contact.get("emailId")?.value || "-" }}</td>
+                  <td class="text-center">
+                    <span *ngIf="contact.get('sendBill')?.value" class="text-success fw-bold fs-6" title="Send Bill Allowed">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </span>
+                    <span *ngIf="!contact.get('sendBill')?.value" class="text-muted fs-6" title="Send Bill Not Allowed">
+                      <i class="bi bi-dash-circle"></i>
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <span *ngIf="contact.get('sendReport')?.value" class="text-success fw-bold fs-6" title="Send Report Allowed">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </span>
+                    <span *ngIf="!contact.get('sendReport')?.value" class="text-muted fs-6" title="Send Report Not Allowed">
+                      <i class="bi bi-dash-circle"></i>
+                    </span>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -315,8 +288,8 @@
                           />
                           <label class="form-check-label text-dark mb-0 cursor-pointer d-flex align-items-center flex-wrap gap-1 w-100 text-xs-75" [for]="'rep_c_' + rIdx + '_' + (contact.contactID || contact.id)">
                             <strong class="text-dark me-1">{{ contact.name }}</strong>
-                            <span *ngIf="contact.isAccountant || contact.designation === 'Accountant' || (cIdx === 0 && !contact.designation)" class="badge bg-warning text-dark fw-bold me-1 text-xs-68" title="Accountant">Accountant</span>
-                            <span *ngIf="!contact.isAccountant && contact.designation !== 'Accountant' && !(cIdx === 0 && !contact.designation)" class="badge bg-light text-secondary border me-1 text-xs-68">{{ contact.designation || 'Contact' }}</span>
+                            <span *ngIf="checkIsAccountant(contact)" class="badge bg-warning text-dark fw-bold me-1 text-xs-68" title="Accountant">Accountant</span>
+                            <span *ngIf="!checkIsAccountant(contact)" class="badge bg-light text-secondary border me-1 text-xs-68">{{ contact.designation || 'Contact' }}</span>
                             <span class="text-muted ms-auto text-nowrap text-xs-72">📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
                           </label>
                         </div>
@@ -407,8 +380,8 @@
                           />
                           <label class="form-check-label text-dark mb-0 cursor-pointer d-flex align-items-center flex-wrap gap-1 w-100 text-xs-75" [for]="'bill_c_' + bIdx + '_' + (contact.contactID || contact.id)">
                             <strong class="text-dark me-1">{{ contact.name }}</strong>
-                            <span *ngIf="contact.isAccountant || contact.designation === 'Accountant' || (cIdx === 0 && !contact.designation)" class="badge bg-warning text-dark fw-bold me-1 text-xs-68" title="Accountant">Accountant</span>
-                            <span *ngIf="!contact.isAccountant && contact.designation !== 'Accountant' && !(cIdx === 0 && !contact.designation)" class="badge bg-light text-secondary border me-1 text-xs-68">{{ contact.designation || 'Contact' }}</span>
+                            <span *ngIf="checkIsAccountant(contact)" class="badge bg-warning text-dark fw-bold me-1 text-xs-68" title="Accountant">Accountant</span>
+                            <span *ngIf="!checkIsAccountant(contact)" class="badge bg-light text-secondary border me-1 text-xs-68">{{ contact.designation || 'Contact' }}</span>
                             <span class="text-muted ms-auto text-nowrap text-xs-72">📞 {{ contact.mobileNo || '-' }} | ✉ {{ contact.emailId || '-' }}</span>
                           </label>
                         </div>

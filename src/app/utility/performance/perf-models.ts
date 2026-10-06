@@ -20,6 +20,8 @@ export interface PerfApiMetric {
   isStuck: boolean;
   isSlow: boolean;
   errorMessage?: string;
+  callerStack?: string;
+  requestBodySummary?: string;
   timestamp: Date;
 }
 

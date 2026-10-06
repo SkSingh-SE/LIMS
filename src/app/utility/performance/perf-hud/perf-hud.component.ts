@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragEnd } from '@angular/cdk/drag-drop';
@@ -18,6 +18,20 @@ export class PerfHudComponent {
   public isExpanded = signal<boolean>(false);
   public activeTab = signal<'traces' | 'duplicates' | 'slow' | 'settings'>('traces');
   public selectedTx = signal<PerfEventTransaction | null>(null);
+  public searchTerm = signal<string>('');
+  public expandedApiId = signal<string | null>(null);
+  public copiedId = signal<string | null>(null);
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardShortcut(event: KeyboardEvent): void {
+    if (
+      (event.altKey && event.key.toLowerCase() === 'p') ||
+      (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'p')
+    ) {
+      event.preventDefault();
+      this.toggleExpand();
+    }
+  }
 
   // Draggable State Management
   public isPillDragging = false;
@@ -46,8 +60,39 @@ export class PerfHudComponent {
     return this.transactions().flatMap(t => t.slowApis);
   });
 
+  public filteredApis = computed<PerfApiMetric[]>(() => {
+    const tx = this.selectedTx();
+    if (!tx) return [];
+    const term = this.searchTerm().trim().toLowerCase();
+    if (!term) return tx.apis;
+    return tx.apis.filter(a =>
+      a.cleanUrl.toLowerCase().includes(term) ||
+      a.method.toLowerCase().includes(term) ||
+      a.url.toLowerCase().includes(term)
+    );
+  });
+
+  public toggleApiDetails(apiId: string): void {
+    this.expandedApiId.set(this.expandedApiId() === apiId ? null : apiId);
+  }
+
+  public copyText(text?: string, id?: string): void {
+    if (!text || !id) return;
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedId.set(id);
+      setTimeout(() => {
+        if (this.copiedId() === id) this.copiedId.set(null);
+      }, 1800);
+    });
+  }
+
+  public clearSearch(): void {
+    this.searchTerm.set('');
+  }
+
   public selectTransaction(tx: PerfEventTransaction): void {
     this.selectedTx.set(tx);
+    this.expandedApiId.set(null);
   }
 
   public toggleExpand(): void {

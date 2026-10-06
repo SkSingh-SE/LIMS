@@ -156,10 +156,17 @@ export class PerfTraceService {
   // 3. HTTP REQUEST & RESPONSE INTERCEPTION
   // ==========================================
 
-  public onRequestStart(method: string, url: string): string {
+  public onRequestStart(method: string, url: string, body?: any): string {
     const cleanUrl = url.split('?')[0];
     const apiId = `API-${this.apiCounter++}`;
     const startTime = performance.now();
+
+    // DevTools Performance Mark
+    if (typeof performance.mark === 'function') {
+      try {
+        performance.mark(`LIMS: ${method.toUpperCase()} ${cleanUrl}-start`, { startTime });
+      } catch (_) {}
+    }
 
     let tx = this.activeTransaction();
     if (!tx) {
@@ -185,6 +192,9 @@ export class PerfTraceService {
       this.recentApiCache[matchIndex].time = now;
     }
 
+    const callerStack = this.captureCallerStack();
+    const requestBodySummary = this.summarizeBody(body);
+
     const metric: PerfApiMetric = {
       id: apiId,
       traceId: tx.id,
@@ -197,6 +207,8 @@ export class PerfTraceService {
       duplicateCount,
       isStuck: false,
       isSlow: false,
+      callerStack,
+      requestBodySummary,
       timestamp: new Date()
     };
 
@@ -233,6 +245,16 @@ export class PerfTraceService {
     metric.responseSize = responseSize;
     metric.errorMessage = errorMessage;
     metric.isStuck = false;
+
+    // DevTools Performance Mark & Measure
+    if (typeof performance.mark === 'function') {
+      try {
+        const markStart = `LIMS: ${metric.method} ${metric.cleanUrl}-start`;
+        const markEnd = `LIMS: ${metric.method} ${metric.cleanUrl}-end`;
+        performance.mark(markEnd, { startTime: endTime });
+        performance.measure(`[LIMS Net] ${metric.method} ${metric.cleanUrl}`, markStart, markEnd);
+      } catch (_) {}
+    }
 
     // Check if Slow
     if (metric.duration > this.config().slowApiThresholdMs) {
@@ -610,5 +632,43 @@ export class PerfTraceService {
       toggleConsole: (val?: boolean) => this.toggleConsole(val),
       toggleHud: (val?: boolean) => this.toggleHud(val)
     };
+  }
+
+  public captureCallerStack(): string {
+    const stack = new Error().stack || '';
+    const lines = stack.split('\n');
+    const filtered = lines.filter(l => {
+      const lower = l.toLowerCase();
+      return (
+        !lower.includes('perf-trace') &&
+        !lower.includes('perf-profiler') &&
+        !lower.includes('perfprofilerinterceptor') &&
+        !lower.includes('perftraceservice') &&
+        !lower.includes('auth.interceptor') &&
+        !lower.includes('authinterceptor') &&
+        !lower.includes('capturecallerstack') &&
+        !lower.includes('onrequeststart') &&
+        !lower.includes('node_modules') &&
+        !lower.includes('rxjs') &&
+        !lower.includes('zone.js') &&
+        !lower.includes('httpclient') &&
+        !lower.includes('httpinterceptor') &&
+        !lower.includes('interceptinghandler')
+      );
+    });
+    return filtered.slice(0, 4).map(l => l.trim()).join('\n') || 'Origin: Direct HTTP Client Call';
+  }
+
+  public summarizeBody(body: any): string | undefined {
+    if (!body) return undefined;
+    if (typeof FormData !== 'undefined' && body instanceof FormData) {
+      return '[FormData Upload]';
+    }
+    try {
+      const str = typeof body === 'string' ? body : JSON.stringify(body);
+      return str.length > 250 ? str.slice(0, 250) + '...' : str;
+    } catch {
+      return undefined;
+    }
   }
 }

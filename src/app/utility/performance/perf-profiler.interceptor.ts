@@ -13,7 +13,7 @@ export const perfProfilerInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   // Register API start
-  const apiId = perfTrace.onRequestStart(req.method, req.urlWithParams);
+  const apiId = perfTrace.onRequestStart(req.method, req.urlWithParams, req.body);
 
   return next(req).pipe(
     tap((event: HttpEvent<any>) => {

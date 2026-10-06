@@ -71,7 +71,10 @@
           <i class="bi bi-lightning-charge-fill"></i>
         </div>
         <div>
-          <h6 class="perf-drawer-title">LIMS Performance & Gap Analyzer</h6>
+          <div class="d-flex align-items-center gap-1.5">
+            <h6 class="perf-drawer-title mb-0">LIMS Performance & Gap Analyzer</h6>
+            <span class="perf-shortcut-badge" title="Keyboard Shortcut">Alt + P</span>
+          </div>
           <span class="perf-drawer-subtitle">Live Event Tracing, Duplicate API Detection & Render Diagnostics</span>
         </div>
       </div>
@@ -255,47 +258,165 @@
 
             <!-- Triggered APIs Table -->
             <div class="perf-apis-table-card">
-              <div class="perf-table-header">
-                <i class="bi bi-hdd-network me-1"></i><strong>Triggered HTTP Requests ({{ selectedTx()?.apis?.length }})</strong>
+              <div class="perf-table-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-hdd-network me-1"></i>
+                  <strong>Triggered HTTP Requests ({{ filteredApis().length }} / {{ selectedTx()?.apis?.length }})</strong>
+                </div>
+
+                <!-- Endpoint Search Input -->
+                <div class="perf-search-input-wrap" *ngIf="selectedTx()?.apis?.length">
+                  <i class="bi bi-search perf-search-icon"></i>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm perf-search-control"
+                    placeholder="Filter by URL or method..."
+                    [ngModel]="searchTerm()"
+                    (ngModelChange)="searchTerm.set($event)"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-sm perf-search-clear-btn"
+                    *ngIf="searchTerm()"
+                    (click)="clearSearch()"
+                    title="Clear search"
+                  >
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
               </div>
 
               <div class="table-responsive" *ngIf="selectedTx()?.apis?.length; else noApisTpl">
                 <table class="table perf-table mb-0">
                   <thead>
                     <tr>
+                      <th class="perf-th-collapse"></th>
                       <th>Method</th>
                       <th>Endpoint URL</th>
                       <th>Status</th>
                       <th>Latency</th>
                       <th>Analysis</th>
+                      <th class="text-end">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let api of selectedTx()?.apis" [class.table-warning]="api.isDuplicate" [class.table-danger]="api.isSlow">
-                      <td>
-                        <span class="perf-method-badge" [ngClass]="getMethodBadgeClass(api.method)">{{ api.method }}</span>
-                      </td>
-                      <td class="perf-url-cell" [title]="api.url">
-                        <span class="text-truncate d-block">{{ api.cleanUrl }}</span>
-                      </td>
-                      <td>
-                        <span class="badge" [ngClass]="api.status >= 200 && api.status < 300 ? 'bg-success' : 'bg-danger'">
-                          {{ api.status || 'Pending' }}
-                        </span>
-                      </td>
-                      <td>
-                        <strong [ngClass]="getDurationBadgeClass(api.duration)">{{ formatMs(api.duration) }}</strong>
-                      </td>
-                      <td>
-                        <span class="badge bg-warning text-dark me-1" *ngIf="api.isDuplicate">
-                          <i class="bi bi-arrow-repeat me-1"></i>Duplicate ({{ api.duplicateCount }}x)
-                        </span>
-                        <span class="badge bg-danger me-1" *ngIf="api.isSlow">
-                          <i class="bi bi-clock-history me-1"></i>Slow
-                        </span>
-                        <span class="badge bg-success" *ngIf="!api.isDuplicate && !api.isSlow">
-                          <i class="bi bi-check-circle me-1"></i>Optimal
-                        </span>
+                    <ng-container *ngFor="let api of filteredApis()">
+                      <tr
+                        class="perf-api-row"
+                        [class.table-warning]="api.isDuplicate"
+                        [class.table-danger]="api.isSlow"
+                        [class.perf-row-expanded]="expandedApiId() === api.id"
+                        (click)="toggleApiDetails(api.id)"
+                        title="Click to view caller stack and payload"
+                      >
+                        <td class="perf-td-caret text-center">
+                          <i
+                            class="bi perf-caret-icon"
+                            [ngClass]="expandedApiId() === api.id ? 'bi-chevron-down' : 'bi-chevron-right'"
+                          ></i>
+                        </td>
+                        <td>
+                          <span class="perf-method-badge" [ngClass]="getMethodBadgeClass(api.method)">{{ api.method }}</span>
+                        </td>
+                        <td class="perf-url-cell" [title]="api.url">
+                          <span class="text-truncate d-block">{{ api.cleanUrl }}</span>
+                        </td>
+                        <td>
+                          <span class="badge" [ngClass]="api.status >= 200 && api.status < 300 ? 'bg-success' : 'bg-danger'">
+                            {{ api.status || 'Pending' }}
+                          </span>
+                        </td>
+                        <td>
+                          <strong [ngClass]="getDurationBadgeClass(api.duration)">{{ formatMs(api.duration) }}</strong>
+                        </td>
+                        <td>
+                          <span class="badge bg-warning text-dark me-1" *ngIf="api.isDuplicate">
+                            <i class="bi bi-arrow-repeat me-1"></i>Duplicate ({{ api.duplicateCount }}x)
+                          </span>
+                          <span class="badge bg-danger me-1" *ngIf="api.isSlow">
+                            <i class="bi bi-clock-history me-1"></i>Slow
+                          </span>
+                          <span class="badge bg-success" *ngIf="!api.isDuplicate && !api.isSlow">
+                            <i class="bi bi-check-circle me-1"></i>Optimal
+                          </span>
+                        </td>
+                        <td class="text-end" (click)="$event.stopPropagation()">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary perf-copy-btn"
+                            (click)="copyText(api.url, api.id + '-url')"
+                            title="Copy full URL"
+                          >
+                            <i class="bi" [ngClass]="copiedId() === api.id + '-url' ? 'bi-check-lg text-success' : 'bi-clipboard'"></i>
+                          </button>
+                        </td>
+                      </tr>
+
+                      <!-- Expanded Details Row (Caller Stack & Request Body) -->
+                      <tr *ngIf="expandedApiId() === api.id" class="perf-details-subrow">
+                        <td colspan="7" class="p-2 bg-light-subtle">
+                          <div class="perf-details-box">
+                            <!-- Full URL with Quick Copy -->
+                            <div class="perf-detail-section mb-2">
+                              <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="perf-detail-label">
+                                  <i class="bi bi-link-45deg me-1"></i>Full Endpoint URL:
+                                </span>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm perf-copy-link-btn"
+                                  (click)="copyText(api.url, api.id + '-url-full')"
+                                >
+                                  <i class="bi" [ngClass]="copiedId() === api.id + '-url-full' ? 'bi-check-lg text-success me-1' : 'bi-clipboard me-1'"></i>
+                                  {{ copiedId() === api.id + '-url-full' ? 'Copied' : 'Copy URL' }}
+                                </button>
+                              </div>
+                              <code class="perf-code-block">{{ api.url }}</code>
+                            </div>
+
+                            <!-- Caller Stack Trace -->
+                            <div class="perf-detail-section mb-2" *ngIf="api.callerStack">
+                              <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="perf-detail-label">
+                                  <i class="bi bi-layers-fill me-1 text-primary"></i>Origin Caller Stack (Component / Service):
+                                </span>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm perf-copy-link-btn"
+                                  (click)="copyText(api.callerStack, api.id + '-stack')"
+                                >
+                                  <i class="bi" [ngClass]="copiedId() === api.id + '-stack' ? 'bi-check-lg text-success me-1' : 'bi-clipboard me-1'"></i>
+                                  {{ copiedId() === api.id + '-stack' ? 'Copied' : 'Copy Stack' }}
+                                </button>
+                              </div>
+                              <pre class="perf-stack-block mb-0">{{ api.callerStack }}</pre>
+                            </div>
+
+                            <!-- Request Body Summary -->
+                            <div class="perf-detail-section" *ngIf="api.requestBodySummary">
+                              <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="perf-detail-label">
+                                  <i class="bi bi-file-earmark-code me-1 text-info"></i>Request Payload Preview:
+                                </span>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm perf-copy-link-btn"
+                                  (click)="copyText(api.requestBodySummary, api.id + '-body')"
+                                >
+                                  <i class="bi" [ngClass]="copiedId() === api.id + '-body' ? 'bi-check-lg text-success me-1' : 'bi-clipboard me-1'"></i>
+                                  {{ copiedId() === api.id + '-body' ? 'Copied' : 'Copy Payload' }}
+                                </button>
+                              </div>
+                              <pre class="perf-payload-block mb-0">{{ api.requestBodySummary }}</pre>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </ng-container>
+
+                    <tr *ngIf="filteredApis().length === 0 && selectedTx()?.apis?.length">
+                      <td colspan="7" class="text-center py-3 text-muted">
+                        <i class="bi bi-search me-1"></i>No API requests match "<strong>{{ searchTerm() }}</strong>"
                       </td>
                     </tr>
                   </tbody>

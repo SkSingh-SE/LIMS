@@ -6,13 +6,14 @@ import { GlobalLoaderComponent } from '../global-loader/global-loader.component'
 import { ToastComponent } from '../toast/toast.component';
 import { UnsavedChangesModalComponent } from '../../utility/components/unsaved-changes-modal/unsaved-changes-modal.component';
 import { FloatingSymbolPickerComponent } from '../../utility/components/floating-symbol-picker/floating-symbol-picker.component';
+import { ApiProfilerBannerComponent } from '../../utility/components/api-profiler-banner/api-profiler-banner.component';
 import { LoaderService } from '../../services/loader.service';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-layout',
-  imports: [CommonModule, NavbarComponent, GlobalLoaderComponent, ToastComponent, RouterOutlet, UnsavedChangesModalComponent, FloatingSymbolPickerComponent],
+  imports: [CommonModule, NavbarComponent, GlobalLoaderComponent, ToastComponent, RouterOutlet, UnsavedChangesModalComponent, FloatingSymbolPickerComponent, ApiProfilerBannerComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })

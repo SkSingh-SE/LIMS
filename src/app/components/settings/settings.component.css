@@ -79,44 +79,78 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 1rem;
+  padding: 0.65rem 0.85rem;
   background: transparent;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   border-radius: 6px;
-  color: #666;
-  font-size: 0.9rem;
+  color: #4b5563;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   text-align: left;
+  position: relative;
 }
 
 .nav-menu-btn:hover {
-  background: rgba(var(--bs-primary-rgb), 0.08);
-  border-color: rgba(var(--bs-primary-rgb), 0.15);
+  background: rgba(var(--bs-primary-rgb), 0.06);
+  border-color: rgba(var(--bs-primary-rgb), 0.12);
   color: var(--primary-color);
 }
 
 .nav-menu-btn.active {
-  background: rgba(var(--bs-primary-rgb), 0.12);
-  border-left: 3px solid var(--primary-color);
+  background: rgba(var(--bs-primary-rgb), 0.08);
+  border-color: rgba(var(--bs-primary-rgb), 0.18);
   color: var(--primary-color);
-  padding-left: calc(1rem - 1px);
   font-weight: 600;
 }
 
+.nav-menu-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  background: var(--primary-color);
+  border-radius: 0 3px 3px 0;
+}
+
 .nav-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   background: rgba(var(--bs-primary-rgb), 0.12);
   border-radius: 6px;
   font-size: 1.1rem;
   color: var(--primary-color);
   flex-shrink: 0;
   transition: all 0.2s ease;
+  line-height: 1 !important;
+  box-sizing: border-box;
+}
+
+.nav-icon i,
+.nav-icon .bi {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.nav-icon i::before,
+.nav-icon .bi::before {
+  vertical-align: 0 !important;
+  display: inline-block !important;
+  line-height: 1 !important;
+  margin: 0 !important;
 }
 
 .nav-menu-btn.active .nav-icon {

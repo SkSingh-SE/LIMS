@@ -643,6 +643,8 @@ export const routes: Routes = [
             { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
             { path: 'test-result', component: TestResultComponent },
+            { path: 'test-result/entry/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'test-result/entry', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },

@@ -35,6 +35,10 @@ export class ProductMasterService {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}&metalId=${metalId}`);
   }
 
+  getProductMasterDropdown(searchTerm: string, pageNumber: number = 0, pageSize: number = 20, metalId: number = 0): Observable<any> {
+    return this.getDropdown(searchTerm, pageNumber, pageSize, metalId);
+  }
+
   getGradeParameters(gradeId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/grade-parameters/${gradeId}`);
   }

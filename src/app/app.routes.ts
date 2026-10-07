@@ -179,6 +179,8 @@ export const routes: Routes = [
             { path: 'test/create', component: LaboratoryTestComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'test/edit/:id', component: LaboratoryTestComponent , canDeactivate: [unsavedChangesGuard]},
             { path: 'test/details/:id', component: LaboratoryTestComponent },
+            { path: 'test-layout-archetype', loadComponent: () => import('./components/test/test-layout-archetype-designer/test-layout-archetype-designer.component').then(m => m.TestLayoutArchetypeDesignerComponent) },
+            { path: 'execution-layout-studio', loadComponent: () => import('./components/test/test-layout-archetype-designer/test-layout-archetype-designer.component').then(m => m.TestLayoutArchetypeDesignerComponent) },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },

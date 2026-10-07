@@ -2637,8 +2637,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   getReadingCount(sec: ExecutionSection): number[] {
-    const count = parseInt(sec.config.count || '5', 10);
-    return Array.from({ length: isNaN(count) ? 5 : count }, (_, i) => i + 1);
+    const count = Number(sec.config.count);
+    const validCount = (isNaN(count) || count <= 0) ? 5 : count;
+    return Array.from({ length: validCount }, (_, i) => i + 1);
   }
 
   // Chart Axes Selection

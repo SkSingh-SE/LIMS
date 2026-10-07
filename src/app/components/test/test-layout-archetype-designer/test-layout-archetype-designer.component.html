@@ -616,14 +616,16 @@
 
                       <!-- Line / Scatter Mode -->
                       <ng-container *ngIf="s.config.chartType !== 'bar'">
-                        <polyline points="50,125 150,105 250,85 350,68 450,45 550,38 650,20" fill="none" stroke="#da261c" stroke-width="3"/>
-                        <circle *ngIf="s.config.showPoints !== false" cx="50" cy="125" r="4" fill="#da261c"/>
-                        <circle *ngIf="s.config.showPoints !== false" cx="150" cy="105" r="4" fill="#da261c"/>
-                        <circle *ngIf="s.config.showPoints !== false" cx="250" cy="85" r="4" fill="#da261c"/>
-                        <circle *ngIf="s.config.showPoints !== false" cx="350" cy="68" r="4" fill="#da261c"/>
-                        <circle *ngIf="s.config.showPoints !== false" cx="450" cy="45" r="4" fill="#da261c"/>
-                        <circle *ngIf="s.config.showPoints !== false" cx="550" cy="38" r="4" fill="#da261c"/>
-                        <circle *ngIf="s.config.showPoints !== false" cx="650" cy="20" r="4" fill="#da261c"/>
+                        <polyline *ngIf="s.config.chartType === 'line' || !s.config.chartType" points="50,125 150,105 250,85 350,68 450,45 550,38 650,20" fill="none" stroke="#da261c" stroke-width="3"/>
+                        <ng-container *ngIf="s.config.chartType === 'scatter' || s.config.showPoints !== false">
+                          <circle cx="50" cy="125" r="4" fill="#da261c"/>
+                          <circle cx="150" cy="105" r="4" fill="#da261c"/>
+                          <circle cx="250" cy="85" r="4" fill="#da261c"/>
+                          <circle cx="350" cy="68" r="4" fill="#da261c"/>
+                          <circle cx="450" cy="45" r="4" fill="#da261c"/>
+                          <circle cx="550" cy="38" r="4" fill="#da261c"/>
+                          <circle cx="650" cy="20" r="4" fill="#da261c"/>
+                        </ng-container>
                       </ng-container>
 
                       <!-- Axis Labels -->

@@ -2636,6 +2636,11 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.toastService.show(`Target set to ${target.name} (${target.unit})`, 'info');
   }
 
+  getReadingCount(sec: ExecutionSection): number[] {
+    const count = parseInt(sec.config.count || '5', 10);
+    return Array.from({ length: isNaN(count) ? 5 : count }, (_, i) => i + 1);
+  }
+
   // Chart Axes Selection
   getAvailableXFields(): { name: string; unit: string; category: string }[] {
     const dims = this.currentDataset.dimensions.map(d => ({ name: d.label, unit: d.unit, category: 'Dimension' }));
@@ -2835,6 +2840,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   isConditionSelected(fieldOrLabel: string): boolean {
     const des = this.deselectedConditionsMap[this.selectedTestKey] || [];
     return !des.includes(fieldOrLabel);
+  }
+
+  trackByField(index: number, item: any): string {
+    return item.field || item.name || item.id || index;
   }
 
   get activeConditionsCount(): number {

@@ -896,7 +896,7 @@
                 </div>
               </div>
               <div class="dataset-checks-list">
-                <label *ngFor="let p of currentDataset.parameters" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
+                <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
                   <div class="d-flex align-items-center gap-1.5">
                     <input class="form-check-input mt-0" type="checkbox"
                            [checked]="isParameterInSubset(s, p.name)"
@@ -1007,7 +1007,7 @@
                 </div>
               </div>
               <div class="dataset-checks-list">
-                <label *ngFor="let p of currentDataset.parameters" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
+                <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
                   <div class="d-flex align-items-center gap-1.5">
                     <input class="form-check-input mt-0" type="checkbox"
                            [checked]="isSpecimenParamSelected(s, p.name)"
@@ -1029,7 +1029,7 @@
                 </div>
               </div>
               <div class="dataset-checks-list">
-                <label *ngFor="let d of currentDataset.dimensions" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom" [class.opacity-50]="!isDimensionSelected(d.field)">
+                <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom" [class.opacity-50]="!isDimensionSelected(d.field)">
                   <div class="d-flex align-items-center gap-1.5">
                     <input class="form-check-input mt-0" type="checkbox"
                            [checked]="isSpecimenDimensionSelected(s, d.field)"
@@ -1135,7 +1135,7 @@
             </div>
             <div class="config-card-title mt-2">Active Environmental Conditions</div>
             <div class="config-checks-grid">
-              <label *ngFor="let c of currentDataset.conditions" class="form-check compact-check" [class.opacity-50]="!isConditionSelected(c.field)">
+              <label *ngFor="let c of currentDataset.conditions; trackBy: trackByField" class="form-check compact-check" [class.opacity-50]="!isConditionSelected(c.field)">
                 <input class="form-check-input" type="checkbox"
                        [checked]="isConditionFieldChecked(s, c)"
                        (change)="toggleConditionField(s, c)">
@@ -1319,7 +1319,7 @@
             </div>
             <div class="config-card-title mt-2">Input Dataset Parameters Used</div>
             <div class="dataset-checks-list">
-              <label *ngFor="let p of currentDataset.parameters" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
+              <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
                 <div class="d-flex align-items-center gap-1.5">
                   <input class="form-check-input mt-0" type="checkbox"
                          [checked]="s.config.inputFields?.includes(p.name)"
@@ -1328,7 +1328,7 @@
                 </div>
                 <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
               </label>
-              <label *ngFor="let d of currentDataset.dimensions" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
+              <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
                 <div class="d-flex align-items-center gap-1.5">
                   <input class="form-check-input mt-0" type="checkbox"
                          [checked]="s.config.inputFields?.includes(d.label)"
@@ -1489,7 +1489,7 @@
             </div>
 
             <div class="d-flex flex-wrap gap-1" *ngIf="currentDataset.conditions.length > 0">
-              <span *ngFor="let c of currentDataset.conditions" class="dataset-chip" [class.deselected]="!isConditionSelected(c.field)">
+              <span *ngFor="let c of currentDataset.conditions; trackBy: trackByField" class="dataset-chip" [class.deselected]="!isConditionSelected(c.field)">
                 <input type="checkbox" class="form-check-input mt-0 me-1" [checked]="isConditionSelected(c.field)" (change)="toggleConditionSelection(c)">
                 <strong>{{ c.label }}</strong>
                 <span class="text-muted ms-1" *ngIf="c.unit">({{ c.unit }})</span>
@@ -1547,7 +1547,7 @@
             </div>
 
             <div class="d-flex flex-wrap gap-1" *ngIf="currentDataset.dimensions.length > 0">
-              <span *ngFor="let d of currentDataset.dimensions" class="dataset-chip" [class.deselected]="!isDimensionSelected(d.field)">
+              <span *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="dataset-chip" [class.deselected]="!isDimensionSelected(d.field)">
                 <input type="checkbox" class="form-check-input mt-0 me-1" [checked]="isDimensionSelected(d.field)" (change)="toggleDimensionSelection(d)">
                 <strong>{{ d.label }}</strong>
                 <span class="text-muted ms-1">({{ d.unit }})</span>
@@ -1850,8 +1850,88 @@
                 </table>
               </ng-container>
 
+              <!-- Reading live entry -->
+              <ng-container *ngIf="s.type === 'reading'">
+                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
+                  <div *ngFor="let i of getReadingCount(s)" [ngClass]="{'col-md-3': s.config.layout === 'Compact cards', 'col-md-6': s.config.layout === 'Two-column cards', 'col-12': !s.config.layout}">
+                    <label class="form-label compact-label">Reading {{ i }} ({{ s.config.unit }})</label>
+                    <input type="number" class="form-control form-control-sm compact-input text-center font-monospace"
+                           [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
+                  </div>
+                </div>
+                <table class="table-exec" *ngIf="s.config.layout === 'Table'">
+                  <thead>
+                    <tr>
+                      <th *ngFor="let i of getReadingCount(s)">R{{ i }}</th>
+                      <th *ngIf="s.config.showAverage">Average</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td *ngFor="let i of getReadingCount(s)">
+                         <input type="number" class="form-control form-control-sm text-center entry-input"
+                           [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
+                      </td>
+                      <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">—</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </ng-container>
+
+              <!-- Traverse live entry -->
+              <ng-container *ngIf="s.type === 'traverse'">
+                <div class="table-responsive">
+                  <table class="table-exec table-bordered">
+                    <thead>
+                      <tr>
+                        <th class="bg-light">{{ s.config.xField || 'Depth' }} ({{ s.config.xUnit || 'mm' }})</th>
+                        <th class="bg-light">{{ s.config.yField || 'Hardness' }} ({{ s.config.yUnit || 'HV' }})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input" placeholder="0.1"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input" placeholder="300"></td>
+                      </tr>
+                      <tr>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input" placeholder="0.2"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input" placeholder="280"></td>
+                      </tr>
+                      <tr><td colspan="2" class="text-center text-muted small py-1 bg-light border-dashed cursor-pointer">+ Add Traverse Point</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
+
+              <!-- Chart live entry -->
+              <ng-container *ngIf="s.type === 'chart'">
+                <div class="p-3 border rounded bg-light text-center border-dashed">
+                  <i class="bi bi-graph-up text-primary" style="font-size: 2rem;"></i>
+                  <div class="fw-semibold mt-2">{{ s.config.xLabel || 'X-Axis' }} vs {{ s.config.yLabel || 'Y-Axis' }} Chart</div>
+                  <div class="small text-muted mt-1">Chart will be plotted dynamically based on {{ s.config.xField || 'X' }} and {{ s.config.yField || 'Y' }} during execution.</div>
+                </div>
+              </ng-container>
+
+              <!-- Formula live entry -->
+              <ng-container *ngIf="s.type === 'formula'">
+                <div class="p-2 border rounded bg-light d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-calculator text-primary fs-5"></i>
+                    <div>
+                      <span class="fw-semibold">{{ s.config.resultLabel || s.config.targetOutput || 'Calculated Result' }}</span>
+                      <div class="small text-muted font-monospace mt-1">{{ s.config.formulaSource || 'No formula mapped' }}</div>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge bg-success-subtle text-success border border-success border-opacity-25 px-3 py-2 fs-6 font-monospace">
+                      Auto-Calculated
+                    </span>
+                  </div>
+                </div>
+              </ng-container>
+
               <!-- Fallback general display for other types -->
-              <ng-container *ngIf="s.type !== 'parameter' && s.type !== 'specimen' && s.type !== 'condition' && s.type !== 'narrative' && s.type !== 'checklist'">
+              <ng-container *ngIf="s.type !== 'parameter' && s.type !== 'specimen' && s.type !== 'condition' && s.type !== 'narrative' && s.type !== 'checklist' && s.type !== 'reading' && s.type !== 'chart' && s.type !== 'traverse' && s.type !== 'formula'">
                 <div class="text-muted small">
                   {{ componentNames[s.type] }} — active with configured rules and leaf node bindings.
                 </div>

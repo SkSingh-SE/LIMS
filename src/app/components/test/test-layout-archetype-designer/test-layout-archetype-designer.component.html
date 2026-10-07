@@ -266,31 +266,33 @@
       <div class="canvas-header-bar">
         <button type="button" 
                 *ngIf="leftPanelCollapsed" 
-                class="btn-lims btn-lims-secondary btn-expand-components me-2" 
+                class="btn-lims btn-lims-secondary btn-expand-components me-1" 
                 (click)="toggleLeftPanel()" 
                 title="Expand Layout Components (Ctrl+[)">
-          <i class="bi bi-layout-sidebar-inset me-1.5 text-danger"></i>
+          <i class="bi bi-layout-sidebar-inset me-1 text-danger"></i>
           <span>Components</span>
         </button>
         <!-- Layout Structure Archetype Selector -->
-        <div class="layout-structure-picker d-flex align-items-center gap-1.5 flex-grow-1 me-2">
-          <span class="badge bg-secondary-subtle text-secondary font-monospace small text-nowrap">
-            <i class="bi bi-diagram-3 me-1"></i>LAYOUT STRUCTURE
+        <div class="layout-structure-picker">
+          <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs text-nowrap">
+            <i class="bi bi-diagram-3 me-1"></i>STRUCTURE
           </span>
           <select class="form-select form-select-sm test-preview-select" 
                   [ngModel]="selectedArchetypeKey" 
                   (ngModelChange)="onLayoutArchetypeChange($event)"
-                  title="Choose structural layout recipe to map to the target test">
+                  title="Choose structural layout archetype to map to the target test">
             <option *ngFor="let arch of layoutArchetypeList" [value]="arch.key">
               {{ arch.icon }} {{ arch.label }}
             </option>
           </select>
         </div>
 
-        <span class="badge badge-mapped text-truncate" title="Layout mapped to target laboratory test">
-          <i class="bi bi-link-45deg me-1"></i> MAPPED TO: {{ currentLabTestName }}
+        <span class="badge badge-mapped" title="Mapped to: {{ currentLabTestName }}">
+          <i class="bi bi-link-45deg me-1"></i>{{ currentLabTestName }}
         </span>
-        <span class="badge badge-structure">Layout captures structure only</span>
+        <span class="badge badge-structure d-none d-xxl-inline" title="Layout captures structure only">
+          Structure Only
+        </span>
         <div class="zoom-controls ms-auto">
           <button type="button" class="btn-zoom" (click)="zoom(-1)" title="Zoom out">−</button>
           <span class="zoom-text">{{ (zoomLevel * 100).toFixed(0) }}%</span>
@@ -898,12 +900,12 @@
                 </div>
               </div>
               <div class="dataset-checks-list">
-                <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
-                  <div class="d-flex align-items-center gap-1.5">
-                    <input class="form-check-input mt-0" type="checkbox"
+                <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                  <div class="d-flex align-items-center">
+                    <input class="form-check-input my-0 me-2" type="checkbox"
                            [checked]="isParameterInSubset(s, p.name)"
                            (change)="toggleParameterInSubset(s, p.name)">
-                    <span class="form-check-label fw-medium">{{ p.name }}</span>
+                    <span class="dataset-check-label fw-medium">{{ p.name }}</span>
                   </div>
                   <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
                 </label>
@@ -1009,12 +1011,12 @@
                 </div>
               </div>
               <div class="dataset-checks-list">
-                <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
-                  <div class="d-flex align-items-center gap-1.5">
-                    <input class="form-check-input mt-0" type="checkbox"
+                <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                  <div class="d-flex align-items-center">
+                    <input class="form-check-input my-0 me-2" type="checkbox"
                            [checked]="isSpecimenParamSelected(s, p.name)"
                            (change)="toggleSpecimenParam(s, p.name)">
-                    <span class="form-check-label fw-medium">{{ p.name }}</span>
+                    <span class="dataset-check-label fw-medium">{{ p.name }}</span>
                   </div>
                   <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
                 </label>
@@ -1031,12 +1033,12 @@
                 </div>
               </div>
               <div class="dataset-checks-list">
-                <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom" [class.opacity-50]="!isDimensionSelected(d.field)">
-                  <div class="d-flex align-items-center gap-1.5">
-                    <input class="form-check-input mt-0" type="checkbox"
+                <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom" [class.opacity-50]="!isDimensionSelected(d.field)">
+                  <div class="d-flex align-items-center">
+                    <input class="form-check-input my-0 me-2" type="checkbox"
                            [checked]="isSpecimenDimensionSelected(s, d.field)"
                            (change)="toggleSpecimenDimension(s, d.field)">
-                    <span class="form-check-label fw-medium">{{ d.label }}</span>
+                    <span class="dataset-check-label fw-medium">{{ d.label }}</span>
                   </div>
                   <div class="d-flex align-items-center gap-1">
                     <span class="badge bg-secondary-subtle text-secondary font-monospace" *ngIf="!isDimensionSelected(d.field)">(Inactive)</span>
@@ -1321,21 +1323,21 @@
             </div>
             <div class="config-card-title mt-2">Input Dataset Parameters Used</div>
             <div class="dataset-checks-list">
-              <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
-                <div class="d-flex align-items-center gap-1.5">
-                  <input class="form-check-input mt-0" type="checkbox"
+              <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField" class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                <div class="d-flex align-items-center">
+                  <input class="form-check-input my-0 me-2" type="checkbox"
                          [checked]="s.config.inputFields?.includes(p.name)"
                          (change)="toggleFormulaInput(s, p.name)">
-                  <span class="form-check-label">{{ p.name }}</span>
+                  <span class="dataset-check-label">{{ p.name }}</span>
                 </div>
                 <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
               </label>
-              <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="form-check compact-check d-flex align-items-center justify-content-between py-1 border-bottom">
-                <div class="d-flex align-items-center gap-1.5">
-                  <input class="form-check-input mt-0" type="checkbox"
+              <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                <div class="d-flex align-items-center">
+                  <input class="form-check-input my-0 me-2" type="checkbox"
                          [checked]="s.config.inputFields?.includes(d.label)"
                          (change)="toggleFormulaInput(s, d.label)">
-                  <span class="form-check-label">{{ d.label }}</span>
+                  <span class="dataset-check-label">{{ d.label }}</span>
                 </div>
                 <span class="badge bg-light text-secondary font-monospace">{{ d.unit }}</span>
               </label>

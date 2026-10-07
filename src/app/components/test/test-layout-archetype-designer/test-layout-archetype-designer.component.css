@@ -337,6 +337,25 @@
 .compact-check {
   font-size: 0.75rem;
   margin-bottom: 4px;
+  display: flex !important;
+  align-items: center !important;
+  padding-left: 0 !important;
+  cursor: pointer;
+}
+
+.compact-check .form-check-input {
+  float: none !important;
+  margin: 0 8px 0 0 !important;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.compact-check .form-check-label {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.75rem;
 }
 
 /* Palette */
@@ -459,29 +478,35 @@
   height: 40px;
   background: #ffffff;
   border-bottom: 1px solid #d9dee8;
-  padding: 0 12px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
   gap: 8px;
   flex: none;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .layout-structure-picker {
   display: flex;
   align-items: center;
-  gap: 6px;
-  max-width: 460px;
+  gap: 5px;
+  flex: 0 1 290px;
+  min-width: 140px;
 }
 
 .layout-structure-picker .test-preview-select {
-  width: auto;
-  flex: 1;
-  font-size: 0.78rem;
+  width: 100%;
+  min-width: 0;
+  font-size: 0.76rem;
   height: 28px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .test-preview-select {
-  width: 260px;
+  width: 240px;
   font-size: 0.78rem;
   height: 28px;
 }
@@ -502,8 +527,15 @@
   font-size: 0.68rem;
   font-weight: 700;
   border: 1px solid #bfdbfe;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: 20px;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .badge-structure {
@@ -514,6 +546,8 @@
   border: 1px solid #cbd5e1;
   padding: 3px 7px;
   border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .zoom-controls {
@@ -980,7 +1014,32 @@
 .config-checks-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
+  gap: 5px 8px;
+}
+
+.config-checks-grid .form-check {
+  padding-left: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 0 !important;
+  min-height: auto !important;
+  cursor: pointer;
+}
+
+.config-checks-grid .form-check-input {
+  float: none !important;
+  margin: 0 7px 0 0 !important;
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+
+.config-checks-grid .form-check-label {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.74rem;
+  line-height: 1.2;
 }
 
 /* 5. Modals */
@@ -1088,6 +1147,32 @@
   border-radius: 4px;
   padding: 2px 6px;
   background: #fafbfc;
+}
+
+.dataset-check-row {
+  cursor: pointer;
+  padding: 3px 4px;
+  border-radius: 4px;
+  transition: background 0.12s ease;
+  user-select: none;
+}
+
+.dataset-check-row:hover {
+  background: #f1f5f9;
+}
+
+.dataset-check-row .form-check-input {
+  float: none !important;
+  margin: 0 8px 0 0 !important;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.dataset-check-label {
+  font-size: 0.75rem;
+  color: #1e293b;
 }
 
 .binding-status-pill {

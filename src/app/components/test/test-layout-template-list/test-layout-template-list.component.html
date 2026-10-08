@@ -1,0 +1,202 @@
+<div class="container-fluid p-2">
+  <div class="card basic-data-table w-100 shadow-sm border-0">
+    <!-- Header -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center py-2 px-3">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-grid-1x2 text-white fs-6"></i>
+        <label class="text-md fw-semibold mb-0">Test Execution Layout Formats</label>
+        <span class="badge bg-white text-danger font-monospace px-2 py-0.5">{{ totalItems }} Formats</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-light btn-sm d-flex align-items-center gap-1.5" (click)="createNewLayout()">
+          <i class="bi bi-plus-circle"></i>
+          <span>Create New Layout Format</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-2.5">
+      <!-- Search & Filters Toolbar -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted text-xs">
+            Manage ISO 17025 execution templates, global fallback layouts, and multi-test test mappings.
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="input-group custom-search input-group-sm">
+            <input type="text"
+                   class="form-control"
+                   placeholder="Search code, name, test..."
+                   [(ngModel)]="searchTerm"
+                   (keydown.enter)="onSearch()">
+            <button class="btn btn-outline-secondary" type="button" (click)="onSearch()">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="loadLayoutTemplates()" title="Refresh List">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="table-responsive">
+        <table class="table table-sm bordered-table align-middle w-100 mb-0">
+          <thead class="table-light">
+            <tr class="text-center align-middle">
+              <th class="text-center actions-col">Actions</th>
+              <th class="cursor text-start" (click)="applySorting('layoutCode')">
+                <span class="dt-column-order">Format Code</span>
+                <i class="bi ms-1" [ngClass]="sortByColumn === 'layoutCode' ? (sortOrder === 'asc' ? 'bi-caret-up-fill text-danger' : 'bi-caret-down-fill text-danger') : 'bi-caret-down text-muted'"></i>
+              </th>
+              <th class="cursor text-start" (click)="applySorting('layoutName')">
+                <span class="dt-column-order">Format Name</span>
+                <i class="bi ms-1" [ngClass]="sortByColumn === 'layoutName' ? (sortOrder === 'asc' ? 'bi-caret-up-fill text-danger' : 'bi-caret-down-fill text-danger') : 'bi-caret-down text-muted'"></i>
+              </th>
+              <th class="text-start">Target Scope / Laboratory Test</th>
+              <th class="text-center">Rev / Ver</th>
+              <th class="text-start">Sections & Archetypes</th>
+              <th class="text-center">Default Scope</th>
+              <th class="text-center">Status</th>
+              <th class="cursor text-center" (click)="applySorting('modifiedOn')">
+                <span>Updated On</span>
+                <i class="bi ms-1" [ngClass]="sortByColumn === 'modifiedOn' ? (sortOrder === 'asc' ? 'bi-caret-up-fill text-danger' : 'bi-caret-down-fill text-danger') : 'bi-caret-down text-muted'"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of layoutList" class="text-xs">
+              <!-- Actions -->
+              <td class="text-center">
+                <div class="d-flex justify-content-center align-items-center gap-1.5">
+                  <button type="button" class="btn-lims-icon btn-lims-edit" (click)="editLayout(item.id)" title="Edit Layout in Studio">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button type="button" class="btn-lims-icon btn-lims-copy" (click)="viewLayout(item.id)" title="View Read-Only Layout">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button type="button" class="btn-lims-icon btn-lims-delete" (click)="deleteLayout(item)" title="Delete Layout">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+
+              <!-- Format Code -->
+              <td class="font-monospace fw-semibold text-danger">
+                {{ item.layoutCode }}
+              </td>
+
+              <!-- Format Name -->
+              <td class="fw-semibold text-dark">
+                {{ item.layoutName }}
+              </td>
+
+              <!-- Target Scope / Test -->
+              <td>
+                <div class="d-flex flex-column gap-0.5">
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="badge bg-indigo-subtle text-indigo border border-indigo-subtle" *ngIf="item.isGlobalDefault">
+                      <i class="bi bi-globe me-0.5"></i><span>Global Fallback (All Tests)</span>
+                    </span>
+                    <span class="fw-medium text-dark" *ngIf="!item.isGlobalDefault">
+                      {{ item.laboratoryTestName || 'Unassigned' }}
+                    </span>
+                    <span class="badge text-xxs"
+                          *ngIf="!item.isGlobalDefault && (item.isChemicalTest || item.departmentName === 'Chemical' || item.leafNode?.includes('Chemical') || item.laboratoryTestName?.includes('Spectro') || item.laboratoryTestName?.includes('Chem'))"
+                          [ngClass]="'bg-success-subtle text-success border border-success-subtle'">
+                      <i class="bi bi-radioactive me-0.5"></i><span>Chemical</span>
+                    </span>
+                    <span class="badge text-xxs"
+                          *ngIf="!item.isGlobalDefault && !(item.isChemicalTest || item.departmentName === 'Chemical' || item.leafNode?.includes('Chemical') || item.laboratoryTestName?.includes('Spectro') || item.laboratoryTestName?.includes('Chem'))"
+                          [ngClass]="'bg-secondary-subtle text-secondary border border-secondary-subtle'">
+                      <i class="bi bi-collection me-0.5"></i><span>General</span>
+                    </span>
+                  </div>
+                  <div class="text-xxs text-muted font-monospace" *ngIf="item.leafNode">
+                    <i class="bi bi-diagram-3 me-0.5 text-danger"></i><span>Leaf: {{ item.leafNode }}</span>
+                  </div>
+                  <div class="text-xxs text-muted" *ngIf="!item.leafNode && item.subGroupName">
+                    SubGroup: {{ item.subGroupName }}
+                  </div>
+                  <div class="d-flex align-items-center gap-1 mt-0.5" *ngIf="item.mappedTestCount > 0">
+                    <span class="badge bg-info-subtle text-info border border-info-subtle text-xxs">
+                      <i class="bi bi-diagram-3 me-0.5"></i> +{{ item.mappedTestCount }} additional tests mapped
+                    </span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Rev / Ver -->
+              <td class="text-center font-monospace">
+                <span class="badge bg-light text-dark border">Rev {{ item.revision }} (v{{ item.version }})</span>
+              </td>
+
+              <!-- Sections & Archetypes -->
+              <td>
+                <div class="d-flex flex-column gap-0.5">
+                  <span class="fw-semibold text-secondary text-xxs">
+                    <i class="bi bi-layers me-1"></i><span>{{ item.sectionCount }} Section(s)</span>
+                  </span>
+                  <span class="text-xxs text-muted text-truncate archetype-summary-text" [title]="item.archetypeSummary">
+                    {{ item.archetypeSummary || 'Custom Stack' }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Default Scope -->
+              <td class="text-center">
+                <span class="badge bg-success-subtle text-success border border-success-subtle" *ngIf="item.isDefault && item.isGlobalDefault">
+                  <i class="bi bi-check2-all me-0.5"></i><span>Global Default</span>
+                </span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle" *ngIf="item.isDefault && !item.isGlobalDefault">
+                  <i class="bi bi-check2 me-0.5"></i><span>Test Default</span>
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary" *ngIf="!item.isDefault">
+                  Standard
+                </span>
+              </td>
+
+              <!-- Status -->
+              <td class="text-center">
+                <span class="badge" [ngClass]="item.status === 'Published' ? 'bg-success' : 'bg-warning text-dark'">
+                  {{ item.status }}
+                </span>
+              </td>
+
+              <!-- Updated On -->
+              <td class="text-center text-muted font-monospace text-xxs">
+                {{ (item.modifiedOn || item.createdOn) | date:'mediumDate' }}
+              </td>
+            </tr>
+
+            <!-- Empty State -->
+            <tr *ngIf="layoutList.length === 0">
+              <td colspan="9" class="text-center py-4 text-muted">
+                <div class="d-flex flex-column align-items-center gap-2">
+                  <i class="bi bi-inbox fs-2 text-secondary"></i>
+                  <span>No test layout formats found matching your criteria.</span>
+                  <button type="button" class="btn btn-sm btn-lims-primary mt-1" (click)="createNewLayout()">
+                    <i class="bi bi-plus-circle me-1"></i><span>Create First Layout Format</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="mt-2" *ngIf="totalItems > 0">
+        <app-pagination
+          [currentPage]="pageNumber"
+          [pageSize]="pageSize"
+          [totalItems]="totalItems"
+          [pageSizes]="pageSizes"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)">
+        </app-pagination>
+      </div>
+    </div>
+  </div>
+</div>

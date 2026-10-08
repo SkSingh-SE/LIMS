@@ -4,8 +4,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
       <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
-        <i class="bi bi-arrow-left"></i>
-        Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </button>
     </div>
 
@@ -115,8 +114,7 @@
               class="btn btn-sm btn-light py-0 me-3"
               (click)="addReading(); $event.stopPropagation()"
             >
-              <i class="bi bi-plus-lg me-1"></i>
-              Add Reading
+              <i class="bi bi-plus-lg me-1"></i><span>Add Reading</span>
             </button>
           </div>
           <div *ngIf="openSections['readings']" class="section-body p-0">
@@ -164,8 +162,7 @@
               class="btn btn-sm btn-light py-0 me-3"
               (click)="addUncertaintySource(); $event.stopPropagation()"
             >
-              <i class="bi bi-plus-lg me-1"></i>
-              Add Source
+              <i class="bi bi-plus-lg me-1"></i><span>Add Source</span>
             </button>
           </div>
           <div *ngIf="openSections['sources']" class="section-body p-0">

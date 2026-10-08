@@ -178,8 +178,7 @@
                       </div>
                     </div>
                     <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addTransition(i)">
-                      <i class="bi bi-plus-circle-dotted"></i>
-                      Add Transition
+                      <i class="bi bi-plus-circle-dotted"></i><span>Add Transition</span>
                     </button>
                   </div>
                 </div>
@@ -187,8 +186,7 @@
             </div>
             <div *ngIf="!isViewMode" class="d-flex gap-2">
               <button type="button" class="btn btn-add" (click)="addStep()">
-                <i class="bi bi-plus-circle-dotted"></i>
-                Add Step
+                <i class="bi bi-plus-circle-dotted"></i><span>Add Step</span>
               </button>
               <button type="button" class="btn btn-danger" (click)="removeStep()">Remove Step</button>
             </div>

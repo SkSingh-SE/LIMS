@@ -181,6 +181,8 @@ export const routes: Routes = [
             { path: 'test/details/:id', component: LaboratoryTestComponent },
             { path: 'test-layout-archetype', loadComponent: () => import('./components/test/test-layout-archetype-designer/test-layout-archetype-designer.component').then(m => m.TestLayoutArchetypeDesignerComponent) },
             { path: 'execution-layout-studio', loadComponent: () => import('./components/test/test-layout-archetype-designer/test-layout-archetype-designer.component').then(m => m.TestLayoutArchetypeDesignerComponent) },
+            { path: 'test/layout-templates', loadComponent: () => import('./components/test/test-layout-template-list/test-layout-template-list.component').then(m => m.TestLayoutTemplateListComponent) },
+            { path: 'execution-layout-studio/list', loadComponent: () => import('./components/test/test-layout-template-list/test-layout-template-list.component').then(m => m.TestLayoutTemplateListComponent) },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
             { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },

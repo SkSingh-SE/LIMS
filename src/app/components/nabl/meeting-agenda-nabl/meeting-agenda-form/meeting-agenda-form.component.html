@@ -4,8 +4,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
       <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
-        <i class="bi bi-arrow-left"></i>
-        Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </button>
     </div>
 
@@ -136,8 +135,7 @@
               </div>
             </div>
             <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAttendee()">
-              <i class="bi bi-plus"></i>
-              Add Attendee
+              <i class="bi bi-plus"></i><span>Add Attendee</span>
             </button>
           </div>
         </div>
@@ -171,8 +169,7 @@
               </div>
             </div>
             <button *ngIf="!isViewMode" type="button" class="btn btn-cancel btn-sm mt-2" (click)="addAgendaItem()">
-              <i class="bi bi-plus"></i>
-              Add Item
+              <i class="bi bi-plus"></i><span>Add Item</span>
             </button>
           </div>
         </div>

@@ -6,7 +6,7 @@
         *ngIf="!isViewMode"
         class="btn btn-outline-light me-3"
         (click)="openAddPerformanceModal()">
-        <i class="bi bi-plus-lg"></i> Add Review
+        <i class="bi bi-plus-lg"></i><span>Add Review</span>
       </button>
     </div>
 
@@ -236,8 +236,7 @@
     <div class="modal-content">
       <div class="modal-header card-form-header text-white">
         <h5 class="modal-title">
-          <i class="bi bi-clipboard-data me-2"></i>
-          {{ editingId ? (performanceForm.disabled ? 'View Performance Review' : 'Edit Performance Review') : 'Add Performance Review' }}
+          <i class="bi bi-clipboard-data me-2"></i><span>{{ editingId ? (performanceForm.disabled ? 'View Performance Review' : 'Edit Performance Review') : 'Add Performance Review' }}</span>
         </h5>
         <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
       </div>
@@ -339,7 +338,7 @@
           (click)="savePerformance()"
           *ngIf="!isViewMode && !performanceForm.disabled"
           [disabled]="performanceForm.invalid">
-          <i class="bi bi-save me-1"></i>{{ editingId ? 'Update Review' : 'Save Review' }}
+          <i class="bi bi-save me-1"></i><span>{{ editingId ? 'Update Review' : 'Save Review' }}</span>
         </button>
       </div>
     </div>

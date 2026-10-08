@@ -34,7 +34,7 @@
 
       <!-- No samples alert -->
       <div *ngIf="selectedInwardId && !availableSamples.length" class="alert alert-warning py-2 mb-3">
-        <i class="bi bi-exclamation-triangle me-1"></i> No samples found for this case.
+        <i class="bi bi-exclamation-triangle me-1"></i><span>No samples found for this case.</span>
       </div>
 
       <!-- Loading Spinner -->
@@ -50,7 +50,7 @@
         <div class="card mb-3 border-0 bg-light-subtle" *ngIf="selectedSamplePrep?.tests?.length">
           <div class="card-header bg-transparent py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
             <span class="fw-semibold text-danger small d-flex align-items-center gap-1">
-              <i class="bi bi-tools text-danger"></i> Planned Specimen Preparation Requirements
+              <i class="bi bi-tools text-danger"></i><span>Planned Specimen Preparation Requirements</span>
             </span>
             <span class="badge bg-secondary-subtle text-secondary small">
               {{ selectedSamplePrep.tests.length }} Planned Item(s)
@@ -153,7 +153,7 @@
               </div>
               <div class="col-md-2">
                 <button class="btn btn-save w-100" (click)="addItem()" [disabled]="!newDesc || !newAmount">
-                  <i class="bi bi-plus-lg me-1"></i>Add
+                  <i class="bi bi-plus-lg me-1"></i><span>Add</span>
                 </button>
               </div>
             </div>

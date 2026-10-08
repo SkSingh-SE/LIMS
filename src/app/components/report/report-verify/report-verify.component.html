@@ -48,7 +48,7 @@
       <!-- Report Identity Section -->
       <div class="info-section">
         <div class="section-label">
-          <i class="bi bi-file-earmark-text me-2"></i>Report Identity
+          <i class="bi bi-file-earmark-text me-2"></i><span>Report Identity</span>
         </div>
         <div class="info-row">
           <div class="info-cell">
@@ -73,7 +73,7 @@
       <!-- Customer & Sample Section -->
       <div class="info-section">
         <div class="section-label">
-          <i class="bi bi-person-badge me-2"></i>Customer & Sample Details
+          <i class="bi bi-person-badge me-2"></i><span>Customer & Sample Details</span>
         </div>
         <div class="info-row">
           <div class="info-cell">
@@ -118,7 +118,7 @@
       <!-- Test Results -->
       <div *ngFor="let test of reportData.testDetails" class="info-section">
         <div class="section-label d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-clipboard-data me-2"></i>{{ test.testName }}</span>
+          <span><i class="bi bi-clipboard-data me-2"></i><span>{{ test.testName }}</span></span>
           <span class="result-pill" [ngClass]="test.allPassed ? 'result-pass' : 'result-fail'">
             {{ test.allPassed ? 'PASS' : 'FAIL' }}
           </span>

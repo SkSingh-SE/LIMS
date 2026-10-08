@@ -5,8 +5,7 @@
       <label class="fw-medium ms-3">{{ formTitle }}</label>
       <div class="d-flex gap-2">
         <button type="button" class="btn btn-sm btn-outline-light d-flex align-items-center" (click)="onCancel()">
-          <i class="bi bi-arrow-left me-1"></i>
-          Back to List
+          <i class="bi bi-arrow-left me-1"></i><span>Back to List</span>
         </button>
         <button
           *ngIf="!isViewMode"
@@ -15,8 +14,7 @@
           [disabled]="checklistForm.invalid"
           class="btn btn-sm btn-save d-flex align-items-center"
         >
-          <i class="bi bi-check-circle me-1"></i>
-          {{ isEditMode ? "Update Checklist" : "Save Checklist" }}
+          <i class="bi bi-check-circle me-1"></i><span>{{ isEditMode ? "Update Checklist" : "Save Checklist" }}</span>
         </button>
       </div>
     </div>
@@ -121,8 +119,7 @@
               <span>III. Checklist & Observations</span>
             </div>
             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addItem(); $event.stopPropagation()">
-              <i class="bi bi-plus-lg me-1"></i>
-              Add Item
+              <i class="bi bi-plus-lg me-1"></i><span>Add Item</span>
             </button>
           </div>
           <div *ngIf="openSections['checklistItems']" class="section-body">
@@ -197,7 +194,7 @@
                   </span>
                 </div>
                 <a [routerLink]="['/audit-plan/details', relatedAuditPlan.id]" class="btn btn-sm btn-add">
-                  <i class="bi bi-box-arrow-up-right me-1"></i>View
+                  <i class="bi bi-box-arrow-up-right me-1"></i><span>View</span>
                 </a>
               </div>
             </div>

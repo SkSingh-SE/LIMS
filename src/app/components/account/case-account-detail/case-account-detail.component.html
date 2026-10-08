@@ -5,7 +5,7 @@
         Case Account Detail
       </label>
       <button class="btn btn-outline-light me-3" (click)="goBack()">
-        <i class="bi bi-arrow-left"></i> Back
+        <i class="bi bi-arrow-left"></i><span>Back</span>
       </button>
     </div>
 
@@ -62,10 +62,9 @@
       <div *ngIf="caseSummary?.pricing || caseSummary?.priceSnapshot" class="card mb-4 border-0 shadow-sm">
         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
           <h5 class="mb-0">
-            <i class="bi bi-currency-rupee"></i>
-            Pricing Information
+            <i class="bi bi-currency-rupee"></i><span>Pricing Information</span>
             <span class="badge bg-light text-dark ms-2">
-              <i class="bi bi-lock-fill"></i> Price Snapshot
+              <i class="bi bi-lock-fill"></i><span>Price Snapshot</span>
             </span>
           </h5>
           <!-- Recalculate Button (Gap 6) -->
@@ -76,8 +75,7 @@
             [disabled]="isRecalculating()"
           >
             <span *ngIf="isRecalculating()" class="spinner-border spinner-border-sm me-1"></span>
-            <i *ngIf="!isRecalculating()" class="bi bi-arrow-clockwise me-1"></i>
-            {{ isRecalculating() ? 'Recalculating...' : 'Recalculate Prices' }}
+            <i *ngIf="!isRecalculating()" class="bi bi-arrow-clockwise me-1"></i><span>{{ isRecalculating() ? 'Recalculating...' : 'Recalculate Prices' }}</span>
           </button>
         </div>
         <div class="card-body">
@@ -118,12 +116,11 @@
                 [disabled]="isGeneratingPI() || !canGeneratePI()"
               >
                 <span *ngIf="isGeneratingPI()" class="spinner-border spinner-border-sm me-2"></span>
-                <i *ngIf="!isGeneratingPI()" class="bi bi-file-earmark-pdf me-2"></i>
-                {{ isGeneratingPI() ? 'Generating...' : 'Generate Proforma Invoice' }}
+                <i *ngIf="!isGeneratingPI()" class="bi bi-file-earmark-pdf me-2"></i><span>{{ isGeneratingPI() ? 'Generating...' : 'Generate Proforma Invoice' }}</span>
               </button>
             </ng-container>
             <p *ngIf="!canGeneratePI()" class="text-muted small">
-              <i class="bi bi-info-circle"></i> PI can only be generated after report approval and pricing is available.
+              <i class="bi bi-info-circle"></i><span>PI can only be generated after report approval and pricing is available.</span>
             </p>
           </div>
 
@@ -152,7 +149,7 @@
                 class="btn btn-add"
                 (click)="openInvoicePreview('pi')"
               >
-                <i class="bi bi-eye me-2"></i>Preview PI
+                <i class="bi bi-eye me-2"></i><span>Preview PI</span>
               </button>
               <button
                 class="btn btn-save"
@@ -160,8 +157,7 @@
                 [disabled]="isSendingInvoice() || isReadOnly"
               >
                 <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
-                <i *ngIf="!isSendingInvoice()" class="bi bi-envelope me-2"></i>
-                {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
+                <i *ngIf="!isSendingInvoice()" class="bi bi-envelope me-2"></i><span>{{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}</span>
               </button>
             </div>
           </div>
@@ -174,7 +170,7 @@
           <h5 class="mb-0">Advance Payment</h5>
           <button *ngIf="proformaInvoice && !invoice" class="btn btn-outline-warning btn-sm"
             (click)="goToRecordPayment()">
-            <i class="bi bi-plus-circle me-1"></i> Record Advance Payment
+            <i class="bi bi-plus-circle me-1"></i><span>Record Advance Payment</span>
           </button>
         </div>
         <div class="card-body">
@@ -210,7 +206,7 @@
             </table>
           </div>
           <div *ngIf="advancePayments.length === 0" class="text-muted small">
-            <i class="bi bi-info-circle me-1"></i> No advance payments recorded yet. Click "Record Advance Payment" to pay against the PI.
+            <i class="bi bi-info-circle me-1"></i><span>No advance payments recorded yet. Click "Record Advance Payment" to pay against the PI.</span>
           </div>
         </div>
       </div>
@@ -231,8 +227,7 @@
                 [disabled]="isGeneratingInvoice() || !canGenerateInvoice()"
               >
                 <span *ngIf="isGeneratingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
-                <i *ngIf="!isGeneratingInvoice()" class="bi bi-file-earmark-plus me-2"></i>
-                {{ isGeneratingInvoice() ? 'Generating...' : 'Generate Final Invoice' }}
+                <i *ngIf="!isGeneratingInvoice()" class="bi bi-file-earmark-plus me-2"></i><span>{{ isGeneratingInvoice() ? 'Generating...' : 'Generate Final Invoice' }}</span>
               </button>
             </ng-container>
             <p *ngIf="!canGenerateInvoice()" class="text-muted small">
@@ -286,7 +281,7 @@
                 class="btn btn-add"
                 (click)="openInvoicePreview()"
               >
-                <i class="bi bi-eye me-2"></i>Preview Invoice
+                <i class="bi bi-eye me-2"></i><span>Preview Invoice</span>
               </button>
               <button
                 class="btn btn-save"
@@ -294,8 +289,7 @@
                 [disabled]="isSendingInvoice() || isReadOnly"
               >
                 <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
-                <i *ngIf="!isSendingInvoice()" class="bi bi-envelope me-2"></i>
-                {{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}
+                <i *ngIf="!isSendingInvoice()" class="bi bi-envelope me-2"></i><span>{{ isSendingInvoice() ? 'Sending...' : 'Send Email' }}</span>
               </button>
               <button
                 class="btn btn-save"
@@ -303,8 +297,7 @@
                 [disabled]="isSendingInvoice() || isReadOnly"
               >
                 <span *ngIf="isSendingInvoice()" class="spinner-border spinner-border-sm me-2"></span>
-                <i *ngIf="!isSendingInvoice()" class="bi bi-whatsapp me-2"></i>
-                {{ isSendingInvoice() ? 'Sending...' : 'Send WhatsApp' }}
+                <i *ngIf="!isSendingInvoice()" class="bi bi-whatsapp me-2"></i><span>{{ isSendingInvoice() ? 'Sending...' : 'Send WhatsApp' }}</span>
               </button>
             </div>
           </div>
@@ -316,7 +309,7 @@
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Additional Charges</h5>
           <button *ngIf="!isReadOnly" class="btn btn-sm btn-primary" (click)="showAddLineItem = !showAddLineItem">
-            <i class="bi bi-plus"></i> Add Charge
+            <i class="bi bi-plus"></i><span>Add Charge</span>
           </button>
         </div>
         <div class="card-body p-0">
@@ -406,7 +399,7 @@
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Payment List</h5>
           <button *ngIf="!isReadOnly" class="btn btn-sm btn-outline-success" (click)="goToRecordPayment()">
-            <i class="bi bi-plus-circle"></i> Record Payment
+            <i class="bi bi-plus-circle"></i><span>Record Payment</span>
           </button>
         </div>
         <div class="card-body">
@@ -466,8 +459,7 @@
                       <i
                         *ngIf="sendingPaymentLinkId !== (payment.paymentOrderId || payment.payment_order_id || payment.id)"
                         class="bi bi-send me-1"
-                      ></i>
-                      Resend Receipt
+                      ></i><span>Resend Receipt</span>
                     </button>
                   </td>
                 </tr>
@@ -493,14 +485,13 @@
         <div class="card-body d-flex justify-content-between align-items-center">
           <div>
             <span *ngIf="!canClose && closeReason" class="text-muted small">
-              <i class="bi bi-info-circle"></i> {{ closeReason }}
+              <i class="bi bi-info-circle"></i><span>{{ closeReason }}</span>
             </span>
           </div>
           <button class="btn btn-danger" [disabled]="!canClose || isClosing()" (click)="closeCase()"
             *hasPermission="['CanManageAccount']">
             <span *ngIf="isClosing()" class="spinner-border spinner-border-sm me-1"></span>
-            <i *ngIf="!isClosing()" class="bi bi-lock-fill me-1"></i>
-            Close Case
+            <i *ngIf="!isClosing()" class="bi bi-lock-fill me-1"></i><span>Close Case</span>
           </button>
         </div>
       </div>

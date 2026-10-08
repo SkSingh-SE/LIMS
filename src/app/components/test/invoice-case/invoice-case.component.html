@@ -9,7 +9,7 @@
       </div>
     </div>
     <a [routerLink]="['/invoice-case']" class="btn btn-outline-light btn-sm me-2">
-      <i class="bi bi-arrow-left me-1"></i> Back to List
+      <i class="bi bi-arrow-left me-1"></i><span>Back to List</span>
     </a>
   </div>
 
@@ -52,7 +52,7 @@
         <div class="matrix-selector-card">
           <div *ngFor="let sg of subGroups" class="subgroup-item">
             <div class="subgroup-title mb-2">
-              <i class="bi bi-folder2-open text-primary me-1"></i>{{ sg.name }}
+              <i class="bi bi-folder2-open text-primary me-1"></i><span>{{ sg.name }}</span>
             </div>
             <div class="d-flex flex-wrap gap-2 ms-3">
               <button *ngFor="let at of sg.analysisTypes" type="button"
@@ -66,7 +66,7 @@
             </div>
           </div>
           <div *ngIf="subGroups.length === 0" class="table-empty-msg">
-            <i class="bi bi-info-circle me-1"></i> No Sub Groups or Analysis Types configured for this Laboratory Test.
+            <i class="bi bi-info-circle me-1"></i><span>No Sub Groups or Analysis Types configured for this Laboratory Test.</span>
           </div>
         </div>
       </div>
@@ -85,14 +85,13 @@
               [class.active]="activeVersionIndex === i"
               [class.current-fy]="isCurrentVersion(i)"
               (click)="selectVersion(i)">
-              <i class="bi bi-calendar-event me-1"></i>
-              {{ getVersionFyLabel(i) }}
+              <i class="bi bi-calendar-event me-1"></i><span>{{ getVersionFyLabel(i) }}</span>
               <span *ngIf="isCurrentVersion(i)" class="badge bg-success ms-1" title="Current default financial year">&#9733; Current</span>
             </button>
           </li>
           <li class="nav-item" *ngIf="!isViewMode">
             <button type="button" class="nav-link add-year-tab" (click)="addYear()">
-              <i class="bi bi-plus-circle me-1"></i> Add Year
+              <i class="bi bi-plus-circle me-1"></i><span>Add Year</span>
             </button>
           </li>
         </ul>
@@ -136,7 +135,7 @@
                   </div>
                   <div class="col-md-3 text-end" *ngIf="!isViewMode">
                     <button type="button" class="btn btn-sm btn-remove" (click)="removeYear(i)">
-                      <i class="bi bi-trash me-1"></i> Remove Year
+                      <i class="bi bi-trash me-1"></i><span>Remove Year</span>
                     </button>
                   </div>
                 </div>
@@ -165,7 +164,7 @@
                               <span *ngIf="isOverrideRow(i, pi)"
                                 class="badge bg-warning text-dark px-1.5 py-0.5"
                                 [title]="getOverrideHint(i, pi)">
-                                <i class="bi bi-lightning-charge me-0.5"></i>{{ getOverrideText(i, pi) }}
+                                <i class="bi bi-lightning-charge me-0.5"></i><span>{{ getOverrideText(i, pi) }}</span>
                               </span>
                               <span class="badge bg-secondary text-white px-1.5 py-0.5">
                                 {{ p.get('groupType')?.value === 'AnalysisType' ? 'Chemical Matrix' : 'Mech/Gen Test' }}
@@ -178,8 +177,7 @@
                         <td>
                           <ng-container *ngIf="getBaseTypeInfo(i, pi) as bInfo">
                             <span [class]="bInfo.typeClass" [title]="bInfo.tooltip">
-                              <i class="bi" [ngClass]="bInfo.icon"></i>
-                              {{ bInfo.badgeText }}
+                              <i class="bi" [ngClass]="bInfo.icon"></i><span>{{ bInfo.badgeText }}</span>
                             </span>
                             <div class="badge-subtext" *ngIf="bInfo.subText">{{ bInfo.subText }}</div>
                           </ng-container>
@@ -227,7 +225,7 @@
                         <td colspan="5" class="p-2 border-bottom">
                           <div class="element-override-box">
                             <div class="element-override-header">
-                              <span><i class="bi bi-gear-fill text-danger me-1"></i>Element-Wise Surcharges (Added on top of base tier)</span>
+                              <span><i class="bi bi-gear-fill text-danger me-1"></i><span>Element-Wise Surcharges (Added on top of base tier)</span></span>
                               <span class="badge bg-info-subtle text-info-emphasis px-2 py-1">Override Parameter Rates</span>
                             </div>
                             <div class="row g-2">
@@ -250,7 +248,7 @@
 
                     <tr *ngIf="pricesOf(i).length === 0">
                       <td colspan="5" class="table-empty-msg">
-                        <i class="bi bi-info-circle me-1"></i> No prices set for this year — select the Sub Group Test or add price rows.
+                        <i class="bi bi-info-circle me-1"></i><span>No prices set for this year — select the Sub Group Test or add price rows.</span>
                       </td>
                     </tr>
                   </tbody>
@@ -265,10 +263,10 @@
       <!-- Sticky Action bar -->
       <div class="sticky-action-bar d-flex justify-content-end gap-2 mt-4">
         <a [routerLink]="['/invoice-case']" class="btn btn-cancel">
-          <i class="bi bi-x-circle me-1"></i> Cancel
+          <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
         </a>
         <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-3">
-          <i class="bi bi-check-circle me-1"></i> Save
+          <i class="bi bi-check-circle me-1"></i><span>Save</span>
         </button>
       </div>
     </form>

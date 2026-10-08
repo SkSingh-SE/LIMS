@@ -3,8 +3,7 @@
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">General Parameter List</label>
       <a class="btn btn-outline-light me-3 d-flex align-items-center gap-1" (click)="openModal('create', 0)">
-        <i class="bi bi-plus-lg"></i>
-        Create General Parameter
+        <i class="bi bi-plus-lg"></i><span>Create General Parameter</span>
       </a>
     </div>
 
@@ -75,8 +74,7 @@
                   class="badge"
                   [ngClass]="(item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'badge-theme-observed' : 'badge-theme-reported'"
                 >
-                  <i class="bi" [ngClass]="(item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'bi-eye me-1' : 'bi-file-earmark-check me-1'"></i>
-                  {{ (item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'Observed' : (item.parameterType || 'Reported') }}
+                  <i class="bi" [ngClass]="(item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'bi-eye me-1' : 'bi-file-earmark-check me-1'"></i><span>{{ (item.parameterType === 'Observed' || item.parameterType === 'Observation') ? 'Observed' : (item.parameterType || 'Reported') }}</span>
                 </span>
               </td>
               <td>
@@ -232,7 +230,7 @@
                 (click)="autoGenerateSymbol()"
                 title="Auto generate symbol from Parameter Name"
               >
-                <i class="bi bi-magic me-1"></i>Auto
+                <i class="bi bi-magic me-1"></i><span>Auto</span>
               </button>
             </div>
           </div>
@@ -285,7 +283,7 @@
                 (click)="openLinkedMaster('/parameter-unit')"
                 title="Manage Parameter Units"
               >
-                <i class="bi bi-box-arrow-up-right me-1"></i>Manage Unit
+                <i class="bi bi-box-arrow-up-right me-1"></i><span>Manage Unit</span>
               </a>
             </div>
             <app-searchable-dropdown
@@ -348,7 +346,7 @@
             <div class="input-group">
               <input type="text" class="form-control" formControlName="formulaDisplay" placeholder="{Carbon} + {Manganese}" readonly />
               <button type="button" class="btn btn-add btn-sm" (click)="openFormulaBuilder()">
-                <i class="bi bi-gear me-1"></i>Build Formula
+                <i class="bi bi-gear me-1"></i><span>Build Formula</span>
               </button>
             </div>
           </div>
@@ -358,7 +356,7 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
               <label class="form-label fw-bold mb-0">Dropdown Options</label>
               <button type="button" class="btn btn-add btn-sm" (click)="addDropdownOption()" *ngIf="!isViewMode">
-                <i class="bi bi-plus-circle me-1"></i>Add Option
+                <i class="bi bi-plus-circle me-1"></i><span>Add Option</span>
               </button>
             </div>
             <div formArrayName="dropdownOptions">
@@ -391,10 +389,10 @@
         <!-- Modal Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn btn-cancel" (click)="closeModal()">
-            <i class="bi bi-x-circle"></i> Cancel
+            <i class="bi bi-x-circle"></i><span>Cancel</span>
           </button>
           <button type="submit" class="btn btn-save" [disabled]="ParameterForm.invalid">
-            <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+            <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
           </button>
         </div>
       </form>

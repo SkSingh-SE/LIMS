@@ -2,19 +2,19 @@
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">
-        <i class="bi bi-receipt me-2"></i>Invoice Preview
+        <i class="bi bi-receipt me-2"></i><span>Invoice Preview</span>
       </label>
       <div class="d-flex gap-2 me-3">
         <span class="badge bg-light text-dark" *ngIf="invoiceData?.status">{{ invoiceData.status }}</span>
         <button class="btn btn-outline-light btn-sm" (click)="printInvoice()">
-          <i class="bi bi-printer me-1"></i> Print
+          <i class="bi bi-printer me-1"></i><span>Print</span>
         </button>
         <button class="btn btn-outline-light btn-sm"
           (click)="sendInvoice('email')" [disabled]="isSendingInvoice()">
-          <i class="bi bi-envelope me-1"></i> Email
+          <i class="bi bi-envelope me-1"></i><span>Email</span>
         </button>
         <button class="btn btn-outline-light btn-sm" (click)="goBack()">
-          <i class="bi bi-arrow-left me-1"></i> Back
+          <i class="bi bi-arrow-left me-1"></i><span>Back</span>
         </button>
       </div>
     </div>
@@ -168,7 +168,7 @@
       <i class="bi bi-exclamation-circle text-muted" style="font-size: 2rem;"></i>
       <p class="text-muted mt-2">Invoice not found or could not be loaded.</p>
       <button class="btn btn-outline-danger btn-sm" (click)="goBack()">
-        <i class="bi bi-arrow-left me-1"></i> Back to Cases
+        <i class="bi bi-arrow-left me-1"></i><span>Back to Cases</span>
       </button>
     </div>
 

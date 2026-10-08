@@ -2293,6 +2293,21 @@ label .text-danger {
   border: 1px solid var(--neutral-300);
 }
 
+/* MANDATORY GLOBAL BADGE ICON-TEXT STRUCTURE FIX (STRICT)
+   Bare text sibling to <i> creates an anonymous inline box with extra
+   whitespace/baseline gap vs <span>-wrapped text. Flex + gap renders
+   both identically; <span> wrapping is still required for text control. */
+.badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.badge i,
+.badge .bi {
+  margin-right: 0 !important;
+  flex-shrink: 0;
+}
+
 /* ════════════════════════════════════════════════════════════════
    NAV TABS — enhanced
 ════════════════════════════════════════════════════════════════ */

@@ -20,10 +20,10 @@
           {{ sample.sampleStatus || sample.status || 'Active' }}
         </span>
         <span class="badge bg-light text-dark border ms-1" *ngIf="sample.metalClassificationName">
-          <i class="bi bi-layers me-1 text-primary"></i>{{ sample.metalClassificationName }}
+          <i class="bi bi-layers me-1 text-primary"></i><span>{{ sample.metalClassificationName }}</span>
         </span>
         <span class="badge bg-light text-dark border" *ngIf="sample.productMasterName">
-          <i class="bi bi-box me-1 text-danger"></i>{{ sample.productMasterName }}
+          <i class="bi bi-box me-1 text-danger"></i><span>{{ sample.productMasterName }}</span>
         </span>
       </div>
       
@@ -54,7 +54,7 @@
             <div class="card h-100 border-0 bg-light-subtle shadow-none">
               <div class="card-header bg-transparent py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
                 <span class="fw-semibold text-danger small d-flex align-items-center gap-1">
-                  <i class="bi bi-tools text-danger"></i> Specimen Preparation & Machining Matrix
+                  <i class="bi bi-tools text-danger"></i><span>Specimen Preparation & Machining Matrix</span>
                 </span>
                 <span class="badge bg-secondary-subtle text-secondary small">
                   {{ getTests(sample.id).length }} Test(s) Configured
@@ -172,7 +172,7 @@
               
               <div class="card-header bg-light py-1 px-2 border-bottom d-flex justify-content-between align-items-center">
                 <span class="fw-semibold text-dark small d-flex align-items-center gap-1">
-                  <i class="bi bi-scissors text-danger"></i> Cutting Parameters & Charges
+                  <i class="bi bi-scissors text-danger"></i><span>Cutting Parameters & Charges</span>
                 </span>
               </div>
 
@@ -275,7 +275,7 @@
   <div class="cm-global-action-bar card mt-3 p-2 bg-white shadow-sm border d-flex flex-row justify-content-between align-items-center" *ngIf="!isReadOnly">
     <div class="d-flex align-items-center gap-2">
       <span class="badge bg-light text-dark border">
-        <i class="bi bi-shield-check text-success me-1"></i> Stage 3: Sample Preparation
+        <i class="bi bi-shield-check text-success me-1"></i><span>Stage 3: Sample Preparation</span>
       </span>
       <span class="small text-muted">
         Review all specimen machining allocations above before transitioning to Testing.

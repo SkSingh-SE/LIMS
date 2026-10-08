@@ -45,7 +45,7 @@
         <div class="card-header d-flex justify-content-between align-items-center py-2">
           <strong class="text-sm">Submenus</strong>
           <button *ngIf="!isViewMode" class="btn btn-sm btn-add" type="button" (click)="addSubmenu(submenuArray)">
-            <i class="bi bi-plus-circle-dotted"></i> Add L1 Item
+            <i class="bi bi-plus-circle-dotted"></i><span>Add L1 Item</span>
           </button>
         </div>
         <div class="card-body p-2">
@@ -104,7 +104,7 @@
             <button *ngIf="!isViewMode && depth < 3" type="button"
               class="btn btn-sm btn-outline-secondary mt-1 mb-1" style="font-size:0.75rem;"
               (click)="addSubmenu(getSubmenuFormArray(sub))">
-              <i class="bi bi-plus-circle-dotted"></i> Add L{{ depth + 1 }} Item
+              <i class="bi bi-plus-circle-dotted"></i><span>Add L{{ depth + 1 }} Item</span>
             </button>
           </div>
 

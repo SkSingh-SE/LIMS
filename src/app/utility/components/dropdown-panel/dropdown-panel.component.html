@@ -11,7 +11,7 @@
       class="list-group-item bg-light text-secondary fw-bold small py-1 px-2 text-uppercase position-sticky top-0 z-1 border-bottom border-top dropdown-group-header-0"
       style="font-size: 0.72rem; letter-spacing: 0.5px; cursor: default; user-select: none;"
     >
-      <i class="bi bi-folder2-open me-1 text-danger"></i> {{ item.name }}
+      <i class="bi bi-folder2-open me-1 text-danger"></i><span>{{ item.name }}</span>
     </li>
 
     <!-- Non-selectable Intermediate SubGroup Header (Level 1: e.g. Chemical SubGroup) -->
@@ -20,7 +20,7 @@
       class="list-group-item bg-light-subtle text-dark fw-semibold small py-1 ps-3 pe-2 border-bottom dropdown-group-header-1"
       style="font-size: 0.74rem; letter-spacing: 0.2px; cursor: default; user-select: none;"
     >
-      <i class="bi bi-folder me-1 text-secondary"></i> {{ item.name }}
+      <i class="bi bi-folder me-1 text-secondary"></i><span>{{ item.name }}</span>
     </li>
 
     <!-- Selectable Option -->

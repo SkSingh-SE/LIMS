@@ -4,8 +4,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
       <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
-        <i class="bi bi-arrow-left"></i>
-        Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </button>
     </div>
 
@@ -195,7 +194,7 @@
                   </span>
                 </div>
                 <a [routerLink]="['/non-conforming-work/details', relatedNcWork.id]" class="btn btn-sm btn-add">
-                  <i class="bi bi-box-arrow-up-right me-1"></i>View
+                  <i class="bi bi-box-arrow-up-right me-1"></i><span>View</span>
                 </a>
               </div>
             </div>

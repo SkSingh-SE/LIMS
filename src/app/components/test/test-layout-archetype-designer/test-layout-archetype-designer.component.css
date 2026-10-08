@@ -56,6 +56,38 @@
   font-size: 0.85rem;
 }
 
+.studio-format-name-box {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 8px;
+  transition: all 0.2s ease;
+}
+
+.studio-format-name-box:focus-within {
+  border-color: var(--primary-color, #da261c);
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.15);
+}
+
+.studio-format-name-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #0f172a;
+  width: 250px;
+  font-family: inherit;
+}
+
+.studio-format-name-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
 .studio-top-actions {
   margin-left: auto;
   display: flex;
@@ -491,18 +523,26 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  flex: 0 1 290px;
-  min-width: 140px;
+  flex: 0 1 340px;
+  min-width: 170px;
 }
 
 .layout-structure-picker .test-preview-select {
-  width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
   font-size: 0.76rem;
   height: 28px;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.btn-load-structure {
+  font-size: 0.74rem;
+  height: 28px;
+  line-height: 1;
+  font-weight: 600;
+  border-radius: 4px;
 }
 
 .test-preview-select {
@@ -826,13 +866,15 @@
 
 .svg-chart {
   width: 100%;
-  height: 110px;
+  height: auto;
+  max-height: 110px;
   display: block;
 }
 
 .svg-chart-full {
   width: 100%;
-  height: 155px;
+  height: auto;
+  max-height: 155px;
   display: block;
 }
 
@@ -1151,10 +1193,13 @@
 
 .dataset-check-row {
   cursor: pointer;
-  padding: 3px 4px;
+  padding: 4px 6px;
   border-radius: 4px;
   transition: background 0.12s ease;
   user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .dataset-check-row:hover {
@@ -1163,7 +1208,7 @@
 
 .dataset-check-row .form-check-input {
   float: none !important;
-  margin: 0 8px 0 0 !important;
+  margin: 0 !important;
   flex-shrink: 0;
   width: 14px;
   height: 14px;
@@ -1367,3 +1412,51 @@
 .photo-preview-card:hover {
   border-color: #cbd5e1;
 }
+
+/* Payload JSON preview pre */
+.payload-preview-pre {
+  max-height: 500px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+}
+
+/* Multi-Test Mapping Modal & Utilities */
+.max-w-sm {
+  max-width: 280px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.multi-test-list-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.multi-test-row {
+  transition: background-color 0.15s ease;
+}
+
+.multi-test-row:hover {
+  background-color: #f1f5f9;
+}
+
+.multi-test-row.selected {
+  background-color: #eff6ff;
+  border-left: 3px solid #2563eb;
+}
+
+/* Global purple utility classes for Global Default badges */
+.bg-purple-subtle {
+  background-color: rgba(147, 51, 234, 0.12) !important;
+}
+
+.text-purple {
+  color: #7e22ce !important;
+}
+
+.border-purple-subtle {
+  border-color: rgba(147, 51, 234, 0.25) !important;
+}
+

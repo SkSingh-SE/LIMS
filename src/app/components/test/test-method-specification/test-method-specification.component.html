@@ -3,7 +3,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">Test Method Specification Form</label>
       <a routerLink="/test-specification" class="btn btn-outline-light btn-sm me-3">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </a>
     </div>
     <div class="card-body">
@@ -152,7 +152,7 @@
               (click)="$event.stopPropagation(); addVersion(true)"
               [disabled]="testSpecificationForm.get('isDisabled')?.value"
             >
-              <i class="bi bi-plus-circle"></i> Add New Version
+              <i class="bi bi-plus-circle"></i><span>Add New Version</span>
             </button>
           </div>
           <div *ngIf="openSections['versions']" class="section-body">
@@ -182,7 +182,7 @@
                       (click)="onActivateVersion(i)"
                       title="Set as active version"
                     >
-                      <i class="bi bi-check-circle"></i> Activate
+                      <i class="bi bi-check-circle"></i><span>Activate</span>
                     </button>
                     <button
                       *ngIf="!isViewMode && group.get('status')?.value === VersionStatus.Withdrawn && !testSpecificationForm.get('isDisabled')?.value"
@@ -191,7 +191,7 @@
                       (click)="onActivateVersion(i)"
                       title="Reactivate version"
                     >
-                      <i class="bi bi-arrow-counterclockwise"></i> Reactivate
+                      <i class="bi bi-arrow-counterclockwise"></i><span>Reactivate</span>
                     </button>
                     <button
                       *ngIf="!isViewMode && (group.get('status')?.value === VersionStatus.Active || group.get('status')?.value === VersionStatus.Superseded) && !testSpecificationForm.get('isDisabled')?.value"
@@ -200,7 +200,7 @@
                       (click)="onWithdrawVersion(i)"
                       title="Withdraw this version"
                     >
-                      <i class="bi bi-x-circle"></i> Withdraw
+                      <i class="bi bi-x-circle"></i><span>Withdraw</span>
                     </button>
                     <button
                       *ngIf="!isViewMode && !isVersionReadOnly(i) && versions.controls.length > 1 && !testSpecificationForm.get('isDisabled')?.value"
@@ -256,8 +256,7 @@
                           (click)="openFileInNewTab(group.get('standardFilePath')?.value)"
                           title="{{ group.get('standardFile')?.value }}"
                         >
-                          <i class="bi bi-file-earmark-fill"></i>
-                          {{ group.get("standardFile")?.value }}
+                          <i class="bi bi-file-earmark-fill"></i><span>{{ group.get("standardFile")?.value }}</span>
                         </span>
                         <button
                           *ngIf="!isViewMode && !isVersionReadOnly(i) && !testSpecificationForm.get('isDisabled')?.value"
@@ -319,21 +318,20 @@
                 <!-- Version-level Parameters -->
                 <div class="param-block mt-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="param-block-title"><i class="bi bi-list-check me-1"></i> Parameters (this version)</span>
+                    <span class="param-block-title"><i class="bi bi-list-check me-1"></i><span>Parameters (this version)</span></span>
                     <button
                       *ngIf="!isViewMode && !isVersionReadOnly(i) && !testSpecificationForm.get('isDisabled')?.value"
                       type="button"
                       class="btn btn-save btn-sm"
                       (click)="addParameter(i)"
                     >
-                      <i class="bi bi-plus-circle-dotted"></i> Add Parameter
+                      <i class="bi bi-plus-circle-dotted"></i><span>Add Parameter</span>
                     </button>
                   </div>
 
                   <div formArrayName="parameters">
                     <div *ngIf="versionParameters(i).length === 0" class="param-list-empty">
-                      <i class="bi bi-list-check"></i>
-                      No parameters added for this version.
+                      <i class="bi bi-list-check"></i><span>No parameters added for this version.</span>
                     </div>
 
                     <table *ngIf="versionParameters(i).length > 0" class="table table-sm align-middle param-table mb-0">
@@ -403,7 +401,7 @@
         <!-- Action bar -->
         <div class="form-action-bar">
           <a class="btn btn-cancel" routerLink="/test-specification">
-            <i class="bi bi-x-circle"></i> Cancel
+            <i class="bi bi-x-circle"></i><span>Cancel</span>
           </a>
           <button
             *ngIf="!isViewMode"
@@ -411,7 +409,7 @@
             type="submit"
             class="btn btn-save"
           >
-            <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+            <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
           </button>
         </div>
       </form>

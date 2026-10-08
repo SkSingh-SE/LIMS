@@ -4,7 +4,7 @@
             class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
             <label class="text-center text-md fw-medium ms-3">Product Size List</label>
             <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i> Create Product Size
+                <i class="bi bi-plus-lg"></i><span>Create Product Size</span>
             </a>
         </div>
 
@@ -202,10 +202,10 @@
                 <!-- Modal Footer -->
                 <div *ngIf="!isViewMode" class="modal-footer">
                     <button type="button" class="btn btn-cancel" (click)="closeModal()">
-                        <i class="bi bi-x-circle me-1"></i>Cancel
+                        <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
                     </button>
                     <button type="submit" class="btn btn-save" [disabled]="productSizeForm.invalid">
-                        <i class="bi bi-check-circle me-1"></i>{{ isEditMode ? 'Update' : 'Save' }}
+                        <i class="bi bi-check-circle me-1"></i><span>{{ isEditMode ? 'Update' : 'Save' }}</span>
                     </button>
                 </div>
             </form>

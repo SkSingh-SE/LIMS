@@ -4,7 +4,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
       <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </button>
     </div>
 
@@ -90,7 +90,7 @@
               <span class="fw-bold ms-2">III. Sample Details</span>
             </div>
             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add me-2" (click)="addSample(); $event.stopPropagation()">
-              <i class="bi bi-plus-lg me-1"></i> Add Sample
+              <i class="bi bi-plus-lg me-1"></i><span>Add Sample</span>
             </button>
           </div>
           <div *ngIf="openSections['samples']" class="section-body p-0">

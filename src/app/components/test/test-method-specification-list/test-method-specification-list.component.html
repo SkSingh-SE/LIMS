@@ -6,21 +6,18 @@
       <div class="d-flex align-items-center gap-2">
         <!-- Download Template Button -->
         <button class="btn btn-outline-light btn-sm" (click)="downloadTemplate()" title="Download Excel template for import">
-          <i class="bi bi-file-earmark-arrow-down"></i>
-          Template
+          <i class="bi bi-file-earmark-arrow-down"></i><span>Template</span>
         </button>
         <!-- Import Excel Button -->
         <button *hasPermission="'CanImportTestMethodSpecification'" class="btn btn-outline-light btn-sm" (click)="fileInput.click()" [disabled]="importBuilding">
-          <i class="bi bi-upload"></i>
-          {{ importBuilding ? 'Parsing...' : 'Import Excel' }}
+          <i class="bi bi-upload"></i><span>{{ importBuilding ? 'Parsing...' : 'Import Excel' }}</span>
         </button>
         <input #fileInput type="file" accept=".xlsx,.xls" class="d-none" (change)="onImportFileSelected($event)" />
 
         <!-- Add Test Method Button -->
         <a *hasPermission="'CanCreateTestMethodSpecification'" routerLink="/test-specification/create" class="btn btn-outline-light btn-sm">
           
-          <i class="bi bi-plus-lg"></i>
-          Add Test Method Specification
+          <i class="bi bi-plus-lg"></i><span>Add Test Method Specification</span>
         </a>
       </div>
     </div>
@@ -187,8 +184,7 @@
     <div class="custom-modal-footer">
       <button type="button" class="btn btn-sm btn-cancel" (click)="cancelImport()" [disabled]="importing">Cancel</button>
       <button type="button" class="btn btn-sm btn-save" (click)="commitImport()" [disabled]="importing || !importHasImportable">
-        <i class="bi bi-download"></i>
-        {{ importing ? 'Importing...' : 'Import ' + importOkCount + ' Record(s)' }}
+        <i class="bi bi-download"></i><span>{{ importing ? 'Importing...' : 'Import ' + importOkCount + ' Record(s)' }}</span>
       </button>
     </div>
   </div>

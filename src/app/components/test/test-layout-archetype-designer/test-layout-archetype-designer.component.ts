@@ -1,11 +1,12 @@
 import { Component, OnInit, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { ToastService } from '../../../services/toast.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { TestLayoutService, TestLayoutTemplateDto } from '../../../services/test-layout.service';
 
 export interface SectionColumnsConfig {
   unit?: boolean;
@@ -71,6 +72,7 @@ export interface TestDatasetPool {
 }
 
 export interface SectionConfig {
+  sectionKey?: string;
   width?: string;
   visibility?: string;
   enabled?: boolean;
@@ -267,6 +269,26 @@ export interface TestDef {
 export class TestLayoutArchetypeDesignerComponent implements OnInit {
   private toastService = inject(ToastService);
   private labService = inject(LaboratoryTestService);
+  private testLayoutService = inject(TestLayoutService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  // Layout View Mode & Source Tracking
+  isViewMode: boolean = false;
+  isGlobalDefault: boolean = false;
+  loadedSource: 'db' | 'preset' = 'preset';
+  additionalMappedTestIds: number[] = [];
+  additionalMappedLeafKeys: string[] = [];
+  availableAllTests: any[] = [];
+  showMultiTestModal: boolean = false;
+  multiTestSearchTerm: string = '';
+
+  // Database Layout State
+  currentLayoutId: number | null = null;
+  layoutCode: string = '';
+  layoutStatus: string = 'Published';
+  isDefaultLayout: boolean = true;
+  currentVersion: number = 1;
 
   // Actual Laboratory Test (Unified Searchable Selection from Database)
   selectedUnifiedTestId: number | string | null = 1;
@@ -312,7 +334,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   // Layout Structure Archetype (Center Canvas Top Bar Selection)
   selectedArchetypeKey: string = 'tensile';
   selectedTestKey: string = 'tensile';
-  leafNode: string = 'Mechanical / Strength / Tensile';
+  selectedPresetToLoad: string = '';
+  leafNode: string = 'General / Strength / Tensile';
   paperSub: string = 'Tensile Test • ASTM E8 / IS 1608';
   layoutName: string = 'Universal Execution Layout';
   layoutRev: string = '1.0';
@@ -320,7 +343,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   isMapped: boolean = false;
   demoMode: boolean = false;
   zoomLevel: number = 1;
-  activeConfigTab: 'basic' | 'data' | 'rules' | 'display' | 'report' = 'basic';
+  activeConfigTab: 'basic' | 'data_binding' | 'field_structure' | 'entry_rules' = 'basic';
 
   // Data Source Pool Management & Custom Additions
   readonly STORAGE_KEY_CUSTOM_CONDITIONS = 'lims_designer_custom_conditions';
@@ -374,13 +397,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   // Modals state
   previewModalOpen: boolean = false;
-  registerModalOpen: boolean = false;
-
-  // Register Test Form state
-  rtName: string = '';
-  rtLeaf: string = '';
-  rtStd: string = '';
-  rtParams: string = 'Bend Angle | deg | ≥ 90\nCrack Observed | — | Runtime';
+  payloadPreviewModalOpen: boolean = false;
 
   // Component Name Dictionary
   readonly componentNames: Record<string, string> = {
@@ -424,7 +441,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     tensile: {
       key: 'tensile',
       label: 'Tensile Test',
-      leaf: 'Mechanical / Strength / Tensile',
+      leaf: 'General / Strength / Tensile',
       sub: 'Tensile Test • ASTM E8 / IS 1608',
       dbTestId: 1,
       isChemical: false,
@@ -439,7 +456,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     impact: {
       key: 'impact',
       label: 'Charpy Impact',
-      leaf: 'Mechanical / Impact / Charpy',
+      leaf: 'General / Impact / Charpy',
       sub: 'Charpy Impact • ASTM E23 / IS 1757',
       dbTestId: 8,
       isChemical: false,
@@ -453,7 +470,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     izod: {
       key: 'izod',
       label: 'Izod Impact Test',
-      leaf: 'Mechanical / Impact / Izod',
+      leaf: 'General / Impact / Izod',
       sub: 'Izod Impact • IS 1598 / ASTM D256',
       dbTestId: 9,
       isChemical: false,
@@ -466,7 +483,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     rockwell: {
       key: 'rockwell',
       label: 'Rockwell Hardness',
-      leaf: 'Mechanical / Hardness / Rockwell',
+      leaf: 'General / Hardness / Rockwell',
       sub: 'Rockwell Hardness • ASTM E18 / IS 1586',
       dbTestId: 7,
       isChemical: false,
@@ -480,7 +497,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     micro_vickers: {
       key: 'micro_vickers',
       label: 'Micro Vickers Hardness',
-      leaf: 'Mechanical / Hardness / Micro-Vickers',
+      leaf: 'General / Hardness / Micro-Vickers',
       sub: 'Micro Vickers • ASTM E384 / ISO 6507',
       dbTestId: 10,
       isChemical: false,
@@ -494,7 +511,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     hardness_multiloc: {
       key: 'hardness_multiloc',
       label: 'Hardness Multi-Location (Weld Survey)',
-      leaf: 'Mechanical / Hardness / Weld-Survey',
+      leaf: 'General / Hardness / Weld-Survey',
       sub: 'Hardness Survey • ISO 9015 / ASTM E92',
       dbTestId: 11,
       isChemical: false,
@@ -508,7 +525,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     case_depth_hardness: {
       key: 'case_depth_hardness',
       label: 'Effective Case Depth (Hardness)',
-      leaf: 'Mechanical / Case-Depth / Micro-Hardness',
+      leaf: 'General / Case-Depth / Micro-Hardness',
       sub: 'Effective Case Depth • IS 6416 / ISO 2639',
       dbTestId: 12,
       isChemical: false,
@@ -555,7 +572,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     metallography: {
       key: 'metallography',
       label: 'Metallography Microstructure',
-      leaf: 'Metallography / Microstructure / General',
+      leaf: 'Metallography / Microstructure / Phase Rating',
       sub: 'Microstructure • ASTM E3 / ASTM E407',
       dbTestId: 13,
       isChemical: false,
@@ -668,11 +685,29 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   ngOnInit(): void {
     this.initResponsiveLeftPanel();
-    this.loadCustomTestsFromStorage();
     this.loadCustomPoolsFromStorage();
     this.initDefaultSections();
-    this.loadSavedLayoutForTest();
     this.loadDatabaseTests();
+    this.loadAllAvailableTests();
+    this.ensureSectionKeys();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['id']) {
+        this.loadLayoutById(+params['id']);
+      } else {
+        this.loadDatabaseLayoutForHierarchy(
+          this.selectedLabTestId,
+          this.selectedSubGroupId,
+          this.selectedAnalysisTypeId,
+          this.leafNode,
+          this.selectedArchetypeKey
+        );
+      }
+
+      if (params['mode'] === 'view') {
+        this.isViewMode = true;
+      }
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -803,7 +838,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   get dataSourceLabel(): string {
     const target = this.resolvedHierarchy?.fullDisplayName || this.currentLabTestName;
-    return `Live parameters mapped from ${target}${this.resolvedHierarchy?.groupId ? ' (ID: ' + this.resolvedHierarchy.groupId + ')' : ''}`;
+    return `Live parameters mapped from ${target}`;
   }
 
   get testList(): TestDef[] {
@@ -829,7 +864,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   createSectionObject(type: string, customTitle?: string): ExecutionSection {
     const id = Date.now() + Math.floor(Math.random() * 1000);
     const title = customTitle || this.componentNames[type] || 'Section';
+    const cleanTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
     const config: SectionConfig = {
+      sectionKey: `${cleanTitle}_${id}`,
       width: 'Full Width',
       visibility: 'Always',
       enabled: true,
@@ -1327,7 +1364,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const subGroupId = addVals.subGroupId ? Number(addVals.subGroupId) : (item.nodeType === 'SubGroup' ? Number(item.id) : null);
     const subGroupName = addVals.subGroupName || (item.nodeType === 'SubGroup' ? item.name : '');
     const analysisTypeId = addVals.analysisTypeId ? Number(addVals.analysisTypeId) : (item.nodeType === 'AnalysisType' ? Number(item.id) : null);
-    const isChemical = !!addVals.isChemical;
+    const isChemical = !!addVals.isChemical || !!item.isChemical ||
+      (masterTestName && (masterTestName.toLowerCase().includes('spectro') || masterTestName.toLowerCase().includes('chem'))) ||
+      (item.name && (item.name.toLowerCase().includes('spectro') || item.name.toLowerCase().includes('oes') || item.name.toLowerCase().includes('chem')));
     const leafName = item.name || '';
     const fullDisplayName = addVals.fullDisplayName || `${masterTestName}${subGroupName ? ' - ' + subGroupName : ''}`;
 
@@ -1348,15 +1387,16 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       isChemical
     };
 
-    // Construct hierarchical leaf node path (Leaf, SubGroup & Group)
+    // Construct hierarchical leaf node path (Discipline, Group, SubGroup & Leaf)
+    const discipline = isChemical ? 'Chemical' : 'General';
     if (analysisTypeId && subGroupName) {
-      this.leafNode = `${masterTestName} / ${subGroupName} / ${leafName}`;
+      this.leafNode = `${discipline} / ${masterTestName} / ${subGroupName} / ${leafName}`;
       this.paperSub = `${masterTestName} • ${subGroupName} (${leafName})`;
     } else if (subGroupId && subGroupName) {
-      this.leafNode = `${masterTestName} / ${subGroupName}`;
+      this.leafNode = `${discipline} / ${masterTestName} / ${subGroupName}`;
       this.paperSub = `${masterTestName} • ${subGroupName}`;
     } else {
-      this.leafNode = `General / ${masterTestName}`;
+      this.leafNode = `${discipline} / ${masterTestName}`;
       this.paperSub = masterTestName;
     }
 
@@ -1374,8 +1414,14 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     // Synchronize live parameters and dataset pool for that exact leaf node
     this.syncLiveParametersForUnifiedSelection(matchedKey, item);
 
-    // Load saved customized layout if one exists for this test/leaf
-    this.loadSavedLayoutForTest();
+    // Load saved database layout for this test & hierarchy (or fallback to defaults)
+    this.loadDatabaseLayoutForHierarchy(
+      masterTestId,
+      subGroupId,
+      analysisTypeId,
+      this.leafNode,
+      matchedKey
+    );
 
     this.toastService.show(`Target: ${fullDisplayName} (Group, SubGroup & Leaf resolved)`, 'success');
   }
@@ -1497,7 +1543,11 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       this.leafNode = def.leaf;
       this.paperSub = `${labTest.name} • ${def.sub}`;
     } else {
-      this.leafNode = labTest.department ? `${labTest.department} / ${labTest.name}` : `General / ${labTest.name}`;
+      const isChem = !!labTest.isChemicalTest ||
+        (labTest.department && labTest.department.toLowerCase().includes('chem')) ||
+        (labTest.name && (labTest.name.toLowerCase().includes('spectro') || labTest.name.toLowerCase().includes('chem')));
+      const dept = isChem ? 'Chemical' : 'General';
+      this.leafNode = `${dept} / ${labTest.name}`;
       this.paperSub = labTest.name;
     }
 
@@ -1510,6 +1560,39 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.loadSavedLayoutForTest();
 
     this.toastService.show(`Target Test: ${labTest.name} (Mapped to ${this.getArchetypeLabel(matchedKey)})`, 'info');
+  }
+
+  // Indirect Structure Preset Loading
+  loadSelectedStructurePreset(): void {
+    if (!this.selectedPresetToLoad) {
+      this.toastService.show('Please select a structure preset to load', 'warning');
+      return;
+    }
+
+    const presetKey = this.selectedPresetToLoad;
+    const archLabel = this.getArchetypeLabel(presetKey);
+
+    if (this.sections && this.sections.length > 0) {
+      const confirmed = window.confirm(`Loading preset "${archLabel}" will replace current canvas layout sections with the preset structure. Do you want to proceed?`);
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    this.selectedArchetypeKey = presetKey;
+    this.selectedTestKey = presetKey;
+
+    // Mount visual layout sections of the chosen structural archetype
+    this.sections = this.getDefaultSectionsForTest(presetKey);
+    this.isMapped = true;
+    if (this.sections.length > 0) {
+      this.selectedSectionId = this.sections[0].id;
+    }
+    this.syncLiveParametersForTest(presetKey);
+
+    this.toastService.show(`Layout Structure: "${archLabel}" loaded into canvas`, 'success');
+    // Reset dropdown selection back to empty so nothing stays selected (protects against accidental re-selection)
+    this.selectedPresetToLoad = '';
   }
 
   onLayoutArchetypeChange(archetypeKey: string): void {
@@ -1641,11 +1724,16 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const idx = this.sections.findIndex(s => s.id === this.selectedSectionId);
     if (idx === -1) return;
     const orig = this.sections[idx];
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    const newTitle = `${orig.title} (Copy)`;
+    const cleanTitle = newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const dupConfig = JSON.parse(JSON.stringify(orig.config));
+    dupConfig.sectionKey = `${cleanTitle}_${newId}`;
     const dup: ExecutionSection = {
-      id: Date.now(),
+      id: newId,
       type: orig.type,
-      title: `${orig.title} (Copy)`,
-      config: JSON.parse(JSON.stringify(orig.config))
+      title: newTitle,
+      config: dupConfig
     };
     this.sections.splice(idx + 1, 0, dup);
     this.selectedSectionId = dup.id;
@@ -1691,10 +1779,444 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.zoomLevel = Math.max(0.7, Math.min(1.3, Math.round((this.zoomLevel + delta * 0.05) * 100) / 100));
   }
 
-  // Save Layout
-  saveLayout(): void {
-    if (!this.selectedTestKey) {
-      this.toastService.show('Select a Laboratory Test first (mandatory)', 'warning');
+  loadAllAvailableTests(): void {
+    // 1. Fetch unified dropdown items (which have full Leaf Node paths and chemical resolution)
+    this.labService.getUnifiedTestMethodDropdown('', 0, 500).subscribe({
+      next: (unifiedList: any[]) => {
+        const leafItems: any[] = [];
+        if (Array.isArray(unifiedList)) {
+          unifiedList.forEach((item: any) => {
+            if (item.selectable) {
+              const addVals = item.additionalValues || {};
+              const masterTestId = addVals.masterTestId ? Number(addVals.masterTestId) : (item.nodeType === 'TestGroup' ? Number(item.id) : 0);
+              const masterName = addVals.masterTestName || (item.nodeType === 'TestGroup' ? item.name : '') || item.name;
+              const subGroupId = addVals.subGroupId ? Number(addVals.subGroupId) : (item.nodeType === 'SubGroup' ? Number(item.id) : null);
+              const subGroupName = addVals.subGroupName || (item.nodeType === 'SubGroup' ? item.name : '');
+              const analysisTypeId = addVals.analysisTypeId ? Number(addVals.analysisTypeId) : (item.nodeType === 'AnalysisType' ? Number(item.id) : null);
+              const isChem = !!addVals.isChemical || !!item.isChemical ||
+                (masterName && (masterName.toLowerCase().includes('spectro') || masterName.toLowerCase().includes('chem'))) ||
+                (item.name && (item.name.toLowerCase().includes('spectro') || item.name.toLowerCase().includes('oes') || item.name.toLowerCase().includes('chem')));
+              const disc = isChem ? 'Chemical' : 'General';
+
+              let uniqueKey = '';
+              let leafPath = '';
+              if (item.nodeType === 'AnalysisType') {
+                uniqueKey = `at_${analysisTypeId || item.id}`;
+                leafPath = `${disc} / ${masterName} / ${subGroupName} / ${item.name}`;
+              } else if (item.nodeType === 'SubGroup') {
+                uniqueKey = `sg_${subGroupId || item.id}`;
+                leafPath = `${disc} / ${masterName} / ${item.name}`;
+              } else {
+                uniqueKey = `lt_${masterTestId || item.id}`;
+                leafPath = `${disc} / ${item.name} (Direct Leaf)`;
+              }
+
+              leafItems.push({
+                uniqueKey: uniqueKey,
+                id: masterTestId,
+                leafId: item.id,
+                masterTestId: masterTestId,
+                masterTestName: masterName,
+                subGroupId: subGroupId,
+                subGroupName: subGroupName,
+                analysisTypeId: analysisTypeId,
+                name: item.name,
+                parentTestName: masterName,
+                leafNode: item.name,
+                subGroup: subGroupName,
+                isChemical: isChem,
+                department: disc,
+                code: item.nodeType || 'LEAF',
+                leafPath: leafPath,
+                fullDisplayName: addVals.fullDisplayName || leafPath
+              });
+            }
+          });
+        }
+
+        // 2. Also fetch all root tests to ensure any standalone test is present
+        this.labService.getAllLaboratoryTests({
+          PageNumber: 1,
+          PageSize: 500,
+          searchTerm: '',
+          sortByColumn: 'name',
+          sortOrder: 'asc'
+        }).subscribe({
+          next: (res: any) => {
+            const list = res?.items || res?.data || (Array.isArray(res) ? res : []);
+            list.forEach((t: any) => {
+              const isChem = !!t.isChemicalTest || (t.departmentName === 'Chemical') ||
+                (t.name && (t.name.toLowerCase().includes('spectro') || t.name.toLowerCase().includes('chem')));
+              const disc = isChem ? 'Chemical' : 'General';
+              const uniqueKey = `lt_${t.id}`;
+
+              const alreadyHas = leafItems.some(l => l.uniqueKey === uniqueKey || l.masterTestId === t.id || l.id === t.id);
+              if (!alreadyHas) {
+                leafItems.push({
+                  uniqueKey: uniqueKey,
+                  id: t.id,
+                  leafId: t.id,
+                  masterTestId: t.id,
+                  masterTestName: t.name,
+                  subGroupId: null,
+                  subGroupName: '',
+                  analysisTypeId: null,
+                  name: t.name,
+                  parentTestName: t.name,
+                  leafNode: t.name,
+                  subGroup: '',
+                  isChemical: isChem,
+                  department: disc,
+                  code: t.code || 'TEST',
+                  leafPath: `${disc} / ${t.name} (Direct Leaf)`,
+                  fullDisplayName: `${t.name} (${disc})`
+                });
+              }
+            });
+
+            this.availableAllTests = leafItems;
+            this.syncAdditionalMappedTestIds();
+          },
+          error: () => {
+            this.availableAllTests = leafItems;
+            this.syncAdditionalMappedTestIds();
+          }
+        });
+      },
+      error: () => {
+        this.labService.getAllLaboratoryTests({
+          PageNumber: 1,
+          PageSize: 500,
+          searchTerm: '',
+          sortByColumn: 'name',
+          sortOrder: 'asc'
+        }).subscribe({
+          next: (res: any) => {
+            const list = res?.items || res?.data || (Array.isArray(res) ? res : []);
+            this.availableAllTests = list.map((t: any) => {
+              const isChem = !!t.isChemicalTest || (t.departmentName === 'Chemical') ||
+                (t.name && (t.name.toLowerCase().includes('spectro') || t.name.toLowerCase().includes('chem')));
+              const disc = isChem ? 'Chemical' : 'General';
+              return {
+                id: t.id,
+                name: t.name,
+                leafNode: t.name,
+                isChemical: isChem,
+                department: disc,
+                code: t.code || 'LAB',
+                leafPath: `${disc} / ${t.name}`,
+                fullDisplayName: `${t.name} (${disc})`
+              };
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // Load Database Layout for Hierarchy
+  loadDatabaseLayoutForHierarchy(testId: number | null, subGroupId: number | null, analysisTypeId: number | null, leaf: string, matchedKey: string): void {
+    if (!testId && !this.isGlobalDefault) {
+      this.handleNoDatabaseLayoutFound(testId || 1, matchedKey);
+      return;
+    }
+
+    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leaf).subscribe({
+      next: (res) => {
+        if (res && res.id) {
+          this.currentLayoutId = res.id;
+          this.layoutCode = res.layoutCode || `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId || 'GLOBAL'}`;
+          this.layoutName = res.layoutName || (res.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy.fullDisplayName} Layout`);
+          this.layoutRev = res.revision || '1.0';
+          this.currentVersion = res.version || 1;
+          this.layoutStatus = res.status || 'Published';
+          this.isDefaultLayout = res.isDefault ?? true;
+          this.isGlobalDefault = res.isGlobalDefault ?? false;
+          this.applyToLeaf = res.applyToLeaf ?? true;
+          this.loadedSource = 'db';
+
+          let parsedMappedLeafKeys: string[] = [];
+          try {
+            const config = JSON.parse(res.layoutConfigJson);
+            if (config.mappedLeafKeys && Array.isArray(config.mappedLeafKeys)) {
+              parsedMappedLeafKeys = config.mappedLeafKeys;
+            }
+            if (config.sections && Array.isArray(config.sections) && config.sections.length > 0) {
+              this.sections = config.sections;
+            }
+            if (config.archetypeKey) {
+              this.selectedArchetypeKey = config.archetypeKey;
+            }
+            const key = this.selectedTestKey;
+            if (config.customConditions) this.customConditionsMap[key] = config.customConditions;
+            if (config.customDimensions) this.customDimensionsMap[key] = config.customDimensions;
+            if (config.deselectedConditions) this.deselectedConditionsMap[key] = config.deselectedConditions;
+            if (config.deselectedDimensions) this.deselectedDimensionsMap[key] = config.deselectedDimensions;
+          } catch (e) {
+            console.error('Error parsing layout config JSON from DB', e);
+          }
+
+          if (parsedMappedLeafKeys.length > 0) {
+            this.additionalMappedLeafKeys = parsedMappedLeafKeys;
+          } else if (res.mappedLeafNodes && Array.isArray(res.mappedLeafNodes)) {
+            this.additionalMappedLeafKeys = res.mappedLeafNodes.map((m: any) => m.uniqueKey).filter(Boolean);
+          } else {
+            this.additionalMappedLeafKeys = [];
+          }
+          this.syncAdditionalMappedTestIds();
+
+          this.ensureSectionKeys();
+          this.isMapped = true;
+          this.selectedSectionId = this.sections.length > 0 ? this.sections[0].id : null;
+          this.toastService.show(`Loaded layout "${res.layoutName}" from database`, 'info');
+        } else {
+          this.handleNoDatabaseLayoutFound(testId || 1, matchedKey);
+        }
+      },
+      error: (err) => {
+        console.warn('No database layout found or error fetching', err);
+        this.handleNoDatabaseLayoutFound(testId || 1, matchedKey);
+      }
+    });
+  }
+
+  loadLayoutById(id: number): void {
+    this.testLayoutService.getLayoutById(id).subscribe({
+      next: (res) => {
+        if (res && res.id) {
+          this.currentLayoutId = res.id;
+          this.layoutCode = res.layoutCode;
+          this.layoutName = res.layoutName;
+          this.layoutRev = res.revision || '1.0';
+          this.currentVersion = res.version || 1;
+          this.layoutStatus = res.status || 'Published';
+          this.isDefaultLayout = res.isDefault ?? true;
+          this.isGlobalDefault = res.isGlobalDefault ?? false;
+          this.applyToLeaf = res.applyToLeaf ?? true;
+          this.leafNode = res.leafNode || this.leafNode;
+          this.loadedSource = 'db';
+          this.selectedPresetToLoad = ''; // Ensure no preset is selected when editing from list
+
+          if (res.laboratoryTestID) {
+            this.selectedLabTestId = res.laboratoryTestID;
+            this.selectedUnifiedTestId = res.laboratoryTestID;
+          }
+
+          if (res.laboratoryTest) {
+            const isChem = !!res.laboratoryTest.isChemicalTest ||
+              (res.laboratoryTest.name && (res.laboratoryTest.name.toLowerCase().includes('spectro') || res.laboratoryTest.name.toLowerCase().includes('chem')));
+            const disc = isChem ? 'Chemical' : 'General';
+            this.resolvedHierarchy = {
+              groupId: res.laboratoryTest.id,
+              groupName: res.laboratoryTest.name,
+              subGroupId: res.laboratoryTestSubGroupID,
+              subGroupName: res.subGroup?.name || '',
+              analysisTypeId: res.laboratoryTestAnalysisTypeID,
+              leafName: res.analysisType?.name || res.subGroup?.name || res.laboratoryTest.name,
+              fullDisplayName: `${res.laboratoryTest.name}${res.subGroup?.name ? ' - ' + res.subGroup.name : ''}${res.analysisType?.name ? ' (' + res.analysisType.name + ')' : ''}`,
+              isChemical: isChem
+            };
+
+            if (!this.leafNode || this.leafNode.startsWith('General /') || this.leafNode.includes('Universal Layout') || this.leafNode.includes('Room Temperature')) {
+              this.leafNode = `${disc} / ${res.laboratoryTest.name}${res.subGroup?.name ? ' / ' + res.subGroup.name : ''}${res.analysisType?.name ? ' / ' + res.analysisType.name : ''}`;
+            }
+          }
+
+          let parsedMappedLeafKeys: string[] = [];
+          try {
+            const config = JSON.parse(res.layoutConfigJson);
+            if (config.mappedLeafKeys && Array.isArray(config.mappedLeafKeys)) {
+              parsedMappedLeafKeys = config.mappedLeafKeys;
+            }
+            if (config.sections && Array.isArray(config.sections) && config.sections.length > 0) {
+              this.sections = config.sections;
+            }
+            if (config.archetypeKey) {
+              this.selectedArchetypeKey = config.archetypeKey;
+            }
+            const key = this.selectedTestKey;
+            if (config.customConditions) this.customConditionsMap[key] = config.customConditions;
+            if (config.customDimensions) this.customDimensionsMap[key] = config.customDimensions;
+            if (config.deselectedConditions) this.deselectedConditionsMap[key] = config.deselectedConditions;
+            if (config.deselectedDimensions) this.deselectedDimensionsMap[key] = config.deselectedDimensions;
+          } catch (e) {
+            console.error('Error parsing layout config JSON from DB', e);
+          }
+
+          if (parsedMappedLeafKeys.length > 0) {
+            this.additionalMappedLeafKeys = parsedMappedLeafKeys;
+          } else if (res.mappedLeafNodes && Array.isArray(res.mappedLeafNodes)) {
+            this.additionalMappedLeafKeys = res.mappedLeafNodes.map((m: any) => m.uniqueKey).filter(Boolean);
+          } else {
+            this.additionalMappedLeafKeys = [];
+          }
+          this.syncAdditionalMappedTestIds();
+
+          this.ensureSectionKeys();
+          this.isMapped = true;
+          this.selectedSectionId = this.sections.length > 0 ? this.sections[0].id : null;
+          this.toastService.show(`Loaded layout "${res.layoutName}"`, 'success');
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load layout by id', err);
+        this.toastService.show('Failed to load requested layout format', 'error');
+      }
+    });
+  }
+
+  handleNoDatabaseLayoutFound(testId: number, matchedKey: string): void {
+    this.currentLayoutId = null;
+    this.loadedSource = 'preset';
+    this.layoutCode = `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId || 1}`;
+    this.layoutName = `${this.resolvedHierarchy.fullDisplayName} Universal Layout`;
+    this.layoutRev = '1.0';
+    this.currentVersion = 1;
+    this.layoutStatus = 'Published';
+    this.isDefaultLayout = true;
+    this.isMapped = false;
+    this.additionalMappedTestIds = [];
+    this.loadSavedLayoutForTest();
+    this.ensureSectionKeys();
+  }
+
+  // Stable Section Key Management (Auto-generated & Non-editable)
+  ensureSectionKeys(): void {
+    if (!this.sections) return;
+    this.sections.forEach(s => {
+      if (!s.config) {
+        s.config = {} as any;
+      }
+      if (!s.config.sectionKey || s.config.sectionKey.trim() === '') {
+        s.config.sectionKey = this.generateSectionKey(s);
+      }
+    });
+  }
+
+  generateSectionKey(s: ExecutionSection): string {
+    const clean = (s.title || s.type || 'section')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return `${clean}_${(s.id || '').toString().toLowerCase()}`;
+  }
+
+  onSectionTitleChange(s: ExecutionSection): void {
+    s.config.sectionKey = this.generateSectionKey(s);
+  }
+
+  // Global Default Layout Toggle
+  onGlobalDefaultToggle(): void {
+    if (this.isGlobalDefault) {
+      this.isDefaultLayout = true;
+      this.layoutCode = `TL-GLOBAL-${this.currentLayoutId || Date.now()}`;
+      if (!this.layoutName || this.layoutName.includes('Universal Layout') || this.layoutName.includes('Tensile')) {
+        this.layoutName = 'Global Default Test Execution Layout';
+      }
+      this.toastService.show('Global Default enabled: this layout will apply as fallback for all unmapped tests', 'info');
+    } else {
+      this.layoutCode = `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${this.selectedLabTestId || 1}`;
+      this.toastService.show('Global Default disabled: mapped to specific laboratory test', 'info');
+    }
+  }
+
+  // Multi-Test Mapping Modal
+  openMultiTestModal(): void {
+    this.showMultiTestModal = true;
+  }
+
+  closeMultiTestModal(): void {
+    this.showMultiTestModal = false;
+  }
+
+  getPrimaryLeafKey(): string {
+    if (this.isGlobalDefault) return '';
+    if (this.selectedAnalysisTypeId) {
+      return `at_${this.selectedAnalysisTypeId}`;
+    }
+    if (this.selectedSubGroupId) {
+      return `sg_${this.selectedSubGroupId}`;
+    }
+    if (this.selectedLabTestId) {
+      return `lt_${this.selectedLabTestId}`;
+    }
+    return '';
+  }
+
+  toggleAdditionalTest(uniqueKey: string): void {
+    if (!uniqueKey) return;
+    if (uniqueKey === this.getPrimaryLeafKey()) {
+      this.toastService.show('Primary Target Test is always mapped to this layout', 'info');
+      return;
+    }
+    const idx = this.additionalMappedLeafKeys.indexOf(uniqueKey);
+    if (idx > -1) {
+      this.additionalMappedLeafKeys.splice(idx, 1);
+    } else {
+      this.additionalMappedLeafKeys.push(uniqueKey);
+    }
+    this.syncAdditionalMappedTestIds();
+  }
+
+  isAdditionalTestSelected(uniqueKey: string): boolean {
+    if (!uniqueKey) return false;
+    if (uniqueKey === this.getPrimaryLeafKey()) {
+      return true;
+    }
+    return this.additionalMappedLeafKeys.includes(uniqueKey);
+  }
+
+  selectAllAdditionalTests(): void {
+    const primaryKey = this.getPrimaryLeafKey();
+    const filteredKeys = this.getFilteredAvailableTests()
+      .map(t => t.uniqueKey)
+      .filter(k => k && k !== primaryKey);
+    this.additionalMappedLeafKeys = Array.from(new Set([...this.additionalMappedLeafKeys, ...filteredKeys]));
+    this.syncAdditionalMappedTestIds();
+  }
+
+  clearAllAdditionalTests(): void {
+    this.additionalMappedLeafKeys = [];
+    this.syncAdditionalMappedTestIds();
+  }
+
+  syncAdditionalMappedTestIds(): void {
+    const ids: number[] = [];
+    for (const key of this.additionalMappedLeafKeys) {
+      const item = this.availableAllTests.find(t => t.uniqueKey === key);
+      if (item && item.id && !ids.includes(item.id)) {
+        ids.push(item.id);
+      }
+    }
+    this.additionalMappedTestIds = ids;
+  }
+
+  getFilteredAvailableTests(): any[] {
+    if (!this.multiTestSearchTerm) return this.availableAllTests;
+    const term = this.multiTestSearchTerm.toLowerCase();
+    return this.availableAllTests.filter(t =>
+      (t.name && t.name.toLowerCase().includes(term)) ||
+      (t.parentTestName && t.parentTestName.toLowerCase().includes(term)) ||
+      (t.code && t.code.toLowerCase().includes(term)) ||
+      (t.department && t.department.toLowerCase().includes(term)) ||
+      (t.subGroup && t.subGroup.toLowerCase().includes(term)) ||
+      (t.leafNode && t.leafNode.toLowerCase().includes(term)) ||
+      (t.leafPath && t.leafPath.toLowerCase().includes(term)) ||
+      (t.fullDisplayName && t.fullDisplayName.toLowerCase().includes(term)) ||
+      (t.isChemical && 'chemical'.includes(term)) ||
+      (!t.isChemical && 'general'.includes(term))
+    );
+  }
+
+  navigateToList(): void {
+    this.router.navigate(['/test/layout-templates']);
+  }
+
+  // Save Layout to Database (Supports both in-place update and Save as New Revision)
+  saveLayout(forceNewRevision: boolean = false): void {
+    const testId = this.isGlobalDefault ? null : (this.selectedLabTestId || this.resolvedHierarchy.groupId);
+    if (!this.isGlobalDefault && !testId) {
+      this.toastService.show('Select a Laboratory Test first (or enable Global Default Layout)', 'warning');
       return;
     }
     if (this.sections.length === 0) {
@@ -1702,6 +2224,131 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       return;
     }
 
+    this.ensureSectionKeys();
+
+    const mappedLeafNodes: any[] = [];
+    const allMappedIds: number[] = [];
+    if (testId) allMappedIds.push(testId);
+
+    for (const key of this.additionalMappedLeafKeys) {
+      const item = this.availableAllTests.find(t => t.uniqueKey === key);
+      if (item) {
+        if (item.id && !allMappedIds.includes(item.id)) {
+          allMappedIds.push(item.id);
+        }
+        mappedLeafNodes.push({
+          laboratoryTestID: item.masterTestId || item.id,
+          laboratoryTestSubGroupID: item.subGroupId || null,
+          laboratoryTestAnalysisTypeID: item.analysisTypeId || null,
+          leafNode: item.leafNode || item.name,
+          uniqueKey: item.uniqueKey
+        });
+      }
+    }
+
+    const configPayload = {
+      archetypeKey: this.selectedArchetypeKey,
+      testKey: this.selectedTestKey,
+      layoutName: this.layoutName,
+      revision: this.layoutRev,
+      sections: this.sections,
+      customConditions: this.customConditionsMap[this.selectedTestKey] || [],
+      customDimensions: this.customDimensionsMap[this.selectedTestKey] || [],
+      deselectedConditions: this.deselectedConditionsMap[this.selectedTestKey] || [],
+      deselectedDimensions: this.deselectedDimensionsMap[this.selectedTestKey] || [],
+      mappedLeafKeys: this.additionalMappedLeafKeys,
+      mappedLeafNodes: mappedLeafNodes
+    };
+
+    const archetypeSummary = Array.from(new Set(this.sections.map(s => s.type))).join(', ');
+    const generatedCode = this.layoutCode || (this.isGlobalDefault ? `TL-GLOBAL-${Date.now()}` : `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${testId}`);
+    const defaultName = this.layoutName || (this.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy.fullDisplayName} Layout`);
+
+    let revToSave = this.layoutRev || '1.0';
+    let versionToSave = this.currentVersion || 1;
+
+    if (forceNewRevision) {
+      versionToSave += 1;
+      const revNum = parseFloat(revToSave);
+      revToSave = !isNaN(revNum) ? (revNum + 0.1).toFixed(1) : `${revToSave}.1`;
+      this.layoutRev = revToSave;
+      this.currentVersion = versionToSave;
+    }
+
+    const dto: TestLayoutTemplateDto = {
+      id: forceNewRevision ? 0 : (this.currentLayoutId || 0),
+      layoutCode: generatedCode,
+      layoutName: defaultName,
+      revision: revToSave,
+      version: versionToSave,
+      status: this.layoutStatus || 'Published',
+      isDefault: this.isDefaultLayout,
+      isGlobalDefault: this.isGlobalDefault,
+      laboratoryTestID: testId,
+      mappedTestIDs: allMappedIds,
+      mappedLeafNodes: mappedLeafNodes,
+      laboratoryTestSubGroupID: this.isGlobalDefault ? null : (this.selectedSubGroupId || this.resolvedHierarchy.subGroupId),
+      laboratoryTestAnalysisTypeID: this.isGlobalDefault ? null : (this.selectedAnalysisTypeId || this.resolvedHierarchy.analysisTypeId),
+      leafNode: this.isGlobalDefault ? 'Global / All Tests' : this.leafNode,
+      applyToLeaf: this.applyToLeaf,
+      sectionCount: this.sections.length,
+      archetypeSummary,
+      layoutConfigJson: JSON.stringify(configPayload),
+      outputPayloadSchemaJson: this.getJsonPayloadPreview()
+    };
+
+    if (dto.id && dto.id > 0) {
+      this.testLayoutService.updateLayout(dto).subscribe({
+        next: () => {
+          this.isMapped = true;
+          this.loadedSource = 'db';
+          this.backupToLocalStorage();
+          this.toastService.show(`Layout updated in database (Rev ${dto.revision || '1.0'})`, 'success');
+        },
+        error: (err) => {
+          console.error('Update layout failed', err);
+          this.backupToLocalStorage();
+          this.toastService.show('Failed to update in database (saved locally as draft)', 'warning');
+        }
+      });
+    } else {
+      this.testLayoutService.createLayout(dto).subscribe({
+        next: (res) => {
+          this.currentLayoutId = res.id;
+          this.isMapped = true;
+          this.loadedSource = 'db';
+          this.backupToLocalStorage();
+          this.toastService.show(`Layout saved to database (Rev ${dto.revision || '1.0'})`, 'success');
+        },
+        error: (err) => {
+          console.error('Create layout failed', err);
+          this.backupToLocalStorage();
+          this.toastService.show('Failed to save in database (saved locally as draft)', 'warning');
+        }
+      });
+    }
+  }
+
+  deleteCurrentLayout(): void {
+    if (!this.currentLayoutId) return;
+    if (!confirm(`Are you sure you want to delete layout "${this.layoutName}" from the database?`)) return;
+
+    this.testLayoutService.deleteLayout(this.currentLayoutId).subscribe({
+      next: () => {
+        this.toastService.show('Layout deleted from database', 'success');
+        this.currentLayoutId = null;
+        this.isMapped = false;
+        this.sections = this.getDefaultSectionsForTest(this.selectedArchetypeKey);
+        if (this.sections.length > 0) this.selectedSectionId = this.sections[0].id;
+      },
+      error: (err) => {
+        console.error('Failed to delete layout', err);
+        this.toastService.show('Failed to delete layout', 'error');
+      }
+    });
+  }
+
+  backupToLocalStorage(): void {
     try {
       const saved = JSON.parse(localStorage.getItem('lims_universal_layouts') || '{}');
       const payload = {
@@ -1716,15 +2363,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         saved[`leaf:${this.currentTest.leaf}`] = payload;
       }
       localStorage.setItem('lims_universal_layouts', JSON.stringify(saved));
-      this.isMapped = true;
-      this.toastService.show(`Layout successfully saved & mapped to ${this.currentTest.label}`, 'success');
     } catch (e) {
-      console.error(e);
-      this.toastService.show('Failed to save layout configuration', 'error');
+      console.warn('Local storage backup failed', e);
     }
   }
 
-  // Load Saved Layout
+  // Load Saved Layout (Local fallback)
   loadSavedLayoutForTest(): void {
     try {
       const saved = JSON.parse(localStorage.getItem('lims_universal_layouts') || '{}');
@@ -1773,7 +2417,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             name: t.name,
             isChemicalTest: !!t.isChemicalTest,
             code: t.code,
-            department: t.department || (t.isChemicalTest ? 'Chemical' : 'Mechanical')
+            department: t.department || (t.isChemicalTest ? 'Chemical' : 'General')
           }));
         } else {
           this.initFallbackActualLabTests();
@@ -1814,13 +2458,14 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   initFallbackActualLabTests(): void {
     this.actualLabTests = [
-      { id: 1, name: 'Tensile Test', isChemicalTest: false, code: 'TENSILE', department: 'Mechanical' },
-      { id: 7, name: 'Hardness Test (Rockwell / Brinell)', isChemicalTest: false, code: 'HARDNESS', department: 'Mechanical' },
-      { id: 8, name: 'Charpy Impact Test', isChemicalTest: false, code: 'CHARPY', department: 'Mechanical' },
-      { id: 9, name: 'Izod Impact Test', isChemicalTest: false, code: 'IZOD', department: 'Mechanical' },
-      { id: 10, name: 'Micro Vickers Hardness', isChemicalTest: false, code: 'MICRO_VICKERS', department: 'Mechanical' },
-      { id: 11, name: 'Hardness Multi-Location (Weld Survey)', isChemicalTest: false, code: 'HARDNESS_SURVEY', department: 'Mechanical' },
+      { id: 1, name: 'Tensile Test', isChemicalTest: false, code: 'TENSILE', department: 'General' },
+      { id: 7, name: 'Hardness Test (Rockwell / Brinell)', isChemicalTest: false, code: 'HARDNESS', department: 'General' },
+      { id: 8, name: 'Charpy Impact Test', isChemicalTest: false, code: 'CHARPY', department: 'General' },
+      { id: 9, name: 'Izod Impact Test', isChemicalTest: false, code: 'IZOD', department: 'General' },
+      { id: 10, name: 'Micro Vickers Hardness', isChemicalTest: false, code: 'MICRO_VICKERS', department: 'General' },
+      { id: 11, name: 'Hardness Multi-Location (Weld Survey)', isChemicalTest: false, code: 'HARDNESS_SURVEY', department: 'General' },
       { id: 12, name: 'Effective Case Depth', isChemicalTest: false, code: 'CASE_DEPTH', department: 'Heat Treatment' },
+      { id: 2, name: 'Spectro', isChemicalTest: true, code: 'SPECTRO', department: 'Chemical' },
       { id: 5, name: 'Spectro OES Chemical Analysis', isChemicalTest: true, code: 'OES', department: 'Chemical' },
       { id: 13, name: 'Metallography Microstructural Analysis', isChemicalTest: false, code: 'METALLOGRAPHY', department: 'Metallography' },
       { id: 14, name: 'Grain Size Analysis', isChemicalTest: false, code: 'GRAIN_SIZE', department: 'Metallography' },
@@ -1830,7 +2475,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     ];
   }
 
-  // Sync Live Parameters from DB (supports 3-level Chemical & 2-level General/Mechanical)
+  // Sync Live Parameters from DB (supports 3-level Chemical & 2-level General)
   syncLiveParametersForTest(testKey: string): void {
     const test = this.testDatabase[testKey];
     if (!test || !test.dbTestId) return;
@@ -1925,83 +2570,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     }
   }
 
-  // Register Custom Test Dialog
-  openRegisterTestModal(): void {
-    this.rtName = '';
-    this.rtLeaf = '';
-    this.rtStd = '';
-    this.rtParams = 'Bend Angle | deg | ≥ 90\nCrack Observed | — | Runtime';
-    this.registerModalOpen = true;
-  }
 
-  closeRegisterTestModal(): void {
-    this.registerModalOpen = false;
-  }
-
-  saveCustomTest(): void {
-    const name = this.rtName.trim();
-    if (!name) {
-      this.toastService.show('Test name is required', 'warning');
-      return;
-    }
-    const lines = this.rtParams.split('\n').map(l => l.trim()).filter(Boolean);
-    const parsedParams: TestParam[] = lines.map(line => {
-      const parts = line.split('|').map(p => p.trim());
-      return {
-        name: parts[0] || 'Parameter',
-        unit: parts[1] || '—',
-        requirement: parts[2] || 'Runtime'
-      };
-    });
-
-    if (parsedParams.length === 0) {
-      this.toastService.show('At least one parameter is required', 'warning');
-      return;
-    }
-
-    const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    const std = this.rtStd.trim();
-    const leaf = this.rtLeaf.trim() || `General / ${name}`;
-    const newTest: TestDef = {
-      key,
-      label: name,
-      leaf,
-      sub: std ? `${name} • ${std}` : name,
-      params: parsedParams,
-      demo: parsedParams.map(() => '100')
-    };
-
-    this.testDatabase[key] = newTest;
-    this.saveCustomTestsToStorage();
-    this.closeRegisterTestModal();
-    this.onTestChange(key);
-    this.toastService.show(`Laboratory Test "${name}" registered successfully`, 'success');
-  }
-
-  private loadCustomTestsFromStorage(): void {
-    try {
-      const custom = JSON.parse(localStorage.getItem('lims_universal_tests') || '{}');
-      Object.keys(custom).forEach(k => {
-        this.testDatabase[k] = custom[k];
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  private saveCustomTestsToStorage(): void {
-    try {
-      const custom: Record<string, TestDef> = {};
-      Object.keys(this.testDatabase).forEach(k => {
-        if (!['tensile', 'impact', 'hardness', 'oes', 'metallography'].includes(k)) {
-          custom[k] = this.testDatabase[k];
-        }
-      });
-      localStorage.setItem('lims_universal_tests', JSON.stringify(custom));
-    } catch (e) {
-      console.error(e);
-    }
-  }
 
   // Execution Preview Modal
   openPreviewModal(): void {
@@ -2992,5 +3561,70 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   setDataSourceViewMode(mode: 'relevant' | 'all'): void {
     this.dataSourceViewMode = mode;
   }
+
+  // --- Output Payload Preview Methods ---
+  getJsonPayloadPreview(): string {
+    const payload: any = {
+      testId: 'TEST-12345',
+      testName: this.currentTest?.label || 'Unknown Test',
+      sections: []
+    };
+
+    if (this.sections) {
+      this.sections.forEach(s => {
+        const sectionData: any = {
+          sectionKey: s.config.sectionKey || `section_${s.id}`,
+          type: s.type,
+          title: s.title
+        };
+
+        if (s.type === 'parameter') {
+          sectionData.fields = this.getParameterListForSection(s).map(p => ({
+            fieldKey: p.name.replace(/\s+/g, '_').toLowerCase(),
+            label: p.name,
+            value: '...',
+            unit: p.unit
+          }));
+        } else if (s.type === 'specimen') {
+          const specCount = s.config.countMode === 'Fixed count' ? (s.config.count || 1) : (s.rt || s.config.count || 1);
+          sectionData.specimens = Array.from({ length: specCount }).map((_, i) => {
+            const spec: any = { specimenId: `${s.config.prefix || 'S'}${i + 1}` };
+            this.currentDataset.parameters.forEach(p => {
+              if (this.isSpecimenParamSelected(s, p.name)) {
+                spec[p.name.replace(/\s+/g, '_').toLowerCase()] = '...';
+              }
+            });
+            return spec;
+          });
+        } else if (s.type === 'reading') {
+          const readCount = s.config.count || 1;
+          sectionData.targetParameter = s.config.targetParameter;
+          sectionData.readings = Array.from({ length: readCount }).map((_, i) => `R${i + 1}_Value`);
+          if (s.config.showStatistics) {
+            sectionData.statistics = { average: '...', min: '...', max: '...' };
+          }
+        } else if (s.type === 'rule') {
+          sectionData.targetParameter = s.config.parameter;
+          sectionData.rule = s.config.valueSource;
+          sectionData.evaluation = 'PASS/FAIL';
+        } else {
+          sectionData.data = '... (Type-specific payload mapping)';
+        }
+
+        payload.sections.push(sectionData);
+      });
+    }
+
+    return JSON.stringify(payload, null, 2);
+  }
+
+  openPayloadPreview() {
+    this.payloadPreviewModalOpen = true;
+  }
+
+  closePayloadPreview() {
+    this.payloadPreviewModalOpen = false;
+  }
 }
+
 

@@ -2,18 +2,17 @@
   <!-- Action Bar (hidden on print) -->
   <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
     <button class="btn btn-cancel btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
+      <i class="bi bi-arrow-left"></i><span>Back to List</span>
     </button>
     <button class="btn btn-save btn-sm" (click)="printPage()">
-      <i class="bi bi-printer"></i> Print
+      <i class="bi bi-printer"></i><span>Print</span>
     </button>
   </div>
 
 <div class="label-master-container p-4" *ngIf="data">
   <!-- Print Instruction -->
   <div class="d-print-none alert alert-info small mb-4">
-    <i class="bi bi-info-circle me-2"></i>
-    This label is designed to be printed on standard adhesive paper. Click "Print Label" to see the output.
+    <i class="bi bi-info-circle me-2"></i><span>This label is designed to be printed on standard adhesive paper. Click "Print Label" to see the output.</span>
   </div>
 
   <!-- Multiple Labels for convenience (e.g. for duplicates) -->

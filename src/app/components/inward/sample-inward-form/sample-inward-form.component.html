@@ -8,23 +8,23 @@
       <ul class="nav nav-tabs card-header-tabs ps-2 mb-0 border-0" id="formTabs" role="tablist">
         <li class="nav-item" role="presentation">
           <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
-            <i class="bi bi-person-lines-fill me-1.5"></i> Customer & Company Info
+            <i class="bi bi-person-lines-fill me-1.5"></i><span>Customer & Company Info</span>
           </button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
-            <i class="bi bi-box-seam me-1.5"></i> Sample Details
+            <i class="bi bi-box-seam me-1.5"></i><span>Sample Details</span>
           </button>
         </li>
         <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
           <button class="nav-link" id="plan-tab" data-bs-toggle="tab" data-bs-target="#plan" type="button" role="tab"
                   (click)="switchToPlanTab()">
-            <i class="bi bi-clipboard-check me-1.5"></i> Plan
+            <i class="bi bi-clipboard-check me-1.5"></i><span>Plan</span>
           </button>
         </li>
         <li *ngIf="sampleId > 0" class="nav-item" role="presentation">
           <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment" type="button" role="tab">
-            <i class="bi bi-credit-card me-1.5"></i> Payment Info
+            <i class="bi bi-credit-card me-1.5"></i><span>Payment Info</span>
           </button>
         </li>
       </ul>
@@ -39,25 +39,25 @@
         <!-- Stop Report Action -->
         <ng-container *ngIf="sampleId > 0">
           <span *ngIf="isReportStopped" class="badge bg-danger" [title]="'Stopped reason: ' + stopReportReason">
-            <i class="bi bi-stop-circle-fill me-1"></i> Report Stopped
+            <i class="bi bi-stop-circle-fill me-1"></i><span>Report Stopped</span>
           </span>
           <button *ngIf="!isReportStopped"
                   type="button" class="btn-lims btn-lims-remove"
                   (click)="openStopReportDialog()">
-            <i class="bi bi-stop-circle me-1"></i> Stop Report
+            <i class="bi bi-stop-circle me-1"></i><span>Stop Report</span>
           </button>
           <button *ngIf="isReportStopped"
                   type="button" class="btn-lims btn-lims-add"
                   (click)="onUnstopReport()">
-            <i class="bi bi-play-circle me-1"></i> Unstop
+            <i class="bi bi-play-circle me-1"></i><span>Unstop</span>
           </button>
         </ng-container>
 
         <button *ngIf="isViewMode && sampleId > 0" type="button" class="btn-lims btn-lims-print" (click)="printJobCard()">
-          <i class="bi bi-printer"></i> Print Job Card
+          <i class="bi bi-printer"></i><span>Print Job Card</span>
         </button>
         <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
-          <i class="bi bi-arrow-left"></i> Back
+          <i class="bi bi-arrow-left"></i><span>Back</span>
         </button>
       </div>
     </div>
@@ -73,7 +73,7 @@
         <!-- ═════════════════ SECTION 1: CUSTOMER DETAILS ═════════════════ -->
         <fieldset class="sample-section-fieldset position-relative mb-3">
           <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-sm-85">
-            <i class="bi bi-building me-1"></i> Customer & Company Details
+            <i class="bi bi-building me-1"></i><span>Customer & Company Details</span>
           </legend>
 
           <!-- Main Customer Search Dropdown -->
@@ -94,38 +94,38 @@
           <!-- Primary Customer Master Summary Grid -->
           <fieldset class="sample-section-fieldset mb-2 bg-light bg-opacity-50">
             <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-xs-78">
-              <i class="bi bi-info-circle-fill"></i> Primary Customer Details Summary
+              <i class="bi bi-info-circle-fill"></i><span>Primary Customer Details Summary</span>
             </legend>
             <div class="row row-cols-1 row-cols-md-4 g-2 text-xs-78">
                 <div>
-                  <span class="text-muted"><i class="bi bi-geo-alt me-1.5 text-danger"></i> Address: </span>
+                  <span class="text-muted"><i class="bi bi-geo-alt me-1.5 text-danger"></i><span>Address:</span> </span>
                   <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("address")?.value || "-" }}</span>
                 </div>
                 <div>
-                  <span class="text-muted"><i class="bi bi-mailbox me-1.5 text-danger"></i> PIN Code: </span>
+                  <span class="text-muted"><i class="bi bi-mailbox me-1.5 text-danger"></i><span>PIN Code:</span> </span>
                   <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("pinCode")?.value || "-" }}</span>
                   <span *ngIf="sampleInwardForm.get('pinCode')?.hasError('pattern') && sampleInwardForm.get('pinCode')?.touched" class="text-danger text-sm d-block">
                     PIN Code must be exactly 6 digits
                   </span>
                 </div>
                 <div>
-                  <span class="text-muted"><i class="bi bi-pin-map me-1.5 text-danger"></i> Area: </span>
+                  <span class="text-muted"><i class="bi bi-pin-map me-1.5 text-danger"></i><span>Area:</span> </span>
                   <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("area")?.value || "-" }}</span>
                 </div>
                 <div>
-                  <span class="text-muted"><i class="bi bi-building me-1.5 text-danger"></i> City: </span>
+                  <span class="text-muted"><i class="bi bi-building me-1.5 text-danger"></i><span>City:</span> </span>
                   <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("city")?.value || "-" }}</span>
                 </div>
                 <div>
-                  <span class="text-muted"><i class="bi bi-map me-1.5 text-danger"></i> State: </span>
+                  <span class="text-muted"><i class="bi bi-map me-1.5 text-danger"></i><span>State:</span> </span>
                   <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("state")?.value || "-" }}</span>
                 </div>
                 <div>
-                  <span class="text-muted"><i class="bi bi-globe me-1.5 text-danger"></i> Country: </span>
+                  <span class="text-muted"><i class="bi bi-globe me-1.5 text-danger"></i><span>Country:</span> </span>
                   <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("country")?.value || "India" }}</span>
                 </div>
                 <div>
-                  <span class="text-muted"><i class="bi bi-receipt me-1.5 text-danger"></i> GST No.: </span>
+                  <span class="text-muted"><i class="bi bi-receipt me-1.5 text-danger"></i><span>GST No.:</span> </span>
                   <span class="fw-medium text-dark ms-1.5">{{ sampleInwardForm.get("gstNo")?.value || "-" }}</span>
                   <span *ngIf="sampleInwardForm.get('gstNo')?.hasError('pattern') && sampleInwardForm.get('gstNo')?.touched" class="text-danger text-sm d-block">
                     Enter valid GST No (e.g., 22AAAAA0000A1Z5)
@@ -155,7 +155,7 @@
                   </div>
                 </div>
                 <div *ngIf="dispatchModesArray.touched && dispatchModesArray.invalid" class="text-danger small mt-1 text-xs-72">
-                  <i class="bi bi-exclamation-circle me-1"></i> At least one Dispatch Mode is required.
+                  <i class="bi bi-exclamation-circle me-1"></i><span>At least one Dispatch Mode is required.</span>
                 </div>
               </div>
           </fieldset>
@@ -164,7 +164,7 @@
         <!-- ═════════════════ SECTION 2: CONTACTS MASTER TABLE ═════════════════ -->
         <fieldset class="sample-section-fieldset position-relative mb-3">
           <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-sm-85">
-            <i class="bi bi-people me-1"></i> Customer Contacts Master
+            <i class="bi bi-people me-1"></i><span>Customer Contacts Master</span>
           </legend>
 
           <div class="table-responsive" formArrayName="contacts">
@@ -219,9 +219,9 @@
           <div class="col-md-6">
             <fieldset class="sample-section-fieldset h-100 position-relative">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between gap-2 text-sm-85">
-                <span><i class="bi bi-file-earmark-text me-1"></i> Reporting To</span>
+                <span><i class="bi bi-file-earmark-text me-1"></i><span>Reporting To</span></span>
                 <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add" (click)="addReportingCustomerCard()">
-                  <i class="bi bi-plus-circle"></i> Add Customer
+                  <i class="bi bi-plus-circle"></i><span>Add Customer</span>
                 </button>
               </legend>
 
@@ -231,8 +231,7 @@
                   <div class="card-header bg-light py-1 px-2.5 d-flex align-items-center justify-content-between">
                     <span class="fw-semibold small text-dark text-truncate me-2 max-w-320"
                           [title]="card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1)))">
-                      <i class="bi bi-building me-1 text-danger"></i>
-                      {{ card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1))) }}
+                      <i class="bi bi-building me-1 text-danger"></i><span>{{ card.get('customerName')?.value || (rIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (rIdx + 1))) }}</span>
                       <span *ngIf="rIdx === 0" class="badge bg-primary ms-1 text-xs-68">Primary</span>
                     </span>
                     <button *ngIf="rIdx > 0 && !isViewMode" type="button" class="btn-lims btn-lims-remove btn-lims-icon" (click)="removeReportingCustomerCard(rIdx)" title="Remove Customer">
@@ -298,7 +297,7 @@
                         </div>
                       </div>
                       <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1 text-xs-72">
-                        <i class="bi bi-exclamation-circle me-1"></i> At least one contact person must be selected.
+                        <i class="bi bi-exclamation-circle me-1"></i><span>At least one contact person must be selected.</span>
                       </div>
                     </div>
                   </div>
@@ -311,9 +310,9 @@
           <div class="col-md-6">
             <fieldset class="sample-section-fieldset h-100 position-relative">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between gap-2 text-sm-85">
-                <span><i class="bi bi-receipt me-1"></i> Billing To</span>
+                <span><i class="bi bi-receipt me-1"></i><span>Billing To</span></span>
                 <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add" (click)="addBillingCustomerCard()">
-                  <i class="bi bi-plus-circle"></i> Add Customer
+                  <i class="bi bi-plus-circle"></i><span>Add Customer</span>
                 </button>
               </legend>
 
@@ -323,8 +322,7 @@
                   <div class="card-header bg-light py-1 px-2.5 d-flex align-items-center justify-content-between">
                     <span class="fw-semibold small text-dark text-truncate me-2 max-w-320"
                           [title]="card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1)))">
-                      <i class="bi bi-building me-1 text-danger"></i>
-                      {{ card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1))) }}
+                      <i class="bi bi-building me-1 text-danger"></i><span>{{ card.get('customerName')?.value || (bIdx === 0 ? (customerData?.name || 'Customer 1') : ('Customer ' + (bIdx + 1))) }}</span>
                       <span *ngIf="bIdx === 0" class="badge bg-primary ms-1 text-xs-68">Primary</span>
                     </span>
                     <button *ngIf="bIdx > 0 && !isViewMode" type="button" class="btn-lims btn-lims-remove btn-lims-icon" (click)="removeBillingCustomerCard(bIdx)" title="Remove Customer">
@@ -390,7 +388,7 @@
                         </div>
                       </div>
                       <div *ngIf="submitted && card.get('selectedContactIDs')?.value.length === 0" class="text-danger small mt-1 text-xs-72">
-                        <i class="bi bi-exclamation-circle me-1"></i> At least one contact person must be selected.
+                        <i class="bi bi-exclamation-circle me-1"></i><span>At least one contact person must be selected.</span>
                       </div>
                     </div>
                   </div>
@@ -403,7 +401,7 @@
         <!-- ═════════════════ SECTION 4: SUPPORTING DOCUMENT ═════════════════ -->
         <fieldset class="sample-section-fieldset mb-3 position-relative">
           <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1 text-sm-85">
-            <i class="bi bi-file-earmark-arrow-up me-1"></i> Document Attachment
+            <i class="bi bi-file-earmark-arrow-up me-1"></i><span>Document Attachment</span>
           </legend>
 
           <div *ngIf="requiresSupportingDoc && !sampleInwardForm.get('requestFileName')?.value"
@@ -427,8 +425,7 @@
                     (click)="openFileInNewTab(sampleInwardForm.get('requestFilePath')?.value)"
                     title="{{ sampleInwardForm.get('requestFileName')?.value }}"
                   >
-                    <i class="bi bi-file-earmark-fill me-1"></i>
-                    {{ sampleInwardForm.get("requestFileName")?.value }}
+                    <i class="bi bi-file-earmark-fill me-1"></i><span>{{ sampleInwardForm.get("requestFileName")?.value }}</span>
                   </span>
                   <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-remove btn-lims-icon" (click)="removeAttachment()" title="Remove Attachment">
                     <i class="bi bi-trash"></i>
@@ -477,7 +474,7 @@
                 <span class="text-secondary">Attached Files: <strong class="text-success fs-6 ms-1">{{ getSampleFilesCount() }}</strong></span>
               </span>
               <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white shadow-sm px-2.5 py-1.5 font-poppins text-xs-78 d-flex align-items-center gap-1.5">
-                <i class="bi bi-lightning-charge-fill me-1.5"></i> URGENT TESTING
+                <i class="bi bi-lightning-charge-fill me-1.5"></i><span>URGENT TESTING</span>
               </span>
             </div>
 
@@ -492,7 +489,7 @@
         <!-- ── SECTION 1: SAMPLE REGISTER TABLE ── -->
         <fieldset formArrayName="sampleDetails" class="sample-section-fieldset position-relative mb-4">
           <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
-            <i class="bi bi-card-list me-1"></i> Sample Registration & Identification
+            <i class="bi bi-card-list me-1"></i><span>Sample Registration & Identification</span>
           </legend>
 
           <div class="table-responsive">
@@ -594,7 +591,7 @@
 
           <div *ngIf="!isViewMode" class="d-flex justify-content-start mt-2">
             <button type="button" class="btn-lims btn-lims-add" (click)="addSample()">
-              <i class="bi bi-plus-circle"></i> Add Sample Row
+              <i class="bi bi-plus-circle"></i><span>Add Sample Row</span>
             </button>
           </div>
         </fieldset>
@@ -605,7 +602,7 @@
             <div class="modal-content shadow">
               <div class="modal-header card-form-header text-white">
                 <h6 class="modal-title mb-0 d-flex align-items-center gap-1.5 fw-semibold text-white">
-                  <i class="bi bi-x-circle me-1"></i> Cancel Sample
+                  <i class="bi bi-x-circle me-1"></i><span>Cancel Sample</span>
                 </h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" (click)="showCancelDialog = false"></button>
               </div>
@@ -620,12 +617,12 @@
               </div>
               <div class="modal-footer py-2">
                 <button type="button" class="btn-lims btn-lims-cancel" (click)="showCancelDialog = false">
-                  <i class="bi bi-x-circle me-1"></i> Close
+                  <i class="bi bi-x-circle me-1"></i><span>Close</span>
                 </button>
                 <button type="button" class="btn-lims btn-lims-remove"
                         [disabled]="!cancelReason.trim()"
                         (click)="confirmCancelSample()">
-                  <i class="bi bi-x-circle me-1"></i> Confirm Cancel
+                  <i class="bi bi-x-circle me-1"></i><span>Confirm Cancel</span>
                 </button>
               </div>
             </div>
@@ -635,7 +632,7 @@
         <!-- ── SECTION 2: TRACEABILITY MATRIX (Heat No / Batch No / Lot No) ── -->
         <fieldset class="sample-section-fieldset position-relative mb-4">
           <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
-            <i class="bi bi-diagram-3 me-1"></i> Case & Sample Traceability Attributes
+            <i class="bi bi-diagram-3 me-1"></i><span>Case & Sample Traceability Attributes</span>
           </legend>
 
           <!-- Quick attribute insertion tags bar -->
@@ -705,14 +702,14 @@
                 </tr>
                 <tr *ngIf="sampleAdditionalDetails.controls.length === 0">
                   <td [attr.colspan]="sampleNumbers.length + 2" class="text-center py-3 text-muted small bg-light">
-                    <i class="bi bi-info-circle me-1 text-secondary"></i> No additional traceability attributes added. Click buttons above to add Heat No, Batch No, etc.
+                    <i class="bi bi-info-circle me-1 text-secondary"></i><span>No additional traceability attributes added. Click buttons above to add Heat No, Batch No, etc.</span>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <button *ngIf="!isViewMode" type="button" class="btn-lims btn-lims-add" (click)="addAdditionalSampleRow()">
-            <i class="bi bi-plus-circle"></i> Add Custom Attribute Row
+            <i class="bi bi-plus-circle"></i><span>Add Custom Attribute Row</span>
           </button>
         </fieldset>
 
@@ -722,33 +719,33 @@
           <div class="col-md-7">
             <fieldset class="sample-section-fieldset h-100 position-relative">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
-                <i class="bi bi-journal-text me-1.5"></i> Sample Receipt Note & Observations
+                <i class="bi bi-journal-text me-1.5"></i><span>Sample Receipt Note & Observations</span>
               </legend>
 
               <!-- Quick Template Chips & Presets Bar -->
               <div *ngIf="!isViewMode" class="d-flex align-items-center justify-content-between gap-1.5 mb-2 flex-wrap">
                 <div class="d-flex align-items-center gap-1.5 flex-wrap">
                   <span class="fw-semibold text-secondary text-xs-75 me-1 d-inline-flex align-items-center">
-                    <i class="bi bi-magic me-1 text-danger"></i> Quick Presets:
+                    <i class="bi bi-magic me-1 text-danger"></i><span>Quick Presets:</span>
                   </span>
                   <span class="quick-chip chip-success" (click)="appendReceiptNote('Good Condition')">
-                    <i class="bi bi-check-circle-fill text-success me-1.5"></i> Good Condition
+                    <i class="bi bi-check-circle-fill text-success me-1.5"></i><span>Good Condition</span>
                   </span>
                   <span class="quick-chip chip-primary" (click)="appendReceiptNote('Sealed in Polythene')">
-                    <i class="bi bi-box-seam-fill text-primary me-1.5"></i> Sealed in Polythene
+                    <i class="bi bi-box-seam-fill text-primary me-1.5"></i><span>Sealed in Polythene</span>
                   </span>
                   <span class="quick-chip chip-info" (click)="appendReceiptNote('Machined Specimen')">
-                    <i class="bi bi-gear-fill text-info me-1.5"></i> Machined Specimen
+                    <i class="bi bi-gear-fill text-info me-1.5"></i><span>Machined Specimen</span>
                   </span>
                   <span class="quick-chip chip-warning" (click)="appendReceiptNote('Rough Surface')">
-                    <i class="bi bi-layers-half text-warning me-1.5"></i> Rough Surface
+                    <i class="bi bi-layers-half text-warning me-1.5"></i><span>Rough Surface</span>
                   </span>
                 </div>
                 <button *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value"
                         type="button" class="btn-lims-clear-chip ms-auto"
                         (click)="sampleInwardForm.patchValue({sampleReceiptNote: ''})"
                         title="Clear all receipt note text">
-                  <i class="bi bi-x-circle-fill"></i> Clear Note
+                  <i class="bi bi-x-circle-fill"></i><span>Clear Note</span>
                 </button>
               </div>
 
@@ -766,7 +763,7 @@
           <div class="col-md-5">
             <fieldset class="sample-section-fieldset h-100 position-relative">
               <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5">
-                <i class="bi bi-shield-exclamation me-1.5"></i> Special Handling & Priority
+                <i class="bi bi-shield-exclamation me-1.5"></i><span>Special Handling & Priority</span>
               </legend>
 
               <div class="d-flex flex-column gap-2 pt-1">
@@ -776,7 +773,7 @@
                     <span>Urgent Testing Priority</span>
                   </label>
                   <span *ngIf="sampleInwardForm.get('urgent')?.value" class="badge bg-danger text-white me-2 px-2 py-0.5 text-xs-68">
-                    <i class="bi bi-check-circle-fill me-1"></i> URGENT
+                    <i class="bi bi-check-circle-fill me-1"></i><span>URGENT</span>
                   </span>
                   <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="urgent" id="urgent" />
                 </div>
@@ -787,7 +784,7 @@
                     <span>Return Tested Sample to Customer</span>
                   </label>
                   <span *ngIf="sampleInwardForm.get('returnSample')?.value" class="badge bg-primary text-white me-2 px-2 py-0.5 text-xs-68">
-                    <i class="bi bi-check-circle-fill me-1"></i> RETURN
+                    <i class="bi bi-check-circle-fill me-1"></i><span>RETURN</span>
                   </span>
                   <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="returnSample" id="returnSample" />
                 </div>
@@ -798,7 +795,7 @@
                     <span>Retain Sample (Not to be Destroyed)</span>
                   </label>
                   <span *ngIf="sampleInwardForm.get('notDestroyed')?.value" class="badge bg-warning text-dark fw-bold me-2 px-2 py-0.5 text-xs-68">
-                    <i class="bi bi-check-circle-fill me-1"></i> RETAIN
+                    <i class="bi bi-check-circle-fill me-1"></i><span>RETAIN</span>
                   </span>
                   <input type="checkbox" class="form-check-input flex-shrink-0 m-0 form-check-input-md cursor-pointer" formControlName="notDestroyed" id="notDestroyed" />
                 </div>
@@ -809,10 +806,10 @@
 
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2 mt-3">
           <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
-            <i class="bi bi-x-circle"></i> Cancel
+            <i class="bi bi-x-circle"></i><span>Cancel</span>
           </button>
           <button type="button" class="btn-lims btn-lims-save px-4" (click)="onSubmit(false)" [disabled]="!sampleInwardForm.valid">
-            <i class="bi bi-check-circle"></i> Save
+            <i class="bi bi-check-circle"></i><span>Save</span>
           </button>
         </div>
       </div>
@@ -827,12 +824,12 @@
       <div *ngIf="sampleId > 0" class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
         <fieldset class="sample-section-fieldset position-relative mb-3">
           <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 text-sm-85">
-            <i class="bi bi-credit-card me-1.5"></i> Payment Information
+            <i class="bi bi-credit-card me-1.5"></i><span>Payment Information</span>
           </legend>
           <div class="row g-3 align-items-start">
             <div class="col-12 col-sm-6 col-md-3">
               <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">
-                <i class="bi bi-currency-rupee me-1 text-danger"></i>Advance Payment
+                <i class="bi bi-currency-rupee me-1 text-danger"></i><span>Advance Payment</span>
               </label>
               <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light text-muted">₹</span>
@@ -859,7 +856,7 @@
             </div>
             <div class="col-12 col-sm-6 col-md-2">
               <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">
-                <i class="bi bi-receipt me-1 text-danger"></i>Bill Required
+                <i class="bi bi-receipt me-1 text-danger"></i><span>Bill Required</span>
               </label>
               <div class="d-flex align-items-center gap-3 pt-1">
                 <div class="form-check form-check-inline mb-0">
@@ -874,7 +871,7 @@
             </div>
             <div class="col-12 col-sm-6 col-md-2">
               <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">
-                <i class="bi bi-file-earmark-text me-1 text-danger"></i>Advance PI Required
+                <i class="bi bi-file-earmark-text me-1 text-danger"></i><span>Advance PI Required</span>
               </label>
               <div class="d-flex align-items-center gap-3 pt-1">
                 <div class="form-check form-check-inline mb-0">
@@ -902,10 +899,10 @@
         </fieldset>
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mb-2">
           <button type="button" class="btn-lims btn-lims-cancel" (click)="onCancel()">
-            <i class="bi bi-x-circle me-1.5"></i> Cancel
+            <i class="bi bi-x-circle me-1.5"></i><span>Cancel</span>
           </button>
           <button type="button" class="btn-lims btn-lims-save" (click)="savePaymentInfo()">
-            <i class="bi bi-check-circle me-1.5"></i> Save Payment Info
+            <i class="bi bi-check-circle me-1.5"></i><span>Save Payment Info</span>
           </button>
         </div>
       </div>
@@ -1087,7 +1084,7 @@
     <div class="modal-content shadow">
       <div class="modal-header card-form-header text-white">
         <h6 class="modal-title mb-0 d-flex align-items-center gap-1.5 fw-semibold text-white">
-          <i class="bi bi-stop-circle me-1"></i> Stop Report Generation
+          <i class="bi bi-stop-circle me-1"></i><span>Stop Report Generation</span>
         </h6>
         <button type="button" class="btn-close btn-close-white btn-sm" (click)="showStopReportDialog = false"></button>
       </div>
@@ -1102,12 +1099,12 @@
       </div>
       <div class="modal-footer py-2">
         <button type="button" class="btn-lims btn-lims-cancel" (click)="showStopReportDialog = false">
-          <i class="bi bi-x-circle me-1"></i> Close
+          <i class="bi bi-x-circle me-1"></i><span>Close</span>
         </button>
         <button type="button" class="btn-lims btn-lims-save"
                 [disabled]="!stopReportReasonInput.trim()"
                 (click)="confirmStopReport()">
-          <i class="bi bi-stop-circle me-1"></i> Confirm Stop
+          <i class="bi bi-stop-circle me-1"></i><span>Confirm Stop</span>
         </button>
       </div>
     </div>

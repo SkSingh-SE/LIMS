@@ -15,14 +15,14 @@
     </div>
     <div class="header-meta d-flex align-items-center gap-2">
       <span class="badge badge-case-no" *ngIf="inward?.caseNo">
-        <i class="bi bi-folder2-open me-1"></i>{{ inward.caseNo }}
+        <i class="bi bi-folder2-open me-1"></i><span>{{ inward.caseNo }}</span>
       </span>
       <span class="badge bg-white text-dark border badge-client" *ngIf="inward?.customerName" [title]="inward.customerName">
-        <i class="bi bi-building me-1 text-danger"></i>{{ inward.customerName }}
+        <i class="bi bi-building me-1 text-danger"></i><span>{{ inward.customerName }}</span>
       </span>
       <app-test-status-badge *ngIf="sample?.sampleStatus" [status]="sample.sampleStatus"></app-test-status-badge>
       <button class="btn btn-sm btn-outline-light ms-2" type="button" (click)="cancel()">
-        <i class="bi bi-arrow-left me-1"></i>Back to List
+        <i class="bi bi-arrow-left me-1"></i><span>Back to List</span>
       </button>
     </div>
   </div>
@@ -33,7 +33,7 @@
   <div class="info-grid">
     <div class="info-card info-card-primary">
       <div class="info-card-header">
-        <span class="info-label"><i class="bi bi-upc-scan me-1 text-primary"></i>Sample ID</span>
+        <span class="info-label"><i class="bi bi-upc-scan me-1 text-primary"></i><span>Sample ID</span></span>
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5">UID</span>
       </div>
       <div class="info-value text-primary fw-bold" [title]="sample?.sampleNo">{{ sample?.sampleNo || '—' }}</div>
@@ -41,28 +41,28 @@
 
     <div class="info-card">
       <div class="info-card-header">
-        <span class="info-label"><i class="bi bi-building me-1 text-secondary"></i>Client</span>
+        <span class="info-label"><i class="bi bi-building me-1 text-secondary"></i><span>Client</span></span>
       </div>
       <div class="info-value text-dark" [title]="inward?.customerName">{{ inward?.customerName || '—' }}</div>
     </div>
 
     <div class="info-card">
       <div class="info-card-header">
-        <span class="info-label"><i class="bi bi-gem me-1 text-danger"></i>Material</span>
+        <span class="info-label"><i class="bi bi-gem me-1 text-danger"></i><span>Material</span></span>
       </div>
       <div class="info-value text-dark" [title]="sample?.material">{{ sample?.material || '—' }}</div>
     </div>
 
     <div class="info-card">
       <div class="info-card-header">
-        <span class="info-label"><i class="bi bi-layers me-1 text-info"></i>Classification</span>
+        <span class="info-label"><i class="bi bi-layers me-1 text-info"></i><span>Classification</span></span>
       </div>
       <div class="info-value text-dark" [title]="sample?.metalClassification">{{ sample?.metalClassification || '—' }}</div>
     </div>
 
     <div class="info-card info-card-accent">
       <div class="info-card-header">
-        <span class="info-label"><i class="bi bi-aspect-ratio me-1 text-danger"></i>Product / Size</span>
+        <span class="info-label"><i class="bi bi-aspect-ratio me-1 text-danger"></i><span>Product / Size</span></span>
       </div>
       <div class="info-value text-danger fw-semibold" [title]="sample?.productSizeFormatted">
         {{ sample?.productSizeFormatted || '—' }}
@@ -71,14 +71,14 @@
 
     <div class="info-card">
       <div class="info-card-header">
-        <span class="info-label"><i class="bi bi-hash me-1 text-muted"></i>Batch No</span>
+        <span class="info-label"><i class="bi bi-hash me-1 text-muted"></i><span>Batch No</span></span>
       </div>
       <div class="info-value text-muted" [title]="sample?.batchNo">{{ sample?.batchNo || '—' }}</div>
     </div>
 
     <div class="info-card">
       <div class="info-card-header">
-        <span class="info-label"><i class="bi bi-calendar-check me-1 text-success"></i>Received On</span>
+        <span class="info-label"><i class="bi bi-calendar-check me-1 text-success"></i><span>Received On</span></span>
       </div>
       <div class="info-value text-dark">{{ inward?.receivedOn || '—' }}</div>
     </div>
@@ -160,12 +160,12 @@
                   <div class="card h-100 shadow-sm border-0 lims-panel">
                     <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
                       <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
-                        <i class="bi bi-flask me-2 fs-5"></i>Test &amp; Sample Details
+                        <i class="bi bi-flask me-2 fs-5"></i><span>Test &amp; Sample Details</span>
                       </h6>
                       <div class="d-flex align-items-center gap-1.5">
                         <app-test-status-badge [status]="plans[p].tests[t]?.status"></app-test-status-badge>
                         <button *ngIf="canStartTest(plans[p].tests[t]?.status)" type="button" class="btn btn-sm btn-outline-success py-0 px-2" (click)="startTest(p, t)" [disabled]="isViewMode">
-                          <i class="bi bi-play-circle me-1"></i>Start Test
+                          <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
                         </button>
                       </div>
                     </div>
@@ -202,7 +202,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                               <span class="detail-label">Test Method</span>
                               <a *ngIf="!isViewMode && !isConfigLocked(plans[p].tests[t]?.status)" class="btn-nav-link" (click)="plans[p].showMethodEdit = !plans[p].showMethodEdit">
-                                <i class="bi bi-pencil me-1"></i>{{ plans[p].showMethodEdit ? 'Close' : 'Change' }}
+                                <i class="bi bi-pencil me-1"></i><span>{{ plans[p].showMethodEdit ? 'Close' : 'Change' }}</span>
                               </a>
                             </div>
                             <span class="detail-value text-primary fw-semibold" *ngIf="!plans[p].showMethodEdit">
@@ -227,7 +227,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                               <span class="detail-label">Material Specification</span>
                               <a *ngIf="!isViewMode && !isConfigLocked(plans[p].tests[t]?.status)" class="btn-nav-link" (click)="plans[p].showSpecEdit = !plans[p].showSpecEdit">
-                                <i class="bi bi-pencil me-1"></i>{{ plans[p].showSpecEdit ? 'Close' : 'Change' }}
+                                <i class="bi bi-pencil me-1"></i><span>{{ plans[p].showSpecEdit ? 'Close' : 'Change' }}</span>
                               </a>
                             </div>
                             <span class="detail-value text-dark fw-semibold" *ngIf="!plans[p].showSpecEdit">
@@ -268,7 +268,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                               <span class="detail-label">Specimen Preparation</span>
                               <a class="btn-nav-link" *ngIf="sampleId" (click)="navigateToPreparation(sampleId)">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+                                <i class="bi bi-box-arrow-up-right me-1"></i><span>Manage</span>
                               </a>
                             </div>
                             <span class="detail-value">{{ plans[p].specimenPreparation || '—' }}</span>
@@ -281,7 +281,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                               <span class="detail-label">Environment</span>
                               <a class="btn-nav-link" (click)="switchTab('execution')">
-                                <i class="bi bi-pencil me-1"></i>{{ getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}
+                                <i class="bi bi-pencil me-1"></i><span>{{ getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}</span>
                               </a>
                             </div>
                             <span class="detail-value">
@@ -301,7 +301,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                               <span class="detail-label">Report Format</span>
                               <a class="btn-nav-link" (click)="viewReportFormat(plans[p].reportFormatId)">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>View
+                                <i class="bi bi-box-arrow-up-right me-1"></i><span>View</span>
                               </a>
                             </div>
                             <span class="detail-value">{{ plans[p].reportFormatName || '—' }}</span>
@@ -321,10 +321,10 @@
                     <div class="card shadow-sm border-0 lims-panel">
                       <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
-                          <i class="bi bi-list-check me-2 fs-5"></i>Applicable Parameters
+                          <i class="bi bi-list-check me-2 fs-5"></i><span>Applicable Parameters</span>
                         </h6>
                         <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" (click)="switchTab('parameters')" style="font-size: 11px;">
-                          <i class="bi bi-sliders me-1"></i>Manage
+                          <i class="bi bi-sliders me-1"></i><span>Manage</span>
                         </button>
                       </div>
                       <div class="card-body p-2">
@@ -364,14 +364,14 @@
                         <!-- Action Buttons under table -->
                         <div class="d-flex gap-2 mt-2 pt-2 border-top" *ngIf="!isViewMode && !isConfigLocked(plans[p].tests[t]?.status)">
                           <button type="button" class="btn btn-sm btn-outline-danger flex-grow-1" (click)="addParameter(p, t)">
-                            <i class="bi bi-plus-circle me-1"></i>Add Parameter
+                            <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
                           </button>
                           <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1" (click)="openFromMethodModal(p, t)">
-                            <i class="bi bi-box-arrow-in-down me-1"></i>Load From Method
+                            <i class="bi bi-box-arrow-in-down me-1"></i><span>Load From Method</span>
                           </button>
                         </div>
                         <div class="alert alert-light border py-1 px-2 mt-2 mb-0 small text-muted d-flex align-items-center" *ngIf="isConfigLocked(plans[p].tests[t]?.status)">
-                          <i class="bi bi-lock-fill text-secondary me-1.5"></i>Configuration locked ({{ plans[p].tests[t]?.status }}).
+                          <i class="bi bi-lock-fill text-secondary me-1.5"></i><span>Configuration locked ({{ plans[p].tests[t]?.status }}).</span>
                         </div>
                       </div>
                     </div>
@@ -380,7 +380,7 @@
                     <div class="card shadow-sm border-0 lims-panel">
                       <div class="card-header bg-white border-bottom py-2">
                         <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
-                          <i class="bi bi-check2-circle me-2 fs-5"></i>Additional Information
+                          <i class="bi bi-check2-circle me-2 fs-5"></i><span>Additional Information</span>
                         </h6>
                       </div>
                       <div class="card-body p-2.5">
@@ -413,11 +413,10 @@
                     <div class="card shadow-sm border-0 lims-panel">
                       <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
-                          <i class="bi bi-shield-check me-2 fs-5"></i>NABL Compliance
+                          <i class="bi bi-shield-check me-2 fs-5"></i><span>NABL Compliance</span>
                         </h6>
                         <span class="badge" [ngClass]="isNablAccredited(plans[p].tests[t]) ? 'badge-scope-in' : 'badge-scope-out'">
-                          <i class="bi" [ngClass]="isNablAccredited(plans[p].tests[t]) ? 'bi-shield-check me-1' : 'bi-shield-slash me-1'"></i>
-                          {{ isNablAccredited(plans[p].tests[t]) ? 'In Scope' : 'Not in Scope' }}
+                          <i class="bi" [ngClass]="isNablAccredited(plans[p].tests[t]) ? 'bi-shield-check me-1' : 'bi-shield-slash me-1'"></i><span>{{ isNablAccredited(plans[p].tests[t]) ? 'In Scope' : 'Not in Scope' }}</span>
                         </span>
                       </div>
                       <div class="card-body p-2.5">
@@ -428,13 +427,13 @@
                             <span *ngIf="!isNablAccredited(plans[p].tests[t])">
                               No parameters are under NABL accreditation scope for this test.
                               <a class="btn-nav-link ms-1 fw-semibold text-danger" (click)="navigateToScope()">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Open ISO Scope
+                                <i class="bi bi-box-arrow-up-right me-1"></i><span>Open ISO Scope</span>
                               </a>
                             </span>
                             <span *ngIf="isNablAccredited(plans[p].tests[t])">
                               Test parameters are mapped to NABL accredited scope under ISO/IEC 17025:2017.
                               <a class="btn-nav-link ms-1 fw-semibold text-success" (click)="navigateToScope()">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>View ISO Scope
+                                <i class="bi bi-box-arrow-up-right me-1"></i><span>View ISO Scope</span>
                               </a>
                             </span>
                           </div>
@@ -459,7 +458,7 @@
                     <div class="card shadow-sm border-0 lims-panel">
                       <div class="card-header bg-white border-bottom py-2">
                         <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
-                          <i class="bi bi-lightning-charge me-2 fs-5"></i>Quick Actions
+                          <i class="bi bi-lightning-charge me-2 fs-5"></i><span>Quick Actions</span>
                         </h6>
                       </div>
                       <div class="card-body p-2">
@@ -685,13 +684,13 @@
                         <!-- Status Badge -->
                         <td class="text-center">
                           <span *ngIf="getParameterStatus(row.value) === 'pass'" class="badge bg-success-subtle text-success border border-success px-2 py-1">
-                            <i class="bi bi-check-circle me-1"></i>Pass
+                            <i class="bi bi-check-circle me-1"></i><span>Pass</span>
                           </span>
                           <span *ngIf="getParameterStatus(row.value) === 'fail'" class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">
-                            <i class="bi bi-x-circle me-1"></i>Fail
+                            <i class="bi bi-x-circle me-1"></i><span>Fail</span>
                           </span>
                           <span *ngIf="getParameterStatus(row.value) === 'marginal'" class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">
-                            <i class="bi bi-exclamation-circle me-1"></i>Marginal
+                            <i class="bi bi-exclamation-circle me-1"></i><span>Marginal</span>
                           </span>
                           <span *ngIf="!getParameterStatus(row.value)" class="text-muted small">—</span>
                         </td>
@@ -745,16 +744,16 @@
                 <!-- Parameters Action Buttons -->
                 <div class="d-flex flex-wrap gap-2 pt-2 border-top" *ngIf="!isViewMode">
                   <button class="btn btn-sm btn-outline-primary" type="button" (click)="loadParametersFromSpec(p, t)" [disabled]="loadingParams[plans[p].tests[t].headerId] || isConfigLocked(plans[p].tests[t].status)">
-                    <i class="bi bi-download me-1"></i>Load Parameters From Spec
+                    <i class="bi bi-download me-1"></i><span>Load Parameters From Spec</span>
                   </button>
                   <button class="btn btn-sm btn-add" type="button" (click)="addParameter(p, t)" [disabled]="isConfigLocked(plans[p].tests[t].status)">
-                    <i class="bi bi-plus-circle me-1"></i>Add Parameter
+                    <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
                   </button>
                   <button class="btn btn-sm btn-outline-info" type="button" (click)="openFromMethodModal(p, t)" [disabled]="isConfigLocked(plans[p].tests[t].status)">
-                    <i class="bi bi-box-arrow-in-down me-1"></i>Add From Test Method
+                    <i class="bi bi-box-arrow-in-down me-1"></i><span>Add From Test Method</span>
                   </button>
                   <button class="btn btn-sm btn-outline-success" type="button" (click)="calculateParameters(p, t)">
-                    <i class="bi bi-calculator me-1"></i>Auto-Calculate
+                    <i class="bi bi-calculator me-1"></i><span>Auto-Calculate</span>
                   </button>
                 </div>
               </div>
@@ -769,11 +768,11 @@
                 <div class="col-md-4">
                   <div class="card h-100 shadow-sm border-0 lims-panel">
                     <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
-                      <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-thermometer-half me-2"></i>Lab Environment</h6>
+                      <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-thermometer-half me-2"></i><span>Lab Environment</span></h6>
                       <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-danger d-inline-flex align-items-center gap-1"
                               (click)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])"
                               title="Record Ambient Temperature & Humidity">
-                        <i class="bi bi-pencil-square me-1"></i>Record
+                        <i class="bi bi-pencil-square me-1"></i><span>Record</span>
                       </button>
                     </div>
                     <div class="card-body p-3">
@@ -812,7 +811,7 @@
                 <div class="col-md-4">
                   <div class="card h-100 shadow-sm border-0 lims-panel">
                     <div class="card-header bg-white border-bottom py-2">
-                      <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-clock-history me-2"></i>Test Timing &amp; Performer</h6>
+                      <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-clock-history me-2"></i><span>Test Timing &amp; Performer</span></h6>
                     </div>
                     <div class="card-body p-3">
                       <div class="timing-metric-box mb-2">
@@ -850,13 +849,13 @@
                 <div class="col-md-4">
                   <div class="card h-100 shadow-sm border-0 lims-panel">
                     <div class="card-header bg-white border-bottom py-2">
-                      <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-cpu me-2"></i>Equipment Used</h6>
+                      <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-cpu me-2"></i><span>Equipment Used</span></h6>
                     </div>
                     <div class="card-body p-3">
                       <label class="form-label small fw-semibold text-muted mb-1.5">Linked Equipment Tags</label>
                       <div class="d-flex flex-wrap gap-1 mb-2.5">
                         <span *ngFor="let eq of selectedEquipmentMap[plans[p].tests[t].headerId] || []" class="badge bg-light text-dark border p-1.5 d-inline-flex align-items-center">
-                          <i class="bi bi-cpu me-1 text-primary"></i>{{ eq.name }}
+                          <i class="bi bi-cpu me-1 text-primary"></i><span>{{ eq.name }}</span>
                           <button *ngIf="!isViewMode" type="button" class="btn-close btn-close-xs ms-1.5" (click)="removeEquipment(plans[p].tests[t].headerId, eq.id)"></button>
                         </span>
                         <span *ngIf="!(selectedEquipmentMap[plans[p].tests[t].headerId] || []).length" class="text-muted small fst-italic">
@@ -885,9 +884,9 @@
             <div class="tab-pane-content" *ngIf="activeTab === 'calculations'">
               <div class="card border-0 shadow-sm lims-panel p-3">
                 <div class="d-flex justify-content-between align-items-center mb-2.5 border-bottom pb-2">
-                  <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-calculator me-2"></i>Formula Evaluation &amp; Specimen Dimensions</h6>
+                  <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-calculator me-2"></i><span>Formula Evaluation &amp; Specimen Dimensions</span></h6>
                   <button type="button" class="btn btn-sm btn-outline-danger" (click)="calculateParameters(p, t)" [disabled]="isViewMode">
-                    <i class="bi bi-arrow-repeat me-1"></i>Recalculate All Formulas
+                    <i class="bi bi-arrow-repeat me-1"></i><span>Recalculate All Formulas</span>
                   </button>
                 </div>
 
@@ -938,7 +937,7 @@
                           <td class="fw-bold text-primary">{{ param.value != null ? param.value : 'Pending' }}</td>
                           <td class="text-center">
                             <button type="button" class="btn btn-xs btn-outline-secondary" (click)="openFormulaBuilder(p, t, r)" [disabled]="isViewMode">
-                              <i class="bi bi-pencil me-1"></i>Edit
+                              <i class="bi bi-pencil me-1"></i><span>Edit</span>
                             </button>
                           </td>
                         </tr>
@@ -959,10 +958,10 @@
               <div class="card border-0 shadow-sm lims-panel p-3">
                 <div class="d-flex justify-content-between align-items-center mb-2.5 border-bottom pb-2">
                   <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
-                    <i class="bi bi-shield-check me-2 fs-5"></i>ISO/IEC 17025:2017 &amp; NABL Accreditation QA
+                    <i class="bi bi-shield-check me-2 fs-5"></i><span>ISO/IEC 17025:2017 &amp; NABL Accreditation QA</span>
                   </h6>
                   <span class="badge bg-light text-dark border">
-                    <i class="bi bi-patch-check-fill text-danger me-1"></i>NABL 133 Compliant
+                    <i class="bi bi-patch-check-fill text-danger me-1"></i><span>NABL 133 Compliant</span>
                   </span>
                 </div>
 
@@ -1008,7 +1007,7 @@
                     </span>
                   </div>
                   <a class="btn btn-sm btn-outline-secondary ms-2" (click)="navigateToScope()">
-                    <i class="bi bi-box-arrow-up-right me-1"></i>ISO Scope
+                    <i class="bi bi-box-arrow-up-right me-1"></i><span>ISO Scope</span>
                   </a>
                 </div>
 
@@ -1030,10 +1029,10 @@
                         <td class="fw-semibold text-dark">{{ param.parameterName }} <span class="text-muted small">({{ param.unit || '-' }})</span></td>
                         <td class="text-center">
                           <span *ngIf="getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope'" class="badge badge-scope-in">
-                            <i class="bi bi-shield-check me-1"></i>In Scope
+                            <i class="bi bi-shield-check me-1"></i><span>In Scope</span>
                           </span>
                           <span *ngIf="getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) !== 'WithinScope'" class="badge badge-scope-out">
-                            <i class="bi bi-shield-slash me-1"></i>Out of Scope
+                            <i class="bi bi-shield-slash me-1"></i><span>Out of Scope</span>
                           </span>
                         </td>
                         <td class="text-center">
@@ -1062,9 +1061,9 @@
             <div class="tab-pane-content" *ngIf="activeTab === 'attachments'">
               <div class="card border-0 shadow-sm lims-panel p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                  <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-images me-2"></i>Test Images &amp; Attachments</h6>
+                  <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-images me-2"></i><span>Test Images &amp; Attachments</span></h6>
                   <label *ngIf="!isViewMode" class="btn btn-outline-danger btn-sm mb-0">
-                    <i class="bi bi-plus-circle me-1"></i>Add Images
+                    <i class="bi bi-plus-circle me-1"></i><span>Add Images</span>
                     <input type="file" accept="image/*" multiple class="d-none"
                       (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
                   </label>
@@ -1079,7 +1078,7 @@
                         (input)="updateCaption(plans[p].tests[t].headerId, i, $any($event.target).value)" placeholder="Caption..." />
                     </div>
                     <button class="btn btn-sm btn-save" (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
-                      <i class="bi bi-cloud-upload me-1"></i>Upload Staged Files
+                      <i class="bi bi-cloud-upload me-1"></i><span>Upload Staged Files</span>
                     </button>
                   </div>
                 </div>
@@ -1112,10 +1111,10 @@
                   <div class="card border-0 shadow-sm lims-panel p-3 h-100">
                     <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
                       <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
-                        <i class="bi bi-clock-history me-2"></i>Test Audit Trail &amp; Verification Events
+                        <i class="bi bi-clock-history me-2"></i><span>Test Audit Trail &amp; Verification Events</span>
                       </h6>
                       <span class="badge bg-light text-secondary border">
-                        <i class="bi bi-shield-lock me-1"></i>ISO 17025 Cl. 7.5
+                        <i class="bi bi-shield-lock me-1"></i><span>ISO 17025 Cl. 7.5</span>
                       </span>
                     </div>
 
@@ -1129,7 +1128,7 @@
                           <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="timeline-title fw-bold text-dark">Test Planned &amp; Allocated</span>
                             <span class="badge bg-light text-muted border small">
-                              <i class="bi bi-calendar3 me-1"></i>{{ inward?.receivedOn || '—' }}
+                              <i class="bi bi-calendar3 me-1"></i><span>{{ inward?.receivedOn || '—' }}</span>
                             </span>
                           </div>
                           <div class="timeline-details text-muted small">
@@ -1149,7 +1148,7 @@
                           <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="timeline-title fw-bold text-dark">Testing In Progress</span>
                             <span class="badge bg-warning-subtle text-warning border border-warning-subtle small">
-                              <i class="bi bi-clock me-1"></i>{{ testTimingMap[plans[p].tests[t].headerId]?.testStartTime ? formatDateTime(testTimingMap[plans[p].tests[t].headerId].testStartTime) : 'In Progress' }}
+                              <i class="bi bi-clock me-1"></i><span>{{ testTimingMap[plans[p].tests[t].headerId]?.testStartTime ? formatDateTime(testTimingMap[plans[p].tests[t].headerId].testStartTime) : 'In Progress' }}</span>
                             </span>
                           </div>
                           <div class="timeline-details text-muted small">
@@ -1168,7 +1167,7 @@
                           <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="timeline-title fw-bold text-success">Testing Completed</span>
                             <span class="badge bg-success-subtle text-success border border-success-subtle small">
-                              <i class="bi bi-check2-circle me-1"></i>{{ formatDateTime(testTimingMap[plans[p].tests[t].headerId]?.testEndTime) }}
+                              <i class="bi bi-check2-circle me-1"></i><span>{{ formatDateTime(testTimingMap[plans[p].tests[t].headerId]?.testEndTime) }}</span>
                             </span>
                           </div>
                           <div class="timeline-details text-muted small">
@@ -1202,7 +1201,7 @@
                 <div class="col-lg-4 col-md-12">
                   <div class="card border-0 shadow-sm lims-panel p-3 h-100">
                     <h6 class="mb-3 fw-semibold text-danger border-bottom pb-2">
-                      <i class="bi bi-card-checklist me-2"></i>Execution Governance
+                      <i class="bi bi-card-checklist me-2"></i><span>Execution Governance</span>
                     </h6>
                     <div class="governance-summary">
                       <div class="gov-row">
@@ -1256,13 +1255,13 @@
 
               <div class="footer-actions d-flex align-items-center gap-2 ms-auto">
                 <button type="button" class="btn btn-cancel" (click)="cancel()">
-                  <i class="bi bi-x-circle me-1"></i>Cancel
+                  <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
                 </button>
                 <button type="button" class="btn btn-success btn-sm px-3" *ngIf="canStartTest(plans[p].tests[t]?.status)" (click)="startTest(p, t)" [disabled]="isViewMode">
-                  <i class="bi bi-play-circle me-1"></i>Start Test
+                  <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
                 </button>
                 <button type="button" class="btn btn-outline-danger btn-sm px-3" (click)="saveAsDraft(p, t)" [disabled]="isViewMode">
-                  <i class="bi bi-bookmark me-1"></i>Save as Draft
+                  <i class="bi bi-bookmark me-1"></i><span>Save as Draft</span>
                 </button>
                 <button type="button" class="btn btn-lims btn-lims-next px-3" (click)="goToNextTab()" *ngIf="activeTab !== 'history'">
                   Next: {{ activeTab === 'info' ? 'Parameters' : activeTab === 'parameters' ? 'Execution' : activeTab === 'execution' ? 'Calculations' : activeTab === 'calculations' ? 'NABL & QA' : activeTab === 'nabl' ? 'Attachments' : 'History' }} &rarr;
@@ -1270,7 +1269,7 @@
                 <button type="button" class="btn btn-save px-3" (click)="completeTest(p, t)"
                         *ngIf="activeTab === 'parameters' || activeTab === 'execution'"
                         [disabled]="isViewMode || isHeaderCompleted(plans[p].tests[t].headerId)">
-                  <i class="bi bi-check-circle me-1"></i>Complete Test
+                  <i class="bi bi-check-circle me-1"></i><span>Complete Test</span>
                 </button>
               </div>
             </div>
@@ -1291,7 +1290,7 @@
     <div class="modal-content border-0 shadow">
       <div class="modal-header modal-header-red py-2 px-3">
         <h6 class="modal-title m-0 d-flex align-items-center">
-          <i class="bi bi-calculator me-2 text-danger"></i>Formula Builder
+          <i class="bi bi-calculator me-2 text-danger"></i><span>Formula Builder</span>
         </h6>
         <button type="button" class="btn-close" (click)="closeFormulaBuilder()"></button>
       </div>
@@ -1300,14 +1299,13 @@
           <button type="button" class="btn btn-sm"
             [ngClass]="smartFormulaMode ? 'btn-outline-secondary' : 'btn-outline-primary'"
             (click)="toggleSmartFormulaMode()">
-            <i class="bi me-1" [ngClass]="smartFormulaMode ? 'bi-grid-3x3-gap' : 'bi-pencil-square'"></i>
-            {{ smartFormulaMode ? 'Switch to Click Mode' : 'Switch to Type Mode' }}
+            <i class="bi me-1" [ngClass]="smartFormulaMode ? 'bi-grid-3x3-gap' : 'bi-pencil-square'"></i><span>{{ smartFormulaMode ? 'Switch to Click Mode' : 'Switch to Type Mode' }}</span>
           </button>
         </div>
 
         <ng-container *ngIf="!smartFormulaMode">
           <div class="mb-3">
-            <label class="form-label fw-semibold"><i class="bi bi-tags me-1"></i>Parameters</label>
+            <label class="form-label fw-semibold"><i class="bi bi-tags me-1"></i><span>Parameters</span></label>
             <div class="d-flex flex-wrap gap-2">
               <button *ngFor="let param of formulaAvailableParams" type="button"
                 class="formula-param-chip" (click)="insertFormulaToken(param.ref)"
@@ -1318,7 +1316,7 @@
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold"><i class="bi bi-plus-slash-minus me-1"></i>Operators</label>
+            <label class="form-label fw-semibold"><i class="bi bi-plus-slash-minus me-1"></i><span>Operators</span></label>
             <div class="d-flex flex-wrap gap-1">
               <button *ngFor="let op of formulaOperators" type="button"
                 class="formula-op-btn" (click)="insertFormulaToken(op)">{{ op }}</button>
@@ -1346,10 +1344,10 @@
       </div>
       <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-end gap-2">
         <button type="button" class="btn btn-cancel" (click)="closeFormulaBuilder()">
-          <i class="bi bi-x-circle me-1"></i>Cancel
+          <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
         </button>
         <button type="button" class="btn btn-save" (click)="smartFormulaMode ? applySmartFormula() : applyFormula()">
-          <i class="bi bi-check-circle me-1"></i>Apply Formula
+          <i class="bi bi-check-circle me-1"></i><span>Apply Formula</span>
         </button>
       </div>
     </div>
@@ -1364,7 +1362,7 @@
     <div class="modal-content border-0 shadow">
       <div class="modal-header modal-header-red py-2 px-3">
         <h6 class="modal-title m-0 d-flex align-items-center">
-          <i class="bi bi-box-arrow-in-down me-2 text-danger"></i>Add Parameter From Test Method
+          <i class="bi bi-box-arrow-in-down me-2 text-danger"></i><span>Add Parameter From Test Method</span>
         </h6>
         <button type="button" class="btn-close" (click)="closeFromMethodModal()" aria-label="Close"></button>
       </div>
@@ -1425,10 +1423,10 @@
               <div class="d-flex align-items-center gap-2">
                 <!-- Spec Range Badge -->
                 <span *ngIf="mp.specRange" class="spec-range-pill" title="Specification acceptance limit">
-                  <i class="bi bi-bullseye me-1"></i>{{ mp.specRange }} {{ mp.unit || '' }}
+                  <i class="bi bi-bullseye me-1"></i><span>{{ mp.specRange }} {{ mp.unit || '' }}</span>
                 </span>
                 <span *ngIf="!mp.specRange && mp.acceptanceCriteria" class="spec-range-pill" title="Acceptance Criteria">
-                  <i class="bi bi-info-circle me-1"></i>{{ mp.acceptanceCriteria }}
+                  <i class="bi bi-info-circle me-1"></i><span>{{ mp.acceptanceCriteria }}</span>
                 </span>
                 <span *ngIf="!mp.specRange && !mp.acceptanceCriteria" class="spec-range-pill no-spec" title="No limit specified in material spec">
                   No spec limit
@@ -1436,7 +1434,7 @@
 
                 <!-- Already added badge -->
                 <span *ngIf="mp.isAlreadyAdded" class="badge bg-secondary-subtle text-secondary border">
-                  <i class="bi bi-check-circle-fill text-success me-1"></i>Already Added
+                  <i class="bi bi-check-circle-fill text-success me-1"></i><span>Already Added</span>
                 </span>
               </div>
             </div>
@@ -1459,12 +1457,12 @@
         </span>
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-cancel" (click)="closeFromMethodModal()">
-            <i class="bi bi-x-circle me-1"></i>Cancel
+            <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </button>
           <button type="button" class="btn btn-save"
             [disabled]="!fromMethodForm.valid || loadingMethodParams"
             (click)="submitFromMethod()">
-            <i class="bi bi-plus-circle me-1"></i>Add Parameter
+            <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
           </button>
         </div>
       </div>
@@ -1480,7 +1478,7 @@
     <div class="modal-content border-0 shadow">
       <div class="modal-header modal-header-red py-2 px-3">
         <h6 class="modal-title m-0 d-flex align-items-center">
-          <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-5"></i>Test Pre-Start Check
+          <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-5"></i><span>Test Pre-Start Check</span>
         </h6>
         <button type="button" class="btn-close" (click)="closeConfigValidationModal()"></button>
       </div>
@@ -1502,15 +1500,15 @@
         </div>
 
         <div class="alert alert-light border small text-muted mb-0">
-          <i class="bi bi-info-circle me-1"></i>Please ensure required equipment, preparation, and test parameters are properly arranged before testing.
+          <i class="bi bi-info-circle me-1"></i><span>Please ensure required equipment, preparation, and test parameters are properly arranged before testing.</span>
         </div>
       </div>
       <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-end gap-2">
         <button type="button" class="btn btn-cancel" (click)="closeConfigValidationModal()">
-          <i class="bi bi-x-circle me-1"></i>Close &amp; Fix
+          <i class="bi bi-x-circle me-1"></i><span>Close &amp; Fix</span>
         </button>
         <button type="button" class="btn btn-save" *ngIf="pendingStartTest" (click)="executeStartTest(pendingStartTest.planIndex, pendingStartTest.testIndex)">
-          <i class="bi bi-play-circle me-1"></i>Proceed &amp; Start Anyway
+          <i class="bi bi-play-circle me-1"></i><span>Proceed &amp; Start Anyway</span>
         </button>
       </div>
     </div>
@@ -1525,7 +1523,7 @@
     <div class="modal-content border-0 shadow">
       <div class="modal-header modal-header-red py-2 px-3">
         <h6 class="modal-title m-0 d-flex align-items-center">
-          <i class="bi bi-info-circle text-primary me-2"></i>Parameter Specification Details
+          <i class="bi bi-info-circle text-primary me-2"></i><span>Parameter Specification Details</span>
         </h6>
         <button type="button" class="btn-close" (click)="closeRequirementDetails()"></button>
       </div>
@@ -1567,7 +1565,7 @@
       </div>
       <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-end">
         <button type="button" class="btn btn-cancel" (click)="closeRequirementDetails()">
-          <i class="bi bi-x-circle me-1"></i>Close
+          <i class="bi bi-x-circle me-1"></i><span>Close</span>
         </button>
       </div>
     </div>
@@ -1582,7 +1580,7 @@
     <div class="modal-content border-0 shadow">
       <div class="modal-header modal-header-red py-2 px-3">
         <h6 class="modal-title m-0 d-flex align-items-center">
-          <i class="bi bi-hash text-danger me-2"></i>Multiple Indentation Readings
+          <i class="bi bi-hash text-danger me-2"></i><span>Multiple Indentation Readings</span>
         </h6>
         <button type="button" class="btn-close" (click)="closeMultipleReadingsModal()"></button>
       </div>
@@ -1614,10 +1612,10 @@
       </div>
       <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-end gap-2">
         <button type="button" class="btn btn-cancel" (click)="closeMultipleReadingsModal()">
-          <i class="bi bi-x-circle me-1"></i>Cancel
+          <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
         </button>
         <button type="button" class="btn btn-save" [disabled]="calculatedAverage <= 0" (click)="applyMultipleReadings()">
-          <i class="bi bi-check-circle me-1"></i>Apply Average Result
+          <i class="bi bi-check-circle me-1"></i><span>Apply Average Result</span>
         </button>
       </div>
     </div>
@@ -1632,7 +1630,7 @@
     <div class="modal-content border-0 shadow">
       <div class="modal-header modal-header-red py-2 px-3">
         <h6 class="modal-title m-0 d-flex align-items-center">
-          <i class="bi bi-thermometer-half text-danger me-2"></i>Record Lab Environment Conditions
+          <i class="bi bi-thermometer-half text-danger me-2"></i><span>Record Lab Environment Conditions</span>
         </h6>
         <button type="button" class="btn-close" (click)="closeRecordEnvironmentModal()"></button>
       </div>
@@ -1644,7 +1642,7 @@
               <div class="fw-semibold text-dark small">{{ activeEnvTestTitle }}</div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center" (click)="fetchLatestDailyEnv(true)" title="Fetch today's recorded environment log">
-              <i class="bi bi-arrow-clockwise me-1"></i>Fetch Daily Log
+              <i class="bi bi-arrow-clockwise me-1"></i><span>Fetch Daily Log</span>
             </button>
           </div>
 
@@ -1675,10 +1673,10 @@
         </div>
         <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-cancel" (click)="closeRecordEnvironmentModal()">
-            <i class="bi bi-x-circle me-1"></i>Cancel
+            <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </button>
           <button type="submit" class="btn btn-save" [disabled]="recordEnvForm.invalid">
-            <i class="bi bi-check-circle me-1"></i>Save
+            <i class="bi bi-check-circle me-1"></i><span>Save</span>
           </button>
         </div>
       </form>

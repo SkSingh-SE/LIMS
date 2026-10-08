@@ -412,7 +412,7 @@
           <div class="d-flex justify-content-between align-items-center mb-2">
             <label class="section-divider">Qualification Details</label>
             <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm" (click)="addQualification()">
-              <i class="bi bi-plus-circle-dotted me-1"></i> Add Row
+              <i class="bi bi-plus-circle-dotted me-1"></i><span>Add Row</span>
             </button>
           </div>
 
@@ -502,7 +502,7 @@
                         <button *ngIf="key === 'confidentialityAgreement' && employeeId"
                           type="button" class="btn btn-link py-0 text-primary text-decoration-none small"
                           [routerLink]="['/employee/impartiality-agreement', employeeId]">
-                          <i class="bi bi-printer me-1"></i>Print F-1
+                          <i class="bi bi-printer me-1"></i><span>Print F-1</span>
                         </button>
                       </div>
                       <ng-container *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FilePath; else uploadField">
@@ -510,8 +510,7 @@
                           <span class="text-truncate me-2" type="button"
                             (click)="openFileInNewTab(documentsForm.get('predefined')?.get(key)?.value?.FilePath)"
                             title="{{ documentsForm.get('predefined')?.get(key)?.value?.FileName }}">
-                            <i class="bi bi-file-earmark-fill"></i>
-                            {{ documentsForm.get("predefined")?.get(key)?.value?.FileName }}
+                            <i class="bi bi-file-earmark-fill"></i><span>{{ documentsForm.get("predefined")?.get(key)?.value?.FileName }}</span>
                           </span>
                           <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
                             (click)="removePredefinedFile(key)">
@@ -535,7 +534,7 @@
               <legend class="w-auto px-2 fw-semibold theme-color">
                 Additional Documents
                 <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm ms-2" (click)="addAdditionalDocument()">
-                  <i class="bi bi-plus-circle-dotted me-1"></i> Add Row
+                  <i class="bi bi-plus-circle-dotted me-1"></i><span>Add Row</span>
                 </button>
               </legend>
 
@@ -571,7 +570,7 @@
                           <div class="d-flex align-items-center gap-2 flex-wrap border bg-light px-1 rounded" style="max-width: 250px">
                             <span class="text-truncate text-muted flex-grow-1 ms-1" type="button"
                               title="{{ doc.value.FileName }}" (click)="openFileInNewTab(doc.value?.FilePath)">
-                              <i class="bi bi-file-earmark-fill"></i> {{ doc.value.FileName }}
+                              <i class="bi bi-file-earmark-fill"></i><span>{{ doc.value.FileName }}</span>
                             </span>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger"
                               (click)="removeAdditionalFile(i)">
@@ -620,7 +619,7 @@
             <i class="bi bi-shield-check" style="font-size: 48px; color: #ccc;"></i>
             <p class="text-muted mt-2">No authorization records found for this employee.</p>
             <a routerLink="/employee/equipment-authorization/create" class="btn btn-save btn-sm">
-              <i class="bi bi-plus-lg"></i> Create Authorization
+              <i class="bi bi-plus-lg"></i><span>Create Authorization</span>
             </a>
           </div>
 
@@ -726,8 +725,7 @@
           </div>
           <ng-template #noPermission>
             <div class="alert alert-warning text-center mt-5" role="alert">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              You do not have permission to access this page. Contact Admin.
+              <i class="bi bi-exclamation-triangle-fill me-2"></i><span>You do not have permission to access this page. Contact Admin.</span>
             </div>
           </ng-template>
         </div>
@@ -741,23 +739,23 @@
 <div *ngIf="!isViewMode" class="sticky-bottom-bar">
   <div class="d-flex justify-content-end align-items-center gap-2">
     <a routerLink="/employee" class="btn btn-cancel btn-sm">
-      <i class="bi bi-x-circle"></i> Cancel
+      <i class="bi bi-x-circle"></i><span>Cancel</span>
     </a>
 
     <!-- Tab 1: Basic Details Save -->
     <button *ngIf="activeFormKey === 1" type="button" class="btn btn-save btn-sm" (click)="submitForm()">
-      <i class="bi bi-check-circle"></i> {{ employeeId > 0 ? 'Update' : 'Save' }}
+      <i class="bi bi-check-circle"></i><span>{{ employeeId > 0 ? 'Update' : 'Save' }}</span>
     </button>
 
     <!-- Tab 2: Qualification Save -->
     <button *ngIf="activeFormKey === 2 && qualificationArray.length > 0" type="button" class="btn btn-save btn-sm"
       (click)="saveQualification()">
-      <i class="bi bi-check-circle"></i> Save Qualification
+      <i class="bi bi-check-circle"></i><span>Save Qualification</span>
     </button>
 
     <!-- Tab 3: Documents Save -->
     <button *ngIf="activeFormKey === 3" type="button" class="btn btn-save btn-sm" (click)="saveDocuments()">
-      <i class="bi bi-check-circle"></i> Save Documents
+      <i class="bi bi-check-circle"></i><span>Save Documents</span>
     </button>
   </div>
 </div>

@@ -33,8 +33,7 @@
         <!-- ========================================== -->
         <div *ngIf="activeTab === 1" class="settings-tab-pane fade-in-slide">
           <div class="form-title">
-            <i class="bi bi-building"></i>
-            Organization Settings
+            <i class="bi bi-building"></i><span>Organization Settings</span>
             <div class="tab-actions ms-auto">
               <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(1)">Reset</button>
               <button type="button" class="btn btn-save btn-sm" (click)="saveTab(1)"
@@ -143,7 +142,7 @@
                 <input type="file" class="form-control" id="orgLogoInput" accept="image/png,image/jpeg,image/jpg"
                   (change)="onOrganizationLogoChange($event)" />
                 <span class="file-label" *ngIf="!organizationLogoPreview">
-                  <i class="bi bi-cloud-upload"></i> Click to upload or drag
+                  <i class="bi bi-cloud-upload"></i><span>Click to upload or drag</span>
                 </span>
                 <span class="file-preview" *ngIf="organizationLogoPreview">
                   <img [src]="organizationLogoPreview" alt="Logo" />
@@ -152,7 +151,7 @@
                 </span>
               </div>
               <div class="file-error-msg" *ngIf="fileErrors['organizationLogo']">
-                <i class="bi bi-exclamation-circle"></i> {{ fileErrors['organizationLogo'] }}
+                <i class="bi bi-exclamation-circle"></i><span>{{ fileErrors['organizationLogo'] }}</span>
               </div>
               <small class="file-hint">PNG or JPG, max 2MB</small>
             </div>
@@ -164,8 +163,7 @@
         <!-- ========================================== -->
         <div *ngIf="activeTab === 2" class="settings-tab-pane fade-in-slide">
           <div class="form-title">
-            <i class="bi bi-award"></i>
-            NABL Accreditation
+            <i class="bi bi-award"></i><span>NABL Accreditation</span>
             <div class="tab-actions ms-auto">
               <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(2)">Reset</button>
               <button type="button" class="btn btn-save btn-sm" (click)="saveTab(2)"
@@ -201,7 +199,7 @@
                 <input type="file" class="form-control" accept="application/pdf"
                   (change)="onNablCertificateChange($event)" />
                 <span class="file-label" *ngIf="!nablCertificateFile && !nablCertificateLoadedPath">
-                  <i class="bi bi-file-pdf"></i> Click to upload PDF
+                  <i class="bi bi-file-pdf"></i><span>Click to upload PDF</span>
                 </span>
                 <span class="file-preview" *ngIf="nablCertificateFile">
                   {{ nablCertificateFile.name }}
@@ -209,13 +207,13 @@
                       class="bi bi-x"></i></button>
                 </span>
                 <span class="file-preview" *ngIf="!nablCertificateFile && nablCertificateLoadedPath">
-                  <i class="bi bi-file-pdf-fill text-danger me-1"></i> Certificate uploaded
+                  <i class="bi bi-file-pdf-fill text-danger me-1"></i><span>Certificate uploaded</span>
                   <a [href]="nablCertificateLoadedPath" target="_blank" class="ms-1" title="View"><i class="bi bi-box-arrow-up-right"></i></a>
                   <button type="button" class="btn-remove" (click)="nablCertificateLoadedPath = null" title="Replace"><i class="bi bi-arrow-repeat"></i></button>
                 </span>
               </div>
               <div class="file-error-msg" *ngIf="fileErrors['nablCertificate']">
-                <i class="bi bi-exclamation-circle"></i> {{ fileErrors['nablCertificate'] }}
+                <i class="bi bi-exclamation-circle"></i><span>{{ fileErrors['nablCertificate'] }}</span>
               </div>
               <small class="file-hint">PDF only, max 10MB</small>
             </div>
@@ -228,7 +226,7 @@
                 <input type="file" class="form-control" accept="image/png,image/jpeg,image/jpg"
                   (change)="onNablLogoChange($event)" />
                 <span class="file-label" *ngIf="!nablLogoPreview">
-                  <i class="bi bi-cloud-upload"></i> Click to upload
+                  <i class="bi bi-cloud-upload"></i><span>Click to upload</span>
                 </span>
                 <span class="file-preview" *ngIf="nablLogoPreview">
                   <img [src]="nablLogoPreview" alt="NABL Logo" />
@@ -237,7 +235,7 @@
                 </span>
               </div>
               <div class="file-error-msg" *ngIf="fileErrors['nablLogo']">
-                <i class="bi bi-exclamation-circle"></i> {{ fileErrors['nablLogo'] }}
+                <i class="bi bi-exclamation-circle"></i><span>{{ fileErrors['nablLogo'] }}</span>
               </div>
               <small class="file-hint">PNG or JPG, max 2MB</small>
             </div>
@@ -249,8 +247,7 @@
         <!-- ========================================== -->
         <div *ngIf="activeTab === 3" class="form-page">
           <div class="form-title">
-            <i class="bi bi-hash"></i>
-            Numbering Configuration
+            <i class="bi bi-hash"></i><span>Numbering Configuration</span>
             <div class="tab-actions ms-auto">
               <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(3)">Reset</button>
               <button type="button" class="btn btn-save btn-sm" (click)="saveTab(3)"
@@ -306,8 +303,7 @@
         <!-- ========================================== -->
         <div *ngIf="activeTab === 4" class="form-page">
           <div class="form-title">
-            <i class="bi bi-receipt"></i>
-            GST & Financial Settings
+            <i class="bi bi-receipt"></i><span>GST & Financial Settings</span>
             <div class="tab-actions ms-auto">
               <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(4)">Reset</button>
               <button type="button" class="btn btn-save btn-sm" (click)="saveTab(4)"
@@ -405,8 +401,7 @@
               </div>
               <div class="form-col">
                 <div class="info-box mt-4">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Interstate GST (IGST) is auto-determined by comparing company state (above) with customer state.
+                  <i class="bi bi-info-circle me-1"></i><span>Interstate GST (IGST) is auto-determined by comparing company state (above) with customer state.</span>
                 </div>
               </div>
             </div>
@@ -417,7 +412,7 @@
             <div class="d-flex justify-content-between align-items-center">
               <div class="form-title-small mb-0">Financial Year Management</div>
               <button type="button" class="btn btn-sm btn-primary" (click)="openAddFY()" *ngIf="!showFYForm">
-                <i class="bi bi-plus-lg me-1"></i> Add
+                <i class="bi bi-plus-lg me-1"></i><span>Add</span>
               </button>
             </div>
 
@@ -437,8 +432,7 @@
                 </div>
                 <div class="col-md-4 d-flex gap-2 align-items-end">
                   <button type="button" class="btn btn-sm btn-save" (click)="saveFY()">
-                    <i class="bi" [ngClass]="editingFYId ? 'bi-check-lg' : 'bi-plus-lg'"></i>
-                    {{ editingFYId ? 'Update' : 'Save' }}
+                    <i class="bi" [ngClass]="editingFYId ? 'bi-check-lg' : 'bi-plus-lg'"></i><span>{{ editingFYId ? 'Update' : 'Save' }}</span>
                   </button>
                   <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelFYForm()">
                     Cancel
@@ -446,7 +440,7 @@
                 </div>
               </div>
               <div class="group-error mt-1" *ngIf="getGroupError('financialYear')">
-                <i class="bi bi-exclamation-triangle"></i> {{ getGroupError('financialYear') }}
+                <i class="bi bi-exclamation-triangle"></i><span>{{ getGroupError('financialYear') }}</span>
               </div>
             </div>
 
@@ -471,7 +465,7 @@
                     <td>{{ fy.endDate | date:'dd-MMM-yyyy' }}</td>
                     <td class="text-center">
                       <span *ngIf="fy.isCurrent" class="badge bg-success">
-                        <i class="bi bi-check-circle me-1"></i>Default
+                        <i class="bi bi-check-circle me-1"></i><span>Default</span>
                       </span>
                       <button *ngIf="!fy.isCurrent" type="button"
                         class="btn btn-sm btn-outline-secondary py-0 px-2"
@@ -505,8 +499,7 @@
         <!-- ========================================== -->
         <div *ngIf="activeTab === 5" class="form-page">
           <div class="form-title">
-            <i class="bi bi-pen"></i>
-            Report Authority Signatures
+            <i class="bi bi-pen"></i><span>Report Authority Signatures</span>
             <div class="tab-actions ms-auto d-flex align-items-center gap-2">
               <button type="button" class="btn btn-secondary btn-sm me-2" (click)="resetTab(5)">Reset</button>
               <button type="button" class="btn btn-save btn-sm" (click)="saveTab(5)"
@@ -560,7 +553,7 @@
                       <input type="file" class="form-control" id="signatureInput"
                         accept="image/png,image/jpeg,image/jpg" (change)="onSignatureChange($event)" />
                       <span class="file-label" *ngIf="!signaturePreview">
-                        <i class="bi bi-cloud-upload"></i> Click to upload signature
+                        <i class="bi bi-cloud-upload"></i><span>Click to upload signature</span>
                       </span>
                       <span class="file-preview" *ngIf="signaturePreview">
                         <img [src]="signaturePreview" alt="Signature" />
@@ -569,7 +562,7 @@
                       </span>
                     </div>
                     <div class="file-error-msg" *ngIf="fileErrors['signature']">
-                      <i class="bi bi-exclamation-circle"></i> {{ fileErrors['signature'] }}
+                      <i class="bi bi-exclamation-circle"></i><span>{{ fileErrors['signature'] }}</span>
                     </div>
                     <small class="file-hint">PNG or JPG, max 2MB</small>
                   </div>
@@ -627,10 +620,10 @@
                     </div>
                     <div class="signature-actions">
                       <button type="button" class="btn btn-edit" (click)="editSignatory(i)">
-                        <i class="bi bi-pencil"></i> Edit
+                        <i class="bi bi-pencil"></i><span>Edit</span>
                       </button>
                       <button type="button" class="btn btn-secondary btn-delete" (click)="deleteSignatory(i)">
-                        <i class="bi bi-trash"></i> Delete
+                        <i class="bi bi-trash"></i><span>Delete</span>
                       </button>
                     </div>
                   </div>
@@ -655,16 +648,15 @@
       <div class="form-footer">
         <div class="action-info">
           <small>
-            <i class="bi bi-info-circle me-1"></i>
-            Click Save to apply changes
+            <i class="bi bi-info-circle me-1"></i><span>Click Save to apply changes</span>
           </small>
         </div>
         <div class="action-buttons">
           <button type="button" class="btn btn-secondary" (click)="onCancel()">
-            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+            <i class="bi bi-arrow-counterclockwise me-1"></i><span>Reset</span>
           </button>
           <button type="button" class="btn btn-save" (click)="onSave()">
-            <i class="bi bi-check-circle me-1"></i> Save Settings
+            <i class="bi bi-check-circle me-1"></i><span>Save Settings</span>
           </button>
         </div>
       </div>

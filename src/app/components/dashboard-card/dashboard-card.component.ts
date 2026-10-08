@@ -13,6 +13,7 @@ export class DashboardCardComponent implements OnInit {
   @Input() card!: DashboardCardDto;
   @Input() isLoading: boolean = false;
   @Input() isCustomizationMode: boolean = false;
+  @Input() icon: string = '';
   @Output() cardClick = new EventEmitter<DashboardCardDto>();
 
   hasError = false;
@@ -135,23 +136,27 @@ export class DashboardCardComponent implements OnInit {
    */
   getStatusIcon(): string {
     try {
+      if (this.icon) {
+        return this.icon;
+      }
+
       if (this.hasError) {
-        return 'ri-error-warning-line';
+        return 'bi-exclamation-triangle';
       }
 
       if (!this.card?.status) {
-        return 'ri-information-line';
+        return 'bi-info-circle';
       }
 
       switch (this.card.status) {
         case 'Normal':
-          return 'ri-information-line';
+          return 'bi-info-circle';
         case 'Warning':
-          return 'ri-alert-line';
+          return 'bi-exclamation-triangle';
         case 'Critical':
-          return 'ri-error-warning-line';
+          return 'bi-lightning-fill';
         default:
-          return 'ri-information-line';
+          return 'bi-info-circle';
       }
     } catch (error) {
       this.errorHandler.handleComponentError(error, {
@@ -159,7 +164,7 @@ export class DashboardCardComponent implements OnInit {
         operation: 'Get Status Icon',
         silent: true
       });
-      return 'ri-error-warning-line';
+      return 'bi-exclamation-triangle';
     }
   }
 

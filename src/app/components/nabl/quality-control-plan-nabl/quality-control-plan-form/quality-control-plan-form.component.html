@@ -4,8 +4,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
       <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
-        <i class="bi bi-arrow-left"></i>
-        Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </button>
     </div>
 
@@ -118,8 +117,7 @@
               class="btn btn-sm btn-light py-0 me-3"
               (click)="addActivity(); $event.stopPropagation()"
             >
-              <i class="bi bi-plus-lg me-1"></i>
-              Add Activity
+              <i class="bi bi-plus-lg me-1"></i><span>Add Activity</span>
             </button>
           </div>
           <div *ngIf="openSections['activities']" class="section-body p-0">

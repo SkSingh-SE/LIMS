@@ -20,7 +20,7 @@ import { DashboardErrorHandlerService, ErrorContext } from './dashboard-error-ha
 export class DashboardService {
   private apiUrl = environment.apiUrl + "/dashboard";
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes in milliseconds
-  private autoRefreshInterval = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private autoRefreshInterval = 30 * 1000; // 30 seconds — live lab KPIs (was 5 minutes)
   private maxRetries = 3;
   private retryDelay = 1000; // 1 second initial delay
   
@@ -378,6 +378,14 @@ export class DashboardService {
       data: null,
       timestamp: 0
     };
+  }
+
+  /**
+   * Public cache invalidation for SignalR live events.
+   * Next getDashboard() call fetches fresh data instead of serving cache.
+   */
+  invalidateCache(): void {
+    this.clearCache();
   }
 
   /**

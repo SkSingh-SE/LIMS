@@ -1,0 +1,1175 @@
+<div class="configured-layout-container w-100 p-0 m-0">
+
+  <!-- ========================================================================= -->
+  <!-- 1. CONFIGURED LAYOUT BANNER                                               -->
+  <!-- ========================================================================= -->
+  <div class="layout-meta-banner mb-0" *ngIf="activeTabSection === 'all'">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <div class="layout-badge-icon">
+          <i class="bi bi-diagram-3-fill fs-6 text-danger"></i>
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="layout-title fw-bold text-dark">{{ layoutConfig?.layoutName || 'Configured Test Layout' }}</span>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace text-xxs">
+              REV {{ layoutConfig?.revision || '1.0' }}
+            </span>
+            <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs" *ngIf="layoutConfig?.layoutCode">
+              {{ layoutConfig.layoutCode }}
+            </span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" *ngIf="layoutConfig?.isGlobalDefault">
+              <i class="bi bi-globe2 me-1"></i><span>Global Default</span>
+            </span>
+          </div>
+          <span class="layout-subtitle text-muted">
+            Test: {{ test?.name || testPlan?.type }} &bull; Standard: {{ getCleanTestMethod() }} &bull; Leaf: {{ layoutConfig?.leafNode || 'Direct Execution' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <app-test-status-badge [status]="test?.status"></app-test-status-badge>
+        <a class="btn-nav-link text-nowrap" [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: layoutConfig?.id }" title="Manage Layout in Studio">
+          <i class="bi bi-box-arrow-up-right me-1"></i><span>Studio</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. DYNAMIC SECTIONS STACK                                                 -->
+  <!-- ========================================================================= -->
+  <div class="sections-stack d-flex flex-column gap-0" [formGroup]="testFormGroup">
+
+    <ng-container *ngFor="let s of sections; let sIdx = index">
+
+      <div *ngIf="isSectionVisible(s)" class="lims-workbench-card" [ngClass]="{ 'half-width': s.config?.width === 'Half Width' }">
+
+        <!-- Section Header -->
+        <div class="lims-workbench-card-header flex-wrap gap-2 py-1 px-2">
+          <div class="d-flex align-items-center gap-2">
+            <i [class]="getSectionIcon(s.type)"></i>
+            <h6 class="lims-workbench-card-title mb-0">
+              <span>{{ s.title }}</span>
+            </h6>
+          </div>
+
+          <!-- Section Header Action Items -->
+          <div class="d-flex align-items-center gap-2">
+            <!-- Specimen Matrix Quick Actions -->
+            <ng-container *ngIf="(s.type === 'spm' || s.type === 'specimen') && !isViewMode && !isLocked">
+              <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1 me-1">
+                <span class="text-xxs fw-semibold text-secondary">Specimens:</span>
+                <button type="button" class="spm-stepper-btn" (click)="adjustSpecimenCount(-1)" [disabled]="specimens.length <= 1" title="Decrease specimen count">
+                  <i class="bi bi-dash"></i>
+                </button>
+                <input type="number" class="form-control form-control-xs text-center fw-bold text-danger spm-stepper-input"
+                       [value]="specimens.length"
+                       min="1" max="20"
+                       (change)="onSpecimenCountInputChange($event)" />
+                <button type="button" class="spm-stepper-btn" (click)="adjustSpecimenCount(1)" [disabled]="specimens.length >= 20" title="Increase specimen count">
+                  <i class="bi bi-plus"></i>
+                </button>
+                <span class="badge bg-white text-muted border text-xxs">Planned: {{ testPlan?.plannedQuantity || 1 }}</span>
+              </div>
+              <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addSpecimen()" title="Add another test specimen">
+                <i class="bi bi-plus-circle me-1"></i><span>Add Specimen</span>
+              </button>
+              <button type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="removeSpecimen()" [disabled]="specimens.length <= 1" title="Remove the last specimen">
+                <i class="bi bi-dash-circle me-1"></i><span>Remove Specimen</span>
+              </button>
+            </ng-container>
+
+            <button *ngIf="(s.type === 'cond' || s.type === 'condition') && !isViewMode && !isLocked"
+                    type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="environmentRequested.emit()">
+              <i class="bi bi-pencil-square me-1"></i><span>Record Ambient</span>
+            </button>
+            <button *ngIf="(s.type === 'photo') && !isViewMode && !isLocked"
+                    type="button" class="btn btn-xs btn-lims btn-lims-save" (click)="photoUploadRequested.emit()">
+              <i class="bi bi-cloud-arrow-up me-1"></i><span>Upload Photo</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section Body -->
+        <div class="section-card-body p-2">
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 1: CONTEXT HEADER & TRACEABILITY (hdr / traceability)-->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'hdr' || s.type === 'traceability'">
+            <div class="row g-2">
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Sample No / UID</span>
+                  <span class="trace-val fw-bold text-primary">{{ sample?.sampleNo || '—' }}</span>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Case / Certificate No</span>
+                  <span class="trace-val fw-semibold text-dark">{{ inward?.caseNo || '—' }}</span>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Batch / Heat No</span>
+                  <span class="trace-val text-dark">{{ sample?.batchNo || '—' }}</span>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Material / Grade</span>
+                  <span class="trace-val fw-semibold text-dark">{{ sample?.material || testPlan?.specification || '—' }}</span>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Test Standard Method</span>
+                  <span class="trace-val text-dark">{{ getCleanTestMethod() }}</span>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Testing Equipment</span>
+                  <span class="trace-val text-dark">{{ selectedEquipment.length ? selectedEquipment[0]?.name : 'General Testing Machine' }}</span>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Performer / Analyst</span>
+                  <span class="trace-val text-dark">{{ timingData?.performedByName || 'Laboratory Analyst' }}</span>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <div class="trace-box p-2 rounded bg-light border">
+                  <span class="trace-label text-muted d-block text-xxs">Test Discipline</span>
+                  <span class="trace-val text-dark">{{ testPlan?.discipline || 'Mechanical / Metallurgical' }}</span>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 2: TEST CONDITIONS & ENVIRONMENT (cond / condition) -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'cond' || s.type === 'condition'">
+            <div class="row g-2">
+              <div class="col-md-3 col-sm-6">
+                <div class="condition-input-box p-2 rounded border bg-light">
+                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
+                    <i class="bi bi-thermometer-half text-danger me-1"></i><span>Ambient Temperature (&deg;C)</span>
+                  </label>
+                  <input type="number" step="0.1" class="form-control form-control-xs text-center fw-bold text-danger"
+                         [(ngModel)]="conditionValues['Temperature']"
+                         [ngModelOptions]="{ standalone: true }"
+                         (ngModelChange)="onConditionChange('Temperature', $event)"
+                         [readOnly]="isViewMode || isLocked"
+                         placeholder="23.0" />
+                </div>
+              </div>
+
+              <div class="col-md-3 col-sm-6">
+                <div class="condition-input-box p-2 rounded border bg-light">
+                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
+                    <i class="bi bi-droplet-half text-primary me-1"></i><span>Relative Humidity (% RH)</span>
+                  </label>
+                  <input type="number" step="0.5" class="form-control form-control-xs text-center fw-bold text-primary"
+                         [(ngModel)]="conditionValues['Relative Humidity']"
+                         [ngModelOptions]="{ standalone: true }"
+                         (ngModelChange)="onConditionChange('Relative Humidity', $event)"
+                         [readOnly]="isViewMode || isLocked"
+                         placeholder="50.0" />
+                </div>
+              </div>
+
+              <div class="col-md-3 col-sm-6">
+                <div class="condition-input-box p-2 rounded border bg-light">
+                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
+                    <i class="bi bi-speedometer text-success me-1"></i><span>Test Speed / Strain Rate</span>
+                  </label>
+                  <input type="text" class="form-control form-control-xs text-center"
+                         [(ngModel)]="conditionValues['Test Speed']"
+                         [ngModelOptions]="{ standalone: true }"
+                         (ngModelChange)="onConditionChange('Test Speed', $event)"
+                         [readOnly]="isViewMode || isLocked"
+                         placeholder="2 mm/min" />
+                </div>
+              </div>
+
+              <div class="col-md-3 col-sm-6">
+                <div class="condition-input-box p-2 rounded border bg-light">
+                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
+                    <i class="bi bi-snow text-info me-1"></i><span>Medium / Environment</span>
+                  </label>
+                  <input type="text" class="form-control form-control-xs text-center"
+                         [(ngModel)]="conditionValues['Medium']"
+                         [ngModelOptions]="{ standalone: true }"
+                         (ngModelChange)="onConditionChange('Medium', $event)"
+                         [readOnly]="isViewMode || isLocked"
+                         placeholder="Ambient Air" />
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 3: MULTI-SPECIMEN OBSERVATION MATRIX (spm / specimen)-->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'spm' || s.type === 'specimen'">
+            <div class="specimen-section">
+              <div class="table-responsive">
+                <!-- 1. Dedicated Tensile Specimen Matrix (When Active Test is Tensile) -->
+                <table class="table lims-matrix-table align-middle mb-1" *ngIf="isTensileTest()">
+                  <thead class="text-center">
+                    <tr>
+                      <th class="text-start w-col-220">Parameter / Dimension</th>
+                      <th class="w-col-65">Unit</th>
+                      <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ spm.id }}</span>
+                          <button *ngIf="!isViewMode && !isLocked && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-delete"
+                                  (click)="removeSpecimen(spmIdx)" title="Remove {{ spm.id }}">
+                            <i class="bi bi-x"></i>
+                          </button>
+                        </div>
+                      </th>
+                      <th *ngIf="s.config?.showAverage !== false" class="w-col-115 avg-col-header">Average</th>
+                      <th *ngIf="s.config?.showMinMax" class="w-col-85">Min</th>
+                      <th *ngIf="s.config?.showMinMax" class="w-col-85">Max</th>
+                      <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Diameter (if round) -->
+                    <tr *ngIf="sample?.diameter || sample?.productForm === 'Round' || sample?.productForm === 'Bar'">
+                      <td class="fw-semibold text-start"><span>Diameter (D)</span></td>
+                      <td class="text-center text-muted small">mm</td>
+                      <td *ngFor="let spm of specimens">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [(ngModel)]="spm.diameter"
+                               [ngModelOptions]="{ standalone: true }"
+                               (input)="onSpecimenDimensionChange(spm)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="D..." />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('diameter') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                    </tr>
+
+                    <!-- Thickness -->
+                    <tr *ngIf="!sample?.diameter">
+                      <td class="fw-semibold text-start"><span>Thickness (T)</span></td>
+                      <td class="text-center text-muted small">mm</td>
+                      <td *ngFor="let spm of specimens">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [(ngModel)]="spm.thickness"
+                               [ngModelOptions]="{ standalone: true }"
+                               (input)="onSpecimenDimensionChange(spm)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="T..." />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('thickness') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                    </tr>
+
+                    <!-- Width -->
+                    <tr *ngIf="!sample?.diameter">
+                      <td class="fw-semibold text-start"><span>Width (W)</span></td>
+                      <td class="text-center text-muted small">mm</td>
+                      <td *ngFor="let spm of specimens">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [(ngModel)]="spm.width"
+                               [ngModelOptions]="{ standalone: true }"
+                               (input)="onSpecimenDimensionChange(spm)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="W..." />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('width') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                    </tr>
+
+                    <!-- Gauge Length -->
+                    <tr>
+                      <td class="fw-semibold text-start"><span>Gauge Length (L₀)</span></td>
+                      <td class="text-center text-muted small">mm</td>
+                      <td *ngFor="let spm of specimens">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [(ngModel)]="spm.gaugeLength"
+                               [ngModelOptions]="{ standalone: true }"
+                               (input)="onSpecimenDimensionChange(spm)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="L₀..." />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('gaugeLength') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                    </tr>
+
+                    <!-- Area (Calculated) -->
+                    <tr>
+                      <td class="fw-semibold text-start"><i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i><span>Cross Section Area (S₀)</span></td>
+                      <td class="text-center text-muted small">mm²</td>
+                      <td *ngFor="let spm of specimens" class="text-center font-monospace fw-semibold text-primary">
+                        {{ spm.area != null ? spm.area : '-' }}
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('area') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">Formula: T &times; W</td>
+                    </tr>
+
+                    <!-- Measured Force Inputs -->
+                    <tr>
+                      <td class="fw-semibold text-start"><span>0.2% Yield Load (F_p0.2)</span></td>
+                      <td class="text-center text-muted small">kN</td>
+                      <td *ngFor="let spm of specimens">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [(ngModel)]="spm.yieldLoad"
+                               [ngModelOptions]="{ standalone: true }"
+                               (input)="onSpecimenLoadChange(spm)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="kN..." />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('yieldLoad') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                    </tr>
+
+                    <tr>
+                      <td class="fw-semibold text-start"><span>Maximum / Peak Load (F_m)</span></td>
+                      <td class="text-center text-muted small">kN</td>
+                      <td *ngFor="let spm of specimens">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [(ngModel)]="spm.peakLoad"
+                               [ngModelOptions]="{ standalone: true }"
+                               (input)="onSpecimenLoadChange(spm)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="kN..." />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('peakLoad') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                    </tr>
+
+                    <tr>
+                      <td class="fw-semibold text-start"><span>Final Length (L_u)</span></td>
+                      <td class="text-center text-muted small">mm</td>
+                      <td *ngFor="let spm of specimens">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [(ngModel)]="spm.finalLength"
+                               [ngModelOptions]="{ standalone: true }"
+                               (input)="onSpecimenLoadChange(spm)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="L_u..." />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('finalLength') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                    </tr>
+
+                    <!-- Calculated Mechanical Results (Real-Time Synchronized to Form) -->
+                    <tr>
+                      <td class="fw-bold text-start text-dark">
+                        <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                        <span>0.2% Proof Stress / Yield Strength</span>
+                      </td>
+                      <td class="text-center fw-bold text-dark">MPa</td>
+                      <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
+                        {{ spm.proofStress != null ? spm.proofStress : '—' }}
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('proofStress') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                        {{ getParamRequirementByName('proof stress') !== '—' ? getParamRequirementByName('proof stress') : (getParamRequirementByName('yield') !== '—' ? getParamRequirementByName('yield') : '—') }}
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td class="fw-bold text-start text-dark">
+                        <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                        <span>Ultimate Tensile Strength (UTS)</span>
+                      </td>
+                      <td class="text-center fw-bold text-dark">MPa</td>
+                      <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
+                        {{ spm.uts != null ? spm.uts : '—' }}
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('uts') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                        {{ getParamRequirementByName('tensile') !== '—' ? getParamRequirementByName('tensile') : (getParamRequirementByName('uts') !== '—' ? getParamRequirementByName('uts') : '—') }}
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td class="fw-bold text-start text-dark">
+                        <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                        <span>Percentage Elongation in 50mm / 4D</span>
+                      </td>
+                      <td class="text-center fw-bold text-dark">%</td>
+                      <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
+                        {{ spm.elongation != null ? spm.elongation : '—' }}
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getDimensionAverage('elongation') }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                        {{ getParamRequirementByName('elongation') }}
+                      </td>
+                    </tr>
+
+                  </tbody>
+                </table>
+
+                <!-- 2. Dynamic Multi-Specimen Parameter Matrix (When Active Test is Non-Tensile e.g. Hardness, Impact, etc.) -->
+                <table class="table lims-matrix-table align-middle mb-1" *ngIf="!isTensileTest()">
+                  <thead class="text-center">
+                    <tr>
+                      <th class="text-start w-col-220">Parameter / Property</th>
+                      <th class="w-col-65">Unit</th>
+                      <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ spm.id }}</span>
+                          <button *ngIf="!isViewMode && !isLocked && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-delete"
+                                  (click)="removeSpecimen(spmIdx)" title="Remove {{ spm.id }}">
+                            <i class="bi bi-x"></i>
+                          </button>
+                        </div>
+                      </th>
+                      <th *ngIf="s.config?.showAverage !== false" class="w-col-115 avg-col-header">Average</th>
+                      <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
+                      <th class="w-col-90">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of getBaseParameterList()">
+                      <td class="fw-semibold text-start">
+                        <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                        <span>{{ p.name }}</span>
+                      </td>
+                      <td class="text-center text-muted small">{{ p.unit }}</td>
+                      <td *ngFor="let spm of specimens; let spmIdx = index">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [value]="getParamValueForSpecimen(p.index, spmIdx)"
+                               (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               [placeholder]="p.name + '...'" />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getBaseParamAverage(p.index) }}
+                      </td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                        {{ p.requirement }}
+                      </td>
+                      <td class="text-center">
+                        <span class="badge" [ngClass]="getBaseParamStatus(p.index) === 'Pass' ? 'bg-success' : (getBaseParamStatus(p.index) === 'Fail' ? 'bg-danger' : 'bg-secondary')">
+                          {{ getBaseParamStatus(p.index) }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="getBaseParameterList().length === 0">
+                      <td [attr.colspan]="3 + specimens.length + (s.config?.showAverage !== false ? 1 : 0) + (s.config?.showRequirement !== false ? 1 : 0)" class="text-center py-2 text-muted">
+                        No parameters configured for this test.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="small text-muted d-flex align-items-center gap-2 mt-2 px-1">
+                <i class="bi bi-info-circle text-primary"></i>
+                <span *ngIf="isTensileTest()">Values entered in the specimen matrix automatically evaluate proof stress, UTS, and elongation, and synchronize live with form parameters.</span>
+                <span *ngIf="!isTensileTest()">Specimen observation readings synchronize live across all test specimens and evaluate limits against configured specification requirements.</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 4: PARAMETERS VERIFICATION TABLE (param / parameter) -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'param' || s.type === 'parameter'">
+
+            <!-- Specimen Filtering & Adjustment Toolbar -->
+            <div class="specimen-toolbar bg-light border rounded p-1 mb-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-1 flex-wrap">
+                <span class="text-muted text-xxs fw-semibold me-1">
+                  <i class="bi bi-filter-circle me-1 text-danger"></i>Specimen View:
+                </span>
+                <!-- All Specimens Tab -->
+                <button type="button" class="spm-filter-pill"
+                        [ngClass]="{ 'active': selectedSpecimenFilter === 'all' }"
+                        (click)="setSpecimenFilter('all')">
+                  All Specimens ({{ parametersFormArray?.length || 0 }})
+                </button>
+                <!-- Individual Specimen Tabs -->
+                <button *ngFor="let spm of specimens; let spmIdx = index"
+                        type="button" class="spm-filter-pill"
+                        [ngClass]="{ 'active': selectedSpecimenFilter === (spmIdx + 1) }"
+                        (click)="setSpecimenFilter(spmIdx + 1)">
+                  {{ spm.id }} ({{ getBaseParameterCount() }})
+                </button>
+              </div>
+
+              <!-- Specimen & Parameter Quick Adjustment Buttons -->
+              <div class="d-flex align-items-center gap-1" *ngIf="!isViewMode && !isLocked">
+                <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()" title="Add custom parameter">
+                  <i class="bi bi-plus-square me-1"></i><span>+ Parameter</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Parameters Table -->
+            <div class="table-responsive">
+              <table class="table lims-data-grid align-middle mb-1">
+                <thead class="text-center">
+                  <tr>
+                    <th class="w-col-35">#</th>
+                    <th class="w-col-50">Spm</th>
+                    <th class="text-start w-col-24p">Parameter Name</th>
+                    <th class="w-col-80">Source</th>
+                    <th *ngIf="s.config?.columns?.unit !== false" class="w-col-75">Unit</th>
+                    <th *ngIf="s.config?.columns?.requirement !== false" class="w-col-130">Requirement</th>
+                    <th class="w-col-145">Result (Observed)</th>
+                    <th *ngIf="s.config?.columns?.status !== false" class="w-col-90">Status</th>
+                    <th *ngIf="s.config?.columns?.method" class="w-col-160">Method / Standard</th>
+                    <th *ngIf="s.config?.columns?.uncertainty" class="w-col-100">Uncertainty (±)</th>
+                    <th *ngIf="s.config?.columns?.remarks" class="w-col-140">Remarks</th>
+                    <th class="w-col-75">Actions</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="parameters" *ngIf="parametersFormArray">
+
+                  <ng-container *ngFor="let r of getFilteredParamIndices()">
+
+                    <!-- Specimen Group Divider (shown only in All Specimens view at boundary) -->
+                    <tr *ngIf="selectedSpecimenFilter === 'all' && isFirstParamOfSpecimen(r)" class="specimen-group-divider">
+                      <td colspan="12" class="py-1 px-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                          <span class="fw-bold text-dark font-monospace">
+                            <i class="bi bi-box-seam me-1 text-danger"></i>
+                            Specimen {{ getSpecimenIndexForParam(r) + 1 }} ({{ getSpecimenLabelForParam(r) }})
+                          </span>
+                          <span class="badge bg-white text-muted border text-xxs font-monospace">
+                            {{ getBaseParameterCount() }} Parameters
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Parameter Row -->
+                    <tr [formGroupName]="r"
+                        [ngClass]="{
+                          'table-danger-subtle': parametersFormArray.at(r).value.isWithinLimit === false,
+                          'table-success-subtle': parametersFormArray.at(r).value.isWithinLimit === true
+                        }">
+
+                      <!-- Index -->
+                      <td class="text-center text-muted small fw-semibold">{{ r + 1 }}</td>
+
+                      <!-- Specimen Badge -->
+                      <td class="text-center">
+                        <span class="badge bg-secondary-subtle text-secondary font-monospace px-2 py-1">
+                          {{ getSpecimenLabelForParam(r) }}
+                        </span>
+                      </td>
+
+                      <!-- Parameter Name -->
+                      <td class="text-start">
+                        <div class="d-flex align-items-center gap-2">
+                          <i *ngIf="isParameterCalculated(parametersFormArray.at(r).value)" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                          <span class="fw-semibold text-dark">{{ parametersFormArray.at(r).value.parameterName }}</span>
+                        </div>
+                      </td>
+
+                      <!-- Parameter Source Badge -->
+                      <td class="text-center">
+                        <span class="badge {{ getParameterSource(parametersFormArray.at(r).value).badgeClass }}"
+                              [title]="getParameterSource(parametersFormArray.at(r).value).tooltip">
+                          <i class="bi {{ getParameterSource(parametersFormArray.at(r).value).icon }} me-1"></i>
+                          {{ getParameterSource(parametersFormArray.at(r).value).label }}
+                        </span>
+                      </td>
+
+                      <!-- Unit -->
+                      <td *ngIf="s.config?.columns?.unit !== false" class="text-center">
+                        <ng-container *ngIf="parametersFormArray.at(r).value.unitOptions?.length > 1; else plainUnit">
+                          <select class="form-select form-select-xs" formControlName="selectedUnit" (change)="onUnitSelect(r)">
+                            <option *ngFor="let opt of parametersFormArray.at(r).value.unitOptions" [value]="opt.unitName">{{ opt.unitName }}</option>
+                          </select>
+                        </ng-container>
+                        <ng-template #plainUnit>
+                          <span class="text-muted small">{{ parametersFormArray.at(r).value.unit || '—' }}</span>
+                        </ng-template>
+                      </td>
+
+                      <!-- Requirement -->
+                      <td *ngIf="s.config?.columns?.requirement !== false" class="text-center">
+                        <span class="badge bg-light text-dark border px-2 py-1 font-monospace text-xs">
+                          {{ formatRequirement(parametersFormArray.at(r).value) }}
+                        </span>
+                      </td>
+
+                      <!-- Observed Result Input -->
+                      <td>
+                        <!-- 1. Calculated parameter: Readonly -->
+                        <ng-container *ngIf="isParameterCalculated(parametersFormArray.at(r).value)">
+                          <input type="text" class="form-control form-control-xs text-center font-monospace bg-light fw-bold text-primary num-tabular"
+                                 formControlName="value"
+                                 readonly
+                                 [title]="'Calculated: ' + (getFormulaDisplay(parametersFormArray.at(r).value) || 'Formula')"
+                                 placeholder="Auto" />
+                        </ng-container>
+
+                        <!-- 2. Boolean: Pass / Fail -->
+                        <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType === 'Boolean'">
+                          <select class="form-select form-select-xs fw-semibold text-center" formControlName="value" (change)="onParameterInputChange(r)">
+                            <option [ngValue]="null">Select...</option>
+                            <option value="Pass">Pass</option>
+                            <option value="Fail">Fail</option>
+                            <option value="Satisfactory">Satisfactory</option>
+                            <option value="Not Satisfactory">Not Satisfactory</option>
+                          </select>
+                        </ng-container>
+
+                        <!-- 3. Dropdown Options -->
+                        <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType === 'Dropdown' && (parametersFormArray.at(r).value.dropdownOptions?.length || 0) > 0">
+                          <select class="form-select form-select-xs fw-semibold" formControlName="value" (change)="onParameterInputChange(r)">
+                            <option [ngValue]="null">Select...</option>
+                            <option *ngFor="let opt of parametersFormArray.at(r).value.dropdownOptions" [value]="opt.value || opt.displayText">
+                              {{ opt.displayText || opt.value }}
+                            </option>
+                          </select>
+                        </ng-container>
+
+                        <!-- 4. Numeric / Decimal / Default Input -->
+                        <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType !== 'Boolean' && (parametersFormArray.at(r).value.inputType !== 'Dropdown' || !(parametersFormArray.at(r).value.dropdownOptions?.length))">
+                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace fw-semibold num-tabular"
+                                 formControlName="value"
+                                 (input)="onParameterInputChange(r)"
+                                 [readOnly]="isViewMode || isLocked"
+                                 placeholder="Result..." />
+                        </ng-container>
+                      </td>
+
+                      <!-- Status Badge -->
+                      <td *ngIf="s.config?.columns?.status !== false" class="text-center">
+                        <span *ngIf="parametersFormArray.at(r).value.isWithinLimit === true" class="status-pill-lims status-pill-pass">
+                          PASS
+                        </span>
+                        <span *ngIf="parametersFormArray.at(r).value.isWithinLimit === false" class="status-pill-lims status-pill-fail">
+                          FAIL
+                        </span>
+                        <span *ngIf="parametersFormArray.at(r).value.isWithinLimit == null" class="status-pill-lims status-pill-pending">
+                          PENDING
+                        </span>
+                      </td>
+
+                      <!-- Method / Standard -->
+                      <td *ngIf="s.config?.columns?.method" class="text-center text-muted small text-truncate" [title]="getCleanTestMethod(parametersFormArray.at(r).value)">
+                        {{ getCleanTestMethod(parametersFormArray.at(r).value) }}
+                      </td>
+
+                      <!-- Uncertainty -->
+                      <td *ngIf="s.config?.columns?.uncertainty" class="text-center text-muted small font-monospace">
+                        &plusmn; 0.25
+                      </td>
+
+                      <!-- Remarks -->
+                      <td *ngIf="s.config?.columns?.remarks">
+                        <input type="text" class="form-control form-control-xs" formControlName="remarks" [readOnly]="isViewMode || isLocked" placeholder="Remark..." />
+                      </td>
+
+                      <!-- Actions -->
+                      <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="isParameterCalculated(parametersFormArray.at(r).value)"
+                                  type="button" class="btn-lims-icon"
+                                  (click)="formulaRequested.emit({ rowIdx: r, param: parametersFormArray.at(r).value })" title="Formula Details">
+                            <i class="bi bi-calculator"></i>
+                          </button>
+                          <button *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && !isViewMode && !isLocked"
+                                  type="button" class="btn-lims-icon"
+                                  (click)="multipleReadingsRequested.emit({ rowIdx: r, param: parametersFormArray.at(r).value })" title="Multiple Indentations">
+                            <i class="bi bi-hash"></i>
+                          </button>
+                          <button *ngIf="!isViewMode && !isLocked && parametersFormArray.length > 1"
+                                  type="button" class="btn-lims-icon btn-lims-delete"
+                                  (click)="removeParameter(r)" title="Remove parameter from this test">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+
+                    </tr>
+                  </ng-container>
+
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 5: MULTI-READING MATRIX (reading)                    -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'reading'">
+            <div class="reading-matrix-section">
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle result-table mb-1">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="text-start w-col-220">Target Parameter</th>
+                      <th *ngFor="let rNum of [1, 2, 3, 4, 5]" class="w-col-90">R{{ rNum }}</th>
+                      <th class="w-col-100 bg-primary-subtle text-primary">Mean / Avg</th>
+                      <th class="w-col-80">Min</th>
+                      <th class="w-col-80">Max</th>
+                      <th class="w-col-95">Std Dev (&sigma;)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="fw-semibold text-start">
+                        <i class="bi bi-hash me-1 text-danger"></i>
+                        <span>{{ s.config?.targetParameter || getTargetParamName() }}</span>
+                      </td>
+                      <td *ngFor="let rNum of [1, 2, 3, 4, 5]; let rIdx = index">
+                        <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                               [ngModel]="getReadingVal(s.config?.targetParameter || getTargetParamName(), rIdx)"
+                               [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="onReadingChange(s.config?.targetParameter || getTargetParamName(), rIdx, $event)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="—" />
+                      </td>
+                      <td class="text-center font-monospace fw-bold text-danger fs-7">
+                        {{ getReadingStat(s.config?.targetParameter || getTargetParamName(), 'avg') }}
+                      </td>
+                      <td class="text-center font-monospace text-muted">
+                        {{ getReadingStat(s.config?.targetParameter || getTargetParamName(), 'min') }}
+                      </td>
+                      <td class="text-center font-monospace text-muted">
+                        {{ getReadingStat(s.config?.targetParameter || getTargetParamName(), 'max') }}
+                      </td>
+                      <td class="text-center font-monospace text-muted">
+                        {{ getReadingStat(s.config?.targetParameter || getTargetParamName(), 'stdev') }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 6: CASE DEPTH TRAVERSE (traverse)                   -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'traverse'">
+            <div class="row g-2">
+              <div class="col-md-7">
+                <table class="table table-sm table-bordered align-middle result-table mb-1">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th>Distance from Surface (mm)</th>
+                      <th *ngFor="let pt of traversePoints">{{ pt.distance }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="fw-semibold text-start">Hardness Value (HV)</td>
+                      <td *ngFor="let pt of traversePoints; let ptIdx = index">
+                        <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                               [(ngModel)]="pt.hardness"
+                               [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="onTraverseChange(ptIdx, $event)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="HV..." />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="col-md-5">
+                <div class="border rounded p-2 bg-light text-center h-100 d-flex flex-column justify-content-between">
+                  <span class="text-xxs fw-semibold text-muted mb-1 d-block">Traverse Hardness Profile vs Distance</span>
+                  <svg viewBox="0 0 400 120" class="svg-traverse-curve">
+                    <line x1="30" y1="15" x2="30" y2="110" stroke="#cbd5e1" stroke-width="1.5" />
+                    <line x1="30" y1="110" x2="380" y2="110" stroke="#cbd5e1" stroke-width="1.5" />
+                    <line x1="30" y1="65" x2="380" y2="65" stroke="#b54708" stroke-dasharray="4 3" stroke-width="1.5" />
+                    <text x="375" y="60" font-size="8" fill="#b54708" text-anchor="end">Cutoff {{ cutoffLimit }} HV</text>
+                    <polyline [attr.points]="getTraversePolyline()" fill="none" stroke="#da261c" stroke-width="2.5" />
+                  </svg>
+                  <div class="d-flex align-items-center justify-content-between mt-1 px-1">
+                    <span class="small text-muted">Effective Case Depth:</span>
+                    <span class="badge bg-danger fs-7 font-monospace">{{ effectiveCaseDepth != null ? (effectiveCaseDepth + ' mm') : 'Pending' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 7: STRESS-STRAIN / LOAD CURVE (chart / graph)        -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'chart' || s.type === 'graph'">
+            <div class="chart-box border rounded p-2 bg-light" *ngIf="getStressStrainChartData() as chart">
+              <div class="d-flex align-items-center justify-content-between mb-2 px-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fw-semibold small text-danger">Engineering Stress vs Strain Curve</span>
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 6892-1 / ASTM E8</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs">
+                    <i class="bi bi-activity me-1"></i>Real-time Synchronized
+                  </span>
+                </div>
+              </div>
+
+              <!-- Interactive / Scaled SVG Chart Canvas -->
+              <svg viewBox="0 0 760 215" class="svg-full-curve w-100">
+                <!-- Background Grid Lines -->
+                <line x1="65" y1="25" x2="730" y2="25" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="65" y1="55" x2="730" y2="55" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="65" y1="85" x2="730" y2="85" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="65" y1="115" x2="730" y2="115" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="65" y1="145" x2="730" y2="145" stroke="#e2e8f0" stroke-dasharray="3 3" />
+
+                <!-- Vertical Grid Lines (Strain %) -->
+                <line x1="160" y1="25" x2="160" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="255" y1="25" x2="255" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="350" y1="25" x2="350" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="445" y1="25" x2="445" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="540" y1="25" x2="540" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <line x1="635" y1="25" x2="635" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+
+                <!-- Axes -->
+                <line x1="65" y1="15" x2="65" y2="175" stroke="#64748b" stroke-width="1.8" />
+                <line x1="65" y1="175" x2="735" y2="175" stroke="#64748b" stroke-width="1.8" />
+
+                <!-- Y-Axis Tick Labels (Stress in MPa) -->
+                <text x="58" y="28" font-size="9" text-anchor="end" fill="#64748b" font-weight="600">600</text>
+                <text x="58" y="58" font-size="9" text-anchor="end" fill="#64748b">500</text>
+                <text x="58" y="88" font-size="9" text-anchor="end" fill="#64748b">400</text>
+                <text x="58" y="118" font-size="9" text-anchor="end" fill="#64748b">300</text>
+                <text x="58" y="148" font-size="9" text-anchor="end" fill="#64748b">200</text>
+                <text x="58" y="178" font-size="9" text-anchor="end" fill="#64748b" font-weight="600">0</text>
+
+                <!-- X-Axis Tick Labels (Strain % / Elongation) -->
+                <text x="65" y="192" font-size="9" text-anchor="middle" fill="#64748b" font-weight="600">0%</text>
+                <text x="160" y="192" font-size="9" text-anchor="middle" fill="#64748b">5%</text>
+                <text x="255" y="192" font-size="9" text-anchor="middle" fill="#64748b">10%</text>
+                <text x="350" y="192" font-size="9" text-anchor="middle" fill="#64748b">15%</text>
+                <text x="445" y="192" font-size="9" text-anchor="middle" fill="#64748b">20%</text>
+                <text x="540" y="192" font-size="9" text-anchor="middle" fill="#64748b">25%</text>
+                <text x="635" y="192" font-size="9" text-anchor="middle" fill="#64748b">30%</text>
+                <text x="730" y="192" font-size="9" text-anchor="middle" fill="#64748b">35%</text>
+
+                <!-- Axis Titles -->
+                <text x="400" y="208" font-size="10" text-anchor="middle" fill="#475569" font-weight="600">Strain (%) / Elongation</text>
+                <text transform="translate(18,95) rotate(-90)" font-size="10" text-anchor="middle" fill="#475569" font-weight="600">Engineering Stress (MPa)</text>
+
+                <!-- Dashed Projection Drop Lines for Key Points -->
+                <!-- Yield Point Drop Lines -->
+                <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="65" [attr.y2]="chart.yieldPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
+                <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="chart.yieldPt.x" y2="175" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
+
+                <!-- Peak Drop Line -->
+                <line [attr.x1]="chart.peakPt.x" [attr.y1]="chart.peakPt.y" [attr.x2]="65" [attr.y2]="chart.peakPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
+
+                <!-- Rupture Drop Line -->
+                <line [attr.x1]="chart.rupturePt.x" [attr.y1]="chart.rupturePt.y" [attr.x2]="chart.rupturePt.x" y2="175" stroke="#475569" stroke-dasharray="3 2" stroke-width="1.2" />
+
+                <!-- Dynamic Stress vs Strain Polyline/Curve -->
+                <path [attr.d]="chart.curvePath" fill="none" stroke="#da261c" stroke-width="2.8" stroke-linejoin="round" />
+
+                <!-- Markers & Value Callouts -->
+                <!-- 1. Yield Point (0.2% Proof Stress) -->
+                <circle [attr.cx]="chart.yieldPt.x" [attr.cy]="chart.yieldPt.y" r="4.5" fill="#da261c" stroke="#ffffff" stroke-width="1.5" />
+                <rect [attr.x]="chart.yieldPt.x + 8" [attr.y]="chart.yieldPt.y - 18" width="105" height="18" rx="3" fill="#ffffff" stroke="#da261c" stroke-width="1" />
+                <text [attr.x]="chart.yieldPt.x + 12" [attr.y]="chart.yieldPt.y - 5" font-size="9.5" fill="#da261c" font-weight="700">
+                  Rp0.2: {{ chart.rp }} MPa
+                </text>
+
+                <!-- 2. Ultimate Tensile Strength (Peak) -->
+                <circle [attr.cx]="chart.peakPt.x" [attr.cy]="chart.peakPt.y" r="5" fill="#b91c1c" stroke="#ffffff" stroke-width="1.5" />
+                <rect [attr.x]="chart.peakPt.x - 55" [attr.y]="chart.peakPt.y - 22" width="115" height="18" rx="3" fill="#ffffff" stroke="#b91c1c" stroke-width="1" />
+                <text [attr.x]="chart.peakPt.x + 2" [attr.y]="chart.peakPt.y - 9" font-size="9.5" fill="#b91c1c" font-weight="700" text-anchor="middle">
+                  Rm (Peak): {{ chart.rm }} MPa
+                </text>
+
+                <!-- 3. Rupture / Fracture Point -->
+                <circle [attr.cx]="chart.rupturePt.x" [attr.cy]="chart.rupturePt.y" r="4.5" fill="#475569" stroke="#ffffff" stroke-width="1.5" />
+                <rect [attr.x]="chart.rupturePt.x - 75" [attr.y]="chart.rupturePt.y - 20" width="75" height="18" rx="3" fill="#ffffff" stroke="#475569" stroke-width="1" />
+                <text [attr.x]="chart.rupturePt.x - 38" [attr.y]="chart.rupturePt.y - 7" font-size="9.5" fill="#475569" font-weight="700" text-anchor="middle">
+                  A: {{ chart.el }}%
+                </text>
+              </svg>
+
+              <!-- Live Key Metrics Ribbon -->
+              <div class="row g-2 mt-1 px-1">
+                <div class="col-md-3 col-6">
+                  <div class="metric-card p-2 rounded border bg-white text-center">
+                    <span class="text-xxs text-muted d-block">0.2% Proof Stress (Rp0.2)</span>
+                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rp }} MPa</span>
+                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;250)</span>
+                  </div>
+                </div>
+                <div class="col-md-3 col-6">
+                  <div class="metric-card p-2 rounded border bg-white text-center">
+                    <span class="text-xxs text-muted d-block">Tensile Strength (Rm)</span>
+                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rm }} MPa</span>
+                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (485–650)</span>
+                  </div>
+                </div>
+                <div class="col-md-3 col-6">
+                  <div class="metric-card p-2 rounded border bg-white text-center">
+                    <span class="text-xxs text-muted d-block">Elongation (A%)</span>
+                    <span class="fw-bold text-primary font-monospace fs-7">{{ chart.el }} %</span>
+                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;22.0)</span>
+                  </div>
+                </div>
+                <div class="col-md-3 col-6">
+                  <div class="metric-card p-2 rounded border bg-white text-center">
+                    <span class="text-xxs text-muted d-block">Reduction of Area (Z%)</span>
+                    <span class="fw-bold text-success font-monospace fs-7">{{ chart.ra }} %</span>
+                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;30.0)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 8: DERIVED CALCULATIONS & FORMULAS (calc / formula) -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'calc' || s.type === 'formula'">
+            <div class="row g-2">
+              <ng-container *ngFor="let p of test?.parameters; let pIdx = index">
+                <div class="col-md-4 col-sm-6" *ngIf="p.isCalculated || p.formulaExpression">
+                  <div class="formula-card p-2 rounded border bg-light h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">
+                          {{ getSpecimenLabelForParam(pIdx) }}
+                        </span>
+                        <span class="fw-semibold small text-dark">{{ p.parameterName }}</span>
+                      </div>
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle">&fnof;</span>
+                    </div>
+                    <code class="formula-expr-pill d-block mb-2 p-1 rounded font-monospace text-xxs bg-white border">
+                      {{ getFormulaDisplay(p) || 'Automated Calculation' }}
+                    </code>
+                    <div class="d-flex align-items-center justify-content-between">
+                      <span class="text-muted text-xxs">Evaluated Result:</span>
+                      <span class="fw-bold text-danger font-monospace fs-7">{{ p.value != null ? (p.value + ' ' + (p.unit || '')) : 'Pending' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 9: REMARKS & STATEMENTS (narrative / rem)           -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'narrative' || s.type === 'rem'">
+            <div class="narrative-box">
+              <textarea class="form-control form-control-xs" rows="3"
+                        formControlName="remarks"
+                        [readOnly]="isViewMode || isLocked"
+                        placeholder="Enter technical observations, fracture appearance, or conformance statement..."></textarea>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 10: QUALITY CHECKLIST (checklist)                   -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'checklist'">
+            <div class="checklist-grid d-flex flex-column gap-2">
+              <div *ngFor="let item of checklistItems" class="checklist-row p-2 rounded border bg-light d-flex align-items-center justify-content-between">
+                <span class="small fw-semibold text-dark">{{ item.label }}</span>
+                <div class="btn-group btn-group-xs" role="group">
+                  <button type="button" class="btn" [ngClass]="item.status === 'Pass' ? 'btn-success' : 'btn-outline-secondary'"
+                          (click)="setChecklistStatus(item, 'Pass')">Pass</button>
+                  <button type="button" class="btn" [ngClass]="item.status === 'Fail' ? 'btn-danger' : 'btn-outline-secondary'"
+                          (click)="setChecklistStatus(item, 'Fail')">Fail</button>
+                  <button type="button" class="btn" [ngClass]="item.status === 'NA' ? 'btn-secondary' : 'btn-outline-secondary'"
+                          (click)="setChecklistStatus(item, 'NA')">N/A</button>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 11: MICROGRAPH & PHOTO GALLERY (photo)             -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'photo'">
+            <div class="photo-gallery-section">
+              <div *ngIf="testImages.length === 0" class="text-center py-3 bg-light rounded border border-dashed">
+                <i class="bi bi-images fs-3 text-muted d-block mb-1"></i>
+                <span class="small text-muted d-block">No microstructure or test images attached.</span>
+                <button *ngIf="!isViewMode && !isLocked" type="button" class="btn btn-xs btn-lims btn-lims-add mt-2" (click)="photoUploadRequested.emit()">
+                  <i class="bi bi-upload me-1"></i><span>Attach Image</span>
+                </button>
+              </div>
+              <div *ngIf="testImages.length > 0" class="row g-2">
+                <div class="col-md-3 col-sm-6" *ngFor="let img of testImages">
+                  <div class="photo-card border rounded p-2 bg-light text-center">
+                    <img [src]="img.url" class="img-fluid rounded mb-1 photo-thumbnail" [alt]="img.name || 'Test Image'" />
+                    <span class="d-block text-xxs text-truncate text-muted">{{ img.name || 'Microstructure' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 12: SIGN-OFF & REVIEW BLOCK (sign)                  -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'sign'">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="sign-box p-2 rounded border bg-light">
+                  <span class="text-xxs text-muted d-block mb-1">Tested & Recorded By:</span>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold small text-dark">{{ timingData?.performedByName || 'Laboratory Analyst' }}</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs">Completed</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="sign-box p-2 rounded border bg-light">
+                  <span class="text-xxs text-muted d-block mb-1">Technical Reviewer / Verifier:</span>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold small text-dark">Authorized Signatory</span>
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle text-xxs">Pending Review</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+        </div>
+      </div>
+
+    </ng-container>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. QUICK-ADD PARAMETER MODAL (Custom LIMS Standard Dialog)                 -->
+  <!-- ========================================================================= -->
+  <div class="custom-modal-backdrop" *ngIf="showAddParamModal">
+    <div class="custom-modal-dialog">
+      <div class="custom-modal-content card border-0 shadow-lg">
+
+        <!-- Header -->
+        <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+          <h6 class="mb-0 fw-semibold text-danger d-flex align-items-center">
+            <i class="bi bi-plus-square me-2"></i><span>Add Custom Test Parameter</span>
+          </h6>
+          <button type="button" class="btn-close" (click)="closeAddParamModal()" aria-label="Close"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body p-3">
+          <div class="row g-2">
+            <div class="col-md-8">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Parameter Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" [(ngModel)]="newParamData.parameterName" placeholder="e.g. Yield Point Elongation (Ae)" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Unit</label>
+              <input type="text" class="form-control form-control-sm" [(ngModel)]="newParamData.unit" placeholder="e.g. %, MPa, kN" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Input Type</label>
+              <select class="form-select form-select-sm" [(ngModel)]="newParamData.inputType">
+                <option value="Decimal">Decimal / Number</option>
+                <option value="Text">Text</option>
+                <option value="Boolean">Pass / Fail</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Min Value</label>
+              <input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="newParamData.minValue" placeholder="Min limit" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Max Value</label>
+              <input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="newParamData.maxValue" placeholder="Max limit" />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Acceptance Criteria</label>
+              <input type="text" class="form-control form-control-sm" [(ngModel)]="newParamData.acceptanceCriteria" placeholder="e.g. Min 20% or As Agreed" />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Test Method Used</label>
+              <input type="text" class="form-control form-control-sm" [(ngModel)]="newParamData.testMethodUsed" placeholder="Method standard name" />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Apply To</label>
+              <div class="d-flex gap-3">
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="applyTo" id="applyAll" value="all" [(ngModel)]="newParamData.applyTo" />
+                  <label class="form-check-label text-xs" for="applyAll">All Specimens ({{ specimens.length }})</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="applyTo" id="applyCurrent" value="current" [(ngModel)]="newParamData.applyTo" />
+                  <label class="form-check-label text-xs" for="applyCurrent">Single Specimen Only</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer bg-light py-2 px-3 border-top d-flex align-items-center justify-content-end gap-2">
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="closeAddParamModal()">Cancel</button>
+          <button type="button" class="btn-lims btn-lims-save" (click)="submitAddParam()" [disabled]="!newParamData.parameterName.trim()">
+            <i class="bi bi-check-circle me-1"></i><span>Add Parameter</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

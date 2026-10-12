@@ -312,7 +312,7 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
     requestAnimationFrame(() => {
       if (this.navbar?.nativeElement) {
         this.navbarHeight = this.navbar.nativeElement.offsetHeight;
-        document.documentElement.style.setProperty('--nav-height', `${this.navbarHeight + 5}px`);
+        document.documentElement.style.setProperty('--nav-height', `${this.navbarHeight}px`);
         this.cdr.detectChanges();
       }
     });

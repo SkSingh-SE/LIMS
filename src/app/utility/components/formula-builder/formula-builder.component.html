@@ -179,7 +179,7 @@
                   <div class="d-flex flex-wrap gap-1" style="max-height: 150px; overflow-y: auto;">
                     <button *ngFor="let p of availableParameters" type="button"
                       class="badge bg-light text-dark border p-2" style="font-size: 0.8rem; cursor: pointer;"
-                      (click)="insertSmartParam(p.name || p.displayText)" [title]="'ID: ' + (p.id || p.value)">
+                      (click)="insertSmartParam(p.name || p.displayText)" [title]="p.name || p.displayText">
                       {{ p.name || p.displayText }}
                     </button>
                   </div>
@@ -191,7 +191,7 @@
                     <span *ngFor="let t of smartTokens" class="d-inline">
                       <span *ngIf="t.type === 'param'"
                         class="badge bg-success-subtle text-success border border-success me-1 mb-1"
-                        [title]="t.matched + ' → ' + t.paramRef">{{ t.token }} <i
+                        [title]="t.matched || t.token">{{ t.token }} <i
                           class="bi bi-check-circle-fill ms-1"></i></span>
                       <span *ngIf="t.type === 'number'"
                         class="badge bg-info-subtle text-info border border-info me-1 mb-1">{{ t.token }}</span>

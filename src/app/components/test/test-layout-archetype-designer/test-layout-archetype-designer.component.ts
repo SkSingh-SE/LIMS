@@ -7,6 +7,7 @@ import { ToastService } from '../../../services/toast.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { TestLayoutService, TestLayoutTemplateDto } from '../../../services/test-layout.service';
+import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 
 export interface SectionColumnsConfig {
   unit?: boolean;
@@ -3043,7 +3044,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         id: p.id,
         field: p.name.replace(/\s+/g, '_'),
         label: p.name,
-        formula: p.formulaDisplay || p.formula || `${p.name} = Formula`,
+        formula: (p.formulaDisplay && !/\{?P\d+\}?/i.test(p.formulaDisplay)) ? p.formulaDisplay : (formatFormulaDisplay(p.formula, test.params) || `${p.name} = Formula`),
         unit: p.unit,
         targetParam: p.name,
         isCalculated: true,
@@ -3271,6 +3272,11 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     sec.config.inputs = sec.config.inputFields.join(', ');
   }
 
+  formatFormula(rawFormula: string | undefined): string {
+    if (!rawFormula) return '';
+    return formatFormulaDisplay(rawFormula, this.currentDataset?.parameters || []);
+  }
+
   // Section data binding description summary
   getSectionBindingSummary(sec: ExecutionSection): string {
     switch (sec.type) {
@@ -3296,7 +3302,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         const totalConds = this.currentDataset.conditions.length;
         return `${cFields} of ${totalConds} conditions active in pool`;
       case 'formula':
-        return `Target: ${sec.config.targetOutput || sec.config.resultLabel || 'Derived Result'} (${sec.config.formulaExpression || 'Calculated'})`;
+        return `Target: ${sec.config.targetOutput || sec.config.resultLabel || 'Derived Result'} (${this.formatFormula(sec.config.formulaExpression) || 'Calculated'})`;
       default:
         return `Live mapped to ${this.currentTest.label}`;
     }

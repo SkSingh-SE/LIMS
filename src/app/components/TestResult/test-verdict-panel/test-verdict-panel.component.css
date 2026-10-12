@@ -1,0 +1,38 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.table-sm th,
+.table-sm td {
+  padding: 0.28rem 0.5rem;
+  font-size: 0.76rem;
+}
+
+.w-col-22p {
+  width: 22%;
+}
+
+.w-col-35 {
+  width: 35px;
+}
+
+.w-col-65 {
+  width: 65px;
+}
+
+.w-col-95 {
+  width: 95px;
+}
+
+.w-col-100 {
+  width: 100px;
+}
+
+.w-col-110 {
+  width: 110px;
+}
+
+.w-col-130 {
+  width: 130px;
+}

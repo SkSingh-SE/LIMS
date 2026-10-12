@@ -344,7 +344,7 @@
           <div *ngIf="ParameterForm.value.isCalculated" class="col-12 my-1">
             <label class="form-label">Formula</label>
             <div class="input-group">
-              <input type="text" class="form-control" formControlName="formulaDisplay" placeholder="{Carbon} + {Manganese}" readonly />
+              <input type="text" class="form-control" formControlName="formulaDisplay" placeholder="e.g. (Yield Load * 1000) / Cross Section Area" readonly />
               <button type="button" class="btn btn-add btn-sm" (click)="openFormulaBuilder()">
                 <i class="bi bi-gear me-1"></i><span>Build Formula</span>
               </button>

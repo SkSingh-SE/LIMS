@@ -1136,7 +1136,7 @@
                     <td class="fw-semibold text-start text-truncate" title="{{ p.name }}">
                       {{ p.name }}
                       <span class="badge bg-success-subtle text-success ms-1 font-monospace" *ngIf="p.isCalculated"
-                        title="{{ p.formulaDisplay || p.formula }}">
+                        [title]="p.formulaDisplay || formatFormula(p.formula)">
                         <i class="bi bi-calculator me-1"></i>ƒx
                       </span>
                     </td>
@@ -2248,8 +2248,7 @@
                     <div>
                       <span class="fw-semibold">{{ s.config.resultLabel || s.config.targetOutput || 'Calculated Result'
                         }}</span>
-                      <div class="small text-muted font-monospace mt-1">{{ s.config.formulaSource ||
-                        s.config.formulaExpression || 'No formula mapped' }}</div>
+                      <div class="small text-muted font-monospace mt-1">{{ formatFormula(s.config.formulaSource || s.config.formulaExpression) || 'No formula mapped' }}</div>
                     </div>
                   </div>
                   <div class="text-end">

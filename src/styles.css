@@ -62,6 +62,43 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   GLOBAL COMPACT FORM CONTROLS STANDARDIZATION (28px)
+   Guarantees uniform height across inputs, selects, & dropdowns
+   ═══════════════════════════════════════════════════════════ */
+.form-control-sm,
+.form-select-sm,
+input.form-control-sm,
+select.form-select-sm {
+  font-size: 0.78rem !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0.15rem 0.5rem !important;
+  line-height: 1.35 !important;
+  border-radius: 4px !important;
+}
+
+app-searchable-dropdown .input-group.input-group-sm,
+app-searchable-dropdown .input-group:has(.form-control-sm) {
+  min-height: 28px !important;
+  height: 28px !important;
+}
+
+app-searchable-dropdown .input-group.input-group-sm .form-control-sm,
+app-searchable-dropdown .input-group:has(.form-control-sm) .form-control-sm {
+  font-size: 0.78rem !important;
+  padding: 0.15rem 0.5rem !important;
+  line-height: 1.35 !important;
+  height: 26px !important;
+}
+
+app-searchable-dropdown .input-group.input-group-sm .input-group-text,
+app-searchable-dropdown .input-group:has(.form-control-sm) .input-group-text {
+  padding: 0 0.35rem !important;
+  height: 26px !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
    MANDATORY GLOBAL ICON-TO-TEXT SPACING & CENTERING SYSTEM (STRICT)
    1. Icons placed beside text in buttons/links/badges maintain 6px right spacing.
    2. All icon-only buttons, circular buttons, badges, detail icons,
@@ -6439,6 +6476,62 @@ input[type="checkbox"]:checked {
   font-size: 0.75rem;
   color: #334155;
   line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL HIGH-DENSITY FORM FIELDSET, LEGEND & STICKY ACTION BAR
+   ═══════════════════════════════════════════════════════════ */
+fieldset.border.rounded,
+fieldset.border,
+fieldset.form-section-fieldset,
+fieldset.fieldset-card {
+  border: 1px solid #e2e8f0 !important;
+  border-left: 3.5px solid var(--primary-color) !important;
+  border-radius: 6px !important;
+  background-color: #ffffff;
+}
+
+legend.form-section-legend,
+fieldset > legend.w-auto,
+fieldset > legend {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px;
+  color: var(--primary-color) !important;
+}
+
+legend.form-section-legend i,
+fieldset > legend.w-auto i,
+fieldset > legend i {
+  color: var(--primary-color) !important;
+}
+
+.legend-collapse-trigger {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+
+.legend-collapse-trigger:hover {
+  opacity: 0.85;
+}
+
+fieldset.fieldset-collapsed {
+  padding-top: 0.2rem !important;
+  padding-bottom: 0.2rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  background-color: #ffffff;
+  border-top: 2px solid var(--primary-color) !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  padding: 0.5rem 0.75rem;
+  margin-top: 1rem;
+  z-index: 100;
 }
 
 

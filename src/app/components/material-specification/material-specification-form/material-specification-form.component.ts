@@ -86,7 +86,6 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   activeLineKey = signal<string | null>(null);
   lineKey(gi: number, tab: string, i: number): string { return `${gi}-${tab}-${i}`; }
 
-
   lowerLimitOptions = [
     { label: '≥', value: '≥' },
     { label: '>', value: '>' },
@@ -113,7 +112,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   gradeBaseNames: string[] = [];
 
   // Accordion open/close state
-  openSections: { [key: string]: boolean } = { header: true, headerParams: true };
+  openSections: { [key: string]: boolean } = { header: true, headerParams: true, paramList: true };
   openGrades: { [key: number]: boolean } = { 0: true };
 
   toggleSection(section: string) {

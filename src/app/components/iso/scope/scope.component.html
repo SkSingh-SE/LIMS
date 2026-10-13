@@ -26,7 +26,7 @@
               <label class="form-label-sm mb-0">
                 Laboratory Test / Technique <span class="text-danger">*</span>
               </label>
-              <a *ngIf="!isViewMode" routerLink="/test/create" target="_blank" class="btn-nav-link"
+              <a *ngIf="!isViewMode" routerLink="/test/create" target="_blank" class="btn-nav-link text-nowrap"
                 title="Manage Laboratory Tests">
                 <i class="bi bi-box-arrow-up-right me-1"></i><span>Manage Tests</span>
               </a>
@@ -43,7 +43,7 @@
           <!-- Clean Resolved Hierarchy Display -->
           <div class="col-md-6">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label-sm mb-0">Resolved Hierarchy</label>
+              <label class="form-label-sm mb-0 text-secondary">Resolved Hierarchy</label>
             </div>
             <div class="resolved-hierarchy-box d-flex align-items-center justify-content-between rounded"
               [class.has-selection]="scopeForm.get('laboratoryTestID')?.value"
@@ -60,7 +60,7 @@
         </div>
 
         <!-- Validity Tracking (Auto-populated from NABL Accreditation) & Scope Remarks -->
-        <div class="row g-2 pt-2 border-top">
+        <div class="row g-2">
           <div class="col-md-3 col-lg-2">
             <label class="form-label-sm mb-1">
               Valid From <span class="text-muted small" *ngIf="nablCertNo">(NABL)</span>
@@ -169,9 +169,9 @@
             </div>
           </legend>
 
-          <!-- Test Method Specification Dropdown & Auto-selected Spec Version -->
+          <!-- Test Method Specification Dropdown -->
           <div class="row g-2 mb-2">
-            <div class="col-md-6">
+            <div class="col-12">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <label class="form-label-sm mb-0">
                   Test Method Specification <span class="text-danger">*</span>
@@ -184,28 +184,10 @@
               <app-searchable-dropdown class="w-100" [placeholder]="'Search Test Specification'"
                 [fetchDataFn]="getTestMethodSpecification" (itemSelected)="onTestSpecificationSelected($event, i)"
                 [hideLabel]="true" [required]="true" [smallInput]="true" [isDisabled]="isViewMode"
-                [selectedItem]="spec.get('testMethodSpecificationID')?.value"
+                [selectedItem]="getSpecSelectedItem(spec)"
                 [isInvalid]="!!(spec.get('testMethodSpecificationID')?.invalid && (spec.get('testMethodSpecificationID')?.touched || submitted))"></app-searchable-dropdown>
               <app-field-error [control]="spec.get('testMethodSpecificationID')" label="Test Method Specification"
                 [submitted]="submitted" />
-            </div>
-
-            <div class="col-md-6" *ngIf="specVersionsMap.get(i)?.length">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <label class="form-label-sm mb-0">
-                  Spec Version <span class="text-muted small">(Auto-selected Latest)</span>
-                </label>
-                <div *ngIf="!isViewMode" class="form-check form-switch form-check-inline mb-0">
-                  <input class="form-check-input" type="checkbox" [id]="'showAllVersions'+i"
-                    [checked]="showAllVersionsMap.get(i)" (change)="toggleShowAllVersions(i)">
-                  <label class="form-check-label small" [for]="'showAllVersions'+i">Show All</label>
-                </div>
-              </div>
-              <select class="form-select form-select-sm" formControlName="testMethodSpecificationVersionID"
-                [attr.disabled]="isViewMode ? true : null">
-                <option [ngValue]="null">-- Default / Latest --</option>
-                <option *ngFor="let v of specVersionsMap.get(i)" [ngValue]="v.id">{{ v.name }}</option>
-              </select>
             </div>
           </div>
 

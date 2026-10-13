@@ -1,3 +1,14 @@
+:host {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+}
+
+legend {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.2px;
+}
+
 .wide-input {
   min-width: 170px;
 }
@@ -224,14 +235,17 @@
 /* ── MS-A: compact (density-only) form styling ─────────────────────────────── */
 :host .form-control,
 :host .form-select {
-  min-height: 30px;
-  padding: 0.15rem 0.4rem;
+  min-height: 28px;
+  height: 28px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
 }
 :host .form-label {
-  font-size: var(--font-xs);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.74rem;
   margin-bottom: 0.15rem;
   font-weight: 500;
-  color: var(--neutral-700);
+  color: #334155;
 }
 :host .section-body {
   padding: 0.6rem 0.75rem;

@@ -1,22 +1,24 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <div class="card w-100 shadow-lg">
-    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
-      <label class="text-md fw-medium ms-3">Material Specification Form</label>
-      <a routerLink="/material-specification" class="btn btn-outline-light btn-sm me-3">
-        <i class="bi bi-arrow-left"></i><span>Back to List</span>
-      </a>
-    </div>
-  <div class="card-body">
+<div class="card shadow-sm m-2">
+  <!-- Standard Form Header -->
+  <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
+    <a routerLink="/material-specification" class="btn btn-header-back" title="Back to List">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <span class="card-header-title fw-semibold flex-grow-1 text-center mb-0">
+      {{ isViewMode ? 'View Material Specification' : (isEditMode ? 'Edit Material Specification' : 'Create Material Specification') }}
+    </span>
+    <div class="header-balance-spacer"></div>
+  </div>
+
+  <div class="card-body p-2">
     <form [formGroup]="MaterialSpecificationForm" (ngSubmit)="onSubmit()">
 
       <!-- Section I: Header Information -->
-      <div class="accordion-section mb-3">
-        <div class="section-header" (click)="toggleSection('header')">
-          <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-          <span class="fw-bold ms-2">Header Information</span>
-        </div>
-        <div *ngIf="openSections['header']" class="section-body">
-          <input type="hidden" formControlName="aliasName" />
+      <fieldset class="border rounded p-2 mb-2 position-relative">
+        <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center gap-2">
+          <i class="bi bi-info-circle me-1"></i><span>Header Information</span>
+        </legend>
+        <input type="hidden" formControlName="aliasName" />
 
           <div class="row g-2 compact-grid">
             <div class="col-md-3">
@@ -111,16 +113,32 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
+      </fieldset>
 
       <!-- Section I-b: Header Parameter List -->
-      <div class="accordion-section mb-3">
-        <div class="section-header" (click)="toggleSection('headerParams')">
-          <i class="bi" [ngClass]="openSections['headerParams'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-          <span class="fw-bold ms-2">Specification Parameter List</span>
-        </div>
-        <div *ngIf="openSections['headerParams']" class="section-body" formGroupName="headerParameters">
+      <fieldset class="border rounded p-2 mb-2 position-relative" formGroupName="headerParameters" [class.fieldset-collapsed]="!openSections['paramList']">
+        <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center justify-content-between gap-2">
+          <span class="d-flex align-items-center gap-2 legend-collapse-trigger" (click)="toggleSection('paramList')">
+            <i class="bi bi-list-check me-1"></i>
+            <span>Specification Parameter List</span>
+            <span class="badge rounded-pill bg-light text-secondary border small fw-normal ms-1">
+              {{ headerParametersByTab('chemical').length + headerParametersByTab('mechanical').length }} Parameter{{ (headerParametersByTab('chemical').length + headerParametersByTab('mechanical').length) === 1 ? '' : 's' }}
+            </span>
+            <i class="bi ms-1" [ngClass]="openSections['paramList'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+          </span>
+          <div *ngIf="!isViewMode" class="d-flex align-items-center gap-2">
+            <button type="button" class="btn-lims btn-lims-add btn-sm"
+              (click)="$event.stopPropagation(); addHeaderParameter($any(selectedHeaderTab)); openSections['paramList'] = true;">
+              <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
+            </button>
+            <button type="button" class="btn-lims btn-lims-save btn-sm"
+              (click)="$event.stopPropagation(); saveParameterList()" title="Save specification with current parameter list">
+              <i class="bi bi-floppy me-1"></i><span>Save Parameters</span>
+            </button>
+          </div>
+        </legend>
+
+        <div *ngIf="openSections['paramList']">
           <div class="d-flex justify-content-between align-items-center border-bottom mb-2">
             <ul class="nav nav-tabs border-0">
               <li class="nav-item">
@@ -138,16 +156,6 @@
                 </a>
               </li>
             </ul>
-            <div *ngIf="!isViewMode" class="d-flex align-items-center gap-2 mb-1">
-              <button type="button" class="btn btn-sm btn-add"
-                (click)="addHeaderParameter($any(selectedHeaderTab))">
-                <i class="bi bi-plus-circle-dotted"></i><span>Add Parameter</span>
-              </button>
-              <button type="button" class="btn btn-sm btn-primary-action"
-                (click)="saveParameterList()" title="Save specification with current parameter list">
-                <i class="bi bi-floppy"></i><span>Save Parameters</span>
-              </button>
-            </div>
           </div>
 
           <ng-container *ngFor="let tab of ['chemical', 'mechanical']">
@@ -208,20 +216,28 @@
             </div>
           </ng-container>
         </div>
-      </div>
+      </fieldset>
 
       <!-- Section II: Grades -->
-      <div formArrayName="grades">
-        <div *ngIf="!isViewMode" class="d-flex justify-content-end align-items-center gap-2 mb-2">
-          <button type="button" class="btn btn-sm btn-cancel" (click)="downloadSpecTemplate()" [disabled]="importBuilding"
-            title="Download a multi-sheet Excel template (all grades & sections)">
-            <i class="bi" [ngClass]="importBuilding ? 'bi-hourglass-split' : 'bi-download'"></i><span>{{ importBuilding ? 'Preparing…' : 'Download Template' }}</span>
-          </button>
-          <button type="button" class="btn btn-sm btn-cancel" (click)="specXlsx.click()" title="Import grades & lines from filled Excel template">
-            <i class="bi bi-upload"></i><span>Import Excel</span>
-          </button>
-          <input #specXlsx type="file" accept=".xlsx" hidden (change)="onSpecFileSelected($event)" />
-        </div>
+      <fieldset class="border rounded p-2 mb-2 position-relative" formArrayName="grades">
+        <legend class="w-auto px-2 fw-semibold text-danger d-flex align-items-center justify-content-between gap-2">
+          <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-layers me-1"></i><span>Grades</span>
+          </span>
+          <div *ngIf="!isViewMode" class="d-flex align-items-center gap-2">
+            <button type="button" class="btn-lims btn-lims-add btn-sm" (click)="addGrade()" title="Add a new grade">
+              <i class="bi bi-plus-circle me-1"></i><span>Add Grade</span>
+            </button>
+            <button type="button" class="btn-lims btn-lims-cancel btn-sm" (click)="downloadSpecTemplate()" [disabled]="importBuilding"
+              title="Download a multi-sheet Excel template (all grades & sections)">
+              <i class="bi" [ngClass]="importBuilding ? 'bi-hourglass-split' : 'bi-download'"></i><span>{{ importBuilding ? 'Preparing…' : 'Template' }}</span>
+            </button>
+            <button type="button" class="btn-lims btn-lims-cancel btn-sm" (click)="specXlsx.click()" title="Import grades & lines from filled Excel template">
+              <i class="bi bi-upload me-1"></i><span>Import</span>
+            </button>
+            <input #specXlsx type="file" accept=".xlsx" hidden (change)="onSpecFileSelected($event)" />
+          </div>
+        </legend>
         <ul class="grade-tabs">
           <li *ngFor="let grade of grades.controls; let gi = index" class="grade-tab"
               [class.active]="selectedGradeIndex === gi" (click)="selectGrade(gi)"
@@ -971,18 +987,25 @@
               </div>
           </div>
         </div>
-      </div>
-      <div *ngIf="!isViewMode" class="form-action-bar">
-        <a [routerLink]="['/material-specification']" class="btn btn-cancel">
-          <i class="bi bi-x-circle"></i><span>Cancel</span>
-        </a>
-        <button type="submit" class="btn btn-save">
-          <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
-        </button>
+      </fieldset>
+
+      <!-- Sticky Action Bar -->
+      <div *ngIf="!isViewMode" class="sticky-action-bar d-flex justify-content-between align-items-center">
+        <div class="text-muted small">
+          Fields marked with <span class="text-danger">*</span> are mandatory
+        </div>
+        <div class="d-flex gap-2">
+          <a routerLink="/material-specification" class="btn-lims btn-lims-cancel d-inline-flex align-items-center gap-2">
+            <i class="bi bi-x-circle"></i><span>Cancel</span>
+          </a>
+          <button type="submit" class="btn-lims btn-lims-save d-inline-flex align-items-center gap-2">
+            <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
+          </button>
+        </div>
       </div>
     </form>
   </div>
-  </div>
+</div>
 
   <!-- Import Analyzing Loader -->
   <div *ngIf="importAnalyzing" class="import-analyzing-backdrop">
@@ -1502,4 +1525,3 @@
       </div>
     </div>
   </div>
-</div>

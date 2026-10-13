@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
@@ -127,17 +127,6 @@ export class ScopeComponent implements OnInit {
 
   removeSpecification(index: number): void {
     this.specifications.removeAt(index);
-    // Rebuild specVersionsMap indices after removal
-    const newMap = new Map<number, any[]>();
-    this.specifications.controls.forEach((spec, idx) => {
-      const specId = spec.get('testMethodSpecificationID')?.value;
-      // Try to find existing data from old map, otherwise empty
-      const oldData = this.specVersionsMap.get(idx >= index ? idx + 1 : idx);
-      if (oldData) {
-        newMap.set(idx, oldData);
-      }
-    });
-    this.specVersionsMap = newMap;
   }
 
   parameters(specIndex: number): FormArray {
@@ -449,40 +438,37 @@ export class ScopeComponent implements OnInit {
   getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
-  specVersionsMap: Map<number, any[]> = new Map();
-  showAllVersionsMap: Map<number, boolean> = new Map();
+  getSpecSelectedItem(spec: AbstractControl): any {
+    const versionId = spec.get('testMethodSpecificationVersionID')?.value;
+    const specId = spec.get('testMethodSpecificationID')?.value;
+    const name = spec.get('testMethodSpecification')?.value;
+    const id = versionId || specId;
+    if (!id) return null;
+    return { id, name: name || '' };
+  }
+
   onTestSpecificationSelected(item: any, index: number) {
+    const spec = this.specifications.at(index);
     if (!item) {
-      this.specifications.at(index).patchValue({ testMethodSpecificationID: '', testMethodSpecificationVersionID: null, testMethodSpecification: '' });
-      this.specVersionsMap.set(index, []);
+      spec.patchValue({
+        testMethodSpecificationID: '',
+        testMethodSpecificationVersionID: null,
+        testMethodSpecification: ''
+      });
       return;
     }
-    this.specifications.at(index).patchValue({ testMethodSpecificationID: item.id, testMethodSpecificationVersionID: null });
-    this.specifications.at(index).patchValue({ testMethodSpecification: item.name });
-    this.loadSpecVersionsForIndex(item.id, index);
-  };
-  loadSpecVersionsForIndex(specId: number, index: number) {
-    const includeAll = this.showAllVersionsMap.get(index) || false;
-    this.testMethodSpecificationService.getVersionsDropdown(specId, includeAll).subscribe({
-      next: (data) => {
-        this.specVersionsMap.set(index, data || []);
-        if (data && data.length > 0) {
-          const currentVersionId = this.specifications.at(index).get('testMethodSpecificationVersionID')?.value;
-          if (!currentVersionId || !data.some((v: any) => v.id === currentVersionId)) {
-            this.specifications.at(index).patchValue({ testMethodSpecificationVersionID: data[0].id });
-          }
-        }
-      },
-      error: () => { this.specVersionsMap.set(index, []); }
+
+    const tmsId = item.additionalValues?.testMethodSpecificationId || (item.additionalValues?.versionId ? null : item.id);
+    const verId = item.additionalValues?.versionId && item.additionalValues.versionId !== 0
+      ? item.additionalValues.versionId
+      : (item.nodeType === 'Version' ? item.id : null);
+    const displayName = item.additionalValues?.fullDisplayName || item.name || '';
+
+    spec.patchValue({
+      testMethodSpecificationID: tmsId || item.id,
+      testMethodSpecificationVersionID: verId || null,
+      testMethodSpecification: displayName
     });
-  }
-  toggleShowAllVersions(index: number) {
-    const current = this.showAllVersionsMap.get(index) || false;
-    this.showAllVersionsMap.set(index, !current);
-    const specId = this.specifications.at(index).get('testMethodSpecificationID')?.value;
-    if (specId) {
-      this.loadSpecVersionsForIndex(specId, index);
-    }
   }
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.parameterService.getParameterDropdown(term, page, pageSize);
@@ -747,7 +733,7 @@ export class ScopeComponent implements OnInit {
         }
         this.specifications.clear();
         data.specifications.forEach((spec: any) => {
-          const specName = spec?.testMethodSpecification?.name || spec?.testMethodSpecificationName || '';
+          const specName = spec?.fullDisplayName || spec?.testMethodSpecification?.name || spec?.testMethodSpecificationName || '';
           const specGroup = this.fb.group({
             ID: [spec.id],
             labScopeID: [data.id],
@@ -831,11 +817,6 @@ export class ScopeComponent implements OnInit {
           });
 
           this.specifications.push(specGroup);
-          // Load version dropdown for this specification
-          const specIndex = this.specifications.length - 1;
-          if (spec.testMethodSpecificationID) {
-            this.loadSpecVersionsForIndex(spec.testMethodSpecificationID, specIndex);
-          }
         });
 
         if (this.isViewMode) {

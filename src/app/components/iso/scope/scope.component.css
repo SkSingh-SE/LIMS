@@ -387,20 +387,22 @@ legend {
   line-height: 1.25;
 }
 
-/* Resolved Hierarchy Display Box */
+/* Resolved Hierarchy Display Box (Matches standard form control border and 28px height) */
 .resolved-hierarchy-box {
-  min-height: 29px;
-  height: 29px;
+  min-height: 28px;
+  height: 28px;
+  max-height: 28px;
   background-color: #ffffff;
   border: 1px solid #ced4da;
-  padding: 2px 8px;
+  padding: 0 0.5rem;
   font-size: 0.78rem;
+  border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .resolved-hierarchy-box.has-selection {
-  border-color: var(--primary-color);
-  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  background-color: #f8fafc;
 }
 
 .resolved-hierarchy-box .hierarchy-text {
@@ -410,13 +412,54 @@ legend {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 26px;
 }
 
 .resolved-hierarchy-box .hierarchy-badge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 4px;
+  line-height: 1.2;
+}
+
+/* Ensure all form controls and searchable dropdowns in scope match standard 28px height */
+.form-control-sm,
+.form-select-sm,
+input.form-control-sm,
+select.form-select-sm {
+  min-height: 28px !important;
+  height: 28px !important;
+  font-size: 0.78rem !important;
+  padding: 0.15rem 0.5rem !important;
+  line-height: 1.35 !important;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group,
+:host ::ng-deep app-searchable-dropdown .input-group.input-group-sm,
+:host ::ng-deep app-searchable-dropdown .input-group:has(.form-control-sm) {
+  min-height: 28px !important;
+  height: 28px !important;
+  max-height: 28px !important;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group input,
+:host ::ng-deep app-searchable-dropdown .input-group .form-control,
+:host ::ng-deep app-searchable-dropdown .input-group .form-control-sm {
+  font-size: 0.78rem !important;
+  padding: 0 0.5rem !important;
+  line-height: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group .input-group-text {
+  padding: 0 0.35rem !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  line-height: 26px !important;
 }
 
 /* Sticky Action Bar & Theme-compliant Horizontal Border Line */

@@ -159,7 +159,7 @@
     font-size: 13px;
     background: #f0f0f0;
     padding: 4px 8px;
-    border-left: 3px solid #da261c;
+    border-left: 3px solid var(--primary-color);
     margin-bottom: 6px;
   }
 

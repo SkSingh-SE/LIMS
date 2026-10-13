@@ -154,7 +154,7 @@
                 class="table-responsive position-relative custom-scroll"
                 style="max-height: calc(100vh - 200px)"
               >
-                <table class="table spec-table align-middle" style="min-width: 1400px">
+                <table class="table spec-table align-middle" style="min-width: 1540px">
                   <thead>
                     <tr class="text-nowrap">
                       <th class="spec-th text-center">#</th>
@@ -249,32 +249,37 @@
                           [labelName]="'Discipline'"
                           [fetchDataFn]="getDiscipline"
                           [smallInput]="true"
-                          (itemSelected)="onDisciplineSelected($event, i, j)"
+                          (itemSelected)="onDisciplineSelected($event, param)"
                           [isDisabled]="isViewMode"
                           [hideLabel]="true"
                           [selectedItem]="param.get('disciplineID')?.value"
                         ></app-searchable-dropdown>
                       </td>
-                      <td>
-                        <select
-                          class="form-select form-select-sm wide-input"
-                          formControlName="groupID"
-                          (change)="onGroupSelected($event, i, j)"
-                        >
-                          <option value="null" disabled>Select Group</option>
-                          <option *ngFor="let group of groupOptionsPerParam[i + '-' + j] || []" [value]="group.id">{{ group.name }}</option>
-                        </select>
+                      <td class="wide-input">
+                        <app-searchable-dropdown
+                          [placeholder]="'Search Group'"
+                          [labelName]="'Group'"
+                          [fetchDataFn]="getGroupFetchFn(param)"
+                          [smallInput]="true"
+                          [reloadKey]="param.get('disciplineID')?.value"
+                          (itemSelected)="onGroupSelected($event, param)"
+                          [isDisabled]="isViewMode || !param.get('disciplineID')?.value"
+                          [hideLabel]="true"
+                          [selectedItem]="param.get('groupID')?.value"
+                        ></app-searchable-dropdown>
                       </td>
-                      <td>
-                        <select
-                          class="form-select form-select-sm wide-input"
-                          formControlName="subGroupID"
-                        >
-                          <option value="null" disabled>Select Sub Group</option>
-                          <option *ngFor="let subGroup of subGroupOptionsPerParam[i + '-' + j] || []" [value]="subGroup.id">
-                            {{ subGroup.name }}
-                          </option>
-                        </select>
+                      <td class="wide-input">
+                        <app-searchable-dropdown
+                          [placeholder]="'Search Sub-Group'"
+                          [labelName]="'Sub-Group'"
+                          [fetchDataFn]="getSubGroupFetchFn(param)"
+                          [smallInput]="true"
+                          [reloadKey]="param.get('groupID')?.value"
+                          (itemSelected)="onSubGroupSelected($event, param)"
+                          [isDisabled]="isViewMode || !param.get('groupID')?.value"
+                          [hideLabel]="true"
+                          [selectedItem]="param.get('subGroupID')?.value"
+                        ></app-searchable-dropdown>
                       </td>
                       <td class="wide-input-xl">
                         <app-searchable-dropdown-modal

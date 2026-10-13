@@ -32,10 +32,14 @@ export class SubGroupService {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
   }
 
-  getSubGroupDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  getSubGroupDropdown(searchTerm: string, pageNumber: number, pageSize: number, groupId?: number | null): Observable<any> {
+    if (groupId) {
+      return this.http.get<any>(`${this.apiUrl}/dropdownByGroupId?groupId=${groupId}`);
+    }
+    let url = `${this.apiUrl}/dropdown?searchTerm=${encodeURIComponent(searchTerm || '')}&pageNo=${pageNumber}&pageSize=${pageSize}`;
+    return this.http.get<any>(url);
   }
   getDropdownByGroupId(groupId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dropdown?groupId=${groupId}`);
+    return this.http.get<any>(`${this.apiUrl}/dropdownByGroupId?groupId=${groupId}`);
   }
 }

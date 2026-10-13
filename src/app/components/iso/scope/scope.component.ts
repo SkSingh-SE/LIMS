@@ -6,7 +6,8 @@ import { noWhitespaceValidator } from '../../../utility/validators/custom-valida
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ParameterService } from '../../../services/parameter.service';
 import { ParameterUnitService } from '../../../services/parameter-unit.service';
@@ -289,52 +290,91 @@ export class ScopeComponent implements OnInit {
   getDiscipline = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.disciplineService.getDisciplineDropdown(term, page, pageSize);
   };
-  onDisciplineSelected(item: any, specIndex: number, paramIndex: number) {
-    const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
-    const key = `${specIndex}-${paramIndex}`;
+  private groupFetchFnMap = new WeakMap<FormGroup, (term: string, page: number, pageSize: number) => Observable<any[]>>();
+  private subGroupFetchFnMap = new WeakMap<FormGroup, (term: string, page: number, pageSize: number) => Observable<any[]>>();
 
+  getGroupFetchFn(param: any): (term: string, page: number, pageSize: number) => Observable<any[]> {
+    const fg = param as FormGroup;
+    if (!this.groupFetchFnMap.has(fg)) {
+      this.groupFetchFnMap.set(fg, (term: string, page: number, pageSize: number) => {
+        const discId = fg.get('disciplineID')?.value;
+        if (!discId) {
+          return of([]);
+        }
+        return this.groupService.getGroupDropdown(term, page, pageSize, discId).pipe(
+          map((list: any[]) => {
+            if (!list) return [];
+            if (!term || !term.trim()) return list;
+            const lower = term.toLowerCase().trim();
+            if (!isNaN(+term)) {
+              const idMatch = list.filter(item => +item.id === +term);
+              if (idMatch.length > 0) return idMatch;
+            }
+            return list.filter(item => item?.name?.toLowerCase().includes(lower));
+          })
+        );
+      });
+    }
+    return this.groupFetchFnMap.get(fg)!;
+  }
+
+  getSubGroupFetchFn(param: any): (term: string, page: number, pageSize: number) => Observable<any[]> {
+    const fg = param as FormGroup;
+    if (!this.subGroupFetchFnMap.has(fg)) {
+      this.subGroupFetchFnMap.set(fg, (term: string, page: number, pageSize: number) => {
+        const grpId = fg.get('groupID')?.value;
+        if (!grpId) {
+          return of([]);
+        }
+        return this.subGroupService.getSubGroupDropdown(term, page, pageSize, grpId).pipe(
+          map((list: any[]) => {
+            if (!list) return [];
+            if (!term || !term.trim()) return list;
+            const lower = term.toLowerCase().trim();
+            if (!isNaN(+term)) {
+              const idMatch = list.filter(item => +item.id === +term);
+              if (idMatch.length > 0) return idMatch;
+            }
+            return list.filter(item => item?.name?.toLowerCase().includes(lower));
+          })
+        );
+      });
+    }
+    return this.subGroupFetchFnMap.get(fg)!;
+  }
+
+  onDisciplineSelected(item: any, paramOrSpecIndex: any, paramIndex?: number) {
+    const fg = (paramIndex !== undefined ? this.parameters(paramOrSpecIndex).at(paramIndex) : paramOrSpecIndex) as FormGroup;
     if (!item) {
-      spec.patchValue({ disciplineID: null, groupID: null, subGroupID: null });
-      this.groupOptionsPerParam[key] = [];
-      this.subGroupOptionsPerParam[key] = [];
+      fg.patchValue({ disciplineID: null, groupID: null, subGroupID: null });
       return;
     }
-
-    spec.patchValue({ disciplineID: item.id, groupID: null, subGroupID: null });
-    this.subGroupOptionsPerParam[key] = [];
-    this.groupService.getGroupDropdown('', 0, 100, item.id).subscribe({
-      next: (data) => {
-        this.groupOptionsPerParam[key] = data;
-      },
-      error: (error) => {
-        console.error('Error fetching group dropdown:', error);
-      },
-    });
-  };
-  onGroupSelected(event: any, specIndex: number, paramIndex: number) {
-    const selectedGroupId = event.target.value;
-    const key = `${specIndex}-${paramIndex}`;
-
-    const paramForm = this.parameters(specIndex).at(paramIndex) as FormGroup;
-    paramForm.patchValue({ groupID: +selectedGroupId, subGroupID: null });
-    this.subGroupOptionsPerParam[key] = [];
-
-    if (selectedGroupId) {
-      this.subGroupService.getDropdownByGroupId(+selectedGroupId).subscribe({
-        next: (data) => {
-          this.subGroupOptionsPerParam[key] = data || [];
-        },
-        error: (err) => {
-          console.error('Error loading sub-groups:', err);
-        }
-      });
+    const currentDiscId = fg.get('disciplineID')?.value;
+    if (currentDiscId !== item.id) {
+      fg.patchValue({ disciplineID: item.id, groupID: null, subGroupID: null });
     }
   }
 
-  onSubGroupSelected(item: any, specIndex: number, paramIndex: number) {
-    const spec = this.parameters(specIndex).at(paramIndex) as FormGroup;
-    spec.patchValue({ subGroupID: item.id });
-  };
+  onGroupSelected(item: any, paramOrSpecIndex: any, paramIndex?: number) {
+    const fg = (paramIndex !== undefined ? this.parameters(paramOrSpecIndex).at(paramIndex) : paramOrSpecIndex) as FormGroup;
+    if (!item) {
+      fg.patchValue({ groupID: null, subGroupID: null });
+      return;
+    }
+    const currentGroupId = fg.get('groupID')?.value;
+    if (currentGroupId !== item.id) {
+      fg.patchValue({ groupID: item.id, subGroupID: null });
+    }
+  }
+
+  onSubGroupSelected(item: any, paramOrSpecIndex: any, paramIndex?: number) {
+    const fg = (paramIndex !== undefined ? this.parameters(paramOrSpecIndex).at(paramIndex) : paramOrSpecIndex) as FormGroup;
+    if (!item) {
+      fg.patchValue({ subGroupID: null });
+      return;
+    }
+    fg.patchValue({ subGroupID: item.id });
+  }
   getParameterUnit() {
     this.prameterUnitService.getParameterUnitDropdown('', 0, 100).subscribe({
       next: (data) => {

@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/htt
 import { Router } from '@angular/router';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { PermissionService } from '../utility/permission/permission.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,11 @@ import { environment } from '../../environments/environment';
 export class AuthService {
   private apiUrl = environment.apiUrl + "/Auth";// Replace with actual API URL
 
-  constructor(private http: HttpClient, private router: Router) { }
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private permissionService: PermissionService
+  ) { }
 
   login(credentials: { email: string; password: string }): Observable<any> {
     return this.http.post<any>(this.apiUrl + '/login', credentials, { observe: 'response' }).pipe(
@@ -63,8 +68,10 @@ export class AuthService {
   }
 
   logout() {
+    this.permissionService.clear();
     localStorage.removeItem('userData');
     localStorage.removeItem('tokenExpiration');
+    localStorage.removeItem('lims_permissions');
     this.router.navigate(['/login']);
   }
 

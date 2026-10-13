@@ -1,19 +1,13 @@
 <div class="card shadow-sm m-2">
   <!-- Standard Form Header -->
   <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-    <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/scope" title="Back to List">
+    <a routerLink="/scope" class="btn btn-header-back" title="Back to List">
       <i class="bi bi-arrow-left"></i>
-    </button>
-    <label class="fw-medium flex-grow-1 text-center mb-0">
-      {{ isViewMode ? 'View Lab Scope of Accreditation' : (labScopeId > 0 ? 'Edit Lab Scope of Accreditation' : 'Create
-      Lab Scope of Accreditation') }}
-    </label>
-    <div class="d-flex align-items-center gap-2">
-      <span class="badge"
-        [ngClass]="isViewMode ? 'bg-secondary' : isEditMode ? 'bg-info text-dark' : 'bg-light text-dark'">
-        {{ isViewMode ? 'View' : isEditMode ? 'Edit' : 'New' }}
-      </span>
-    </div>
+    </a>
+    <span class="card-header-title fw-semibold flex-grow-1 text-center mb-0">
+      {{ isViewMode ? 'View Lab Scope of Accreditation' : (labScopeId > 0 ? 'Edit Lab Scope of Accreditation' : 'Create Lab Scope of Accreditation') }}
+    </span>
+    <div class="header-balance-spacer"></div>
   </div>
 
   <div class="card-body p-2">

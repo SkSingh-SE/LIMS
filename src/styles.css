@@ -21,6 +21,11 @@
   --select2-selection-border-radius: 5px;
   --select2-selection-choice-line-height: 23px;
   accent-color: var(--primary-color);
+  --font-xs: 0.72rem;
+  --font-sm: 0.78rem;
+  --font-md: 0.875rem;
+  --font-lg: 1rem;
+  --font-xl: 1.15rem;
 }
 
 body {
@@ -465,31 +470,148 @@ a.btn i.bi,
   border: 1px solid var(--primary-color) !important;
 }
 .card-form-header {
-  font-family: "Poppins", sans-serif;
-  font-size: var(--font-md);
+  font-family: "Poppins", sans-serif !important;
+  font-size: var(--font-md, 0.875rem);
   font-style: normal;
-  font-weight: 500;
+  font-weight: 600;
   background: linear-gradient(90deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%) !important;
-  color: #fff;
-  padding: 0.5rem 1rem;
+  color: #fff !important;
+  padding: 0.45rem 1rem !important;
+  min-height: 42px;
 }
-/* Standardize buttons & titles inside card-form-header */
+
+/* Header titles */
+.card-form-header > h5,
+.card-form-header > h6,
+.card-form-header > label,
+.card-form-header > .card-header-title,
+.card-form-header .card-header-title,
+.card-form-header .header-title {
+  font-family: "Poppins", sans-serif !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.3px;
+}
+
+/* Standardize buttons inside card-form-header */
 .card-form-header .btn,
 .card-header .btn-outline-light,
 .card-header .btn-primary-red {
-  padding: 0.25rem 0.65rem !important;
+  font-family: "Poppins", sans-serif !important;
+  padding: 0.28rem 0.75rem !important;
   font-size: 0.78rem !important;
   line-height: 1.35 !important;
   border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
 }
 
-.card-form-header h6,
-.card-form-header label,
-.card-form-header span {
-  font-size: var(--font-md);
-  font-weight: 500;
-  margin-bottom: 0;
-  color: #fff;
+/* Standardize .btn-outline-light in card headers */
+.card-form-header .btn-outline-light,
+.card-header .btn-outline-light {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500 !important;
+}
+
+.card-form-header .btn-outline-light span,
+.card-form-header .btn-outline-light i,
+.card-header .btn-outline-light span,
+.card-header .btn-outline-light i {
+  font-family: "Poppins", sans-serif !important;
+  font-size: 0.78rem !important;
+  color: #ffffff !important;
+  transition: color 0.2s ease !important;
+}
+
+.card-form-header .btn-outline-light i,
+.card-header .btn-outline-light i {
+  font-size: 0.85rem !important;
+}
+
+/* CRITICAL HOVER FIX: Background turns pure white, text and icon turn Brand Red */
+.card-form-header .btn-outline-light:hover,
+.card-form-header .btn-outline-light:focus,
+.card-header .btn-outline-light:hover,
+.card-header .btn-outline-light:focus {
+  background-color: #ffffff !important;
+  color: var(--primary-color, #da261c) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18) !important;
+}
+
+.card-form-header .btn-outline-light:hover span,
+.card-form-header .btn-outline-light:hover i,
+.card-form-header .btn-outline-light:focus span,
+.card-form-header .btn-outline-light:focus i,
+.card-header .btn-outline-light:hover span,
+.card-header .btn-outline-light:hover i,
+.card-header .btn-outline-light:focus span,
+.card-header .btn-outline-light:focus i {
+  color: var(--primary-color, #da261c) !important;
+}
+
+/* Standardized square centered back button in card-form-header */
+.card-form-header .btn-header-back,
+.card-form-header .btn-icon-back {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer;
+  text-decoration: none !important;
+}
+
+.card-form-header .btn-header-back:hover,
+.card-form-header .btn-header-back:focus,
+.card-form-header .btn-icon-back:hover,
+.card-form-header .btn-icon-back:focus {
+  background-color: #ffffff !important;
+  color: var(--primary-color, #da261c) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-form-header .btn-header-back i,
+.card-form-header .btn-icon-back i {
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #ffffff !important;
+  transition: color 0.2s ease !important;
+}
+
+.card-form-header .btn-header-back:hover i,
+.card-form-header .btn-header-back:focus i,
+.card-form-header .btn-icon-back:hover i,
+.card-form-header .btn-icon-back:focus i {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.header-balance-spacer {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .header-font {

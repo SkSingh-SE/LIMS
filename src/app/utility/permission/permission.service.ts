@@ -8,8 +8,36 @@ export class PermissionService {
   private perms$ = new BehaviorSubject<Set<string>>(new Set());
   private _isAdmin = false;
 
+  constructor() {
+    this.initFromStorage();
+  }
+
+  public initFromStorage(): void {
+    try {
+      const rawUser = localStorage.getItem('userData') || localStorage.getItem('user');
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        this._isAdmin = u?.isAdmin === true || (u?.role || '').toLowerCase() === 'admin';
+      }
+      const rawPerms = localStorage.getItem('lims_permissions');
+      if (rawPerms) {
+        const parsed = JSON.parse(rawPerms);
+        if (Array.isArray(parsed)) {
+          this.perms$.next(new Set(parsed));
+          return;
+        }
+      }
+      if (this._isAdmin) {
+        this.perms$.next(this.perms$.value);
+      }
+    } catch (e) {
+      console.error('Failed to init permissions from storage', e);
+    }
+  }
+
   setAdmin(isAdmin: boolean): void {
     this._isAdmin = isAdmin;
+    this.perms$.next(this.perms$.value);
   }
 
   get isAdmin(): boolean {
@@ -27,7 +55,19 @@ export class PermissionService {
       newPerms = new Set();
     }
 
+    try {
+      localStorage.setItem('lims_permissions', JSON.stringify(Array.from(newPerms)));
+    } catch {}
+
     this.perms$.next(newPerms);
+  }
+
+  clear(): void {
+    this._isAdmin = false;
+    this.perms$.next(new Set());
+    try {
+      localStorage.removeItem('lims_permissions');
+    } catch {}
   }
 
 

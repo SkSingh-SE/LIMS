@@ -153,6 +153,8 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
         ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
         : (userData.userName || '').substring(0, 2).toUpperCase();
       this.loadProfileImage(userData);
+      const isAdmin = userData.isAdmin === true || (userData.role ?? '').toLowerCase() === 'admin';
+      this.permissionService.setAdmin(isAdmin);
       if (userData.employeeId) {
         this.getUserMenu(userData.employeeId);
       }
@@ -392,12 +394,13 @@ export class NavbarComponent implements OnInit, AfterViewInit, AfterViewChecked,
       next: (res: MenuItem[]) => {
         try {
 
-          // 1. Set global permissions
-          const perms = this.collectPermissionsFromApi(res || []);
-          this.permissionService.setPermissions(perms);
           const ud = this.authService.getUserData();
           const isAdmin = ud?.isAdmin === true || (ud?.role ?? '').toLowerCase() === 'admin';
           this.permissionService.setAdmin(isAdmin);
+
+          // 1. Set global permissions
+          const perms = this.collectPermissionsFromApi(res || []);
+          this.permissionService.setPermissions(perms);
 
           // 2. Filter hardcoded menu by API response
           const filtered = (isAdmin || !res || res.length === 0) ? getAllMenuItems() : this.filterMenusByApi(res || []);

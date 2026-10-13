@@ -272,3 +272,86 @@
   border-color: var(--primary-color);
 }
 
+/* Accreditation Context Fieldset & Cards */
+.accreditation-context-fieldset {
+  border: 1px solid #e2e8f0 !important;
+  border-left: 4px solid var(--primary-color) !important;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.accreditation-card {
+  background-color: #fbfcfe;
+  border: 1px solid #e2e8f0;
+  min-height: 52px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.accreditation-card:hover {
+  border-color: #cbd5e1;
+  background-color: #f8fafc;
+}
+
+.accreditation-icon-box {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.accreditation-label {
+  font-size: 0.72rem;
+  line-height: 1.15;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.accreditation-value {
+  font-size: 0.84rem;
+  line-height: 1.25;
+}
+
+/* Resolved Hierarchy Display Box */
+.resolved-hierarchy-box {
+  min-height: 29px;
+  height: 29px;
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  transition: all 0.2s ease;
+}
+
+.resolved-hierarchy-box.has-selection {
+  border-color: var(--primary-color);
+  background-color: #ffffff;
+}
+
+.resolved-hierarchy-box .hierarchy-text {
+  font-size: 0.78rem;
+  color: #1e293b;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resolved-hierarchy-box .hierarchy-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* Sticky Action Bar & Theme-compliant Horizontal Border Line */
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  background-color: #ffffff;
+  border-top: 2px solid var(--primary-color) !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  padding: 0.65rem 0.75rem;
+  margin-top: 1.25rem;
+  z-index: 100;
+}
+

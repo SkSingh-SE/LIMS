@@ -79,8 +79,8 @@
                                 <a [routerLink]="['/scope/details', material.id]"
                                    [state]="{ mode: 'view' }"
                                    class="text-primary text-decoration-none cursor-pointer"
-                                   [title]="'View details for ' + material.laboratoryTestName">
-                                    {{ material.laboratoryTestName }}
+                                   [title]="'View details for ' + getHierarchyDisplayName(material)">
+                                    {{ getHierarchyDisplayName(material) }}
                                 </a>
                             </td>
                             <td>{{ material.testMethodSpecificationName }}</td>

@@ -86,6 +86,24 @@ export class ScopeListComponent implements OnInit {
 
   }
 
+  getHierarchyDisplayName(material: any): string {
+    if (!material) return '';
+    if (material.hierarchyName) return material.hierarchyName;
+    const parts: string[] = [];
+    if (material.laboratoryTestName) parts.push(material.laboratoryTestName);
+    if (material.subGroupName) parts.push(material.subGroupName);
+    if (material.isChemicalTest && material.analysisTypeName) parts.push(material.analysisTypeName);
+    return parts.length > 0 ? parts.join(' > ') : (material.laboratoryTestName || '');
+  }
+
+  getChildName(material: any): string {
+    if (!material) return '';
+    if (material.childName) return material.childName;
+    if (material.isChemicalTest && material.analysisTypeName) return material.analysisTypeName;
+    if (material.subGroupName) return material.subGroupName;
+    return material.laboratoryTestName || '';
+  }
+
   applySorting(column: string) {
     if (this.sortByColumn === column) {
       this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';

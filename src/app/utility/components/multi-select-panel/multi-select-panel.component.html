@@ -42,9 +42,10 @@
     </li>
   </ul>
 
-  <!-- Footer: selected count -->
-  <div class="ms-panel-footer" *ngIf="count > 0">
-    <i class="bi bi-check-circle-fill me-1"></i><span>{{ count }} item{{ count !== 1 ? 's' : '' }} selected</span>
+  <!-- Footer: selected count (always rendered for stable height) -->
+  <div class="ms-panel-footer">
+    <i class="bi bi-check-circle-fill me-1" [class.text-primary]="count > 0" [class.text-muted]="count === 0"></i>
+    <span>{{ count }} item{{ count !== 1 ? 's' : '' }} selected</span>
   </div>
 
 </div>

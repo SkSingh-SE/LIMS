@@ -24,17 +24,19 @@
   display: flex;
   align-items: center;
   min-height: 36px;
-  max-height: 80px;
-  overflow-y: auto;
+  max-height: 36px;
+  height: 36px;
+  overflow: hidden;
   border: 1px solid #dee2e6;
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
-  padding: 4px 4px 4px 8px;
+  padding: 2px 4px 2px 8px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   font-size: 0.875rem;
   gap: 4px;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .ms-trigger:hover:not(.ms-trigger-disabled) {
@@ -63,30 +65,42 @@
 }
 
 .ms-trigger-sm {
-  min-height: 30px;
-  max-height: 72px;
-  font-size: 0.8rem;
-  padding: 3px 4px 3px 6px;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  height: 28px !important;
+  font-size: 0.78rem !important;
+  padding: 0 4px 0 6px !important;
+  box-sizing: border-box !important;
 }
 
 /* ─── Value container — chips + placeholder ─── */
 .ms-value-container {
   flex: 1;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap !important;
   align-items: center;
   gap: 3px;
   min-width: 0;
+  height: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.ms-value-container::-webkit-scrollbar {
+  display: none !important;
 }
 
 .ms-placeholder {
   color: #adb5bd;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-family: 'Poppins', sans-serif;
   pointer-events: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1;
 }
 
 /* ─── Chips — ng-select theme ─── */
@@ -97,12 +111,16 @@
   border: 1px solid var(--primary-color);
   border-radius: 3px;
   overflow: hidden;
-  max-width: 180px;
-  flex-shrink: 0;
+  max-width: 140px;
+  height: 20px;
+  max-height: 20px;
+  flex-shrink: 0 !important;
+  box-sizing: border-box;
+  margin: 0;
 }
 
 .ms-chip-label {
-  padding: 1px 4px 1px 6px;
+  padding: 0 4px;
   font-size: 0.72rem;
   font-family: 'Poppins', sans-serif;
   color: var(--primary-color);
@@ -110,19 +128,21 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 110px;
+  line-height: 18px;
 }
 
 .ms-chip-remove {
   background: none;
   border: none;
   border-left: 1px solid rgba(var(--bs-primary-rgb), 0.3);
-  padding: 1px 4px;
+  padding: 0 3px;
   cursor: pointer;
   color: var(--primary-color);
   display: flex;
   align-items: center;
-  font-size: 0.8rem;
+  justify-content: center;
+  font-size: 0.75rem;
   line-height: 1;
   flex-shrink: 0;
   height: 100%;
@@ -139,13 +159,14 @@
   align-items: center;
   gap: 1px;
   flex-shrink: 0;
-  align-self: flex-start;
-  padding-top: 2px;
+  align-self: center !important;
+  height: 100%;
+  padding-top: 0 !important;
 }
 
 .ms-divider {
   width: 1px;
-  height: 16px;
+  height: 14px;
   background: #dee2e6;
   margin: 0 2px;
 }
@@ -153,13 +174,15 @@
 .ms-action-btn {
   background: none;
   border: none;
-  padding: 2px 5px;
+  padding: 0 3px;
   cursor: pointer;
   color: #9ca3af;
   display: flex;
   align-items: center;
+  justify-content: center;
   line-height: 1;
   font-size: 0.72rem;
+  height: 100%;
 }
 
 .ms-action-btn:hover {

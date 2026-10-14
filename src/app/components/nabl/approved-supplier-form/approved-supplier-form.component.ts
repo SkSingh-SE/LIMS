@@ -27,7 +27,6 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
     isViewMode = false;
     formTitle = 'Add Approved Supplier';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
-    supplierList: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         supplier: true,

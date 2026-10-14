@@ -4,7 +4,7 @@ export interface FeedbackAnalysis {
     totalFeedbackReceived: number;
     analysisSummary: string;
     actionsTaken: string;
-
+    feedbackRatings: FeedbackRating[];
     // Header standard fields
     formatNo: string;
     docNo: string;
@@ -17,3 +17,8 @@ export interface FeedbackAnalysis {
     revNo: string | number;
     revDate: string | Date;
 }
+export interface FeedbackRating {
+    parameterName: string;
+    rating: number; // 1-5 or similar
+}
+

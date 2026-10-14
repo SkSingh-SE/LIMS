@@ -57,14 +57,18 @@
           <div *ngIf="openSections['supplier']" class="section-body">
             <div class="row g-3">
               <div class="col-md-3">
-                <label class="form-label">Supplier Name <span class="text-danger">*</span></label>
+                <!-- <label class="form-label">Supplier Name <span class="text-danger">*</span></label>
                 <select class="form-select form-select-sm" formControlName="supplierRegisterId"
                   (change)="onSupplierChange($event)">
                   <option [ngValue]="null">Select Supplier</option>
                   <option *ngFor="let supplier of supplierList" [value]="supplier.id || supplier.Id">
                     {{ supplier.name || supplier.Name }}
                   </option>
-                </select>
+                </select> -->
+                <app-searchable-dropdown [placeholder]="'Search Supplier'" [labelName]="'Supplier Name'"
+                  [fetchDataFn]="loadSupplierList" (itemSelected)="onSupplierChange($event)" [isDisabled]="isViewMode"
+                  [required]="true" [selectedItem]="evaluationForm.get('supplierRegisterId')?.value">
+                </app-searchable-dropdown>
                 <div
                   *ngIf="evaluationForm.get('supplierRegisterId')?.invalid && evaluationForm.get('supplierRegisterId')?.touched"
                   class="text-danger text-sm mt-1">

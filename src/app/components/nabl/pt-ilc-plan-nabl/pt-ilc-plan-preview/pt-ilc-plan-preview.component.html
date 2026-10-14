@@ -77,7 +77,7 @@
           <thead>
             <tr class="tbl-head">
               <th rowspan="2" style="width: 30px">S.N.</th>
-              <th rowspan="2" style="width:140px; min-width:140px;">Accredited Discipline(s)</th>
+              <th rowspan="2" style="width:120px; min-width:140px;">Accredited Discipline(s)</th>
               <th rowspan="2" style="width:165px; min-width:150px;">Group(s)/Subgroups</th>
               <th [attr.colspan]="maxYearCount">PT/ILC Activities Plan</th>
               <th [attr.colspan]="maxYearCount">Status and Result</th>
@@ -121,7 +121,7 @@
       <!-- Notes -->
       <div class="doc-section mb-3" *ngIf="data()?.note">
         <div class="sec-title">III. NOTES</div>
-        <div class="sec-body">{{ data()?.note }}</div>
+        <div class="sec-body" [innerHTML]="data()?.note"></div>
       </div>
     </ng-container>
 

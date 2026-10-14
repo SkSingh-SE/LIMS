@@ -11,11 +11,12 @@ import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
+import { SearchableDropdownComponent } from '../../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
     selector: 'app-supplier-evaluation-record-form',
 
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './supplier-evaluation-record-form.component.html',
     styleUrls: ['./supplier-evaluation-record-form.component.css']
 })
@@ -24,7 +25,7 @@ export class SupplierEvaluationRecordFormComponent implements CanComponentDeacti
     evaluationForm!: FormGroup;
     isEditMode = false;
     isViewMode = false;
-    recordId: number | null = null;
+    recordId: number = 0;
     formNumbers: string[] = [];
     supplierList: any[] = [];
     poSummaryList: any[] = [];
@@ -166,7 +167,6 @@ export class SupplierEvaluationRecordFormComponent implements CanComponentDeacti
             },
             error: () => { }
         });
-        this.loadSupplierList();
         this.route.params.subscribe(params => {
             if (params['id']) {
                 this.recordId = +params['id'];
@@ -266,42 +266,38 @@ export class SupplierEvaluationRecordFormComponent implements CanComponentDeacti
     }
 
 
-    loadSupplierList(): void {
-        this.service.getAllSuppliers().subscribe({
-            next: (res) => {
-                this.supplierList = res;
-            },
-            error: () => {
-                this.supplierList = [];
-            }
-        })
+    loadSupplierList = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.service.getAllSuppliers(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
 
-
     onSupplierChange(event: any): void {
-        const supplierId = Number(event.target.value);
-        const selectSupplier = this.supplierList.find(c => c.id === supplierId || c.Id === supplierId);
-        if (!selectSupplier) {
-            this.evaluationForm.patchValue({
-                supplierRegisterId: null,
-                supplierName: '',
-                contactPerson: '',
-                mobileNo: '',
-                email: '',
-                registerNo: '',
-                gstNo: '',
-                address: '',
-                natureOfBusiness: '',
-                productsServicesOffered: '',
-                presentStatus: '',
-                serviceProvider: ''
-            });
+        if (!event) {
             return;
         }
-        const additional = selectSupplier.additionalValues || selectSupplier.AdditionalValues || {};
+
+        // const supplierId = Number(event.target.value);
+        // const selectSupplier = this.supplierList.find(c => c.id === supplierId || c.Id === supplierId);
+        // if (!selectSupplier) {
+        //     this.evaluationForm.patchValue({
+        //         supplierRegisterId: null,
+        //         supplierName: '',
+        //         contactPerson: '',
+        //         mobileNo: '',
+        //         email: '',
+        //         registerNo: '',
+        //         gstNo: '',
+        //         address: '',
+        //         natureOfBusiness: '',
+        //         productsServicesOffered: '',
+        //         presentStatus: '',
+        //         serviceProvider: ''
+        //     });
+        //     return;
+        // }
+        const additional = event.additionalValues || event.AdditionalValues || {};
         this.evaluationForm.patchValue({
-            supplierRegisterId: selectSupplier.id || selectSupplier.Id,
-            supplierName: selectSupplier.name || selectSupplier.Name,
+            supplierRegisterId: event.id || event.Id,
+            supplierName: event.name || event.Name,
             contactPerson: additional.ContactPerson || '',
             mobileNo: additional.MobileNo || '',
             email: additional.Email || '',

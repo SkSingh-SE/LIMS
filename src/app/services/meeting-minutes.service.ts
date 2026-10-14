@@ -32,14 +32,18 @@ export class MeetingMinutesService {
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
     }
-    getLoadMeetingList(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
-        return this.http.get<any[]>(`${this.apiUrl}/all-meeting-list`, {
-            params: {
-                searchTearm: searchTerm,
-                pageNo: pageNo,
-                pageSize: pageSize
-            }
-        });
+
+    getLoadMeetingList(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/all-meeting-list` +
+            `?searchTearm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
     meetingDetails(meetingNo: string) {
         return this.http.get<any>(`${this.apiUrl}/meeting-details/${meetingNo}`);

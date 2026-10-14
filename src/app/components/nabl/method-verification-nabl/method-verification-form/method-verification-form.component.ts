@@ -29,6 +29,7 @@ export class MethodVerificationNablFormComponent implements CanComponentDeactiva
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
     quillModules = { toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']] };
     testMethodList: any[] = [];
+    savedMethodVerificationList: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         methodInfo: true,
@@ -121,6 +122,7 @@ export class MethodVerificationNablFormComponent implements CanComponentDeactiva
             error: () => { }
         });
         this.loadTestMethodList();
+        this.loadSavedMethodVerificationList();
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
         if (path === 'details') {
@@ -140,34 +142,139 @@ export class MethodVerificationNablFormComponent implements CanComponentDeactiva
         }
     }
 
-    loadTestMethodList(): void {
-        this.service.getTestMethodList().subscribe({
-            next: (data) => {
-                this.testMethodList = data;
+    loadSavedMethodVerificationList(): void {
+        this.service.getAll().subscribe({
+            next: (response: any) => {
+                this.savedMethodVerificationList = response?.items ?? [];
+
+                console.log(
+                    'Saved verification records:',
+                    this.savedMethodVerificationList.length
+                );
+                console.log(
+                    'Saved Test Methods:',
+                    this.savedMethodVerificationList.map((x: any) => ({
+                        id: x.id,
+                        testMethodCode: x.testMethodCode,
+                        testMethodName: x.testMethodName
+                    }))
+                );
             },
-            error: () => {
+            error: (error) => {
+                console.error('Failed to load saved methods:', error);
+                this.savedMethodVerificationList = [];
+            }
+        });
+    }
+
+
+    loadTestMethodList(): void {
+        this.service.getTestMethodList('', 0, 1000).subscribe({
+            next: (data: any[]) => {
+                this.testMethodList = data || [];
+
+                // Edit mode: dropdown options load hone ke baad selected method set karo
+                if (this.recordId > 0) {
+                    this.setSelectedTestMethod(this.requestForm.getRawValue());
+                }
+            },
+            error: (error) => {
+                console.error('Test method list loading failed:', error);
                 this.testMethodList = [];
             }
         });
     }
+    // onChangeTestMethodCode(event: any): void {
+    //     const testmethodCode = event.target.value;
+    //     const selectedMethod = this.testMethodList.find(m => m.name === testmethodCode || m.Name === testmethodCode);
+    //     if (!selectedMethod) {
+    //         this.requestForm.patchValue({
+    //             testMethodName: "",
+    //             referenceStandard: "",
+    //             revIssue: ""
+    //         });
+    //         return;
+    //     }
+    //     const additional = selectedMethod.additionalValues || selectedMethod.AdditionalValues || {};
+    //     this.requestForm.patchValue({
+    //         testMethodName: additional.MethodName || '',
+    //         referenceStandard: additional.ReferenceStandard || '',
+    //         revIssue: additional.RevisionNo || ''
+    //     });
+    // }
+
     onChangeTestMethodCode(event: any): void {
-        const testmethodCode = event.target.value;
-        const selectedMethod = this.testMethodList.find(m => m.name === testmethodCode || m.Name === testmethodCode);
+        const testmethodCode = String(event.target.value || '').trim();
+
+        const selectedMethod = this.testMethodList.find(
+            (method: any) =>
+                String(method.name || method.Name || '').trim().toLowerCase() ===
+                testmethodCode.toLowerCase()
+        );
+
         if (!selectedMethod) {
-            this.requestForm.patchValue({
-                testMethodName: "",
-                referenceStandard: "",
-                revIssue: ""
-            });
             return;
         }
-        const additional = selectedMethod.additionalValues || selectedMethod.AdditionalValues || {};
+
+        const additional =
+            selectedMethod.additionalValues || selectedMethod.AdditionalValues ||
+            {};
+
+        const methodCode = String(
+            additional.SpecificationCode || selectedMethod.name || selectedMethod.Name || ''
+        ).trim();
+
+        const methodName = String(additional.MethodName || '').trim();
+
+        const isDuplicate = this.savedMethodVerificationList.some(
+            (record: any) => {
+                const savedCode = String(
+                    record.testMethodCode || record.TestMethodCode || '').trim();
+
+                const savedName = String(record.testMethodName || record.TestMethodName || '').trim();
+
+                const savedId = Number(record.id ?? record.ID ?? 0);
+
+                // Edit mode: current record ko duplicate check se exclude karo
+                if (this.recordId > 0 && savedId === Number(this.recordId)) {
+                    return false;
+                }
+
+                return (
+                    savedCode.toLowerCase() === methodCode.toLowerCase() &&
+                    savedName.toLowerCase() === methodName.toLowerCase()
+                );
+            }
+        );
+
+        console.log('Selected code:', methodCode);
+        console.log('Selected name:', methodName);
+        console.log('Is duplicate:', isDuplicate);
+
+        if (isDuplicate) {
+            this.toastService.show(
+                'This Test Method is already used in another verification record.',
+                'warning'
+            );
+
+            this.requestForm.patchValue({
+                testMethodCode: '',
+                testMethodName: '',
+                referenceStandard: '',
+                revIssue: ''
+            });
+
+            return;
+        }
+
+        // No duplicate: continue existing process
         this.requestForm.patchValue({
-            testMethodName: additional.MethodName || '',
+            testMethodName: methodName,
             referenceStandard: additional.ReferenceStandard || '',
             revIssue: additional.RevisionNo || ''
         });
     }
+
     generateCRMSampleId(): string {
         const nextNo = this.crmParameters.length + 1;
         return `CRM-${nextNo.toString().padStart(3, '0')}`;
@@ -348,7 +455,7 @@ export class MethodVerificationNablFormComponent implements CanComponentDeactiva
             status: status
         }, { emitEvent: false });
     }
-    
+
     calculateAllVerificationRows(): void {
         this.verificationData.controls.forEach((_, index) => {
             this.calculateVerificationRow(index);
@@ -359,6 +466,38 @@ export class MethodVerificationNablFormComponent implements CanComponentDeactiva
         this.calculateAllVerificationRows();
     }
 
+    // loadData(): void {
+    //     this.service.getById(this.recordId).subscribe({
+    //         next: (data) => {
+    //             if (data) {
+    //                 if (data.crmParameters) {
+    //                     this.crmParameters.clear();
+    //                     data.crmParameters.forEach(() => this.addCRMParameter());
+    //                 }
+    //                 data.date = NablFormsHelper.formatDateForInput(data.date || null);
+    //                 data.verificationDate = NablFormsHelper.formatDateForInput(data.verificationDate || null);
+    //                 data.calibrationDueDate = NablFormsHelper.formatDateForInput(data.calibrationDueDate || null);
+    //                 this.requestForm.patchValue(data);
+    //                 // Lock form if not in editable status
+    //                 const status = (data as any).status;
+    //                 if (status && status !== 'Draft' && status !== 'Rejected') {
+    //                     this.requestForm.disable();
+    //                     this.isViewMode = true;
+    //                 } else if (this.isViewMode) {
+    //                     this.requestForm.disable();
+    //                 }
+    //                 // Re-disable system fields (in case form was enabled for Draft/Rejected)
+    //                 this.requestForm.get('documentNo')?.disable();
+    //                 this.requestForm.get('issueNo')?.disable();
+    //                 this.requestForm.get('revNo')?.disable();
+    //                 this.requestForm.get('formatNo')?.disable();
+    //             }
+    //         },
+    //         error: () => { }
+    //     });
+    // }
+
+
     loadData(): void {
         this.service.getById(this.recordId).subscribe({
             next: (data) => {
@@ -367,19 +506,27 @@ export class MethodVerificationNablFormComponent implements CanComponentDeactiva
                         this.crmParameters.clear();
                         data.crmParameters.forEach(() => this.addCRMParameter());
                     }
+
                     data.date = NablFormsHelper.formatDateForInput(data.date || null);
                     data.verificationDate = NablFormsHelper.formatDateForInput(data.verificationDate || null);
                     data.calibrationDueDate = NablFormsHelper.formatDateForInput(data.calibrationDueDate || null);
+
                     this.requestForm.patchValue(data);
+
+                    // Restore selected Test Method after both APIs have loaded
+                    this.setSelectedTestMethod(data);
+
                     // Lock form if not in editable status
                     const status = (data as any).status;
+
                     if (status && status !== 'Draft' && status !== 'Rejected') {
                         this.requestForm.disable();
                         this.isViewMode = true;
                     } else if (this.isViewMode) {
                         this.requestForm.disable();
                     }
-                    // Re-disable system fields (in case form was enabled for Draft/Rejected)
+
+                    // Re-disable system fields
                     this.requestForm.get('documentNo')?.disable();
                     this.requestForm.get('issueNo')?.disable();
                     this.requestForm.get('revNo')?.disable();
@@ -390,6 +537,62 @@ export class MethodVerificationNablFormComponent implements CanComponentDeactiva
         });
     }
 
+
+    setSelectedTestMethod(data: any): void {
+        const savedCode = String(
+            data.testMethodCode || data.TestMethodCode || ''
+        ).trim();
+
+        if (!savedCode) {
+            return;
+        }
+
+        const selectedMethod = this.testMethodList.find((method: any) => {
+            const additional =
+                method.additionalValues || method.AdditionalValues || {};
+
+            const code = String(
+                additional.SpecificationCode ||
+                method.name ||
+                method.Name ||
+                ''
+            ).trim();
+
+            return code.toLowerCase() === savedCode.toLowerCase();
+        });
+
+        if (!selectedMethod) {
+            console.warn('Saved Test Method not found in dropdown:', savedCode);
+            return;
+        }
+
+        const additional =
+            selectedMethod.additionalValues ||
+            selectedMethod.AdditionalValues ||
+            {};
+
+        this.requestForm.patchValue({
+            testMethodCode:
+                selectedMethod.name ||
+                selectedMethod.Name ||
+                additional.SpecificationCode,
+            testMethodName:
+                data.testMethodName ||
+                data.TestMethodName ||
+                additional.MethodName ||
+                '',
+            referenceStandard:
+                data.referenceStandard ||
+                data.ReferenceStandard ||
+                additional.ReferenceStandard ||
+                '',
+            revIssue:
+                data.revIssue ||
+                data.RevIssue ||
+                additional.RevisionNo ||
+                ''
+        });
+    }
     onSubmit(): void {
         if (this.requestForm.invalid) {
             this.requestForm.markAllAsTouched();

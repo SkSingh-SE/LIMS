@@ -11,11 +11,12 @@ import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../services/nabl-header.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
     selector: 'app-incoming-material-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './incoming-material-form.component.html'
 })
 export class IncomingMaterialFormComponent implements CanComponentDeactivate, OnInit {
@@ -69,12 +70,11 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
         this.loadplanNoList();
-        this.loadPONoList();
         if (path === 'details') {
             this.isViewMode = true;
             this.formTitle = 'View Inspection Record';
             this.materialForm.disable();
-            
+
         } else if (path === 'edit') {
             this.isEditMode = true;
             this.formTitle = 'Edit Inspection Record';
@@ -151,16 +151,19 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
             }
         })
     }
-    loadPONoList(): void {
-        this.service.getAllPONoetails().subscribe({
-            next: (res) => {
-                this.PurchaseOrderNoList = res;
-            },
-            error: () => {
-                this.PurchaseOrderNoList = [];
-            }
-        })
+    loadPONoList = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.service.getAllPONoetails(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
+    // loadPONoList(): void {
+    //     this.service.getAllPONoetails().subscribe({
+    //         next: (res) => {
+    //             this.PurchaseOrderNoList = res;
+    //         },
+    //         error: () => {
+    //             this.PurchaseOrderNoList = [];
+    //         }
+    //     })
+    // }
     get parameters(): FormArray {
         return this.materialForm.get('inspectionParameters') as FormArray;
     }
@@ -168,34 +171,33 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
         return this.materialForm.get('itemsParameters') as FormArray;
     }
 
-    onPoNoChange(event: any): void {
-        const selectedId = Number(event.target.value);
 
-        const item = this.PurchaseOrderNoList.find((x: any) => x.id === selectedId || x.Id === selectedId);
+    onPoNoChange(item: any): void {
 
         if (!item) {
             this.items.clear();
             return;
         }
 
-        const data = item.additionalValues || item.AdditionalValues || {};
+        const additional = item.additionalValues || item.AdditionalValues || {};
 
         this.materialForm.patchValue({
-            supplierName: data.SupplierName || '',
-            indentNoPoNo: data.ReferenceIndentNo || '',
-            purchaseOrderNo: data.PurchaseOrderNo || '',
-            email: data.Email || '',
-            phoneNo: data.PhoneNo || '',
-            gstNo: data.GSTNo || '',
-            orderType: data.OrderType || '',
-            address: data.SupplierAddress || ''
+            supplierName: additional.SupplierName || '',
+            indentNoPoNo: additional.ReferenceIndentNo || '',
+            purchaseOrderNo: additional.PurchaseOrderNo || '',
+            email: additional.Email || '',
+            phoneNo: additional.PhoneNo || '',
+            gstNo: additional.GSTNo || '',
+            orderType: additional.OrderType || '',
+            address: additional.SupplierAddress || '',
+            poNo: item.id || ''
         });
 
         let parameters: any[] = [];
 
         try {
-            parameters = data.ItemsJson
-                ? JSON.parse(data.ItemsJson)
+            parameters = additional.ItemsJson
+                ? JSON.parse(additional.ItemsJson)
                 : [];
         } catch {
             parameters = [];
@@ -207,20 +209,19 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
         parameters.forEach((p: any) => {
             this.items.push(this.fb.group({
                 materialName: [p.Description || p.description || ''],
-                materialCode: [''],
+                materialCode: ['', Validators.required],
                 orderedQty: [p.Quantity || p.quantity || ''],
                 unit: [p.UnitPrice || p.unitPrice || ''],
-                receviceQty: [''],
-                batchNo: [''],
-                lotNo: [''],
-                invoiceNo: [''],
-                expiryDate: [''],
+                receviceQty: [0, Validators.required],
+                batchNo: ['', Validators.required],
+                lotNo: ['', Validators.required],
+                invoiceNo: ['', Validators.required],
+                expiryDate: [null],
                 coaAvailable: ['Yes']
                 // result: ['Pass']
             }));
         });
     }
-
     validateReceivedQuantity(index: number): boolean {
         const row = this.items.at(index);
 
@@ -312,16 +313,16 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
 
                     data.itemsParameters?.forEach((r: any) => {
                         this.items.push(this.fb.group({
-                            coaAvailable: [r.coaAvailable || '', Validators.required],
-                            batchNo: [r.batchNo || '', Validators.required],
-                            expiryDate: [r.expiryDate ? r.expiryDate.split('T')[0] : '', Validators.required],
+                            coaAvailable: [r.coaAvailable || null],
+                            batchNo: [r.batchNo || null, Validators.required],
+                            expiryDate: [NablFormsHelper.formatDateForInput(r.expiryDate) || null],
                             invoiceNo: [r.invoiceNo || '', Validators.required],
                             materialCode: [r.materialCode || '', Validators.required],
-                            unit: [r.unit || '', Validators.required],
-                            orderedQty: [r.orderedQty || '', Validators.required],
-                            receviceQty: [r.receviceQty || '', Validators.required],
+                            unit: [r.unit || '',],
+                            orderedQty: [r.orderedQty || ''],
+                            receviceQty: [r.receviceQty || null, Validators.required],
                             lotNo: [r.lotNo || '', Validators.required],
-                            materialName: [r.materialName || '', Validators.required],
+                            materialName: [r.materialName || null],
                             // result: [r.result || 'Pass', Validators.required]
                         }));
                     });
@@ -333,7 +334,7 @@ export class IncomingMaterialFormComponent implements CanComponentDeactivate, On
                         const itemGroup = this.items.at(index);
 
                         itemGroup.get('expiryDate')?.setValue(
-                            r.expiryDate ? r.expiryDate.split('T')[0] : ''
+                            r.expiryDate ? r.expiryDate.split('T')[0] : null
                         );
 
                     });

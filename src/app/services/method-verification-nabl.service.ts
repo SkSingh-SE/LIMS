@@ -32,13 +32,25 @@ export class MethodVerificationNablService {
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
     }
-    getTestMethodList(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
-        return this.http.get<any[]>(`${this.apiUrl}/alltestmethodlist`, {
-            params: {
-                searchTerm: searchTerm,
-                pageNo: pageNo,
-                pageSize: pageSize
-            }
-        });
+    // getTestMethodList(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
+    //     return this.http.get<any[]>(`${this.apiUrl}/alltestmethodlist`, {
+    //         params: {
+    //             searchTerm: searchTerm,
+    //             pageNo: pageNo,
+    //             pageSize: pageSize
+    //         }
+    //     });
+    // }
+     getTestMethodList(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/alltestmethodlist` +
+            `?searchTerm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
 }

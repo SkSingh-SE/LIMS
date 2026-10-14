@@ -10,7 +10,7 @@ import { IncomingMaterial, IncomingMaterialListResponse, IncomingMaterialRespons
 export class IncomingMaterialService {
     private apiUrl = environment.apiUrl + '/Nabl/IncomingMaterial';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<IncomingMaterialListResponse> {
         return this.http.post<IncomingMaterialListResponse>(this.apiUrl + '/list', params || {});
@@ -41,13 +41,17 @@ export class IncomingMaterialService {
             }
         });
     }
-    getAllPONoetails(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
-        return this.http.get<any[]>(`${this.apiUrl}/pONoList`, {
-            params: {
-                searchTerm: searchTerm,
-                pageNo: pageNo,
-                pageSize: pageSize
-            }
-        });
+
+    getAllPONoetails(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/pONoList` +
+            `?searchTearm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
 }

@@ -32,14 +32,17 @@ export class PurchaseMaterialVerificationService {
     delete(id: number): Observable<PurchaseMaterialVerificationResponse> {
         return this.http.delete<PurchaseMaterialVerificationResponse>(`${this.apiUrl}/delete/${id}`);
     }
-    getAllPONoetails(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
-        return this.http.get<any[]>(`${this.apiUrl}/pONoList`, {
-            params: {
-                searchTerm: searchTerm,
-                pageNo: pageNo,
-                pageSize: pageSize
-            }
-        });
+    getAllPONoetails(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/pONoList` +
+            `?searchTearm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
     getPrintList(): Observable<PurchaseMaterialVerificationPrintDto[]> {
         return this.http.get<PurchaseMaterialVerificationPrintDto[]>(

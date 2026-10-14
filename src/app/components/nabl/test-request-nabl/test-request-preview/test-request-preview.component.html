@@ -194,7 +194,7 @@
 
             <tr>
               <td class="lbl" style="width: 20%;">Remark:</td>
-              <td>{{ data.remarks || '-' }}</td>
+              <td [innerHTML]="data.remarks"></td>
               <td class="text-center">{{ data.reviewedBy || '-' }}</td>
             </tr>
           </tbody>

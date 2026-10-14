@@ -32,8 +32,20 @@ export class FeedbackAnalysisService {
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
     }
-    getCustomerDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-        return this.http.get<any>(`${this.apiUrl}/customer-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    // getCustomerDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+    //     return this.http.get<any>(`${this.apiUrl}/customer-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+    // }
+     getCustomerDropdown(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/customer-dropdown` +
+            `?searchTerm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
     getFeedbackDetails(id: number) {
         return this.http.get<any>(`${this.apiUrl}/feedback-details/${id}`);

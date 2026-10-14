@@ -57,9 +57,14 @@
               <div class="col-md-4">
                 <label class="form-label">Test Method Code <span class="text-danger">*</span></label>
                 <select class="form-select" formControlName="testMethodCode" (change)="onChangeTestMethodCode($event)">
-                  <option value="" disabled selected>Select Method</option>
-                  <option *ngFor="let method of testMethodList" [value]="method.name">{{ method.name }}</option>
+
+                  <option value="" disabled>Select Method</option>
+
+                  <option *ngFor="let method of testMethodList" [value]="method.name">
+                    {{ method.name }}
+                  </option>
                 </select>
+               
               </div>
               <div class="col-md-4">
                 <label class="form-label">Test Method Name <span class="text-danger">*</span></label>

@@ -32,10 +32,19 @@ export class RetestingOfRetainedSampleService {
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
     }
-    getQCPlanNo(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
-        return this.http.get<any>(`${this.apiUrl}/qcplanno-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
-    }
 
+    getQCPlanNo(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/qcplanno-dropdown` +
+            `?searchTearm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
+    }
     getQcDetails(id: number): Observable<any> {
         return this.http.get<any[]>(`${this.apiUrl}/qcDetails/${id}`);
     }

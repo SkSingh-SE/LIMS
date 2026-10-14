@@ -32,7 +32,10 @@ export interface RetestingOfRetainedSample {
     formatNo: string;
     issueNo: string;
     revNo: string;
-    date: string;
+    date: string | Date;
+    effectiveFrom: string | Date;
+    effectiveTo: string | Date;
+    nextDueDate: string | Date;
     documentNo: string;
 
     // Header Info
@@ -45,7 +48,7 @@ export interface RetestingOfRetainedSample {
 
     // Retest Parameters
     retestingLogs: RetestingLogs[];
-    initialTestingLogs:InitialTestingLogs[];
+    initialTestingLogs: InitialTestingLogs[];
 
     // Review & Signatures
     remarks: string;

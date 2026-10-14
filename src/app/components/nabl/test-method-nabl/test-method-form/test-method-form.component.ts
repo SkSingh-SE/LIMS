@@ -147,8 +147,8 @@ export class TestMethodNablFormComponent implements CanComponentDeactivate, OnIn
             revisionNo: ['', Validators.required],
             effectiveDate: ['', Validators.required],
             status: ['Active'],
-            isVerified: [false],
-            isValidated: [false]
+            // isVerified: [false],
+            // isValidated: [false]
         });
 
         this.testMethod.push(entryGroup);
@@ -181,8 +181,8 @@ export class TestMethodNablFormComponent implements CanComponentDeactivate, OnIn
                             revisionNo: [entry.revisionNo || '', Validators.required],
                             effectiveDate: NablFormsHelper.formatDateForInput(entry.effectiveDate) || null,
                             status: [entry.status || 'Active'],
-                            isVerified: [entry.isVerified === true || entry.isVerified === 1],
-                            isValidated: [entry.isValidated === true || entry.isValidated === 1]
+                            // isVerified: [entry.isVerified === true || entry.isVerified === 1],
+                            // isValidated: [entry.isValidated === true || entry.isValidated === 1]
                         }));
                     });
 

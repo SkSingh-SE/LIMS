@@ -32,14 +32,18 @@ export class SupplierEvaluationRecordService {
     delete(id: number): Observable<SupplierEvaluationRecordResponse> {
         return this.http.delete<SupplierEvaluationRecordResponse>(`${this.apiUrl}/delete/${id}`);
     }
-    getAllSuppliers(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
-        return this.http.get<any[]>(`${this.apiUrl}/allsupplierlist`, {
-            params: {
-                searchTerm: searchTerm,
-                pageNo: pageNo,
-                pageSize: pageSize
-            }
-        });
+
+    getAllSuppliers(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/allsupplierlist` +
+            `?searchTearm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
     getSupplierEvaluationDetails(supplierName: string, fromDate: string, toDate: string) {
         return this.http.get<any>(`${this.apiUrl}/supplier-evaluation-details`, {

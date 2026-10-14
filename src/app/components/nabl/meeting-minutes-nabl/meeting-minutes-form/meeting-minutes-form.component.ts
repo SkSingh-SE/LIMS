@@ -11,11 +11,12 @@ import { UnsavedChangesService } from '../../../../services/unsaved-changes.serv
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
 import { ToastService } from '../../../../services/toast.service';
+import { SearchableDropdownComponent } from '../../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
     selector: 'app-meeting-minutes-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, RouterModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './meeting-minutes-form.component.html',
     styleUrl: './meeting-minutes-form.component.css'
 })
@@ -27,7 +28,6 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
     recordId: number = 0;
     formTitle = 'Minutes of Management Review Meeting';
     formNumbers = NablFormsHelper.getFormNumbers();
-    meetingList: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         meetingInfo: true,
@@ -79,7 +79,6 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
         this.route.paramMap.subscribe(params => {
             const id = params.get('id');
             const mode = this.route.snapshot.url[1]?.path;
-            this.loadMeetingList();
             if (id && id !== 'create') {
                 this.recordId = +id;
                 this.isEditMode = mode === 'edit';
@@ -104,9 +103,9 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
             revNo: ['00'],
             revDate: [null],
 
-            meetingDate: [''],
-            meetingNo: ['', Validators.required],
-            meetingId: [null],
+            meetingDate: ['', Validators.required],
+            meetingId: ['', Validators.required],
+            meetingNo: [null],
             meetingTime: [''],
             meetingVenue: [''],
             chairpersonName: [''],
@@ -144,20 +143,19 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
         return this.minutesForm.get('actionItems') as FormArray;
     }
 
-
-    loadMeetingList(): void {
-        this.service.getLoadMeetingList().subscribe({
-            next: (data) => {
-                this.meetingList = data;
-            },
-            error: () => {
-                this.meetingList = [];
-            }
-        })
+    loadMeetingList = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.service.getLoadMeetingList(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
-
     onChangeMeetingNo(event: any): void {
-        const meetingNo = event.target.value;
+
+        if (!event) {
+            return;
+        }
+
+        this.minutesForm.patchValue({
+            meetingId: event.id
+        })
+        const meetingNo = event.name;
         this.service.meetingDetails(meetingNo).subscribe({
             next: (data) => {
                 this.minutesForm.patchValue({
@@ -216,7 +214,7 @@ export class MeetingMinutesFormComponent implements CanComponentDeactivate, OnIn
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
             if (data) {
-                
+
                 this.minutesForm.patchValue(data);
                 this.agendalist.clear();
                 data.agendaList.forEach((item: any) => {

@@ -179,7 +179,7 @@ export class RetestingOfRetainedSampleFormComponent implements CanComponentDeact
 
     fetchQCPlanNo = (term: string, page: number, pageSize: number): Observable<any[]> => {
         // Replace with actual service call to fetch test methods
-        return this.service.getQCPlanNo(term, page, pageSize);
+        return this.service.getQCPlanNo(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
     getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
         // Replace with actual service call to fetch test methods
@@ -261,6 +261,7 @@ export class RetestingOfRetainedSampleFormComponent implements CanComponentDeact
                     this.initialTestingLogs.clear();
                     this.retestingLogs.clear();
 
+
                     data.initialTestingLogs?.forEach((x: any) => {
                         this.initialTestingLogs.push(
                             this.fb.group({
@@ -300,6 +301,13 @@ export class RetestingOfRetainedSampleFormComponent implements CanComponentDeact
                         )
                     });
                     this.retestForm.patchValue(data);
+
+                    this.retestForm.patchValue({
+                        nextDueDate: NablFormsHelper.formatDateForInput(data.nextDueDate),
+                        effectiveFrom: NablFormsHelper.formatDateForInput(data.effectiveFrom),
+                        effectiveTo: NablFormsHelper.formatDateForInput(data.effectiveTo),
+                        date: NablFormsHelper.formatDateForInput(data.date),
+                    })
                     // Lock form if not in editable status
                     const status = (data as any).status;
                     if (status && status !== 'Draft' && status !== 'Rejected') {

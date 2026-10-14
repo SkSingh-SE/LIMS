@@ -67,15 +67,19 @@
           <div *ngIf="openSections['referenceDetails']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Purchase Order No <span
+                <!-- <label class="form-label fw-semibold text-dark small">Purchase Order No <span
                     class="text-danger">*</span></label>
-                <!-- <input type="text" class="form-control shadow-sm" formControlName="planNo"> -->
+                <input type="text" class="form-control shadow-sm" formControlName="planNo">
                 <select class="form-select form-select-sm" formControlName="poNo" (change)="onPoNoChange($event)">
                   <option value="" disabled>Select Plan No</option>
                   <option *ngFor="let poNo of PurchaseOrderNoList" [value]="poNo.id || poNo.Id">
                     {{ poNo.name || poNo.Name }}
                   </option>
-                </select>
+                </select> -->
+                <app-searchable-dropdown [placeholder]="'Search Purchase Order'" [labelName]="'Purchase Order No'"
+                  [fetchDataFn]="loadPONoList" (itemSelected)="onPoNoChange($event)" [isDisabled]="isViewMode"
+                  [required]="true" [selectedItem]="materialForm.get('poNo')?.value">
+                </app-searchable-dropdown>
                 <div *ngIf="materialForm.get('poNo')?.invalid && materialForm.get('poNo')?.touched"
                   class="text-danger text-sm mt-1">
                   po no is required
@@ -168,7 +172,7 @@
           <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
             (click)="toggleSection('receivedItem')" style="cursor: pointer;">
             <i class="bi" [ngClass]="openSections['receivedItem'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2 ">III. Received Items Table</span>
+            <span class="fw-bold ms-2 ">III. Received Items</span>
           </div>
           <div *ngIf="openSections['receivedItem']" class="section-body p-0 border border-top-0 rounded-bottom">
             <div class="table-responsive">
@@ -176,10 +180,10 @@
                 <thead class="table-light align-middle text-center">
                   <tr>
                     <th style="width: 50px;">SN</th>
-                    <th>Material/Description</th>
+                    <th>Material Name</th>
                     <th>Material Code </th>
                     <th>Ordered Qty </th>
-                    <th>Unit </th>
+                    <th>Unit Price </th>
                     <th>Received Qty</th>
                     <th>Batch No </th>
                     <th>Lot No </th>
@@ -199,13 +203,22 @@
                     </td>
 
                     <td>
-                      <input type="text" class="form-control form-control-sm border-dashed"
-                        formControlName="materialCode" placeholder="material code"  [readOnly]="isViewMode">
+                      <input type="text" class="form-control form-control-sm border-dashed" [ngClass]="{
+                        'is-invalid': item.get('materialCode')?.touched && item.get('materialCode')?.invalid
+                      }" formControlName="materialCode" placeholder="material code" [readOnly]="isViewMode">
+                      <div *ngIf="
+                                        item.get('materialCode')?.touched &&
+                                        item.get('materialCode')?.invalid
+                                        " class="text-danger text-sm mt-1">
+
+                        Material Code is required.
+
+                      </div>
                     </td>
 
                     <td>
-                      <input type="number" class="form-control form-control-sm border-dashed" formControlName="orderedQty"
-                        readonly>
+                      <input type="number" class="form-control form-control-sm border-dashed"
+                        formControlName="orderedQty" readonly>
                     </td>
 
                     <td>
@@ -214,26 +227,59 @@
                     </td>
                     <td>
                       <input type="number" class="form-control form-control-sm border-dashed"
-                        formControlName="receviceQty" (input)="validateReceivedQuantity(i)" placeholder="received qty" [readOnly]="isViewMode">
+                        formControlName="receviceQty" (input)="validateReceivedQuantity(i)" placeholder="received qty"
+                        [readOnly]="isViewMode" [ngClass]="{
+                          'is-invalid': item.get('receviceQty')?.touched && item.get('receviceQty')?.invalid
+                        }">
+                      <div *ngIf="
+                                        item.get('receviceQty')?.touched &&
+                                        item.get('receviceQty')?.invalid
+                                        " class="text-danger text-sm mt-1">
+                        Received Quantity is required and must be a valid number.
+                      </div>
                     </td>
                     <td>
                       <input type="text" class="form-control form-control-sm border-dashed" formControlName="batchNo"
-                        placeholder="batch no" [readOnly]="isViewMode">
+                        placeholder="batch no" [readOnly]="isViewMode" [ngClass]="{
+                          'is-invalid': item.get('batchNo')?.touched && item.get('batchNo')?.invalid
+                        }">
+                      <div *ngIf="
+                                        item.get('batchNo')?.touched &&
+                                        item.get('batchNo')?.invalid
+                                        " class="text-danger text-sm mt-1">
+                        Batch No is required.
+                      </div>
                     </td>
 
                     <td>
                       <input type="text" class="form-control form-control-sm border-dashed" formControlName="lotNo"
-                        placeholder="lot no"[readOnly]="isViewMode">
+                        placeholder="lot no" [readOnly]="isViewMode" [ngClass]="{
+                          'is-invalid': item.get('lotNo')?.touched && item.get('lotNo')?.invalid
+                        }">
+                      <div *ngIf="
+                                        item.get('lotNo')?.touched &&
+                                        item.get('lotNo')?.invalid
+                                        " class="text-danger text-sm mt-1">
+                        Lot No is required.
+                      </div>
                     </td>
 
                     <td>
                       <input type="text" class="form-control form-control-sm border-dashed" formControlName="invoiceNo"
-                        placeholder="invoice no" [readOnly]="isViewMode">
+                        placeholder="invoice no" [readOnly]="isViewMode" [ngClass]="{
+                          'is-invalid': item.get('invoiceNo')?.touched && item.get('invoiceNo')?.invalid
+                        }">
+                      <div *ngIf="
+                                        item.get('invoiceNo')?.touched &&
+                                        item.get('invoiceNo')?.invalid
+                                        " class="text-danger text-sm mt-1">
+                        Invoice No is required.
+                      </div>
                     </td>
 
                     <td>
-                      <input type="date" class="form-control form-control-sm border-dashed"
-                        formControlName="expiryDate" [readOnly]="isViewMode">
+                      <input type="date" class="form-control form-control-sm border-dashed" formControlName="expiryDate"
+                        [readOnly]="isViewMode">
                     </td>
 
                     <td>
@@ -430,7 +476,7 @@
                   placeholder="verified by">
                 <div *ngIf="materialForm.get('receivedBy')?.invalid && materialForm.get('receivedBy')?.touched"
                   class="text-danger text-sm mt-1">
-                 received by is required
+                  received by is required
                 </div>
               </div>
               <div class="col-md-4">

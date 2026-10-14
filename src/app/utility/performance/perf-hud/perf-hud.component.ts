@@ -16,6 +16,8 @@ export class PerfHudComponent {
   public perfService = inject(PerfTraceService);
 
   public isExpanded = signal<boolean>(false);
+  public isDocked = signal<boolean>(true);
+  private wasDockedOnOpen = true;
   public activeTab = signal<'traces' | 'duplicates' | 'slow' | 'settings'>('traces');
   public selectedTx = signal<PerfEventTransaction | null>(null);
   public searchTerm = signal<string>('');
@@ -98,13 +100,29 @@ export class PerfHudComponent {
   public toggleExpand(): void {
     const next = !this.isExpanded();
     this.isExpanded.set(next);
-    if (next && !this.selectedTx() && this.transactions().length > 0) {
-      this.selectedTx.set(this.transactions()[0]);
+    if (next) {
+      this.wasDockedOnOpen = this.isDocked();
+      this.isDocked.set(false);
+      if (!this.selectedTx() && this.transactions().length > 0) {
+        this.selectedTx.set(this.transactions()[0]);
+      }
+    } else {
+      // Return to previous state: docked arrow if it was docked before, else pill
+      this.isDocked.set(this.wasDockedOnOpen);
     }
+  }
+
+  public showPill(): void {
+    this.isDocked.set(false);
+  }
+
+  public hideToDock(): void {
+    this.isDocked.set(true);
   }
 
   public closeExpand(): void {
     this.isExpanded.set(false);
+    this.isDocked.set(this.wasDockedOnOpen);
   }
 
   public setTab(tab: 'traces' | 'duplicates' | 'slow' | 'settings'): void {

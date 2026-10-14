@@ -100,6 +100,12 @@ export class MachiningChargeMasterComponent implements OnInit {
     this.loadFinancialYears();
   }
 
+  /**
+   * Cutting / Machining / Other Preparation are child toggles of Preparation Required.
+   * Holds their last switched-on values so nothing is lost when the parent is toggled off.
+   */
+  private prepChildSnapshot: { cuttingRequired: boolean; machiningRequired: boolean; otherPreparation: boolean } | null = null;
+
   initForm(): void {
     this.form = this.fb.group({
       id: [0],
@@ -124,6 +130,42 @@ export class MachiningChargeMasterComponent implements OnInit {
     this.selectedFile = null;
     this.existingFilePath = null;
     this.existingFileName = null;
+    this.prepChildSnapshot = null;
+  }
+
+  /**
+   * Parent toggle handler for Preparation Required.
+   * OFF → children are switched off (they are hidden too, so no stale flag can be saved).
+   * ON  → the values captured when the parent was switched off are restored.
+   */
+  onPreparationRequiredToggle(): void {
+    if (this.form.get('preparationRequired')?.value) {
+      if (this.prepChildSnapshot) {
+        this.form.patchValue({ ...this.prepChildSnapshot });
+        this.prepChildSnapshot = null;
+      }
+      return;
+    }
+    this.prepChildSnapshot = {
+      cuttingRequired: !!this.form.get('cuttingRequired')?.value,
+      machiningRequired: !!this.form.get('machiningRequired')?.value,
+      otherPreparation: !!this.form.get('otherPreparation')?.value
+    };
+    this.form.patchValue({ cuttingRequired: false, machiningRequired: false, otherPreparation: false });
+  }
+
+  /** Keeps the loaded record consistent: parent off ⇒ every child off. */
+  private syncPreparationChildren(): void {
+    if (this.form.get('preparationRequired')?.value) {
+      this.prepChildSnapshot = null;
+      return;
+    }
+    this.prepChildSnapshot = {
+      cuttingRequired: !!this.form.get('cuttingRequired')?.value,
+      machiningRequired: !!this.form.get('machiningRequired')?.value,
+      otherPreparation: !!this.form.get('otherPreparation')?.value
+    };
+    this.form.patchValue({ cuttingRequired: false, machiningRequired: false, otherPreparation: false });
   }
 
   loadFinancialYears(): void {
@@ -246,6 +288,7 @@ export class MachiningChargeMasterComponent implements OnInit {
         });
         this.selectedLabTestId = response.laboratoryTestID || 0;
         this.selectedStandardId = response.testMethodStandardID || 0;
+        this.syncPreparationChildren();
         this.existingFilePath = response.drawingFilePath || null;
         this.existingFileName = response.fileName || null;
         this.versions.clear();
@@ -482,6 +525,8 @@ export class MachiningChargeMasterComponent implements OnInit {
     }
 
     const raw = this.form.getRawValue();
+    // Preparation Required is the parent flag — children can never be on while it is off.
+    const prepRequired = !!raw.preparationRequired;
     const fd = new FormData();
     fd.append('id', String(raw.id || 0));
     fd.append('laboratoryTestID', String(raw.laboratoryTestID));
@@ -489,10 +534,10 @@ export class MachiningChargeMasterComponent implements OnInit {
     fd.append('specimenRawMaterialSize', raw.specimenRawMaterialSize || '');
     fd.append('specimenSize', raw.specimenSize || '');
     fd.append('specimenQuantity', String(raw.specimenQuantity ?? 1));
-    fd.append('preparationRequired', String(!!raw.preparationRequired));
-    fd.append('cuttingRequired', String(!!raw.cuttingRequired));
-    fd.append('machiningRequired', String(!!raw.machiningRequired));
-    fd.append('otherPreparation', String(!!raw.otherPreparation));
+    fd.append('preparationRequired', String(prepRequired));
+    fd.append('cuttingRequired', String(prepRequired && !!raw.cuttingRequired));
+    fd.append('machiningRequired', String(prepRequired && !!raw.machiningRequired));
+    fd.append('otherPreparation', String(prepRequired && !!raw.otherPreparation));
     fd.append('cuttingInstructions', raw.cuttingInstructions || '');
     fd.append('machiningInstructions', raw.machiningInstructions || '');
     fd.append('remark', raw.remark || '');

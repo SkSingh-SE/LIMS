@@ -119,9 +119,9 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 42, title: 'Review', route: '/sample/review', parentMenuID: 5, permissions: ['CanReadReview'], children: [], color: getRandomColor() },
         {
           id: 500, title: 'Sample Preparation', route: '', parentMenuID: 5, permissions: [], children: [
-            { id: 130, title: 'Preparation Queue', route: '/sample/preparation', parentMenuID: 500, permissions: [], children: [], color: getRandomColor() },
+            { id: 130, title: 'Sample Preparation Queue', route: '/sample/preparation', parentMenuID: 500, permissions: [], children: [], color: getRandomColor() },
             // { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 500, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
-            { id: 47, title: 'Machining Charge Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
+            { id: 47, title: 'Specimen Preparation Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
             // { id: 48, title: 'Sample Preparation Master', route: '/sample-preparation-master', parentMenuID: 500, permissions: ['CanReadSamplePreparationMaster'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
           ], color: getRandomColor()
         }

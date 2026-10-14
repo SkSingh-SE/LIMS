@@ -403,17 +403,36 @@ export class SymbolPickerComponent implements OnInit {
     this.loadRecent();
   }
 
+  /**
+   * Filtered groups are cached so the getter always returns the SAME array
+   * reference while the search term is unchanged. Without this, `*ngFor`
+   * (default trackBy = identity) would destroy and recreate every symbol
+   * button on every change-detection pass, so a real click could land on an
+   * already-detached node and the symbol never got inserted.
+   */
+  private filteredCacheKey = '';
+  private filteredCacheSource: SymbolGroup[] | null = null;
+  private filteredCache: SymbolGroup[] = [];
+
   get filteredGroups(): SymbolGroup[] {
     if (!this.searchText.trim()) {
+      this.filteredCacheKey = '';
       return this.symbolGroups;
     }
+    if (this.filteredCacheKey === this.searchText && this.filteredCacheSource === this.symbolGroups) {
+      return this.filteredCache;
+    }
     const term = this.searchText.toLowerCase();
-    return this.symbolGroups
+    const groups = this.symbolGroups
       .map((g) => ({
         label: g.label,
         symbols: g.symbols.filter((s) => s.name.toLowerCase().includes(term) || s.char === term),
       }))
       .filter((g) => g.symbols.length > 0);
+    this.filteredCacheKey = this.searchText;
+    this.filteredCacheSource = this.symbolGroups;
+    this.filteredCache = groups;
+    return groups;
   }
 
   toggle(): void {

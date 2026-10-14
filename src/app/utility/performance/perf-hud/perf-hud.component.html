@@ -1,9 +1,20 @@
 <div class="lims-perf-hud-container" *ngIf="isVisible()">
 
+  <!-- 0. DOCKED CORNER ARROW (DEFAULT STATE — HUD HIDDEN) -->
+  <button
+    type="button"
+    class="perf-dock-btn"
+    *ngIf="isDocked() && !isExpanded()"
+    (click)="showPill()"
+    title="Show Performance HUD"
+  >
+    <i class="bi bi-chevron-up"></i>
+  </button>
+
   <!-- 1. COLLAPSED FLOATING PILL (DRAGGABLE) -->
   <div
     class="perf-pill"
-    *ngIf="!isExpanded()"
+    *ngIf="!isExpanded() && !isDocked()"
     cdkDrag
     cdkDragBoundary="body"
     [cdkDragFreeDragPosition]="pillPosition"
@@ -46,7 +57,15 @@
       </ng-template>
     </div>
 
-    <button type="button" class="perf-pill-expand-btn" (click)="toggleExpand(); $event.stopPropagation()">
+    <button
+      type="button"
+      class="perf-pill-hide-btn"
+      (click)="hideToDock(); $event.stopPropagation()"
+      title="Hide Performance HUD (only arrow stays in corner)"
+    >
+      <i class="bi bi-chevron-down"></i>
+    </button>
+    <button type="button" class="perf-pill-expand-btn" (click)="toggleExpand(); $event.stopPropagation()" title="Open full dashboard">
       <i class="bi bi-chevron-up"></i>
     </button>
   </div>

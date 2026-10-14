@@ -118,7 +118,7 @@
   </div>
 </div>
 
-<!-- Modal for Add/Edit/View Machining Charge Master -->
+<!-- Modal for Add/Edit/View Specimen Preparation Master -->
 <div
   id="machiningChargeModal"
   class="modal fade modal-fade modal-xl"
@@ -221,7 +221,7 @@
               <legend class="fieldset-legend d-flex align-items-center gap-1.5">
                 <i class="bi bi-toggles text-danger"></i><span>Preparation Requirements</span>
               </legend>
-              <div class="d-flex flex-wrap gap-4 py-1">
+              <div class="d-flex flex-wrap align-items-center gap-4 py-1">
                 <div class="form-check form-switch d-flex align-items-center gap-2">
                   <input
                     id="masterPrepReq"
@@ -229,12 +229,15 @@
                     type="checkbox"
                     role="switch"
                     formControlName="preparationRequired"
+                    (change)="onPreparationRequiredToggle()"
                   />
                   <label for="masterPrepReq" class="form-check-label text-sm fw-medium cursor-pointer">
                     Preparation Required
                   </label>
                 </div>
-                <div class="form-check form-switch d-flex align-items-center gap-2">
+
+                <!-- Child toggles — visible only while Preparation Required is ON -->
+                <div class="form-check form-switch d-flex align-items-center gap-2" *ngIf="form.get('preparationRequired')?.value">
                   <input
                     id="masterCutReq"
                     class="form-check-input mt-0 cursor-pointer"
@@ -246,7 +249,7 @@
                     Cutting Required
                   </label>
                 </div>
-                <div class="form-check form-switch d-flex align-items-center gap-2">
+                <div class="form-check form-switch d-flex align-items-center gap-2" *ngIf="form.get('preparationRequired')?.value">
                   <input
                     id="masterMachReq"
                     class="form-check-input mt-0 cursor-pointer"
@@ -258,7 +261,7 @@
                     Machining Required
                   </label>
                 </div>
-                <div class="form-check form-switch d-flex align-items-center gap-2">
+                <div class="form-check form-switch d-flex align-items-center gap-2" *ngIf="form.get('preparationRequired')?.value">
                   <input
                     id="masterOtherPrep"
                     class="form-check-input mt-0 cursor-pointer"

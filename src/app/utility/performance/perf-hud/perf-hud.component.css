@@ -5,12 +5,37 @@
 .lims-perf-hud-container {
   position: fixed;
   bottom: 60px;
-  right: 16px;
+  left: 16px;
+  right: auto;
   z-index: 99999;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.8rem;
   color: #1e293b;
   pointer-events: none;
+}
+
+/* --- 0. DOCKETED CORNER ARROW (DEFAULT HIDDEN STATE) --- */
+.perf-dock-btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: var(--primary-color, #da261c);
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease, border-color 0.25s ease;
+}
+
+.perf-dock-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  border-color: var(--primary-color, #da261c);
 }
 
 /* --- 1. COLLAPSED FLOATING PILL --- */
@@ -146,11 +171,27 @@
   margin-left: 4px;
 }
 
+.perf-pill-hide-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.perf-pill-hide-btn:hover {
+  color: var(--primary-color, #da261c);
+}
+
 /* --- 2. EXPANDED PERFORMANCE DASHBOARD MODAL/DRAWER --- */
 .perf-drawer {
   position: fixed;
   bottom: 16px;
-  right: 16px;
+  left: 16px;
+  right: auto;
   width: 860px;
   max-width: calc(100vw - 32px);
   max-height: 600px;

@@ -1,5 +1,13 @@
 import { Injectable, OnDestroy } from '@angular/core';
 
+/**
+ * Marker for inputs that belong to the symbol picker UI itself (its own search box).
+ * These must NEVER become the "active" target field, otherwise the selected symbol
+ * is typed into the picker search box instead of the form field (and the symbol
+ * list collapses because the search term keeps changing).
+ */
+const PICKER_OWN_INPUT = '[data-symbol-picker-input]';
+
 @Injectable({ providedIn: 'root' })
 export class ActiveInputService implements OnDestroy {
   private lastInput: HTMLInputElement | HTMLTextAreaElement | null = null;
@@ -11,6 +19,10 @@ export class ActiveInputService implements OnDestroy {
       const target = event.target as HTMLElement;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
         if (target.type !== 'checkbox' && target.type !== 'radio' && target.type !== 'file' && target.type !== 'button') {
+          // Keep the previously targeted form field while the picker's search box is focused.
+          if (target.closest(PICKER_OWN_INPUT)) {
+            return;
+          }
           this.lastInput = target;
         }
       }
@@ -50,8 +62,21 @@ export class ActiveInputService implements OnDestroy {
     el.dispatchEvent(new Event('input', { bubbles: true }));
 
     setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(start + char.length, start + char.length);
+      const active = document.activeElement;
+      const inPickerSearch = active instanceof HTMLElement && !!active.closest(PICKER_OWN_INPUT);
+
+      // If the user is typing in the picker's own search box, do NOT steal focus
+      // back to the form field — let them keep searching and inserting symbols.
+      if (!inPickerSearch) {
+        el.focus();
+      }
+
+      // Keep the caret on the target field so consecutive inserts chain correctly.
+      try {
+        el.setSelectionRange(start + char.length, start + char.length);
+      } catch {
+        // Some input types do not support selection ranges.
+      }
     });
 
     return true;

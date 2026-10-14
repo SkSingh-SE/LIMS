@@ -160,13 +160,13 @@
         <!-- Case Information & Customer Details Card -->
         <div class="col-md-8">
           <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
-            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
-              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
+            <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1">
                 <i class="bi bi-info-circle text-danger"></i><span>Case Information & Customer Details</span>
               </span>
             </div>
 
-            <div class="row g-1.5">
+            <div class="row g-2">
               <div class="col-md-4 col-sm-6">
                 <div class="meta-field-box">
                   <span class="meta-field-label">Case Number</span>
@@ -210,8 +210,8 @@
         <!-- Financial & Accounts Status Card -->
         <div class="col-md-4">
           <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
-            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
-              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
+            <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1">
                 <i class="bi bi-wallet2 text-danger"></i><span>Billing & Accounts Status</span>
               </span>
             </div>
@@ -233,7 +233,7 @@
                 <span class="text-muted fs-7">Amount Received:</span>
                 <span class="fw-semibold text-success fs-7">₹{{ lifecycleSummary.totalReceivedAmount | number:'1.2-2' }}</span>
               </div>
-              <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-0.5">
+              <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
                 <span class="text-muted fs-7">Balance Due:</span>
                 <span class="fw-bold fs-7" [class.text-danger]="lifecycleSummary.balanceDueAmount > 0" [class.text-success]="lifecycleSummary.balanceDueAmount === 0">
                   ₹{{ lifecycleSummary.balanceDueAmount | number:'1.2-2' }}
@@ -279,11 +279,12 @@
     <!-- ── 3. PREPARATION STAGE ── -->
     <div *ngIf="activeStageId === 'preparation'" class="stage-pane-body">
       <div *ngIf="inwardId > 0">
-        <app-cutting-machining-plan-tab
-          [inwardId]="inwardId"
-          [isReadOnly]="isStageReadOnly('preparation')"
+        <app-sample-preparation-form
+          [embeddedInwardId]="inwardId"
+          [isEmbeddedMode]="true"
+          [isEmbeddedReadOnly]="isStageReadOnly('preparation')"
           (prepCompleted)="onPrepCompleted()">
-        </app-cutting-machining-plan-tab>
+        </app-sample-preparation-form>
       </div>
     </div>
 
@@ -298,7 +299,7 @@
 
       <div *ngIf="selectedSampleId && activeInlineAction === 'testing'" class="inline-form-panel mt-2">
         <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
-          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1.5">
+          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1">
             <i class="bi bi-flask-fill"></i><span>Testing Execution: {{ getSelectedSample()?.sampleNo }}</span>
           </span>
           <div class="d-flex align-items-center gap-2">
@@ -332,7 +333,7 @@
 
       <div *ngIf="selectedSampleId && activeInlineAction === 'reporting'" class="inline-form-panel mt-2">
         <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
-          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1.5">
+          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1">
             <i class="bi bi-file-earmark-text-fill"></i><span>Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}</span>
           </span>
           <div class="d-flex align-items-center gap-2">

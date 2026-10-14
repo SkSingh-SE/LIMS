@@ -1,9 +1,9 @@
 <div class="container-fluid p-0" [formGroup]="planForm">
   <!-- Inward Details Strip -->
   <div class="inward-strip" [class.inward-strip-compact]="mode === 'plan'">
-    <div class="inward-strip-header" *ngIf="mode !== 'plan'">
+    <!-- <div class="inward-strip-header" *ngIf="mode !== 'plan'">
       <i class="bi bi-file-earmark-text me-2"></i><span>Inward Details</span>
-    </div>
+    </div> -->
     <div class="inward-strip-body">
       <div class="d-flex flex-wrap align-items-center gap-3">
         <span class="case-badge">
@@ -57,7 +57,8 @@
           <input *ngIf="!isViewMode && samples.length > 1" type="checkbox" class="form-check-input mt-0 cursor-pointer"
             [checked]="isAllSamplesSelected()" [indeterminate]="isSomeSamplesSelected()"
             (change)="toggleSelectAll($event)" title="Select all samples for combined planning">
-          <span class="sample-panel-label"><i class="bi bi-collection ms-1 me-2 text-danger"></i><span>SAMPLES</span></span>
+          <span class="sample-panel-label"><i
+              class="bi bi-collection ms-1 me-2 text-danger"></i><span>SAMPLES</span></span>
         </div>
         <span class="sample-panel-count">{{ samples.length }}</span>
       </div>
@@ -151,278 +152,329 @@
           <ng-container *ngFor="let sampleCtrl of samples.controls; let sIdx = index">
             <div *ngIf="sIdx === activeSampleIdx" [formGroupName]="sIdx" class="sample-section position-relative">
 
-            <!-- Standardized Fieldset for Sample Details & Guidelines (Proposal B - Spacious 3-Layer Layout) -->
-            <fieldset class="mb-3">
-              <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-2">
-                <span><i class="bi bi-box-seam me-2"></i><span>Sample Details & Guidelines</span></span>
-                <span class="badge bg-dark ms-2">{{ getActiveSample().get('sampleNo')?.value }}</span>
-                <span *ngIf="getActiveSample().get('quantity')?.value" class="badge bg-secondary ms-1">
-                  Qty: {{ getActiveSample().get('quantity')?.value }}
-                </span>
+              <!-- Standardized Fieldset for Sample Details & Guidelines (Proposal B - Spacious 3-Layer Layout) -->
+              <fieldset class="mb-3">
+                <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-2">
+                  <span><i class="bi bi-box-seam me-2"></i><span>Sample Details & Guidelines</span></span>
+                  <span class="badge bg-dark ms-2">{{ getActiveSample().get('sampleNo')?.value }}</span>
+                  <span *ngIf="getActiveSample().get('quantity')?.value" class="badge bg-secondary ms-1">
+                    Qty: {{ getActiveSample().get('quantity')?.value }}
+                  </span>
 
-                <!-- Unknown Sample Toggle in Header Line -->
-                <div class="form-check form-switch mb-0 ms-3 d-inline-flex align-items-center gap-1.5 p-0">
-                  <input class="form-check-input m-0 cursor-pointer" type="checkbox" formControlName="isUnknownSample"
-                    (change)="onUnknownSampleToggle(activeSampleIdx)" id="unknownToggle{{activeSampleIdx}}">
-                  <label class="form-check-label extra-small fw-semibold text-secondary cursor-pointer mb-0 user-select-none"
-                    for="unknownToggle{{activeSampleIdx}}">Unknown Sample</label>
-                </div>
-              </legend>
+                  <!-- Unknown Sample Toggle in Header Line -->
+                  <div class="form-check form-switch mb-0 ms-3 d-inline-flex align-items-center gap-1.5 p-0">
+                    <input class="form-check-input m-0 cursor-pointer" type="checkbox" formControlName="isUnknownSample"
+                      (change)="onUnknownSampleToggle(activeSampleIdx)" id="unknownToggle{{activeSampleIdx}}">
+                    <label
+                      class="form-check-label extra-small fw-semibold text-secondary cursor-pointer mb-0 user-select-none"
+                      for="unknownToggle{{activeSampleIdx}}">Unknown Sample</label>
+                  </div>
+                </legend>
 
-              <div class="row g-2 align-items-stretch">
-                <!-- LEFT COLUMN: Dedicated Full-Width Sample Image Anchor (col-md-3) -->
-                <div class="col-md-3">
-                  <div
-                    class="card p-1 border bg-light shadow-none text-center h-100 d-flex align-items-center justify-content-center overflow-hidden">
+                <div class="row g-2 align-items-stretch">
+                  <!-- LEFT COLUMN: Dedicated Full-Width Sample Image Anchor (col-md-3) -->
+                  <div class="col-md-3">
                     <div
-                      class="w-100 h-100 d-flex align-items-center justify-content-center overflow-hidden position-relative rounded bg-white sample-img-anchor-box">
-                      <img *ngIf="getActiveSample().get('sampleFilePath')?.value"
-                        [src]="baseUrl + getActiveSample().get('sampleFilePath')?.value"
-                        [alt]="getActiveSample().get('fileName')?.value"
-                        class="img-fluid rounded cursor-pointer sample-img-anchor-img"
-                        (click)="openFileInNewTab(getActiveSample().get('sampleFilePath')?.value)"
-                        title="Click to view full image" />
-                      <div *ngIf="!getActiveSample().get('sampleFilePath')?.value" class="text-muted small py-4">
-                        <i class="bi bi-image fs-1 d-block mb-2 text-secondary opacity-50"></i><span>No Image Available</span>
+                      class="card p-1 border bg-light shadow-none text-center h-100 d-flex align-items-center justify-content-center overflow-hidden">
+                      <div
+                        class="w-100 h-100 d-flex align-items-center justify-content-center overflow-hidden position-relative rounded bg-white sample-img-anchor-box">
+                        <img *ngIf="getActiveSample().get('sampleFilePath')?.value"
+                          [src]="baseUrl + getActiveSample().get('sampleFilePath')?.value"
+                          [alt]="getActiveSample().get('fileName')?.value"
+                          class="img-fluid rounded cursor-pointer sample-img-anchor-img"
+                          (click)="openFileInNewTab(getActiveSample().get('sampleFilePath')?.value)"
+                          title="Click to view full image" />
+                        <div *ngIf="!getActiveSample().get('sampleFilePath')?.value" class="text-muted small py-4">
+                          <i class="bi bi-image fs-1 d-block mb-2 text-secondary opacity-50"></i><span>No Image
+                            Available</span>
+                        </div>
                       </div>
                     </div>
+                  </div>
+
+                  <!-- RIGHT COLUMN: 3 Structured Layers (col-md-9) -->
+                  <div class="col-md-9 d-flex flex-column justify-content-between gap-2">
+
+                    <!-- LAYER 1: Sample Specifications Text Banner -->
+                    <div class="sample-text-details bg-light p-2 rounded border small">
+                      <span *ngIf="getActiveSample().get('details')?.value">
+                        <strong class="text-secondary">Details:</strong> {{ getActiveSample().get('details')?.value }}
+                      </span>
+                      <ng-container
+                        *ngIf="getActiveSample().get('thickness')?.value || getActiveSample().get('diameter')?.value || getActiveSample().get('width')?.value || getActiveSample().get('length')?.value">
+                        <span class="text-muted mx-1">|</span>
+                        <span>
+                          <strong class="text-secondary">Dim:</strong>
+                          <ng-container *ngIf="getActiveSample().get('thickness')?.value"> T:{{
+                            getActiveSample().get('thickness')?.value }}mm</ng-container>
+                          <ng-container *ngIf="getActiveSample().get('diameter')?.value"> D:{{
+                            getActiveSample().get('diameter')?.value }}mm</ng-container>
+                          <ng-container *ngIf="getActiveSample().get('width')?.value"> W:{{
+                            getActiveSample().get('width')?.value }}mm</ng-container>
+                          <ng-container *ngIf="getActiveSample().get('length')?.value"> L:{{
+                            getActiveSample().get('length')?.value }}mm</ng-container>
+                        </span>
+                      </ng-container>
+                      <ng-container *ngFor="let row of getAdditionalDetailsArray(getActiveSample())">
+                        <span class="text-muted mx-1">|</span>
+                        <span><strong class="text-secondary">{{ row.get('label')?.value }}:</strong> {{
+                          row.get('value')?.value || '-' }}</span>
+                      </ng-container>
+                    </div>
+
+                    <!-- LAYER 2: Master Classification Header with Quick Explore Button -->
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-semibold text-secondary small d-flex align-items-center gap-1.5">
+                        <i class="bi bi-diagram-3 me-1.5 text-danger"></i><span>Master Classification & Scope</span>
+                      </span>
+                      <button type="button"
+                        class="btn btn-sm btn-lims btn-lims-primary d-inline-flex align-items-center py-0.5 px-2.5 shadow-sm"
+                        (click)="openExplorerModal(activeSampleIdx)"
+                        title="Explore Configured Tests, Standards & Methods for this sample">
+                        <i class="bi bi-layout-sidebar-reverse me-1.5"></i><span>Explore Configured Scope</span>
+                      </button>
+                    </div>
+
+                    <!-- LAYER 2: Master Classification (3 Dropdowns Side-By-Side) -->
+                    <div class="row g-2">
+                      <div class="col-md-4">
+                        <app-searchable-dropdown [placeholder]="'Select Product Size Range'" [hideLabel]="false"
+                          [labelName]="'Product Size'" [smallInput]="true" [fetchDataFn]="getProductSizeDrop"
+                          [reloadKey]="activeSampleIdx" (itemSelected)="onProductSizeSelected($event, activeSampleIdx)"
+                          [selectedItem]="getSelectedProductSize(activeSampleIdx)"
+                          [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"></app-searchable-dropdown>
+                      </div>
+                      <div class="col-md-4">
+                        <app-searchable-dropdown
+                          [placeholder]="getActiveSample().get('isUnknownSample')?.value ? 'Unknown Sample (Optional)' : 'Search Product Master / Grade'"
+                          [hideLabel]="false" [labelName]="'Product Master'" [smallInput]="true"
+                          [fetchDataFn]="getProductMasterDrop" [reloadKey]="activeSampleIdx"
+                          (itemSelected)="onProductMasterSelected($event, activeSampleIdx)"
+                          [selectedItem]="getSelectedProductMaster(activeSampleIdx)"
+                          [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode || getActiveSample().get('isUnknownSample')?.value"></app-searchable-dropdown>
+                      </div>
+                      <div class="col-md-4">
+                        <app-searchable-dropdown [placeholder]="'Search Metal Classification'" [hideLabel]="false"
+                          [labelName]="'Metal Classification'" [smallInput]="true" [fetchDataFn]="getMetalDrop"
+                          [reloadKey]="activeSampleIdx"
+                          (itemSelected)="onMetalClassificationSelected($event, activeSampleIdx)"
+                          [selectedItem]="getSelectedMetal(activeSampleIdx)"
+                          [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"></app-searchable-dropdown>
+                      </div>
+                    </div>
+
+                    <!-- Unknown Sample Flow Banner & Assign Grade Control (Exception Action) -->
+                    <div *ngIf="getActiveSample().get('isUnknownSample')?.value" class="mt-1 mb-2">
+                      <div
+                        class="lims-info-banner-compact d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                        <div class="d-flex align-items-center">
+                          <i class="bi bi-info-circle-fill text-info me-2"></i>
+                          <span><strong>Unknown Sample:</strong> Grade will be assigned post-testing. All master tests
+                            available.</span>
+                        </div>
+                        <span class="badge-tbd">Grade TBD</span>
+                      </div>
+                      <!-- Post-Testing Assign Grade Panel (Permitted even when plan is approved) -->
+                      <div class="p-2 rounded bg-light border border-info border-opacity-50">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                          <span class="fw-semibold text-dark small d-flex align-items-center">
+                            <i class="bi bi-patch-check-fill text-primary me-1.5"></i><span>Assign Specification Grade
+                              (Post-Testing)</span>
+                          </span>
+                          <span
+                            class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 extra-small">
+                            <i class="bi bi-unlock-fill me-1"></i>Active Exception Action
+                          </span>
+                        </div>
+                        <div class="row g-2 align-items-end">
+                          <div class="col-md-5">
+                            <app-searchable-dropdown [placeholder]="'Type & Search Grade to Assign'" [hideLabel]="true"
+                              [labelName]="'Assigned Grade'" [smallInput]="true"
+                              [fetchDataFn]="getGradeDropForUnknown(activeSampleIdx)"
+                              [reloadKey]="activeSampleIdx + '_assigned_grade'"
+                              (itemSelected)="onAssignedGradeSelected($event, activeSampleIdx)"
+                              [selectedItem]="getSelectedAssignedGrade(activeSampleIdx)">
+                            </app-searchable-dropdown>
+                          </div>
+                          <div class="col-md-5">
+                            <input type="text" class="form-control form-control-sm"
+                              placeholder="Optional remarks / metallurgical evaluation note..."
+                              [value]="getActiveSample().get('assignedGradeNote')?.value || ''"
+                              (input)="getActiveSample().get('assignedGradeNote')?.setValue($any($event.target).value)" />
+                          </div>
+                          <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-lims btn-lims-primary w-100 py-1"
+                              (click)="onAssignGrade(activeSampleIdx)"
+                              [disabled]="!getActiveSample().get('assignedGradeID')?.value">
+                              <i class="bi bi-check-circle me-1"></i><span>Assign</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Scope Master Not Configured Alert Banner (Compact) -->
+                    <div *ngIf="isScopeConfiguredMap[activeSampleIdx] === false" class="mt-1 mb-1">
+                      <div class="lims-warn-banner-compact">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                        <span><strong>Notice:</strong> Scope Master not configured for this Product/Grade. Manual test
+                          selection active (no acceptance limits).</span>
+                      </div>
+                    </div>
+
+                    <!-- LAYER 3: TPI Inspection & Special Test Instructions (Split 2 Columns) -->
+                    <div class="row g-2 align-items-stretch">
+                      <!-- TPI Sub-block (col-md-5) -->
+                      <div class="col-md-5">
+                        <div class="p-2 rounded bg-light border h-100 d-flex flex-column justify-content-between">
+                          <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="fw-semibold text-dark small"><i
+                                class="bi bi-patch-check text-danger me-2"></i><span>TPI Inspection</span></span>
+                            <div class="form-check form-switch mb-0 d-inline-flex align-items-center gap-1.5 p-0">
+                              <input class="form-check-input m-0 cursor-pointer" type="checkbox"
+                                [checked]="getActiveSample().get('tpiRequired')?.value"
+                                [disabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                (change)="onTpiRequiredToggle(activeSampleIdx, $event)"
+                                id="tpiCheck_{{activeSampleIdx}}">
+                              <label class="form-check-label small fw-semibold cursor-pointer mb-0 user-select-none"
+                                for="tpiCheck_{{activeSampleIdx}}"
+                                [class.text-success]="getActiveSample().get('tpiRequired')?.value"
+                                [class.text-muted]="!getActiveSample().get('tpiRequired')?.value">
+                                {{ getActiveSample().get('tpiRequired')?.value ? 'Yes' : 'No' }}
+                              </label>
+                            </div>
+                          </div>
+                          <div *ngIf="getActiveSample().get('tpiRequired')?.value" class="mt-2">
+                            <app-searchable-dropdown [placeholder]="'Type & Search TPI Agency'" [hideLabel]="true"
+                              [labelName]="'TPI Agency'" [smallInput]="true" [fetchDataFn]="getTPIAgencies"
+                              [reloadKey]="activeSampleIdx" (itemSelected)="onTPISelected($event, activeSampleIdx)"
+                              [selectedItem]="getSelectedTpiAgency(activeSampleIdx)"
+                              [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"></app-searchable-dropdown>
+                            <div *ngIf="tpiAgencyDetails[activeSampleIdx]"
+                              class="d-flex align-items-center gap-2 p-2 mt-2 bg-white rounded small border text-muted">
+                              <span class="text-dark"><i class="bi bi-telephone text-success me-2"></i><span>{{
+                                  tpiAgencyDetails[activeSampleIdx].contactNo }}</span></span>
+                              <span class="text-dark ms-auto"><i class="bi bi-envelope text-info me-2"></i><span>{{
+                                  tpiAgencyDetails[activeSampleIdx].emailId }}</span></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Instructions Sub-block (col-md-7) -->
+                      <div class="col-md-7">
+                        <div class="p-2 rounded bg-white border h-100 d-flex flex-column justify-content-between gap-2">
+                          <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small fw-semibold text-dark mb-0"><i
+                                class="bi bi-file-earmark-text text-danger me-2"></i><span>Test
+                                Instructions:</span></label>
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                              <button type="button" class="btn btn-xs preset-chip-btn"
+                                [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'btn-danger text-white' : 'btn-outline-secondary'"
+                                (click)="toggleInstruction(activeSampleIdx, 'Preserve broken specimen')"
+                                [disabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                title="Click to toggle 'Preserve broken specimen'">
+                                <i class="bi me-1.5"
+                                  [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'bi-check-lg' : 'bi-plus'"></i><span>Preserve</span>
+                              </button>
+                              <button type="button" class="btn btn-xs preset-chip-btn"
+                                [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'btn-danger text-white' : 'btn-outline-secondary'"
+                                (click)="toggleInstruction(activeSampleIdx, 'Provide stress-strain graph')"
+                                [disabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                title="Click to toggle 'Provide stress-strain graph'">
+                                <i class="bi me-1.5"
+                                  [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'bi-check-lg' : 'bi-plus'"></i><span>Graph</span>
+                              </button>
+                              <button type="button" class="btn btn-xs preset-chip-btn"
+                                [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'btn-danger text-white' : 'btn-outline-secondary'"
+                                (click)="toggleInstruction(activeSampleIdx, 'Impact test at -46°C')"
+                                [disabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                title="Click to toggle 'Impact test at -46°C'">
+                                <i class="bi me-1.5"
+                                  [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'bi-check-lg' : 'bi-plus'"></i>-46°C
+                              </button>
+                              <button type="button" class="btn btn-xs preset-chip-btn"
+                                [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'btn-danger text-white' : 'btn-outline-secondary'"
+                                (click)="toggleInstruction(activeSampleIdx, 'Protect polished surface')"
+                                [disabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                title="Click to toggle 'Protect polished surface'">
+                                <i class="bi me-1.5"
+                                  [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'bi-check-lg' : 'bi-plus'"></i><span>Protect</span>
+                              </button>
+                            </div>
+                          </div>
+                          <textarea class="form-control form-control-sm instruction-textarea"
+                            formControlName="testInstructions" rows="3"
+                            [readonly]="isPlanLocked(activeSampleIdx) || isViewMode"
+                            placeholder="Enter special test guidelines or click preset buttons..."></textarea>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
+              </fieldset>
 
-                <!-- RIGHT COLUMN: 3 Structured Layers (col-md-9) -->
-                <div class="col-md-9 d-flex flex-column justify-content-between gap-2">
-
-                  <!-- LAYER 1: Sample Specifications Text Banner -->
-                  <div class="sample-text-details bg-light p-2 rounded border small">
-                    <span *ngIf="getActiveSample().get('details')?.value">
-                      <strong class="text-secondary">Details:</strong> {{ getActiveSample().get('details')?.value }}
-                    </span>
-                    <ng-container
-                      *ngIf="getActiveSample().get('thickness')?.value || getActiveSample().get('diameter')?.value || getActiveSample().get('width')?.value || getActiveSample().get('length')?.value">
-                      <span class="text-muted mx-1">|</span>
-                      <span>
-                        <strong class="text-secondary">Dim:</strong>
-                        <ng-container *ngIf="getActiveSample().get('thickness')?.value"> T:{{
-                          getActiveSample().get('thickness')?.value }}mm</ng-container>
-                        <ng-container *ngIf="getActiveSample().get('diameter')?.value"> D:{{
-                          getActiveSample().get('diameter')?.value }}mm</ng-container>
-                        <ng-container *ngIf="getActiveSample().get('width')?.value"> W:{{
-                          getActiveSample().get('width')?.value }}mm</ng-container>
-                        <ng-container *ngIf="getActiveSample().get('length')?.value"> L:{{
-                          getActiveSample().get('length')?.value }}mm</ng-container>
-                      </span>
-                    </ng-container>
-                    <ng-container *ngFor="let row of getAdditionalDetailsArray(getActiveSample())">
-                      <span class="text-muted mx-1">|</span>
-                      <span><strong class="text-secondary">{{ row.get('label')?.value }}:</strong> {{
-                        row.get('value')?.value || '-' }}</span>
-                    </ng-container>
-                  </div>
-
-                  <!-- LAYER 2: Master Classification Header with Quick Explore Button -->
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="fw-semibold text-secondary small d-flex align-items-center">
-                      <i class="bi bi-diagram-3 me-1.5 text-danger"></i><span>Master Classification & Scope</span>
-                    </span>
-                    <button *ngIf="!isViewMode" type="button"
-                      class="btn btn-sm btn-lims btn-lims-primary d-inline-flex align-items-center py-0.5 px-2.5 shadow-sm"
-                      (click)="openExplorerModal(activeSampleIdx)"
-                      title="Explore Configured Tests, Standards & Methods for this sample">
-                      <i class="bi bi-layout-sidebar-reverse me-1.5"></i><span>Explore Configured Scope</span>
-                    </button>
-                  </div>
-
-                  <!-- LAYER 2: Master Classification (3 Dropdowns Side-By-Side) -->
-                  <div class="row g-2">
-                    <div class="col-md-4">
-                      <app-searchable-dropdown [placeholder]="'Select Product Size Range'" [hideLabel]="false"
-                        [labelName]="'Product Size'" [smallInput]="true" [fetchDataFn]="getProductSizeDrop"
-                        [reloadKey]="activeSampleIdx"
-                        (itemSelected)="onProductSizeSelected($event, activeSampleIdx)"
-                        [selectedItem]="getActiveSample().get('productSizeID')?.value"
-                        [isDisabled]="isViewMode"></app-searchable-dropdown>
-                    </div>
-                    <div class="col-md-4">
-                      <app-searchable-dropdown
-                        [placeholder]="getActiveSample().get('isUnknownSample')?.value ? 'Unknown Sample (Optional)' : 'Search Product Master / Grade'"
-                        [hideLabel]="false" [labelName]="'Product Master'" [smallInput]="true"
-                        [fetchDataFn]="getProductMasterDrop"
-                        [reloadKey]="activeSampleIdx"
-                        (itemSelected)="onProductMasterSelected($event, activeSampleIdx)"
-                        [selectedItem]="getActiveSample().get('productMasterID')?.value"
-                        [isDisabled]="isViewMode || getActiveSample().get('isUnknownSample')?.value"></app-searchable-dropdown>
-                    </div>
-                    <div class="col-md-4">
-                      <app-searchable-dropdown [placeholder]="'Search Metal Classification'" [hideLabel]="false"
-                        [labelName]="'Metal Classification'" [smallInput]="true" [fetchDataFn]="getMetalDrop"
-                        [reloadKey]="activeSampleIdx"
-                        (itemSelected)="onMetalClassificationSelected($event, activeSampleIdx)"
-                        [selectedItem]="getActiveSample().get('metalClassificationID')?.value"
-                        [isDisabled]="isViewMode"></app-searchable-dropdown>
-                    </div>
-                  </div>
-
-                  <!-- Unknown Sample Flow Banner (Compact with reduced width) -->
-                  <div *ngIf="getActiveSample().get('isUnknownSample')?.value" class="mt-1 mb-1">
-                    <div class="lims-info-banner-compact">
-                      <i class="bi bi-info-circle-fill text-info me-2"></i>
-                      <span><strong>Unknown Sample:</strong> Grade will be assigned post-testing. All master tests
-                        available.</span>
-                      <span class="badge-tbd">Grade TBD</span>
-                    </div>
-                  </div>
-
-                  <!-- Scope Master Not Configured Alert Banner (Compact) -->
-                  <div *ngIf="isScopeConfiguredMap[activeSampleIdx] === false" class="mt-1 mb-1">
-                    <div class="lims-warn-banner-compact">
-                      <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-                      <span><strong>Notice:</strong> Scope Master not configured for this Product/Grade. Manual test
-                        selection active (no acceptance limits).</span>
-                    </div>
-                  </div>
-
-                  <!-- LAYER 3: TPI Inspection & Special Test Instructions (Split 2 Columns) -->
-                  <div class="row g-2 align-items-stretch">
-                    <!-- TPI Sub-block (col-md-5) -->
-                    <div class="col-md-5">
-                      <div class="p-2 rounded bg-light border h-100 d-flex flex-column justify-content-between">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                          <span class="fw-semibold text-dark small"><i
-                              class="bi bi-patch-check text-danger me-2"></i><span>TPI Inspection</span></span>
-                          <div class="form-check form-switch mb-0 d-inline-flex align-items-center gap-1.5 p-0">
-                            <input class="form-check-input m-0 cursor-pointer" type="checkbox"
-                              [checked]="getActiveSample().get('tpiRequired')?.value"
-                              (change)="onTpiRequiredToggle(activeSampleIdx, $event)" id="tpiCheck_{{activeSampleIdx}}">
-                            <label class="form-check-label small fw-semibold cursor-pointer mb-0 user-select-none"
-                              for="tpiCheck_{{activeSampleIdx}}"
-                              [class.text-success]="getActiveSample().get('tpiRequired')?.value"
-                              [class.text-muted]="!getActiveSample().get('tpiRequired')?.value">
-                              {{ getActiveSample().get('tpiRequired')?.value ? 'Yes' : 'No' }}
-                            </label>
-                          </div>
-                        </div>
-                        <div *ngIf="getActiveSample().get('tpiRequired')?.value" class="mt-2">
-                          <app-searchable-dropdown [placeholder]="'Type & Search TPI Agency'" [hideLabel]="true"
-                            [labelName]="'TPI Agency'" [smallInput]="true" [fetchDataFn]="getTPIAgencies"
-                            [reloadKey]="activeSampleIdx"
-                            (itemSelected)="onTPISelected($event, activeSampleIdx)"
-                            [selectedItem]="getActiveSample().get('tpiAgencyID')?.value"
-                            [isDisabled]="isViewMode"></app-searchable-dropdown>
-                          <div *ngIf="tpiAgencyDetails[activeSampleIdx]"
-                            class="d-flex align-items-center gap-2 p-2 mt-2 bg-white rounded small border text-muted">
-                            <span class="text-dark"><i class="bi bi-telephone text-success me-2"></i><span>{{
-                              tpiAgencyDetails[activeSampleIdx].contactNo }}</span></span>
-                            <span class="text-dark ms-auto"><i class="bi bi-envelope text-info me-2"></i><span>{{
-                              tpiAgencyDetails[activeSampleIdx].emailId }}</span></span>
-                          </div>
-                        </div>
+              <!-- Test Plans -->
+              <div formArrayName="testPlans">
+                <ng-container *ngIf="getTestPlansArray(getActiveSample()).length > 0; else addPlanBlock">
+                  <div *ngFor="let testPlan of getTestPlansArray(getActiveSample()); let planIdx = index"
+                    [formGroupName]="planIdx" class="plan-block">
+                    <!-- Plan Version & Status Bar -->
+                    <div class="version-bar">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-dark version-badge">
+                          <i class="bi bi-layers me-2"></i><span>v{{ testPlan.get('version')?.value || 1 }}</span>
+                        </span>
+                        <span *ngIf="testPlan.get('planStatus')?.value" class="badge"
+                          [ngClass]="getPlanStatusClass(testPlan.get('planStatus')?.value)">
+                          {{ getPlanStatusLabel(testPlan.get('planStatus')?.value) }}
+                        </span>
+                        <span *ngIf="testPlan.get('replanCount')?.value > 0" class="badge bg-warning text-dark">
+                          <i class="bi bi-arrow-repeat me-2"></i><span>Replanned {{ testPlan.get('replanCount')?.value
+                            }}×</span>
+                        </span>
+                      </div>
+                      <div class="d-flex gap-2 align-items-center">
+                        <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode && samples.length > 1"
+                          type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5"
+                          (click)="copyActivePlanToAllOtherSamples()"
+                          title="Copy this sample's plan to all other samples">
+                          <i class="bi bi-copy me-1"></i><span>Copy to All Samples</span>
+                        </button>
+                        <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                          class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1.5"
+                          (click)="clearSamplePlan(activeSampleIdx)" title="Clear all planned tests for this sample">
+                          <i class="bi bi-trash3 me-1"></i><span>Clear Plan</span>
+                        </button>
+                        <button *ngIf="testPlan.get('id')?.value > 0" type="button"
+                          class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5"
+                          (click)="togglePlanHistory(testPlan.get('id')?.value)" title="View History">
+                          <i class="bi bi-clock-history me-1"></i><span>History</span>
+                        </button>
+                        <button *ngIf="isPlanApproved(testPlan)" type="button"
+                          class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1.5"
+                          (click)="openReplanModal(testPlan.get('id')?.value)" title="Request Replan">
+                          <i class="bi bi-arrow-repeat me-1"></i><span>Replan</span>
+                        </button>
                       </div>
                     </div>
 
-                    <!-- Instructions Sub-block (col-md-7) -->
-                    <div class="col-md-7">
-                      <div class="p-2 rounded bg-white border h-100 d-flex flex-column justify-content-between gap-2">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                          <label class="form-label small fw-semibold text-dark mb-0"><i
-                              class="bi bi-file-earmark-text text-danger me-2"></i><span>Test Instructions:</span></label>
-                          <div class="d-flex flex-wrap gap-1 align-items-center">
-                            <button type="button" class="btn btn-xs preset-chip-btn"
-                              [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'btn-danger text-white' : 'btn-outline-secondary'"
-                              (click)="toggleInstruction(activeSampleIdx, 'Preserve broken specimen')"
-                              title="Click to toggle 'Preserve broken specimen'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Preserve broken specimen') ? 'bi-check-lg' : 'bi-plus'"></i><span>Preserve</span>
-                            </button>
-                            <button type="button" class="btn btn-xs preset-chip-btn"
-                              [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'btn-danger text-white' : 'btn-outline-secondary'"
-                              (click)="toggleInstruction(activeSampleIdx, 'Provide stress-strain graph')"
-                              title="Click to toggle 'Provide stress-strain graph'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Provide stress-strain graph') ? 'bi-check-lg' : 'bi-plus'"></i><span>Graph</span>
-                            </button>
-                            <button type="button" class="btn btn-xs preset-chip-btn"
-                              [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'btn-danger text-white' : 'btn-outline-secondary'"
-                              (click)="toggleInstruction(activeSampleIdx, 'Impact test at -46°C')"
-                              title="Click to toggle 'Impact test at -46°C'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Impact test at -46°C') ? 'bi-check-lg' : 'bi-plus'"></i>-46°C
-                            </button>
-                            <button type="button" class="btn btn-xs preset-chip-btn"
-                              [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'btn-danger text-white' : 'btn-outline-secondary'"
-                              (click)="toggleInstruction(activeSampleIdx, 'Protect polished surface')"
-                              title="Click to toggle 'Protect polished surface'">
-                              <i class="bi me-1.5" [ngClass]="isInstructionSelected(activeSampleIdx, 'Protect polished surface') ? 'bi-check-lg' : 'bi-plus'"></i><span>Protect</span>
-                            </button>
-                          </div>
+                    <!-- Plan History Panel (collapsible) -->
+                    <div *ngIf="showHistoryPanel && activeHistoryPlanId === testPlan.get('id')?.value"
+                      class="history-panel">
+                      <div class="history-panel-header">
+                        <span class="fw-semibold small"><i class="bi bi-clock-history me-2 text-danger"></i><span>Plan
+                            History
+                            Timeline</span></span>
+                        <button type="button" class="btn-close btn-sm" (click)="showHistoryPanel = false"></button>
+                      </div>
+                      <div class="history-panel-body">
+                        <div *ngIf="planHistoryData.length === 0" class="text-muted text-center py-3">
+                          No history records found.
                         </div>
-                        <textarea class="form-control form-control-sm instruction-textarea"
-                          formControlName="testInstructions" rows="3"
-                          placeholder="Enter special test guidelines or click preset buttons..."></textarea>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </fieldset>
-
-            <!-- Test Plans -->
-            <div formArrayName="testPlans">
-              <ng-container *ngIf="getTestPlansArray(getActiveSample()).length > 0; else addPlanBlock">
-                <div *ngFor="let testPlan of getTestPlansArray(getActiveSample()); let planIdx = index"
-                  [formGroupName]="planIdx" class="plan-block">
-                  <!-- Plan Version & Status Bar -->
-                  <div class="version-bar">
-                    <div class="d-flex align-items-center gap-2">
-                      <span class="badge bg-dark version-badge">
-                        <i class="bi bi-layers me-2"></i><span>v{{ testPlan.get('version')?.value || 1 }}</span>
-                      </span>
-                      <span *ngIf="testPlan.get('planStatus')?.value" class="badge"
-                        [ngClass]="getPlanStatusClass(testPlan.get('planStatus')?.value)">
-                        {{ getPlanStatusLabel(testPlan.get('planStatus')?.value) }}
-                      </span>
-                      <span *ngIf="testPlan.get('replanCount')?.value > 0" class="badge bg-warning text-dark">
-                        <i class="bi bi-arrow-repeat me-2"></i><span>Replanned {{ testPlan.get('replanCount')?.value }}×</span>
-                      </span>
-                    </div>
-                    <div class="d-flex gap-2 align-items-center">
-                      <button *ngIf="!isViewMode && samples.length > 1" type="button"
-                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5"
-                        (click)="copyActivePlanToAllOtherSamples()"
-                        title="Copy this sample's plan to all other samples">
-                        <i class="bi bi-copy me-1"></i><span>Copy to All Samples</span>
-                      </button>
-                      <button *ngIf="!isViewMode" type="button"
-                        class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1.5"
-                        (click)="clearSamplePlan(activeSampleIdx)"
-                        title="Clear all planned tests for this sample">
-                        <i class="bi bi-trash3 me-1"></i><span>Clear Plan</span>
-                      </button>
-                      <button *ngIf="testPlan.get('id')?.value > 0" type="button"
-                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5"
-                        (click)="togglePlanHistory(testPlan.get('id')?.value)"
-                        title="View History">
-                        <i class="bi bi-clock-history me-1"></i><span>History</span>
-                      </button>
-                      <button *ngIf="isPlanApproved(testPlan)" type="button"
-                        class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1.5"
-                        (click)="openReplanModal(testPlan.get('id')?.value)" title="Request Replan">
-                        <i class="bi bi-arrow-repeat me-1"></i><span>Replan</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Plan History Panel (collapsible) -->
-                  <div *ngIf="showHistoryPanel && activeHistoryPlanId === testPlan.get('id')?.value"
-                    class="history-panel">
-                    <div class="history-panel-header">
-                      <span class="fw-semibold small"><i class="bi bi-clock-history me-2 text-danger"></i><span>Plan History
-                        Timeline</span></span>
-                      <button type="button" class="btn-close btn-sm" (click)="showHistoryPanel = false"></button>
-                    </div>
-                    <div class="history-panel-body">
-                      <div *ngIf="planHistoryData.length === 0" class="text-muted text-center py-3">
-                        No history records found.
-                      </div>
-                      <div class="history-cards">
-                        <div *ngFor="let entry of planHistoryData" class="history-card" [ngClass]="{
+                        <div class="history-cards">
+                          <div *ngFor="let entry of planHistoryData" class="history-card" [ngClass]="{
                             'card-approved': entry.changeType === 'Approved' || entry.changeType === 'ReplanApproved',
                             'card-rejected': entry.changeType === 'Rejected' || entry.changeType === 'ReplanRejected',
                             'card-replan': entry.changeType === 'ReplanRequested',
@@ -430,438 +482,272 @@
                             'card-created': entry.changeType === 'Created',
                             'card-updated': entry.changeType === 'Updated'
                           }">
-                          <div class="history-card-top">
-                            <span class="history-badge">V{{ entry.version }}</span>
-                            <span class="history-type">{{ entry.changeType }}</span>
-                          </div>
-                          <div class="history-card-meta">
-                            <i class="bi bi-person-fill me-2"></i><span>{{ entry.changedByName || 'System' }}</span>
-                          </div>
-                          <div class="history-card-meta">
-                            <i class="bi bi-clock me-2"></i><span>{{ entry.changedAt | date: 'dd MMM, hh:mm a' }}</span>
-                          </div>
-                          <div *ngIf="entry.remarks" class="history-card-remark">{{ entry.remarks }}</div>
-                          <div *ngIf="parseFieldChanges(entry.fieldChangesJson)?.length" class="history-changes">
-                            <div *ngFor="let fc of parseFieldChanges(entry.fieldChangesJson)"
-                              class="history-change-row">
-                              <span class="change-field">{{ fc.field }}</span>
-                              <span *ngIf="fc.oldValue" class="change-old">{{ fc.oldValue }}</span>
-                              <i *ngIf="fc.oldValue" class="bi bi-arrow-right change-arrow"></i>
-                              <span class="change-new">{{ fc.newValue }}</span>
+                            <div class="history-card-top">
+                              <span class="history-badge">V{{ entry.version }}</span>
+                              <span class="history-type">{{ entry.changeType }}</span>
+                            </div>
+                            <div class="history-card-meta">
+                              <i class="bi bi-person-fill me-2"></i><span>{{ entry.changedByName || 'System' }}</span>
+                            </div>
+                            <div class="history-card-meta">
+                              <i class="bi bi-clock me-2"></i><span>{{ entry.changedAt | date: 'dd MMM, hh:mm a'
+                                }}</span>
+                            </div>
+                            <div *ngIf="entry.remarks" class="history-card-remark">{{ entry.remarks }}</div>
+                            <div *ngIf="parseFieldChanges(entry.fieldChangesJson)?.length" class="history-changes">
+                              <div *ngFor="let fc of parseFieldChanges(entry.fieldChangesJson)"
+                                class="history-change-row">
+                                <span class="change-field">{{ fc.field }}</span>
+                                <span *ngIf="fc.oldValue" class="change-old">{{ fc.oldValue }}</span>
+                                <i *ngIf="fc.oldValue" class="bi bi-arrow-right change-arrow"></i>
+                                <span class="change-new">{{ fc.newValue }}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <!-- Approved Info -->
-                  <div *ngIf="testPlan.get('approvedByName')?.value" class="approved-bar">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    Approved by <strong>{{ testPlan.get('approvedByName')?.value }}</strong>
-                    on {{ testPlan.get('approvedAt')?.value | date: 'dd MMM yyyy, hh:mm a' }}
-                  </div>
-
-                  <!-- Tabs -->
-                  <ul class="nav nav-tabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link" [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'general') }"
-                        (click)="setActiveTab(activeSampleIdx, planIdx, 'general')"
-                        id="general-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
-                        <i class="bi bi-gear me-2"></i><span>General Test</span>
-                      </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link" [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'chemical') }"
-                        (click)="setActiveTab(activeSampleIdx, planIdx, 'chemical')"
-                        id="chemical-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
-                        <i class="bi bi-droplet me-2"></i><span>Chemical Test</span>
-                      </button>
-                    </li>
-                  </ul>
-                  <div class="tab-content">
-                    <!-- General Test Tab -->
-                    <div class="tab-pane fade" id="general-{{ activeSampleIdx }}-{{ planIdx }}" role="tabpanel"
-                      [ngClass]="{ 'show active': isActiveTab(activeSampleIdx, planIdx, 'general') }">
-                      <ng-container *ngIf="getTestArray(activeSampleIdx, planIdx, 'generalTests').length > 0">
-                        <div [formGroup]="getGeneralTestSection(activeSampleIdx, planIdx)">
-                          <div class="row row-cols-auto row-cols-md-2 mb-2 spec-row">
-                            <div class="">
-                              <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
-                                [labelName]="'Specification'"
-                                [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification1')"
-                                [reloadKey]="activeSampleIdx + '_' + planIdx + '_gen_spec1'"
-                                (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification1', 'generalTests')"
-                                [hideLabel]="false" [required]="false" [smallInput]="true" [isDisabled]="isViewMode"
-                                [selectedItem]="getGeneralTestSection(activeSampleIdx, planIdx).get('specification1')?.value"></app-searchable-dropdown>
-                            </div>
-                            <div class="">
-                              <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
-                                [labelName]="'Specification 2'"
-                                [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification2')"
-                                [reloadKey]="activeSampleIdx + '_' + planIdx + '_gen_spec2'"
-                                (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification2', 'generalTests')"
-                                [hideLabel]="false" [smallInput]="true" [isDisabled]="isViewMode"
-                                [selectedItem]="getGeneralTestSection(activeSampleIdx, planIdx).get('specification2')?.value || null"></app-searchable-dropdown>
-                            </div>
-                          </div>
-                          <div
-                            *ngIf="getGeneralTestSection(activeSampleIdx, planIdx).errors?.['sameSpecification'] && (getGeneralTestSection(activeSampleIdx, planIdx).get('specification1')?.touched || getGeneralTestSection(activeSampleIdx, planIdx).get('specification2')?.touched)"
-                            class="text-danger small mb-1">
-                            Specification 1 and Specification 2 must be different.
-                          </div>
-                          <table class="table table-sm table-bordered table-compact align-middle">
-                            <thead class="table-light">
-                              <tr class="text-nowrap text-muted small">
-                                <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
-                                <th class="fw-medium text-center">Laboratory Test</th>
-                                <th class="fw-medium text-center">Test Method Specification</th>
-                                <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
-                                <th class="fw-medium text-center" style="width: 180px;">
-                                   <div>Report No / ULR No</div>
-                                </th>
-                                <th class="fw-medium text-center" style="width: 100px;">Preparation</th>
-                                <th class="fw-medium text-center" style="width: 60px;">Action</th>
-                              </tr>
-                            </thead>
-                            <tbody #dropdownContainer class="dropdown-wrapper position-relative" formArrayName="methods"
-                              *ngIf="getTestArray(activeSampleIdx, planIdx, 'generalTests').length > 0">
-                              <tr
-                                *ngFor="let method of getMethodRows(activeSampleIdx, planIdx).controls; let methodIdx = index"
-                                [formGroupName]="methodIdx">
-                                <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
-                                <td>
-                                  <!-- Inline Grade Suggested Tests Quick-Pick Chips -->
-                                  <div *ngIf="getGradeSuggestedTests(activeSampleIdx).length > 0"
-                                    class="d-flex flex-wrap gap-1 mb-1">
-                                    <span *ngFor="let sug of getGradeSuggestedTests(activeSampleIdx)"
-                                      class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 extra-small cursor-pointer d-inline-flex align-items-center gap-2"
-                                      (click)="applyGradeSuggestedTest(sug, activeSampleIdx, planIdx, methodIdx)"
-                                      title="Click to auto-fill {{ sug.laboratoryTestName }} (Grade Suggested)">
-                                      <i class="bi bi-stars text-danger me-2"></i><span>{{ sug.laboratoryTestName }}</span>
-                                    </span>
-                                  </div>
-
-                                  <app-searchable-dropdown
-                                    [fetchDataFn]="buildLabTestFetchFnWithSuggestions(activeSampleIdx)"
-                                    [placeholder]="'Search SubGroup / Test'" [labelName]="'Laboratory Test SubGroup'"
-                                    [hideLabel]="true" [smallInput]="true"
-                                    [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + methodIdx + '_gen_test'"
-                                    (itemSelected)="onLabTestSubGroupSelected($event, activeSampleIdx, planIdx, methodIdx)"
-                                    [selectedItem]="method.get('testMethodID')?.value"
-                                    [isDisabled]="isViewMode"></app-searchable-dropdown>
-
-                                  <!-- Master Compliance Badge (3-State) -->
-                                  <div class="mt-1">
-                                    <span *ngIf="getActiveSample().get('isUnknownSample')?.value"
-                                      class="badge badge-lims-unknown border extra-small"
-                                      title="Unknown Sample: Grade will be determined after testing">
-                                      <i class="bi bi-question-circle me-2"></i><span>Unknown Sample (Grade TBD)</span>
-                                    </span>
-                                    <span
-                                      *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant"
-                                      class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 extra-small">
-                                      <i class="bi bi-patch-check-fill me-2"></i><span>Master Configured</span>
-                                    </span>
-                                    <span
-                                      *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant"
-                                      class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 extra-small"
-                                      title="Custom Selection: Non-standard override">
-                                      <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i><span>Custom Selection</span>
-                                    </span>
-                                  </div>
-
-                                  <div
-                                    *ngIf="method.get('testMethodID')?.hasError('required') && method.get('testMethodID')?.touched"
-                                    class="text-danger small mt-1">
-                                    Required
-                                  </div>
-                                </td>
-                                <td>
-                                  <app-searchable-dropdown
-                                    [fetchDataFn]="buildTestMethodSpecificationFetchFnWithSuggestions(activeSampleIdx, planIdx, methodIdx)"
-                                    [placeholder]="'Search Test Method Specification'"
-                                    [labelName]="'Test Method Specification'" [hideLabel]="true" [smallInput]="true"
-                                    [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + methodIdx + '_gen_std'"
-                                    (itemSelected)="onTestMethodSpecificationSelected($event, activeSampleIdx, planIdx, methodIdx)"
-                                    [selectedItem]="method.get('standardID')?.value"
-                                    [isDisabled]="isViewMode"></app-searchable-dropdown>
-
-                                  <!-- Inline Remark Input for Custom Selection -->
-                                  <div
-                                    *ngIf="complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx].isFullyCompliant"
-                                    class="mt-1">
-                                    <input type="text"
-                                      class="form-control form-control-sm extra-small py-1 border-warning"
-                                      formControlName="customRemarks" placeholder="Remark for custom selection..." />
-                                  </div>
-                                </td>
-                                <td class="text-center">
-                                  <input type="number" class="form-control form-control-sm text-center"
-                                    formControlName="quantity" placeholder="Qty" />
-                                </td>
-                                <td class="text-center">
-                                  <div class="fw-semibold text-dark">{{ displayUlr(method.get("reportNo")?.value) }}
-                                  </div>
-                                  <div
-                                    class="d-flex justify-content-center align-items-center gap-2 text-muted ulr-text-sub">
-                                    <span>ULR: {{ displayUlr(method.get("ulrNo")?.value) }}</span>
-                                    <div class="form-check mb-0 d-inline-flex align-items-center"
-                                      title="Cancel test method">
-                                      <input type="checkbox" class="form-check-input mt-0" formControlName="cancel" />
-                                    </div>
-                                  </div>
-                                </td>
-                                <td class="text-center">
-                                  <div class="form-check form-switch d-inline-flex align-items-center justify-content-center mb-0"
-                                       [title]="method.get('preparationRequired')?.value ? 'Preparation Required' : 'No Preparation'">
-                                    <input type="checkbox" class="form-check-input mt-0 cursor-pointer" formControlName="preparationRequired" role="switch" [disabled]="isViewMode" />
-                                  </div>
-                                </td>
-                                <td class="text-center">
-                                  <div
-                                    *ngIf="getTestArray(activeSampleIdx, planIdx, 'generalTests').length > 0 && !isViewMode">
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
-                                      (click)="getMethodRows(activeSampleIdx, planIdx).removeAt(methodIdx)"
-                                      title="Delete Row">
-                                      <i class="bi bi-trash"></i>
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                          <div class="d-flex gap-2 mt-1 plan-action-bar">
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-add"
-                              (click)="addMethodRow(activeSampleIdx, planIdx)">
-                              <i class="bi bi-plus-circle me-2"></i><span>Add Row</span>
-                            </button>
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-secondary"
-                              (click)="loadSuggestedTests(activeSampleIdx, planIdx)"
-                              [disabled]="suggestLoading[activeSampleIdx + '_' + planIdx]">
-                              <i class="bi bi-lightbulb me-2"></i>
-                              <span *ngIf="suggestLoading[activeSampleIdx + '_' + planIdx]"
-                                class="spinner-border spinner-border-sm me-2"></span>
-                              Auto-Suggest
-                            </button>
-                            <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-secondary"
-                              (click)="openExplorerModal(activeSampleIdx)">
-                              <i class="bi bi-layout-sidebar-reverse me-2"></i><span>Configured Explorer</span>
-                            </button>
-                            <button *ngIf="!isViewMode" type="button"
-                              class="btn btn-sm btn-lims btn-lims-remove ms-auto"
-                              (click)="removeGeneralTest(activeSampleIdx, planIdx, 0)">
-                              <i class="bi bi-trash me-2"></i><span>Remove Block</span>
-                            </button>
-                          </div>
-
-                          <!-- Auto-Suggest Panel -->
-                          <div *ngIf="showSuggestPanel[activeSampleIdx + '_' + planIdx]"
-                            class="card mt-2 border-info shadow-sm">
-                            <div
-                              class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center py-2">
-                              <span class="fw-semibold small text-info-emphasis"><i
-                                  class="bi bi-lightbulb me-2"></i><span>Smart Suggested Tests</span></span>
-                              <button type="button" class="btn-close btn-sm"
-                                (click)="closeSuggestPanel(activeSampleIdx, planIdx)"></button>
-                            </div>
-                            <div class="card-body p-2">
-                              <div
-                                *ngIf="suggestedTests.length === 0 && !suggestLoading[activeSampleIdx + '_' + planIdx]"
-                                class="text-muted small text-center py-2">
-                                No suggestions available.
-                              </div>
-                              <table *ngIf="suggestedTests.length > 0" class="table table-sm table-compact mb-2">
-                                <thead class="table-light">
-                                  <tr class="text-nowrap text-muted small">
-                                    <th class="fw-medium text-center col-checkbox">
-                                      <input type="checkbox" class="form-check-input mt-0"
-                                        (change)="toggleAllSuggestions($event)" />
-                                    </th>
-                                    <th class="fw-medium">Test Name</th>
-                                    <th class="fw-medium text-center">Type</th>
-                                    <th class="fw-medium text-center">Source</th>
-                                    <th class="fw-medium text-center">Tags</th>
-                                    <th class="fw-medium text-center">Score</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr *ngFor="let suggestion of suggestedTests" class="small suggestion-row"
-                                    (click)="suggestion.selected = !suggestion.selected">
-                                    <td class="text-center">
-                                      <input type="checkbox" class="form-check-input mt-0"
-                                        [(ngModel)]="suggestion.selected" [ngModelOptions]="{ standalone: true }"
-                                        (click)="$event.stopPropagation()" />
-                                    </td>
-                                    <td>
-                                      <span class="fw-semibold">{{ suggestion.laboratoryTestName || suggestion.testName
-                                        || suggestion.name }}</span>
-                                      <span *ngIf="suggestion.subGroup" class="text-muted ms-1 small">({{
-                                        suggestion.subGroup }})</span>
-                                    </td>
-                                    <td class="text-center">
-                                      <span class="badge"
-                                        [ngClass]="suggestion.testType === 'Chemical' ? 'bg-danger text-white' : 'bg-primary text-white'">
-                                        {{ suggestion.testType || 'General' }}
-                                      </span>
-                                    </td>
-                                    <td class="text-center">
-                                      <span class="badge" [ngClass]="getSuggestBadgeClass(suggestion.source)">
-                                        {{ suggestion.source || 'Auto' }}
-                                      </span>
-                                    </td>
-                                    <td class="text-center">
-                                      <span *ngFor="let tag of suggestion.tags"
-                                        class="badge bg-light text-dark border me-1">{{ tag }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                      <span class="badge bg-dark">{{ suggestion.score }}</span>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                              <div *ngIf="suggestedTests.length > 0" class="text-end">
-                                <button type="button" class="btn btn-sm btn-lims btn-lims-save"
-                                  (click)="addSelectedSuggestedTests(activeSampleIdx, planIdx)"
-                                  [disabled]="!hasSelectedSuggestions()">
-                                  <i class="bi bi-plus-circle me-2"></i><span>Add Selected</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </ng-container>
+                    <!-- Approved Info -->
+                    <div *ngIf="testPlan.get('approvedByName')?.value" class="approved-bar">
+                      <i class="bi bi-check-circle-fill me-2"></i>
+                      Approved by <strong>{{ testPlan.get('approvedByName')?.value }}</strong>
+                      on {{ testPlan.get('approvedAt')?.value | date: 'dd MMM yyyy, hh:mm a' }}
                     </div>
 
-                    <!-- Chemical Test Tab -->
-                    <div class="tab-pane fade" id="chemical-{{ activeSampleIdx }}-{{ planIdx }}" role="tabpanel"
-                      [ngClass]="{ 'show active': isActiveTab(activeSampleIdx, planIdx, 'chemical') }">
-
-                      <!-- Technique-First Checkbox Selector (Clean Inline Banner) -->
-                      <div class="p-2 mt-2 mb-2 bg-light rounded border"
-                        [class.border-warning]="!hasSelectedTechnique(activeSampleIdx)"
-                        [class.border-light-subtle]="hasSelectedTechnique(activeSampleIdx)">
-                        <div class="d-flex flex-wrap gap-3 align-items-center">
-                          <span class="fw-semibold small text-dark d-flex align-items-center">
-                            <i class="bi bi-funnel text-danger me-1.5"></i>
-                            <span>Analytical Techniques <span class="text-danger">*</span>:</span>
-                          </span>
-                          <label *ngFor="let tech of availableTechniques" class="tech-check-item">
-                            <input type="checkbox" class="form-check-input mt-0"
-                              [id]="'tech_' + activeSampleIdx + '_' + tech.code"
-                              [checked]="isTechniqueSelected(activeSampleIdx, tech.code)"
-                              (change)="toggleTechnique(activeSampleIdx, tech.code, $event)" [disabled]="isViewMode">
-                            <span>{{ tech.name }}</span>
-                          </label>
-                          <span *ngIf="!hasSelectedTechnique(activeSampleIdx)" class="extra-small text-danger fw-semibold ms-auto">
-                            <i class="bi bi-exclamation-circle me-1.5"></i><span>Select at least 1 technique to add/search chemical tests</span>
-                          </span>
+                    <!-- Context Replan Alert Banner (Directly Above Test Tables) -->
+                    <div *ngIf="testPlan.get('planStatus')?.value === 'ReplanRequested'"
+                      class="replan-alert-banner alert alert-warning border border-warning shadow-sm rounded-2 p-2 mb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="replan-alert-icon text-warning fs-5">
+                          <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div>
+                          <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-danger text-white px-2 py-0.5">Replan Requested</span>
+                            <span class="small text-muted" *ngIf="testPlan.get('pendingReplanRequestedByName')?.value">
+                              by <strong>{{ testPlan.get('pendingReplanRequestedByName')?.value }}</strong>
+                            </span>
+                            <span class="small text-muted" *ngIf="testPlan.get('pendingReplanRequestedAt')?.value">
+                              · {{ testPlan.get('pendingReplanRequestedAt')?.value | date: 'dd MMM yyyy, hh:mm a' }}
+                            </span>
+                          </div>
+                          <div class="replan-reason-text small text-dark mt-1"
+                            *ngIf="testPlan.get('pendingReplanReason')?.value">
+                            <i class="bi bi-chat-left-quote me-1.5 text-secondary"></i>
+                            <em>"{{ testPlan.get('pendingReplanReason')?.value }}"</em>
+                          </div>
                         </div>
                       </div>
+                      <div class="d-flex align-items-center gap-2 ms-auto">
+                        <button type="button"
+                          class="btn btn-sm btn-success d-inline-flex align-items-center gap-1.5 px-3 py-1 fw-semibold shadow-sm"
+                          (click)="approveReplan(testPlan)" title="Approve Replan & Unlock Plan into Draft v2">
+                          <i class="bi bi-check-circle-fill"></i>
+                          <span>Approve & Unlock v{{ (testPlan.get('version')?.value || 1) + 1 }}</span>
+                        </button>
+                        <button type="button"
+                          class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1.5 px-2.5 py-1"
+                          (click)="openRejectReplanDialog(testPlan)" title="Reject Replan Request">
+                          <i class="bi bi-x-circle"></i>
+                          <span>Reject</span>
+                        </button>
+                      </div>
+                    </div>
 
-                      <div formArrayName="chemicalTests">
-                        <ng-container *ngIf="getChemicalTestsArray(activeSampleIdx, planIdx).length > 0">
-                          <div
-                            *ngFor="let chemTest of getChemicalTestsArray(activeSampleIdx, planIdx); let chemIdx = index"
-                            [formGroupName]="chemIdx" class="p-2 bg-white rounded border mb-2">
-
-                            <!-- Specification Dropdowns Row -->
-                            <div class="row g-2 mb-2">
-                              <div class="col-md-3">
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link"
+                          [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'general') }"
+                          (click)="setActiveTab(activeSampleIdx, planIdx, 'general')"
+                          id="general-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
+                          <i class="bi bi-gear me-2"></i><span>General Test</span>
+                        </button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link"
+                          [ngClass]="{ active: isActiveTab(activeSampleIdx, planIdx, 'chemical') }"
+                          (click)="setActiveTab(activeSampleIdx, planIdx, 'chemical')"
+                          id="chemical-tab-{{ activeSampleIdx }}-{{ planIdx }}" type="button" role="tab">
+                          <i class="bi bi-droplet me-2"></i><span>Chemical Test</span>
+                        </button>
+                      </li>
+                    </ul>
+                    <div class="tab-content">
+                      <!-- General Test Tab -->
+                      <div class="tab-pane fade" id="general-{{ activeSampleIdx }}-{{ planIdx }}" role="tabpanel"
+                        [ngClass]="{ 'show active': isActiveTab(activeSampleIdx, planIdx, 'general') }">
+                        <ng-container *ngIf="getTestArray(activeSampleIdx, planIdx, 'generalTests').length > 0">
+                          <div [formGroup]="getGeneralTestSection(activeSampleIdx, planIdx)">
+                            <div class="row row-cols-auto row-cols-md-2 mb-2 spec-row">
+                              <div class="">
                                 <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
                                   [labelName]="'Specification'"
                                   [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification1')"
-                                  [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_chem_spec1'"
-                                  (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
-                                  [hideLabel]="false" [smallInput]="true" [required]="false" [isDisabled]="isViewMode"
-                                  [selectedItem]="chemTest.get('specification1')?.value"></app-searchable-dropdown>
+                                  [reloadKey]="activeSampleIdx + '_' + planIdx + '_gen_spec1'"
+                                  (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification1', 'generalTests')"
+                                  [hideLabel]="false" [required]="false" [smallInput]="true"
+                                  [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                  [selectedItem]="getSelectedGenSpec(activeSampleIdx, planIdx, 'specification1')"></app-searchable-dropdown>
                               </div>
-                              <div class="col-md-3">
+                              <div class="">
                                 <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
                                   [labelName]="'Specification 2'"
                                   [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification2')"
-                                  [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_chem_spec2'"
-                                  (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification2', 'chemicalTests')"
-                                  [hideLabel]="false" [required]="false" [smallInput]="true" [isDisabled]="isViewMode"
-                                  [selectedItem]="chemTest.get('specification2')?.value"></app-searchable-dropdown>
+                                  [reloadKey]="activeSampleIdx + '_' + planIdx + '_gen_spec2'"
+                                  (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification2', 'generalTests')"
+                                  [hideLabel]="false" [smallInput]="true"
+                                  [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                  [selectedItem]="getSelectedGenSpec(activeSampleIdx, planIdx, 'specification2')"></app-searchable-dropdown>
                               </div>
                             </div>
+                            <div
+                              *ngIf="getGeneralTestSection(activeSampleIdx, planIdx).errors?.['sameSpecification'] && (getGeneralTestSection(activeSampleIdx, planIdx).get('specification1')?.touched || getGeneralTestSection(activeSampleIdx, planIdx).get('specification2')?.touched)"
+                              class="text-danger small mb-1">
+                              Specification 1 and Specification 2 must be different.
+                            </div>
+                            <table class="table table-sm table-bordered table-compact align-middle">
+                              <thead class="table-light">
+                                <tr class="text-nowrap text-muted small">
+                                  <th class="fw-medium text-center" style="width: 50px;">Sr No.</th>
+                                  <th class="fw-medium text-center">Laboratory Test</th>
+                                  <th class="fw-medium text-center">Test Method Specification</th>
+                                  <th class="fw-medium text-center" style="width: 90px;">Quantity</th>
+                                  <th class="fw-medium text-center" style="width: 180px;">
+                                    <div>Report No / ULR No</div>
+                                  </th>
+                                  <th class="fw-medium text-center" style="width: 100px;">Preparation</th>
+                                  <th class="fw-medium text-center" style="width: 60px;">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody #dropdownContainer class="dropdown-wrapper position-relative"
+                                formArrayName="methods"
+                                *ngIf="getTestArray(activeSampleIdx, planIdx, 'generalTests').length > 0">
+                                <tr
+                                  *ngFor="let method of getMethodRows(activeSampleIdx, planIdx).controls; let methodIdx = index"
+                                  [formGroupName]="methodIdx">
+                                  <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
+                                  <td>
+                                    <!-- Inline Grade Suggested Tests Quick-Pick Chips -->
+                                    <div
+                                      *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode && getGradeSuggestedTests(activeSampleIdx).length > 0"
+                                      class="d-flex flex-wrap gap-1 mb-1">
+                                      <span *ngFor="let sug of getGradeSuggestedTests(activeSampleIdx)"
+                                        class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 extra-small cursor-pointer d-inline-flex align-items-center gap-2"
+                                        (click)="applyGradeSuggestedTest(sug, activeSampleIdx, planIdx, methodIdx)"
+                                        title="Click to auto-fill {{ sug.laboratoryTestName }} (Grade Suggested)">
+                                        <i class="bi bi-stars text-danger me-2"></i><span>{{ sug.laboratoryTestName
+                                          }}</span>
+                                      </span>
+                                    </div>
 
-                            <!-- Chemical Test Table -->
-                            <div class="table-responsive mb-2">
-                              <table class="table table-sm table-bordered table-compact align-middle mb-0">
-                                <thead class="table-light">
-                                  <tr class="text-nowrap text-muted small">
-                                    <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
-                                    <th class="fw-medium">LABORATORY TEST</th>
-                                    <th class="fw-medium">TEST METHOD SPECIFICATION</th>
-                                    <th class="fw-medium text-center" style="width: 90px;">QUANTITY</th>
-                                    <th class="fw-medium text-center" style="width: 180px;">REPORT NO / ULR NO</th>
-                                    <th class="fw-medium text-center" style="width: 100px;">PREPARATION</th>
-                                    <th class="fw-medium text-center" style="width: 60px;">ACTION</th>
-                                  </tr>
-                                </thead>
-                                <tbody formArrayName="methods">
-                                  <tr
-                                    *ngFor="let method of getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).controls; let mIdx = index"
-                                    [formGroupName]="mIdx">
-                                    <td class="text-center fw-semibold text-secondary">{{ mIdx + 1 }}</td>
-                                    <td>
-                                      <app-searchable-dropdown
-                                        [fetchDataFn]="buildChemicalLabTestFetchFnWithSuggestions(activeSampleIdx)"
-                                        [placeholder]="hasSelectedTechnique(activeSampleIdx) ? 'Search Chemical Test / Analysis Type' : 'Select at least 1 technique above first'"
-                                        [labelName]="'Laboratory Test'" [hideLabel]="true" [smallInput]="true"
-                                        [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_' + mIdx + '_chem_test'"
-                                        (itemSelected)="onChemicalLabTestSelected($event, activeSampleIdx, planIdx, chemIdx, mIdx)"
-                                        [selectedItem]="method.get('testMethodID')?.value"
-                                        [isDisabled]="isViewMode || !hasSelectedTechnique(activeSampleIdx)"></app-searchable-dropdown>
-                                    </td>
-                                    <td>
-                                      <app-searchable-dropdown
-                                        [fetchDataFn]="buildChemicalTestMethodSpecificationFetchFnWithSuggestions(activeSampleIdx, planIdx, chemIdx, mIdx)"
-                                        [placeholder]="'Search Test Method Specification'"
-                                        [labelName]="'Test Method Specification'" [hideLabel]="true" [smallInput]="true"
-                                        [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_' + mIdx + '_chem_std'"
-                                        (itemSelected)="onChemicalTestMethodSpecificationSelected($event, activeSampleIdx, planIdx, chemIdx, mIdx)"
-                                        [selectedItem]="method.get('standardID')?.value"
-                                        [isDisabled]="isViewMode"></app-searchable-dropdown>
-                                    </td>
-                                    <td class="text-center">
-                                      <input type="number" class="form-control form-control-sm text-center"
-                                        formControlName="quantity" placeholder="1" min="1" [readonly]="isViewMode" />
-                                    </td>
-                                    <td class="text-center small">
-                                      <div class="fw-semibold text-dark">{{ displayUlr(method.get("reportNo")?.value) }}
+                                    <app-searchable-dropdown
+                                      [fetchDataFn]="buildLabTestFetchFnWithSuggestions(activeSampleIdx)"
+                                      [placeholder]="'Search SubGroup / Test'" [labelName]="'Laboratory Test SubGroup'"
+                                      [hideLabel]="true" [smallInput]="true"
+                                      [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + methodIdx + '_gen_test'"
+                                      (itemSelected)="onLabTestSubGroupSelected($event, activeSampleIdx, planIdx, methodIdx)"
+                                      [selectedItem]="getSelectedGenTestMethod(method)"
+                                      [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"></app-searchable-dropdown>
+
+                                    <!-- Master Compliance Badge (3-State) -->
+                                    <div class="mt-1">
+                                      <span *ngIf="getActiveSample().get('isUnknownSample')?.value"
+                                        class="badge badge-lims-unknown border extra-small"
+                                        title="Unknown Sample: Grade will be determined after testing">
+                                        <i class="bi bi-question-circle me-2"></i><span>Unknown Sample (Grade
+                                          TBD)</span>
+                                      </span>
+                                      <span
+                                        *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant"
+                                        class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 extra-small">
+                                        <i class="bi bi-patch-check-fill me-2"></i><span>Master Configured</span>
+                                      </span>
+                                      <span
+                                        *ngIf="!getActiveSample().get('isUnknownSample')?.value && complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx]?.isFullyCompliant"
+                                        class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 extra-small"
+                                        title="Custom Selection: Non-standard override">
+                                        <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i><span>Custom
+                                          Selection</span>
+                                      </span>
+                                    </div>
+
+                                    <div
+                                      *ngIf="method.get('testMethodID')?.hasError('required') && method.get('testMethodID')?.touched"
+                                      class="text-danger small mt-1">
+                                      Required
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <app-searchable-dropdown
+                                      [fetchDataFn]="buildTestMethodSpecificationFetchFnWithSuggestions(activeSampleIdx, planIdx, methodIdx)"
+                                      [placeholder]="'Search Test Method Specification'"
+                                      [labelName]="'Test Method Specification'" [hideLabel]="true" [smallInput]="true"
+                                      [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + methodIdx + '_gen_std'"
+                                      (itemSelected)="onTestMethodSpecificationSelected($event, activeSampleIdx, planIdx, methodIdx)"
+                                      [selectedItem]="getSelectedStandard(method)"
+                                      [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"></app-searchable-dropdown>
+
+                                    <!-- Inline Remark Input for Custom Selection -->
+                                    <div
+                                      *ngIf="complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx] && !complianceMap[activeSampleIdx + '_' + planIdx + '_' + methodIdx].isFullyCompliant"
+                                      class="mt-1">
+                                      <input type="text"
+                                        class="form-control form-control-sm extra-small py-1 border-warning"
+                                        formControlName="customRemarks"
+                                        [readonly]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                        placeholder="Remark for custom selection..." />
+                                    </div>
+                                  </td>
+                                  <td class="text-center">
+                                    <input type="number" class="form-control form-control-sm text-center"
+                                      formControlName="quantity" placeholder="Qty"
+                                      [readonly]="isPlanLocked(activeSampleIdx) || isViewMode" />
+                                  </td>
+                                  <td class="text-center">
+                                    <div class="fw-semibold text-dark">{{ displayUlr(method.get("reportNo")?.value) }}
+                                    </div>
+                                    <div
+                                      class="d-flex justify-content-center align-items-center gap-2 text-muted ulr-text-sub">
+                                      <span>ULR: {{ displayUlr(method.get("ulrNo")?.value) }}</span>
+                                      <div class="form-check mb-0 d-inline-flex align-items-center"
+                                        title="Cancel test method">
+                                        <input type="checkbox" class="form-check-input mt-0" formControlName="cancel"
+                                          [disabled]="isPlanLocked(activeSampleIdx) || isViewMode" />
                                       </div>
-                                      <div class="text-muted ulr-text-sub">
-                                        ULR: {{ displayUlr(method.get("ulrNo")?.value) }}
-                                      </div>
-                                    </td>
-                                    <td class="text-center">
-                                      <div class="form-check form-switch d-inline-flex align-items-center justify-content-center mb-0"
-                                           [title]="method.get('preparationRequired')?.value ? 'Preparation Required' : 'No Preparation'">
-                                        <input type="checkbox" class="form-check-input mt-0 cursor-pointer" formControlName="preparationRequired" role="switch" [disabled]="isViewMode" />
-                                      </div>
-                                    </td>
-                                    <td class="text-center">
-                                      <button *ngIf="!isViewMode" type="button"
-                                        class="btn btn-sm btn-outline-danger btn-lims-icon"
-                                        (click)="getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).removeAt(mIdx)"
+                                    </div>
+                                  </td>
+                                  <td class="text-center">
+                                    <div
+                                      class="form-check form-switch d-inline-flex align-items-center justify-content-center mb-0"
+                                      [title]="method.get('preparationRequired')?.value ? 'Preparation Required' : 'No Preparation'">
+                                      <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                                        formControlName="preparationRequired" role="switch"
+                                        [disabled]="isPlanLocked(activeSampleIdx) || isViewMode" />
+                                    </div>
+                                  </td>
+                                  <td class="text-center">
+                                    <div
+                                      *ngIf="getTestArray(activeSampleIdx, planIdx, 'generalTests').length > 0 && !isPlanLocked(activeSampleIdx) && !isViewMode">
+                                      <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
+                                        (click)="getMethodRows(activeSampleIdx, planIdx).removeAt(methodIdx)"
                                         title="Delete Row">
                                         <i class="bi bi-trash"></i>
                                       </button>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-
-                            <div class="d-flex gap-2 mb-2" *ngIf="!isViewMode">
-                              <button type="button" class="btn btn-sm btn-lims btn-lims-add"
-                                (click)="addChemicalMethodRow(activeSampleIdx, planIdx, chemIdx)">
+                                    </div>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <div class="d-flex gap-2 mt-1 plan-action-bar">
+                              <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                class="btn btn-sm btn-lims btn-lims-add"
+                                (click)="addMethodRow(activeSampleIdx, planIdx)">
                                 <i class="bi bi-plus-circle me-2"></i><span>Add Row</span>
                               </button>
-                              <button type="button" class="btn btn-sm btn-lims btn-lims-secondary"
+                              <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                class="btn btn-sm btn-lims btn-lims-secondary"
                                 (click)="loadSuggestedTests(activeSampleIdx, planIdx)"
                                 [disabled]="suggestLoading[activeSampleIdx + '_' + planIdx]">
                                 <i class="bi bi-lightbulb me-2"></i>
@@ -873,15 +759,16 @@
                                 (click)="openExplorerModal(activeSampleIdx)">
                                 <i class="bi bi-layout-sidebar-reverse me-2"></i><span>Configured Explorer</span>
                               </button>
-                              <button type="button" class="btn btn-sm btn-lims btn-lims-remove ms-auto"
-                                (click)="removeChemicalTest(activeSampleIdx, planIdx, chemIdx)">
-                                <i class="bi bi-trash me-2"></i><span>Remove Chemical Block</span>
+                              <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                class="btn btn-sm btn-lims btn-lims-remove ms-auto"
+                                (click)="removeGeneralTest(activeSampleIdx, planIdx, 0)">
+                                <i class="bi bi-trash me-2"></i><span>Remove Block</span>
                               </button>
                             </div>
 
-                            <!-- Auto-Suggest Panel for Chemical Tab -->
+                            <!-- Auto-Suggest Panel -->
                             <div *ngIf="showSuggestPanel[activeSampleIdx + '_' + planIdx]"
-                              class="card mt-2 mb-3 border-info shadow-sm">
+                              class="card mt-2 border-info shadow-sm">
                               <div
                                 class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center py-2">
                                 <span class="fw-semibold small text-info-emphasis"><i
@@ -893,7 +780,7 @@
                                 <div
                                   *ngIf="suggestedTests.length === 0 && !suggestLoading[activeSampleIdx + '_' + planIdx]"
                                   class="text-muted small text-center py-2">
-                                  No suggestions available for current context.
+                                  No suggestions available.
                                 </div>
                                 <table *ngIf="suggestedTests.length > 0" class="table table-sm table-compact mb-2">
                                   <thead class="table-light">
@@ -919,7 +806,8 @@
                                       </td>
                                       <td>
                                         <span class="fw-semibold">{{ suggestion.laboratoryTestName ||
-                                          suggestion.testName || suggestion.name }}</span>
+                                          suggestion.testName
+                                          || suggestion.name }}</span>
                                         <span *ngIf="suggestion.subGroup" class="text-muted ms-1 small">({{
                                           suggestion.subGroup }})</span>
                                       </td>
@@ -953,145 +841,389 @@
                                 </div>
                               </div>
                             </div>
+                          </div>
+                        </ng-container>
+                      </div>
 
-                            <!-- Element Matrix Table (Test-Wise Categorized) -->
+                      <!-- Chemical Test Tab -->
+                      <div class="tab-pane fade" id="chemical-{{ activeSampleIdx }}-{{ planIdx }}" role="tabpanel"
+                        [ngClass]="{ 'show active': isActiveTab(activeSampleIdx, planIdx, 'chemical') }">
+
+                        <!-- Technique-First Checkbox Selector (Clean Inline Banner) -->
+                        <div class="p-2 mt-2 mb-2 bg-light rounded border"
+                          [class.border-warning]="!hasSelectedTechnique(activeSampleIdx)"
+                          [class.border-light-subtle]="hasSelectedTechnique(activeSampleIdx)">
+                          <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <span class="fw-semibold small text-dark d-flex align-items-center">
+                              <i class="bi bi-funnel text-danger me-1.5"></i>
+                              <span>Analytical Techniques <span class="text-danger">*</span>:</span>
+                            </span>
+                            <label *ngFor="let tech of availableTechniques" class="tech-check-item">
+                              <input type="checkbox" class="form-check-input mt-0"
+                                [id]="'tech_' + activeSampleIdx + '_' + tech.code"
+                                [checked]="isTechniqueSelected(activeSampleIdx, tech.code)"
+                                (change)="toggleTechnique(activeSampleIdx, tech.code, $event)"
+                                [disabled]="isPlanLocked(activeSampleIdx) || isViewMode">
+                              <span>{{ tech.name }}</span>
+                            </label>
+                            <span *ngIf="!hasSelectedTechnique(activeSampleIdx)"
+                              class="extra-small text-danger fw-semibold ms-auto">
+                              <i class="bi bi-exclamation-circle me-1.5"></i><span>Select at least 1 technique to
+                                add/search chemical tests</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div formArrayName="chemicalTests">
+                          <ng-container *ngIf="getChemicalTestsArray(activeSampleIdx, planIdx).length > 0">
                             <div
-                              *ngIf="getElementsArray(activeSampleIdx, planIdx, chemIdx) && getElementsArray(activeSampleIdx, planIdx, chemIdx).length > 0"
-                              class="mt-3">
-                              <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
-                                <div class="fw-semibold text-secondary small d-flex align-items-center">
-                                  <i class="bi bi-grid-3x3-gap text-danger me-1.5"></i>
-                                  <span>Chemical Element Matrix (Test-Wise Categorized)</span>
+                              *ngFor="let chemTest of getChemicalTestsArray(activeSampleIdx, planIdx); let chemIdx = index"
+                              [formGroupName]="chemIdx" class="p-2 bg-white rounded border mb-2">
+
+                              <!-- Specification Dropdowns Row -->
+                              <div class="row g-2 mb-2">
+                                <div class="col-md-3">
+                                  <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
+                                    [labelName]="'Specification'"
+                                    [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification1')"
+                                    [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_chem_spec1'"
+                                    (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification1', 'chemicalTests')"
+                                    [hideLabel]="false" [smallInput]="true" [required]="false"
+                                    [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                    [selectedItem]="getSelectedChemSpec(chemTest, 'specification1')"></app-searchable-dropdown>
                                 </div>
-                                <div class="d-flex align-items-center gap-2">
-                                  <button *ngIf="!isViewMode" type="button" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1.5"
-                                    (click)="reloadAllConfiguredSpectroMatrices(activeSampleIdx, planIdx, chemIdx)"
-                                    title="Load / Refresh machine spectro matrices for all selected chemical tests">
-                                    <i class="bi bi-arrow-repeat me-1"></i><span>Load Spectro Elements</span>
-                                  </button>
+                                <div class="col-md-3">
+                                  <app-searchable-dropdown [placeholder]="'Type & Search Specification'"
+                                    [labelName]="'Specification 2'"
+                                    [fetchDataFn]="buildSpecFetchFnWithSuggestions(activeSampleIdx, 'specification2')"
+                                    [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_chem_spec2'"
+                                    (itemSelected)="onSpecificationGradeSelected(activeSampleIdx, planIdx, $event, 'specification2', 'chemicalTests')"
+                                    [hideLabel]="false" [required]="false" [smallInput]="true"
+                                    [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                    [selectedItem]="getSelectedChemSpec(chemTest, 'specification2')"></app-searchable-dropdown>
                                 </div>
                               </div>
 
-                              <div class="table-responsive">
+                              <!-- Chemical Test Table -->
+                              <div class="table-responsive mb-2">
                                 <table class="table table-sm table-bordered table-compact align-middle mb-0">
                                   <thead class="table-light">
                                     <tr class="text-nowrap text-muted small">
                                       <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
-                                      <th class="fw-medium">ELEMENT / PARAMETER</th>
-                                      <th class="fw-medium" style="width: 220px;">CATEGORY / TEST SOURCE</th>
-                                      <th class="fw-medium text-center" style="width: 90px;">MIN</th>
-                                      <th class="fw-medium text-center" style="width: 90px;">MAX</th>
-                                      <th class="fw-medium text-center" style="width: 70px;">UNIT</th>
-                                      <th class="fw-medium text-center" style="width: 80px;">
-                                        <div class="d-flex align-items-center justify-content-center gap-1">
-                                          <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
-                                            [checked]="isAllElementsSelected(activeSampleIdx, planIdx, chemIdx)"
-                                            [indeterminate]="isSomeElementsSelected(activeSampleIdx, planIdx, chemIdx)"
-                                            (change)="toggleSelectAllElements($event, activeSampleIdx, planIdx, chemIdx)"
-                                            [disabled]="isViewMode" title="Select / Deselect all elements" />
-                                          <span class="extra-small text-muted">All</span>
-                                        </div>
-                                      </th>
+                                      <th class="fw-medium">LABORATORY TEST</th>
+                                      <th class="fw-medium">TEST METHOD SPECIFICATION</th>
+                                      <th class="fw-medium text-center" style="width: 90px;">QUANTITY</th>
+                                      <th class="fw-medium text-center" style="width: 180px;">REPORT NO / ULR NO</th>
+                                      <th class="fw-medium text-center" style="width: 100px;">PREPARATION</th>
+                                      <th class="fw-medium text-center" style="width: 60px;">ACTION</th>
                                     </tr>
                                   </thead>
-                                  <tbody formArrayName="elements">
-                                    <ng-container
-                                      *ngFor="let grp of getGroupedChemicalElements(activeSampleIdx, planIdx, chemIdx); trackBy: trackByGroupKey">
-                                      <!-- Categorized Header Row -->
-                                      <tr class="table-light">
-                                        <td colspan="6" class="py-1 px-2 fw-semibold small bg-light-subtle">
-                                          <span *ngIf="grp.sourceType === 'Specification'"
-                                            class="badge bg-danger-subtle text-danger border border-danger-subtle me-2">
-                                            <i class="bi bi-bookmark-check me-1.5"></i><span>Specification Grade</span>
-                                          </span>
-                                          <span *ngIf="grp.sourceType !== 'Specification'"
-                                            class="badge bg-info-subtle text-info-emphasis border border-info-subtle me-2">
-                                            <i class="bi bi-cpu me-1.5"></i><span>Analysis Type</span>
-                                          </span>
-                                          <span class="text-dark">{{ grp.title }}</span>
-                                          <span class="text-muted extra-small ms-2">({{ grp.elements.length }}
-                                            elements)</span>
-                                        </td>
-                                        <td class="text-center py-1 bg-light-subtle">
-                                          <div class="form-check d-inline-block mb-0"
-                                            title="Select / Deselect all in this group">
-                                            <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
-                                              [checked]="isGroupAllSelected(grp)"
-                                              [indeterminate]="isGroupSomeSelected(grp)"
-                                              (change)="toggleSelectGroupElements(activeSampleIdx, planIdx, chemIdx, grp, $event)"
-                                              [disabled]="isViewMode" />
-                                          </div>
-                                        </td>
-                                      </tr>
-
-                                      <!-- Categorized Element Rows -->
-                                      <tr *ngFor="let item of grp.elements; trackBy: trackByElementItem" [formGroupName]="item.originalIndex">
-                                        <td class="text-center fw-semibold text-secondary">{{ item.originalIndex + 1 }}
-                                        </td>
-                                        <td>
-                                          <div class="fw-medium text-dark">{{ item.control.get('parameterName')?.value
-                                            || 'Parameter #' + item.control.get('parameterID')?.value }}</div>
-                                        </td>
-                                        <td>
-                                          <span
-                                            *ngIf="item.control.get('sourceType')?.value === 'Specification' || (item.control.get('minValue')?.value != null || item.control.get('maxValue')?.value != null)"
-                                            class="badge bg-danger-subtle text-danger border border-danger-subtle extra-small">
-                                            Specification Limit
-                                          </span>
-                                          <span
-                                            *ngIf="item.control.get('sourceType')?.value !== 'Specification' && item.control.get('minValue')?.value == null && item.control.get('maxValue')?.value == null"
-                                            class="badge bg-info-subtle text-info-emphasis border border-info-subtle extra-small">
-                                            {{ item.control.get('sourceTitle')?.value || 'Analysis Type Spectro Channel'
-                                            }}
-                                          </span>
-                                        </td>
-                                        <td class="text-center">
-                                          <span class="small font-monospace">{{ item.control.get('minValue')?.value !=
-                                            null ? item.control.get('minValue')?.value : '-' }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                          <span class="small font-monospace">{{ item.control.get('maxValue')?.value !=
-                                            null ? item.control.get('maxValue')?.value : '-' }}</span>
-                                        </td>
-                                        <td class="text-center small text-secondary">
-                                          <span>{{ item.control.get("parameterUnit")?.value || "%" }}</span>
-                                        </td>
-                                        <td class="text-center">
+                                  <tbody formArrayName="methods">
+                                    <tr
+                                      *ngFor="let method of getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).controls; let mIdx = index"
+                                      [formGroupName]="mIdx">
+                                      <td class="text-center fw-semibold text-secondary">{{ mIdx + 1 }}</td>
+                                      <td>
+                                        <app-searchable-dropdown
+                                          [fetchDataFn]="buildChemicalLabTestFetchFnWithSuggestions(activeSampleIdx)"
+                                          [placeholder]="hasSelectedTechnique(activeSampleIdx) ? 'Search Chemical Test / Analysis Type' : 'Select at least 1 technique above first'"
+                                          [labelName]="'Laboratory Test'" [hideLabel]="true" [smallInput]="true"
+                                          [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_' + mIdx + '_chem_test'"
+                                          (itemSelected)="onChemicalLabTestSelected($event, activeSampleIdx, planIdx, chemIdx, mIdx)"
+                                          [selectedItem]="getSelectedChemTestMethod(method)"
+                                          [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode || !hasSelectedTechnique(activeSampleIdx)"></app-searchable-dropdown>
+                                      </td>
+                                      <td>
+                                        <app-searchable-dropdown
+                                          [fetchDataFn]="buildChemicalTestMethodSpecificationFetchFnWithSuggestions(activeSampleIdx, planIdx, chemIdx, mIdx)"
+                                          [placeholder]="'Search Test Method Specification'"
+                                          [labelName]="'Test Method Specification'" [hideLabel]="true"
+                                          [smallInput]="true"
+                                          [reloadKey]="activeSampleIdx + '_' + planIdx + '_' + chemIdx + '_' + mIdx + '_chem_std'"
+                                          (itemSelected)="onChemicalTestMethodSpecificationSelected($event, activeSampleIdx, planIdx, chemIdx, mIdx)"
+                                          [selectedItem]="getSelectedChemStandard(method)"
+                                          [isDisabled]="isPlanLocked(activeSampleIdx) || isViewMode"></app-searchable-dropdown>
+                                      </td>
+                                      <td class="text-center">
+                                        <input type="number" class="form-control form-control-sm text-center"
+                                          formControlName="quantity" placeholder="1" min="1"
+                                          [readonly]="isPlanLocked(activeSampleIdx) || isViewMode" />
+                                      </td>
+                                      <td class="text-center small">
+                                        <div class="fw-semibold text-dark">{{ displayUlr(method.get("reportNo")?.value)
+                                          }}
+                                        </div>
+                                        <div class="text-muted ulr-text-sub">
+                                          ULR: {{ displayUlr(method.get("ulrNo")?.value) }}
+                                        </div>
+                                      </td>
+                                      <td class="text-center">
+                                        <div
+                                          class="form-check form-switch d-inline-flex align-items-center justify-content-center mb-0"
+                                          [title]="method.get('preparationRequired')?.value ? 'Preparation Required' : 'No Preparation'">
                                           <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
-                                            [checked]="item.control.get('selected')?.value"
-                                            (change)="toggleElementSelection(item.control, $event)"
-                                            [disabled]="isViewMode" />
-                                        </td>
-                                      </tr>
-                                    </ng-container>
+                                            formControlName="preparationRequired" role="switch"
+                                            [disabled]="isPlanLocked(activeSampleIdx) || isViewMode" />
+                                        </div>
+                                      </td>
+                                      <td class="text-center">
+                                        <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                          class="btn btn-sm btn-outline-danger btn-lims-icon"
+                                          (click)="getChemicalMethodRows(activeSampleIdx, planIdx, chemIdx).removeAt(mIdx)"
+                                          title="Delete Row">
+                                          <i class="bi bi-trash"></i>
+                                        </button>
+                                      </td>
+                                    </tr>
                                   </tbody>
                                 </table>
                               </div>
-                            </div>
-                          </div>
-                        </ng-container>
 
-                        <button
-                          *ngIf="getTestArray(activeSampleIdx, planIdx, 'chemicalTests').length < 1 && !isViewMode"
-                          type="button" class="btn btn-sm btn-lims btn-lims-add mt-1"
-                          (click)="addTestBlock(activeSampleIdx, planIdx, 'chemicalTests')">
-                          <i class="bi bi-plus-circle me-2"></i><span>Add Chemical Test</span>
-                        </button>
+                              <div class="d-flex gap-2 mb-2">
+                                <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                  class="btn btn-sm btn-lims btn-lims-add"
+                                  (click)="addChemicalMethodRow(activeSampleIdx, planIdx, chemIdx)">
+                                  <i class="bi bi-plus-circle me-2"></i><span>Add Row</span>
+                                </button>
+                                <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                  class="btn btn-sm btn-lims btn-lims-secondary"
+                                  (click)="loadSuggestedTests(activeSampleIdx, planIdx)"
+                                  [disabled]="suggestLoading[activeSampleIdx + '_' + planIdx]">
+                                  <i class="bi bi-lightbulb me-2"></i>
+                                  <span *ngIf="suggestLoading[activeSampleIdx + '_' + planIdx]"
+                                    class="spinner-border spinner-border-sm me-2"></span>
+                                  Auto-Suggest
+                                </button>
+                                <button type="button" class="btn btn-sm btn-lims btn-lims-secondary"
+                                  (click)="openExplorerModal(activeSampleIdx)">
+                                  <i class="bi bi-layout-sidebar-reverse me-2"></i><span>Configured Explorer</span>
+                                </button>
+                                <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                  class="btn btn-sm btn-lims btn-lims-remove ms-auto"
+                                  (click)="removeChemicalTest(activeSampleIdx, planIdx, chemIdx)">
+                                  <i class="bi bi-trash me-2"></i><span>Remove Chemical Block</span>
+                                </button>
+                              </div>
+
+                              <!-- Auto-Suggest Panel for Chemical Tab -->
+                              <div *ngIf="showSuggestPanel[activeSampleIdx + '_' + planIdx]"
+                                class="card mt-2 mb-3 border-info shadow-sm">
+                                <div
+                                  class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center py-2">
+                                  <span class="fw-semibold small text-info-emphasis"><i
+                                      class="bi bi-lightbulb me-2"></i><span>Smart Suggested Tests</span></span>
+                                  <button type="button" class="btn-close btn-sm"
+                                    (click)="closeSuggestPanel(activeSampleIdx, planIdx)"></button>
+                                </div>
+                                <div class="card-body p-2">
+                                  <div
+                                    *ngIf="suggestedTests.length === 0 && !suggestLoading[activeSampleIdx + '_' + planIdx]"
+                                    class="text-muted small text-center py-2">
+                                    No suggestions available for current context.
+                                  </div>
+                                  <table *ngIf="suggestedTests.length > 0" class="table table-sm table-compact mb-2">
+                                    <thead class="table-light">
+                                      <tr class="text-nowrap text-muted small">
+                                        <th class="fw-medium text-center col-checkbox">
+                                          <input type="checkbox" class="form-check-input mt-0"
+                                            (change)="toggleAllSuggestions($event)" />
+                                        </th>
+                                        <th class="fw-medium">Test Name</th>
+                                        <th class="fw-medium text-center">Type</th>
+                                        <th class="fw-medium text-center">Source</th>
+                                        <th class="fw-medium text-center">Tags</th>
+                                        <th class="fw-medium text-center">Score</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr *ngFor="let suggestion of suggestedTests" class="small suggestion-row"
+                                        (click)="suggestion.selected = !suggestion.selected">
+                                        <td class="text-center">
+                                          <input type="checkbox" class="form-check-input mt-0"
+                                            [(ngModel)]="suggestion.selected" [ngModelOptions]="{ standalone: true }"
+                                            (click)="$event.stopPropagation()" />
+                                        </td>
+                                        <td>
+                                          <span class="fw-semibold">{{ suggestion.laboratoryTestName ||
+                                            suggestion.testName || suggestion.name }}</span>
+                                          <span *ngIf="suggestion.subGroup" class="text-muted ms-1 small">({{
+                                            suggestion.subGroup }})</span>
+                                        </td>
+                                        <td class="text-center">
+                                          <span class="badge"
+                                            [ngClass]="suggestion.testType === 'Chemical' ? 'bg-danger text-white' : 'bg-primary text-white'">
+                                            {{ suggestion.testType || 'General' }}
+                                          </span>
+                                        </td>
+                                        <td class="text-center">
+                                          <span class="badge" [ngClass]="getSuggestBadgeClass(suggestion.source)">
+                                            {{ suggestion.source || 'Auto' }}
+                                          </span>
+                                        </td>
+                                        <td class="text-center">
+                                          <span *ngFor="let tag of suggestion.tags"
+                                            class="badge bg-light text-dark border me-1">{{ tag }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                          <span class="badge bg-dark">{{ suggestion.score }}</span>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                  <div *ngIf="suggestedTests.length > 0" class="text-end">
+                                    <button type="button" class="btn btn-sm btn-lims btn-lims-save"
+                                      (click)="addSelectedSuggestedTests(activeSampleIdx, planIdx)"
+                                      [disabled]="!hasSelectedSuggestions()">
+                                      <i class="bi bi-plus-circle me-2"></i><span>Add Selected</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Element Matrix Table (Test-Wise Categorized) -->
+                              <div
+                                *ngIf="getElementsArray(activeSampleIdx, planIdx, chemIdx) && getElementsArray(activeSampleIdx, planIdx, chemIdx).length > 0"
+                                class="mt-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                  <div class="fw-semibold text-secondary small d-flex align-items-center">
+                                    <i class="bi bi-grid-3x3-gap text-danger me-1.5"></i>
+                                    <span>Chemical Element Matrix (Test-Wise Categorized)</span>
+                                  </div>
+                                  <div class="d-flex align-items-center gap-2">
+                                    <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                                      class="btn btn-xs btn-outline-primary d-inline-flex align-items-center gap-1.5"
+                                      (click)="reloadAllConfiguredSpectroMatrices(activeSampleIdx, planIdx, chemIdx)"
+                                      title="Load / Refresh machine spectro matrices for all selected chemical tests">
+                                      <i class="bi bi-arrow-repeat me-1"></i><span>Load Spectro Elements</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                  <table class="table table-sm table-bordered table-compact align-middle mb-0">
+                                    <thead class="table-light">
+                                      <tr class="text-nowrap text-muted small">
+                                        <th class="fw-medium text-center" style="width: 50px;">SR NO.</th>
+                                        <th class="fw-medium">ELEMENT / PARAMETER</th>
+                                        <th class="fw-medium" style="width: 220px;">CATEGORY / TEST SOURCE</th>
+                                        <th class="fw-medium text-center" style="width: 90px;">MIN</th>
+                                        <th class="fw-medium text-center" style="width: 90px;">MAX</th>
+                                        <th class="fw-medium text-center" style="width: 70px;">UNIT</th>
+                                        <th class="fw-medium text-center" style="width: 80px;">
+                                          <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                                              [checked]="isAllElementsSelected(activeSampleIdx, planIdx, chemIdx)"
+                                              [indeterminate]="isSomeElementsSelected(activeSampleIdx, planIdx, chemIdx)"
+                                              (change)="toggleSelectAllElements($event, activeSampleIdx, planIdx, chemIdx)"
+                                              [disabled]="isPlanLocked(activeSampleIdx) || isViewMode"
+                                              title="Select / Deselect all elements" />
+                                            <span class="extra-small text-muted">All</span>
+                                          </div>
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody formArrayName="elements">
+                                      <ng-container
+                                        *ngFor="let grp of getGroupedChemicalElements(activeSampleIdx, planIdx, chemIdx); trackBy: trackByGroupKey">
+                                        <!-- Categorized Header Row -->
+                                        <tr class="table-light">
+                                          <td colspan="6" class="py-1 px-2 fw-semibold small bg-light-subtle">
+                                            <span *ngIf="grp.sourceType === 'Specification'"
+                                              class="badge bg-danger-subtle text-danger border border-danger-subtle me-2">
+                                              <i class="bi bi-bookmark-check me-1.5"></i><span>Specification
+                                                Grade</span>
+                                            </span>
+                                            <span *ngIf="grp.sourceType !== 'Specification'"
+                                              class="badge bg-info-subtle text-info-emphasis border border-info-subtle me-2">
+                                              <i class="bi bi-cpu me-1.5"></i><span>Analysis Type</span>
+                                            </span>
+                                            <span class="text-dark">{{ grp.title }}</span>
+                                            <span class="text-muted extra-small ms-2">({{ grp.elements.length }}
+                                              elements)</span>
+                                          </td>
+                                          <td class="text-center py-1 bg-light-subtle">
+                                            <div class="form-check d-inline-block mb-0"
+                                              title="Select / Deselect all in this group">
+                                              <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                                                [checked]="isGroupAllSelected(grp)"
+                                                [indeterminate]="isGroupSomeSelected(grp)"
+                                                (change)="toggleSelectGroupElements(activeSampleIdx, planIdx, chemIdx, grp, $event)"
+                                                [disabled]="isPlanLocked(activeSampleIdx) || isViewMode" />
+                                            </div>
+                                          </td>
+                                        </tr>
+
+                                        <!-- Categorized Element Rows -->
+                                        <tr *ngFor="let item of grp.elements; trackBy: trackByElementItem"
+                                          [formGroupName]="item.originalIndex">
+                                          <td class="text-center fw-semibold text-secondary">{{ item.originalIndex + 1
+                                            }}
+                                          </td>
+                                          <td>
+                                            <div class="fw-medium text-dark">{{ item.control.get('parameterName')?.value
+                                              || 'Parameter #' + item.control.get('parameterID')?.value }}</div>
+                                          </td>
+                                          <td>
+                                            <span
+                                              *ngIf="item.control.get('sourceType')?.value === 'Specification' || (item.control.get('minValue')?.value != null || item.control.get('maxValue')?.value != null)"
+                                              class="badge bg-danger-subtle text-danger border border-danger-subtle extra-small">
+                                              Specification Limit
+                                            </span>
+                                            <span
+                                              *ngIf="item.control.get('sourceType')?.value !== 'Specification' && item.control.get('minValue')?.value == null && item.control.get('maxValue')?.value == null"
+                                              class="badge bg-info-subtle text-info-emphasis border border-info-subtle extra-small">
+                                              {{ item.control.get('sourceTitle')?.value || 'Analysis Type Spectro
+                                              Channel'
+                                              }}
+                                            </span>
+                                          </td>
+                                          <td class="text-center">
+                                            <span class="small font-monospace">{{ item.control.get('minValue')?.value !=
+                                              null ? item.control.get('minValue')?.value : '-' }}</span>
+                                          </td>
+                                          <td class="text-center">
+                                            <span class="small font-monospace">{{ item.control.get('maxValue')?.value !=
+                                              null ? item.control.get('maxValue')?.value : '-' }}</span>
+                                          </td>
+                                          <td class="text-center small text-secondary">
+                                            <span>{{ item.control.get("parameterUnit")?.value || "%" }}</span>
+                                          </td>
+                                          <td class="text-center">
+                                            <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
+                                              [checked]="item.control.get('selected')?.value"
+                                              (change)="toggleElementSelection(item.control, $event)"
+                                              [disabled]="isPlanLocked(activeSampleIdx) || isViewMode" />
+                                          </td>
+                                        </tr>
+                                      </ng-container>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
+                          </ng-container>
+
+                          <button
+                            *ngIf="getTestArray(activeSampleIdx, planIdx, 'chemicalTests').length < 1 && !isPlanLocked(activeSampleIdx) && !isViewMode"
+                            type="button" class="btn btn-sm btn-lims btn-lims-add mt-1"
+                            (click)="addTestBlock(activeSampleIdx, planIdx, 'chemicalTests')">
+                            <i class="bi bi-plus-circle me-2"></i><span>Add Chemical Test</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </ng-container>
+                </ng-container>
 
-              <ng-template #addPlanBlock>
-                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-lims btn-lims-add"
-                  (click)="addPlanToSample(activeSampleIdx)">
-                  <i class="bi bi-plus-circle me-2"></i><span>Add Plan</span>
-                </button>
-              </ng-template>
+                <ng-template #addPlanBlock>
+                  <button *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode" type="button"
+                    class="btn btn-sm btn-lims btn-lims-add" (click)="addPlanToSample(activeSampleIdx)">
+                    <i class="bi bi-plus-circle me-2"></i><span>Add Plan</span>
+                  </button>
+                </ng-template>
+              </div>
+
             </div>
-
-          </div>
           </ng-container>
         </div>
       </ng-container>
@@ -1103,15 +1235,19 @@
           <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <span class="fw-semibold small text-uppercase">
-                <i class="bi bi-collection-play me-1.5 text-danger"></i><span>Combined Multi-Sample Plan ({{ combinedIdxs.size }} Samples):</span>
+                <i class="bi bi-collection-play me-1.5 text-danger"></i><span>Combined Multi-Sample Plan ({{
+                  combinedIdxs.size }} Samples):</span>
               </span>
-              <span *ngFor="let idx of getCombinedIdxsArray()" class="badge bg-danger bg-opacity-75 text-white d-inline-flex align-items-center gap-1.5 py-1 px-2">
+              <span *ngFor="let idx of getCombinedIdxsArray()"
+                class="badge bg-danger bg-opacity-75 text-white d-inline-flex align-items-center gap-1.5 py-1 px-2">
                 #{{ idx + 1 }} {{ samples.at(idx).get('sampleNo')?.value }}
-                <button type="button" class="btn-close btn-close-white extra-small" (click)="removeFromCombined(idx)" title="Remove from combined batch"></button>
+                <button type="button" class="btn-close btn-close-white extra-small" (click)="removeFromCombined(idx)"
+                  title="Remove from combined batch"></button>
               </span>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button type="button" class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small d-inline-flex align-items-center gap-1.5"
+              <button type="button"
+                class="btn btn-sm btn-outline-light py-1 px-2.5 extra-small d-inline-flex align-items-center gap-1.5"
                 (click)="isCombinedMode = false; combinedIdxs.clear(); selectAllChecked = false">
                 <i class="bi bi-x-circle me-1"></i><span>Cancel Combined</span>
               </button>
@@ -1123,30 +1259,23 @@
         <div class="p-2 bg-light border-start border-end border-bottom">
           <div class="row g-2 align-items-end">
             <div class="col-md-3">
-              <app-searchable-dropdown
-                [placeholder]="'Product Master (Optional)'"
-                [labelName]="'Product Master'"
-                [fetchDataFn]="getProductMasterDrop"
-                [smallInput]="true"
-                [hideLabel]="false"
+              <app-searchable-dropdown [placeholder]="'Product Master (Optional)'" [labelName]="'Product Master'"
+                [fetchDataFn]="getProductMasterDrop" [smallInput]="true" [hideLabel]="false"
                 (itemSelected)="onCombinedProductMasterSelected($event)"
-                [selectedItem]="combinedPlanForm.get('productMasterID')?.value">
+                [selectedItem]="getSelectedCombinedProductMaster()">
               </app-searchable-dropdown>
             </div>
             <div class="col-md-3">
-              <app-searchable-dropdown
-                [placeholder]="'Metal Classification (Optional)'"
-                [labelName]="'Metal Classification'"
-                [fetchDataFn]="getMetalDrop"
-                [smallInput]="true"
-                [hideLabel]="false"
-                (itemSelected)="onCombinedMetalSelected($event)"
-                [selectedItem]="combinedPlanForm.get('metalClassificationID')?.value">
+              <app-searchable-dropdown [placeholder]="'Metal Classification (Optional)'"
+                [labelName]="'Metal Classification'" [fetchDataFn]="getMetalDrop" [smallInput]="true"
+                [hideLabel]="false" (itemSelected)="onCombinedMetalSelected($event)"
+                [selectedItem]="getSelectedCombinedMetal()">
               </app-searchable-dropdown>
             </div>
             <div class="col-md-3">
               <label class="form-label text-xs-78 fw-medium text-secondary mb-1 d-block">Quick Load from Sample</label>
-              <select class="form-select form-select-sm" (change)="copyPlanFromSampleToCombined($any($event.target).value); $any($event.target).value = ''">
+              <select class="form-select form-select-sm"
+                (change)="copyPlanFromSampleToCombined($any($event.target).value); $any($event.target).value = ''">
                 <option value="" selected disabled>-- Copy from Sample --</option>
                 <option *ngFor="let sample of samples.controls; let sIdx = index" [value]="sIdx">
                   📋 Sample #{{ sIdx + 1 }} ({{ sample.get('sampleNo')?.value }})
@@ -1154,7 +1283,8 @@
               </select>
             </div>
             <div class="col-md-3 d-flex justify-content-end">
-              <button type="button" class="btn btn-sm btn-lims btn-lims-primary w-100 py-1.5 extra-small" (click)="openExplorerModal()">
+              <button type="button" class="btn btn-sm btn-lims btn-lims-primary w-100 py-1.5 extra-small"
+                (click)="openExplorerModal()">
                 <i class="bi bi-layout-sidebar-reverse me-1.5"></i><span>Explore Configured Scope</span>
               </button>
             </div>
@@ -1172,7 +1302,8 @@
           <li class="nav-item">
             <button class="nav-link" [ngClass]="{ active: combinedActiveTab === 'chemical' }"
               (click)="combinedActiveTab = 'chemical'" type="button">
-              <i class="bi bi-droplet me-1.5"></i><span>Chemical Test ({{ getCombinedChemMethods().length }} tests / {{ getCombinedElements().length }} elements)</span>
+              <i class="bi bi-droplet me-1.5"></i><span>Chemical Test ({{ getCombinedChemMethods().length }} tests / {{
+                getCombinedElements().length }} elements)</span>
             </button>
           </li>
         </ul>
@@ -1185,13 +1316,13 @@
                 <app-searchable-dropdown [placeholder]="'Type & Search Specification'" [labelName]="'Specification'"
                   [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedGenSpecSelected($event, 'genSpec1')" [hideLabel]="false" [smallInput]="true"
-                  [selectedItem]="combinedPlanForm.get('genSpec1')?.value"></app-searchable-dropdown>
+                  [selectedItem]="getSelectedCombinedGenSpec('genSpec1')"></app-searchable-dropdown>
               </div>
               <div>
                 <app-searchable-dropdown [placeholder]="'Type & Search Specification 2'" [labelName]="'Specification 2'"
                   [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedGenSpecSelected($event, 'genSpec2')" [hideLabel]="false" [smallInput]="true"
-                  [selectedItem]="combinedPlanForm.get('genSpec2')?.value"></app-searchable-dropdown>
+                  [selectedItem]="getSelectedCombinedGenSpec('genSpec2')"></app-searchable-dropdown>
               </div>
             </div>
 
@@ -1207,14 +1338,15 @@
                   </tr>
                 </thead>
                 <tbody formArrayName="methods">
-                  <tr *ngFor="let method of getCombinedMethods().controls; let methodIdx = index" [formGroupName]="methodIdx">
+                  <tr *ngFor="let method of getCombinedMethods().controls; let methodIdx = index"
+                    [formGroupName]="methodIdx">
                     <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                     <td>
-                      <app-searchable-dropdown [fetchDataFn]="buildCombinedGeneralLabTestFetchFn()" [placeholder]="'Search General / Mechanical Test'"
-                        [hideLabel]="true" [smallInput]="true"
+                      <app-searchable-dropdown [fetchDataFn]="buildCombinedGeneralLabTestFetchFn()"
+                        [placeholder]="'Search General / Mechanical Test'" [hideLabel]="true" [smallInput]="true"
                         [reloadKey]="'comb_gen_test_' + methodIdx + '_' + combinedPlanForm.get('genSpec1')?.value"
                         (itemSelected)="onCombinedLabTestSelected($event, methodIdx)"
-                        [selectedItem]="method.get('testMethodID')?.value"></app-searchable-dropdown>
+                        [selectedItem]="getSelectedGenTestMethod(method)"></app-searchable-dropdown>
                     </td>
                     <td>
                       <app-searchable-dropdown [fetchDataFn]="buildCombinedStandardFetchFn(methodIdx)"
@@ -1222,10 +1354,11 @@
                         [hideLabel]="true" [smallInput]="true"
                         [reloadKey]="'comb_gen_std_' + methodIdx + '_' + method.get('testMethodID')?.value"
                         (itemSelected)="onCombinedStandardSelected($event, methodIdx)"
-                        [selectedItem]="method.get('standardID')?.value"></app-searchable-dropdown>
+                        [selectedItem]="getSelectedStandard(method)"></app-searchable-dropdown>
                     </td>
                     <td class="text-center">
-                      <input type="number" class="form-control form-control-sm text-center" formControlName="quantity" placeholder="1" min="1" />
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="quantity"
+                        placeholder="1" min="1" />
                     </td>
                     <td class="text-center">
                       <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
@@ -1250,8 +1383,7 @@
           <!-- Combined Chemical Test Tab -->
           <div *ngIf="combinedActiveTab === 'chemical'">
             <!-- Technique-First Checkbox Selector (Clean Inline Banner - Same as Single Sample) -->
-            <div class="p-2 mt-2 mb-2 bg-light rounded border"
-              [class.border-warning]="!hasSelectedCombinedTechnique()"
+            <div class="p-2 mt-2 mb-2 bg-light rounded border" [class.border-warning]="!hasSelectedCombinedTechnique()"
               [class.border-light-subtle]="hasSelectedCombinedTechnique()">
               <div class="d-flex flex-wrap gap-3 align-items-center">
                 <span class="fw-semibold small text-dark d-flex align-items-center">
@@ -1259,14 +1391,14 @@
                   <span>Analytical Techniques <span class="text-danger">*</span>:</span>
                 </span>
                 <label *ngFor="let tech of availableTechniques" class="tech-check-item">
-                  <input type="checkbox" class="form-check-input mt-0"
-                    [id]="'comb_tech_' + tech.code"
+                  <input type="checkbox" class="form-check-input mt-0" [id]="'comb_tech_' + tech.code"
                     [checked]="isCombinedTechniqueSelected(tech.code)"
                     (change)="toggleCombinedTechnique(tech.code, $event)">
                   <span>{{ tech.name }}</span>
                 </label>
                 <span *ngIf="!hasSelectedCombinedTechnique()" class="extra-small text-danger fw-semibold ms-auto">
-                  <i class="bi bi-exclamation-circle me-1.5"></i><span>Select at least 1 technique to add/search chemical tests</span>
+                  <i class="bi bi-exclamation-circle me-1.5"></i><span>Select at least 1 technique to add/search
+                    chemical tests</span>
                 </span>
               </div>
             </div>
@@ -1278,14 +1410,14 @@
                   [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedChemSpecSelected($event, 'chemSpec1')" [hideLabel]="false"
                   [smallInput]="true"
-                  [selectedItem]="combinedPlanForm.get('chemSpec1')?.value"></app-searchable-dropdown>
+                  [selectedItem]="getSelectedCombinedChemSpec('chemSpec1')"></app-searchable-dropdown>
               </div>
               <div>
                 <app-searchable-dropdown [placeholder]="'Type & Search Specification 2'" [labelName]="'Specification 2'"
                   [fetchDataFn]="getCombinedSpecWrapper()"
                   (itemSelected)="onCombinedChemSpecSelected($event, 'chemSpec2')" [hideLabel]="false"
                   [smallInput]="true"
-                  [selectedItem]="combinedPlanForm.get('chemSpec2')?.value"></app-searchable-dropdown>
+                  [selectedItem]="getSelectedCombinedChemSpec('chemSpec2')"></app-searchable-dropdown>
               </div>
             </div>
 
@@ -1302,33 +1434,31 @@
                   </tr>
                 </thead>
                 <tbody formArrayName="chemMethods">
-                  <tr *ngFor="let method of getCombinedChemMethods().controls; let methodIdx = index" [formGroupName]="methodIdx">
+                  <tr *ngFor="let method of getCombinedChemMethods().controls; let methodIdx = index"
+                    [formGroupName]="methodIdx">
                     <td class="text-center fw-semibold text-secondary">{{ methodIdx + 1 }}</td>
                     <td>
-                      <app-searchable-dropdown
-                        [fetchDataFn]="buildCombinedChemicalLabTestFetchFn()"
+                      <app-searchable-dropdown [fetchDataFn]="buildCombinedChemicalLabTestFetchFn()"
                         [placeholder]="hasSelectedCombinedTechnique() ? 'Search Chemical Test / Analysis Type' : 'Select at least 1 technique above first'"
                         [labelName]="'Laboratory Test'" [hideLabel]="true" [smallInput]="true"
                         [reloadKey]="'comb_chem_test_' + methodIdx + '_' + combinedPlanForm.get('chemSpec1')?.value"
                         (itemSelected)="onCombinedChemLabTestSelected($event, methodIdx)"
-                        [selectedItem]="method.get('testMethodID')?.value"
+                        [selectedItem]="getSelectedChemTestMethod(method)"
                         [isDisabled]="!hasSelectedCombinedTechnique()">
                       </app-searchable-dropdown>
                     </td>
                     <td>
-                      <app-searchable-dropdown
-                        [fetchDataFn]="buildCombinedChemStandardFetchFn(methodIdx)"
-                        [placeholder]="'Search Test Method Specification'"
-                        [labelName]="'Test Method Specification'"
-                        [hideLabel]="true"
-                        [smallInput]="true"
+                      <app-searchable-dropdown [fetchDataFn]="buildCombinedChemStandardFetchFn(methodIdx)"
+                        [placeholder]="'Search Test Method Specification'" [labelName]="'Test Method Specification'"
+                        [hideLabel]="true" [smallInput]="true"
                         [reloadKey]="'comb_chem_std_' + methodIdx + '_' + method.get('testMethodID')?.value"
                         (itemSelected)="onCombinedChemStandardSelected($event, methodIdx)"
-                        [selectedItem]="method.get('standardID')?.value">
+                        [selectedItem]="getSelectedChemStandard(method)">
                       </app-searchable-dropdown>
                     </td>
                     <td class="text-center">
-                      <input type="number" class="form-control form-control-sm text-center" formControlName="quantity" placeholder="1" min="1" />
+                      <input type="number" class="form-control form-control-sm text-center" formControlName="quantity"
+                        placeholder="1" min="1" />
                     </td>
                     <td class="text-center">
                       <button type="button" class="btn btn-sm btn-outline-danger btn-lims-icon"
@@ -1379,8 +1509,7 @@
                           <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
                             [checked]="isAllCombinedElementsSelected()"
                             [indeterminate]="isSomeCombinedElementsSelected()"
-                            (change)="toggleSelectAllCombinedElements($event)"
-                            title="Select / Deselect all elements" />
+                            (change)="toggleSelectAllCombinedElements($event)" title="Select / Deselect all elements" />
                           <span class="extra-small text-muted">All</span>
                         </div>
                       </th>
@@ -1403,11 +1532,9 @@
                           <span class="text-muted extra-small ms-2">({{ grp.elements.length }} elements)</span>
                         </td>
                         <td class="text-center py-1 bg-light-subtle">
-                          <div class="form-check d-inline-block mb-0"
-                            title="Select / Deselect all in this group">
+                          <div class="form-check d-inline-block mb-0" title="Select / Deselect all in this group">
                             <input type="checkbox" class="form-check-input mt-0 cursor-pointer"
-                              [checked]="isGroupAllSelected(grp)"
-                              [indeterminate]="isGroupSomeSelected(grp)"
+                              [checked]="isGroupAllSelected(grp)" [indeterminate]="isGroupSomeSelected(grp)"
                               (change)="toggleSelectCombinedGroupElements(grp, $event)" />
                           </div>
                         </td>
@@ -1415,26 +1542,32 @@
 
                       <!-- Categorized Element Rows -->
                       <ng-container formArrayName="elements">
-                        <tr *ngFor="let item of grp.elements; trackBy: trackByElementItem" [formGroupName]="item.originalIndex">
+                        <tr *ngFor="let item of grp.elements; trackBy: trackByElementItem"
+                          [formGroupName]="item.originalIndex">
                           <td class="text-center fw-semibold text-secondary">{{ item.originalIndex + 1 }}</td>
                           <td>
-                            <div class="fw-medium text-dark">{{ item.control.get('parameterName')?.value || 'Parameter #' + item.control.get('parameterID')?.value }}</div>
+                            <div class="fw-medium text-dark">{{ item.control.get('parameterName')?.value || 'Parameter
+                              #' + item.control.get('parameterID')?.value }}</div>
                           </td>
                           <td>
-                            <span *ngIf="item.control.get('sourceType')?.value === 'Specification' || (item.control.get('minValue')?.value != null || item.control.get('maxValue')?.value != null)"
+                            <span
+                              *ngIf="item.control.get('sourceType')?.value === 'Specification' || (item.control.get('minValue')?.value != null || item.control.get('maxValue')?.value != null)"
                               class="badge bg-danger-subtle text-danger border border-danger-subtle extra-small">
                               Specification Limit
                             </span>
-                            <span *ngIf="item.control.get('sourceType')?.value !== 'Specification' && item.control.get('minValue')?.value == null && item.control.get('maxValue')?.value == null"
+                            <span
+                              *ngIf="item.control.get('sourceType')?.value !== 'Specification' && item.control.get('minValue')?.value == null && item.control.get('maxValue')?.value == null"
                               class="badge bg-info-subtle text-info-emphasis border border-info-subtle extra-small">
                               {{ item.control.get('sourceTitle')?.value || 'Analysis Type Spectro Channel' }}
                             </span>
                           </td>
                           <td class="text-center">
-                            <span class="small font-monospace">{{ item.control.get('minValue')?.value != null ? item.control.get('minValue')?.value : '-' }}</span>
+                            <span class="small font-monospace">{{ item.control.get('minValue')?.value != null ?
+                              item.control.get('minValue')?.value : '-' }}</span>
                           </td>
                           <td class="text-center">
-                            <span class="small font-monospace">{{ item.control.get('maxValue')?.value != null ? item.control.get('maxValue')?.value : '-' }}</span>
+                            <span class="small font-monospace">{{ item.control.get('maxValue')?.value != null ?
+                              item.control.get('maxValue')?.value : '-' }}</span>
                           </td>
                           <td class="text-center small text-secondary">
                             <span>{{ item.control.get('parameterUnit')?.value || '%' }}</span>
@@ -1464,15 +1597,39 @@
     </div>
   </div>
 
-  <!-- Save/Cancel Sticky Action Bar -->
-  <div *ngIf="!isViewMode"
-    class="d-flex justify-content-end gap-2 my-2 p-2 bg-white border-top border-2 border-danger sticky-bottom rounded shadow-sm">
-    <button type="button" class="btn btn-lims btn-lims-cancel" (click)="onCancel()">
-      <i class="bi bi-x-circle me-2"></i><span>Cancel</span>
+  <!-- Save/Cancel/Print Sticky Action Bar -->
+  <div
+    class="d-flex justify-content-end align-items-center gap-2 my-2 p-2 bg-white border-top border-2 border-danger sticky-bottom rounded shadow-sm">
+    <button type="button" class="btn btn-lims btn-lims-print me-auto" (click)="printJobCard()"
+      title="Print Job Card / Route Sheet for testing">
+      <i class="bi bi-printer me-1.5"></i><span>Print Job Card</span>
     </button>
-    <button *ngIf="canSavePlan()" type="button" class="btn btn-lims btn-lims-save px-4" (click)="onSave()">
-      <i class="bi bi-check-circle me-2"></i><span>Save Plan</span>
+
+    <!-- Locked Status Indicators -->
+    <span *ngIf="isCurrentPlanApproved(activeSampleIdx)"
+      class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 d-inline-flex align-items-center gap-1.5 px-2.5 py-1.5 small">
+      <i class="bi bi-check-circle-fill"></i><span>Plan Approved & Locked</span>
+    </span>
+    <span *ngIf="!isCurrentPlanApproved(activeSampleIdx) && (isPlanLocked(activeSampleIdx) || isViewMode)"
+      class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 d-inline-flex align-items-center gap-1.5 px-2.5 py-1.5 small">
+      <i class="bi bi-lock-fill"></i><span>Read-Only View</span>
+    </span>
+
+    <!-- If Plan is Locked / View Mode: Show Back Button -->
+    <button *ngIf="isPlanLocked(activeSampleIdx) || isViewMode" type="button" class="btn btn-lims btn-lims-cancel"
+      (click)="onCancel()">
+      <i class="bi bi-arrow-left me-1.5"></i><span>Back</span>
     </button>
+
+    <!-- If Plan is Editable: Show Cancel & Save Plan Buttons -->
+    <ng-container *ngIf="!isPlanLocked(activeSampleIdx) && !isViewMode">
+      <button type="button" class="btn btn-lims btn-lims-cancel" (click)="onCancel()">
+        <i class="bi bi-x-circle me-1.5"></i><span>Cancel</span>
+      </button>
+      <button *ngIf="canSavePlan()" type="button" class="btn btn-lims btn-lims-save px-4" (click)="onSave()">
+        <i class="bi bi-check-circle me-1.5"></i><span>Save Plan</span>
+      </button>
+    </ng-container>
   </div>
 </div>
 
@@ -1481,7 +1638,8 @@
   <div class="modal-dialog modal-dialog-centered plan-modal-sm">
     <div class="modal-content shadow-lg border-0">
       <div class="modal-header py-2 bg-warning text-dark">
-        <h6 class="modal-title mb-0 d-flex align-items-center gap-2"><i class="bi bi-exclamation-triangle me-2"></i><span>Empty Test Tabs Detected</span></h6>
+        <h6 class="modal-title mb-0 d-flex align-items-center gap-2"><i
+            class="bi bi-exclamation-triangle me-2"></i><span>Empty Test Tabs Detected</span></h6>
         <button type="button" class="btn-close btn-sm" (click)="showEmptyTabsDialog = false"></button>
       </div>
       <div class="modal-body py-3">
@@ -1535,6 +1693,37 @@
   </div>
 </div>
 
+<!-- Reject Replan Request Modal -->
+<div *ngIf="showRejectReplanModal" class="modal d-block plan-modal-backdrop" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered plan-modal-sm">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header py-2 bg-danger text-white">
+        <h6 class="modal-title mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-x-circle me-1.5"></i><span>Reject Replan Request</span>
+        </h6>
+        <button type="button" class="btn-close btn-close-white" (click)="closeRejectReplanDialog()"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="mb-2">
+          <label class="form-label fw-semibold small mb-1">Rejection Remarks / Reason</label>
+          <textarea class="form-control form-control-sm" rows="3" [(ngModel)]="rejectReplanRemarks"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Optional reason for rejecting this replan request..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer py-2 gap-2">
+        <button type="button" class="btn btn-sm btn-lims btn-lims-cancel" (click)="closeRejectReplanDialog()">
+          <i class="bi bi-x-circle me-1.5"></i><span>Cancel</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-danger d-inline-flex align-items-center gap-1.5"
+          (click)="submitRejectReplan()">
+          <i class="bi bi-x-circle-fill"></i><span>Reject Replan</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Configured Data Explorer Draggable & Resizable Popup Modal -->
 <div *ngIf="showExplorerModal" class="modal d-block plan-modal-backdrop" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable plan-explorer-left-modal"
@@ -1544,7 +1733,8 @@
         class="modal-header card-form-header text-white py-2 bg-danger d-flex align-items-center justify-content-between"
         (mousedown)="startDragExplorer($event)" title="Click and drag to move window anywhere">
         <h6 class="modal-title text-white mb-0 d-flex align-items-center gap-2 cursor-move">
-          <i class="bi bi-arrows-move me-2"></i><span>Configured Explorer — {{ isCombinedMode ? ('Combined Plan (' + combinedIdxs.size + ' Samples)') : ('Sample #' + getActiveSample().get('sampleNo')?.value) }}</span>
+          <i class="bi bi-arrows-move me-2"></i><span>Configured Explorer — {{ isCombinedMode ? ('Combined Plan (' +
+            combinedIdxs.size + ' Samples)') : ('Sample #' + getActiveSample().get('sampleNo')?.value) }}</span>
         </h6>
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-white bg-opacity-25 text-white extra-small"><i
@@ -1558,10 +1748,147 @@
           [metalClassificationId]="isCombinedMode ? combinedPlanForm.get('metalClassificationID')?.value : getActiveSample().get('metalClassificationID')?.value"
           [activeSampleNo]="isCombinedMode ? ('Combined (' + combinedIdxs.size + ' Samples)') : (getActiveSample().get('sampleNo')?.value || '')"
           [activeTabType]="isCombinedMode ? combinedActiveTab : (activeTabs[activeSampleIdx + '-0'] === 'chemical' ? 'chemical' : 'general')"
-          [isViewMode]="isViewMode" (applyGradeConfig)="onApplyGradeConfig($event)"
+          [isViewMode]="isPlanLocked(activeSampleIdx) || isViewMode" (applyGradeConfig)="onApplyGradeConfig($event)"
           (applyTestConfig)="onApplyTestConfig($event)" (applyBatchTests)="onApplyBatchTests($event)">
         </app-plan-explorer-panel>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ JOB CARD PRINT SECTION (hidden on screen, visible on print) ═══════ -->
+<div class="job-card-print" id="jobCardPrint" *ngIf="rawInwardData">
+
+  <!-- ── Header ── -->
+  <div class="jc-header">
+    <h2 class="jc-title">Job Card</h2>
+    <div class="jc-meta">
+      <div><strong>Case No:</strong> {{ rawInwardData.caseNo }}</div>
+      <div><strong>Date:</strong> {{ (rawInwardData.collectionDate || rawInwardData.collectionTime) | date:'dd-MM-yyyy'
+        }}</div>
+      <div><strong>Time:</strong> {{ rawInwardData.collectionTime }}</div>
+    </div>
+  </div>
+
+  <!-- ── Customer Details ── -->
+  <div class="jc-section">
+    <div class="jc-section-title">Customer Details</div>
+    <table class="jc-info-table">
+      <tr>
+        <td><strong>Customer:</strong> {{ rawInwardData.customerName || '-' }}</td>
+        <td><strong>Contact:</strong> {{ rawInwardData.reportingTo?.contactPersonName || '-' }}</td>
+      </tr>
+      <tr>
+        <td><strong>Address:</strong> {{ rawInwardData.address || '-' }}, {{ rawInwardData.city || '' }}</td>
+        <td *ngIf="rawInwardData.gstNo"><strong>GST No:</strong> {{ rawInwardData.gstNo }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ── Case Flags ── -->
+  <div class="jc-section"
+    *ngIf="rawInwardData.urgent || rawInwardData.returnSample || rawInwardData.notDestroyed || rawInwardData.sampleReceiptNote">
+    <div class="jc-section-title">Case Information</div>
+    <div class="jc-flag-row" *ngIf="rawInwardData.urgent || rawInwardData.returnSample || rawInwardData.notDestroyed">
+      <span class="jc-flag" *ngIf="rawInwardData.urgent">URGENT</span>
+      <span class="jc-flag" *ngIf="rawInwardData.returnSample">RETURN SAMPLE</span>
+      <span class="jc-flag" *ngIf="rawInwardData.notDestroyed">NOT TO BE DESTROYED</span>
+    </div>
+    <div class="jc-receipt-note" *ngIf="rawInwardData.sampleReceiptNote">
+      <strong>Receipt Note:</strong> {{ rawInwardData.sampleReceiptNote }}
+    </div>
+  </div>
+
+  <!-- ── Conformity & Decision ── -->
+  <div class="jc-section">
+    <div class="jc-section-title">Conformity &amp; Decision Rule</div>
+    <table class="jc-kv-table">
+      <tr>
+        <td class="jc-kv-key">Statement of Conformity</td>
+        <td class="jc-kv-val">{{ rawInwardData.statementOfConformity || 'Not Applicable' }}</td>
+      </tr>
+      <tr>
+        <td class="jc-kv-key">Decision Rule</td>
+        <td class="jc-kv-val">{{ rawInwardData.decisionRule || 'Not Applicable' }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ── Sample Details ── -->
+  <div class="jc-section">
+    <div class="jc-section-title">Sample Details</div>
+    <div *ngFor="let sample of (rawInwardData.sampleDetails || []); let i = index" class="jc-sample-block">
+      <div class="jc-sample-header">
+        <span><strong>#{{ i + 1 }}</strong>&nbsp;&nbsp;{{ sample.sampleNo }}</span>
+        <span>Qty: <strong>{{ sample.quantity || 1 }}</strong></span>
+      </div>
+
+      <table class="jc-kv-table">
+        <tr>
+          <td class="jc-kv-key">Description</td>
+          <td class="jc-kv-val">{{ sample.details || '-' }}</td>
+        </tr>
+        <tr *ngIf="sample.metalClassificationName">
+          <td class="jc-kv-key">Metal Classification</td>
+          <td class="jc-kv-val">{{ sample.metalClassificationName }}</td>
+        </tr>
+        <tr *ngIf="sample.productConditionName">
+          <td class="jc-kv-key">Product Condition</td>
+          <td class="jc-kv-val">{{ sample.productConditionName }}</td>
+        </tr>
+        <tr *ngIf="sample.thickness || sample.diameter || sample.width || sample.length">
+          <td class="jc-kv-key">Dimensions</td>
+          <td class="jc-kv-val">
+            <ng-container *ngIf="sample.thickness">T: {{ sample.thickness }}mm&nbsp;</ng-container>
+            <ng-container *ngIf="sample.diameter">D: {{ sample.diameter }}mm&nbsp;</ng-container>
+            <ng-container *ngIf="sample.width">W: {{ sample.width }}mm&nbsp;</ng-container>
+            <ng-container *ngIf="sample.length">L: {{ sample.length }}mm</ng-container>
+          </td>
+        </tr>
+        <tr *ngIf="sample.remarks">
+          <td class="jc-kv-key">Remarks</td>
+          <td class="jc-kv-val">{{ sample.remarks }}</td>
+        </tr>
+        <tr *ngIf="sample.preparationRequired">
+          <td class="jc-kv-key">Sample Preparation</td>
+          <td class="jc-kv-val">Required</td>
+        </tr>
+        <tr *ngIf="sample.machiningRequired">
+          <td class="jc-kv-key">Machining</td>
+          <td class="jc-kv-val">Required</td>
+        </tr>
+        <tr *ngIf="sample.machiningRequired && sample.specimen">
+          <td class="jc-kv-key">Specimen</td>
+          <td class="jc-kv-val">{{ sample.specimen }}</td>
+        </tr>
+        <tr *ngIf="sample.tpiRequired">
+          <td class="jc-kv-key">TPI</td>
+          <td class="jc-kv-val">
+            Required
+            <ng-container *ngIf="sample.tpiAgencyName">&nbsp;· Agency: {{ sample.tpiAgencyName }}</ng-container>
+          </td>
+        </tr>
+        <tr *ngIf="sample.testInstructions">
+          <td class="jc-kv-key">Test Instructions</td>
+          <td class="jc-kv-val">{{ sample.testInstructions }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Signatures ── -->
+  <div class="jc-footer">
+    <div class="jc-sign-block">
+      <div class="jc-sign-line"></div>
+      <div>Received By</div>
+    </div>
+    <div class="jc-sign-block">
+      <div class="jc-sign-line"></div>
+      <div>Authorized By</div>
+    </div>
+    <div class="jc-sign-block">
+      <div class="jc-sign-line"></div>
+      <div>Customer Signature</div>
     </div>
   </div>
 </div>

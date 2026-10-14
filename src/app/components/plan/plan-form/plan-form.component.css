@@ -1798,5 +1798,180 @@ textarea.form-control-sm {
   cursor: move !important;
 }
 
+/* ═══════ JOB CARD PRINT STYLES ═══════ */
+.job-card-print {
+  display: none;
+}
 
+@media print {
+  :host > div > *:not(.job-card-print),
+  .plan-form-container > *:not(.job-card-print),
+  .card:not(.job-card-print),
+  .sticky-action-bar,
+  .btn-lims {
+    display: none !important;
+  }
 
+  .job-card-print {
+    display: block !important;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #000;
+  }
+
+  .jc-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+
+  .jc-title {
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 0 6px 0;
+  }
+
+  .jc-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+
+  .jc-section {
+    margin-bottom: 10px;
+  }
+
+  .jc-section-title {
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #f0f0f0;
+    padding: 4px 8px;
+    border-left: 3px solid #da261c;
+    margin-bottom: 5px;
+  }
+
+  .jc-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 5px;
+  }
+
+  .jc-info-table td {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid #ddd;
+  }
+
+  .jc-flag-row {
+    display: flex;
+    gap: 12px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+  }
+
+  .jc-flag {
+    font-weight: 700;
+    font-size: 10px;
+    border: 1.5px solid #da261c;
+    color: #da261c;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  .jc-receipt-note {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .jc-sample-block {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
+
+  .jc-sample-header {
+    background: #f9f9f9;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .jc-kv-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .jc-kv-table td {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .jc-kv-key {
+    width: 25%;
+    color: #555;
+    font-weight: 600;
+  }
+
+  .jc-kv-val {
+    width: 75%;
+  }
+
+  .jc-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 10px;
+  }
+
+  .jc-sign-block {
+    text-align: center;
+    font-size: 11px;
+  }
+
+  .jc-sign-line {
+    width: 140px;
+    border-bottom: 1px solid #000;
+    margin-bottom: 4px;
+    height: 40px;
+  }
+}
+
+/* ── Context Replan Alert Banner ── */
+.replan-alert-banner {
+  background-color: #fffbeb;
+  border-left: 4px solid #f59e0b !important;
+  color: #1e293b;
+  font-size: 0.8rem;
+}
+
+.replan-alert-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fef3c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.replan-reason-text {
+  font-size: 0.76rem;
+  background: #ffffff;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 2px 8px;
+  max-width: 650px;
+}

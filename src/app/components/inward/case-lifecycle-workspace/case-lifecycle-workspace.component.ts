@@ -7,7 +7,7 @@ import { ToastService } from '../../../services/toast.service';
 import { PermissionService } from '../../../utility/permission/permission.service';
 import { SampleInwardFormComponent } from '../sample-inward-form/sample-inward-form.component';
 import { ReviewOfRequestFormComponent } from '../review-of-request-form/review-of-request-form.component';
-import { CuttingMachiningPlanTabComponent } from '../cutting-machining-plan-tab/cutting-machining-plan-tab.component';
+import { SamplePreparationFormComponent } from '../../sample-prepration/sample-preparation-form/sample-preparation-form.component';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
 import { CaseSampleSelectorComponent } from './case-sample-selector/case-sample-selector.component';
 import { TestResultEntryFormComponent } from '../../TestResult/test-result-entry-form/test-result-entry-form.component';
@@ -45,7 +45,7 @@ export interface LifecycleStage {
     RouterModule,
     SampleInwardFormComponent,
     ReviewOfRequestFormComponent,
-    CuttingMachiningPlanTabComponent,
+    SamplePreparationFormComponent,
     TestStatusBadgeComponent,
     CaseSampleSelectorComponent,
     TestResultEntryFormComponent,

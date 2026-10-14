@@ -302,9 +302,33 @@ td .btn-edit-row i::before {
   app-toast,
   app-global-loader,
   #btn-back-to-top,
-  .no-print {
+  .no-print,
+  app-perf-hud,
+  .lims-perf-hud-container,
+  app-floating-symbol-picker,
+  .floating-symbol-picker,
+  .workspace-compact-header,
+  .stepper-nav-row,
+  .header-main-row,
+  .btn-compact-back,
+  .case-meta-group,
+  .compact-kpi-strip,
+  .stage-popover-card,
+  app-performance-indicator,
+  .perf-pill-dock,
+  .perf-pill-container,
+  .perf-indicator-wrapper,
+  .sticky-action-bar,
+  .card-form-header,
+  .btn-header-back,
+  .header-balance-spacer,
+  .btn-lims,
+  button.btn {
     display: none !important;
     visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .content-container {
@@ -6533,5 +6557,19 @@ fieldset.fieldset-collapsed {
   margin-top: 1rem;
   z-index: 100;
 }
+
+/* GLOBAL ICON & SPACING UTILITIES (Enforces strict min 5-6px spacing) */
+.me-1\.5 {
+  margin-right: 0.375rem !important; /* 6px */
+}
+
+.ms-1\.5 {
+  margin-left: 0.375rem !important; /* 6px */
+}
+
+.gap-1\.5 {
+  gap: 0.375rem !important; /* 6px */
+}
+
 
 

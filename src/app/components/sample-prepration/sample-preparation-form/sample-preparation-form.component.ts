@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Observable, of } from 'rxjs';
@@ -45,10 +45,19 @@ export interface PrepItemRow {
   templateUrl: './sample-preparation-form.component.html',
   styleUrl: './sample-preparation-form.component.css',
 })
-export class SamplePreparationFormComponent implements OnInit {
+export class SamplePreparationFormComponent implements OnInit, OnChanges {
+  // Embedding support: used by CaseLifecycleWorkspaceComponent or other embeds
+  @Input() embeddedInwardId: number = 0;
+  @Input() embeddedSampleId: number = 0;
+  @Input() isEmbeddedMode: boolean = false;
+  @Input() isEmbeddedReadOnly: boolean = false;
+  @Output() prepCompleted = new EventEmitter<any>();
+
   prepId = 0;
   sampleId = 0;
   inwardId = 0;
+  selectedSampleId = 0;
+  inwardSamples: any[] = [];
   isViewMode = false;
   isEditMode = false;
 
@@ -64,6 +73,9 @@ export class SamplePreparationFormComponent implements OnInit {
   isPrinting = false;
   showNablSection = true;
 
+  isPrepEnabledForSample: boolean = false;
+  availablePlanTests: any[] = [];
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -78,6 +90,17 @@ export class SamplePreparationFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+
+    if (this.isEmbeddedReadOnly) {
+      this.isViewMode = true;
+      this.prepForm.disable();
+    }
+
+    if (this.isEmbeddedMode || this.embeddedInwardId > 0) {
+      this.inwardId = this.embeddedInwardId;
+      this.loadInwardData(this.embeddedInwardId, this.embeddedSampleId);
+      return;
+    }
 
     const urlPath = this.router.url;
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -100,6 +123,24 @@ export class SamplePreparationFormComponent implements OnInit {
       this.loadPrepData(this.prepId);
     } else if (this.sampleId > 0) {
       this.loadBySample(this.sampleId);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['embeddedInwardId'] && changes['embeddedInwardId'].currentValue > 0) {
+      this.inwardId = changes['embeddedInwardId'].currentValue;
+      this.loadInwardData(this.inwardId, this.embeddedSampleId);
+    }
+    if (changes['embeddedSampleId'] && changes['embeddedSampleId'].currentValue > 0) {
+      this.switchSample(changes['embeddedSampleId'].currentValue);
+    }
+    if (changes['isEmbeddedReadOnly']) {
+      this.isViewMode = !!changes['isEmbeddedReadOnly'].currentValue;
+      if (this.isViewMode && this.prepForm) {
+        this.prepForm.disable();
+      } else if (!this.isViewMode && this.prepForm) {
+        this.prepForm.enable();
+      }
     }
   }
 
@@ -150,16 +191,71 @@ export class SamplePreparationFormComponent implements OnInit {
 
   // ── Data Loading ──
 
+  loadInwardData(inwardId: number, targetSampleId?: number): void {
+    this.inwardId = inwardId;
+    this.prepService.getByInward(inwardId).subscribe({
+      next: (items: any[]) => {
+        this.inwardSamples = items || [];
+        if (this.inwardSamples.length > 0) {
+          let target = null;
+          if (targetSampleId && targetSampleId > 0) {
+            target = this.inwardSamples.find(s => s.sampleID === targetSampleId);
+          }
+          if (!target) {
+            target = this.inwardSamples.find(s => s.preparationRequired || (s.items && s.items.some((i: any) => i.cuttingRequired || i.machiningRequired)));
+          }
+          if (!target) {
+            target = this.inwardSamples[0];
+          }
+          this.applySelectedSamplePrep(target);
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => this.toastService.show('Failed to load sample preparation details for case.', 'error')
+    });
+  }
+
+  loadInwardSamplesList(inwardId: number): void {
+    this.prepService.getByInward(inwardId).subscribe({
+      next: (items: any[]) => {
+        this.inwardSamples = items || [];
+        this.selectedSampleId = this.sampleId;
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+  }
+
+  applySelectedSamplePrep(data: any): void {
+    this.prepData = data;
+    this.prepId = data.id || 0;
+    this.sampleId = data.sampleID;
+    this.selectedSampleId = data.sampleID;
+    this.inwardId = data.inwardID;
+    this.populateFormData(data);
+    if (this.isViewMode || this.isEmbeddedReadOnly) {
+      this.prepForm.disable();
+    }
+    this.cdr.markForCheck();
+  }
+
+  switchSample(sampleId: number): void {
+    if (this.selectedSampleId === sampleId && this.prepData) return;
+    const found = this.inwardSamples.find(s => s.sampleID === sampleId);
+    if (found) {
+      this.applySelectedSamplePrep(found);
+    } else {
+      this.loadBySample(sampleId);
+    }
+  }
+
   private loadPrepData(id: number): void {
     this.prepService.getById(id).subscribe({
       next: (data) => {
-        this.prepData = data;
-        this.prepId = data.id;
-        this.sampleId = data.sampleID;
-        this.inwardId = data.inwardID;
-        this.populateFormData(data);
-        if (this.isViewMode) this.prepForm.disable();
-        this.cdr.markForCheck();
+        this.applySelectedSamplePrep(data);
+        if (this.inwardId > 0 && this.inwardSamples.length === 0) {
+          this.loadInwardSamplesList(this.inwardId);
+        }
       },
       error: () => this.toastService.show('Failed to load preparation data', 'error'),
     });
@@ -168,24 +264,19 @@ export class SamplePreparationFormComponent implements OnInit {
   private loadBySample(sampleId: number): void {
     this.prepService.getBySample(sampleId).subscribe({
       next: (data) => {
-        this.prepData = data;
-        this.prepId = data.id;
-        this.sampleId = data.sampleID;
-        this.inwardId = data.inwardID;
-        this.populateFormData(data);
-        if (this.isViewMode) this.prepForm.disable();
-        this.cdr.markForCheck();
+        this.applySelectedSamplePrep(data);
+        if (this.inwardId > 0 && this.inwardSamples.length === 0) {
+          this.loadInwardSamplesList(this.inwardId);
+        }
       },
       error: () => {
         // Fallback to getOrCreate
         this.prepService.getOrCreateBySample(sampleId).subscribe({
           next: (data) => {
-            this.prepData = data;
-            this.prepId = data.id;
-            this.sampleId = data.sampleID;
-            this.inwardId = data.inwardID;
-            this.populateFormData(data);
-            this.cdr.markForCheck();
+            this.applySelectedSamplePrep(data);
+            if (this.inwardId > 0 && this.inwardSamples.length === 0) {
+              this.loadInwardSamplesList(this.inwardId);
+            }
           },
           error: () => this.toastService.show('Failed to initialize preparation for sample', 'error')
         });
@@ -223,12 +314,28 @@ export class SamplePreparationFormComponent implements OnInit {
     }
 
     // Build tests FormArray
+    this.availablePlanTests = data.availablePlanTests || [];
+    const hasActivePrepItems = data.items && data.items.length > 0 && data.items.some((i: any) => i.cuttingRequired || i.machiningRequired || i.status === 'Required' || i.status === 'InProgress');
+    this.isPrepEnabledForSample = !!data.preparationRequired || hasActivePrepItems;
+
     this.tests.clear();
-    const rawItems: any[] = data.items || [];
+    if (this.isPrepEnabledForSample) {
+      const itemsToPopulate = (data.items && data.items.length > 0) ? data.items : this.availablePlanTests;
+      this.populateTestItems(itemsToPopulate);
+    }
+
+    if (this.isViewMode) {
+      this.prepForm.disable();
+    }
+  }
+
+  populateTestItems(rawItems: any[]): void {
+    this.tests.clear();
+    this.selectedSpecimenMap = {};
     const isHard = this.isHardMetal();
 
-    rawItems.forEach((item: any, index: number) => {
-      const specSize = item.specimenSize || data.specimen || '';
+    (rawItems || []).forEach((item: any, index: number) => {
+      const specSize = item.specimenSize || this.prepData?.specimen || '';
       const masterId = item.specimenPreparationMasterID || null;
       const rawSize = item.specimenRawMaterialSize || '';
 
@@ -266,6 +373,8 @@ export class SamplePreparationFormComponent implements OnInit {
         laboratoryTestID: [item.laboratoryTestID || 0],
         testId: [item.laboratoryTestID || item.testId || 0],
         testName: [resolvedTestName],
+        rootTestName: [item.rootTestName || ''],
+        subGroupName: [item.subGroupName || ''],
         standardId: [item.testMethodSpecificationID || item.standardId || 0],
         standardName: [item.testMethodName || item.standardName || ''],
         quantity: [item.quantity || 1, [Validators.required, Validators.min(1)]],
@@ -274,10 +383,10 @@ export class SamplePreparationFormComponent implements OnInit {
         specimenRawMaterialSize: [rawSize],
         drawingFilePath: [item.drawingFilePath || ''],
         fileName: [item.fileName || ''],
-        machiningRate: [item.resolvedMachiningRate || 0],
-        cuttingRate: [item.resolvedCuttingRate || 0],
-        machiningTotal: [item.machiningTotal || (item.resolvedMachiningRate ? item.resolvedMachiningRate * (item.quantity || 1) : 0)],
-        cuttingTotal: [item.cuttingTotal || (item.resolvedCuttingRate ? item.resolvedCuttingRate * (item.quantity || 1) : 0)],
+        machiningRate: [item.resolvedMachiningRate || item.machiningRate || 0],
+        cuttingRate: [item.resolvedCuttingRate || item.cuttingRate || 0],
+        machiningTotal: [item.machiningTotal || ((item.resolvedMachiningRate || item.machiningRate || 0) * (item.quantity || 1))],
+        cuttingTotal: [item.cuttingTotal || ((item.resolvedCuttingRate || item.cuttingRate || 0) * (item.quantity || 1))],
         requiresCutting: [item.cuttingRequired ?? item.requiresCutting ?? true],
         requiresMachining: [item.machiningRequired ?? item.requiresMachining ?? true],
         noTesting: [item.noTesting ?? false],
@@ -294,8 +403,24 @@ export class SamplePreparationFormComponent implements OnInit {
     });
 
     if (this.isViewMode) {
-      this.prepForm.disable();
+      this.tests.disable();
     }
+  }
+
+  onPrepToggleChange(enabled: boolean): void {
+    this.isPrepEnabledForSample = enabled;
+    if (enabled) {
+      if (this.tests.length === 0) {
+        const itemsToPopulate = (this.prepData?.items && this.prepData.items.length > 0)
+          ? this.prepData.items
+          : this.availablePlanTests;
+        this.populateTestItems(itemsToPopulate);
+      }
+    } else {
+      this.tests.clear();
+      this.selectedSpecimenMap = {};
+    }
+    this.cdr.markForCheck();
   }
 
   private isHardMetal(): boolean {
@@ -360,17 +485,14 @@ export class SamplePreparationFormComponent implements OnInit {
         fileName: matched.fileName || ''
       }, { emitEvent: false });
 
-      const mRate = isHard
-        ? (matched.machiningRateHardMetal || matched.machiningRateSoftMetal || 0)
-        : (matched.machiningRateSoftMetal || matched.machiningRateHardMetal || 0);
-      const cRate = isHard
-        ? (matched.cuttingRateHardMetal || matched.cuttingRateSoftMetal || 0)
-        : (matched.cuttingRateSoftMetal || matched.cuttingRateHardMetal || 0);
+      const rates = this.resolveConfigRates(matched);
 
       testGroup.patchValue({
-        machiningRate: mRate,
-        cuttingRate: cRate
+        machiningRate: rates.machiningRate,
+        cuttingRate: rates.cuttingRate
       }, { emitEvent: false });
+
+      this.recalcRow(testIndex);
 
       this.selectedSpecimenMap[testIndex] = {
         id: matched.id,
@@ -394,6 +516,41 @@ export class SamplePreparationFormComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  resolveConfigRates(config: any): { machiningRate: number; cuttingRate: number } {
+    if (!config) return { machiningRate: 0, cuttingRate: 0 };
+    const isHard = this.isHardMetal();
+
+    // 1. Try date-effective active version from versions array
+    const versions: any[] = config.versions || config.Versions || [];
+    if (versions.length > 0) {
+      const today = new Date().toISOString();
+      const sorted = [...versions]
+        .filter(v => v.isActive !== false && (!v.effectiveFrom || v.effectiveFrom <= today))
+        .sort((a, b) => new Date(b.effectiveFrom || 0).getTime() - new Date(a.effectiveFrom || 0).getTime());
+
+      const activeVersion = sorted[0] || versions[0];
+      if (activeVersion) {
+        const mRate = isHard
+          ? +(activeVersion.priceHardMetal || activeVersion.priceGeneralMetal || 0)
+          : +(activeVersion.priceGeneralMetal || activeVersion.priceHardMetal || 0);
+        const cRate = isHard
+          ? +(activeVersion.cuttingRateHardMetal || activeVersion.cuttingRateGeneralMetal || 0)
+          : +(activeVersion.cuttingRateGeneralMetal || activeVersion.cuttingRateHardMetal || 0);
+        return { machiningRate: mRate, cuttingRate: cRate };
+      }
+    }
+
+    // 2. Fallback to currentPrice fields or direct scalar rates
+    const mFallback = isHard
+      ? +(config.currentPriceHardMetal || config.currentPriceGeneralMetal || config.machiningRateHardMetal || config.machiningRateSoftMetal || config.machiningRate || 0)
+      : +(config.currentPriceGeneralMetal || config.currentPriceHardMetal || config.machiningRateSoftMetal || config.machiningRateHardMetal || config.machiningRate || 0);
+    const cFallback = isHard
+      ? +(config.cuttingRateHardMetal || config.cuttingRateGeneralMetal || config.cuttingRate || 0)
+      : +(config.cuttingRateGeneralMetal || config.cuttingRateHardMetal || config.cuttingRate || 0);
+
+    return { machiningRate: mFallback, cuttingRate: cFallback };
+  }
+
   getSpecimenDropdownFn(testIndex: number): (search: string, page: number, pageSize: number) => Observable<any[]> {
     return (search: string, page: number, pageSize: number): Observable<any[]> => {
       const testGroup = this.getTestGroup(testIndex);
@@ -403,7 +560,6 @@ export class SamplePreparationFormComponent implements OnInit {
       const standardId = testGroup.get('standardId')?.value || 0;
       const cacheKey = `${testId}_${standardId || 0}`;
       const configs = this.specimenConfigsMap[cacheKey] || [];
-      const isHard = this.isHardMetal();
 
       const term = (search || '').toLowerCase().trim();
       const filtered = configs.filter(c =>
@@ -413,17 +569,16 @@ export class SamplePreparationFormComponent implements OnInit {
       );
 
       const mapped = filtered.map(c => {
-        const mRate = isHard ? (c.machiningRateHardMetal || c.machiningRateSoftMetal || 0) : (c.machiningRateSoftMetal || 0);
-        const cRate = isHard ? (c.cuttingRateHardMetal || c.cuttingRateSoftMetal || 0) : (c.cuttingRateSoftMetal || 0);
+        const rates = this.resolveConfigRates(c);
         const label = c.specimenSize
-          ? `${c.specimenSize}${c.specimenRawMaterialSize ? ' (Raw: ' + c.specimenRawMaterialSize + ')' : ''} [₹${mRate}/pc]`
+          ? `${c.specimenSize}${c.specimenRawMaterialSize ? ' (Raw: ' + c.specimenRawMaterialSize + ')' : ''} [₹${rates.machiningRate}/pc]`
           : `Config #${c.id}`;
         return {
           id: c.id,
           name: label,
           rawObj: c,
-          machiningRate: mRate,
-          cuttingRate: cRate
+          machiningRate: rates.machiningRate,
+          cuttingRate: rates.cuttingRate
         };
       });
 
@@ -481,14 +636,7 @@ export class SamplePreparationFormComponent implements OnInit {
 
     this.selectedSpecimenMap[testIndex] = item;
     const raw = item.rawObj || {};
-    const isHard = this.isHardMetal();
-
-    const mRate = isHard
-      ? (raw.machiningRateHardMetal || raw.machiningRateSoftMetal || 0)
-      : (raw.machiningRateSoftMetal || raw.machiningRateHardMetal || 0);
-    const cRate = isHard
-      ? (raw.cuttingRateHardMetal || raw.cuttingRateSoftMetal || 0)
-      : (raw.cuttingRateSoftMetal || raw.cuttingRateHardMetal || 0);
+    const rates = this.resolveConfigRates(raw);
 
     testGroup.patchValue({
       specimenPreparationMasterID: raw.id || item.id || null,
@@ -496,8 +644,8 @@ export class SamplePreparationFormComponent implements OnInit {
       specimenRawMaterialSize: raw.specimenRawMaterialSize || '',
       drawingFilePath: raw.drawingFilePath || '',
       fileName: raw.fileName || '',
-      machiningRate: mRate,
-      cuttingRate: cRate
+      machiningRate: rates.machiningRate,
+      cuttingRate: rates.cuttingRate
     });
 
     this.recalcRow(testIndex);
@@ -588,9 +736,13 @@ export class SamplePreparationFormComponent implements OnInit {
 
   // ── Save & Actions ──
 
-  savePreparation(): void {
+  savePreparation(isCompleting: boolean = false): void {
     if (this.isViewMode) return;
     this.isSaving = true;
+
+    if (isCompleting) {
+      this.prepForm.patchValue({ status: 'Completed' }, { emitEvent: false });
+    }
 
     const val = this.prepForm.getRawValue();
 
@@ -606,6 +758,8 @@ export class SamplePreparationFormComponent implements OnInit {
       specimenPreparationMasterID: t.specimenPreparationMasterID || null,
       specimenSize: t.specimenSize || '',
       specimenRawMaterialSize: t.specimenRawMaterialSize || '',
+      drawingFilePath: t.drawingFilePath || '',
+      fileName: t.fileName || '',
       quantity: +(t.quantity || 1),
       cuttingRequired: t.requiresCutting,
       machiningRequired: t.requiresMachining,
@@ -614,14 +768,14 @@ export class SamplePreparationFormComponent implements OnInit {
       resolvedMachiningRate: +(t.machiningRate || 0),
       cuttingTotal: +(t.cuttingTotal || 0),
       machiningTotal: +(t.machiningTotal || 0),
-      status: t.status || 'Required',
+      status: isCompleting ? 'Completed' : (t.status || 'Required'),
       remarks: t.remarks || ''
     }));
 
     // 1. Update SamplePreparation via SamplePreparationService
     const updateDto = {
       ID: this.prepId,
-      status: val.status,
+      status: isCompleting ? 'Completed' : val.status,
       equipmentID: val.equipmentID,
       preparationMethod: val.preparationMethod,
       temperature: val.temperature,
@@ -644,7 +798,7 @@ export class SamplePreparationFormComponent implements OnInit {
 
     // 2. Also prepare SamplePrepReviewDto for inward service synchronization
     const inwardSyncPayload = {
-      preparationRequired: true,
+      preparationRequired: this.isPrepEnabledForSample,
       machiningRequired: this.testMachiningTotal > 0,
       machiningAmount: this.testMachiningTotal,
       specimen: val.tests[0]?.specimenSize || this.prepData?.specimen || '',
@@ -683,7 +837,7 @@ export class SamplePreparationFormComponent implements OnInit {
         requiresMachining: t.requiresMachining,
         noTesting: t.noTesting,
         remarks: t.remarks || '',
-        status: t.status || 'Pending'
+        status: isCompleting ? 'Completed' : (t.status || 'Pending')
       }))
     };
 
@@ -708,7 +862,33 @@ export class SamplePreparationFormComponent implements OnInit {
           });
         }
         this.isSaving = false;
-        this.toastService.show('Sample preparation plan and charges saved successfully.', 'success');
+        if (isCompleting) {
+          const sampleItem = this.inwardSamples.find(s => s.sampleID === this.sampleId);
+          if (sampleItem) {
+            sampleItem.status = 'Completed';
+          }
+
+          if (this.inwardId > 0) {
+            this.inwardService.completeSamplePreparation(this.inwardId).subscribe({
+              next: () => {
+                this.toastService.show('Sample preparation completed. Moving to Testing.', 'success');
+                this.prepCompleted.emit({ inwardId: this.inwardId, sampleId: this.sampleId });
+                if (!this.isEmbeddedMode) {
+                  this.router.navigate(['/sample/case', this.inwardId]);
+                }
+              },
+              error: (err) => {
+                this.toastService.show('Preparation saved as completed.', 'success');
+                this.prepCompleted.emit({ inwardId: this.inwardId, sampleId: this.sampleId });
+              }
+            });
+          } else {
+            this.toastService.show('Sample preparation completed.', 'success');
+            this.prepCompleted.emit({ inwardId: this.inwardId, sampleId: this.sampleId });
+          }
+        } else {
+          this.toastService.show('Sample preparation plan and charges saved successfully.', 'success');
+        }
         if (this.prepId > 0) this.loadPrepData(this.prepId);
         else if (this.sampleId > 0) this.loadBySample(this.sampleId);
       },
@@ -717,6 +897,26 @@ export class SamplePreparationFormComponent implements OnInit {
         this.toastService.show(err?.error?.message || 'Failed to save preparation details.', 'error');
       }
     });
+  }
+
+  completeAndProceedToTesting(): void {
+    if (this.isSaving) return;
+    this.savePreparation(true);
+  }
+
+  isSamplePrepRequired(s: any): boolean {
+    if (!s) return false;
+    if (s.preparationRequired) return true;
+    if (s.items && s.items.some((i: any) => i.cuttingRequired || i.machiningRequired || i.status === 'Required' || i.status === 'InProgress')) return true;
+    return false;
+  }
+
+  get isCurrentSamplePrepRequired(): boolean {
+    return this.isPrepEnabledForSample || this.isSamplePrepRequired(this.prepData);
+  }
+
+  getOtherSamplesNeedingPrep(): any[] {
+    return (this.inwardSamples || []).filter(s => s.sampleID !== this.selectedSampleId && this.isSamplePrepRequired(s));
   }
 
   updateStatus(status: string): void {

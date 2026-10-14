@@ -471,3 +471,33 @@
     padding: 8px 10px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PRINT STYLES (Hide workspace header, stepper, & chrome)
+═══════════════════════════════════════════════════════════ */
+@media print {
+  .workspace-compact-header,
+  .stepper-nav-row,
+  .header-main-row,
+  .btn-compact-back,
+  .compact-kpi-strip,
+  .case-meta-group,
+  .stage-popover-card {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .lifecycle-workspace,
+  .workspace-main-content,
+  .stage-pane-body {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+}
+

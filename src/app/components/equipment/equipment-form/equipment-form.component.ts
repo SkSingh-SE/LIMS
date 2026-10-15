@@ -49,6 +49,21 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
 
   intermediateCheckintervalOptions: string[] = ['EveryDay', 'Weekly', '1 Month', '3 Months', '4 Months', '6 Months', '1 Year', '2 Years'];
 
+  calibrationFrequencyOptions: Array<{ label: string; value: number }> = [
+    { label: '30 Days (1 Month)', value: 30 },
+    { label: '60 Days (2 Months)', value: 60 },
+    { label: '90 Days (3 Months)', value: 90 },
+    { label: '180 Days (6 Months)', value: 180 },
+    { label: '365 Days (1 Year)', value: 365 },
+    { label: '730 Days (2 Years)', value: 730 },
+  ];
+
+  isCustomFrequency(val: any): boolean {
+    if (val === null || val === undefined || val === '') return false;
+    const num = Number(val);
+    return !isNaN(num) && num > 0 && !this.calibrationFrequencyOptions.some(opt => opt.value === num);
+  }
+
   sopAttachments: Array<{ id: number; title: string; name: string; type: string; url: string }> = [];
   sopVideos: Array<{ id: number; title: string; name: string; type: string; url: string }> = [];
 
@@ -317,6 +332,31 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
         const due = this.calculateDueDate(new Date().toDateString(), interval);
         this.equipmentForm.get('nextMaintenanceDueDate')?.setValue(due);
       }
+    });
+
+    const updateNextCalibrationDueDate = () => {
+      const lastDate = this.equipmentForm.get('lastCalibrationDate')?.value;
+      const freqDays = this.equipmentForm.get('calibrationFrequencyDays')?.value;
+
+      if (lastDate && freqDays && Number(freqDays) > 0) {
+        const d = new Date(lastDate);
+        if (!isNaN(d.getTime())) {
+          d.setDate(d.getDate() + Number(freqDays));
+          const year = d.getFullYear();
+          const month = `${d.getMonth() + 1}`.padStart(2, '0');
+          const day = `${d.getDate()}`.padStart(2, '0');
+          const calculatedDueDate = `${year}-${month}-${day}`;
+          this.equipmentForm.get('nextCalibrationDueDate')?.setValue(calculatedDueDate);
+        }
+      }
+    };
+
+    this.equipmentForm.get('lastCalibrationDate')?.valueChanges.subscribe(() => {
+      updateNextCalibrationDueDate();
+    });
+
+    this.equipmentForm.get('calibrationFrequencyDays')?.valueChanges.subscribe(() => {
+      updateNextCalibrationDueDate();
     });
   }
 

@@ -208,13 +208,18 @@
         </div>
         <div>
           <label class="form-label">Calibration Frequency (Days)</label>
-          <input
-            type="number"
-            class="form-control"
-            formControlName="calibrationFrequencyDays"
-            placeholder="e.g. 365"
-            min="1"
-          />
+          <select class="form-select" formControlName="calibrationFrequencyDays">
+            <option [ngValue]="null">Select Frequency</option>
+            <option *ngFor="let opt of calibrationFrequencyOptions" [ngValue]="opt.value">
+              {{ opt.label }}
+            </option>
+            <option *ngIf="isCustomFrequency(equipmentForm.get('calibrationFrequencyDays')?.value)" [ngValue]="equipmentForm.get('calibrationFrequencyDays')?.value">
+              {{ equipmentForm.get('calibrationFrequencyDays')?.value }} Days (Custom)
+            </option>
+          </select>
+          <small class="text-muted d-block mt-0.5" *ngIf="equipmentForm.get('nextCalibrationDueDate')?.value">
+            Next Due: {{ equipmentForm.get('nextCalibrationDueDate')?.value | date: 'dd-MMM-yyyy' }}
+          </small>
         </div>
         <div>
           <label class="form-label">Maintenance Schedule</label>

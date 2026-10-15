@@ -23,6 +23,7 @@
                         <select class="form-control form-select" formControlName="productType"
                         [ngClass]="{ 'is-invalid': supplierForm.get('productType')?.touched && supplierForm.get('productType')?.invalid }">
                         <option value="Product" [defaultSelected]="true">Product </option>
+                        <option value="Equipment / OEM">Equipment / OEM</option>
                         <option value="Service Supplied">Service Supplied</option>
                     </select>
                     <div *ngIf="supplierForm.get('productType')?.touched && supplierForm.get('productType')?.invalid"
@@ -35,7 +36,7 @@
                 </div>
                 <!--Contact Person 1-->
                 <div>
-                    <label class="form-label">Contact Person 1 <span class="text-danger">*</span></label>
+                    <label class="form-label">Contact Person 1</label>
                     <input type="text" class="form-control" formControlName="contactPerson1"
                         placeholder="Enter Contact Person 1" maxlength="100"
                         [ngClass]="{ 'is-invalid': isFieldInvalid('contactPerson1') }" />
@@ -43,81 +44,65 @@
                 </div>
                 <!--Contact No 1-->
                 <div>
-                    <label class="form-label">Contact No 1 <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="contactNo1"
-                        placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
-                        (blur)="checkPhoneNumber($event)"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('contactNo1')?.touched && supplierForm.get('contactNo1')?.invalid }" />
-                    <span *ngIf="supplierForm.get('contactNo1')?.hasError('required') && supplierForm.get('contactNo1')?.touched"
-                        class="text-danger text-sm">Contact No 1 is required.</span>
-                    <span *ngIf="supplierForm.get('contactNo1')?.hasError('pattern') && !supplierForm.get('contactNo1')?.hasError('required') && supplierForm.get('contactNo1')?.touched"
-                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
+                    <label class="form-label">Contact No 1</label>
+                    <app-phone-input formControlName="contactNo1" [submitted]="submitted"></app-phone-input>
                 </div>
 
                 <!--Email Id 1-->
                 <div>
-                    <label class="form-label">Email Id 1 <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
+                    <label class="form-label">Email Id 1</label>
+                    <input type="email" class="form-control" formControlName="emailId1" placeholder="e.g. contact@supplier.com"
                         maxlength="100"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('emailId1')?.touched && supplierForm.get('emailId1')?.invalid }" />
-                    <div *ngIf="supplierForm.get('emailId1')?.touched && supplierForm.get('emailId1')?.invalid"
-                        class="text-danger text-sm">Email Id 1 is required and must be a valid email address.</div>
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('emailId1') }" />
+                    <app-field-error [control]="supplierForm.get('emailId1')" label="Email Id 1" [submitted]="submitted"/>
                 </div>
 
                 <!--Contact Person 2-->
                 <div>
                     <label class="form-label">Contact Person 2</label>
                     <input type="text" class="form-control" formControlName="contactPerson2"
-                        placeholder="Enter Contact Person 2" maxlength="100" />
+                        placeholder="Enter Contact Person 2" maxlength="100"
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('contactPerson2') }" />
+                    <app-field-error [control]="supplierForm.get('contactPerson2')" label="Contact Person 2" [submitted]="submitted"/>
                 </div>
 
                 <!--Contact No 2-->
                 <div>
                     <label class="form-label">Contact No 2</label>
-                    <input type="text" class="form-control" formControlName="contactNo2"
-                        placeholder="Enter Contact No 2" maxlength="12" appNumberOnly
-                        (blur)="checkPhoneNumber($event)"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('contactNo2')?.touched && supplierForm.get('contactNo2')?.invalid }" />
-                    <span *ngIf="supplierForm.get('contactNo2')?.hasError('pattern') && supplierForm.get('contactNo2')?.touched"
-                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
+                    <app-phone-input formControlName="contactNo2" [submitted]="submitted"></app-phone-input>
                 </div>
 
                 <!--Email Id 2-->
                 <div>
                     <label class="form-label">Email Id 2</label>
-                    <input type="email" class="form-control" formControlName="emailId2" placeholder="Enter Email Id 2"
+                    <input type="email" class="form-control" formControlName="emailId2" placeholder="e.g. contact@supplier.com"
                         maxlength="100"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('emailId2')?.touched && supplierForm.get('emailId2')?.invalid }" />
-                    <div *ngIf="supplierForm.get('emailId2')?.touched && supplierForm.get('emailId2')?.invalid"
-                        class="text-danger text-sm">Email Id 2 must be a valid email address.</div>
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('emailId2') }" />
+                    <app-field-error [control]="supplierForm.get('emailId2')" label="Email Id 2" [submitted]="submitted"/>
                 </div>
 
                 <!--Contact Person 3-->
                 <div>
                     <label class="form-label">Contact Person 3</label>
                     <input type="text" class="form-control" formControlName="contactPerson3"
-                        placeholder="Enter Contact Person 3" maxlength="100" />
+                        placeholder="Enter Contact Person 3" maxlength="100"
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('contactPerson3') }" />
+                    <app-field-error [control]="supplierForm.get('contactPerson3')" label="Contact Person 3" [submitted]="submitted"/>
                 </div>
 
                 <!--Contact No 3-->
                 <div>
                     <label class="form-label">Contact No 3</label>
-                    <input type="text" class="form-control" formControlName="contactNo3"
-                        placeholder="Enter Contact No 3" maxlength="12" appNumberOnly
-                        (blur)="checkPhoneNumber($event)"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('contactNo3')?.touched && supplierForm.get('contactNo3')?.invalid }" />
-                    <span *ngIf="supplierForm.get('contactNo3')?.hasError('pattern') && supplierForm.get('contactNo3')?.touched"
-                        class="text-danger text-sm">Please enter a valid contact number.</span>
+                    <app-phone-input formControlName="contactNo3" [submitted]="submitted"></app-phone-input>
                 </div>
 
                 <!--Email Id 3-->
                 <div>
                     <label class="form-label">Email Id 3</label>
-                    <input type="email" class="form-control" formControlName="emailId3" placeholder="Enter Email Id 3"
+                    <input type="email" class="form-control" formControlName="emailId3" placeholder="e.g. contact@supplier.com"
                         maxlength="100"
-                        [ngClass]="{ 'is-invalid': supplierForm.get('emailId3')?.touched && supplierForm.get('emailId3')?.invalid }" />
-                    <div *ngIf="supplierForm.get('emailId3')?.touched && supplierForm.get('emailId3')?.invalid"
-                        class="text-danger text-sm">Email Id 3 must be a valid email address.</div>
+                        [ngClass]="{ 'is-invalid': isFieldInvalid('emailId3') }" />
+                    <app-field-error [control]="supplierForm.get('emailId3')" label="Email Id 3" [submitted]="submitted"/>
                 </div>
 
                 <!--Present Status-->
@@ -154,8 +139,6 @@
                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                             [disabled]="isViewMode" (change)="onFileChange($event)" />
                     </ng-template>
-                    <div *ngIf="supplierForm.get('fileName')?.touched && supplierForm.get('fileName')?.invalid"
-                        class="text-danger text-sm">Agreement File is required.</div>
                 </div>
 
                 <div>
@@ -166,11 +149,11 @@
 
             </div>
             <div class="d-flex justify-content-end gap-2 mt-4">
-                <a [routerLink]="['/supplier']" class="btn btn-cancel">
-                    <i class="bi bi-x-circle"></i><span>Cancel</span>
+                <a [routerLink]="['/supplier']" class="btn-lims btn-lims-cancel">
+                    <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
                 </a>
-                <button *ngIf="!isViewMode" type="submit" class="btn btn-save" [disabled]="supplierForm.invalid">
-                    <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
+                <button *ngIf="!isViewMode" type="submit" class="btn-lims btn-lims-save" [disabled]="supplierForm.invalid">
+                    <i class="bi bi-check-circle me-1"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
                 </button>
             </div>
 

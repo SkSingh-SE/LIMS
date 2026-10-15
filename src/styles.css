@@ -8,7 +8,8 @@
   z-index: 1060 !important;
 }
 
-.cdk-overlay-pane.ms-overlay-panel {
+.cdk-overlay-pane.ms-overlay-panel,
+.cdk-overlay-pane:has(.phone-dropdown-panel) {
   pointer-events: auto;
   z-index: 1070 !important;
 }
@@ -62,6 +63,51 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   GLOBAL FORM FIELD HINT & METADATA BADGE STANDARDIZATION
+   Theme: Poppins | High Density | 0.72rem - 0.75rem
+═══════════════════════════════════════════════════════════ */
+.form-field-hint {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.73rem !important;
+  font-weight: 400 !important;
+  color: #64748b !important;
+  line-height: 1.35 !important;
+  margin-top: 0.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.form-field-hint i {
+  font-size: 0.75rem !important;
+  margin-right: 5px !important;
+  color: #64748b !important;
+}
+
+.field-due-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.73rem !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  margin-top: 0.25rem !important;
+  line-height: 1.3 !important;
+}
+
+.field-due-badge i {
+  color: var(--primary-color) !important;
+  font-size: 0.76rem !important;
+  margin-right: 5px !important;
+}
+
+.field-due-badge strong,
+.field-due-badge .badge-date {
+  font-weight: 600 !important;
+  color: #0f172a !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
    GLOBAL COMPACT FORM CONTROLS STANDARDIZATION (28px)
    Guarantees uniform height across inputs, selects, & dropdowns
    ═══════════════════════════════════════════════════════════ */
@@ -95,6 +141,57 @@ app-searchable-dropdown .input-group.input-group-sm .input-group-text,
 app-searchable-dropdown .input-group:has(.form-control-sm) .input-group-text {
   padding: 0 0.35rem !important;
   height: 26px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL PHONE INPUT GROUP WITH COUNTRY CODE SELECTOR
+   Ensures uniform height (28px) and consistent compact styling
+   ═══════════════════════════════════════════════════════════ */
+.phone-input-group {
+  display: flex !important;
+  width: 100% !important;
+  position: relative !important;
+}
+
+.phone-input-group .country-code-select {
+  flex: 0 0 100px !important;
+  max-width: 100px !important;
+  font-size: 0.76rem !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0.15rem 0.35rem !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  background-color: #f8fafc !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+  cursor: pointer !important;
+}
+
+.phone-input-group .country-code-select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15) !important;
+  z-index: 2 !important;
+}
+
+.phone-input-group .form-control {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-left: 0 !important;
+  font-size: 0.78rem !important;
+  min-height: 28px !important;
+  height: 28px !important;
+}
+
+.phone-input-group .form-control:focus {
+  z-index: 3 !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15) !important;
+}
+
+.phone-input-group .form-control.is-invalid {
+  border-left: 1px solid #dc3545 !important;
 }
 
 

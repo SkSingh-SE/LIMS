@@ -1,0 +1,105 @@
+<div class="phone-input-wrapper">
+  <!-- Optional Label -->
+  <label *ngIf="label && !hideLabel" class="form-label">
+    {{ label }} <span *ngIf="required" class="text-danger">*</span>
+  </label>
+
+  <!-- Input Group -->
+  <div class="phone-control-group"
+       [ngClass]="'phone-size-' + (size || 'md')"
+       [class.is-invalid]="showError"
+       [class.is-disabled]="disabled"
+       cdkOverlayOrigin
+       #origin="cdkOverlayOrigin">
+    
+    <!-- Country Code Trigger -->
+    <button type="button"
+            class="country-trigger-btn"
+            [disabled]="disabled"
+            (click)="toggleDropdown()"
+            [title]="selectedCountry.name + ' (' + selectedCountry.dialCode + ')'">
+      <span class="flag-icon-container">
+        <img *ngIf="!flagErrorMap[selectedCountry.iso2]"
+             [src]="'https://flagcdn.com/20x15/' + selectedCountry.iso2 + '.png'"
+             [alt]="selectedCountry.name"
+             class="flag-img"
+             (error)="flagErrorMap[selectedCountry.iso2] = true" />
+        <span *ngIf="flagErrorMap[selectedCountry.iso2]" class="flag-emoji">
+          {{ selectedCountry.flag }}
+        </span>
+      </span>
+      <span class="dial-code-text">{{ selectedCountry.dialCode }}</span>
+      <i class="bi caret-icon" [ngClass]="isOpen ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+    </button>
+
+    <!-- Number Input Field -->
+    <input #phoneInput
+           type="text"
+           class="phone-text-input"
+           [value]="phoneNumber"
+           [placeholder]="dynamicPlaceholder"
+           [attr.maxlength]="dynamicMaxLength"
+           [disabled]="disabled"
+           appNumberOnly
+           (input)="onInput($event)"
+           (blur)="onBlur()" />
+
+    <!-- Trailing Phone Icon -->
+    <span class="trailing-icon">
+      <i class="bi bi-telephone"></i>
+    </span>
+  </div>
+
+  <!-- Validation Error Display -->
+  <div *ngIf="showError" class="phone-error-text">
+    {{ errorMessage }}
+  </div>
+
+  <!-- CDK Connected Overlay for Country Dropdown -->
+  <ng-template cdkConnectedOverlay
+               [cdkConnectedOverlayOrigin]="origin"
+               [cdkConnectedOverlayOpen]="isOpen"
+               [cdkConnectedOverlayHasBackdrop]="false"
+               (overlayOutsideClick)="closeDropdown()">
+    <div class="phone-dropdown-panel shadow">
+      <!-- Search Box Header -->
+      <div class="phone-search-header">
+        <i class="bi bi-search search-icon"></i>
+        <input #searchInput
+               type="text"
+               class="search-input"
+               [value]="searchQuery"
+               (input)="onSearch($any($event.target).value)"
+               placeholder="Search country or code..." />
+        <button *ngIf="searchQuery"
+                type="button"
+                class="search-clear-btn"
+                (click)="onSearch('')">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Country List -->
+      <ul class="country-list">
+        <li *ngFor="let c of filteredCountries"
+            class="country-item"
+            [class.selected]="c.iso2 === selectedCountry.iso2"
+            (click)="selectCountry(c)">
+          <span class="country-flag-cell">
+            <img *ngIf="!flagErrorMap[c.iso2]"
+                 [src]="'https://flagcdn.com/20x15/' + c.iso2 + '.png'"
+                 [alt]="c.name"
+                 class="flag-img"
+                 (error)="flagErrorMap[c.iso2] = true" />
+            <span *ngIf="flagErrorMap[c.iso2]" class="flag-emoji">{{ c.flag }}</span>
+          </span>
+          <span class="country-name-cell">{{ c.name }}</span>
+          <span class="country-code-cell">{{ c.dialCode }}</span>
+        </li>
+        <li *ngIf="filteredCountries.length === 0" class="country-empty-cell">
+          <i class="bi bi-emoji-neutral me-1"></i> No matching countries found
+        </li>
+      </ul>
+    </div>
+  </ng-template>
+</div>

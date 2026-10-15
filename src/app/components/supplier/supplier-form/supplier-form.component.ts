@@ -9,13 +9,14 @@ import { environment } from '../../../../environments/environment';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
-import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
+import { emailPatternValidator, noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { PhoneInputComponent } from '../../../utility/components/phone-input/phone-input.component';
 
 @Component({
   selector: 'app-supplier-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink, FormFieldErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink, FormFieldErrorComponent, PhoneInputComponent],
   templateUrl: './supplier-form.component.html',
   styleUrl: './supplier-form.component.css'
 })
@@ -51,25 +52,26 @@ export class SupplierFormComponent implements CanComponentDeactivate, OnInit {
       this.loadSupplier(this.supplierId);
     }
   }
+
   initForm() {
     this.supplierForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
       productType: ['Product', Validators.required],
-      contactPerson1: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      contactNo1: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]],
-      emailId1: ['', [Validators.required, Validators.email]],
-      contactPerson2: [''],
-      contactNo2: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
-      emailId2: ['', Validators.email],
-      contactPerson3: [''],
-      contactNo3: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
-      emailId3: ['', Validators.email],
+      contactPerson1: ['', [Validators.maxLength(100)]],
+      contactNo1: [''],
+      emailId1: ['', [emailPatternValidator(), Validators.maxLength(100)]],
+      contactPerson2: ['', [Validators.maxLength(100)]],
+      contactNo2: [''],
+      emailId2: ['', [emailPatternValidator(), Validators.maxLength(100)]],
+      contactPerson3: ['', [Validators.maxLength(100)]],
+      contactNo3: [''],
+      emailId3: ['', [emailPatternValidator(), Validators.maxLength(100)]],
       address: [''],
       presentStatus: [1, Validators.required],
       uploadReferenceID: [null],
       agreementFilePath: [''],
-      fileName: ['', Validators.required],
+      fileName: [''],
       supplierApproved: [false],
       isBlacklisted: [false],
       reasonForBlacklisting: [''],
@@ -124,12 +126,12 @@ export class SupplierFormComponent implements CanComponentDeactivate, OnInit {
     formData.append('contactPerson1', raw.contactPerson1 || '');
     formData.append('contactPerson2', raw.contactPerson2 || '');
     formData.append('contactPerson3', raw.contactPerson3 || '');
-    formData.append('contactNo1', raw.contactNo1 || '');
-    formData.append('contactNo2', raw.contactNo2 || '');
-    formData.append('contactNo3', raw.contactNo3 || '');
-    formData.append('emailId1', raw.emailId1 || '');
-    formData.append('emailId2', raw.emailId2 || '');
-    formData.append('emailId3', raw.emailId3 || '');
+    formData.append('contactNo1', (raw.contactNo1 || '').trim());
+    formData.append('contactNo2', (raw.contactNo2 || '').trim());
+    formData.append('contactNo3', (raw.contactNo3 || '').trim());
+    formData.append('emailId1', (raw.emailId1 || '').trim());
+    formData.append('emailId2', (raw.emailId2 || '').trim());
+    formData.append('emailId3', (raw.emailId3 || '').trim());
     formData.append('address', raw.address || '');
     formData.append('presentStatus', raw.presentStatus.toString());
     formData.append('uploadReferenceID', raw.uploadReferenceID ?? '');

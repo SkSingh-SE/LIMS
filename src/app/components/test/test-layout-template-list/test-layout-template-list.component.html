@@ -45,7 +45,7 @@
         <table class="table table-sm bordered-table align-middle w-100 mb-0">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th class="text-center actions-col">Actions</th>
+              <th class="text-center col-actions">Actions</th>
               <th class="cursor text-start" (click)="applySorting('layoutCode')">
                 <span class="dt-column-order">Format Code</span>
                 <i class="bi ms-1" [ngClass]="sortByColumn === 'layoutCode' ? (sortOrder === 'asc' ? 'bi-caret-up-fill text-danger' : 'bi-caret-down-fill text-danger') : 'bi-caret-down text-muted'"></i>
@@ -68,7 +68,7 @@
           <tbody>
             <tr *ngFor="let item of layoutList" class="text-xs">
               <!-- Actions -->
-              <td class="text-center">
+              <td class="text-center col-actions">
                 <div class="d-flex justify-content-center align-items-center gap-1.5">
                   <button type="button" class="btn-lims-icon btn-lims-edit" (click)="editLayout(item.id)" title="Edit Layout in Studio">
                     <i class="bi bi-pencil"></i>

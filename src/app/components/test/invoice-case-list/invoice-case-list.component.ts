@@ -29,6 +29,7 @@ export class InvoiceCaseListComponent implements OnInit {
     analysisTypeName: 'string',
     tierCount: 'number',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

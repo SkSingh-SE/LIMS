@@ -24,9 +24,10 @@ import { EmployeeAuthorizationService } from '../../../services/employee-authori
 import { noWhitespaceValidator } from '../../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
+import { PhoneInputComponent } from '../../../utility/components/phone-input/phone-input.component';
 @Component({
   selector: 'app-employee-form',
-  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent, EmployeeUserManagementComponent, EmployeeJobTrainingComponent, EmployeePerformanceRecordComponent, FormFieldErrorComponent],
+  imports: [FormsModule, CommonModule, RouterModule, ReactiveFormsModule, NumberOnlyDirective, SearchableDropdownComponent, UserPermissionComponent, EmployeeUserManagementComponent, EmployeeJobTrainingComponent, EmployeePerformanceRecordComponent, FormFieldErrorComponent, PhoneInputComponent],
   templateUrl: './employee-form.component.html',
   styleUrl: './employee-form.component.css',
 })
@@ -124,16 +125,14 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       mobileNo: [
         '',
         [
-          Validators.required,
-          Validators.pattern(/^[+]?\d{10,13}$/),
+          Validators.required
         ]
       ],
       gender: ['', Validators.required],
       emergencyMobileNo: [
         '',
         [
-          Validators.required,
-          Validators.pattern(/^[+]?\d{10,13}$/),
+          Validators.required
         ]
       ],
       emailId: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],

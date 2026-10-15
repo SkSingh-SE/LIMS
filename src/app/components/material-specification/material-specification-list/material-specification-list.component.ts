@@ -31,6 +31,7 @@ export class MaterialSpecificationListComponent implements OnInit {
     standardYear: 'string',
     version: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

@@ -30,19 +30,6 @@
 
 tr.cursor:hover { background-color: #f8f9fa; }
 
-.action-icon-link {
-  width: 30px;
-  height: 30px;
-  cursor: pointer;
-  transition: transform 0.2s ease-in-out;
-}
-.action-icon-link:hover {
-  transform: scale(1.1);
-}
-.action-icon {
-  font-size: 22px;
-  line-height: 1;
-}
 
 /* Custom Modal */
 .modal-backdrop-custom {

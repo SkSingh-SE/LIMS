@@ -116,12 +116,16 @@
                     (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
                 </div>
               </th>
-              <th class="text-center" style="width: 130px; min-width: 130px;">Actions</th>
+              <th class="align-middle text-center col-actions">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let record of performanceRecords; let i = index" class="text-sm text-center">
-              <td class="fw-bold">{{ record.reviewPeriod }}</td>
+              <td class="fw-semibold">
+                <a (click)="viewPerformance(record)" class="text-primary text-decoration-none cursor-pointer">
+                  {{ record.reviewPeriod }}
+                </a>
+              </td>
               <td>
                 <span [ngClass]="getRatingClass(record.technicalRating)">
                   {{ record.technicalRating }}/5
@@ -156,17 +160,17 @@
                   {{ record.status }}
                 </span>
               </td>
-              <td class="text-center">
+              <td class="text-center col-actions">
                 <div class="d-flex justify-content-center gap-1">
-                  <button class="btn btn-sm btn-add" title="View" (click)="viewPerformance(record)">
+                  <button type="button" class="btn-lims-icon btn-lims-view" title="View" (click)="viewPerformance(record)">
                     <i class="bi bi-eye"></i>
                   </button>
-                  <button *ngIf="!isViewMode && record.status === 'Draft'"
-                    class="btn btn-sm btn-cancel" title="Edit" (click)="editPerformance(record)">
+                  <button type="button" *ngIf="!isViewMode && record.status === 'Draft'"
+                    class="btn-lims-icon btn-lims-edit" title="Edit" (click)="editPerformance(record)">
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button *ngIf="!isViewMode && record.status === 'Draft'"
-                    class="btn btn-sm btn-remove" title="Delete" (click)="deletePerformance(record.id)">
+                  <button type="button" *ngIf="!isViewMode && record.status === 'Draft'"
+                    class="btn-lims-icon btn-lims-delete" title="Delete" (click)="deletePerformance(record.id)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>

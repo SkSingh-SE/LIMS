@@ -28,11 +28,12 @@ import { FormValidationHelper } from '../../../utility/helper/form-validation.he
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { CurrencyService } from '../../../services/currency.service';
 import { GstValidatorService } from '../../../services/gst-validator.service';
+import { PhoneInputComponent } from '../../../utility/components/phone-input/phone-input.component';
 
 
 @Component({
   selector: 'app-customer-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, DecimalOnlyDirective, SearchableDropdownComponent, MultiSelectDropdownComponent, RouterLink, FormFieldErrorComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, DecimalOnlyDirective, SearchableDropdownComponent, MultiSelectDropdownComponent, RouterLink, FormFieldErrorComponent, PhoneInputComponent],
   templateUrl: './customer-form.component.html',
   styleUrls: ['./customer-form.component.css']
 })
@@ -373,9 +374,7 @@ export class CustomerFormComponent implements CanComponentDeactivate, OnInit {
       emailId:      ['',    isRequired
         ? [Validators.required, Validators.pattern(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/)]
         : [Validators.pattern(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/)]],
-      mobileNo:     ['',    isRequired
-        ? [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]
-        : [Validators.pattern(/^[+]?\d{10,13}$/)]],
+      mobileNo:     ['',    isRequired ? [Validators.required] : []],
       isWhatsappNo: [false],
       telephoneNo:  ['',    [Validators.pattern(/^[+]?\d{10,13}$/)]],
       sendBill:     [false],

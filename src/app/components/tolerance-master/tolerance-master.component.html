@@ -22,8 +22,8 @@
                 <table class="table bordered-table align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-                            <th *ngFor="let column of columns; let i = index">
+                            <th class="align-middle text-center col-actions">Actions</th>
+                            <th *ngFor="let column of columns; let i = index" [ngClass]="column.key === 'id' ? 'col-sn' : ''">
                                 <div class="d-flex align-items-center">
                                     <span class="dt-column-order">{{ column.label }}</span>
                                     <span class="d-flex flex-column ms-2 mt-2">
@@ -45,21 +45,21 @@
                     <tbody>
                         <tr *ngFor="let item of toleranceMasterList; let i = index" class="text-sm">
 
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-3">
-                                    <a (click)="openModal('view',item.id)" class="icon-link" title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
-                                    </a>
-                                    <a (click)="openModal('edit',item.id)" class="icon-link" title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
-                                    </a>
-                                    <a (click)="deleteFn(item.id)" class="icon-link" title="Delete">
-                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                                    </a>
+                            <td class="text-center col-actions">
+                                <div class="d-flex justify-content-center align-items-center gap-1.5">
+                                    <button type="button" (click)="openModal('view',item.id)" class="btn-lims-icon btn-lims-view" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" (click)="openModal('edit',item.id)" class="btn-lims-icon btn-lims-edit" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" (click)="deleteFn(item.id)" class="btn-lims-icon btn-lims-delete" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                             </td>
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td class="wide-input">{{ item.standardName }}</td>
+                            <td class="text-center col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td class="wide-input"><a class="text-primary cell-record-link fw-medium cursor-pointer text-decoration-none" (click)="openModal('view', item.id)" [title]="'View details for ' + item.standardName">{{ item.standardName }}</a></td>
                             <td class="wide-input">{{ item.parameterName }}</td>
                             <td>{{ item.valueRangeStart }}</td>
                             <td>{{ item.valueRangeEnd }}</td>

@@ -8,7 +8,8 @@
   z-index: 1060 !important;
 }
 
-.cdk-overlay-pane.ms-overlay-panel {
+.cdk-overlay-pane.ms-overlay-panel,
+.cdk-overlay-pane:has(.phone-dropdown-panel) {
   pointer-events: auto;
   z-index: 1070 !important;
 }
@@ -62,6 +63,51 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   GLOBAL FORM FIELD HINT & METADATA BADGE STANDARDIZATION
+   Theme: Poppins | High Density | 0.72rem - 0.75rem
+═══════════════════════════════════════════════════════════ */
+.form-field-hint {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.73rem !important;
+  font-weight: 400 !important;
+  color: #64748b !important;
+  line-height: 1.35 !important;
+  margin-top: 0.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.form-field-hint i {
+  font-size: 0.75rem !important;
+  margin-right: 5px !important;
+  color: #64748b !important;
+}
+
+.field-due-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.73rem !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  margin-top: 0.25rem !important;
+  line-height: 1.3 !important;
+}
+
+.field-due-badge i {
+  color: var(--primary-color) !important;
+  font-size: 0.76rem !important;
+  margin-right: 5px !important;
+}
+
+.field-due-badge strong,
+.field-due-badge .badge-date {
+  font-weight: 600 !important;
+  color: #0f172a !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
    GLOBAL COMPACT FORM CONTROLS STANDARDIZATION (28px)
    Guarantees uniform height across inputs, selects, & dropdowns
    ═══════════════════════════════════════════════════════════ */
@@ -95,6 +141,57 @@ app-searchable-dropdown .input-group.input-group-sm .input-group-text,
 app-searchable-dropdown .input-group:has(.form-control-sm) .input-group-text {
   padding: 0 0.35rem !important;
   height: 26px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL PHONE INPUT GROUP WITH COUNTRY CODE SELECTOR
+   Ensures uniform height (28px) and consistent compact styling
+   ═══════════════════════════════════════════════════════════ */
+.phone-input-group {
+  display: flex !important;
+  width: 100% !important;
+  position: relative !important;
+}
+
+.phone-input-group .country-code-select {
+  flex: 0 0 100px !important;
+  max-width: 100px !important;
+  font-size: 0.76rem !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0.15rem 0.35rem !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  background-color: #f8fafc !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+  cursor: pointer !important;
+}
+
+.phone-input-group .country-code-select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15) !important;
+  z-index: 2 !important;
+}
+
+.phone-input-group .form-control {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-left: 0 !important;
+  font-size: 0.78rem !important;
+  min-height: 28px !important;
+  height: 28px !important;
+}
+
+.phone-input-group .form-control:focus {
+  z-index: 3 !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15) !important;
+}
+
+.phone-input-group .form-control.is-invalid {
+  border-left: 1px solid #dc3545 !important;
 }
 
 
@@ -2184,7 +2281,7 @@ fieldset.border legend i {
 }
 
 .bordered-table thead tr th {
-  padding: 9px 10px !important;
+  padding: 5px 8px !important;
   font-weight: 600;
   font-size: var(--font-xs);
   text-transform: uppercase;
@@ -2203,7 +2300,7 @@ fieldset.border legend i {
 }
 
 .bordered-table tbody tr td {
-  padding: 7px 10px !important;
+  padding: 4px 8px !important;
   border: 1px solid #e9ecef;
   font-size: var(--font-sm);
   color: var(--neutral-800);
@@ -3150,32 +3247,42 @@ textarea.form-control {
 /* ════════════════════════════════════════════════════════════════
    FILE INPUT & UPLOAD BUTTON (Global Theme Standard)
    Clean, integrated left-segmented button with vertical divider
+   Supports Standard (36px), Small (28px), and Large (46px)
 ════════════════════════════════════════════════════════════════ */
 .form-control[type="file"],
 input[type="file"].form-control {
   overflow: hidden !important;
-  padding: 0.25rem 0.6rem !important;
-  font-size: var(--font-sm, 0.78rem) !important;
+  padding: 0.35rem 0.75rem !important;
+  font-size: var(--font-sm, 0.8125rem) !important;
   line-height: 1.5 !important;
   cursor: pointer !important;
-  min-height: 31px !important;
-  height: 31px !important;
+  min-height: 36px !important;
+  height: 36px !important;
 }
 
-.form-control-sm[type="file"] {
+.form-control-sm[type="file"],
+input[type="file"].form-control-sm {
   min-height: 28px !important;
   height: 28px !important;
   padding: 0.18rem 0.5rem !important;
   font-size: 0.75rem !important;
 }
 
+.form-control-lg[type="file"],
+input[type="file"].form-control-lg {
+  min-height: 46px !important;
+  height: 46px !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 1rem !important;
+}
+
 /* Integrated segmented button for WebKit (Chrome, Edge, Safari) */
 .form-control[type="file"]::-webkit-file-upload-button,
 input[type="file"].form-control::-webkit-file-upload-button {
-  padding: 0.25rem 0.75rem !important;
-  margin: -0.25rem -0.6rem !important;
-  -webkit-margin-end: 0.6rem !important;
-  margin-inline-end: 0.6rem !important;
+  padding: 0.35rem 0.85rem !important;
+  margin: -0.35rem -0.75rem !important;
+  -webkit-margin-end: 0.75rem !important;
+  margin-inline-end: 0.75rem !important;
   color: var(--primary-color, #da261c) !important;
   background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.08) !important;
   border-color: #dee2e6 !important;
@@ -3183,11 +3290,27 @@ input[type="file"].form-control::-webkit-file-upload-button {
   border-width: 0 !important;
   border-right-width: 1px !important;
   border-radius: 0 !important;
-  font-size: 0.75rem !important;
+  font-size: 0.78rem !important;
   font-weight: 500 !important;
   font-family: 'Poppins', sans-serif !important;
   cursor: pointer !important;
   transition: all 0.15s ease-in-out !important;
+}
+
+.form-control-sm[type="file"]::-webkit-file-upload-button,
+input[type="file"].form-control-sm::-webkit-file-upload-button {
+  padding: 0.18rem 0.6rem !important;
+  margin: -0.18rem -0.5rem !important;
+  margin-inline-end: 0.5rem !important;
+  font-size: 0.73rem !important;
+}
+
+.form-control-lg[type="file"]::-webkit-file-upload-button,
+input[type="file"].form-control-lg::-webkit-file-upload-button {
+  padding: 0.5rem 1.1rem !important;
+  margin: -0.5rem -1rem !important;
+  margin-inline-end: 1rem !important;
+  font-size: 0.95rem !important;
 }
 
 .form-control[type="file"]:hover::-webkit-file-upload-button,
@@ -3199,9 +3322,9 @@ input[type="file"].form-control:hover::-webkit-file-upload-button {
 /* Integrated segmented button for Firefox / Standards */
 .form-control[type="file"]::file-selector-button,
 input[type="file"].form-control::file-selector-button {
-  padding: 0.25rem 0.75rem !important;
-  margin: -0.25rem -0.6rem !important;
-  margin-inline-end: 0.6rem !important;
+  padding: 0.35rem 0.85rem !important;
+  margin: -0.35rem -0.75rem !important;
+  margin-inline-end: 0.75rem !important;
   color: var(--primary-color, #da261c) !important;
   background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.08) !important;
   border-color: #dee2e6 !important;
@@ -3209,17 +3332,83 @@ input[type="file"].form-control::file-selector-button {
   border-width: 0 !important;
   border-inline-end-width: 1px !important;
   border-radius: 0 !important;
-  font-size: 0.75rem !important;
+  font-size: 0.78rem !important;
   font-weight: 500 !important;
   font-family: 'Poppins', sans-serif !important;
   cursor: pointer !important;
   transition: all 0.15s ease-in-out !important;
 }
 
+.form-control-sm[type="file"]::file-selector-button,
+input[type="file"].form-control-sm::file-selector-button {
+  padding: 0.18rem 0.6rem !important;
+  margin: -0.18rem -0.5rem !important;
+  margin-inline-end: 0.5rem !important;
+  font-size: 0.73rem !important;
+}
+
+.form-control-lg[type="file"]::file-selector-button,
+input[type="file"].form-control-lg::file-selector-button {
+  padding: 0.5rem 1.1rem !important;
+  margin: -0.5rem -1rem !important;
+  margin-inline-end: 1rem !important;
+  font-size: 0.95rem !important;
+}
+
 .form-control[type="file"]:hover::file-selector-button,
 input[type="file"].form-control:hover::file-selector-button {
   background-color: var(--primary-color, #da261c) !important;
   color: #ffffff !important;
+}
+
+/* File Preview Box (when file is already attached) */
+.file-preview-box {
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 0 12px !important;
+  font-size: 0.8125rem !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL INPUT WITH TRAILING ICON (e.g. Email, Search)
+   Matches phone input trailing icon standard
+   ═══════════════════════════════════════════════════════════ */
+.input-with-icon-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.input-with-icon-wrapper .form-control {
+  padding-right: 36px !important;
+}
+
+.input-with-icon-wrapper .input-trailing-icon {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #94a3b8 !important;
+  font-size: 0.875rem !important;
+  pointer-events: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: color 0.15s ease-in-out !important;
+  z-index: 4 !important;
+}
+
+.input-with-icon-wrapper:focus-within .input-trailing-icon {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.input-with-icon-wrapper .form-control.is-invalid ~ .input-trailing-icon {
+  color: #dc3545 !important;
+}
+
+.input-with-icon-wrapper .form-control.is-invalid {
+  background-image: none !important; /* Avoid duplicate exclamation mark icon */
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -6570,6 +6759,358 @@ fieldset.fieldset-collapsed {
 .gap-1\.5 {
   gap: 0.375rem !important; /* 6px */
 }
+
+/* GLOBAL AUDIT CELL (Modified By & Date Time in List Tables - 2-Line Compact Stacked) */
+.cell-audit {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.cell-audit-name {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 0.76rem;
+  letter-spacing: -0.01em;
+}
+
+.cell-audit-time {
+  color: #64748b;
+  font-size: 0.70rem;
+  margin-top: 1px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SMART DENSE LIST CELL — text-wise auto fit without row growth
+   Global rules automatically clip overflowing text with ellipsis
+   and preserve fixed row heights across all .bordered-table grids.
+════════════════════════════════════════════════════════════════ */
+.cell-clip,
+.cell-clip-xs,
+.cell-clip-sm,
+.cell-clip-md,
+.cell-clip-lg,
+.cell-clip-xl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-clip-xs { max-width: 80px; }
+.cell-clip-sm { max-width: 130px; }
+.cell-clip, .cell-clip-md { max-width: 200px; }
+.cell-clip-lg { max-width: 300px; }
+.cell-clip-xl { max-width: 420px; }
+
+/* Global default for bordered-table data cells (excluding actions, sn, audit, wrap, colspan) */
+.bordered-table > tbody > tr > td:not(.col-actions):not(.col-actions-2):not(.col-actions-4):not(.col-sn):not(.col-select):not(.col-checkbox):not(.cell-wrap) {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Colspan / Empty State Safeguard: Never restrict full-width messages */
+.bordered-table > tbody > tr > td[colspan] {
+  max-width: none !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FIXED UTILITY COLUMN WIDTHS
+   Actions & SN compact layout gives maximum space to data columns
+════════════════════════════════════════════════════════════════ */
+.col-actions {
+  width: 104px;
+  min-width: 104px;
+  max-width: 104px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.col-actions-2 {
+  width: 76px;
+  min-width: 76px;
+  max-width: 76px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.col-actions-4 {
+  width: 136px;
+  min-width: 136px;
+  max-width: 136px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.col-actions-5 {
+  width: 165px;
+  min-width: 165px;
+  max-width: 165px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.col-sn {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.col-select,
+.col-checkbox {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.col-actions-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* 8px compact gap */
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL TABLE ACTION BUTTONS (.btn-lims-icon)
+   Compact 26px table action buttons replacing ad-hoc/SVG icons
+   Following AGENTS.md Global Action Button Standard
+════════════════════════════════════════════════════════════════ */
+.btn-lims-icon {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 0.82rem;
+  line-height: 1;
+  text-decoration: none !important;
+  cursor: pointer;
+  background-color: transparent;
+  transition: all 0.15s ease-in-out;
+  outline: none;
+  box-shadow: none;
+}
+
+.btn-lims-icon i.bi,
+.btn-lims-icon .bi {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.82rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* 1. View button (Soft Blue) */
+.btn-lims-icon.btn-lims-view,
+.btn-lims-view.btn-lims-icon {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
+  color: #2563eb !important;
+}
+
+.btn-lims-icon.btn-lims-view:hover,
+.btn-lims-view.btn-lims-icon:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+}
+
+/* 2. Edit button (Soft Green / Emerald) */
+.btn-lims-icon.btn-lims-edit,
+.btn-lims-edit.btn-lims-icon {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  color: #059669 !important;
+}
+
+.btn-lims-icon.btn-lims-edit:hover,
+.btn-lims-edit.btn-lims-icon:hover {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+}
+
+/* 3. Delete / Remove button (Soft Red) */
+.btn-lims-icon.btn-lims-delete,
+.btn-lims-delete.btn-lims-icon,
+.btn-lims-icon.btn-lims-remove,
+.btn-lims-remove.btn-lims-icon {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  color: #dc2626 !important;
+}
+
+.btn-lims-icon.btn-lims-delete:hover,
+.btn-lims-delete.btn-lims-icon:hover,
+.btn-lims-icon.btn-lims-remove:hover,
+.btn-lims-remove.btn-lims-icon:hover {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);
+}
+
+/* 4. Copy button (Soft Teal) */
+.btn-lims-icon.btn-lims-copy,
+.btn-lims-copy.btn-lims-icon {
+  background-color: rgba(13, 148, 136, 0.08) !important;
+  border-color: rgba(13, 148, 136, 0.25) !important;
+  color: #0d9488 !important;
+}
+
+.btn-lims-icon.btn-lims-copy:hover,
+.btn-lims-copy.btn-lims-icon:hover {
+  background-color: #0d9488 !important;
+  border-color: #0d9488 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+}
+
+/* 5. Print button (Soft Dark Navy) */
+.btn-lims-icon.btn-lims-print,
+.btn-lims-print.btn-lims-icon {
+  background-color: rgba(30, 41, 59, 0.08) !important;
+  border-color: rgba(30, 41, 59, 0.25) !important;
+  color: #1e293b !important;
+}
+
+.btn-lims-icon.btn-lims-print:hover,
+.btn-lims-print.btn-lims-icon:hover {
+  background-color: #1e293b !important;
+  border-color: #1e293b !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(30, 41, 59, 0.25);
+}
+
+/* 6. Success / Report button (Soft Emerald) */
+.btn-lims-icon.btn-lims-success,
+.btn-lims-success.btn-lims-icon {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  color: #059669 !important;
+}
+
+.btn-lims-icon.btn-lims-success:hover,
+.btn-lims-success.btn-lims-icon:hover {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+}
+
+/* 7. Info / Academic button (Soft Sky Blue) */
+.btn-lims-icon.btn-lims-info,
+.btn-lims-info.btn-lims-icon {
+  background-color: rgba(14, 165, 233, 0.08) !important;
+  border-color: rgba(14, 165, 233, 0.25) !important;
+  color: #0284c7 !important;
+}
+
+.btn-lims-icon.btn-lims-info:hover,
+.btn-lims-info.btn-lims-icon:hover {
+  background-color: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.25);
+}
+
+/* Legacy SVG Icon backward compatibility */
+.bordered-table .icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.bordered-table .icon-svg {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  transition: transform 0.15s ease-in-out;
+  display: block;
+  pointer-events: none;
+}
+
+.bordered-table .icon-link:hover .icon-svg,
+.bordered-table .icon-svg:hover {
+  transform: scale(1.12);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL TABLE RECORD NAVIGATION LINK THEME COLOR
+   Replaces Bootstrap blue with brand theme color (var(--primary-color))
+════════════════════════════════════════════════════════════════ */
+.bordered-table td a.text-primary,
+.bordered-table td a.cell-record-link,
+.bordered-table td a.table-link {
+  color: var(--primary-color, #da261c) !important;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease-in-out;
+}
+
+.bordered-table td a.text-primary:hover,
+.bordered-table td a.cell-record-link:hover,
+.bordered-table td a.table-link:hover {
+  color: var(--primary-hover, #b81d14) !important;
+  text-decoration: underline !important;
+}
+
+.bordered-table td a.text-primary.disabled,
+.bordered-table td a.cell-record-link.disabled {
+  color: #94a3b8 !important;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PRINT VIEW SAFEGUARD
+   Unclips all truncated columns and hides action buttons on print
+════════════════════════════════════════════════════════════════ */
+@media print {
+  .bordered-table > tbody > tr > td {
+    max-width: none !important;
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+  .col-actions,
+  .col-actions-2,
+  .col-actions-4,
+  .col-actions-5,
+  .bordered-table th[class*="col-actions"],
+  .bordered-table td[class*="col-actions"] {
+    display: none !important;
+  }
+}
+
+
 
 
 

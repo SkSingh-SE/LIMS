@@ -23,9 +23,14 @@
                     <!-- Username / Email -->
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
-                        <input type="text" id="email" class="form-control" formControlName="email"
-                            placeholder="Enter Email"
-                            [ngClass]="{'is-invalid': isFieldInvalid('email')}"/>
+                        <div class="input-with-icon-wrapper">
+                            <input type="text" id="email" class="form-control" formControlName="email"
+                                placeholder="Enter Email"
+                                [ngClass]="{'is-invalid': isFieldInvalid('email')}"/>
+                            <span class="input-trailing-icon">
+                                <i class="bi bi-envelope"></i>
+                            </span>
+                        </div>
                         <app-field-error [control]="loginForm.get('email')" label="Email" [submitted]="submitted"/>
                     </div>
 

@@ -25,8 +25,9 @@
                 <table class="table bordered-table align-middle w-100">
                     <thead class="table-light">
                         <tr class="text-center align-middle">
-                            <th>
-                                <div class="d-flex align-items-center">
+                            <th class="align-middle text-center col-actions">Actions</th>
+                            <th class="col-sn">
+                                <div class="d-flex align-items-center justify-content-center">
                                     <span class="dt-column-order">#</span>
                                 </div>
                             </th>
@@ -86,23 +87,30 @@
                     <tbody>
                         <tr *ngFor="let record of records; let i = index" class="text-sm">
 
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-3">
+                            <td class="text-center col-actions">
+                                <div class="d-flex justify-content-center align-items-center gap-1.5">
                                     <a [routerLink]="['/intermediate-check/details', record.id]"
-                                        [state]="{ mode: 'view' }" class="icon-link" title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
+                                        [state]="{ mode: 'view' }" class="btn-lims-icon btn-lims-view" title="View">
+                                        <i class="bi bi-eye"></i>
                                     </a>
                                     <a [routerLink]="['/intermediate-check/edit', record.id]"
-                                        [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
+                                        [state]="{ mode: 'edit' }" class="btn-lims-icon btn-lims-edit" title="Edit">
+                                        <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a class="icon-link" title="Delete" (click)="deleteRecord(record.id)">
-                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                                    </a>
+                                    <button type="button" class="btn-lims-icon btn-lims-delete" title="Delete" (click)="deleteRecord(record.id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                             </td>
-                            <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td>{{ getMonthName(record.checkMonth) }} {{ record.checkYear }}</td>
+                            <td class="text-center col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+                            <td>
+                                <a [routerLink]="['/intermediate-check/details', record.id]"
+                                   [state]="{ mode: 'view' }"
+                                   class="text-primary cell-record-link fw-medium cursor-pointer text-decoration-none"
+                                   [title]="'View details for ' + getMonthName(record.checkMonth) + ' ' + record.checkYear">
+                                    {{ getMonthName(record.checkMonth) }} {{ record.checkYear }}
+                                </a>
+                            </td>
                             <td>{{ record.equipmentName }}</td>
                             <td>{{ record.equipmentNo }}</td>
                             <td>{{ record.location }}</td>

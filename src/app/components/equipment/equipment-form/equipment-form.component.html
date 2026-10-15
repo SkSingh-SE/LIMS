@@ -68,18 +68,31 @@
           ></app-searchable-dropdown>
         </div>
         <div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label mb-0">
+              Supplier / Manufacturer
+              <span class="text-danger">*</span>
+            </label>
+            <a class="btn-nav-link" routerLink="/supplier/create" target="_blank">
+              <i class="bi bi-box-arrow-up-right"></i> Manage Supplier
+            </a>
+          </div>
           <app-searchable-dropdown
             class="w-100"
-            [placeholder]="'Search OEM'"
-            [labelName]="'OEM'"
-            [fetchDataFn]="getOEM"
-            (itemSelected)="onOEMSelected($event)"
-            [hideLabel]="false"
+            [placeholder]="'Search Supplier'"
+            [fetchDataFn]="getSupplier"
+            (itemSelected)="onSupplierSelected($event)"
+            [hideLabel]="true"
             [required]="true"
             [isDisabled]="isViewMode"
-            [isInvalid]="isFieldInvalid('oemID')"
-            [selectedItem]="equipmentForm.get('oemID')?.value"
+            [isInvalid]="isFieldInvalid('supplierID')"
+            [selectedItem]="equipmentForm.get('supplierID')?.value"
           ></app-searchable-dropdown>
+          <app-field-error
+            [control]="equipmentForm.get('supplierID')"
+            label="Supplier"
+            [submitted]="submitted"
+          ></app-field-error>
         </div>
         <div>
           <label class="form-label">Model Number</label>
@@ -200,7 +213,10 @@
             [selectedValues]="equipmentForm.get('techniqueIds')?.value"
             (itemsSelected)="onTechniqueSelected($event)">
           </app-multi-select-dropdown>
-          <small class="text-muted">Instruments/techniques this equipment can perform (OES/ICP/WET/LECO/WDXRF/EDXRF).</small>
+          <div class="form-field-hint">
+            <i class="bi bi-info-circle"></i>
+            <span>Instruments/techniques this equipment can perform (OES/ICP/WET/LECO/WDXRF/EDXRF).</span>
+          </div>
         </div>
         <div>
           <label class="form-label">Last Calibration Date</label>
@@ -217,9 +233,10 @@
               {{ equipmentForm.get('calibrationFrequencyDays')?.value }} Days (Custom)
             </option>
           </select>
-          <small class="text-muted d-block mt-0.5" *ngIf="equipmentForm.get('nextCalibrationDueDate')?.value">
-            Next Due: {{ equipmentForm.get('nextCalibrationDueDate')?.value | date: 'dd-MMM-yyyy' }}
-          </small>
+          <div class="field-due-badge" *ngIf="equipmentForm.get('nextCalibrationDueDate')?.value">
+            <i class="bi bi-calendar-event"></i>
+            <span>Next Due: <strong>{{ equipmentForm.get('nextCalibrationDueDate')?.value | date: 'dd-MMM-yyyy' }}</strong></span>
+          </div>
         </div>
         <div>
           <label class="form-label">Maintenance Schedule</label>

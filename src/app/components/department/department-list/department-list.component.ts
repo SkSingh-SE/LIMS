@@ -21,13 +21,12 @@ export class DepartmentListComponent implements OnInit {
     { key: 'description', type: 'string', label: 'Description', filter: true },
     { key: 'isChemical', type: 'string', label: 'Type', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
-    { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     description: 'string',
-    createdBy: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

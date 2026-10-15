@@ -41,6 +41,7 @@ export class MetalClassificationComponent implements OnInit {
     metalType: 'string',
     // sortOrder: 'number',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   // common filter variables

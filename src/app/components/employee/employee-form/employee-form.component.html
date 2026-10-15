@@ -61,26 +61,27 @@
                 <!-- Mobile Number -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
-                  <input type="tel" class="form-control" formControlName="mobileNo" placeholder="Enter Mobile Number"
-                    maxlength="12" appNumberOnly
-                    [ngClass]="{ 'is-invalid': isFieldInvalid('mobileNo') }" />
+                  <app-phone-input formControlName="mobileNo" [submitted]="submitted"></app-phone-input>
                   <app-field-error [control]="personalInfoForm.get('mobileNo')" label="Mobile Number" [submitted]="submitted"/>
                 </div>
 
                 <!-- Emergency Mobile Number -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Emergency Mobile No <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" formControlName="emergencyMobileNo"
-                    placeholder="Enter Mobile Number" maxlength="12" appNumberOnly
-                    [ngClass]="{ 'is-invalid': isFieldInvalid('emergencyMobileNo') }" />
+                  <app-phone-input formControlName="emergencyMobileNo" [submitted]="submitted"></app-phone-input>
                   <app-field-error [control]="personalInfoForm.get('emergencyMobileNo')" label="Emergency Mobile No" [submitted]="submitted"/>
                 </div>
 
                 <!-- Email -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Email <span class="text-danger">*</span></label>
-                  <input type="email" class="form-control" formControlName="emailId" placeholder="Enter Email"
-                    [ngClass]="{ 'is-invalid': isFieldInvalid('emailId') }" />
+                  <div class="input-with-icon-wrapper">
+                    <input type="email" class="form-control" formControlName="emailId" placeholder="Enter Email"
+                      [ngClass]="{ 'is-invalid': isFieldInvalid('emailId') }" />
+                    <span class="input-trailing-icon">
+                      <i class="bi bi-envelope"></i>
+                    </span>
+                  </div>
                   <app-field-error [control]="personalInfoForm.get('emailId')" label="Email" [submitted]="submitted"/>
                 </div>
 

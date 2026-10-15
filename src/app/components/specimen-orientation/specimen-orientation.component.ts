@@ -36,6 +36,7 @@ export class SpecimenOrientationComponent implements OnInit {
     code: 'string',
     name: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

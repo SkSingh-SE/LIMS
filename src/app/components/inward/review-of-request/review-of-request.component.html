@@ -19,7 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 140px; min-width: 140px;">Actions</th>
+                            <th class="align-middle text-center col-actions-4">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -51,26 +51,27 @@
           </thead>
           <tbody>
             <tr *ngFor="let item of listData; let i = index" class="text-sm">
-              <td class="text-center">
-                <div class="d-flex justify-content-center gap-2 align-items-center">
+              <td class="text-center col-actions-4">
+                <div class="d-flex justify-content-center align-items-center gap-1.5">
                   <a
                     [routerLink]="['/sample/review', item.id]"
                     [state]="{ mode: 'review' }"
-                    class="icon-link"
+                    class="btn-lims-icon btn-lims-view"
                     title="Review Plan"
                   >
-                    <img src="/icons/view.svg" alt="Review" class="icon-svg">
+                    <i class="bi bi-eye"></i>
                   </a>
                   <ng-container *ngIf="item.canTakeAction">
                     <a
                       *ngFor="let action of item.actions"
                       role="button"
-                      class="icon-link action-icon-link"
+                      class="btn-lims-icon"
+                      [ngClass]="getActionCfg(action.action).textClass?.includes('success') ? 'btn-lims-success' : 'btn-lims-delete'"
                       [class.disabled]="isSubmittingAction"
                       [title]="action.name"
                       (click)="!isSubmittingAction && onActionClick(action, item)"
                     >
-                      <i class="bi action-icon" [ngClass]="[getActionCfg(action.action).icon, getActionCfg(action.action).textClass]"></i>
+                      <i class="bi" [ngClass]="getActionCfg(action.action).icon"></i>
                     </a>
                   </ng-container>
                 </div>
@@ -100,8 +101,12 @@
               <td>
                 <app-test-status-badge [status]="item.inwardStatus"></app-test-status-badge>
               </td>
-              <td>{{ item.modifiedBy }}</td>
-              <td>{{ item.modifiedOn | date : "dd MMM, yyyy hh:mm a" }}</td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (item.modifiedByName || item.modifiedBy || item.createdByName || '-') + ' on ' + ((item.modifiedOn || item.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ item.modifiedByName || item.modifiedBy || item.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">{{ (item.modifiedOn || item.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>

@@ -10,10 +10,11 @@ import { noWhitespaceValidator, phoneValidator } from '../../utility/validators/
 import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 import { FormFieldErrorComponent } from '../../utility/components/form-field-error/form-field-error.component';
 import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
+import { PhoneInputComponent } from '../../utility/components/phone-input/phone-input.component';
 
 @Component({
   selector: 'app-courier',
-  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, FormFieldErrorComponent, PaginationComponent ],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, FormFieldErrorComponent, PaginationComponent, PhoneInputComponent ],
   templateUrl: './courier.component.html',
   styleUrl: './courier.component.css'
 })
@@ -32,6 +33,7 @@ export class CourierComponent implements OnInit {
     name: 'string',
     contactNo: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -93,7 +95,7 @@ export class CourierComponent implements OnInit {
     this.courierForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/), Validators.maxLength(13), phoneValidator()]],
+      contactNo: ['', [Validators.required]],
     });
   }
 

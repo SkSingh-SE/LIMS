@@ -7,10 +7,11 @@ import { TPIService } from '../../services/tpi.service';
 import { ToastService } from '../../services/toast.service';
 import { NumberOnlyDirective } from '../../utility/directives/number-only.directive';
 import { PaginationComponent } from '../../utility/components/pagination/pagination.component';
+import { PhoneInputComponent } from '../../utility/components/phone-input/phone-input.component';
 
 @Component({
   selector: 'app-tpi',
-  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, PaginationComponent ],
+  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, NumberOnlyDirective, PaginationComponent, PhoneInputComponent ],
   templateUrl: './tpi.component.html',
   styleUrl: './tpi.component.css'
 })
@@ -31,6 +32,7 @@ export class TPIComponent implements OnInit {
     emailId: 'string',
     contactNo: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
@@ -83,7 +85,7 @@ export class TPIComponent implements OnInit {
       id: [0],
       agencyName: ['', Validators.required],
       emailId: ['', [Validators.required, Validators.email]],
-      contactNo: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]]
+      contactNo: ['', [Validators.required]]
     });
   }
 

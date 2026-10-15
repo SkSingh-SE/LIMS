@@ -28,7 +28,7 @@
                     <thead class="table-light">
                         <tr class="align-middle">
                             <th class="align-middle text-center col-actions">Actions</th>
-                            <th *ngFor="let column of columns; let i = index">
+                            <th *ngFor="let column of columns; let i = index" [ngClass]="column.key === 'id' ? 'col-sn' : ''">
                                 <div class="d-flex align-items-center justify-content-between">
                                     <span class="dt-column-order">{{ column.label }}</span>
                                     <div class="d-flex align-items-center gap-1 ms-2">
@@ -56,27 +56,27 @@
                     <tbody>
                         <tr *ngFor="let material of listData; let i = index" class="scope-row text-sm">
                             <td class="text-center col-actions">
-                                <div class="d-flex justify-content-center gap-3">
+                                <div class="d-flex justify-content-center gap-1">
                                     <a *hasPermission="['CanReadLabScopeMaster','CanManageLabScopeMaster']"
                                        [routerLink]="['/scope/details', material.id]"
                                        [state]="{ mode: 'view' }" 
-                                       class="icon-link"
+                                       class="btn-lims-icon btn-lims-view"
                                        title="View">
-                                        <img src="/icons/view.svg" alt="View" class="icon-svg">
+                                        <i class="bi bi-eye"></i>
                                     </a>
                                     <a *hasPermission="['CanUpdateLabScopeMaster','CanManageLabScopeMaster']"
                                        [routerLink]="['/scope/edit', material.id]" 
                                        [state]="{ mode: 'edit' }"
-                                       class="icon-link"
+                                       class="btn-lims-icon btn-lims-edit"
                                        title="Edit">
-                                        <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
+                                        <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a *hasPermission="['CanDeleteLabScopeMaster','CanManageLabScopeMaster']"
+                                    <button type="button" *hasPermission="['CanDeleteLabScopeMaster','CanManageLabScopeMaster']"
                                        (click)="deleteScope(material.id)"
-                                       class="icon-link cursor-pointer"
+                                       class="btn-lims-icon btn-lims-delete"
                                        title="Delete">
-                                        <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
-                                    </a>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                             </td>
 
@@ -98,7 +98,12 @@
                                     {{ material.isUnderISO }}
                                 </span>
                             </td>
-                            <td class="text-muted small">{{ material.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+                            <td>
+                                <div class="cell-audit" [title]="(material.modifiedByName || material.createdByName ? (material.modifiedByName || material.createdByName) + ' | ' : '') + ((material.modifiedOn || material.createdOn) | date:'medium')">
+                                    <span class="cell-audit-name">{{ material.modifiedByName || material.createdByName || '-' }}</span>
+                                    <span class="cell-audit-time">{{ (material.modifiedOn || material.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

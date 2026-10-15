@@ -32,7 +32,7 @@
         <table class="table bordered-table align-middle w-100 menu-tree-table">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th style="width: 100px;">Actions</th>
+              <th class="align-middle text-center col-actions-2">Actions</th>
               <th class="text-start">Title</th>
               <th style="width: 80px;">Level</th>
               <th class="text-start" style="min-width: 120px;">Icon</th>
@@ -45,15 +45,15 @@
                 [class.menu-child-row]="node.depth > 0">
 
                 <!-- Actions -->
-                <td class="text-center">
-                  <div class="d-flex justify-content-center gap-2">
-                    <a [routerLink]="['/menu/details', node.id]" [state]="{ mode: 'view' }" class="icon-link"
+                <td class="text-center col-actions-2">
+                  <div class="d-flex justify-content-center gap-1">
+                    <a [routerLink]="['/menu/details', node.id]" [state]="{ mode: 'view' }" class="btn-lims-icon btn-lims-view"
                       title="View">
-                      <img src="/icons/view.svg" alt="View" class="icon-svg">
+                      <i class="bi bi-eye"></i>
                     </a>
-                    <a [routerLink]="['/menu/edit', node.id]" [state]="{ mode: 'edit' }" class="icon-link"
+                    <a [routerLink]="['/menu/edit', node.id]" [state]="{ mode: 'edit' }" class="btn-lims-icon btn-lims-edit"
                       title="Edit">
-                      <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
+                      <i class="bi bi-pencil"></i>
                     </a>
                   </div>
                 </td>

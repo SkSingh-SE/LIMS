@@ -165,10 +165,7 @@
                         <input type="text" class="form-control form-control-sm" placeholder="Inspector Name (e.g. Sudhanshu Singh)" [(ngModel)]="person.name" (ngModelChange)="onTpiPersonModified(sample.id)" [ngModelOptions]="{standalone: true}" />
                       </td>
                       <td>
-                        <div class="input-group input-group-sm">
-                          <span class="input-group-text py-0 px-2 fs-8 bg-light text-muted"><i class="bi bi-telephone"></i></span>
-                          <input type="text" class="form-control form-control-sm" placeholder="Phone No." [(ngModel)]="person.contactNo" (ngModelChange)="onTpiPersonModified(sample.id)" [ngModelOptions]="{standalone: true}" />
-                        </div>
+                        <app-phone-input [size]="'sm'" placeholder="Phone No." [(ngModel)]="person.contactNo" (ngModelChange)="onTpiPersonModified(sample.id)" [ngModelOptions]="{standalone: true}"></app-phone-input>
                       </td>
                       <td>
                         <input type="text" class="form-control form-control-sm" placeholder="e.g. Lead Inspector / Witness Engineer" [(ngModel)]="person.role" (ngModelChange)="onTpiPersonModified(sample.id)" [ngModelOptions]="{standalone: true}" />

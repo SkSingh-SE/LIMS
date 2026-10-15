@@ -28,7 +28,7 @@
         <table class="table bordered-table align-middle w-100 small">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
+              <th class="align-middle text-center fw-semibold col-actions-2">Actions</th>
               <th *ngFor="let column of columns; let i = index" class="fw-semibold">
                 <div class="d-flex align-items-center justify-content-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -63,16 +63,16 @@
 
           <tbody>
             <tr *ngFor="let item of dataList" class="align-middle text-center">
-              <td class="text-center">
-                <div class="d-flex justify-content-center gap-3">
-                  <a class="icon-link" title="View"
+              <td class="text-center col-actions-2">
+                <div class="d-flex justify-content-center align-items-center gap-1.5">
+                  <button type="button" class="btn-lims-icon btn-lims-view" title="View"
                     (click)="openCaseDetail(item.inwardId || item.id, 'view')">
-                    <img src="/icons/view.svg" alt="View" class="icon-svg">
-                  </a>
-                  <a class="icon-link" title="Open"
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button type="button" class="btn-lims-icon btn-lims-edit" title="Open"
                     (click)="openCaseDetail(item.inwardId || item.id, 'edit')">
-                    <img src="/icons/edit.svg" alt="Open" class="icon-svg">
-                  </a>
+                    <i class="bi bi-pencil"></i>
+                  </button>
                 </div>
               </td>
               <td class="fw-semibold">

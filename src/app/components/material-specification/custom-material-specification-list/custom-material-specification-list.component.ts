@@ -28,6 +28,7 @@ export class CustomMaterialSpecificationListComponent implements OnInit {
     specificationNo: 'string',
     version: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

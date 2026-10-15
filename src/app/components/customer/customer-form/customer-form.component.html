@@ -620,12 +620,9 @@
               Mobile No
               <span class="text-danger" *ngIf="contactGroup.get('type')?.value !== 'accountant'">*</span>
             </label>
-            <input [id]="'mobileNo-' + idx" type="text" class="form-control form-control-sm" placeholder="Enter Mobile No."
-              formControlName="mobileNo" maxlength="13" appNumberOnly
-              [ngClass]="{ 'is-invalid': contactGroup.get('mobileNo')?.touched && contactGroup.get('mobileNo')?.invalid }" />
+            <app-phone-input formControlName="mobileNo" [submitted]="contactGroup.touched"></app-phone-input>
             <div *ngIf="contactGroup.get('mobileNo')?.touched && contactGroup.get('mobileNo')?.invalid">
               <span *ngIf="contactGroup.get('mobileNo')?.errors?.['required']" class="text-danger text-sm">Mobile No is required.</span>
-              <span *ngIf="contactGroup.get('mobileNo')?.errors?.['pattern']" class="text-danger text-sm">Mobile No must be 10-13 digits.</span>
             </div>
           </div>
 
@@ -634,9 +631,14 @@
               Email ID
               <span class="text-danger" *ngIf="contactGroup.get('type')?.value !== 'accountant'">*</span>
             </label>
-            <input [id]="'emailId-' + idx" type="email" class="form-control form-control-sm" placeholder="Enter Email"
-              formControlName="emailId"
-              [ngClass]="{ 'is-invalid': contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid }" />
+            <div class="input-with-icon-wrapper">
+              <input [id]="'emailId-' + idx" type="email" class="form-control form-control-sm" placeholder="Enter Email"
+                formControlName="emailId"
+                [ngClass]="{ 'is-invalid': contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid }" />
+              <span class="input-trailing-icon">
+                <i class="bi bi-envelope"></i>
+              </span>
+            </div>
             <div *ngIf="contactGroup.get('emailId')?.touched && contactGroup.get('emailId')?.invalid">
               <span *ngIf="contactGroup.get('emailId')?.errors?.['required']" class="text-danger text-sm">Email is required.</span>
               <span *ngIf="contactGroup.get('emailId')?.errors?.['pattern']" class="text-danger text-sm">Invalid email format.</span>

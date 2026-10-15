@@ -7,6 +7,7 @@ import { SearchableDropdownModalComponent } from '../../../utility/components/se
 import { Observable } from 'rxjs';
 import { DepartmentService } from '../../../services/department.service';
 import { OEMService } from '../../../services/oem.service';
+import { SupplierService } from '../../../services/supplier.service';
 import { CalibrationAgencyService } from '../../../services/calibration-agency.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
@@ -76,6 +77,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     private toastService: ToastService,
     private departmentService: DepartmentService,
     private oemService: OEMService,
+    private supplierService: SupplierService,
     private agencyService: CalibrationAgencyService,
     private equipmentTypeService: EquipmentTypeService,
     private equipmentService: EquipmentService,
@@ -121,7 +123,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       equipmentNo: ['', [Validators.required, Validators.maxLength(50), noWhitespaceValidator()]],
       departmentID: ['', Validators.required],
       equipmentTypeID: ['', Validators.required],
-      oemID: ['', Validators.required],
+      supplierID: ['', Validators.required],
+      oemID: [''],
       modelNo: [''],
       purchaseDate: ['', Validators.required],
       calibrationRequired: [false],
@@ -214,7 +217,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           equipmentNo: data.equipmentNo,
           departmentID: data.departmentID,
           equipmentTypeID: data.equipmentTypeID,
-          oemID: data.oemid,
+          supplierID: data.supplierID || data.oemid,
+          oemID: data.oemid || data.supplierID,
           modelNo: data.modelNo,
           purchaseDate: data.purchaseDate ? data.purchaseDate.split('T')[0] : '',
           calibrationRequired: data.calibrationRequired,
@@ -425,15 +429,25 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     }
     this.equipmentForm.patchValue({ departmentID: item.id });
   }
+  getSupplier = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.supplierService.getSupplierDropdown(term, page, pageSize);
+  };
+  onSupplierSelected(item: any) {
+    if (!item) {
+      this.equipmentForm.patchValue({ supplierID: null, oemID: null });
+      return;
+    }
+    this.equipmentForm.patchValue({ supplierID: item.id, oemID: item.id });
+  }
   getOEM = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.oemService.getOEMDropdown(term, page, pageSize);
+    return this.supplierService.getSupplierDropdown(term, page, pageSize);
   };
   onOEMSelected(item: any) {
     if (!item) {
-      this.equipmentForm.patchValue({ oemID: null });
+      this.equipmentForm.patchValue({ supplierID: null, oemID: null });
       return;
     }
-    this.equipmentForm.patchValue({ oemID: item.id });
+    this.equipmentForm.patchValue({ supplierID: item.id, oemID: item.id });
   }
   getCalibrationAgency = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.agencyService.getCalibrationAgencyDropdown(term, page, pageSize);
@@ -488,7 +502,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     if (!payload.lastCalibrationDate) payload.lastCalibrationDate = null;
     if (!payload.calibrationFrequencyDays && payload.calibrationFrequencyDays !== 0) payload.calibrationFrequencyDays = null;
     // Ensure numeric IDs are sent as numbers, not empty strings
-    if (!payload.oemID) payload.oemID = 0;
+    if (!payload.supplierID) payload.supplierID = payload.oemID || 0;
+    if (!payload.oemID) payload.oemID = payload.supplierID || 0;
     if (!payload.departmentID) payload.departmentID = 0;
     if (!payload.equipmentTypeID) payload.equipmentTypeID = 0;
 

@@ -34,6 +34,7 @@ export class BankComponent implements OnInit {
     accountNumber: 'string',
     accountType: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

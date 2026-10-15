@@ -43,14 +43,6 @@
   opacity: 1;
 }
 
-.bordered-table thead tr th {
-  padding: 0.35rem 0.5rem !important;
-}
-
-.bordered-table tbody tr td {
-  padding: 0.35rem 0.5rem !important;
-  font-size: 0.78rem;
-}
 
 .custom-search {
   height: 30px;

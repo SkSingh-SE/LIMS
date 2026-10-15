@@ -33,6 +33,7 @@ export class TaxComponent implements OnInit {
     rate: 'number',
     date: 'date',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

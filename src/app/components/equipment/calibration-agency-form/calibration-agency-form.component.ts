@@ -9,11 +9,12 @@ import { environment } from '../../../../environments/environment';
 import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
+import { PhoneInputComponent } from '../../../utility/components/phone-input/phone-input.component';
 
 @Component({
   selector: 'app-calibration-agency-form',
 
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink, PhoneInputComponent],
   templateUrl: './calibration-agency-form.component.html',
   styleUrl: './calibration-agency-form.component.css'
 })
@@ -54,13 +55,13 @@ export class CalibrationAgencyFormComponent implements CanComponentDeactivate, O
       id: [0],
       name: ['', Validators.required],
       contactPerson1: ['', Validators.required],
-      contactNo1: ['', [Validators.required, Validators.pattern(/^[+]?\d{10,13}$/)]],
+      contactNo1: ['', [Validators.required]],
       emailId1: ['', [Validators.required, Validators.email]],
       contactPerson2: [''],
-      contactNo2: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
+      contactNo2: [''],
       emailId2: ['', Validators.email],
       contactPerson3: [''],
-      contactNo3: ['', Validators.pattern(/^[+]?\d{10,13}$/)],
+      contactNo3: [''],
       emailId3: ['', Validators.email],
       address: [''],
       presentStatus: [1, Validators.required], // 1: Enlisted, 2: Delisted

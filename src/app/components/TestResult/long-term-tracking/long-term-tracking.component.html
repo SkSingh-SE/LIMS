@@ -2,10 +2,10 @@
   <div class="card basic-data-table w-100">
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">
-        <i class="bi bi-hourglass-split"></i> Long-Term Test Tracking
+        <i class="bi bi-hourglass-split"></i><span>Long-Term Test Tracking</span>
       </label>
       <button class="btn btn-sm btn-light" routerLink="/testing/dashboard">
-        <i class="bi bi-arrow-left"></i> Back
+        <i class="bi bi-arrow-left"></i><span>Back</span>
       </button>
     </div>
 
@@ -298,7 +298,7 @@
         </div>
         <!-- Readings Section -->
         <h6 class="mt-4 mb-3">
-          <i class="bi bi-graph-up"></i> Recorded Readings ({{ selectedTest!.readings.length || 0 }})
+          <i class="bi bi-graph-up"></i><span>Recorded Readings ({{ selectedTest!.readings.length || 0 }})</span>
         </h6>
 
         <div class="table-responsive" *ngIf="selectedTest!.readings.length">
@@ -323,7 +323,7 @@
         </div>
 
         <div *ngIf="!selectedTest!.readings.length" class="alert alert-info mb-0">
-          <i class="bi bi-info-circle"></i> No readings recorded yet
+          <i class="bi bi-info-circle"></i><span>No readings recorded yet</span>
         </div>
       </div>
 
@@ -335,7 +335,7 @@
           (click)="refreshDetails(selectedTest?.id!)"
           [disabled]="isSaving()"
         >
-          <i class="bi bi-arrow-clockwise"></i> Refresh
+          <i class="bi bi-arrow-clockwise"></i><span>Refresh</span>
         </button>
         <button
           type="button"
@@ -343,7 +343,7 @@
           (click)="completeTest(selectedTest!)"
           [disabled]="!canCompleteTest(selectedTest!) || isSaving()"
         >
-          <i class="bi bi-check-lg"></i> Complete Test
+          <i class="bi bi-check-lg"></i><span>Complete Test</span>
         </button>
       </div>
     </div>

@@ -3,7 +3,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">{{ formTitle }}</label>
       <button type="button" class="btn btn-outline-light btn-sm me-3" routerLink="/environment-monitoring">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </button>
     </div>
 
@@ -130,7 +130,7 @@
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
           <button type="button" class="btn btn-cancel" routerLink="/environment-monitoring">Cancel</button>
           <button type="submit" class="btn btn-save" [disabled]="monitorForm.invalid">
-            <i class="bi bi-save me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Record
+            <i class="bi bi-save me-1"></i><span>{{ isEditMode ? 'Update' : 'Save' }} Record</span>
           </button>
         </div>
 

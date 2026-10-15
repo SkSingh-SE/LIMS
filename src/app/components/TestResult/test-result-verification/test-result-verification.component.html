@@ -198,7 +198,7 @@
 <!-- Approve Modal -->
 <div *ngIf="showApproveModal" class="modal-backdrop-custom" (click)="cancelApprove()"></div>
 <div *ngIf="showApproveModal" class="modal-custom">
-  <h6 class="mb-3"><i class="bi bi-check-circle text-success me-2"></i>Approve Verification</h6>
+  <h6 class="mb-3"><i class="bi bi-check-circle text-success me-2"></i><span>Approve Verification</span></h6>
   <div class="mb-3">
     <label class="form-label">Comments (Optional)</label>
     <textarea class="form-control" rows="3" [(ngModel)]="approveComments" placeholder="Enter approval comments..."></textarea>
@@ -206,7 +206,7 @@
   <div class="d-flex gap-2 justify-content-end">
     <button class="btn btn-sm btn-secondary" (click)="cancelApprove()">Cancel</button>
     <button class="btn btn-sm btn-save" (click)="confirmApprove()">
-      <i class="bi bi-check-circle me-1"></i>Approve
+      <i class="bi bi-check-circle me-1"></i><span>Approve</span>
     </button>
   </div>
 </div>
@@ -214,7 +214,7 @@
 <!-- Reject Modal -->
 <div *ngIf="showRejectModal" class="modal-backdrop-custom" (click)="cancelReject()"></div>
 <div *ngIf="showRejectModal" class="modal-custom">
-  <h6 class="mb-3"><i class="bi bi-x-circle text-danger me-2"></i>Reject Verification</h6>
+  <h6 class="mb-3"><i class="bi bi-x-circle text-danger me-2"></i><span>Reject Verification</span></h6>
   <div class="mb-3">
     <label class="form-label">Rejection Comments <span class="text-danger">*</span></label>
     <textarea class="form-control" rows="3" [(ngModel)]="rejectComments" placeholder="Enter rejection reason..."
@@ -223,7 +223,7 @@
   <div class="d-flex gap-2 justify-content-end">
     <button class="btn btn-sm btn-secondary" (click)="cancelReject()">Cancel</button>
     <button class="btn btn-sm btn-danger" (click)="confirmReject()" [disabled]="!rejectComments.trim()">
-      <i class="bi bi-x-lg me-1"></i>Reject
+      <i class="bi bi-x-lg me-1"></i><span>Reject</span>
     </button>
   </div>
 </div>

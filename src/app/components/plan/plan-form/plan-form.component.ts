@@ -54,6 +54,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   replanReason = '';
   showReplanModal = false;
   replanPlanId: number | null = null;
+  showRejectReplanModal = false;
+  rejectPlanId: number | null = null;
+  rejectRequestId: number | null = null;
+  rejectReplanRemarks = '';
+  rawInwardData: any = null;
 
   yearCode = new Date().getFullYear().toString().slice(-2);
   getChemicalTestTypeDrop = (term: string, page: number, pageSize: number) =>
@@ -458,7 +463,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     const masterTestId = item?.additionalValues?.masterTestId ? +item.additionalValues.masterTestId : testId;
 
     m.patchValue({
-      testMethodID: masterTestId,
+      testMethodID: testId || masterTestId,
       laboratoryTestAnalysisTypeID: testId
     });
 
@@ -1304,6 +1309,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     return this.fb.group({
       id: [0],
       sampleNo: [sampleNo],
+      version: [1],
+      replanCount: [0],
+      planStatus: ['Draft'],
+      approvedById: [null],
+      approvedByName: [''],
+      approvedAt: [null],
+      pendingReplanRequestId: [null],
+      pendingReplanReason: [''],
+      pendingReplanRequestedByName: [''],
+      pendingReplanRequestedAt: [null],
       generalTests: this.fb.array([generalTestGroup]),
       chemicalTests: this.fb.array([])
     });
@@ -1314,8 +1329,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       id: [0],
       sampleNo: [''],
       specification1: [null],
+      specification1Name: [''],
       specification2: [null],
+      specification2Name: [''],
       laboratoryTestSubGroupID: [null],
+      laboratoryTestName: [''],
       parameter: [''],
       methods: this.fb.array([])
     }, { validators: this.uniqueSpecificationValidator });
@@ -1328,10 +1346,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       reportNo: [reportNo || ''],
       ulrNo: [ulrNo || ''],
       laboratoryTestAnalysisTypeID: [null],
+      analysisTypeName: [''],
       metalClassificationID: [null],
+      metalClassificationName: [''],
       testTypeIds: [[]],
       specification1: [null],
+      specification1Name: [''],
       specification2: [null],
+      specification2Name: [''],
       methods: this.fb.array([this.createTestMethodRow(reportNo, ulrNo)]),
       elements: this.fb.array([])
     });
@@ -1341,6 +1363,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     return this.fb.group({
       id: [0],
       testMethodID: [null, Validators.required],
+      testMethodName: [''],
       laboratoryTestSubGroupID: [null],
       laboratoryTestAnalysisTypeID: [null],
       quantity: ['1'],
@@ -1790,6 +1813,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     this.inwardService.getSampleInwardWithPlans(sampleId).subscribe({
       next: (data) => {
         if (!data) return;
+        this.rawInwardData = data;
 
         // Store current status for Send for Review button visibility
         this.currentStatus = data.status || '';
@@ -1823,7 +1847,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               productSizeID: s.productSizeID ?? s.productSizeMasterID ?? null,
               productSizeName: s.productSizeName ?? s.sizeDisplayName ?? '',
               specificationGradeID: s.specificationGradeID ?? null,
+              specificationGradeName: s.specificationGradeName ?? '',
               isUnknownSample: s.isUnknownSample ?? false,
+              assignedGradeID: s.assignedGradeID ?? null,
+              assignedGradeName: s.assignedGradeName ?? '',
+              assignedGradeNote: s.assignedGradeNote ?? '',
               specimenOrientationID: s.specimenOrientationID,
               productFormID: s.productFormID,
               tpiAgencyID: s.tpiAgencyID,
@@ -1864,16 +1892,25 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
             approvedById: tp.approvedById,
             approvedByName: tp.approvedByName,
             approvedAt: tp.approvedAt,
+            pendingReplanRequestId: tp.pendingReplanRequestId ?? null,
+            pendingReplanReason: tp.pendingReplanReason ?? '',
+            pendingReplanRequestedByName: tp.pendingReplanRequestedByName ?? '',
+            pendingReplanRequestedAt: tp.pendingReplanRequestedAt ?? null,
+            planHistories: tp.planHistories || [],
             generalTests: (tp.generalTests || []).map((gt: any) => ({
               id: gt.id,
               sampleNo: gt.sampleNo,
               specification1: gt.specification1,
+              specification1Name: gt.specification1Name || '',
               specification2: gt.specification2,
+              specification2Name: gt.specification2Name || '',
               laboratoryTestSubGroupID: gt.laboratoryTestSubGroupID || null,
+              laboratoryTestName: gt.laboratoryTestName || gt.subGroupName || '',
               parameter: gt.parameter,
               methods: (gt.methods || []).map((m: any) => ({
                 id: m.id,
                 testMethodID: m.testMethodID,
+                testMethodName: m.testMethodName || m.laboratoryTestName || '',
                 laboratoryTestSubGroupID: m.laboratoryTestSubGroupID || gt.laboratoryTestSubGroupID || null,
                 quantity: m.quantity,
                 reportNo: m.reportNo,
@@ -1894,13 +1931,17 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               techniqueCodes: ct.techniqueCodes || [],
               techniqueNames: ct.techniqueNames || [],
               metalClassificationID: ct.metalClassificationID || null,
+              metalClassificationName: ct.metalClassificationName || '',
               testTypeIds: ct.testTypeIds || [],
               analysisTypeIds: ct.analysisTypeIds || ct.testTypeIds || [],
               specification1: ct.specification1,
+              specification1Name: ct.specification1Name || '',
               specification2: ct.specification2,
+              specification2Name: ct.specification2Name || '',
               methods: (ct.methods && ct.methods.length > 0) ? ct.methods.map((m: any) => ({
                 id: m.id,
                 testMethodID: m.testMethodID || ct.laboratoryTestAnalysisTypeID || null,
+                testMethodName: m.testMethodName || m.analysisTypeName || '',
                 laboratoryTestAnalysisTypeID: m.laboratoryTestAnalysisTypeID || ct.laboratoryTestAnalysisTypeID || null,
                 analysisTypeName: m.analysisTypeName || ct.analysisTypeName || '',
                 techniqueCodes: m.techniqueCodes || ct.techniqueCodes || [],
@@ -1915,6 +1956,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               })) : (ct.laboratoryTestAnalysisTypeID ? [{
                 id: 0,
                 testMethodID: ct.laboratoryTestAnalysisTypeID,
+                testMethodName: ct.analysisTypeName || '',
                 laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID,
                 analysisTypeName: ct.analysisTypeName || '',
                 techniqueCodes: ct.techniqueCodes || [],
@@ -1928,8 +1970,13 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
                 standardName: ''
               }] : []),
               elements: (ct.elements || []).map((el: any) => ({
+                id: el.id || 0,
                 parameterID: el.parameterID || 0,
                 specificationLineID: el.specificationLineID || 0,
+                laboratoryTestAnalysisTypeID: el.laboratoryTestAnalysisTypeID || null,
+                laboratoryTestAnalysisTypeName: el.laboratoryTestAnalysisTypeName || el.analysisTypeName || '',
+                sourceType: el.sourceType || '',
+                sourceTitle: el.sourceTitle || '',
                 parameterName: el.parameterName || '',
                 minValue: el.minValue ?? null,
                 maxValue: el.maxValue ?? null,
@@ -2690,6 +2737,13 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     return this.materialSpecificationService.getGradeDropdownByMetalId(term, page, pageSize, metalId);
   };
 
+  getGradeDropForUnknown(sampleIdx: number) {
+    return (term: string, page: number, pageSize: number) => {
+      const metalId = this.getMetalIdForSample(sampleIdx);
+      return this.materialSpecificationService.getGradeDropdownByMetalId(term, page, pageSize, metalId);
+    };
+  }
+
   private getMetalIdForSample(sampleIndex?: number): number {
     if (sampleIndex === undefined || sampleIndex === null) return 0;
     const sampleGroup = this.getSampleGroupSafely(sampleIndex);
@@ -3025,7 +3079,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   onTPISelected(item: any, sampleIndex: number) {
     const sampleDetailGroup = this.getSampleGroupSafely(sampleIndex);
     if (!sampleDetailGroup) return;
-    sampleDetailGroup.patchValue({ tpiAgencyID: item?.id ?? null });
+    sampleDetailGroup.patchValue({
+      tpiAgencyID: item?.id ?? null,
+      tpiAgencyName: item?.name ?? ''
+    });
     if (item?.additionalValues) {
       this.tpiAgencyDetails[sampleIndex] = {
         emailId: item.additionalValues['emailId'] ?? '',
@@ -3044,7 +3101,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     sampleDetailGroup.patchValue({ tpiRequired: checked });
 
     if (!checked) {
-      sampleDetailGroup.patchValue({ tpiAgencyID: null });
+      sampleDetailGroup.patchValue({ tpiAgencyID: null, tpiAgencyName: '' });
       delete this.tpiAgencyDetails[sampleIndex];
     }
   }
@@ -3095,12 +3152,15 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     const otherVal = otherValRaw !== undefined && otherValRaw !== null ? +otherValRaw : null;
 
     if (newId && otherVal && newId === otherVal) {
-      section.patchValue({ [field]: null });
+      section.patchValue({ [field]: null, [field + 'Name']: '' });
       this.toastService.show('Specification 1 and Specification 2 cannot be the same.', 'warning');
       return;
     }
 
-    section.patchValue({ [field]: newId });
+    section.patchValue({
+      [field]: newId,
+      [field + 'Name']: item?.name ?? ''
+    });
 
     const spec1 = section.get('specification1')?.value;
     const spec2 = section.get('specification2')?.value;
@@ -3266,12 +3326,16 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               id: [gt.id || 0],
               sampleNo: [sample.sampleNo],
               specification1: [gt.specification1 !== undefined && gt.specification1 !== null ? +gt.specification1 : null],
+              specification1Name: [gt.specification1Name || ''],
               specification2: [gt.specification2 !== undefined && gt.specification2 !== null ? +gt.specification2 : null],
+              specification2Name: [gt.specification2Name || ''],
               laboratoryTestSubGroupID: [gt.laboratoryTestSubGroupID || null],
+              laboratoryTestName: [gt.laboratoryTestName || gt.subGroupName || ''],
               parameter: [gt.parameter],
               methods: this.fb.array((gt.methods || []).map((m: any) => this.fb.group({
                 id: [m.id || 0],
                 testMethodID: [m.testMethodID, Validators.required],
+                testMethodName: [m.testMethodName || m.laboratoryTestName || ''],
                 laboratoryTestSubGroupID: [m.laboratoryTestSubGroupID || gt.laboratoryTestSubGroupID || null],
                 quantity: [m.quantity || 1],
                 reportNo: [m.reportNo || ''],
@@ -3289,8 +3353,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
             const methodsList = (ct.methods && ct.methods.length > 0)
               ? ct.methods
               : (ct.laboratoryTestAnalysisTypeID
-                  ? [{ id: 0, testMethodID: ct.laboratoryTestAnalysisTypeID, laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID, quantity: 1, reportNo: ct.reportNo || '', ulrNo: ct.ulrNo || '', standardID: null, standardName: '' }]
-                  : [{ id: 0, testMethodID: null, laboratoryTestAnalysisTypeID: null, quantity: 1, reportNo: ct.reportNo || '', ulrNo: ct.ulrNo || '', standardID: null, standardName: '' }]);
+                  ? [{ id: 0, testMethodID: ct.laboratoryTestAnalysisTypeID, testMethodName: ct.analysisTypeName || '', laboratoryTestAnalysisTypeID: ct.laboratoryTestAnalysisTypeID, analysisTypeName: ct.analysisTypeName || '', quantity: 1, reportNo: ct.reportNo || '', ulrNo: ct.ulrNo || '', standardID: null, standardName: '' }]
+                  : [{ id: 0, testMethodID: null, testMethodName: '', laboratoryTestAnalysisTypeID: null, analysisTypeName: '', quantity: 1, reportNo: ct.reportNo || '', ulrNo: ct.ulrNo || '', standardID: null, standardName: '' }]);
 
             // 1. Direct techniqueCodes from backend ChemicalTestDto (User's saved selection)
             if (ct.techniqueCodes && Array.isArray(ct.techniqueCodes) && ct.techniqueCodes.length > 0) {
@@ -3320,18 +3384,24 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
               reportNo: [ct.reportNo],
               ulrNo: [ct.ulrNo],
               laboratoryTestAnalysisTypeID: [ct.laboratoryTestAnalysisTypeID || null],
+              analysisTypeName: [ct.analysisTypeName || ''],
               metalClassificationID: [ct.metalClassificationID || null],
+              metalClassificationName: [ct.metalClassificationName || ''],
               testTypeIds: [testTypeIds],
               specification1: [
                 ct.specification1 !== undefined && ct.specification1 !== null ? +ct.specification1 : null
               ],
+              specification1Name: [ct.specification1Name || ''],
               specification2: [
                 ct.specification2 !== undefined && ct.specification2 !== null ? +ct.specification2 : null
               ],
+              specification2Name: [ct.specification2Name || ''],
               methods: this.fb.array(methodsList.map((m: any) => this.fb.group({
                 id: [m.id || 0],
                 testMethodID: [m.testMethodID || ct.laboratoryTestAnalysisTypeID || null, Validators.required],
+                testMethodName: [m.testMethodName || m.analysisTypeName || ''],
                 laboratoryTestAnalysisTypeID: [m.laboratoryTestAnalysisTypeID || ct.laboratoryTestAnalysisTypeID || null],
+                analysisTypeName: [m.analysisTypeName || ct.analysisTypeName || ''],
                 quantity: [m.quantity || 1],
                 reportNo: [m.reportNo || ct.reportNo || ''],
                 ulrNo: [m.ulrNo || ct.ulrNo || ''],
@@ -3379,6 +3449,10 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
             approvedById: [tp.approvedById ?? null],
             approvedByName: [tp.approvedByName ?? ''],
             approvedAt: [tp.approvedAt ?? null],
+            pendingReplanRequestId: [tp.pendingReplanRequestId ?? null],
+            pendingReplanReason: [tp.pendingReplanReason ?? ''],
+            pendingReplanRequestedByName: [tp.pendingReplanRequestedByName ?? ''],
+            pendingReplanRequestedAt: [tp.pendingReplanRequestedAt ?? null],
             generalTests: this.fb.array(generalTestsArr),
             chemicalTests: this.fb.array(chemicalTestsArr)
           });
@@ -3401,9 +3475,11 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
         productMasterID: [sample.productMasterID ?? null],
         productMasterName: [sample.productMasterName ?? ''],
         specificationGradeID: [sample.specificationGradeID ?? null],
+        specificationGradeName: [sample.specificationGradeName ?? ''],
         isUnknownSample: [sample.isUnknownSample ?? false],
-        assignedGradeID: [null],
-        assignedGradeNote: [''],
+        assignedGradeID: [sample.assignedGradeID ?? null],
+        assignedGradeName: [sample.assignedGradeName ?? ''],
+        assignedGradeNote: [sample.assignedGradeNote ?? ''],
         productSizeID: [sample.productSizeID ?? sample.productSizeMasterID ?? null],
         productSizeName: [sample.productSizeName ?? sample.sizeDisplayName ?? ''],
         productConditionID: [sample.productConditionID ?? null],
@@ -3411,6 +3487,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
         specimenOrientationID: [sample.specimenOrientationID],
         productFormID: [sample.productFormID],
         tpiAgencyID: [sample.tpiAgencyID],
+        tpiAgencyName: [sample.tpiAgencyName ?? ''],
         remarks: [sample.remarks],
         quantity: [sample.quantity],
         preparationRequired: [sample.preparationRequired ?? false],
@@ -3667,7 +3744,7 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
             parameter: g.parameter || '',
             methods: (g.methods || []).map((m: any) => ({
               id: m.id || 0,
-              testMethodID: m.testMethodID || 0,
+              testMethodID: m.laboratoryTestSubGroupID || m.testMethodID || 0,
               standardID: m.standardID || null,
               quantity: m.quantity || 0,
               reportNo: m.reportNo === 'Auto Generate' ? '' : m.reportNo || '',
@@ -3792,6 +3869,72 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     });
   }
 
+  approveReplan(testPlan: any): void {
+    const planId = testPlan.get('id')?.value;
+    const requestId = testPlan.get('pendingReplanRequestId')?.value;
+
+    if (!planId && !requestId) {
+      this.toastService.show('Unable to identify plan for approval.', 'error');
+      return;
+    }
+
+    const currentVersion = testPlan.get('version')?.value || 1;
+    const req$ = requestId
+      ? this.inwardService.approveReplan(requestId)
+      : this.inwardService.approveReplanByPlan(planId);
+
+    req$.subscribe({
+      next: () => {
+        this.toastService.show(`Replan approved! Plan unlocked in Draft (v${currentVersion + 1}) mode.`, 'success');
+        if (this.inwardID) {
+          this.fetchSampleInwardDetails(this.inwardID);
+        }
+      },
+      error: (err: any) => {
+        console.error('[PlanForm] Approve replan error:', err);
+        this.toastService.show(err?.error?.message || 'Failed to approve replan request.', 'error');
+      }
+    });
+  }
+
+  openRejectReplanDialog(testPlan: any): void {
+    this.rejectPlanId = testPlan.get('id')?.value;
+    this.rejectRequestId = testPlan.get('pendingReplanRequestId')?.value;
+    this.rejectReplanRemarks = '';
+    this.showRejectReplanModal = true;
+  }
+
+  closeRejectReplanDialog(): void {
+    this.showRejectReplanModal = false;
+    this.rejectPlanId = null;
+    this.rejectRequestId = null;
+    this.rejectReplanRemarks = '';
+  }
+
+  submitRejectReplan(): void {
+    if (!this.rejectPlanId && !this.rejectRequestId) {
+      return;
+    }
+
+    const req$ = this.rejectRequestId
+      ? this.inwardService.rejectReplan(this.rejectRequestId, this.rejectReplanRemarks)
+      : this.inwardService.rejectReplanByPlan(this.rejectPlanId!, this.rejectReplanRemarks);
+
+    req$.subscribe({
+      next: () => {
+        this.toastService.show('Replan request rejected.', 'info');
+        this.closeRejectReplanDialog();
+        if (this.inwardID) {
+          this.fetchSampleInwardDetails(this.inwardID);
+        }
+      },
+      error: (err: any) => {
+        console.error('[PlanForm] Reject replan error:', err);
+        this.toastService.show(err?.error?.message || 'Failed to reject replan request.', 'error');
+      }
+    });
+  }
+
   parseFieldChanges(json: string | null): any[] | null {
     if (!json) return null;
     try { return JSON.parse(json); } catch { return null; }
@@ -3803,8 +3946,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
 
   /** Save button visible only when at least one plan is in editable status */
   canSavePlan(): boolean {
-    if (this.isViewMode) return false;
-    const editableStatuses = ['Draft', 'ReplanRequested', 'ReplanApproved'];
+    if (this.isViewMode || this.isPlanLocked()) return false;
+    const editableStatuses = ['Draft', 'ReplanApproved'];
     let hasAnyPlan = false;
     for (let i = 0; i < this.samples.length; i++) {
       const plans = this.getTestPlans(i);
@@ -4362,13 +4505,17 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     const masterTestId = item?.additionalValues?.masterTestId ? +item.additionalValues.masterTestId : subGroupId;
 
     methodRow.patchValue({
-      testMethodID: masterTestId,
+      testMethodID: subGroupId || masterTestId,
+      testMethodName: item?.name ?? '',
       laboratoryTestSubGroupID: subGroupId
     });
 
     const genGroup = this.getGeneralTestSection(sampleIdx, planIdx);
     if (genGroup) {
-      genGroup.patchValue({ laboratoryTestSubGroupID: subGroupId });
+      genGroup.patchValue({
+        laboratoryTestSubGroupID: subGroupId,
+        laboratoryTestName: item?.name ?? ''
+      });
     }
 
     if (subGroupId) {
@@ -4440,13 +4587,18 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     const masterTestId = item?.additionalValues?.masterTestId ? +item.additionalValues.masterTestId : analysisTypeId;
 
     methodRow.patchValue({
-      testMethodID: masterTestId,
-      laboratoryTestAnalysisTypeID: analysisTypeId
+      testMethodID: analysisTypeId || masterTestId,
+      testMethodName: item?.name ?? '',
+      laboratoryTestAnalysisTypeID: analysisTypeId,
+      analysisTypeName: item?.name ?? ''
     });
 
     const chemGroup = this.getChemicalTestSection(sampleIdx, planIdx);
     if (chemGroup) {
-      chemGroup.patchValue({ laboratoryTestAnalysisTypeID: analysisTypeId });
+      chemGroup.patchValue({
+        laboratoryTestAnalysisTypeID: analysisTypeId,
+        analysisTypeName: item?.name ?? ''
+      });
     }
 
     if (analysisTypeId) {
@@ -5079,11 +5231,21 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     this.planForm.markAsDirty();
   }
 
+  onAssignedGradeSelected(item: any, sampleIdx: number): void {
+    const sampleGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sampleGroup) return;
+    sampleGroup.patchValue({
+      assignedGradeID: item?.id ? +item.id : null,
+      assignedGradeName: item?.name ?? ''
+    });
+  }
+
   onAssignGrade(sampleIdx: number): void {
     const sampleGroup = this.getSampleGroupSafely(sampleIdx);
     if (!sampleGroup) return;
     const sampleId = sampleGroup.get('id')?.value;
     const gradeId = sampleGroup.get('assignedGradeID')?.value;
+    const gradeName = sampleGroup.get('assignedGradeName')?.value || '';
     const note = sampleGroup.get('assignedGradeNote')?.value || '';
 
     if (!gradeId) {
@@ -5096,7 +5258,9 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
         sampleGroup.patchValue({
           isUnknownSample: false,
           specificationGradeID: +gradeId,
+          specificationGradeName: gradeName,
           assignedGradeID: null,
+          assignedGradeName: '',
           assignedGradeNote: ''
         });
         this.toastService.show(res?.message || 'Grade assigned successfully and audit logged.', 'success');
@@ -5182,6 +5346,191 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
     this.toastService.show(`Applied ${tests.length} test(s) with specification grade(s) from batch selection.`, 'success');
     this.planForm.markAsDirty();
     this.cdr.markForCheck();
+  }
+
+  // ────────────── Object Getters for Dropdown Rebinding ──────────────
+  getSelectedProductSize(sampleIdx: number): { id: number; name: string } | null {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sGroup) return null;
+    const id = sGroup.get('productSizeID')?.value;
+    if (!id) return null;
+    const name = sGroup.get('productSizeName')?.value || `Size #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedProductMaster(sampleIdx: number): { id: number; name: string } | null {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sGroup) return null;
+    const id = sGroup.get('productMasterID')?.value;
+    if (!id) return null;
+    const name = sGroup.get('productMasterName')?.value || `Product Master #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedMetal(sampleIdx: number): { id: number; name: string } | null {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sGroup) return null;
+    const id = sGroup.get('metalClassificationID')?.value;
+    if (!id) return null;
+    const name = sGroup.get('metalClassificationName')?.value || `Metal #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedTpiAgency(sampleIdx: number): { id: number; name: string } | null {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sGroup) return null;
+    const id = sGroup.get('tpiAgencyID')?.value;
+    if (!id) return null;
+    const name = sGroup.get('tpiAgencyName')?.value || `TPI #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedGenSpec(sampleIdx: number, planIdx: number, field: 'specification1' | 'specification2'): { id: number; name: string } | null {
+    const section = this.getGeneralTestSection(sampleIdx, planIdx);
+    if (!section) return null;
+    const id = section.get(field)?.value;
+    if (!id) return null;
+    const nameField = field + 'Name';
+    const name = section.get(nameField)?.value || `Specification #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedGenTestMethod(method: AbstractControl): { id: number; name: string } | null {
+    if (!method) return null;
+    const id = method.get('laboratoryTestSubGroupID')?.value || method.get('testMethodID')?.value;
+    if (!id) return null;
+    const name = method.get('testMethodName')?.value || method.get('laboratoryTestName')?.value || `Test #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedStandard(method: AbstractControl): { id: number; name: string } | null {
+    if (!method) return null;
+    const id = method.get('standardID')?.value;
+    if (!id) return null;
+    const name = method.get('standardName')?.value || `Standard #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedChemSpec(chemTest: AbstractControl, field: 'specification1' | 'specification2'): { id: number; name: string } | null {
+    if (!chemTest) return null;
+    const id = chemTest.get(field)?.value;
+    if (!id) return null;
+    const nameField = field + 'Name';
+    const name = chemTest.get(nameField)?.value || `Specification #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedChemTestMethod(method: AbstractControl): { id: number; name: string } | null {
+    if (!method) return null;
+    const id = method.get('testMethodID')?.value || method.get('laboratoryTestAnalysisTypeID')?.value;
+    if (!id) return null;
+    const name = method.get('testMethodName')?.value || method.get('analysisTypeName')?.value || method.get('laboratoryTestName')?.value || `Chemical Test #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedChemStandard(method: AbstractControl): { id: number; name: string } | null {
+    if (!method) return null;
+    const id = method.get('standardID')?.value;
+    if (!id) return null;
+    const name = method.get('standardName')?.value || `Standard #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedAssignedGrade(sampleIdx: number): { id: number; name: string } | null {
+    const sGroup = this.getSampleGroupSafely(sampleIdx);
+    if (!sGroup) return null;
+    const id = sGroup.get('assignedGradeID')?.value;
+    if (!id) return null;
+    const name = sGroup.get('assignedGradeName')?.value || `Grade #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedCombinedProductMaster(): { id: number; name: string } | null {
+    const id = this.combinedPlanForm?.get('productMasterID')?.value;
+    if (!id) return null;
+    const name = this.combinedPlanForm?.get('productMasterName')?.value || `Product Master #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedCombinedMetal(): { id: number; name: string } | null {
+    const id = this.combinedPlanForm?.get('metalClassificationID')?.value;
+    if (!id) return null;
+    const name = this.combinedPlanForm?.get('metalClassificationName')?.value || `Metal #${id}`;
+    return { id: +id, name };
+  }
+
+  getSelectedCombinedGenSpec(field: 'genSpec1' | 'genSpec2'): { id: number; name: string } | null {
+    const id = this.combinedPlanForm?.get(field)?.value;
+    if (!id) return null;
+    return { id: +id, name: `Specification #${id}` };
+  }
+
+  getSelectedCombinedChemSpec(field: 'chemSpec1' | 'chemSpec2'): { id: number; name: string } | null {
+    const id = this.combinedPlanForm?.get(field)?.value;
+    if (!id) return null;
+    return { id: +id, name: `Specification #${id}` };
+  }
+
+  // ────────────── Lockdown & Exception Action Helpers ──────────────
+  isPlanLocked(sampleIdx?: number): boolean {
+    if (this.isViewMode) return true;
+    const targetIdx = sampleIdx !== undefined ? sampleIdx : this.activeSampleIdx;
+    const sampleGroup = this.getSampleGroupSafely(targetIdx);
+    if (!sampleGroup) return false;
+
+    // Check Sample Plan status
+    const testPlans = sampleGroup.get('testPlans') as FormArray;
+    if (testPlans && testPlans.length > 0) {
+      const activePlan = testPlans.at(0) as FormGroup;
+      const planStatus = (activePlan?.get('planStatus')?.value || '').toLowerCase();
+      if (planStatus === 'approved' || planStatus === 'submitted' || planStatus === 'underreview' || planStatus === 'replanrequested') {
+        return true;
+      }
+      if (planStatus === 'draft') {
+        return false;
+      }
+    }
+
+    // Check Inward overall workflow status
+    const lockedInwardStatuses: string[] = [
+      'REQUEST_APPROVED',
+      'REVIEW_COMPLETED',
+      'PLAN_APPROVED',
+      'PREPARATION_REQUIRED',
+      'PREPARATION_IN_PROGRESS',
+      'PREPARATION_COMPLETED',
+      'TESTING_IN_PROGRESS',
+      'TESTING_COMPLETED',
+      'VERIFICATION_IN_PROGRESS',
+      'VERIFIED',
+      'APPROVAL_IN_PROGRESS',
+      'APPROVED',
+      'REPORT_GENERATED',
+      'DISPATCHED',
+      'CLOSED'
+    ];
+    if (this.currentStatus && lockedInwardStatuses.includes(this.currentStatus.toString().toUpperCase())) {
+      return true;
+    }
+
+    return false;
+  }
+
+  isCurrentPlanApproved(sampleIdx?: number): boolean {
+    const targetIdx = sampleIdx !== undefined ? sampleIdx : this.activeSampleIdx;
+    const sampleGroup = this.getSampleGroupSafely(targetIdx);
+    if (!sampleGroup) return false;
+    const testPlans = sampleGroup.get('testPlans') as FormArray;
+    if (testPlans && testPlans.length > 0) {
+      const activePlan = testPlans.at(0) as FormGroup;
+      const planStatus = (activePlan?.get('planStatus')?.value || '').toLowerCase();
+      return planStatus === 'approved';
+    }
+    return false;
+  }
+
+  printJobCard(): void {
+    window.print();
   }
 
   canDeactivate(): Observable<boolean> | boolean {

@@ -89,7 +89,8 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 35, title: 'Laboratory Test', route: '/test', parentMenuID: 3, permissions: ['CanReadLaboratoryTest'], children: [], color: getRandomColor() },
         { id: 36, title: 'Test Method Specification', route: '/test-specification', parentMenuID: 3, permissions: ['CanReadTestMethodSpecification'], children: [], color: getRandomColor() },
         { id: 37, title: 'Invoice Case', route: '/invoice-case', parentMenuID: 3, permissions: ['CanReadInvoiceCase'], children: [], color: getRandomColor() },
-        { id: 372, title: 'Analysis Technique', route: '/analysis-technique', parentMenuID: 3, permissions: ['CanReadAnalysisTechnique'], children: [], color: getRandomColor() }
+        { id: 372, title: 'Analysis Technique', route: '/analysis-technique', parentMenuID: 3, permissions: ['CanReadAnalysisTechnique'], children: [], color: getRandomColor() },
+        { id: 373, title: 'Execution Layout Studio', route: '/test-layout-archetype', parentMenuID: 3, permissions: ['CanReadLaboratoryTest'], children: [], color: getRandomColor() }
       ]
     },
     {
@@ -118,9 +119,9 @@ export function getAllMenuItems(): MenuItem[] {
         { id: 42, title: 'Review', route: '/sample/review', parentMenuID: 5, permissions: ['CanReadReview'], children: [], color: getRandomColor() },
         {
           id: 500, title: 'Sample Preparation', route: '', parentMenuID: 5, permissions: [], children: [
-            { id: 130, title: 'Preparation Queue', route: '/sample/preparation', parentMenuID: 500, permissions: [], children: [], color: getRandomColor() },
+            { id: 130, title: 'Sample Preparation Queue', route: '/sample/preparation', parentMenuID: 500, permissions: [], children: [], color: getRandomColor() },
             // { id: 44, title: 'Cutting Price Master', route: '/cutting-price-master', parentMenuID: 500, permissions: ['CanReadCuttingPrice'], children: [], color: getRandomColor() },
-            { id: 47, title: 'Machining Charge Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
+            { id: 47, title: 'Specimen Preparation Master', route: '/machining-charge-master', parentMenuID: 500, permissions: ['CanReadMachiningCharge'], children: [], color: getRandomColor() },
             // { id: 48, title: 'Sample Preparation Master', route: '/sample-preparation-master', parentMenuID: 500, permissions: ['CanReadSamplePreparationMaster'], children: [], color: getRandomColor() }, // Hidden: see HIDDEN_MENU_ITEMS
           ], color: getRandomColor()
         }

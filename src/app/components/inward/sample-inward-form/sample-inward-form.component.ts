@@ -398,9 +398,9 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           if (Array.isArray(this.customerData?.contactPersons)) {
             const defaultSelected = false; // Note 3: By default all contacts unselected
 
-            this.customerData.contactPersons.forEach((contact: any, idx: number) => {
+            this.customerData.contactPersons.forEach((contact: any) => {
               contact.contactID = contact.id;
-              contact.isAccountant = contact.isAccountant !== undefined ? contact.isAccountant : (idx === 0);
+              contact.isAccountant = this.checkIsAccountant(contact);
               this.addContact(contact, defaultSelected);
               this.contactPersons.push(contact);
             });
@@ -409,10 +409,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           }
         } else {
           // Edit mode: just update the contactPersons list for dropdowns
-          this.contactPersons = this.customerData?.contactPersons?.map((c: any, idx: number) => ({
+          this.contactPersons = this.customerData?.contactPersons?.map((c: any) => ({
             ...c,
             contactID: c.id,
-            isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+            isAccountant: this.checkIsAccountant(c)
           })) || [];
           this.updateContactLists();
         }
@@ -447,10 +447,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       contactPersons: data.contactPersons
     };
 
-    const contacts = (data.contactPersons || []).map((c: any, idx: number) => ({
+    const contacts = (data.contactPersons || []).map((c: any) => ({
       ...c,
       contactID: c.id,
-      isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+      isAccountant: this.checkIsAccountant(c)
     }));
     this.customerContactsCache.set(data.id, contacts);
 
@@ -494,21 +494,35 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       }
     }
 
-    // Auto-select primary/accountant contact for Card 0 if no contact selected yet
+    // Auto-select reporting & billing contacts for Card 0 if no contact selected yet
     if (contacts.length > 0) {
-      const defaultContact = contacts.find((c: any) => c.isAccountant || c.designation === 'Accountant') || contacts[0];
-      const contactId = defaultContact?.id || defaultContact?.contactID;
-      if (contactId) {
+      // For Reporting To: select contact with sendReport === true (prefer non-accountant contact), or first contact
+      const defaultRepContact = contacts.find((c: any) => (c.sendReport === true || c.sendReport === 'true' || c.sendReport === 1) && !this.checkIsAccountant(c))
+        || contacts.find((c: any) => c.sendReport === true || c.sendReport === 'true' || c.sendReport === 1)
+        || contacts.find((c: any) => !this.checkIsAccountant(c))
+        || contacts[0];
+      const repContactId = defaultRepContact?.id || defaultRepContact?.contactID;
+
+      // For Billing To: select contact with sendBill === true (prefer accountant), or first contact with sendBill, or accountant
+      const defaultBillContact = contacts.find((c: any) => (c.sendBill === true || c.sendBill === 'true' || c.sendBill === 1) && this.checkIsAccountant(c))
+        || contacts.find((c: any) => c.sendBill === true || c.sendBill === 'true' || c.sendBill === 1)
+        || contacts.find((c: any) => this.checkIsAccountant(c))
+        || contacts[0];
+      const billContactId = defaultBillContact?.id || defaultBillContact?.contactID;
+
+      if (repContactId) {
         const repCard0 = this.reportingToCustomerControls.at(0) as FormGroup;
         const repSelected = repCard0.get('selectedContactIDs') as FormArray;
         if (repSelected && repSelected.length === 0) {
-          repSelected.push(this.fb.control(contactId));
+          repSelected.push(this.fb.control(repContactId));
         }
+      }
 
+      if (billContactId) {
         const billCard0 = this.billingToCustomerControls.at(0) as FormGroup;
         const billSelected = billCard0.get('selectedContactIDs') as FormArray;
         if (billSelected && billSelected.length === 0) {
-          billSelected.push(this.fb.control(contactId));
+          billSelected.push(this.fb.control(billContactId));
         }
       }
     }
@@ -639,6 +653,8 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               this.billingToContactPerson = [];
               this.reportingToContactPerson = [];
               data.contacts.forEach((c: any) => {
+                const matchedCp = this.customerData?.contactPersons?.find((cp: any) => cp.id === c.contactID || cp.contactID === c.contactID);
+                const isAcc = matchedCp ? this.checkIsAccountant(matchedCp) : this.checkIsAccountant(c);
                 this.contactControls.push(
                   this.fb.group({
                     id: c.id,
@@ -649,7 +665,9 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
                     emailId: c.emailId,
                     sendBill: c.sendBill,
                     sendReport: c.sendReport,
-                    inwardID: c.inwardID
+                    inwardID: c.inwardID,
+                    isAccountant: isAcc,
+                    type: matchedCp?.type || c.type || (isAcc ? 'accountant' : 'contact')
                   })
                 );
               });
@@ -680,10 +698,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               if (repCustId && !this.customerContactsCache.has(repCustId)) {
                 this.customerService.getCustomerById(repCustId).subscribe({
                   next: (cData) => {
-                    const contacts = (cData.contactPersons || []).map((c: any, idx: number) => ({
+                    const contacts = (cData.contactPersons || []).map((c: any) => ({
                       ...c,
                       contactID: c.id,
-                      isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+                      isAccountant: this.checkIsAccountant(c)
                     }));
                     this.customerContactsCache.set(cData.id, contacts);
                   }
@@ -711,10 +729,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               if (billCustId && !this.customerContactsCache.has(billCustId)) {
                 this.customerService.getCustomerById(billCustId).subscribe({
                   next: (cData) => {
-                    const contacts = (cData.contactPersons || []).map((c: any, idx: number) => ({
+                    const contacts = (cData.contactPersons || []).map((c: any) => ({
                       ...c,
                       contactID: c.id,
-                      isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+                      isAccountant: this.checkIsAccountant(c)
                     }));
                     this.customerContactsCache.set(cData.id, contacts);
                   }
@@ -1074,10 +1092,20 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   // Contact Helpers
+  checkIsAccountant(contact: any): boolean {
+    if (!contact) return false;
+    if (contact.isAccountant === true || contact.isAccountant === 'true') return true;
+    const type = (contact.type || '').toString().trim().toLowerCase();
+    if (type === 'accountant') return true;
+    const desig = (contact.designation || '').toString().trim().toLowerCase();
+    if (desig === 'accountant') return true;
+    return false;
+  }
+
   isAccountantContact(index: number): boolean {
-    if (index === 0) return true;
     const ctrl = this.contactControls.at(index);
-    return ctrl?.get('isAccountant')?.value === true;
+    if (!ctrl) return false;
+    return this.checkIsAccountant(ctrl.value);
   }
 
   // Multi-Customer / Multi-Contact Cache & FormArrays
@@ -1112,10 +1140,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     const card = this.createCustomerCardGroup('reporting', customerData);
     this.reportingToCustomerControls.push(card);
     if (customerData?.id && customerData?.contactPersons) {
-      const contacts = customerData.contactPersons?.map((c: any, idx: number) => ({
+      const contacts = customerData.contactPersons?.map((c: any) => ({
         ...c,
         contactID: c.id,
-        isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+        isAccountant: this.checkIsAccountant(c)
       })) || [];
       this.customerContactsCache.set(customerData.id, contacts);
     }
@@ -1196,10 +1224,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           pinCode: data.pinCode,
           gstNo: data.gstNo
         });
-        const contacts = data.contactPersons?.map((c: any, idx: number) => ({
+        const contacts = data.contactPersons?.map((c: any) => ({
           ...c,
           contactID: c.id,
-          isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+          isAccountant: this.checkIsAccountant(c)
         })) || [];
         this.customerContactsCache.set(data.id, contacts);
       }
@@ -1210,10 +1238,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     const card = this.createCustomerCardGroup('billing', customerData);
     this.billingToCustomerControls.push(card);
     if (customerData?.id && customerData?.contactPersons) {
-      const contacts = customerData.contactPersons?.map((c: any, idx: number) => ({
+      const contacts = customerData.contactPersons?.map((c: any) => ({
         ...c,
         contactID: c.id,
-        isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+        isAccountant: this.checkIsAccountant(c)
       })) || [];
       this.customerContactsCache.set(customerData.id, contacts);
     }
@@ -1258,10 +1286,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
           pinCode: data.pinCode,
           gstNo: data.gstNo
         });
-        const contacts = data.contactPersons?.map((c: any, idx: number) => ({
+        const contacts = data.contactPersons?.map((c: any) => ({
           ...c,
           contactID: c.id,
-          isAccountant: c.isAccountant !== undefined ? c.isAccountant : (idx === 0)
+          isAccountant: this.checkIsAccountant(c)
         })) || [];
         this.customerContactsCache.set(data.id, contacts);
       }
@@ -1380,16 +1408,18 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   addContact(contact: any, selected: boolean = false): void {
+    const isAcc = this.checkIsAccountant(contact);
     this.contactControls.push(this.fb.group({
       id: [contact.id || 0],
       selected: [selected],
-      contactID: [contact.id || 0],
+      contactID: [contact.id || contact.contactID || 0],
       name: [contact?.name || ''],
       mobileNo: [contact?.mobileNo || ''],
       emailId: [contact?.emailId || ''],
       sendBill: [{ value: contact?.sendBill || false, disabled: true }],
       sendReport: [{ value: contact?.sendReport || false, disabled: true }],
-      isAccountant: [contact?.isAccountant || false]
+      isAccountant: [isAcc],
+      type: [contact?.type || (isAcc ? 'accountant' : 'contact')]
     }));
   }
 

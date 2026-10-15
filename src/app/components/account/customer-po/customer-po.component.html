@@ -3,7 +3,7 @@
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">Customer Purchase Orders</label>
       <button class="btn btn-outline-light btn-sm me-3" (click)="openCreateForm()" *ngIf="!showForm">
-        <i class="bi bi-plus-circle me-1"></i> Create PO
+        <i class="bi bi-plus-circle me-1"></i><span>Create PO</span>
       </button>
     </div>
     <div class="card-body">
@@ -12,8 +12,7 @@
   <div class="card shadow-sm mb-4" *ngIf="showForm">
     <div class="card-header bg-white">
       <h5 class="card-title mb-0">
-        <i class="bi bi-pencil-square me-2"></i>
-        {{ editingId ? 'Edit Purchase Order' : 'Create Purchase Order' }}
+        <i class="bi bi-pencil-square me-2"></i><span>{{ editingId ? 'Edit Purchase Order' : 'Create Purchase Order' }}</span>
       </h5>
     </div>
     <div class="card-body">
@@ -87,11 +86,10 @@
         <div class="d-flex gap-2 mt-3">
           <button type="submit" class="btn btn-save" [disabled]="isSubmitting">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-            <i class="bi bi-check-circle me-1" *ngIf="!isSubmitting"></i>
-            {{ isSubmitting ? 'Saving...' : (editingId ? 'Update PO' : 'Create PO') }}
+            <i class="bi bi-check-circle me-1" *ngIf="!isSubmitting"></i><span>{{ isSubmitting ? 'Saving...' : (editingId ? 'Update PO' : 'Create PO') }}</span>
           </button>
           <button type="button" class="btn btn-cancel" (click)="cancelForm()">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+            <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </button>
         </div>
       </form>
@@ -188,7 +186,7 @@
           Items for PO: <strong>{{ selectedPO.poNumber }}</strong>
         </h6>
         <button class="btn btn-sm btn-cancel" (click)="closePOItems()">
-          <i class="bi bi-x"></i> Close
+          <i class="bi bi-x"></i><span>Close</span>
         </button>
       </div>
       <div *ngIf="isLoadingItems" class="text-center py-3">
@@ -223,7 +221,7 @@
         </table>
       </div>
       <div *ngIf="!isLoadingItems && poItems.length === 0" class="text-center text-muted py-3">
-        <i class="bi bi-inbox"></i> No items found for this purchase order.
+        <i class="bi bi-inbox"></i><span>No items found for this purchase order.</span>
       </div>
     </div>
   </div>

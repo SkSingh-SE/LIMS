@@ -14,7 +14,7 @@
       <!-- ======================== Basic Information ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
         <legend class="w-auto px-2 fw-semibold theme-color">
-          <i class="bi bi-person-vcard-fill"></i> Basic Information
+          <i class="bi bi-person-vcard-fill"></i><span>Basic Information</span>
         </legend>
         <div class="row g-2 align-items-start">
           <!-- Customer Name -->
@@ -103,7 +103,7 @@
               [submitted]="submitted" />
             <div *ngIf="customerId > 0 && pendingChange?.newValues?.customerType" class="mt-1">
               <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
-                <i class="bi bi-clock-history me-1"></i>Pending Type: {{ pendingChange.newValues.customerType }}
+                <i class="bi bi-clock-history me-1"></i><span>Pending Type: {{ pendingChange.newValues.customerType }}</span>
               </span>
             </div>
           </div>
@@ -131,7 +131,7 @@
       <!-- ======================== Address Details ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
         <legend class="w-auto px-2 fw-semibold theme-color">
-          <i class="bi bi-geo-alt-fill"></i> Address Details
+          <i class="bi bi-geo-alt-fill"></i><span>Address Details</span>
         </legend>
         <div class="row g-2">
           <!-- Address -->
@@ -202,7 +202,7 @@
       <!-- ======================== Dispatch Modes ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
         <legend class="w-auto px-2 fw-semibold theme-color">
-          <i class="bi bi-truck"></i> Dispatch Modes
+          <i class="bi bi-truck"></i><span>Dispatch Modes</span>
         </legend>
         <div class="d-flex flex-wrap gap-4">
           <div class="form-check" *ngFor="let mode of dispatchModes; index as modeIndex">
@@ -227,7 +227,7 @@
         </ng-container>
         <div *ngIf="!isViewMode" class="d-flex justify-content-end mb-3">
           <button type="button" class="btn btn-sm btn-add" (click)="addContact()">
-            <i class="bi bi-plus-circle-dotted me-1"></i> Add Contact
+            <i class="bi bi-plus-circle-dotted me-1"></i><span>Add Contact</span>
           </button>
         </div>
       </div>
@@ -235,7 +235,7 @@
       <!-- ======================== Account Section ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
         <legend class="w-auto px-2 fw-semibold theme-color">
-          <i class="bi bi-credit-card-2-front-fill"></i> Account
+          <i class="bi bi-credit-card-2-front-fill"></i><span>Account</span>
         </legend>
 
         <!-- Row 1: Special Accounting / Currency / Credit Limit -->
@@ -273,7 +273,7 @@
             </div>
             <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
               <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
-                <i class="bi bi-clock-history me-1"></i>Pending: {{ getPendingNewValue('creditLimitAmount') ?? '—' }}
+                <i class="bi bi-clock-history me-1"></i><span>Pending: {{ getPendingNewValue('creditLimitAmount') ?? '—' }}</span>
               </span>
             </div>
           </div>
@@ -297,7 +297,7 @@
             </div>
             <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
               <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
-                <i class="bi bi-clock-history me-1"></i>Pending: {{ getPendingNewValue('creditLimitTime') ?? '—' }} Days
+                <i class="bi bi-clock-history me-1"></i><span>Pending: {{ getPendingNewValue('creditLimitTime') ?? '—' }} Days</span>
               </span>
             </div>
           </div>
@@ -306,7 +306,7 @@
         <!-- Row 2: Billing Options -->
         <div class="billing-opts-box">
           <div class="billing-opts-label">
-            <i class="bi bi-toggles"></i> Billing Options
+            <i class="bi bi-toggles"></i><span>Billing Options</span>
           </div>
 
           <div class="row g-3">
@@ -323,7 +323,7 @@
                   </div>
                   <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
                     <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
-                      <i class="bi bi-clock-history me-1"></i>Pending: {{ getPendingNewValue('constantDiscount') ? 'Yes' : 'No' }}
+                      <i class="bi bi-clock-history me-1"></i><span>Pending: {{ getPendingNewValue('constantDiscount') ? 'Yes' : 'No' }}</span>
                       <ng-container *ngIf="getPendingNewValue('constantDiscountPercentage') != null">
                         ({{ getPendingNewValue('constantDiscountPercentage') }}%)
                       </ng-container>
@@ -403,7 +403,7 @@
                   </div>
                   <div *ngIf="customerId > 0 && hasPendingChange()" class="mt-1">
                     <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
-                      <i class="bi bi-clock-history me-1"></i>Pending:
+                      <i class="bi bi-clock-history me-1"></i><span>Pending:</span>
                       <ng-container *ngIf="getPendingNewValue('weeklyBillingCustomer')">Weekly</ng-container>
                       <ng-container *ngIf="getPendingNewValue('monthlyBillingCustomer')">Monthly</ng-container>
                       <ng-container *ngIf="getPendingNewValue('billingEvery')">Every {{ getPendingNewValue('billingEveryDays') ?? '?' }} Days</ng-container>
@@ -472,7 +472,7 @@
       <!-- ======================== Remark ======================== -->
       <fieldset class="border rounded p-3 mb-3 position-relative">
         <legend class="w-auto px-2 fw-semibold theme-color">
-          <i class="bi bi-chat-left-text-fill"></i> Remarks
+          <i class="bi bi-chat-left-text-fill"></i><span>Remarks</span>
         </legend>
         <div class="row g-2">
           <div class="col-12 col-md-6">
@@ -486,7 +486,7 @@
       <!-- ======================== Change Request History ======================== -->
       <fieldset *ngIf="customerId > 0 && changeHistory.length > 0" class="border rounded p-3 mb-3 position-relative">
         <legend class="w-auto px-2 fw-semibold theme-color" (click)="showHistory = !showHistory" style="cursor:pointer;">
-          <i class="bi bi-clock-history"></i> Change Request History
+          <i class="bi bi-clock-history"></i><span>Change Request History</span>
           <i class="bi ms-1" [ngClass]="showHistory ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
         </legend>
         <div *ngIf="showHistory" class="table-responsive">
@@ -531,13 +531,33 @@
 
 <!-- ======================== Sticky Bottom Bar ======================== -->
 <div *ngIf="!isViewMode" class="sticky-bottom-bar">
-  <div class="d-flex justify-content-end align-items-center gap-2">
-    <a routerLink="/customer" class="btn btn-cancel btn-sm">
-      <i class="bi bi-x-lg me-1"></i> Cancel
-    </a>
-    <button type="button" class="btn btn-save btn-sm px-3" (click)="onSubmit()">
-      <i class="bi bi-check2-circle me-1"></i> {{ customerId > 0 ? 'Update' : 'Save' }}
-    </button>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <!-- Validation Status / Missing Fields Indicator -->
+    <div class="d-flex align-items-center gap-2">
+      <span *ngIf="!isFormValidForSubmit()" class="badge bg-warning-subtle text-dark border border-warning d-inline-flex align-items-center gap-1.5 py-1 px-2"
+        [title]="getDisabledReason()">
+        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+        <span><strong>{{ getInvalidFieldNames().length }}</strong> required field(s) pending</span>
+      </span>
+      <span *ngIf="isFormValidForSubmit()" class="badge bg-success-subtle text-success border border-success d-inline-flex align-items-center gap-1.5 py-1 px-2">
+        <i class="bi bi-check-circle-fill text-success"></i>
+        <span>Ready to save</span>
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex align-items-center gap-2">
+      <a routerLink="/customer" class="btn btn-cancel btn-sm">
+        <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
+      </a>
+      <div class="d-inline-block" [title]="getDisabledReason()">
+        <button type="button" class="btn btn-save btn-sm px-3"
+          [disabled]="!isFormValidForSubmit()"
+          (click)="onSubmit()">
+          <i class="bi bi-check-circle me-1"></i><span>{{ customerId > 0 ? 'Update' : 'Save' }}</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -545,15 +565,15 @@
 <ng-template #contactFieldset let-contactGroup let-title="title" let-idx="index">
   <fieldset [formGroup]="contactGroup" class="border rounded p-3 mb-3 position-relative contact-fieldset">
     <legend class="w-auto px-2 fw-semibold theme-color d-flex align-items-center gap-2">
-      <i class="bi bi-person-fill"></i> {{ title }}
+      <i class="bi bi-person-fill"></i><span>{{ title }}</span>
       <button type="button" class="btn btn-link btn-sm p-0 text-primary" *ngIf="!isViewMode && idx > 0"
         (click)="copyContact1ToContact(contactGroup)">
-        <i class="bi bi-files me-1"></i>Copy from Contact 1
+        <i class="bi bi-files me-1"></i><span>Copy from Contact 1</span>
       </button>
       <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-auto"
         *ngIf="!isViewMode && idx > 0 && idx < contactPersonsArray.length - 1"
         (click)="removeDynamicContact(contactGroup)">
-        <i class="bi bi-trash-fill"></i> Remove
+        <i class="bi bi-trash-fill"></i><span>Remove</span>
       </button>
     </legend>
     <div class="row">
@@ -650,7 +670,7 @@
               </label>
               <button type="button" class="btn btn-link btn-sm p-0 text-primary" *ngIf="!isViewMode"
                 (click)="copyCustomerAddressToContact(contactGroup)">
-                <i class="bi bi-copy me-1"></i>Same as Customer
+                <i class="bi bi-copy me-1"></i><span>Same as Customer</span>
               </button>
             </div>
             <textarea [id]="'contactAddress-' + idx" rows="4" class="form-control form-control-sm text-uppercase"

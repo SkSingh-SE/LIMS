@@ -1,0 +1,2372 @@
+<div class="studio-container">
+  <!-- Topbar Header -->
+  <header class="studio-topbar">
+    <div class="studio-brand">
+      <span class="studio-logo">LIMS</span>
+      <span class="studio-crumb">/ Studio /</span>
+      <!-- Editable Format / Layout Name in Topbar -->
+      <div class="studio-format-name-box" title="Click to rename format">
+        <i class="bi bi-pencil-square text-danger me-1"></i>
+        <input type="text" class="studio-format-name-input" [(ngModel)]="layoutName" [disabled]="isViewMode"
+          placeholder="Custom Format Name...">
+      </div>
+    </div>
+    <div class="studio-top-actions">
+      <!-- Database / Source Transparency Badges -->
+      <span
+        class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1 font-monospace"
+        *ngIf="loadedSource === 'db' && currentLayoutId"
+        title="Persistent layout format loaded from SQL Server Database">
+        <i class="bi bi-database-check"></i><span>{{ layoutCode || 'Layout Format' }} (v{{ currentVersion }}.{{ layoutRev }})</span>
+      </span>
+      <span
+        class="badge bg-purple-subtle text-purple border border-purple-subtle d-inline-flex align-items-center gap-1 font-monospace"
+        *ngIf="isGlobalDefault" title="Global Default Layout (Inherited by all tests without custom format)">
+        <i class="bi bi-globe"></i><span>Global Default</span>
+      </span>
+      <span
+        class="badge bg-info-subtle text-info border border-info-subtle d-inline-flex align-items-center gap-1 font-monospace"
+        *ngIf="loadedSource === 'preset'" title="Predefined Blueprint loaded dynamically from memory">
+        <i class="bi bi-file-earmark-code"></i><span>Predefined Blueprint: {{ dataSourceLabel }}</span>
+      </span>
+      <span
+        class="badge bg-warning-subtle text-warning border border-warning-subtle d-inline-flex align-items-center gap-1 font-monospace"
+        *ngIf="!currentLayoutId && loadedSource !== 'preset'" title="New unsaved layout template">
+        <i class="bi bi-clock-history"></i><span>Unsaved Format</span>
+      </span>
+
+      <!-- All Formats List Navigation Button -->
+      <button type="button" class="btn-lims btn-lims-secondary" (click)="navigateToList()"
+        title="View and manage all saved layout formats">
+        <i class="bi bi-list-columns-reverse me-1.5"></i>
+        <span>All Formats</span>
+      </button>
+
+      <button type="button" class="btn-lims btn-lims-secondary" (click)="toggleDemoData()"
+        title="Toggle simulated test values">
+        <i class="bi bi-clipboard-data me-1.5"></i>
+        <span>{{ demoMode ? 'Demo Data: ON' : 'Demo Data: OFF' }}</span>
+      </button>
+      <button type="button" class="btn-lims btn-lims-cancel" *ngIf="!isViewMode" (click)="resetLayout()"
+        title="Reset layout to default stack">
+        <i class="bi bi-arrow-counterclockwise me-1.5"></i>
+        <span>Reset</span>
+      </button>
+      <button type="button" class="btn-lims btn-lims-edit" (click)="openPreviewModal()"
+        title="Open interactive technician data-entry workbench">
+        <i class="bi bi-eye me-1.5"></i>
+        <span>Execution Preview</span>
+      </button>
+      <button type="button" class="btn-lims btn-lims-copy" *ngIf="currentLayoutId && !isViewMode"
+        (click)="saveLayout(true)" title="Save as a new revision without overwriting">
+        <i class="bi bi-files me-1.5"></i>
+        <span>Save as New Rev</span>
+      </button>
+      <button type="button" class="btn-lims btn-lims-save" *ngIf="!isViewMode" (click)="saveLayout(false)"
+        title="Save layout and map to test">
+        <i class="bi bi-check-circle me-1.5"></i>
+        <span>{{ currentLayoutId ? 'Update Format' : 'Save Format' }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace 3-Column Layout with Adjustable Left Panel -->
+  <div class="studio-workspace" [class.is-left-resizing]="isResizingLeft"
+    [style.--left-panel-width]="(leftPanelCollapsed ? 0 : leftPanelWidth) + 'px'">
+    <!-- LEFT PANEL: Components Palette & Outline -->
+    <aside class="studio-panel studio-panel-left" [class.is-collapsed]="leftPanelCollapsed">
+      <div class="panel-header">
+        <span class="panel-header-title">
+          <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Layout Components</span>
+        </span>
+        <span class="badge bg-secondary ms-auto me-1.5">{{ sections.length }}</span>
+        <button type="button" class="btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+      </div>
+
+      <!-- Quick Width Adjuster Presets Bar -->
+      <div class="panel-width-bar">
+        <span class="width-indicator" title="Current panel width">
+          <i class="bi bi-arrows-expand-vertical me-1.5 rotate-90"></i><span>{{ leftPanelWidth }}px</span>
+        </span>
+        <div class="btn-group btn-group-xs ms-auto">
+          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 220" (click)="setLeftPreset(220)"
+            title="Compact width (220px)">S</button>
+          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 270" (click)="setLeftPreset(270)"
+            title="Default width (270px)">M</button>
+          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 340" (click)="setLeftPreset(340)"
+            title="Wide width (340px)">L</button>
+          <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to screen default width"><i
+              class="bi bi-arrow-counterclockwise"></i></button>
+        </div>
+      </div>
+
+      <!-- Mandatory Context Section: Actual Laboratory Test -->
+      <div class="panel-section">
+        <div class="d-flex align-items-center justify-content-between mb-1.5">
+          <h6 class="panel-section-title mb-0">Mandatory Context</h6>
+          <span class="badge bg-danger-subtle text-danger font-monospace small" *ngIf="!isGlobalDefault">TARGET
+            TEST</span>
+          <span class="badge bg-purple-subtle text-purple font-monospace small" *ngIf="isGlobalDefault">GLOBAL
+            FALLBACK</span>
+        </div>
+
+        <!-- Without Test Global Fallback Toggle -->
+        <div class="form-check form-switch compact-switch mb-2 p-2 bg-light rounded border">
+          <input class="form-check-input" type="checkbox" id="chkGlobalDefault" [(ngModel)]="isGlobalDefault"
+            (ngModelChange)="onGlobalDefaultToggle()" [disabled]="isViewMode">
+          <label class="form-check-label fw-semibold text-dark small cursor-pointer" for="chkGlobalDefault">
+            <i class="bi bi-globe me-1 text-primary"></i><span>Global Default Layout</span>
+          </label>
+          <div class="text-muted text-xxs mt-0.5">
+            If enabled, this format will load as default for <strong>ALL tests</strong> without a custom layout.
+          </div>
+        </div>
+
+        <!-- Single Unified Searchable Dropdown (Resolves Group, SubGroup & Leaf Node) -->
+        <div class="mb-2" *ngIf="!isGlobalDefault">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label compact-label mb-0">
+              <i class="bi bi-search me-1.5 text-danger"></i><span>Actual Laboratory Test *</span>
+            </label>
+            <a routerLink="/test/laboratory-test" class="btn-nav-link" target="_blank" title="Manage Laboratory Tests">
+              <i class="bi bi-box-arrow-up-right me-1"></i><span>Manage</span>
+            </a>
+          </div>
+          <app-searchable-dropdown [fetchDataFn]="fetchUnifiedLabTestFn" [selectedItem]="selectedUnifiedTestId"
+            (itemSelected)="onUnifiedTestSelected($event)" [placeholder]="'Search test, subgroup, matrix...'"
+            [labelName]="'Target Laboratory Test'" [hideLabel]="true" [smallInput]="true">
+          </app-searchable-dropdown>
+        </div>
+
+        <!-- Map to Multiple Tests Button (When not Global Default) -->
+        <div class="mb-2" *ngIf="!isGlobalDefault">
+          <button type="button"
+            class="btn-lims btn-lims-edit w-100 d-flex align-items-center justify-content-between py-1 px-2"
+            (click)="openMultiTestModal()" [disabled]="isViewMode" title="Link this single format to multiple tests">
+            <span><i class="bi bi-link-45deg me-1"></i><span>Map Additional Tests</span></span>
+            <span class="badge bg-primary text-white font-monospace">{{ additionalMappedLeafKeys.length }} mapped</span>
+          </button>
+          <div class="text-muted text-xxs mt-0.5" *ngIf="additionalMappedLeafKeys.length > 0">
+            Also mapped to {{ additionalMappedLeafKeys.length }} additional laboratory test(s).
+          </div>
+        </div>
+
+        <!-- Resolved Hierarchy Summary (Leaf, SubGroup & Group Test) -->
+        <div class="resolved-hierarchy-box mb-2" *ngIf="resolvedHierarchy">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="hierarchy-box-title">
+              <i class="bi bi-diagram-3-fill me-1 text-danger"></i><span>RESOLVED HIERARCHY</span>
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs">
+              {{ resolvedHierarchy.isChemical ? 'Chemical 3-Level' : 'General 2-Level' }}
+            </span>
+          </div>
+          <div class="hierarchy-row">
+            <span class="hierarchy-label">Group Test:</span>
+            <span class="hierarchy-val text-dark fw-semibold">{{ resolvedHierarchy.groupName || '—' }}</span>
+          </div>
+          <div class="hierarchy-row" *ngIf="resolvedHierarchy.subGroupName">
+            <span class="hierarchy-label">Sub-Group:</span>
+            <span class="hierarchy-val text-secondary">{{ resolvedHierarchy.subGroupName }}</span>
+          </div>
+          <div class="hierarchy-row"
+            *ngIf="resolvedHierarchy.analysisTypeId || (resolvedHierarchy.leafName && resolvedHierarchy.leafName !== resolvedHierarchy.subGroupName)">
+            <span class="hierarchy-label">Technique / Leaf:</span>
+            <span class="hierarchy-val text-danger fw-medium">{{ resolvedHierarchy.leafName }}</span>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label compact-label">Leaf Node Path</label>
+          <input type="text" class="form-control form-control-sm compact-input" [value]="leafNode" readonly>
+        </div>
+        <div class="mb-2">
+          <label class="form-label compact-label">Data Source</label>
+          <input type="text" class="form-control form-control-sm compact-input" [value]="dataSourceLabel" readonly>
+        </div>
+      </div>
+
+      <!-- Component Palette Section -->
+      <div class="panel-section">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h6 class="panel-section-title mb-0">Component Palette (15 Elements)</h6>
+        </div>
+        <div class="palette-grid">
+          <button type="button" class="palette-btn" (click)="addSection('parameter')">
+            <span class="palette-icon">▦</span>
+            <span class="palette-label">Parameter Table</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('specimen')">
+            <span class="palette-icon">▤</span>
+            <span class="palette-label">Multi Specimen</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('reading')">
+            <span class="palette-icon">◫</span>
+            <span class="palette-label">Multi Reading</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('location')">
+            <span class="palette-icon">⌖</span>
+            <span class="palette-label">Location / Zone</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('condition')">
+            <span class="palette-icon">◌</span>
+            <span class="palette-label">Condition / Env</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('rule')">
+            <span class="palette-icon">✓</span>
+            <span class="palette-label">Parameter Rule</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('traverse')">
+            <span class="palette-icon">↗</span>
+            <span class="palette-label">Traverse / Depth</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('chart')">
+            <span class="palette-icon">⌁</span>
+            <span class="palette-label">Curve / Chart</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('classification')">
+            <span class="palette-icon">▥</span>
+            <span class="palette-label">Classification</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('custom')">
+            <span class="palette-icon">⊞</span>
+            <span class="palette-label">Custom Table</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('photo')">
+            <span class="palette-icon">▧</span>
+            <span class="palette-label">Photo / Attachment</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('formula')">
+            <span class="palette-icon">ƒx</span>
+            <span class="palette-label">Formula / Derived</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('narrative')">
+            <span class="palette-icon">¶</span>
+            <span class="palette-label">Remarks / Statement</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('checklist')">
+            <span class="palette-icon">☑</span>
+            <span class="palette-label">Checklist</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('traceability')">
+            <span class="palette-icon">🧾</span>
+            <span class="palette-label">Traceability Record</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Layout Outline Section -->
+      <div class="panel-section">
+        <h6 class="panel-section-title">Layout Outline</h6>
+        <div class="outline-list" *ngIf="sections.length > 0">
+          <div *ngFor="let s of sections; let i = index" class="outline-item"
+            [ngClass]="{ 'active': selectedSectionId === s.id }" (click)="selectSection(s.id)">
+            <span class="outline-item-title">{{ i + 1 }}. {{ s.title }}</span>
+            <div class="outline-item-actions" (click)="$event.stopPropagation()">
+              <button type="button" class="btn-icon-mini" (click)="moveSection(-1, s.id)" title="Move up">↑</button>
+              <button type="button" class="btn-icon-mini" (click)="moveSection(1, s.id)" title="Move down">↓</button>
+              <button type="button" class="btn-icon-mini text-danger" (click)="deleteSection(s.id)"
+                title="Remove section">✕</button>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="sections.length === 0" class="empty-outline-note">
+          No sections in this layout. Click any element in the palette above to add.
+        </div>
+        <button type="button" class="btn-lims btn-lims-add w-100 mt-2" (click)="clearAllSections()">
+          <i class="bi bi-trash me-1.5"></i><span>Clear all sections</span>
+        </button>
+      </div>
+
+      <!-- Layout Mapping Settings Section -->
+      <div class="panel-section">
+        <h6 class="panel-section-title">Format & Mapping Config</h6>
+        <div class="mb-2">
+          <label class="form-label compact-label">
+            <i class="bi bi-pencil-square me-1 text-danger"></i><span>Format / Layout Name *</span>
+          </label>
+          <input type="text" class="form-control form-control-sm compact-input fw-semibold" [(ngModel)]="layoutName"
+            [disabled]="isViewMode" placeholder="Custom Format Name...">
+        </div>
+        <div class="mb-2">
+          <label class="form-label compact-label">Format Code</label>
+          <input type="text" class="form-control form-control-sm compact-input font-monospace" [(ngModel)]="layoutCode"
+            [disabled]="isViewMode" placeholder="e.g. TL-TENSILE-01">
+        </div>
+        <div class="mb-2">
+          <label class="form-label compact-label">Revision</label>
+          <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="layoutRev"
+            [disabled]="isViewMode">
+        </div>
+        <div class="form-check compact-check mt-1" *ngIf="!isGlobalDefault">
+          <input class="form-check-input" type="checkbox" id="chkIsDefault" [(ngModel)]="isDefaultLayout"
+            [disabled]="isViewMode">
+          <label class="form-check-label" for="chkIsDefault">Set as Default Format for Selected Test</label>
+        </div>
+        <div class="form-check compact-check mt-1" *ngIf="!isGlobalDefault">
+          <input class="form-check-input" type="checkbox" id="chkApplyLeaf" [(ngModel)]="applyToLeaf"
+            [disabled]="isViewMode">
+          <label class="form-check-label" for="chkApplyLeaf">Apply to all tests of this leaf node</label>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top" *ngIf="currentLayoutId">
+          <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs font-monospace">
+            <i class="bi bi-cloud-check me-1"></i><span>{{ layoutCode || 'Configured Format' }}</span>
+          </span>
+          <button type="button" class="btn-lims btn-lims-remove btn-xs py-0 px-2" *ngIf="!isViewMode"
+            (click)="deleteCurrentLayout()" title="Delete this format from database">
+            <i class="bi bi-trash me-1"></i><span>Delete</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Resizer Divider Splitter Handle -->
+    <div class="panel-resizer panel-resizer-left" [class.is-active]="isResizingLeft"
+      [class.is-collapsed]="leftPanelCollapsed" (mousedown)="startResizeLeft($event)" (dblclick)="resetLeftWidth()"
+      title="Drag to resize Layout Components (Double-click to reset, Ctrl+[ to toggle)">
+      <div class="resizer-handle-grip" *ngIf="!leftPanelCollapsed">
+        <i class="bi bi-grip-vertical"></i>
+      </div>
+      <!-- Expand button when collapsed -->
+      <button type="button" class="resizer-expand-tab" *ngIf="leftPanelCollapsed" (click)="toggleLeftPanel()"
+        title="Expand Layout Components (Ctrl+[)">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- CENTER PANEL: Interactive Paper Canvas -->
+    <main class="studio-center">
+      <!-- Canvas Header Bar -->
+      <div class="canvas-header-bar">
+        <button type="button" *ngIf="leftPanelCollapsed" class="btn-lims btn-lims-secondary btn-expand-components me-1"
+          (click)="toggleLeftPanel()" title="Expand Layout Components (Ctrl+[)">
+          <i class="bi bi-layout-sidebar-inset me-1 text-danger"></i>
+          <span>Components</span>
+        </button>
+        <!-- Layout Structure Archetype Selector (Indirect Load) -->
+        <div class="layout-structure-picker">
+          <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs text-nowrap">
+            <i class="bi bi-diagram-3 me-1"></i><span>STRUCTURE</span>
+          </span>
+          <select class="form-select form-select-sm test-preview-select" [(ngModel)]="selectedPresetToLoad"
+            title="Choose structural layout preset to load into canvas">
+            <option value="">-- Load Structure Preset --</option>
+            <option *ngFor="let arch of layoutArchetypeList" [value]="arch.key">
+              {{ arch.icon }} {{ arch.label }}
+            </option>
+          </select>
+          <button type="button"
+            class="btn btn-sm btn-outline-danger py-0 px-2 btn-load-structure text-nowrap d-flex align-items-center gap-1"
+            [disabled]="!selectedPresetToLoad" (click)="loadSelectedStructurePreset()"
+            title="Click to load configured structure data for the selected preset">
+            <i class="bi bi-box-arrow-in-down"></i>
+            <span>Load</span>
+          </button>
+        </div>
+
+        <span class="badge badge-mapped" title="Mapped to: {{ currentLabTestName }}">
+          <i class="bi bi-link-45deg me-1"></i><span>{{ currentLabTestName }}</span>
+        </span>
+        <span class="badge badge-structure d-none d-xxl-inline" title="Layout captures structure only">
+          Structure Only
+        </span>
+        <div class="zoom-controls ms-auto">
+          <button type="button" class="btn-zoom" (click)="zoom(-1)" title="Zoom out">−</button>
+          <span class="zoom-text">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+          <button type="button" class="btn-zoom" (click)="zoom(1)" title="Zoom in">+</button>
+        </div>
+      </div>
+
+      <!-- Canvas Scroll Area -->
+      <div class="canvas-scroll-container">
+        <div class="canvas-paper" [ngStyle]="{ 'transform': 'scale(' + zoomLevel + ')' }">
+          <!-- Paper Header Simulation -->
+          <div class="paper-header">
+            <div class="paper-logo-box">LAB LOGO</div>
+            <div class="paper-title-area">
+              <h4 class="paper-main-title">UNIVERSAL TEST EXECUTION PREVIEW</h4>
+              <div class="paper-sub-title">{{ paperSub }} • Leaf Node: {{ leafNode }}</div>
+            </div>
+            <div class="paper-meta-box">
+              <div><strong>Case:</strong> DEMO-00024</div>
+              <div><strong>Status:</strong> In Execution</div>
+              <div><strong>Version:</strong> Draft {{ layoutRev }}</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Execution Section Stack -->
+          <div class="sections-stack">
+            <div *ngFor="let s of sections; let i = index" class="exec-section-card" [ngClass]="{
+                   'is-selected': selectedSectionId === s.id,
+                   'is-half': s.config.width === 'Half Width',
+                   'is-disabled': s.config.enabled === false,
+                   'is-compact': s.config.density === 'Compact',
+                   'is-large': s.config.density === 'Large'
+                 }">
+              <!-- Section Header -->
+              <div class="exec-sec-header" (click)="selectSection(s.id)">
+                <span class="sec-number-title">{{ i + 1 }}. {{ s.title }}</span>
+                <span class="sec-type-badge">{{ componentNames[s.type] }}</span>
+                <span *ngIf="s.config.width === 'Half Width'" class="badge bg-light text-dark ms-1">Half Width</span>
+                <span *ngIf="s.config.visibility !== 'Always'" class="badge bg-warning text-dark ms-1">{{
+                  s.config.visibility }}</span>
+                <span *ngIf="s.config.enabled === false" class="badge bg-secondary ms-1">Disabled</span>
+                <span *ngIf="s.config.reportable === false" class="badge bg-light text-muted ms-1">Internal only</span>
+                <span class="sec-config-link ms-auto">
+                  <i class="bi bi-gear-fill me-1.5"></i><span>Configure</span>
+                </span>
+                <button type="button" class="btn-sec-delete" (click)="$event.stopPropagation(); deleteSection(s.id)"
+                  title="Remove section">✕</button>
+              </div>
+
+              <!-- Section Body Rendering -->
+              <div class="exec-sec-body">
+                <!-- 1. Parameter Table -->
+                <ng-container *ngIf="s.type === 'parameter'">
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <tr>
+                          <th>Parameter</th>
+                          <th *ngIf="s.config.columns?.unit !== false">Unit</th>
+                          <th *ngIf="s.config.columns?.requirement !== false">Requirement</th>
+                          <th>{{ s.config.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed
+                            Result' }}</th>
+                          <th *ngIf="s.config.columns?.uncertainty">Uncertainty (±)</th>
+                          <th *ngIf="s.config.columns?.dl">DL / LOQ</th>
+                          <th *ngIf="s.config.columns?.status !== false">Status</th>
+                          <th *ngIf="s.config.columns?.method">Method / Standard</th>
+                          <th *ngIf="s.config.columns?.scope">NABL Scope</th>
+                          <th *ngIf="s.config.columns?.remarks">Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let p of getParameterListForSection(s); let pIdx = index">
+                          <td class="fw-semibold text-start">{{ p.name }}</td>
+                          <td *ngIf="s.config.columns?.unit !== false">{{ p.unit }}</td>
+                          <td *ngIf="s.config.columns?.requirement !== false" class="text-muted">
+                            {{ s.config.requirement === 'Hide Requirement' ? '—' : (demoMode ? p.requirement : 'Runtime
+                            Requirement') }}
+                          </td>
+                          <td class="text-center font-monospace">
+                            {{ demoMode ? (p.demoValue || '420') : '—' }}
+                          </td>
+                          <td *ngIf="s.config.columns?.uncertainty" class="text-muted">
+                            {{ demoMode ? '± 1.8' : 'Runtime' }}
+                          </td>
+                          <td *ngIf="s.config.columns?.dl" class="text-muted">
+                            {{ demoMode ? '< 0.001' : 'Runtime' }} </td>
+                          <td *ngIf="s.config.columns?.status !== false">
+                            <span *ngIf="demoMode" class="badge-status-pass">PASS</span>
+                            <span *ngIf="!demoMode" class="text-muted">Runtime</span>
+                          </td>
+                          <td *ngIf="s.config.columns?.method" class="text-muted">Runtime Method</td>
+                          <td *ngIf="s.config.columns?.scope" class="text-muted">In Scope</td>
+                          <td *ngIf="s.config.columns?.remarks" class="text-muted">Runtime</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </ng-container>
+
+                <!-- 2. Multi Specimen Matrix -->
+                <ng-container *ngIf="s.type === 'specimen'">
+                  <!-- Identification Header if enabled -->
+                  <div *ngIf="s.config.showIdentity && s.config.ident && s.config.ident.length > 0" class="mb-2">
+                    <table class="table-exec ident-table">
+                      <thead>
+                        <tr>
+                          <th>Identification</th>
+                          <th *ngFor="let idField of s.config.ident">{{ idField }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let specNum of getSpecimenCount(s)">
+                          <td class="fw-semibold text-start">{{ s.config.prefix || 'S' }}{{ specNum }}</td>
+                          <td *ngFor="let idField of s.config.ident" class="text-muted">
+                            {{ demoMode ? ('ID-' + specNum + '00') : 'Runtime' }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Specimen Matrix Table -->
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <tr>
+                          <th>Parameter</th>
+                          <th *ngFor="let specNum of getSpecimenCount(s)">{{ s.config.prefix || 'S' }}{{ specNum }}</th>
+                          <th *ngIf="s.config.showAverage">Average</th>
+                          <th *ngIf="s.config.showMinMax">Min</th>
+                          <th *ngIf="s.config.showMinMax">Max</th>
+                          <th *ngIf="s.config.showRequirement">Requirement</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let p of getSpecimenParamsForSection(s); let pIdx = index">
+                          <td class="fw-semibold text-start">{{ p.name }} ({{ p.unit }})</td>
+                          <td *ngFor="let specNum of getSpecimenCount(s)" class="font-monospace">
+                            {{ demoMode ? (420 + pIdx * 4 + specNum * 2) : '—' }}
+                          </td>
+                          <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">
+                            {{ demoMode ? (424 + pIdx * 4) : '—' }}
+                          </td>
+                          <td *ngIf="s.config.showMinMax" class="font-monospace">
+                            {{ demoMode ? (422 + pIdx * 4) : '—' }}
+                          </td>
+                          <td *ngIf="s.config.showMinMax" class="font-monospace">
+                            {{ demoMode ? (426 + pIdx * 4) : '—' }}
+                          </td>
+                          <td *ngIf="s.config.showRequirement" class="text-muted">
+                            {{ demoMode ? p.requirement : 'Runtime' }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </ng-container>
+
+                <!-- 3. Multi Reading Matrix -->
+                <ng-container *ngIf="s.type === 'reading'">
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <tr>
+                          <th>{{ s.config.readingLabel || (getReadingTargetForSection(s).name + ' Readings') }}</th>
+                          <th *ngFor="let rNum of getSpecimenCount(s)">R{{ rNum }}</th>
+                          <th>{{ s.config.aggregation || 'Average' }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let p of [getReadingTargetForSection(s)]; let pIdx = index">
+                          <td class="fw-semibold text-start">{{ p.name }} ({{ p.unit }})</td>
+                          <td *ngFor="let rNum of getSpecimenCount(s)" class="font-monospace">
+                            {{ demoMode ? (60 + pIdx * 2 + rNum) : '—' }}
+                          </td>
+                          <td class="fw-bold text-primary font-monospace">
+                            {{ demoMode ? (62 + pIdx * 2) : '—' }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </ng-container>
+
+                <!-- 4. Location / Zone Matrix -->
+                <ng-container *ngIf="s.type === 'location'">
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <tr>
+                          <th>Zone / Location</th>
+                          <th *ngFor="let p of currentTest.params.slice(0, 3)">{{ p.name }} ({{ p.unit }})</th>
+                          <th *ngIf="s.config.showAverage">Average</th>
+                          <th *ngIf="s.config.showRequirement">Requirement</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let loc of getLocationList(s); let locIdx = index">
+                          <td class="fw-semibold text-start">{{ loc }}</td>
+                          <td *ngFor="let p of currentTest.params.slice(0, 3); let pIdx = index" class="font-monospace">
+                            {{ demoMode ? (220 + locIdx * 15 + pIdx * 5) : '—' }}
+                          </td>
+                          <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">
+                            {{ demoMode ? (225 + locIdx * 15) : '—' }}
+                          </td>
+                          <td *ngIf="s.config.showRequirement" class="text-muted">
+                            {{ demoMode ? '≥ 200 HV' : 'Runtime' }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </ng-container>
+
+                <!-- 5. Condition / Environment -->
+                <ng-container *ngIf="s.type === 'condition'">
+                  <div class="condition-cards-grid" [ngClass]="{ 'two-col': s.config.layout === 'Two-column cards' }">
+                    <div *ngFor="let cond of getConditionFields(s)" class="condition-card">
+                      <span class="condition-label">{{ getConditionLabel(cond) }}</span>
+                      <strong class="condition-val font-monospace">
+                        {{ demoMode ? getConditionValue(cond) : 'Runtime' }}
+                      </strong>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- 6. Parameter Rule -->
+                <ng-container *ngIf="s.type === 'rule'">
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <tr>
+                          <th>Parameter</th>
+                          <th>Operator</th>
+                          <th>Value Source</th>
+                          <th>Observed Result</th>
+                          <th>Evaluation</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let p of currentTest.params; let pIdx = index">
+                          <td class="fw-semibold text-start">{{ p.name }}</td>
+                          <td class="font-monospace">{{ s.config.operator || '≥' }}</td>
+                          <td class="text-muted">{{ s.config.valueSource === 'Runtime Requirement' ? (demoMode ?
+                            p.requirement : 'Runtime Requirement') : s.config.valueSource }}</td>
+                          <td class="font-monospace">{{ demoMode ? (currentTest.demo[pIdx] || '420') : '—' }}</td>
+                          <td>
+                            <span *ngIf="demoMode" class="badge-status-pass">PASS</span>
+                            <span *ngIf="!demoMode" class="text-muted">Runtime</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div *ngIf="s.config.showRule" class="rule-footer-note mt-1">
+                    <span><strong>Decision Rule:</strong> {{ s.config.decisionRule || 'Simple acceptance (no guard
+                      band)' }}</span>
+                    <span class="ms-2"><strong>Fail Action:</strong> {{ s.config.failAction || 'Mark parameter FAIL'
+                      }}</span>
+                  </div>
+                </ng-container>
+
+                <!-- 7. Traverse / Sequence -->
+                <ng-container *ngIf="s.type === 'traverse'">
+                  <div class="row g-2 align-items-center">
+                    <div [ngClass]="s.config.showCurve !== false ? 'col-md-7' : 'col-12'"
+                      *ngIf="s.config.showTable !== false">
+                      <table class="table-exec">
+                        <thead>
+                          <tr>
+                            <th>{{ s.config.xField || 'Depth / Distance' }}</th>
+                            <th>{{ s.config.yField || 'Hardness Result' }}</th>
+                            <th>Unit</th>
+                            <th>Requirement</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let step of [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]; let sIdx = index">
+                            <td class="font-monospace">{{ step.toFixed(2) }}</td>
+                            <td class="font-monospace">{{ demoMode ? (610 - sIdx * 25) : '—' }}</td>
+                            <td>{{ s.config.xUnit || 'mm' }}</td>
+                            <td class="text-muted">{{ s.config.cutoffMode === 'No cutoff' ? '—' : 'Runtime Cutoff' }}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div [ngClass]="s.config.showTable !== false ? 'col-md-5' : 'col-12'"
+                      *ngIf="s.config.showCurve !== false">
+                      <div class="chart-box">
+                        <svg viewBox="0 0 400 130" class="svg-chart">
+                          <line x1="30" y1="10" x2="30" y2="110" stroke="#cbd5e1" />
+                          <line x1="30" y1="110" x2="380" y2="110" stroke="#cbd5e1" />
+                          <polyline points="35,25 90,38 150,55 220,78 300,98 370,105" fill="none" stroke="#da261c"
+                            stroke-width="2.5" />
+                          <line x1="30" y1="75" x2="380" y2="75" stroke="#b54708" stroke-dasharray="4 3" />
+                          <text x="375" y="72" font-size="8" fill="#b54708" text-anchor="end">Cutoff 500 HV</text>
+                        </svg>
+                        <div class="chart-caption">Hardness Depth Traverse Curve (mm vs HV)</div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- 8. Curve / Chart -->
+                <ng-container *ngIf="s.type === 'chart'">
+                  <div class="chart-box">
+                    <svg viewBox="0 0 700 160" class="svg-chart-full">
+                      <!-- Grid Lines -->
+                      <line *ngIf="s.config.showGrid !== false" x1="45" y1="25" x2="680" y2="25" stroke="#eef2f6" />
+                      <line *ngIf="s.config.showGrid !== false" x1="45" y1="55" x2="680" y2="55" stroke="#eef2f6" />
+                      <line *ngIf="s.config.showGrid !== false" x1="45" y1="85" x2="680" y2="85" stroke="#eef2f6" />
+                      <line *ngIf="s.config.showGrid !== false" x1="45" y1="115" x2="680" y2="115" stroke="#eef2f6" />
+
+                      <!-- Axes -->
+                      <line x1="45" y1="15" x2="45" y2="135" stroke="#98a2b3" />
+                      <line x1="45" y1="135" x2="680" y2="135" stroke="#98a2b3" />
+
+                      <!-- Cutoff Limit Line -->
+                      <line *ngIf="s.config.showLimit" x1="45" y1="65" x2="680" y2="65" stroke="#b54708"
+                        stroke-dasharray="5 4" />
+                      <text *ngIf="s.config.showLimit" x="675" y="62" font-size="9" fill="#b54708" text-anchor="end">Req
+                        Limit</text>
+
+                      <!-- Bar Chart Mode -->
+                      <ng-container *ngIf="s.config.chartType === 'bar'">
+                        <rect x="100" y="45" width="40" height="90" fill="#da261c" opacity="0.85" />
+                        <rect x="220" y="30" width="40" height="105" fill="#da261c" opacity="0.85" />
+                        <rect x="340" y="60" width="40" height="75" fill="#da261c" opacity="0.85" />
+                        <rect x="460" y="20" width="40" height="115" fill="#da261c" opacity="0.85" />
+                        <rect x="580" y="50" width="40" height="85" fill="#da261c" opacity="0.85" />
+                      </ng-container>
+
+                      <!-- Line / Scatter Mode -->
+                      <ng-container *ngIf="s.config.chartType !== 'bar'">
+                        <polyline *ngIf="s.config.chartType === 'line' || !s.config.chartType"
+                          points="50,125 150,105 250,85 350,68 450,45 550,38 650,20" fill="none" stroke="#da261c"
+                          stroke-width="3" />
+                        <ng-container *ngIf="s.config.chartType === 'scatter' || s.config.showPoints !== false">
+                          <circle cx="50" cy="125" r="4" fill="#da261c" />
+                          <circle cx="150" cy="105" r="4" fill="#da261c" />
+                          <circle cx="250" cy="85" r="4" fill="#da261c" />
+                          <circle cx="350" cy="68" r="4" fill="#da261c" />
+                          <circle cx="450" cy="45" r="4" fill="#da261c" />
+                          <circle cx="550" cy="38" r="4" fill="#da261c" />
+                          <circle cx="650" cy="20" r="4" fill="#da261c" />
+                        </ng-container>
+                      </ng-container>
+
+                      <!-- Axis Labels -->
+                      <text x="365" y="155" font-size="10" text-anchor="middle" fill="#526071">
+                        {{ s.config.xLabel || 'Runtime X' }} {{ s.config.xUnit ? '(' + s.config.xUnit + ')' : '' }}
+                      </text>
+                      <text transform="translate(15,75) rotate(-90)" font-size="10" text-anchor="middle" fill="#526071">
+                        {{ s.config.yLabel || 'Runtime Result' }} {{ s.config.yUnit ? '(' + s.config.yUnit + ')' : '' }}
+                      </text>
+                      <text *ngIf="s.config.showLegend !== false" x="680" y="14" font-size="9" text-anchor="end"
+                        fill="#526071">
+                        ● {{ s.config.yField || 'Result' }}
+                      </text>
+                    </svg>
+                  </div>
+                </ng-container>
+
+                <!-- 9. Rating / Classification -->
+                <ng-container *ngIf="s.type === 'classification'">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th>Class / Grade</th>
+                        <th *ngIf="s.config.showCriteria">Criteria / Scale</th>
+                        <th>Rating System</th>
+                        <th>Classification Result</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-semibold text-start">Observed Structural Rating</td>
+                        <td *ngIf="s.config.showCriteria" class="text-muted">Standard reference comparison</td>
+                        <td>{{ s.config.ratingSystem }}</td>
+                        <td>
+                          <span *ngIf="demoMode" class="badge bg-success-subtle text-success fw-bold">Type A (Thin 1.0,
+                            Heavy 1.5)</span>
+                          <span *ngIf="!demoMode" class="text-muted">Runtime</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </ng-container>
+
+                <!-- 10. Custom Table -->
+                <ng-container *ngIf="s.type === 'custom'">
+                  <table class="table-exec">
+                    <thead *ngIf="s.config.showHeader !== false">
+                      <tr>
+                        <th *ngFor="let col of getCustomColumns(s)">{{ col }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td *ngFor="let col of getCustomColumns(s)" class="text-muted">
+                          {{ demoMode ? 'Observed ' + col : 'Runtime' }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </ng-container>
+
+                <!-- 11. Photo / Attachment -->
+                <ng-container *ngIf="s.type === 'photo'">
+                  <div class="photos-grid">
+                    <div class="photo-plate-card">
+                      <div class="photo-placeholder-box">
+                        <i class="bi bi-camera me-1"></i>
+                        <span>Attachment 1</span>
+                      </div>
+                      <div class="photo-caption-info">
+                        <div>{{ s.config.caption || 'Runtime attachment caption' }}</div>
+                        <div class="text-muted small" *ngIf="s.config.showMagnification">Mag: 100X • Etchant: 2% Nital
+                        </div>
+                      </div>
+                    </div>
+                    <div class="photo-plate-card">
+                      <div class="photo-placeholder-box">
+                        <i class="bi bi-camera me-1"></i>
+                        <span>Attachment 2</span>
+                      </div>
+                      <div class="photo-caption-info">
+                        <div>{{ s.config.caption || 'Runtime attachment caption' }}</div>
+                        <div class="text-muted small" *ngIf="s.config.showMagnification">Mag: 500X • Etchant: 2% Nital
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- 12. Formula / Derived -->
+                <ng-container *ngIf="s.type === 'formula'">
+                  <div class="condition-cards-grid">
+                    <div class="condition-card">
+                      <span class="condition-label">Formula Source</span>
+                      <strong class="condition-val">{{ s.config.formulaSource }}</strong>
+                    </div>
+                    <div class="condition-card" *ngIf="s.config.showInputs">
+                      <span class="condition-label">Inputs</span>
+                      <strong class="condition-val">Mapped runtime parameters</strong>
+                    </div>
+                    <div class="condition-card">
+                      <span class="condition-label">{{ s.config.resultLabel || 'Calculated Result' }}</span>
+                      <strong class="condition-val text-primary font-monospace">{{ demoMode ? '0.9967' : 'Runtime'
+                        }}</strong>
+                    </div>
+                    <div class="condition-card">
+                      <span class="condition-label">Precision / Rounding</span>
+                      <strong class="condition-val">{{ s.config.precision }} • {{ s.config.rounding || 'Half up'
+                        }}</strong>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- 13. Narrative / Statement -->
+                <ng-container *ngIf="s.type === 'narrative'">
+                  <div class="narrative-box">
+                    <div class="narrative-meta">
+                      <span class="badge bg-secondary me-1.5">{{ s.config.category || 'Remarks' }}</span>
+                      <span class="text-muted">Type: {{ s.config.inputType }}</span>
+                      <span *ngIf="s.config.required" class="badge bg-danger-subtle text-danger ms-1.5">Required</span>
+                    </div>
+                    <div class="narrative-text">
+                      {{ demoMode ? 'The test was carried out strictly as per standard test method. The specimen
+                      conforms to the specified acceptance criteria.' : 'Runtime analyst remarks or statements will be
+                      recorded here.' }}
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- 14. Checklist -->
+                <ng-container *ngIf="s.type === 'checklist'">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th>Inspection Point</th>
+                        <th *ngIf="s.config.showCriteria">Criteria</th>
+                        <th>Observation Response</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of getChecklistItems(s)">
+                        <td class="fw-semibold text-start">{{ item }}</td>
+                        <td *ngIf="s.config.showCriteria" class="text-muted">Configured standard criteria</td>
+                        <td class="font-monospace">{{ demoMode ? 'Conforming' : 'Runtime' }}</td>
+                        <td>
+                          <span *ngIf="demoMode" class="badge-status-pass">PASS</span>
+                          <span *ngIf="!demoMode" class="text-muted">Runtime</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </ng-container>
+
+                <!-- 15. Traceability / Tech Record -->
+                <ng-container *ngIf="s.type === 'traceability'">
+                  <div class="condition-cards-grid" [ngClass]="{ 'two-col': s.config.layout === 'Two-column cards' }">
+                    <div *ngFor="let f of s.config.fields" class="condition-card">
+                      <span class="condition-label">{{ f }}</span>
+                      <strong class="condition-val font-monospace">
+                        {{ demoMode ? (f.includes('Analyst') ? 'J. Smith (Tech-01)' : f.includes('Date') ? '2026-10-06'
+                        : f.includes('Equipment') ? 'UTM-Instron 600kN' : 'Runtime') : 'Runtime' }}
+                      </strong>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paper Footer Note -->
+          <div class="paper-footer-note">
+            Runtime values, requirements, method/version and applicable specification are resolved from the transaction.
+            This layout stores presentation and configuration rules only.
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas Footer Action Bar -->
+      <footer class="canvas-footerbar">
+        <span class="canvas-footer-hint">
+          <i class="bi bi-info-circle me-1.5 text-danger"></i><span>{{ selectedSection ? ('Configuring ' + selectedSection.title + ' from the right panel.') : 'Select a section
+          in the canvas to configure.' }}</span>
+        </span>
+        <button type="button" class="btn-lims btn-lims-secondary btn-sm" (click)="moveSection(-1)"
+          [disabled]="!selectedSectionId">
+          <i class="bi bi-arrow-up me-1.5"></i><span>Move Up</span>
+        </button>
+        <button type="button" class="btn-lims btn-lims-secondary btn-sm" (click)="moveSection(1)"
+          [disabled]="!selectedSectionId">
+          <i class="bi bi-arrow-down me-1.5"></i><span>Move Down</span>
+        </button>
+        <button type="button" class="btn-lims btn-lims-copy btn-sm" (click)="duplicateSection()"
+          [disabled]="!selectedSectionId">
+          <i class="bi bi-copy me-1.5"></i><span>Duplicate</span>
+        </button>
+        <button type="button" class="btn-lims btn-lims-delete btn-sm" (click)="deleteSection()"
+          [disabled]="!selectedSectionId">
+          <i class="bi bi-trash me-1.5"></i><span>Delete</span>
+        </button>
+        <div class="ms-auto">
+          <button type="button" class="btn-lims btn-lims-secondary btn-sm" (click)="openPayloadPreview()">
+            <i class="bi bi-filetype-json me-1.5"></i><span>Preview Payload</span>
+          </button>
+        </div>
+      </footer>
+    </main>
+
+    <!-- RIGHT PANEL: Dedicated Section Configuration -->
+    <aside class="studio-panel studio-panel-right">
+      <!-- Config Header -->
+      <div class="panel-header">
+        <div class="config-header-identity">
+          <span class="config-dot"></span>
+          <strong class="config-title">{{ selectedSection ? selectedSection.title : 'Section Configuration' }}</strong>
+          <small class="config-type-tag text-muted ms-auto">{{ selectedSection ? componentNames[selectedSection.type] :
+            'None selected' }}</small>
+        </div>
+      </div>
+
+      <!-- Config Tab Navigation -->
+      <nav class="config-tabs">
+        <button type="button" class="config-tab-btn" [ngClass]="{ 'active': activeConfigTab === 'basic' }"
+          (click)="activeConfigTab = 'basic'">Basic</button>
+        <button type="button" class="config-tab-btn" [ngClass]="{ 'active': activeConfigTab === 'data_binding' }"
+          (click)="activeConfigTab = 'data_binding'">Data Binding</button>
+        <button type="button" class="config-tab-btn" [ngClass]="{ 'active': activeConfigTab === 'field_structure' }"
+          (click)="activeConfigTab = 'field_structure'">Field Structure</button>
+        <button type="button" class="config-tab-btn" [ngClass]="{ 'active': activeConfigTab === 'entry_rules' }"
+          (click)="activeConfigTab = 'entry_rules'">Entry Rules</button>
+      </nav>
+
+      <!-- Config Body Form -->
+      <div class="config-body" *ngIf="selectedSection as s">
+        <div class="config-note mb-2">
+          <strong>{{ componentNames[s.type] }}</strong> configuration. These settings belong only to the selected
+          section. Changes reflect immediately in the canvas.
+        </div>
+
+        <!-- TAB 1: BASIC -->
+        <div *ngIf="activeConfigTab === 'basic'">
+          <!-- Identity block -->
+          <div class="config-card mb-2">
+            <div class="config-card-title">Identity & Layout</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Section Title</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
+                (ngModelChange)="onSectionTitleChange(s)" [disabled]="isViewMode">
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-0.5">
+                <label class="form-label compact-label mb-0">Stable Section Key *</label>
+                <span
+                  class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-monospace text-xxs">
+                  <i class="bi bi-lock-fill me-1"></i><span>AUTO-GENERATED</span>
+                </span>
+              </div>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted font-monospace"><i class="bi bi-key-fill"></i></span>
+                <input type="text"
+                  class="form-control form-control-sm compact-input font-monospace text-danger bg-light"
+                  [value]="s.config.sectionKey" readonly
+                  title="Auto-generated stable key used by Report Engine. Cannot be manually edited.">
+              </div>
+              <div class="text-muted text-xxs mt-0.5">Auto-generated unique key for QuestPDF & report data mapping.
+                Non-editable.</div>
+            </div>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label compact-label">Width</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.width">
+                  <option value="Full Width">Full Width</option>
+                  <option value="Half Width">Half Width</option>
+                  <option value="Auto">Auto</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Visibility</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.visibility">
+                  <option value="Always">Always</option>
+                  <option value="Only when data exists">Only when data exists</option>
+                  <option value="Only when PASS">Only when PASS</option>
+                  <option value="Only when FAIL">Only when FAIL</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
+
+
+        </div>
+
+        <!-- TAB 2: DATA BINDING -->
+        <div *ngIf="activeConfigTab === 'data_binding'">
+          <!-- 1. Section Binding Status Card -->
+          <div class="config-card mb-2">
+            <div class="config-card-title d-flex align-items-center justify-content-between">
+              <span>Section Binding Summary</span>
+              <span class="badge bg-danger-subtle text-danger font-monospace">{{ componentNames[s.type] }}</span>
+            </div>
+            <div class="binding-status-pill mb-2">
+              <i class="bi bi-link-45deg me-1.5 text-danger"></i>
+              <strong>{{ getSectionBindingSummary(s) }}</strong>
+            </div>
+            <div class="text-muted small mb-2">
+              <i class="bi bi-diagram-3 me-1.5 text-primary"></i><strong>Active Dataset:</strong> {{
+              getRelevantPoolsDescription(s) }}
+            </div>
+            <!-- Data Source View Mode Switcher -->
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+              <span class="small text-muted fw-semibold">Pool Scope:</span>
+              <div class="pool-mode-switch">
+                <button type="button" class="pool-mode-btn" [class.active]="dataSourceViewMode === 'relevant'"
+                  (click)="setDataSourceViewMode('relevant')">
+                  <i class="bi bi-funnel me-1.5"></i><span>Relevant to Section</span>
+                </button>
+                <button type="button" class="pool-mode-btn" [class.active]="dataSourceViewMode === 'all'"
+                  (click)="setDataSourceViewMode('all')">
+                  <i class="bi bi-grid-3x3-gap me-1.5"></i><span>All Data Sources</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Active Test Dataset Header -->
+          <div class="config-card mb-2">
+            <div class="config-card-title d-flex align-items-center justify-content-between">
+              <span>Central Test Dataset Pool</span>
+              <span class="badge bg-primary-subtle text-primary">{{ currentTest.label }}</span>
+            </div>
+            <div class="dataset-meta-grid mb-2">
+              <div class="dataset-meta-item">
+                <span class="dataset-meta-num">{{ currentDataset.parameters.length }}</span>
+                <span class="dataset-meta-lbl">Parameters</span>
+              </div>
+              <div class="dataset-meta-item">
+                <span class="dataset-meta-num">{{ activeConditionsCount }}/{{ currentDataset.conditions.length }}</span>
+                <span class="dataset-meta-lbl">Conditions</span>
+              </div>
+              <div class="dataset-meta-item">
+                <span class="dataset-meta-num">{{ activeDimensionsCount }}/{{ currentDataset.dimensions.length }}</span>
+                <span class="dataset-meta-lbl">Dimensions</span>
+              </div>
+              <div class="dataset-meta-item">
+                <span class="dataset-meta-num">{{ currentDataset.calculations.length }}</span>
+                <span class="dataset-meta-lbl">Calculated</span>
+              </div>
+            </div>
+            <div class="text-secondary small font-monospace">
+              Leaf: {{ currentTest.leaf }}
+            </div>
+          </div>
+
+          <!-- 3. Available Parameters Pool Table -->
+          <div class="config-card mb-2"
+            *ngIf="isPoolRelevantToSection('parameters', s) && currentDataset.parameters.length > 0">
+            <div class="config-card-title d-flex align-items-center justify-content-between">
+              <span>Parameters Pool ({{ currentDataset.parameters.length }})</span>
+              <span class="badge bg-secondary font-monospace">Live / Mapped</span>
+            </div>
+
+            <!-- Type-specific Data Binding for Parameter Table -->
+            <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'parameter'">
+              <div class="mb-2">
+                <label class="form-label compact-label">Parameter Mode</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.parameterMode">
+                  <option value="All runtime parameters">All runtime parameters</option>
+                  <option value="Configured parameter subset">Configured parameter subset</option>
+                  <option value="Runtime parameters by leaf node">Runtime parameters by leaf node</option>
+                </select>
+              </div>
+
+              <!-- Interactive Parameter Subset Selector -->
+              <div class="mt-2 pt-2 border-top" *ngIf="s.config.parameterMode === 'Configured parameter subset'">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <span class="fw-bold small text-dark"><i class="bi bi-funnel me-1 text-danger"></i><span>Included
+                    Parameters:</span></span>
+                  <div class="d-flex gap-1">
+                    <button type="button" class="btn-xs-action" (click)="selectAllParameters(s)">Select All</button>
+                    <button type="button" class="btn-xs-action text-danger"
+                      (click)="deselectAllParameters(s)">Clear</button>
+                  </div>
+                </div>
+                <div class="dataset-checks-list">
+                  <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField"
+                    class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                    <div class="d-flex align-items-center">
+                      <input class="form-check-input my-0 me-2" type="checkbox"
+                        [checked]="isParameterInSubset(s, p.name)" (change)="toggleParameterInSubset(s, p.name)">
+                      <span class="dataset-check-label fw-medium">{{ p.name }}</span>
+                    </div>
+                    <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive mt-2">
+              <table class="table-exec dataset-table">
+                <thead>
+                  <tr>
+                    <th class="text-start">Name</th>
+                    <th>Unit</th>
+                    <th>Req</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of currentDataset.parameters">
+                    <td class="fw-semibold text-start text-truncate" title="{{ p.name }}">
+                      {{ p.name }}
+                      <span class="badge bg-success-subtle text-success ms-1 font-monospace" *ngIf="p.isCalculated"
+                        [title]="p.formulaDisplay || formatFormula(p.formula)">
+                        <i class="bi bi-calculator me-1"></i>ƒx
+                      </span>
+                    </td>
+                    <td class="font-monospace">{{ p.unit }}</td>
+                    <td class="text-muted small">{{ p.requirement }}</td>
+                    <td><span class="badge bg-light text-dark">{{ p.type }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Type-specific Data Binding for Specimen Matrix -->
+            <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'specimen'">
+              <div class="mb-2">
+                <label class="form-label compact-label">Specimen Source</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.specimenSource">
+                  <option value="Execution Specimens">Execution Specimens</option>
+                  <option value="Runtime specimen list">Runtime specimen list</option>
+                  <option value="Sample preparation specimens">Sample preparation specimens</option>
+                </select>
+              </div>
+
+              <!-- Specimen Parameter Columns Selector -->
+              <div class="mt-2">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <span class="fw-bold small text-dark"><i class="bi bi-table me-1 text-danger"></i><span>Specimen Parameter
+                    Columns:</span></span>
+                  <div class="d-flex gap-1">
+                    <button type="button" class="btn-xs-action" (click)="selectAllSpecimenParams(s)">All</button>
+                    <button type="button" class="btn-xs-action text-secondary"
+                      (click)="resetSpecimenParams(s)">Reset</button>
+                  </div>
+                </div>
+                <div class="dataset-checks-list">
+                  <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField"
+                    class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                    <div class="d-flex align-items-center">
+                      <input class="form-check-input my-0 me-2" type="checkbox"
+                        [checked]="isSpecimenParamSelected(s, p.name)" (change)="toggleSpecimenParam(s, p.name)">
+                      <span class="dataset-check-label fw-medium">{{ p.name }}</span>
+                    </div>
+                    <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Environmental Conditions Pool -->
+          <div class="config-card mb-2" *ngIf="isPoolRelevantToSection('conditions', s)">
+            <div class="d-flex align-items-center justify-content-between mb-1.5">
+              <div class="config-card-title mb-0">
+                Conditions Pool ({{ activeConditionsCount }} / {{ currentDataset.conditions.length }} Active)
+              </div>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn-xs-action text-success" (click)="selectAllConditions()"
+                  title="Select all conditions">
+                  <i class="bi bi-check-all me-1"></i><span>All</span>
+                </button>
+                <button type="button" class="btn-xs-action text-secondary" (click)="deselectAllConditions()"
+                  title="Deselect all conditions">
+                  <i class="bi bi-x me-1"></i><span>None</span>
+                </button>
+                <button type="button" class="btn-xs-action text-danger fw-semibold" (click)="toggleAddConditionForm()"
+                  title="Add custom condition">
+                  <i class="bi bi-plus-lg me-1"></i><span>Add</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Type-specific Data Binding for Conditions -->
+            <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'condition'">
+              <div class="config-card-title">Active Environmental Conditions</div>
+              <div class="config-checks-grid">
+                <label *ngFor="let c of currentDataset.conditions; trackBy: trackByField"
+                  class="form-check compact-check" [class.opacity-50]="!isConditionSelected(c.field)">
+                  <input class="form-check-input" type="checkbox" [checked]="isConditionFieldChecked(s, c)"
+                    (change)="toggleConditionField(s, c)">
+                  <span class="form-check-label">{{ c.label }}</span>
+                  <span class="badge bg-secondary-subtle text-secondary ms-1 font-monospace"
+                    *ngIf="!isConditionSelected(c.field)">(Inactive)</span>
+                </label>
+                <label *ngFor="let f of conditionMasterFields" class="form-check compact-check">
+                  <input class="form-check-input" type="checkbox" [checked]="s.config.fields?.includes(f)"
+                    (change)="s.config.fields = toggleArrayItem(s.config.fields, f)">
+                  <span class="form-check-label">{{ f }}</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'rule'">
+            <div class="mb-2">
+              <label class="form-label compact-label">Target Parameter from Dataset</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.parameter">
+                <option *ngFor="let p of currentDataset.parameters" [value]="p.name">{{ p.name }} ({{ p.unit }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'traverse'">
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">Distance / X-Axis</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.xField"
+                  (ngModelChange)="onTraverseAxisChange(s)">
+                  <option *ngFor="let d of currentDataset.dimensions" [value]="d.label">{{ d.label }} ({{ d.unit }})
+                  </option>
+                  <option value="Depth from Surface">Depth from Surface (mm)</option>
+                  <option value="Distance from Centerline">Distance from Centerline (mm)</option>
+                  <option value="Exposure Time">Exposure Time (Hours)</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Hardness / Y-Axis</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.yField"
+                  (ngModelChange)="onTraverseAxisChange(s)">
+                  <option *ngFor="let p of currentDataset.parameters" [value]="p.name">{{ p.name }} ({{ p.unit }})
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'chart'">
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">X-Axis Data Source *</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.xField"
+                  (ngModelChange)="onChartAxisChange(s, 'x')">
+                  <optgroup label="Dimensions & Geometry">
+                    <option *ngFor="let d of currentDataset.dimensions" [value]="d.label">{{ d.label }} ({{ d.unit }})
+                    </option>
+                  </optgroup>
+                  <optgroup label="Test Parameters">
+                    <option *ngFor="let p of currentDataset.parameters" [value]="p.name">{{ p.name }} ({{ p.unit }})
+                    </option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Y-Axis Data Source *</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.yField"
+                  (ngModelChange)="onChartAxisChange(s, 'y')">
+                  <option *ngFor="let p of currentDataset.parameters" [value]="p.name">{{ p.name }} ({{ p.unit }})
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'formula'">
+            <div class="mb-2">
+              <label class="form-label compact-label">Target Output Parameter *</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.targetOutput"
+                (ngModelChange)="onFormulaTargetChange(s)">
+                <option *ngFor="let c of currentDataset.calculations" [value]="c.targetParam || c.field">{{ c.label }}
+                  ({{ c.formula }})</option>
+                <option *ngFor="let p of currentDataset.parameters" [value]="p.name">{{ p.name }} ({{ p.unit }})
+                </option>
+              </select>
+            </div>
+            <div class="config-card-title mt-2">Input Dataset Parameters Used</div>
+            <div class="dataset-checks-list">
+              <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField"
+                class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                <div class="d-flex align-items-center">
+                  <input class="form-check-input my-0 me-2" type="checkbox"
+                    [checked]="s.config.inputFields?.includes(p.name)" (change)="toggleFormulaInput(s, p.name)">
+                  <span class="dataset-check-label">{{ p.name }}</span>
+                </div>
+                <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
+              </label>
+              <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField"
+                class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
+                <div class="d-flex align-items-center">
+                  <input class="form-check-input my-0 me-2" type="checkbox"
+                    [checked]="s.config.inputFields?.includes(d.label)" (change)="toggleFormulaInput(s, d.label)">
+                  <span class="dataset-check-label">{{ d.label }}</span>
+                </div>
+                <span class="badge bg-light text-secondary font-monospace">{{ d.unit }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Inline Custom Add Condition Form -->
+          <div class="pool-inline-form mb-2" *ngIf="showAddConditionForm">
+            <div class="fw-semibold small text-danger mb-1 d-flex align-items-center">
+              <i class="bi bi-plus-circle me-1.5"></i><span>Add Custom Test Condition</span>
+            </div>
+            <div class="row g-1 mb-1.5">
+              <div class="col-5">
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="newConditionInput.label" placeholder="Condition Name *">
+              </div>
+              <div class="col-3">
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="newConditionInput.unit" placeholder="Unit (°C, %)">
+              </div>
+              <div class="col-4">
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="newConditionInput.demoValue" placeholder="Demo / Default">
+              </div>
+            </div>
+            <div class="d-flex justify-content-end gap-1">
+              <button type="button" class="btn-xs-action text-secondary"
+                (click)="showAddConditionForm = false">Cancel</button>
+              <button type="button" class="btn-xs-action text-success fw-bold" (click)="saveNewCondition()">
+                <i class="bi bi-check-lg me-1"></i><span>Save</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-1" *ngIf="currentDataset.conditions.length > 0">
+            <span *ngFor="let c of currentDataset.conditions; trackBy: trackByField" class="dataset-chip"
+              [class.deselected]="!isConditionSelected(c.field)">
+              <input type="checkbox" class="form-check-input mt-0 me-1" [checked]="isConditionSelected(c.field)"
+                (change)="toggleConditionSelection(c)">
+              <strong>{{ c.label }}</strong>
+              <span class="text-muted ms-1" *ngIf="c.unit">({{ c.unit }})</span>
+              <span class="badge bg-white text-dark ms-1 font-monospace">{{ c.demoValue }}</span>
+              <span class="badge bg-warning-subtle text-warning-emphasis ms-1" *ngIf="c.isCustom">Custom</span>
+              <button type="button" class="btn-badge-remove ms-1" *ngIf="c.isCustom"
+                (click)="removeCustomCondition(c.field)" title="Remove custom condition">×</button>
+            </span>
+          </div>
+          <div class="text-muted small mt-1" *ngIf="currentDataset.conditions.length === 0">
+            No conditions in pool. Click "+ Add" to add a custom condition.
+          </div>
+        </div>
+
+        <!-- 5. Specimen Dimensions Pool -->
+        <div class="config-card mb-2" *ngIf="isPoolRelevantToSection('dimensions', s)">
+          <div class="d-flex align-items-center justify-content-between mb-1.5">
+            <div class="config-card-title mb-0">
+              Dimensions Pool ({{ activeDimensionsCount }} / {{ currentDataset.dimensions.length }} Active)
+            </div>
+            <div class="d-flex gap-1">
+              <button type="button" class="btn-xs-action text-success" (click)="selectAllDimensions()"
+                title="Select all dimensions">
+                <i class="bi bi-check-all me-1"></i><span>All</span>
+              </button>
+              <button type="button" class="btn-xs-action text-secondary" (click)="deselectAllDimensions()"
+                title="Deselect all dimensions">
+                <i class="bi bi-x me-1"></i><span>None</span>
+              </button>
+              <button type="button" class="btn-xs-action text-danger fw-semibold" (click)="toggleAddDimensionForm()"
+                title="Add custom dimension">
+                <i class="bi bi-plus-lg me-1"></i><span>Add</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Inline Custom Add Dimension Form -->
+          <div class="pool-inline-form mb-2" *ngIf="showAddDimensionForm">
+            <div class="fw-semibold small text-danger mb-1 d-flex align-items-center">
+              <i class="bi bi-plus-circle me-1.5"></i><span>Add Custom Specimen Dimension</span>
+            </div>
+            <div class="row g-1 mb-1.5">
+              <div class="col-5">
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="newDimensionInput.label" placeholder="Dimension Name *">
+              </div>
+              <div class="col-3">
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="newDimensionInput.unit" placeholder="Unit (mm, mm²)">
+              </div>
+              <div class="col-4">
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="newDimensionInput.demoValue" placeholder="Demo / Default">
+              </div>
+            </div>
+            <div class="d-flex justify-content-end gap-1">
+              <button type="button" class="btn-xs-action text-secondary"
+                (click)="showAddDimensionForm = false">Cancel</button>
+              <button type="button" class="btn-xs-action text-success fw-bold" (click)="saveNewDimension()">
+                <i class="bi bi-check-lg me-1"></i><span>Save</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Specimen Dimensions (Geometry) Selector -->
+          <div class="mt-2 pt-2 border-top" *ngIf="s.type === 'specimen' && currentDataset.dimensions.length > 0">
+            <div class="d-flex align-items-center justify-content-between mb-1.5">
+              <span class="fw-bold small text-dark"><i class="bi bi-bounding-box me-1 text-danger"></i><span>Specimen
+                Dimensions (Geometry):</span></span>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn-xs-action" (click)="selectAllSpecimenDimensions(s)">All</button>
+                <button type="button" class="btn-xs-action text-secondary"
+                  (click)="resetSpecimenDimensions(s)">Reset</button>
+              </div>
+            </div>
+            <div class="dataset-checks-list">
+              <label *ngFor="let d of currentDataset.dimensions; trackBy: trackByField"
+                class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom"
+                [class.opacity-50]="!isDimensionSelected(d.field)">
+                <div class="d-flex align-items-center">
+                  <input class="form-check-input my-0 me-2" type="checkbox"
+                    [checked]="isSpecimenDimensionSelected(s, d.field)" (change)="toggleSpecimenDimension(s, d.field)">
+                  <span class="dataset-check-label fw-medium">{{ d.label }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace"
+                    *ngIf="!isDimensionSelected(d.field)">(Inactive)</span>
+                  <span class="badge bg-light text-secondary font-monospace">{{ d.unit }}</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-1" *ngIf="currentDataset.dimensions.length > 0">
+            <span *ngFor="let d of currentDataset.dimensions; trackBy: trackByField" class="dataset-chip"
+              [class.deselected]="!isDimensionSelected(d.field)">
+              <input type="checkbox" class="form-check-input mt-0 me-1" [checked]="isDimensionSelected(d.field)"
+                (change)="toggleDimensionSelection(d)">
+              <strong>{{ d.label }}</strong>
+              <span class="text-muted ms-1">({{ d.unit }})</span>
+              <span class="badge bg-white text-dark ms-1 font-monospace">{{ d.demoValue }}</span>
+              <span class="badge bg-warning-subtle text-warning-emphasis ms-1" *ngIf="d.isCustom">Custom</span>
+              <button type="button" class="btn-badge-remove ms-1" *ngIf="d.isCustom"
+                (click)="removeCustomDimension(d.field)" title="Remove custom dimension">×</button>
+            </span>
+          </div>
+          <div class="text-muted small mt-1" *ngIf="currentDataset.dimensions.length === 0">
+            No dimensions in pool. Click "+ Add" to add a custom dimension.
+          </div>
+        </div>
+
+        <!-- 6. Derived Calculations Pool (Only IsCalculated = true & with Formula) -->
+        <div class="config-card mb-2"
+          *ngIf="isPoolRelevantToSection('calculations', s) && currentDataset.calculations.length > 0">
+          <div class="config-card-title d-flex align-items-center justify-content-between">
+            <span>Calculations Pool ({{ currentDataset.calculations.length }})</span>
+            <span class="badge bg-danger-subtle text-danger font-monospace">IsCalculated = True</span>
+          </div>
+          <div class="text-muted small mb-1.5">
+            Parameters configured with calculation formulas in ParameterMaster:
+          </div>
+          <div class="d-flex flex-column gap-1.5">
+            <div *ngFor="let calc of currentDataset.calculations" class="formula-item-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-1.5">
+                  <strong class="text-dark small">{{ calc.label }}</strong>
+                  <span class="badge bg-success-subtle text-success" *ngIf="calc.isFromDb">
+                    <i class="bi bi-database me-1"></i><span>ParameterMaster</span>
+                  </span>
+                  <span class="badge bg-primary-subtle text-primary" *ngIf="!calc.isFromDb">
+                    <i class="bi bi-cpu me-1"></i><span>Standard</span>
+                  </span>
+                </div>
+                <span class="badge bg-light text-primary font-monospace" *ngIf="calc.unit">{{ calc.unit }}</span>
+              </div>
+              <div class="font-monospace small text-danger mt-1 bg-white p-1 rounded border">
+                {{ calc.formula }}
+              </div>
+              <div class="text-secondary small mt-0.5" *ngIf="calc.targetParam">
+                Target Parameter: <strong class="text-dark">{{ calc.targetParam }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: FIELD STRUCTURE -->
+        <div *ngIf="activeConfigTab === 'field_structure'">
+          <div class="config-card mb-2" *ngIf="s.type === 'reading'">
+            <div class="config-card-title">Reading Matrix Structure</div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">Reading Count</label>
+                <input type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
+                  min="1" max="20">
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Aggregation</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.aggregation">
+                  <option value="Average">Average</option>
+                  <option value="Minimum">Minimum</option>
+                  <option value="Maximum">Maximum</option>
+                  <option value="Median">Median</option>
+                  <option value="Standard Deviation">Standard Deviation</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Reading Column Label Prefix</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.readingLabel">
+            </div>
+            <div class="config-checks-grid">
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showIndividual">
+                <span class="form-check-label">Show Individual Readings</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showStatistics">
+                <span class="form-check-label">Show Statistics (Avg/Min/Max)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'location'">
+            <div class="config-card-title">Location / Zone Settings</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Location Mode</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.locationMode">
+                <option value="Named locations">Named locations</option>
+                <option value="Fixed count">Fixed count</option>
+                <option value="Runtime (technician adds)">Runtime (technician adds)</option>
+              </select>
+            </div>
+            <div class="mb-2" *ngIf="s.config.locationMode === 'Named locations'">
+              <label class="form-label compact-label">Location Names (comma separated)</label>
+              <input type="text" class="form-control form-control-sm compact-input"
+                [(ngModel)]="s.config.locationNames">
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'condition'">
+            <div class="config-card-title">Condition Structure</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Layout</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.layout">
+                <option value="Compact cards">Compact cards</option>
+                <option value="Two-column cards">Two-column cards</option>
+                <option value="Table">Table</option>
+              </select>
+            </div>
+            <div class="mt-2">
+              <label class="form-label compact-label">Extra Fields (comma separated)</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.extraFields"
+                placeholder="e.g. Medium, Flow rate">
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'specimen'">
+            <div class="config-card-title">Specimen Matrix Structure</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Matrix Orientation</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.orientation">
+                <option value="Parameters × Specimens">Parameters × Specimens</option>
+                <option value="Specimens × Parameters">Specimens × Parameters</option>
+              </select>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">Count Mode</label>
+                <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.countMode">
+                  <option value="Fixed count">Fixed count</option>
+                  <option value="Runtime (technician adds)">Runtime (technician adds)</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Specimen Count</label>
+                <input type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
+                  min="1" max="20">
+              </div>
+            </div>
+            <div class="config-checks-grid mt-2">
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage">
+                <span class="form-check-label">Show Average</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMinMax">
+                <span class="form-check-label">Show Min / Max</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showRequirement">
+                <span class="form-check-label">Show Requirement</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showIdentity">
+                <span class="form-check-label">Identification Table</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'parameter'">
+            <div class="config-card-title">Visible Table Columns</div>
+            <div class="config-checks-grid" *ngIf="s.config.columns">
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.unit">
+                <span class="form-check-label">Unit</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.requirement">
+                <span class="form-check-label">Requirement</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.result">
+                <span class="form-check-label">Observed Result</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.status">
+                <span class="form-check-label">Status</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.method">
+                <span class="form-check-label">Method Used</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.remarks">
+                <span class="form-check-label">Remarks</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.uncertainty">
+                <span class="form-check-label">Uncertainty (±)</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.dl">
+                <span class="form-check-label">Detection Limit / LOQ</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.columns.scope">
+                <span class="form-check-label">NABL Scope Mark</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'traverse'">
+            <div class="config-card-title">Traverse Structure</div>
+            <div class="config-checks-grid">
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showTable">
+                <span class="form-check-label">Show Table</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showCurve">
+                <span class="form-check-label">Show Curve</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'chart'">
+            <div class="config-card-title">Chart Structure</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Chart Type</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.chartType">
+                <option value="line">Line Chart</option>
+                <option value="scatter">Scatter Plot</option>
+                <option value="bar">Bar Chart</option>
+              </select>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">X-Axis Label</label>
+                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xLabel">
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Y-Axis Label</label>
+                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yLabel">
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">X-Axis Unit</label>
+                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xUnit">
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Y-Axis Unit</label>
+                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yUnit">
+              </div>
+            </div>
+            <div class="config-checks-grid">
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showPoints">
+                <span class="form-check-label">Show Data Points</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showGrid">
+                <span class="form-check-label">Show Grid Lines</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLimit">
+                <span class="form-check-label">Show Limit Line</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLegend">
+                <span class="form-check-label">Show Legend</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'traceability'">
+            <div class="config-card-title">Technical Record Fields (ISO 17025)</div>
+            <div class="config-checks-grid">
+              <label *ngFor="let tf of traceMasterFields" class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [checked]="s.config.fields?.includes(tf)"
+                  (change)="s.config.fields = toggleArrayItem(s.config.fields, tf)">
+                <span class="form-check-label">{{ tf }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: ENTRY RULES -->
+        <div *ngIf="activeConfigTab === 'entry_rules'">
+          <div class="config-card mb-2" *ngIf="s.type === 'parameter'">
+            <div class="config-card-title">Parameter Entry Rules</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Result Mode</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.resultMode">
+                <option value="Observed Result">Observed Result</option>
+                <option value="Observed + Calculated Result">Observed + Calculated Result</option>
+                <option value="Calculated Result only">Calculated Result only</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Requirement Source</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.requirement">
+                <option value="Runtime Requirement">Runtime Requirement</option>
+                <option value="Hide Requirement">Hide Requirement</option>
+                <option value="Show only when available">Show only when available</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'rule'">
+            <div class="config-card-title">Rule Evaluation</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Operator</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.operator">
+                <option value="≥">≥ (Greater than or equal)</option>
+                <option value="≤">≤ (Less than or equal)</option>
+                <option value="=">= (Equal)</option>
+                <option value="Within Range">Within Range</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Value Source / Requirement</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.valueSource"
+                placeholder="Runtime Requirement or limit">
+            </div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Decision Rule (ISO 17025 cl. 7.8.6)</label>
+              <select class="form-select form-select-sm compact-select" [(ngModel)]="s.config.decisionRule">
+                <option value="Simple acceptance (no guard band)">Simple acceptance (no guard band)</option>
+                <option value="Guard band (uncertainty considered)">Guard band (uncertainty considered)</option>
+                <option value="Customer specified rule">Customer specified rule</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'traverse'">
+            <div class="config-card-title">Traverse Execution Rules</div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">Cut-off Hardness Limit</label>
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="s.config.cutoffHardness" placeholder="e.g. 550 or 250">
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Traverse Step Pitch</label>
+                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.stepValue"
+                  placeholder="0.05 mm">
+              </div>
+            </div>
+          </div>
+
+          <div class="config-card mb-2" *ngIf="s.type === 'formula'">
+            <div class="config-card-title">Formula Execution Rules</div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Formula Expression</label>
+              <input type="text" class="form-control form-control-sm compact-input font-monospace"
+                [(ngModel)]="s.config.formulaExpression" placeholder="e.g. UTS = PeakLoad / Area">
+            </div>
+            <div class="mb-2">
+              <label class="form-label compact-label">Result Label</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.resultLabel">
+            </div>
+          </div>
+
+          <div class="config-card mb-2">
+            <div class="config-card-title">Execution Rules</div>
+            <div class="config-checks-grid">
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enabled">
+                <span class="form-check-label">Enable Section</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.runtimeAdjust">
+                <span class="form-check-label">Allow Runtime Adjustment</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showRequirement">
+                <span class="form-check-label">Show Specification Requirement</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.reportable">
+                <span class="form-check-label">Include in Final Report</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-3 text-center text-muted" *ngIf="!selectedSection">
+        <i class="bi bi-cursor-fill me-1"></i><span>Please select a section in the execution canvas to configure its properties.</span>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MODAL 1: Interactive Technician Execution Preview Workbench -->
+  <div class="modal-backdrop-custom" *ngIf="previewModalOpen">
+    <div class="modal-workbench">
+      <div class="modal-header-bar">
+        <div class="d-flex align-items-center gap-2">
+          <span class="workbench-badge">TECHNICIAN WORKBENCH</span>
+          <strong class="workbench-title">Execution Result Entry Simulation</strong>
+          <span class="text-muted small">({{ currentTest.label }} • {{ currentTest.sub }})</span>
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-2">
+          <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="submitPreviewResult()">
+            <i class="bi bi-cloud-arrow-up me-1.5"></i><span>Submit Result</span>
+          </button>
+          <button type="button" class="btn-lims btn-lims-cancel btn-sm" (click)="closePreviewModal()">
+            <i class="bi bi-x-lg me-1.5"></i><span>Close</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-body-scroll">
+        <div class="container-fluid p-3">
+          <!-- Simulation Meta Card -->
+          <div class="card p-3 mb-3 border bg-white shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <h5 class="fw-bold mb-1 text-dark">{{ currentTest.label }}</h5>
+                <div class="text-muted small">{{ currentTest.sub }} • Leaf Node: {{ currentTest.leaf }}</div>
+                <div class="text-secondary small mt-1">
+                  Interactive technician data-entry view. Status evaluates live against requirements upon keystroke.
+                </div>
+              </div>
+              <span class="badge bg-danger-subtle text-danger px-3 py-2 fw-bold">CASE: DEMO-00024</span>
+            </div>
+          </div>
+
+          <!-- Section-by-section live entry cards -->
+          <div *ngFor="let s of sections; let i = index" class="card mb-3 border shadow-sm bg-white">
+            <div class="card-header bg-light py-2 px-3 d-flex align-items-center justify-content-between">
+              <span class="fw-bold text-dark">{{ i + 1 }}. {{ s.title }}</span>
+              <span class="badge bg-secondary">{{ componentNames[s.type] }}</span>
+            </div>
+
+            <div class="card-body p-3">
+              <!-- Parameter live entry -->
+              <ng-container *ngIf="s.type === 'parameter'">
+                <table class="table-exec">
+                  <thead>
+                    <tr>
+                      <th>Parameter</th>
+                      <th>Unit</th>
+                      <th>Requirement</th>
+                      <th>Technician Entry</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of currentTest.params; let pIdx = index">
+                      <td class="fw-semibold text-start">{{ p.name }}</td>
+                      <td>{{ p.unit }}</td>
+                      <td class="text-muted">{{ p.requirement }}</td>
+                      <td>
+                        <input type="text" class="form-control form-control-sm text-center entry-input"
+                          placeholder="Enter value" [ngModel]="previewEntries['param_' + pIdx] || ''"
+                          (ngModelChange)="onPreviewEntryChange('param_' + pIdx, $event, p.requirement)">
+                      </td>
+                      <td>
+                        <span *ngIf="previewStatus['param_' + pIdx] === true" class="badge-status-pass">PASS</span>
+                        <span *ngIf="previewStatus['param_' + pIdx] === false" class="badge-status-fail">FAIL</span>
+                        <span
+                          *ngIf="previewStatus['param_' + pIdx] === undefined || previewStatus['param_' + pIdx] === null"
+                          class="text-muted">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </ng-container>
+
+              <!-- Specimen live entry -->
+              <ng-container *ngIf="s.type === 'specimen'">
+                <table class="table-exec">
+                  <thead>
+                    <tr>
+                      <th>Parameter</th>
+                      <th *ngFor="let sp of getSpecimenCount(s)">{{ s.config.prefix || 'S' }}{{ sp }}</th>
+                      <th *ngIf="s.config.showAverage">Live Average</th>
+                      <th *ngIf="s.config.showRequirement">Requirement</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of currentTest.params; let pIdx = index">
+                      <td class="fw-semibold text-start">{{ p.name }} ({{ p.unit }})</td>
+                      <td *ngFor="let sp of getSpecimenCount(s)">
+                        <input type="number" class="form-control form-control-sm text-center entry-input"
+                          [ngModel]="previewEntries['spec_' + pIdx + '_' + sp] || ''"
+                          (ngModelChange)="onPreviewEntryChange('spec_' + pIdx + '_' + sp, $event, p.requirement, 'spec_' + pIdx)">
+                      </td>
+                      <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">
+                        {{ previewStats['spec_' + pIdx] ? previewStats['spec_' + pIdx].avg : '—' }}
+                      </td>
+                      <td *ngIf="s.config.showRequirement" class="text-muted">{{ p.requirement }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </ng-container>
+
+              <!-- Condition live entry -->
+              <ng-container *ngIf="s.type === 'condition'">
+                <div class="row g-2">
+                  <div *ngFor="let f of getConditionFields(s)" class="col-md-3">
+                    <label class="form-label compact-label">{{ getConditionLabel(f) }}</label>
+                    <input type="text" class="form-control form-control-sm compact-input font-monospace"
+                      [placeholder]="getConditionValue(f) || ('Enter ' + f)" [(ngModel)]="previewEntries['cond_' + f]">
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- Narrative live entry -->
+              <ng-container *ngIf="s.type === 'narrative'">
+                <label class="form-label compact-label">{{ s.config.label || 'Remarks / Statement' }}</label>
+                <textarea class="form-control form-control-sm" rows="3"
+                  [placeholder]="'Type ' + (s.config.inputType || 'remarks') + ' here...'"
+                  [(ngModel)]="previewEntries['narrative_' + s.id]"></textarea>
+              </ng-container>
+
+              <!-- Checklist live entry -->
+              <ng-container *ngIf="s.type === 'checklist'">
+                <table class="table-exec">
+                  <thead>
+                    <tr>
+                      <th>Inspection Point</th>
+                      <th>Response</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of getChecklistItems(s); let itIdx = index">
+                      <td class="fw-semibold text-start">{{ item }}</td>
+                      <td>
+                        <select class="form-select form-select-sm compact-select"
+                          [(ngModel)]="previewEntries['chk_' + itIdx]">
+                          <option value="">Select Response</option>
+                          <option value="PASS">Pass / Acceptable</option>
+                          <option value="FAIL">Fail / Non-Conforming</option>
+                          <option value="NA">Not Applicable</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </ng-container>
+
+              <!-- Reading live entry -->
+              <ng-container *ngIf="s.type === 'reading'">
+                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
+                  <div *ngFor="let i of getReadingCount(s)"
+                    [ngClass]="{'col-md-3': s.config.layout === 'Compact cards', 'col-md-6': s.config.layout === 'Two-column cards', 'col-12': !s.config.layout}">
+                    <label class="form-label compact-label">Reading {{ i }} ({{ s.config.unit }})</label>
+                    <input type="number" class="form-control form-control-sm compact-input text-center font-monospace"
+                      [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
+                  </div>
+                </div>
+                <table class="table-exec" *ngIf="s.config.layout === 'Table'">
+                  <thead>
+                    <tr>
+                      <th *ngFor="let i of getReadingCount(s)">R{{ i }}</th>
+                      <th *ngIf="s.config.showAverage">Average</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td *ngFor="let i of getReadingCount(s)">
+                        <input type="number" class="form-control form-control-sm text-center entry-input"
+                          [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
+                      </td>
+                      <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">—</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </ng-container>
+
+              <!-- Location live entry -->
+              <ng-container *ngIf="s.type === 'location'">
+                <div class="table-responsive">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th>Location / Zone</th>
+                        <th *ngFor="let p of currentTest.params.slice(0, 3)">{{ p.name }} ({{ p.unit }})</th>
+                        <th *ngIf="s.config.showAverage">Live Average</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let loc of getLocationList(s); let locIdx = index">
+                        <td class="fw-semibold text-start">{{ loc }}</td>
+                        <td *ngFor="let p of currentTest.params.slice(0, 3); let pIdx = index">
+                          <input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="Enter value"
+                            [(ngModel)]="previewEntries['loc_' + s.id + '_' + locIdx + '_' + pIdx]">
+                        </td>
+                        <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">—</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
+
+              <!-- Rule live entry -->
+              <ng-container *ngIf="s.type === 'rule'">
+                <div class="table-responsive">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th>Parameter</th>
+                        <th>Operator</th>
+                        <th>Requirement</th>
+                        <th>Technician Entry</th>
+                        <th>Evaluation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let p of currentTest.params; let pIdx = index">
+                        <td class="fw-semibold text-start">{{ p.name }}</td>
+                        <td class="font-monospace">{{ s.config.operator || '≥' }}</td>
+                        <td class="text-muted">{{ s.config.valueSource === 'Runtime Requirement' ? p.requirement :
+                          s.config.valueSource }}</td>
+                        <td>
+                          <input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="Enter value" [ngModel]="previewEntries['rule_' + s.id + '_' + pIdx] || ''"
+                            (ngModelChange)="onPreviewEntryChange('rule_' + s.id + '_' + pIdx, $event, p.requirement)">
+                        </td>
+                        <td>
+                          <span *ngIf="previewStatus['rule_' + s.id + '_' + pIdx] === true"
+                            class="badge-status-pass">PASS</span>
+                          <span *ngIf="previewStatus['rule_' + s.id + '_' + pIdx] === false"
+                            class="badge-status-fail">FAIL</span>
+                          <span
+                            *ngIf="previewStatus['rule_' + s.id + '_' + pIdx] === undefined || previewStatus['rule_' + s.id + '_' + pIdx] === null"
+                            class="text-muted">—</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
+
+              <!-- Traverse live entry -->
+              <ng-container *ngIf="s.type === 'traverse'">
+                <div class="table-responsive">
+                  <table class="table-exec table-bordered">
+                    <thead>
+                      <tr>
+                        <th class="bg-light">{{ s.config.xField || 'Depth' }} ({{ s.config.xUnit || 'mm' }})</th>
+                        <th class="bg-light">{{ s.config.yField || 'Hardness' }} ({{ s.config.yUnit || 'HV' }})</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="0.1"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="300"></td>
+                      </tr>
+                      <tr>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="0.2"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="280"></td>
+                      </tr>
+                      <tr>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="0.4"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
+                            placeholder="260"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
+
+              <!-- Chart live entry -->
+              <ng-container *ngIf="s.type === 'chart'">
+                <div class="chart-box">
+                  <svg viewBox="0 0 700 160" class="svg-chart-full">
+                    <!-- Grid Lines -->
+                    <line *ngIf="s.config.showGrid !== false" x1="45" y1="25" x2="680" y2="25" stroke="#eef2f6" />
+                    <line *ngIf="s.config.showGrid !== false" x1="45" y1="55" x2="680" y2="55" stroke="#eef2f6" />
+                    <line *ngIf="s.config.showGrid !== false" x1="45" y1="85" x2="680" y2="85" stroke="#eef2f6" />
+                    <line *ngIf="s.config.showGrid !== false" x1="45" y1="115" x2="680" y2="115" stroke="#eef2f6" />
+
+                    <!-- Axes -->
+                    <line x1="45" y1="15" x2="45" y2="135" stroke="#98a2b3" />
+                    <line x1="45" y1="135" x2="680" y2="135" stroke="#98a2b3" />
+
+                    <!-- Cutoff Limit Line -->
+                    <line *ngIf="s.config.showLimit" x1="45" y1="65" x2="680" y2="65" stroke="#b54708"
+                      stroke-dasharray="5 4" />
+                    <text *ngIf="s.config.showLimit" x="675" y="62" font-size="9" fill="#b54708" text-anchor="end">Req
+                      Limit</text>
+
+                    <!-- Bar Chart Mode -->
+                    <ng-container *ngIf="s.config.chartType === 'bar'">
+                      <rect x="100" y="45" width="40" height="90" fill="#da261c" opacity="0.85" />
+                      <rect x="220" y="30" width="40" height="105" fill="#da261c" opacity="0.85" />
+                      <rect x="340" y="60" width="40" height="75" fill="#da261c" opacity="0.85" />
+                      <rect x="460" y="20" width="40" height="115" fill="#da261c" opacity="0.85" />
+                      <rect x="580" y="50" width="40" height="85" fill="#da261c" opacity="0.85" />
+                    </ng-container>
+
+                    <!-- Line / Scatter Mode -->
+                    <ng-container *ngIf="s.config.chartType !== 'bar'">
+                      <polyline *ngIf="s.config.chartType === 'line' || !s.config.chartType"
+                        points="50,125 150,105 250,85 350,68 450,45 550,38 650,20" fill="none" stroke="#da261c"
+                        stroke-width="3" />
+                      <ng-container *ngIf="s.config.chartType === 'scatter' || s.config.showPoints !== false">
+                        <circle cx="50" cy="125" r="4" fill="#da261c" />
+                        <circle cx="150" cy="105" r="4" fill="#da261c" />
+                        <circle cx="250" cy="85" r="4" fill="#da261c" />
+                        <circle cx="350" cy="68" r="4" fill="#da261c" />
+                        <circle cx="450" cy="45" r="4" fill="#da261c" />
+                        <circle cx="550" cy="38" r="4" fill="#da261c" />
+                        <circle cx="650" cy="20" r="4" fill="#da261c" />
+                      </ng-container>
+                    </ng-container>
+
+                    <!-- Axis Labels -->
+                    <text x="365" y="155" font-size="10" text-anchor="middle" fill="#526071">
+                      {{ s.config.xLabel || 'Runtime X' }} {{ s.config.xUnit ? '(' + s.config.xUnit + ')' : '' }}
+                    </text>
+                    <text transform="translate(15,75) rotate(-90)" font-size="10" text-anchor="middle" fill="#526071">
+                      {{ s.config.yLabel || 'Runtime Result' }} {{ s.config.yUnit ? '(' + s.config.yUnit + ')' : '' }}
+                    </text>
+                    <text *ngIf="s.config.showLegend !== false" x="680" y="14" font-size="9" text-anchor="end"
+                      fill="#526071">
+                      ● {{ s.config.yField || 'Result' }}
+                    </text>
+                  </svg>
+                </div>
+              </ng-container>
+
+              <!-- Classification live entry -->
+              <ng-container *ngIf="s.type === 'classification'">
+                <table class="table-exec">
+                  <thead>
+                    <tr>
+                      <th>Rating System</th>
+                      <th *ngIf="s.config.showCriteria">Criteria / Scale</th>
+                      <th>Observed Classification / Grade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="fw-semibold text-start">{{ s.config.ratingSystem || 'Standard System' }}</td>
+                      <td *ngIf="s.config.showCriteria" class="text-muted">Standard reference comparison</td>
+                      <td>
+                        <input type="text" class="form-control form-control-sm text-center entry-input font-monospace"
+                          placeholder="e.g. Type A (Thin 1.0, Heavy 1.5)" [(ngModel)]="previewEntries['class_' + s.id]">
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </ng-container>
+
+              <!-- Custom Table live entry -->
+              <ng-container *ngIf="s.type === 'custom'">
+                <div class="table-responsive">
+                  <table class="table-exec">
+                    <thead *ngIf="s.config.showHeader !== false">
+                      <tr>
+                        <th *ngFor="let col of getCustomColumns(s)">{{ col }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td *ngFor="let col of getCustomColumns(s); let cIdx = index">
+                          <input type="text" class="form-control form-control-sm text-center entry-input"
+                            [placeholder]="'Enter ' + col" [(ngModel)]="previewEntries['custom_' + s.id + '_' + cIdx]">
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
+
+              <!-- Photo / Attachment live entry -->
+              <ng-container *ngIf="s.type === 'photo'">
+                <div class="row g-2">
+                  <div class="col-md-6" *ngFor="let pNum of [1, 2]">
+                    <div class="photo-preview-card p-2 border rounded bg-light text-center">
+                      <div class="photo-placeholder-box mb-2">
+                        <i class="bi bi-camera me-1.5"></i>
+                        <span>Attachment Plate #{{ pNum }}</span>
+                      </div>
+                      <input type="text" class="form-control form-control-sm compact-input"
+                        [placeholder]="'Attachment ' + pNum + ' Caption...'"
+                        [(ngModel)]="previewEntries['photo_cap_' + s.id + '_' + pNum]">
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- Formula live entry -->
+              <ng-container *ngIf="s.type === 'formula'">
+                <div class="p-2 border rounded bg-light d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-calculator text-primary fs-5"></i>
+                    <div>
+                      <span class="fw-semibold">{{ s.config.resultLabel || s.config.targetOutput || 'Calculated Result'
+                        }}</span>
+                      <div class="small text-muted font-monospace mt-1">{{ formatFormula(s.config.formulaSource || s.config.formulaExpression) || 'No formula mapped' }}</div>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <span
+                      class="badge bg-success-subtle text-success border border-success border-opacity-25 px-3 py-2 fs-6 font-monospace">
+                      Auto-Calculated
+                    </span>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- Traceability live entry -->
+              <ng-container *ngIf="s.type === 'traceability'">
+                <div class="row g-2">
+                  <div *ngFor="let f of s.config.fields" class="col-md-3">
+                    <label class="form-label compact-label">{{ f }}</label>
+                    <input type="text" class="form-control form-control-sm compact-input font-monospace"
+                      [placeholder]="f.includes('Analyst') ? 'Enter Analyst ID' : f.includes('Date') ? 'YYYY-MM-DD' : f.includes('Equipment') ? 'Equipment ID' : ('Enter ' + f)"
+                      [(ngModel)]="previewEntries['trace_' + s.id + '_' + f]">
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Output Payload Preview -->
+  <div class="modal-backdrop-custom" *ngIf="payloadPreviewModalOpen">
+    <div class="modal-dialog-custom modal-lg">
+      <div class="modal-header-bar">
+        <strong class="workbench-title">Reporting JSON Contract Preview</strong>
+        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closePayloadPreview()">✕</button>
+      </div>
+      <div class="p-3">
+        <div class="config-note mb-2">
+          This is the structural payload that will be sent to the Report Builder engine. It uses the stable `sectionKey`
+          and resolves structural fields based on your design.
+        </div>
+        <pre class="bg-dark text-light p-3 rounded payload-preview-pre">{{ getJsonPayloadPreview() }}</pre>
+        <div class="mt-3 text-end">
+          <button class="btn-lims btn-lims-secondary" (click)="closePayloadPreview()">Close Preview</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Multi-Test Mapping Modal -->
+  <div class="modal-backdrop-custom" *ngIf="showMultiTestModal">
+    <div class="modal-dialog-custom modal-lg">
+      <div class="modal-header-bar">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-link-45deg fs-5 text-primary"></i>
+          <strong class="workbench-title">Map Format to Multiple Laboratory Tests</strong>
+        </div>
+        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closeMultiTestModal()">✕</button>
+      </div>
+      <div class="p-3">
+        <div class="config-note mb-2">
+          Select laboratory tests that will share this layout format with <strong>{{ layoutName }}</strong> during execution.
+        </div>
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="input-group input-group-sm max-w-sm">
+            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control form-control-sm" placeholder="Filter tests..."
+              [(ngModel)]="multiTestSearchTerm">
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary text-white font-monospace">{{ additionalMappedLeafKeys.length }}
+              Selected</span>
+            <button type="button" class="btn-lims btn-lims-add btn-xs" (click)="selectAllAdditionalTests()">Select All
+              Filtered</button>
+            <button type="button" class="btn-lims btn-lims-cancel btn-xs" (click)="clearAllAdditionalTests()">Clear
+              All</button>
+          </div>
+        </div>
+
+        <div class="multi-test-list-scroll border rounded bg-white">
+          <div *ngFor="let t of getFilteredAvailableTests()"
+            class="multi-test-row d-flex align-items-center p-2 border-bottom cursor-pointer"
+            [class.selected]="isAdditionalTestSelected(t.uniqueKey)"
+            [class.table-light]="t.uniqueKey === getPrimaryLeafKey()" (click)="toggleAdditionalTest(t.uniqueKey)">
+            <input type="checkbox" class="form-check-input me-2 mt-0" [checked]="isAdditionalTestSelected(t.uniqueKey)"
+              [disabled]="t.uniqueKey === getPrimaryLeafKey()">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-1.5 mb-0.5">
+                <span class="fw-semibold text-dark small">{{ t.leafNode || t.name }}</span>
+                <span class="badge text-xxs"
+                  [ngClass]="t.isChemical ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle'">
+                  <i class="bi" [ngClass]="t.isChemical ? 'bi-radioactive me-1' : 'bi-collection me-1'"></i><span>{{ t.isChemical ? 'Chemical' : 'General' }}</span>
+                </span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace text-xxs"
+                  *ngIf="t.uniqueKey === getPrimaryLeafKey()">
+                  Primary Target
+                </span>
+              </div>
+              <div class="text-muted text-xxs font-monospace d-flex align-items-center gap-1">
+                <i class="bi bi-diagram-3 text-danger"></i>
+                <span class="text-dark fw-medium">Path:</span>
+                <span class="text-truncate">{{ t.leafPath || t.fullDisplayName || t.name }}</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="getFilteredAvailableTests().length === 0" class="p-3 text-center text-muted small">
+            No laboratory tests found matching "{{ multiTestSearchTerm }}".
+          </div>
+        </div>
+
+        <div class="mt-3 d-flex align-items-center justify-content-between">
+          <span class="text-muted text-xs">Primary Target Test is always automatically mapped.</span>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="closeMultiTestModal()">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

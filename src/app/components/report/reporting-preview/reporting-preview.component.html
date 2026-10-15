@@ -19,7 +19,7 @@
       <div class="d-flex align-items-center gap-2">
         <app-test-status-badge [status]="reportData.status"></app-test-status-badge>
         <button class="btn btn-sm btn-outline-light" type="button" (click)="goBack()">
-          <i class="bi bi-arrow-left me-1"></i>Back to List
+          <i class="bi bi-arrow-left me-1"></i><span>Back to List</span>
         </button>
       </div>
     </div>
@@ -65,8 +65,7 @@
                 <!-- Generate & Save: creates report on server (status-gated) -->
                 <button *ngIf="canGeneratePdf()" class="btn btn-sm btn-outline-danger"
                   (click)="generatePdf()" [disabled]="pdfGenerating" title="Generate & save report on server">
-                  <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i>
-                  {{ pdfGenerating ? "..." : "PDF" }}
+                  <i class="bi" [class.bi-file-pdf]="!pdfGenerating" [class.bi-hourglass-split]="pdfGenerating"></i><span>{{ pdfGenerating ? "..." : "PDF" }}</span>
                 </button>
               </div>
             </ng-container>
@@ -167,7 +166,7 @@
       <i class="bi bi-currency-rupee me-2 text-success"></i>
       <span class="fw-semibold">Pricing Information</span>
       <span *ngIf="hasPriceSnapshot" class="badge bg-light text-dark border ms-2" style="font-size:10px;">
-        <i class="bi bi-lock-fill"></i> Snapshot
+        <i class="bi bi-lock-fill"></i><span>Snapshot</span>
       </span>
     </div>
     <div class="section-body">
@@ -215,7 +214,7 @@
           </div>
           <div *ngIf="reportData?.amendment?.filePath && !(reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpg') || reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.jpeg') || reportData?.amendment?.fileName?.toLowerCase()?.endsWith('.png'))">
             <a [href]="reportData?.amendment?.filePath" target="_blank" class="link-primary small">
-              <i class="bi bi-paperclip me-1"></i>{{ reportData?.amendment?.fileName }}
+              <i class="bi bi-paperclip me-1"></i><span>{{ reportData?.amendment?.fileName }}</span>
             </a>
           </div>
         </div>
@@ -455,7 +454,7 @@
   <div class="review-action-bar" *ngIf="reportData?.actions?.length">
     <div class="d-flex align-items-center gap-3 flex-wrap">
       <button type="button" class="btn btn-cancel btn-sm fw-semibold" (click)="goBack()">
-        <i class="bi bi-arrow-left me-1"></i>Back
+        <i class="bi bi-arrow-left me-1"></i><span>Back</span>
       </button>
 
       <div class="btn-group" role="group">
@@ -473,7 +472,7 @@
               [class.bi-arrow-return-left]="act.name.toLowerCase().includes('back')"
               [class.bi-x-circle]="act.name.toLowerCase().includes('reject')"
               [class.bi-arrow-right]="!act.name.toLowerCase().includes('approve') && !act.name.toLowerCase().includes('back') && !act.name.toLowerCase().includes('reject')"
-            ></i>{{ act.name }}
+            ></i><span>{{ act.name }}</span>
           </label>
         </ng-container>
       </div>
@@ -490,7 +489,7 @@
       <button class="btn btn-primary btn-sm px-4"
         [disabled]="!selectedAction || (selectedAction.action !== 'Next' && !actionRemark)"
         (click)="submitReview()">
-        <i class="bi bi-send-check me-1"></i>Submit
+        <i class="bi bi-send-check me-1"></i><span>Submit</span>
       </button>
     </div>
   </div>
@@ -499,7 +498,7 @@
   <div *ngIf="reportData && !reportData?.actions?.length" class="review-action-bar">
     <div class="d-flex align-items-center justify-content-between">
       <button type="button" class="btn btn-cancel btn-sm fw-semibold" (click)="goBack()">
-        <i class="bi bi-arrow-left me-1"></i>Back
+        <i class="bi bi-arrow-left me-1"></i><span>Back</span>
       </button>
       <ng-container *ngIf="reportData.canSubmitForReportApproval">
         <button *hasPermission="'CanPerformTesting'"
@@ -507,8 +506,7 @@
           class="btn btn-primary btn-sm fw-semibold px-4"
           (click)="submitForReportApproval()"
           [disabled]="submittingForApproval">
-          <i class="bi me-1" [class.bi-send-check]="!submittingForApproval" [class.bi-hourglass-split]="submittingForApproval"></i>
-          {{ submittingForApproval ? 'Submitting...' : 'Submit for Report Approval' }}
+          <i class="bi me-1" [class.bi-send-check]="!submittingForApproval" [class.bi-hourglass-split]="submittingForApproval"></i><span>{{ submittingForApproval ? 'Submitting...' : 'Submit for Report Approval' }}</span>
         </button>
       </ng-container>
     </div>

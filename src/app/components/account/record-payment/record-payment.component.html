@@ -14,7 +14,7 @@
       <h3 class="fw-bold text-primary">{{ receiptNumber }}</h3>
       <div class="mt-3">
         <button class="btn btn-primary me-2" (click)="recordAnother()">
-          <i class="bi bi-plus-circle me-1"></i> Record Another Payment
+          <i class="bi bi-plus-circle me-1"></i><span>Record Another Payment</span>
         </button>
       </div>
     </div>
@@ -26,7 +26,7 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header bg-white">
           <h5 class="card-title mb-0">
-            <i class="bi bi-credit-card me-2"></i> Payment Details
+            <i class="bi bi-credit-card me-2"></i><span>Payment Details</span>
           </h5>
         </div>
         <div class="card-body">
@@ -125,11 +125,10 @@
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-save" [disabled]="isSubmitting || !selectedCustomerId">
                 <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-                <i class="bi bi-check-circle me-1" *ngIf="!isSubmitting"></i>
-                {{ isSubmitting ? 'Recording...' : 'Record Payment' }}
+                <i class="bi bi-check-circle me-1" *ngIf="!isSubmitting"></i><span>{{ isSubmitting ? 'Recording...' : 'Record Payment' }}</span>
               </button>
               <button type="button" class="btn btn-cancel" (click)="resetForm()">
-                <i class="bi bi-x-circle me-1"></i> Reset
+                <i class="bi bi-x-circle me-1"></i><span>Reset</span>
               </button>
             </div>
           </form>
@@ -144,7 +143,7 @@
       <div *ngIf="piInfo" class="card shadow-sm mb-3 border-warning">
         <div class="card-header bg-warning bg-opacity-10 py-2">
           <h6 class="card-title mb-0">
-            <i class="bi bi-file-earmark-text me-2 text-warning"></i> Advance Payment Against PI
+            <i class="bi bi-file-earmark-text me-2 text-warning"></i><span>Advance Payment Against PI</span>
           </h6>
         </div>
         <div class="card-body py-2">
@@ -174,7 +173,7 @@
           </div>
           <button *ngIf="piInfo.balance > 0" type="button" class="btn btn-outline-warning btn-sm w-100 mt-2"
             (click)="paymentForm.patchValue({ amount: piInfo.balance })">
-            <i class="bi bi-cash me-1"></i> Pay Full Balance (&#8377;{{ piInfo.balance | number:'1.2-2' }})
+            <i class="bi bi-cash me-1"></i><span>Pay Full Balance (&#8377;{{ piInfo.balance | number:'1.2-2' }})</span>
           </button>
         </div>
       </div>
@@ -183,7 +182,7 @@
       <div class="card shadow-sm">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">
-            <i class="bi bi-receipt me-2"></i> Outstanding Invoices
+            <i class="bi bi-receipt me-2"></i><span>Outstanding Invoices</span>
           </h5>
           <button *ngIf="outstandingInvoices.length" class="btn btn-sm btn-add"
                   (click)="selectAllInvoices()">
@@ -199,15 +198,13 @@
 
           <!-- No Customer -->
           <div *ngIf="!selectedCustomerId && !loadingInvoices" class="text-center py-4 text-muted">
-            <i class="bi bi-person-lines-fill fs-1 d-block mb-2"></i>
-            Select a customer to view outstanding invoices.
+            <i class="bi bi-person-lines-fill fs-1 d-block mb-2"></i><span>Select a customer to view outstanding invoices.</span>
           </div>
 
           <!-- No Invoices -->
           <div *ngIf="selectedCustomerId && !loadingInvoices && !outstandingInvoices.length"
                class="text-center py-4 text-muted">
-            <i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i>
-            No outstanding invoices found.
+            <i class="bi bi-check-circle fs-1 d-block mb-2 text-success"></i><span>No outstanding invoices found.</span>
           </div>
 
           <!-- Invoice List -->

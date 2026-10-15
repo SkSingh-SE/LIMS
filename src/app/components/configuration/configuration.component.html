@@ -3,8 +3,7 @@
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">Config List</label>
       <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
-        <i class="bi bi-plus-lg"></i>
-        Create Config
+        <i class="bi bi-plus-lg"></i><span>Create Config</span>
       </a>
     </div>
 
@@ -193,8 +192,7 @@
             <div class="d-flex justify-content-between m-2">
               <label class="form-label">Dropdown Values</label>
               <button type="button" class="btn btn-sm btn-add" (click)="addValue()">
-                <i class="bi bi-plus-circle-dotted"></i>
-                Add Option
+                <i class="bi bi-plus-circle-dotted"></i><span>Add Option</span>
               </button>
             </div>
             <div formArrayName="values" class="d-flex flex-column">

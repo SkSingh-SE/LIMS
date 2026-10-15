@@ -1,3 +1,79 @@
+:host {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+}
+
+.card-header-title {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.3px;
+}
+
+.card-form-header .btn-header-back {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer;
+  text-decoration: none !important;
+}
+
+.card-form-header .btn-header-back:hover,
+.card-form-header .btn-header-back:focus {
+  background-color: #ffffff !important;
+  color: var(--primary-color, #da261c) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-form-header .btn-header-back i {
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #ffffff !important;
+  transition: color 0.2s ease !important;
+}
+
+.card-form-header .btn-header-back:hover i,
+.card-form-header .btn-header-back:focus i {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.header-balance-spacer {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.form-label-sm {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+legend {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.2px;
+}
+
 .wide-input {
   min-width: 170px;
 }
@@ -270,5 +346,131 @@
 .form-check-input:checked {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
+}
+
+/* Accreditation Context Fieldset & Cards */
+.accreditation-context-fieldset {
+  border: 1px solid #e2e8f0 !important;
+  border-left: 4px solid var(--primary-color) !important;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.accreditation-card {
+  background-color: #fbfcfe;
+  border: 1px solid #e2e8f0;
+  min-height: 52px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.accreditation-card:hover {
+  border-color: #cbd5e1;
+  background-color: #f8fafc;
+}
+
+.accreditation-icon-box {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.accreditation-label {
+  font-size: 0.72rem;
+  line-height: 1.15;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.accreditation-value {
+  font-size: 0.84rem;
+  line-height: 1.25;
+}
+
+/* Resolved Hierarchy Display Box (Matches standard form control border and 28px height) */
+.resolved-hierarchy-box {
+  min-height: 28px;
+  height: 28px;
+  max-height: 28px;
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  padding: 0 0.5rem;
+  font-size: 0.78rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.resolved-hierarchy-box.has-selection {
+  border: 1px solid #ced4da;
+  background-color: #f8fafc;
+}
+
+.resolved-hierarchy-box .hierarchy-text {
+  font-size: 0.78rem;
+  color: #1e293b;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 26px;
+}
+
+.resolved-hierarchy-box .hierarchy-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+/* Ensure all form controls and searchable dropdowns in scope match standard 28px height */
+.form-control-sm,
+.form-select-sm,
+input.form-control-sm,
+select.form-select-sm {
+  min-height: 28px !important;
+  height: 28px !important;
+  font-size: 0.78rem !important;
+  padding: 0.15rem 0.5rem !important;
+  line-height: 1.35 !important;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group,
+:host ::ng-deep app-searchable-dropdown .input-group.input-group-sm,
+:host ::ng-deep app-searchable-dropdown .input-group:has(.form-control-sm) {
+  min-height: 28px !important;
+  height: 28px !important;
+  max-height: 28px !important;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group input,
+:host ::ng-deep app-searchable-dropdown .input-group .form-control,
+:host ::ng-deep app-searchable-dropdown .input-group .form-control-sm {
+  font-size: 0.78rem !important;
+  padding: 0 0.5rem !important;
+  line-height: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+}
+
+:host ::ng-deep app-searchable-dropdown .input-group .input-group-text {
+  padding: 0 0.35rem !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  line-height: 26px !important;
+}
+
+/* Sticky Action Bar & Theme-compliant Horizontal Border Line */
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  background-color: #ffffff;
+  border-top: 2px solid var(--primary-color) !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  padding: 0.65rem 0.75rem;
+  margin-top: 1.25rem;
+  z-index: 100;
 }
 

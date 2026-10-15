@@ -23,10 +23,10 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
           </div>
           <div class="unsaved-actions">
             <button type="button" class="btn btn-stay" (click)="stay()">
-              <i class="bi bi-arrow-left-circle"></i> Stay on Page
+              <i class="bi bi-arrow-left-circle"></i><span>Stay on Page</span>
             </button>
             <button type="button" class="btn btn-leave" (click)="leave()">
-              <i class="bi bi-box-arrow-right"></i> Leave Anyway
+              <i class="bi bi-box-arrow-right"></i><span>Leave Anyway</span>
             </button>
           </div>
         </div>

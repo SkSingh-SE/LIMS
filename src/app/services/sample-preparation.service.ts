@@ -23,6 +23,10 @@ export class SamplePreparationService {
     return this.http.get<any>(`${this.apiUrl}/by-sample/${sampleId}`);
   }
 
+  getByInward(inwardId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/by-inward/${inwardId}`);
+  }
+
   getOrCreateBySample(sampleId: number): Observable<any> {
     return this.getBySample(sampleId);
   }

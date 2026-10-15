@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TestResultService } from '../../../services/test-result.service';
@@ -6,20 +6,34 @@ import { ParameterService } from '../../../services/parameter.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { TestLayoutService } from '../../../services/test-layout.service';
 import { Observable } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
+import { ConfiguredTestLayoutRendererComponent } from '../configured-test-layout-renderer/configured-test-layout-renderer.component';
+import { TestVerdictPanelComponent } from '../test-verdict-panel/test-verdict-panel.component';
 import { FormsModule } from '@angular/forms';
+import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
 
 @Component({
   selector: 'app-test-result-entry-form',
   templateUrl: './test-result-entry-form.component.html',
   styleUrls: ['./test-result-entry-form.component.css'],
-  imports: [ReactiveFormsModule, CommonModule, SearchableDropdownComponent, DecimalOnlyDirective, TestStatusBadgeComponent, FormsModule],
+  imports: [
+    ReactiveFormsModule,
+    CommonModule,
+    RouterModule,
+    SearchableDropdownComponent,
+    DecimalOnlyDirective,
+    TestStatusBadgeComponent,
+    ConfiguredTestLayoutRendererComponent,
+    TestVerdictPanelComponent,
+    FormsModule
+  ],
 })
 export class TestResultEntryFormComponent implements OnInit, OnChanges {
   @Input() inputSampleId?: number;
@@ -37,13 +51,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   isViewMode: boolean = false;
   payloadLoaded: boolean = false;
 
-  // 7-Tab Workflow Navigation as per ISO 17025 Redesign
-  activeTab: 'info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history' = 'info';
+  // 6-Tab Workflow Navigation as per ISO 17025 Redesign (Parameters merged into Execution)
+  activeTab: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history' = 'info';
 
-  testTabs: { id: 'info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'; label: string; icon: string }[] = [
+  testTabs: { id: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'; label: string; icon: string }[] = [
     { id: 'info', label: 'Test Information', icon: 'bi-file-text' },
-    { id: 'parameters', label: 'Parameters', icon: 'bi-grid-3x3' },
-    { id: 'execution', label: 'Execution', icon: 'bi-play-circle' },
+    { id: 'execution', label: 'Test Execution', icon: 'bi-play-circle' },
     { id: 'calculations', label: 'Calculations', icon: 'bi-calculator' },
     { id: 'nabl', label: 'NABL & QA', icon: 'bi-shield-check' },
     { id: 'attachments', label: 'Attachments', icon: 'bi-paperclip' },
@@ -70,6 +83,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // Plan tabs - active tab index
   activePlanIndex: number = 0;
 
+  // Configured Test-Wise Layout State
+  currentTestLayout: any = null;
+  activeLayoutMode: 'configured' | 'default' = 'configured';
+  layoutCache: Record<string, any> = {};
+  loadingLayout: boolean = false;
+  availableLayoutTemplates: any[] = [];
+  selectedLayoutTemplateId: number | null = null;
+  planLayoutSelections: Record<number, any> = {};
+
   // Formula Builder Modal
   showFormulaBuilderModal = false;
   formulaBuilderTargetRow: { planIndex: number; testIndex: number; paramIndex: number } | null = null;
@@ -81,6 +103,34 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
   // Formula dependency warnings: key = "planIdx-testIdx-paramIdx", value = warning message
   formulaDependencyWarnings: Record<string, string> = {};
+  globalParamMap: Record<number, string> = {};
+
+  /**
+   * Returns a user-friendly human-readable formula display string.
+   * Never displays raw parameter IDs ({P240}) on any UI screen.
+   */
+  getFormulaDisplay(param: any, planIndex?: number, testIndex?: number): string {
+    if (!param) return '';
+    if (param.formulaDisplay && !/\{?P\d+\}?/i.test(param.formulaDisplay)) {
+      return param.formulaDisplay;
+    }
+    const expr = param.formulaExpression || param.formula || '';
+    if (!expr) return '';
+
+    const lookupList: any[] = [];
+    if (planIndex !== undefined && testIndex !== undefined && this.plans?.[planIndex]?.tests?.[testIndex]?.parameters) {
+      lookupList.push(...this.plans[planIndex].tests[testIndex].parameters);
+    }
+    if (planIndex !== undefined && testIndex !== undefined) {
+      try {
+        const formParams = this.getParameters(planIndex, testIndex)?.value;
+        if (Array.isArray(formParams)) lookupList.push(...formParams);
+      } catch {}
+    }
+    lookupList.push(this.globalParamMap);
+
+    return formatFormulaDisplay(expr, lookupList, this.globalParamMap);
+  }
 
   // Smart formula input
   smartFormulaInput = '';
@@ -200,9 +250,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     private equipmentService: EquipmentService,
     private testMethodService: TestMethodSpecificationService,
     private materialSpecService: MaterialSpecificationService,
+    private testLayoutService: TestLayoutService,
     private toastService: ToastService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -233,6 +285,18 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.buildStandaloneParamForm();
     this.buildFromMethodForm();
     this.buildRecordEnvironmentForm();
+    this.loadAvailableLayoutTemplates();
+    this.parameterService.getParameterDropdown('', 0, 500).subscribe({
+      next: (res) => {
+        (res || []).forEach((p: any) => {
+          const id = p.id ?? p.value;
+          const name = p.name ?? p.displayText;
+          if (id && name) {
+            this.globalParamMap[Number(id)] = String(name).trim();
+          }
+        });
+      }
+    });
     if (this.sampleId) {
       this.loadFullResultPayload(this.sampleId);
     } else {
@@ -368,6 +432,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         // Auto-evaluate formulas and validate dependencies on first load
         this.autoEvaluateAllFormulas();
 
+        // Load configured test-wise layout for active test
+        this.loadTestLayoutForPlan(this.activePlanIndex);
+
         // Auto-set view mode if all tests are finalized (Verified/PendingVerification)
         if (!this.canSaveAnyTest()) {
           this.isViewMode = true;
@@ -379,6 +446,305 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         // loading handled by interceptor
       }
     });
+  }
+
+  // ----------------------------------------------------------------
+  // Configured Test-Wise Layout Management
+  // ----------------------------------------------------------------
+  selectPlanTab(p: number): void {
+    this.activePlanIndex = p;
+    const saved = this.planLayoutSelections[p];
+    if (saved !== undefined) {
+      if (saved === null) {
+        this.selectedLayoutTemplateId = null;
+        this.loadTestLayoutForPlan(p);
+      } else if (saved === -1 || saved === '-1') {
+        this.selectedLayoutTemplateId = -1;
+        this.currentTestLayout = null;
+        this.activeLayoutMode = 'default';
+      } else {
+        this.onLayoutTemplateSelect(saved, false);
+      }
+    } else {
+      this.selectedLayoutTemplateId = null;
+      this.loadTestLayoutForPlan(p);
+    }
+  }
+
+  loadTestLayoutForPlan(planIndex: number): void {
+    const plan = this.plans[planIndex];
+    if (!plan) return;
+
+    const testId = plan.labTestId;
+    const subGroupId = plan.subGroupId || null;
+    const analysisTypeId = plan.analysisTypeId || null;
+    const leafNode = plan.leafNode || plan.tests?.[0]?.name || null;
+    const headerId = plan.headerId || plan.tests?.[0]?.headerId || `plan_${planIndex}`;
+
+    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}`;
+    if (this.layoutCache[cacheKey]) {
+      this.currentTestLayout = this.layoutCache[cacheKey];
+      this.selectedLayoutTemplateId = this.currentTestLayout?.id || null;
+      this.activeLayoutMode = 'configured';
+      return;
+    }
+
+    this.loadingLayout = true;
+    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leafNode).subscribe({
+      next: (template: any) => {
+        this.loadingLayout = false;
+        if (template && template.layoutConfigJson) {
+          try {
+            const parsed = JSON.parse(template.layoutConfigJson);
+            this.currentTestLayout = {
+              ...template,
+              parsedConfig: parsed,
+              sections: parsed.sections || []
+            };
+            this.selectedLayoutTemplateId = template.id || null;
+            this.layoutCache[cacheKey] = this.currentTestLayout;
+            this.activeLayoutMode = 'configured';
+          } catch (e) {
+            console.warn('Failed to parse layoutConfigJson', e);
+            this.currentTestLayout = null;
+            this.selectedLayoutTemplateId = null;
+            this.activeLayoutMode = 'default';
+          }
+        } else {
+          // No layout returned (204 NoContent or null)
+          this.currentTestLayout = null;
+          this.selectedLayoutTemplateId = null;
+          this.activeLayoutMode = 'default';
+        }
+      },
+      error: (err) => {
+        this.loadingLayout = false;
+        console.warn('Could not load configured layout, falling back to default layout', err);
+        this.currentTestLayout = null;
+        this.selectedLayoutTemplateId = null;
+        this.activeLayoutMode = 'default';
+      }
+    });
+  }
+
+  loadAvailableLayoutTemplates(): void {
+    this.testLayoutService.getAllLayouts({ PageNumber: 1, PageSize: 100, sortByColumn: 'id', sortOrder: 'desc' }).subscribe({
+      next: (res: any) => {
+        const list = res?.items || res?.data || res?.model || [];
+        this.availableLayoutTemplates = list;
+        if (this.currentTestLayout?.id) {
+          this.selectedLayoutTemplateId = this.currentTestLayout.id;
+        }
+      },
+      error: (err: any) => {
+        console.warn('Failed to load layout templates list', err);
+      }
+    });
+  }
+
+  getAvailableLayoutTemplatesForActiveTest(): any[] {
+    const plan = this.plans[this.activePlanIndex];
+    if (!plan) return this.availableLayoutTemplates;
+
+    const testId = plan.labTestId;
+    const testName = (plan.tests?.[0]?.name || plan.type || '').trim().toLowerCase();
+
+    return this.availableLayoutTemplates.filter(t => {
+      // Global default templates apply to all tests
+      if (t.isGlobalDefault) return true;
+      // Explicit match by LaboratoryTestId
+      if (t.laboratoryTestId && testId && Number(t.laboratoryTestId) === Number(testId)) return true;
+      // Explicit match by LaboratoryTestName
+      if (t.laboratoryTestName && t.laboratoryTestName.trim().toLowerCase() === testName) return true;
+      return false;
+    });
+  }
+
+  onLayoutTemplateSelect(layoutId: any, showToast: boolean = true): void {
+    this.planLayoutSelections[this.activePlanIndex] = layoutId;
+
+    if (layoutId === null || layoutId === 'auto' || layoutId === '') {
+      this.selectedLayoutTemplateId = null;
+      this.loadTestLayoutForPlan(this.activePlanIndex);
+      if (showToast) this.toastService.show('Auto-selected layout by hierarchy', 'info');
+      return;
+    }
+
+    if (layoutId === -1 || layoutId === '-1') {
+      this.selectedLayoutTemplateId = -1;
+      this.currentTestLayout = null;
+      this.activeLayoutMode = 'default';
+      if (showToast) this.toastService.show('Switched to Standard Fallback Layout', 'info');
+      return;
+    }
+
+    const targetId = Number(layoutId);
+    this.selectedLayoutTemplateId = targetId;
+
+    const found = this.availableLayoutTemplates.find(t => t.id === targetId);
+    if (found && found.layoutConfigJson) {
+      try {
+        const parsed = JSON.parse(found.layoutConfigJson);
+        this.currentTestLayout = {
+          ...found,
+          parsedConfig: parsed,
+          sections: parsed.sections || []
+        };
+        this.activeLayoutMode = 'configured';
+        if (showToast) this.toastService.show(`Applied Layout Template: ${found.layoutName}`, 'success');
+        return;
+      } catch (e) {
+        console.warn('Failed to parse cached layoutConfigJson', e);
+      }
+    }
+
+    this.loadingLayout = true;
+    this.testLayoutService.getLayoutById(targetId).subscribe({
+      next: (template: any) => {
+        this.loadingLayout = false;
+        if (template && template.layoutConfigJson) {
+          try {
+            const parsed = JSON.parse(template.layoutConfigJson);
+            this.currentTestLayout = {
+              ...template,
+              parsedConfig: parsed,
+              sections: parsed.sections || []
+            };
+            this.activeLayoutMode = 'configured';
+            if (showToast) this.toastService.show(`Applied Layout Template: ${template.layoutName}`, 'success');
+          } catch (e) {
+            console.error('Failed to parse layoutConfigJson', e);
+            this.toastService.show('Invalid layout JSON configuration', 'error');
+          }
+        }
+      },
+      error: (err: any) => {
+        this.loadingLayout = false;
+        console.error('Failed to fetch layout details', err);
+        this.toastService.show('Failed to load selected layout template', 'error');
+      }
+    });
+  }
+
+  toggleLayoutMode(mode: 'configured' | 'default'): void {
+    this.activeLayoutMode = mode;
+  }
+
+  getActiveTestGroup(): FormGroup {
+    if (!this.resultForm) return this.fb.group({});
+    const plansFA = this.resultForm.get('plans') as FormArray;
+    if (!plansFA || plansFA.length <= this.activePlanIndex) return this.fb.group({});
+    const planGroup = plansFA.at(this.activePlanIndex) as FormGroup;
+    const testsFA = planGroup?.get('tests') as FormArray;
+    if (!testsFA || testsFA.length === 0) return this.fb.group({});
+    return testsFA.at(0) as FormGroup;
+  }
+
+  getActiveParametersFormArray(): FormArray {
+    return (this.getActiveTestGroup()?.get('parameters') as FormArray) || this.fb.array([]);
+  }
+
+  @ViewChildren(ConfiguredTestLayoutRendererComponent) configuredRenderers!: QueryList<ConfiguredTestLayoutRendererComponent>;
+
+  getActivePlannedQuantity(): number {
+    const plan = this.plans[this.activePlanIndex];
+    return Number(plan?.plannedQuantity || plan?.quantity || plan?.tests?.[0]?.plannedQuantity || 1);
+  }
+
+  getActiveSpecimenCount(): number {
+    const plan = this.plans[this.activePlanIndex];
+    return Number(plan?.tests?.[0]?.totalSpecimens || plan?.totalSpecimens || this.getActivePlannedQuantity());
+  }
+
+  onWorkbenchSpecimenCountAdjust(delta: number): void {
+    if (this.isViewMode) return;
+    const current = this.getActiveSpecimenCount();
+    const next = Math.max(1, Math.min(20, current + delta));
+    this.updateWorkbenchSpecimenCount(next);
+  }
+
+  onWorkbenchSpecimenInputChange(event: Event): void {
+    if (this.isViewMode) return;
+    const input = event.target as HTMLInputElement;
+    const val = Number(input.value);
+    if (!isNaN(val) && val >= 1) {
+      this.updateWorkbenchSpecimenCount(Math.min(20, Math.max(1, Math.round(val))));
+    } else {
+      input.value = String(this.getActiveSpecimenCount());
+    }
+  }
+
+  updateWorkbenchSpecimenCount(count: number): void {
+    const plan = this.plans[this.activePlanIndex];
+    if (plan) {
+      plan.totalSpecimens = count;
+      if (plan.tests?.[0]) {
+        plan.tests[0].totalSpecimens = count;
+      }
+    }
+    if (this.configuredRenderers && this.configuredRenderers.length > 0) {
+      this.configuredRenderers.forEach(r => r.setSpecimenCount(count));
+    } else {
+      // If configured renderers are not active in DOM (e.g. user is on Info tab), resize FormArray directly
+      const tg = this.getActiveTestGroup();
+      const paramsFA = tg?.get('parameters') as FormArray;
+      if (paramsFA && paramsFA.length > 0) {
+        const names = new Set<string>();
+        let base = 0;
+        for (let i = 0; i < paramsFA.length; i++) {
+          const pName = (paramsFA.at(i).get('parameterName')?.value || '').trim().toLowerCase();
+          if (pName && names.has(pName)) break;
+          if (pName) names.add(pName);
+          base++;
+        }
+        if (base === 0) base = 6;
+        const targetLen = count * base;
+        if (paramsFA.length > targetLen) {
+          while (paramsFA.length > targetLen) {
+            paramsFA.removeAt(paramsFA.length - 1);
+          }
+        } else if (paramsFA.length < targetLen) {
+          while (paramsFA.length < targetLen) {
+            const templateIdx = paramsFA.length % base;
+            const tCtrl = paramsFA.at(templateIdx);
+            if (tCtrl) {
+              paramsFA.push(this.createParamGroup({
+                ...tCtrl.value,
+                id: null,
+                value: null,
+                resultStatus: null,
+                isWithinLimit: null,
+                remarks: ''
+              }, plan?.type));
+            }
+          }
+        }
+      }
+    }
+    this.autoEvaluateAllFormulas();
+    this.cdr.markForCheck();
+  }
+
+  onWorkbenchSpecimenCountChanged(count: number): void {
+    const plan = this.plans[this.activePlanIndex];
+    if (plan) {
+      plan.totalSpecimens = count;
+      if (plan.tests?.[0]) {
+        plan.tests[0].totalSpecimens = count;
+      }
+    }
+    this.autoEvaluateAllFormulas();
+    this.cdr.markForCheck();
+  }
+
+  hasCalculationSection(layout: any): boolean {
+    if (!layout) return false;
+    const sections = layout.sections || layout.parsedConfig?.sections || [];
+    return sections.some((s: any) => s.type === 'formula' || s.type === 'calc');
+  }
+
+  onConfiguredParamChanged(event: { rowIdx: number; param: any }): void {
+    this.onValueChanged(this.activePlanIndex, 0, event.rowIdx);
   }
 
   // ----------------------------------------------------------------
@@ -469,7 +835,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           generalTest.specfication2Name
         );
 
-        const totalSpecimens = generalTest.totalSpecimens || 1;
+        const plannedQuantity = Number(generalTest.plannedQuantity || generalTest.quantity || 1);
+        const totalSpecimens = plannedQuantity;
         const sequenceNo = generalTest.sequenceNo || 1;
         const baseName = generalTest.laboratoryTest || 'General Test';
         const testName = totalSpecimens > 1 ? `${baseName} - Specimen ${sequenceNo}` : baseName;
@@ -478,6 +845,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         const specName = specification && specification !== 'Unknown' ? specification : '';
         const genPlan: any = {
           type: 'General',
+          plannedQuantity: plannedQuantity,
+          totalSpecimens: totalSpecimens,
           discipline: generalTest.discipline || 'Mechanical',
           analysisTechnique: generalTest.analysisTechnique || generalTest.laboratoryTest || '—',
           sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || '—',
@@ -489,6 +858,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           grade: '',
           headerId: generalTest.headerId,
           labTestId: (generalTest as any).laboratoryTestId || null,
+          subGroupId: (generalTest as any).subGroupId || (generalTest as any).laboratoryTestSubGroupID || null,
+          analysisTypeId: (generalTest as any).analysisTypeId || (generalTest as any).analysisTypeID || null,
+          leafNode: (generalTest as any).leafNode || generalTest.laboratoryTest || null,
           methodId: generalTest.standard || null,
           methodName: methodName,
           methodSelected: generalTest.standard ? { id: generalTest.standard, name: methodName || `Method #${generalTest.standard}` } : null,
@@ -499,6 +871,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               id: `gen-${generalTest.headerId}`,
               headerId: generalTest.headerId,
               name: testName,
+              plannedQuantity: plannedQuantity,
+              totalSpecimens: totalSpecimens,
               reportNo: generalTest.reportNo || `Auto-${gtIdx}`,
               status: generalTest.status || 'Pending',
               testPurpose: generalTest.testPurpose || 'Material Qualification',
@@ -507,35 +881,50 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               equipmentId: generalTest.equipmentId || null,
               roomTemperature: generalTest.roomTemperature ?? null,
               roomHumidity: generalTest.roomHumidity ?? null,
-              parameters: (generalTest.parameters || []).map((param: any) => ({
-                id: param.id,
-                parameterID: param.parameterID || null,
-                parameterName: param.parameterName || '',
-                unit: param.unit || '',
-                value: param.value ?? null,
-                remarks: param.remarks ?? '',
-                minValue: param.minValue ?? null,
-                maxValue: param.maxValue ?? null,
-                isWithinLimit: param.isWithinLimit ?? null,
-                formulaExpression: param.formulaExpression || '',
-                specMinValue: param.specMinValue ?? null,
-                specMaxValue: param.specMaxValue ?? null,
-                acceptanceCriteria: param.acceptanceCriteria || '',
-                isCalculated: param.isCalculated || !!param.formulaExpression || false,
-                isStandalone: param.isStandalone || false,
-                sourceTestMethodId: param.sourceTestMethodId ?? null,
-                resultStatus: param.resultStatus || null,
-                parameterType: param.parameterType || '',
-                testMethodUsed: param.testMethodUsed || '',
-                decimalPrecision: param.decimalPrecision ?? 2,
-                conversionFactor: param.conversionFactor ?? 1,
-                convertedValue: param.convertedValue ?? null,
-                selectedUnit: param.selectedUnit || param.unit || '',
-                unitOptions: param.unitOptions || [],
-                isBillable: param.isBillable ?? true,
-                inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
-                dropdownOptions: param.dropdownOptions || []
-              }))
+              // Drive initial parameters strictly by plannedQuantity to prevent change detection mismatch
+              parameters: (() => {
+                const allParams = generalTest.parameters || [];
+                const uniqueNames = new Set<string>();
+                let baseCount = 0;
+                for (const p of allParams) {
+                  const pName = (p.parameterName || '').trim().toLowerCase();
+                  if (pName && uniqueNames.has(pName)) break;
+                  if (pName) uniqueNames.add(pName);
+                  baseCount++;
+                }
+                if (baseCount === 0) baseCount = 6;
+                const targetCount = plannedQuantity * baseCount;
+                return allParams.slice(0, targetCount).map((param: any) => ({
+                  id: param.id,
+                  parameterID: param.parameterID || null,
+                  parameterName: param.parameterName || '',
+                  unit: param.unit || '',
+                  value: param.value ?? null,
+                  remarks: param.remarks ?? '',
+                  minValue: param.minValue ?? null,
+                  maxValue: param.maxValue ?? null,
+                  isWithinLimit: param.isWithinLimit ?? null,
+                  formulaExpression: param.formulaExpression || '',
+                  formulaDisplay: param.formulaDisplay || '',
+                  specMinValue: param.specMinValue ?? null,
+                  specMaxValue: param.specMaxValue ?? null,
+                  acceptanceCriteria: param.acceptanceCriteria || '',
+                  isCalculated: param.isCalculated || !!param.formulaExpression || false,
+                  isStandalone: param.isStandalone || false,
+                  sourceTestMethodId: param.sourceTestMethodId ?? null,
+                  resultStatus: param.resultStatus || null,
+                  parameterType: param.parameterType || '',
+                  testMethodUsed: param.testMethodUsed || '',
+                  decimalPrecision: param.decimalPrecision ?? 2,
+                  conversionFactor: param.conversionFactor ?? 1,
+                  convertedValue: param.convertedValue ?? null,
+                  selectedUnit: param.selectedUnit || param.unit || '',
+                  unitOptions: param.unitOptions || [],
+                  isBillable: param.isBillable ?? true,
+                  inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
+                  dropdownOptions: param.dropdownOptions || []
+                }));
+              })()
             }
           ]
         };
@@ -550,8 +939,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           chemicalTest.specfication2Name
         );
 
+        const chemPlannedQuantity = Number(chemicalTest.plannedQuantity || chemicalTest.quantity || 1);
         const chemPlan: any = {
           type: 'Chemical',
+          plannedQuantity: chemPlannedQuantity,
+          totalSpecimens: chemPlannedQuantity,
           discipline: chemicalTest.discipline || 'Chemical',
           analysisTechnique: chemicalTest.analysisTechnique || '—',
           sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || '—',
@@ -568,12 +960,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           specSelected: chemicalTest.specification1 ? { id: chemicalTest.specification1, name: (specification && specification !== 'Unknown' ? specification : `Spec #${chemicalTest.specification1}`) } : null,
           techniqueCodes: chemicalTest.techniqueCodes || [],
           labTestId: chemicalTest.labTestId || null,
+          subGroupId: (chemicalTest as any).subGroupId || (chemicalTest as any).laboratoryTestSubGroupID || null,
+          analysisTypeId: (chemicalTest as any).analysisTypeId || (chemicalTest as any).analysisTypeID || null,
+          leafNode: (chemicalTest as any).leafNode || chemicalTest.laboratoryTest || null,
           parentLabTestId: chemicalTest.parentLabTestId || null,
           tests: [
             {
               id: `chem-${chemicalTest.headerId}`,
               headerId: chemicalTest.headerId,
               name: chemicalTest.laboratoryTest || 'Chemical Test',
+              plannedQuantity: chemPlannedQuantity,
+              totalSpecimens: chemPlannedQuantity,
               reportNo: chemicalTest.reportNo || `Auto-${chemicalTest.headerId}`,
               status: chemicalTest.status || 'Pending',
               testPurpose: chemicalTest.testPurpose || 'Material Qualification',
@@ -594,6 +991,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                 isWithinLimit: param.isWithinLimit ?? null,
                 altered: param.altered || false,
                 formulaExpression: param.formulaExpression || '',
+                formulaDisplay: param.formulaDisplay || '',
                 specMinValue: param.specMinValue ?? null,
                 specMaxValue: param.specMaxValue ?? null,
                 acceptanceCriteria: param.acceptanceCriteria || '',
@@ -617,6 +1015,19 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         };
 
         this.plans.push(chemPlan);
+      });
+    });
+
+    // Populate globalParamMap from all mapped parameters
+    (this.plans || []).forEach((pl: any) => {
+      pl.tests?.forEach((t: any) => {
+        t.parameters?.forEach((pm: any) => {
+          const id = pm.parameterID || pm.id;
+          const name = pm.parameterName || pm.name;
+          if (id && name) {
+            this.globalParamMap[Number(id)] = String(name).trim();
+          }
+        });
       });
     });
 
@@ -757,7 +1168,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   get plansFA(): FormArray {
-    return this.resultForm.get('plans') as FormArray;
+    return (this.resultForm?.get('plans') as FormArray) || this.fb.array([]);
   }
 
   createPlanGroup(plan: any): FormGroup {
@@ -771,7 +1182,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   getTests(planIndex: number): FormArray {
-    return this.plansFA.at(planIndex).get('tests') as FormArray;
+    return (this.plansFA?.at(planIndex)?.get('tests') as FormArray) || this.fb.array([]);
   }
 
  createTestGroup(test: any, planType: string): FormGroup {
@@ -787,7 +1198,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   getParameters(planIndex: number, testIndex: number): FormArray {
-    return this.getTests(planIndex).at(testIndex).get('parameters') as FormArray;
+    return (this.getTests(planIndex)?.at(testIndex)?.get('parameters') as FormArray) || this.fb.array([]);
   }
 
   createParamGroup(p: any, planType?: string): FormGroup {
@@ -810,6 +1221,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       isWithinLimit: [p.isWithinLimit ?? null],
       altered: [p.altered || false],
       formulaExpression: [p.formulaExpression || p.formula || ''],
+      formulaDisplay: [p.formulaDisplay || ''],
       isCalculated: [isCalculated],
       inputType: [inputType],
       dropdownOptions: [p.dropdownOptions || []],
@@ -835,7 +1247,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // ----------------------------------------------------------------
   addParameter(planIndex: number, testIndex: number): void {
     const parametersArray = this.getParameters(planIndex, testIndex);
-    const planType = this.plansFA.at(planIndex).get('type')?.value;
+    const planType = this.plansFA?.at(planIndex)?.get('type')?.value;
 
     const newParam = this.createParamGroup({
       id: 0,
@@ -851,7 +1263,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }, planType);
 
     parametersArray.push(newParam);
-    this.switchTab('parameters');
+    this.switchTab('execution');
     this.toastService.show('New parameter row added. Please select parameter.', 'info');
 
     setTimeout(() => {
@@ -1055,6 +1467,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       next: (response) => {
         this.toastService.show(`${testName} — saved successfully`, 'success');
         this.resultSaved.emit(response);
+        // Automatically evaluate formula parameters on backend
+        this.calculateParameters(planIndex, testIndex);
       },
       error: (error) => {
         this.toastService.show(`Error saving ${testName}`, 'error');
@@ -1205,7 +1619,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   onValueChanged(planIndex: number, testIndex: number, paramIndex: number): void {
     const row = this.getParameters(planIndex, testIndex).at(paramIndex);
     const rawValue = row.get('value')?.value;
-    const planType = this.plansFA.at(planIndex).get('type')?.value; // 'General' or 'Chemical'
+    const planType = this.plansFA?.at(planIndex)?.get('type')?.value; // 'General' or 'Chemical'
 
     // Use minValue/maxValue first, fallback to specMinValue/specMaxValue
     const minRaw = row.get('minValue')?.value ?? row.get('specMinValue')?.value;
@@ -1250,14 +1664,32 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       const withinMax = !hasMax || compareValue <= max;
       const withinLimit = withinMin && withinMax;
 
-      // Chemical → Pass/Fail, Mechanical → Within Range/Under Range/Over Range
+      // Apply measurement uncertainty guard-band if loaded for this test
+      const pId = row.get('parameterID')?.value;
+      const test = this.plans[planIndex]?.tests?.[testIndex];
+      const unc = test?.headerId ? this.getUncertainty(test.headerId, pId) : null;
+      const expandedU = unc?.expandedUncertainty != null ? Number(unc.expandedUncertainty) : 0;
+
+      // Chemical → Pass/Fail/Borderline, Mechanical → Within Range/Under Range/Over Range/Borderline
       let status: string;
       if (planType === 'Chemical') {
-        status = withinLimit ? 'Pass' : 'Fail';
+        if (!withinLimit) {
+          status = 'Fail';
+        } else if (expandedU > 0 && ((hasMin && Math.abs(compareValue - min) <= expandedU) || (hasMax && Math.abs(compareValue - max) <= expandedU))) {
+          status = 'Borderline';
+        } else {
+          status = 'Pass';
+        }
       } else {
-        if (!withinMin) status = 'Under Range';
-        else if (!withinMax) status = 'Over Range';
-        else status = 'Within Range';
+        if (!withinMin) {
+          status = 'Under Range';
+        } else if (!withinMax) {
+          status = 'Over Range';
+        } else if (expandedU > 0 && ((hasMin && Math.abs(compareValue - min) <= expandedU) || (hasMax && Math.abs(compareValue - max) <= expandedU))) {
+          status = 'Borderline';
+        } else {
+          status = 'Within Range';
+        }
       }
 
       row.patchValue({ isWithinLimit: withinLimit, resultStatus: status }, { emitEvent: false });
@@ -1371,7 +1803,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           for (const ref of pRefs) {
             const refId = Number(ref.replace('P', ''));
             if (!paramIdSet.has(refId)) {
-              missingNames.push(ref);
+              const friendlyName = this.globalParamMap[refId] || `Parameter #${refId}`;
+              missingNames.push(friendlyName);
             }
           }
 
@@ -1891,20 +2324,55 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   // ================================================================
-  // 7-Tab Workflow Navigation & Quick Actions
+  // 6-Tab Workflow Navigation & Quick Actions
   // ================================================================
-  switchTab(tab: 'info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'): void {
+  switchTab(tab: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'): void {
     this.activeTab = tab;
   }
 
   goToNextTab(): void {
-    const tabOrder: ('info' | 'parameters' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history')[] = [
-      'info', 'parameters', 'execution', 'calculations', 'nabl', 'attachments', 'history'
+    const tabOrder: ('info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history')[] = [
+      'info', 'execution', 'calculations', 'nabl', 'attachments', 'history'
     ];
     const currentIndex = tabOrder.indexOf(this.activeTab);
     if (currentIndex < tabOrder.length - 1) {
       this.activeTab = tabOrder[currentIndex + 1];
     }
+  }
+
+  getExecutionMetrics(planIndex?: number, testIndex?: number): { total: number; entered: number; pass: number; fail: number; pending: number } {
+    const p = planIndex ?? this.activePlanIndex ?? 0;
+    const t = testIndex ?? 0;
+    const testGroup = this.getTests(p)?.at(t);
+    const paramsFA = testGroup?.get('parameters') as FormArray;
+    if (!paramsFA || !paramsFA.length) {
+      const rawParams = this.plans?.[p]?.tests?.[t]?.parameters || [];
+      return { total: rawParams.length, entered: 0, pass: 0, fail: 0, pending: rawParams.length };
+    }
+
+    let entered = 0;
+    let pass = 0;
+    let fail = 0;
+    let pending = 0;
+
+    paramsFA.controls.forEach(ctrl => {
+      const val = ctrl.get('value')?.value;
+      const status = ctrl.get('resultStatus')?.value || ctrl.get('status')?.value;
+      const isWithinLimit = ctrl.get('isWithinLimit')?.value;
+      const hasValue = val !== null && val !== undefined && val !== '';
+      if (hasValue) {
+        entered++;
+      }
+      if (status === 'Pass' || status === 'Compliant' || status === 'Within Range' || isWithinLimit === true) {
+        pass++;
+      } else if (status === 'Fail' || status === 'Non-compliant' || status === 'Under Range' || status === 'Over Range' || isWithinLimit === false) {
+        fail++;
+      } else {
+        pending++;
+      }
+    });
+
+    return { total: paramsFA.length, entered, pass, fail, pending };
   }
 
   formatDateDisplay(dateStr: any): string {
@@ -2061,6 +2529,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
   getParameterStatus(param: any): 'pass' | 'fail' | 'marginal' | null {
     if (!param) return null;
+    // CRITICAL: If no result value has been entered, status cannot be Pass/Fail
+    if (param.value === null || param.value === undefined || param.value === '') {
+      return null;
+    }
     if (param.resultStatus) {
       const status = String(param.resultStatus).toLowerCase();
       if (status === 'pass' || status === 'within range') return 'pass';
@@ -3201,8 +3673,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   openFormulaBuilder(planIndex: number, testIndex: number, paramIndex: number): void {
     this.formulaBuilderTargetRow = { planIndex, testIndex, paramIndex };
     const paramRow = this.getParameters(planIndex, testIndex).at(paramIndex);
-    this.formulaExpression = paramRow?.get('formulaExpression')?.value || '';
-    this.formulaCursorPos = this.formulaExpression.length;
+    const rawExpr = paramRow?.get('formulaExpression')?.value || '';
 
     // Build available params list (excluding current row)
     const params = this.getParameters(planIndex, testIndex);
@@ -3211,14 +3682,39 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       if (idx === paramIndex) return;
       const v = row.value;
       if (v.parameterID) {
+        const pName = v.parameterName || this.globalParamMap[v.parameterID] || `Param ${v.parameterID}`;
         this.formulaAvailableParams.push({
           parameterID: v.parameterID,
-          parameterName: v.parameterName || `Param ${v.parameterID}`,
+          parameterName: pName,
           unit: v.unit || '',
           ref: `P${v.parameterID}`
         });
       }
     });
+
+    // Also include any parameters explicitly referenced in rawExpr that exist in globalParamMap
+    const referencedIds = (rawExpr.match(/\{?P(\d+)\}?/gi) || []).map((m: string) => Number(m.replace(/\D/g, '')));
+    referencedIds.forEach((id: number) => {
+      if (id && !this.formulaAvailableParams.some(p => p.parameterID === id)) {
+        const pName = this.globalParamMap[id];
+        if (pName) {
+          this.formulaAvailableParams.push({
+            parameterID: id,
+            parameterName: pName,
+            unit: '',
+            ref: `P${id}`
+          });
+        }
+      }
+    });
+
+    const displayFormula = paramRow?.get('formulaDisplay')?.value;
+    if (displayFormula && !/\{?P\d+\}?/i.test(displayFormula)) {
+      this.formulaExpression = displayFormula;
+    } else {
+      this.formulaExpression = formatFormulaDisplay(rawExpr, this.formulaAvailableParams, this.globalParamMap);
+    }
+    this.formulaCursorPos = this.formulaExpression.length;
     this.smartFormulaMode = false;
     this.smartFormulaInput = '';
     this.smartFormulaTokens = [];
@@ -3248,11 +3744,26 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     if (!this.formulaBuilderTargetRow) return;
     const { planIndex, testIndex, paramIndex } = this.formulaBuilderTargetRow;
     const paramRow = this.getParameters(planIndex, testIndex).at(paramIndex);
-    paramRow?.patchValue({ formulaExpression: this.formulaExpression });
+
+    const displayFormula = this.formulaExpression.trim();
+    // Convert human-readable parameter names into internal {P123} tokens for storage and math calculation
+    const allAvailable = [
+      ...this.formulaAvailableParams,
+      ...Object.entries(this.globalParamMap).map(([id, name]) => ({
+        parameterID: Number(id),
+        parameterName: name
+      }))
+    ];
+    const tokenizedExpr = convertNamesToFormulaTokens(displayFormula, allAvailable);
+
+    paramRow?.patchValue({
+      formulaExpression: tokenizedExpr,
+      formulaDisplay: displayFormula
+    });
     this.showFormulaBuilderModal = false;
 
     // Evaluate formula on UI side immediately
-    const calculatedValue = this.evaluateFormula(this.formulaExpression, planIndex, testIndex, paramIndex);
+    const calculatedValue = this.evaluateFormula(tokenizedExpr, planIndex, testIndex, paramIndex);
     if (calculatedValue !== null) {
       paramRow?.patchValue({ value: calculatedValue });
       // Also update isWithinLimit based on new value
@@ -3375,15 +3886,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.smartFormulaValid = this.smartFormulaErrors.length === 0 && this.smartFormulaTokens.length > 0;
   }
 
-  /** Apply smart formula — convert to P-notation */
+  /** Apply smart formula — convert to friendly parameter names */
   applySmartFormula(): void {
     if (!this.smartFormulaValid) return;
 
     const specialConstants: Record<string, string> = { 'pi': '3.14159265', 'PI': '3.14159265', 'π': '3.14159265' };
 
-    // Build P-notation expression
+    // Build friendly expression using parameter names, not raw IDs
     const parts = this.smartFormulaTokens.map(t => {
-      if (t.type === 'param' && t.paramRef) return t.paramRef;
+      if (t.type === 'param' && t.matched) return t.matched;
       if (t.type === 'number' && specialConstants[t.token]) return specialConstants[t.token];
       return t.token;
     });
@@ -3408,7 +3919,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
   /**
    * Evaluate a formula expression on the client side using current parameter values.
-   * Supports P{ID} references, basic math (+,-,*,/,(,)), and functions (MEAN, MAX, MIN, SUM, COUNT, STDEV).
+   * Supports P{ID} references, parameter names, basic math (+,-,*,/,(,)), and functions (MEAN, MAX, MIN, SUM, COUNT, STDEV).
    * Returns the calculated numeric value, or null if evaluation fails.
    */
   evaluateFormula(expression: string, planIndex: number, testIndex: number, excludeParamIndex: number): number | null {
@@ -3416,16 +3927,28 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
     try {
       const params = this.getParameters(planIndex, testIndex);
-      // Build a map of P{ID} -> numeric value from all parameters in this test
+      // Build a map of P{ID} -> numeric value and parameterName -> numeric value
       const paramValueMap: Record<string, number> = {};
       params.controls.forEach((row, idx) => {
         const v = row.value;
-        if (v.parameterID && v.value != null && v.value !== '') {
-          paramValueMap[`P${v.parameterID}`] = Number(v.value);
+        if (v.value != null && v.value !== '') {
+          const numVal = Number(v.value);
+          if (v.parameterID) {
+            paramValueMap[`P${v.parameterID}`] = numVal;
+          }
+          if (v.parameterName) {
+            paramValueMap[v.parameterName.toLowerCase()] = numVal;
+          }
+          if (v.symbol) {
+            paramValueMap[v.symbol.toLowerCase()] = numVal;
+          }
         }
       });
 
       let expr = expression.trim();
+      if (!/\{?P\d+\}?/i.test(expr)) {
+        expr = convertNamesToFormulaTokens(expr, params.controls.map(c => c.value));
+      }
 
       // Parity with FormulaEvaluator.ConvertToNCalcExpression: strip target assignment (e.g. "UTS = Load / Area")
       const eqIdx = expr.indexOf('=');

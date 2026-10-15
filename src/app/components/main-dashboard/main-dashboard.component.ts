@@ -1,23 +1,33 @@
 import { Component, OnInit, OnDestroy, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subject, timer, Observable } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, timer } from 'rxjs';
+import { takeUntil, debounceTime } from 'rxjs/operators';
 import { CdkDragDrop, moveItemInArray, DragDropModule } from '@angular/cdk/drag-drop';
 import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { DashboardLayoutService } from '../../services/dashboard-layout.service';
+import { SignalRService } from '../../services/signal-r.service';
 import { DashboardCardComponent } from '../dashboard-card/dashboard-card.component';
 import { DashboardChartComponent } from '../dashboard-chart/dashboard-chart.component';
 import { DashboardNotificationPanelComponent } from '../dashboard-notification-panel/dashboard-notification-panel.component';
 import {
-  DashboardState,
   DashboardCardDto,
   DashboardChartDto,
   DashboardNotificationDto,
+  DashboardState,
   CardLayout
 } from '../../models/dashboardModels';
+
+export interface WorkflowStep {
+  key: string;
+  label: string;
+  count: number;
+  urgent: boolean;
+  route: string;
+  icon: string;
+}
 
 @Component({
   selector: 'app-main-dashboard',
@@ -28,9 +38,13 @@ import {
 })
 export class MainDashboardComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private realtimeRefresh$ = new Subject<void>();
 
   // State signals
   error = signal<string | null>(null);
+  isLoading = signal<boolean>(true);
+  isLive = signal<boolean>(false);
+  liveEventCount = signal<number>(0);
   lastRefresh = signal<Date>(new Date());
   autoRefreshStatus = signal<any>({
     isActive: false,
@@ -55,19 +69,38 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
   // Signal for time until next refresh to avoid NG0100 error
   timeUntilNextRefresh = signal<string>('');
 
+  // Card icon / route metadata (single source for design consistency)
+  private readonly cardMeta: Record<string, { icon: string; route: string }> = {
+    'pending-sample-inward': { icon: 'bi-box-arrow-in-down', route: '/sample/inward' },
+    'todays-samples': { icon: 'bi-calendar-check', route: '/sample/inward' },
+    'overdue-samples': { icon: 'bi-alarm', route: '/sample/inward' },
+    'pending-plan-approval': { icon: 'bi-clipboard-check', route: '/sample/plan' },
+    'samples-under-testing': { icon: 'bi-flask', route: '/testing/dashboard' },
+    'results-pending-review': { icon: 'bi-eye', route: '/testing/verification' },
+    'reports-pending-dispatch': { icon: 'bi-send', route: '/reporting/dashboard' },
+    'standards-due-review': { icon: 'bi-journal-text', route: '/test-method-specification' },
+    'pending-invoices': { icon: 'bi-receipt', route: '/accounts/cases' },
+    'paid-invoices': { icon: 'bi-cash-coin', route: '/accounts/cases' },
+    'payment-summary': { icon: 'bi-wallet2', route: '/accounts/cases' }
+  };
+
   constructor(
     private dashboardService: DashboardService,
     private authService: AuthService,
     private router: Router,
     private toastService: ToastService,
-    private layoutService: DashboardLayoutService
+    private layoutService: DashboardLayoutService,
+    private signalR: SignalRService
   ) {
     this.currentUser = this.authService.getUserData();
   }
 
   ngOnInit(): void {
-    this.initializeDashboard();
+    this.initializeLayout();
     this.subscribeToDashboardState();
+    this.subscribeToRealtime();
+    this.isLoading.set(true);
+    this.loadDashboardData();
     this.startAutoRefresh();
     this.setupAutoRefreshStatusMonitoring();
   }
@@ -78,185 +111,65 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     this.dashboardService.stopAutoRefresh();
   }
 
-  /**
-   * Initialize dashboard by loading data
-   */
   private initializeDashboard(): void {
     this.initializeLayout();
-    this.detectSlowNetwork();
-    this.loadDashboardDataWithOptimization();
-    this.logUserInfo();
+    this.loadDashboardData();
   }
 
   /**
-   * Load dashboard data with performance optimization
+   * Load dashboard data — always applies server payload (fixes prior
+   * inverted loadTime-target guard that left cards at 0).
    */
-  private loadDashboardDataWithOptimization(): void {
+  private loadDashboardData(): void {
+    this.error.set(null);
+    this.isLoading.set(true);
     const startTime = performance.now();
 
-    // Show loading state immediately
-    this.error.set(null);
-
-    // Check if we should optimize for slow network
-    const connectionType = this.getConnectionType();
-    if (connectionType === 'slow-2g' || connectionType === '2g') {
-      this.optimizeForSlowNetwork();
-    }
-
-    // Preload critical data first for better perceived performance
-    this.preloadCriticalData().subscribe({
-      next: (success) => {
-        if (success) {
-          console.log('Critical data preloaded successfully');
-        }
-
-        // Then load complete dashboard
-        this.loadCompleteData(startTime);
-      },
-      error: (error) => {
-        console.warn('Critical data preload failed, loading normally:', error);
-        this.loadCompleteData(startTime);
-      }
-    });
-  }
-
-  /**
-   * Load complete dashboard data
-   */
-  private loadCompleteData(startTime: number): void {
     this.dashboardService.getDashboard()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
           const loadTime = performance.now() - startTime;
-          console.log(`Dashboard loaded in ${loadTime.toFixed(2)}ms`);
-
-          // Check if we meet performance targets
-          const target = this.getLoadTimeTarget();
-          if (loadTime > target) {
-            console.warn(`Dashboard load time (${loadTime.toFixed(2)}ms) exceeds target (${target}ms)`);
-
-            // Load dashboard data without role filtering
-            this.cards.set(data.cards);
-            this.charts.set(data.charts);
-            this.notifications.set(data.notifications);
-            console.log('Dashboard data loaded:', {
-              cards: data.cards.length,
-              charts: data.charts.length,
-              notifications: data.notifications.length
-            });
+          this.cards.set(data.cards ?? []);
+          this.charts.set(data.charts ?? []);
+          this.notifications.set(data.notifications ?? []);
+          this.lastRefresh.set(new Date());
+          this.updateDisplayCards();
+          this.isLoading.set(false);
+          if (loadTime > 3000) {
+            console.warn(`Dashboard load time (${loadTime.toFixed(0)}ms) exceeds 3000ms target`);
           }
-
-          console.log('Dashboard data loaded:', {
-            cards: data.cards.length,
-            charts: data.charts.length,
-            notifications: data.notifications.length
-          });
         },
         error: (error) => {
-          const loadTime = performance.now() - startTime;
-          console.error(`Dashboard failed to load after ${loadTime.toFixed(2)}ms:`, error);
-
+          console.error('Error loading dashboard:', error);
           this.error.set('Failed to load dashboard data');
+          this.isLoading.set(false);
           this.toastService.show('Failed to load dashboard data', 'error');
         }
       });
   }
 
   /**
-   * Detect slow network conditions
+   * Silent refresh used by auto-refresh + SignalR live events (no toast spam).
    */
-  private detectSlowNetwork(): void {
-    // Use Network Information API if available
-    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-
-    if (connection) {
-      console.log('Network information:', {
-        effectiveType: connection.effectiveType,
-        downlink: connection.downlink,
-        rtt: connection.rtt
-      });
-
-      // Optimize for slow networks
-      if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g' || connection.downlink < 0.5) {
-        console.log('Slow network detected, optimizing dashboard');
-        this.optimizeForSlowNetwork();
-      }
-
-      // Listen for network changes
-      connection.addEventListener('change', () => {
-        console.log('Network conditions changed:', connection.effectiveType);
-        if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
-          this.optimizeForSlowNetwork();
+  private silentRefresh(reason: string): void {
+    this.dashboardService.getDashboard()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.cards.set(data.cards ?? []);
+          this.charts.set(data.charts ?? []);
+          this.notifications.set(data.notifications ?? []);
+          this.lastRefresh.set(new Date());
+          this.updateDisplayCards();
+          this.isLoading.set(false);
+          this.error.set(null);
+          console.log(`Dashboard silently refreshed (${reason})`);
+        },
+        error: (error) => {
+          console.warn(`Silent dashboard refresh failed (${reason}):`, error);
         }
       });
-    }
-  }
-
-  /**
-   * Get connection type for optimization
-   */
-  private getConnectionType(): string {
-    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-    return connection?.effectiveType || 'unknown';
-  }
-
-  /**
-   * Get load time target for performance monitoring
-   */
-  private getLoadTimeTarget(): number {
-    // Return 3 seconds as default target
-    return 3000;
-  }
-
-  /**
-   * Preload critical data for better perceived performance
-   */
-  private preloadCriticalData(): Observable<boolean> {
-    return new Observable(observer => {
-      // Simulate preloading critical data
-      setTimeout(() => {
-        observer.next(true);
-        observer.complete();
-      }, 100);
-    });
-  }
-
-  /**
-   * Optimize dashboard for slow network conditions
-   */
-  private optimizeForSlowNetwork(): void {
-    console.log('Applying slow network optimizations');
-    // Reduce auto-refresh frequency for slow networks
-    this.dashboardService.stopAutoRefresh();
-    // Start with reduced frequency by restarting auto-refresh (service will handle interval)
-    setTimeout(() => {
-      this.dashboardService.startAutoRefresh();
-    }, 1000);
-  }
-
-  /**
-   * Show performance warning for slow loading
-   */
-  private showPerformanceWarning(actualTime: number, targetTime: number): void {
-    const message = `Dashboard loaded slower than expected (${actualTime.toFixed(0)}ms vs ${targetTime}ms target). Consider optimizing for slow network.`;
-
-    // Only show warning if significantly slower
-    if (actualTime > targetTime * 1.5) {
-      console.warn(message);
-
-      // Optionally show user notification for very slow loading
-      if (actualTime > 10000) { // More than 10 seconds
-        this.toastService.show('Dashboard is loading slowly due to network conditions', 'warning');
-      }
-    }
-  }
-
-  /**
-   * Log user information for debugging
-   */
-  private logUserInfo(): void {
-    console.log('Dashboard initialized for user:', this.currentUser);
   }
 
   /**
@@ -267,13 +180,40 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((state: DashboardState) => {
         this.error.set(state.error);
-        this.cards.set(state.cards);
-        this.charts.set(state.charts);
-        this.notifications.set(state.notifications);
+        this.cards.set(state.cards ?? []);
+        this.charts.set(state.charts ?? []);
+        this.notifications.set(state.notifications ?? []);
         this.lastRefresh.set(state.lastRefresh);
+        this.isLoading.set(state.isLoading);
 
         // Update display cards when cards change
         this.updateDisplayCards();
+      });
+  }
+
+  /**
+   * Realtime wiring: SignalR live events invalidate cache and refresh KPIs.
+   */
+  private subscribeToRealtime(): void {
+    this.signalR.startConnection();
+
+    this.signalR.connected$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(connected => this.isLive.set(connected));
+
+    // Debounce bursts (e.g. bulk inward uploads) into a single refresh.
+    this.realtimeRefresh$
+      .pipe(debounceTime(1500), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.dashboardService.invalidateCache();
+        this.silentRefresh('signalr');
+      });
+
+    this.signalR.dashboardUpdated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.liveEventCount.update(v => v + 1);
+        this.realtimeRefresh$.next();
       });
   }
 
@@ -299,40 +239,14 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     const savedLayout = this.layoutService.getLayout();
     if (savedLayout) {
       this.customLayout.set(savedLayout);
-      console.log('Loaded custom layout:', savedLayout);
     }
   }
 
   /**
-   * Load dashboard data
-   */
-  private loadDashboardData(): void {
-    this.error.set(null);
-
-    this.dashboardService.getDashboard()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          console.log('Dashboard data loaded:', {
-            cards: data.cards.length,
-            charts: data.charts.length,
-            notifications: data.notifications.length
-          });
-        },
-        error: (error) => {
-          console.error('Error loading dashboard:', error);
-          this.error.set('Failed to load dashboard data');
-          this.toastService.show('Failed to load dashboard data', 'error');
-        }
-      });
-  }
-
-  /**
-   * Start auto-refresh mechanism
+   * Start auto-refresh mechanism (30s live polling + SignalR instant).
    */
   private startAutoRefresh(): void {
     this.dashboardService.startAutoRefresh();
-    console.log('Auto-refresh started from main dashboard component');
   }
 
   /**
@@ -392,8 +306,10 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
    * Manual refresh handler
    */
   onRefresh(): void {
-    console.log('Manual refresh triggered from UI');
-    this.dashboardService.refreshDashboard();
+    this.dashboardService.invalidateCache();
+    this.isLoading.set(true);
+    this.loadDashboardData();
+    this.toastService.show('Dashboard refreshed successfully', 'success');
   }
 
   /**
@@ -403,28 +319,79 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     return this.autoRefreshStatus().retryAttempts;
   }
 
+  getUrgentCount(): number {
+    return this.displayCards().filter(c => (c.metadata?.['HasUrgent'] as boolean) === true).length;
+  }
+
+  getTotalPending(): number {
+    return this.displayCards().reduce((sum, c) => sum + (typeof c.count === 'number' ? c.count : 0), 0);
+  }
+
+  private cardCount(key: string): number {
+    return this.cards().find(c => c.key === key)?.count ?? 0;
+  }
+
+  private cardUrgent(key: string): boolean {
+    return (this.cards().find(c => c.key === key)?.metadata?.['HasUrgent'] as boolean) === true;
+  }
+
+  /**
+   * Lab workflow pipeline derived from live KPI cards.
+   */
+  workflowSteps(): WorkflowStep[] {
+    return [
+      { key: 'inward', label: 'Inward', count: this.cardCount('pending-sample-inward'), urgent: this.cardUrgent('pending-sample-inward'), route: '/sample/inward', icon: 'bi-box-arrow-in-down' },
+      { key: 'plan', label: 'Plan', count: this.cardCount('pending-plan-approval'), urgent: this.cardUrgent('pending-plan-approval'), route: '/sample/plan', icon: 'bi-clipboard-check' },
+      { key: 'testing', label: 'Testing', count: this.cardCount('samples-under-testing'), urgent: this.cardUrgent('samples-under-testing'), route: '/testing/dashboard', icon: 'bi-flask' },
+      { key: 'verify', label: 'Verify', count: this.cardCount('results-pending-review'), urgent: this.cardUrgent('results-pending-review'), route: '/testing/verification', icon: 'bi-eye' },
+      { key: 'dispatch', label: 'Dispatch', count: this.cardCount('reports-pending-dispatch'), urgent: this.cardUrgent('reports-pending-dispatch'), route: '/reporting/dashboard', icon: 'bi-send' },
+      { key: 'billing', label: 'Billing', count: this.cardCount('pending-invoices'), urgent: false, route: '/accounts/cases', icon: 'bi-receipt' }
+    ];
+  }
+
+  goToStep(step: WorkflowStep): void {
+    this.router.navigate([step.route]);
+  }
+
+  getCardIcon(card: DashboardCardDto): string {
+    return this.cardMeta[card.key]?.icon ?? 'bi-grid-3x3-gap';
+  }
+
+  getCardAccent(card: DashboardCardDto): string {
+    if ((card.metadata?.['HasUrgent'] as boolean) === true || card.status === 'Critical') return 'accent-critical';
+    if (card.status === 'Warning') return 'accent-warning';
+    if (card.key.includes('invoice') || card.key.includes('payment')) return 'accent-billing';
+    if (card.key.includes('overdue') || card.key.includes('due')) return 'accent-alert';
+    return 'accent-normal';
+  }
+
+  getCardRoute(card: DashboardCardDto): string {
+    if (card.metadata?.['route']) return card.metadata['route'];
+    return this.cardMeta[card.key]?.route ?? '';
+  }
+
   /**
    * Handle card click navigation
    */
   onCardClick(card: DashboardCardDto): void {
-    if (card.metadata?.['route']) {
-      this.router.navigate([card.metadata['route']]);
-    } else {
-      // Default route mapping based on card key
-      const routeMap: { [key: string]: string } = {
-        'pending-samples': '/sample/inward',
-        'pending-tests': '/testing/dashboard',
-        'pending-reports': '/reporting/dashboard',
-        'pending-invoices': '/accounts/cases',
-        'equipment-due': '/equipment',
-        'calibration-due': '/calibration-agency',
-        'standards-due-review': '/test-method-specification'
-      };
+    const route = this.getCardRoute(card);
+    if (route) {
+      this.router.navigate([route]);
+      return;
+    }
+    const routeMap: { [key: string]: string } = {
+      'pending-samples': '/sample/inward',
+      'pending-tests': '/testing/dashboard',
+      'pending-reports': '/reporting/dashboard',
+      'pending-invoices': '/accounts/cases',
+      'equipment-due': '/equipment',
+      'calibration-due': '/calibration-agency',
+      'standards-due-review': '/test-method-specification'
+    };
 
-      const route = routeMap[card.key];
-      if (route) {
-        this.router.navigate([route]);
-      }
+    const fallback = routeMap[card.key];
+    if (fallback) {
+      this.router.navigate([fallback]);
     }
   }
 
@@ -445,84 +412,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get notification priority CSS class
-   */
-  getNotificationPriorityClass(priority: string): string {
-    switch (priority) {
-      case 'Info':
-        return 'notification-info';
-      case 'Warning':
-        return 'notification-warning';
-      case 'Critical':
-        return 'notification-critical';
-      default:
-        return 'notification-info';
-    }
-  }
-
-  /**
-   * Apply custom layout to cards
-   */
-  private applyCustomLayout(cards: DashboardCardDto[]): DashboardCardDto[] {
-    const customLayout = this.layoutService.getLayout();
-    if (customLayout && customLayout.length > 0) {
-      // Apply custom layout
-      const layoutCards = this.layoutService.applyLayoutToCards(cards, customLayout);
-      this.displayCards.set(layoutCards);
-      console.log('Applied custom layout:', customLayout);
-      return layoutCards;
-    } else {
-      // Use default layout (original order)
-      this.displayCards.set(cards);
-      return cards;
-    }
-  }
-
-  /**
-   * Filter cards based on user roles
-   */
-  private filterCardsByRole(cards: DashboardCardDto[]): DashboardCardDto[] {
-    const userRoles = this.authService.getUserRoles();
-
-    if (userRoles.length === 0) {
-      console.warn('User has no roles assigned, showing all cards');
-      return cards;
-    }
-
-    return cards.filter(card => {
-      // If card has no role restrictions, show to all users
-      if (!card.allowedRoles || card.allowedRoles.length === 0) {
-        return true;
-      }
-
-      // Check if user has any of the allowed roles
-      return this.authService.hasAnyRole(card.allowedRoles);
-    });
-  }
-
-  /**
-   * Filter charts based on user roles
-   */
-  private filterChartsByRole(charts: DashboardChartDto[]): DashboardChartDto[] {
-    const userRoles = this.authService.getUserRoles();
-
-    if (userRoles.length === 0) {
-      console.warn('User has no roles assigned, showing all charts');
-      return charts;
-    }
-
-    return charts.filter(chart => {
-      // If chart has no role restrictions, show to all users
-      if (!chart.allowedRoles || chart.allowedRoles.length === 0) {
-        return true;
-      }
-
-      // Check if user has any of the allowed roles
-      return this.authService.hasAnyRole(chart.allowedRoles);
-    });
-  }
-
-  /**
    * Format timestamp for display
    */
   formatTimestamp(timestamp: Date): string {
@@ -536,16 +425,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     return Array(count).fill(0).map((_, i) => i);
   }
 
-  /**
-   * Check if user has any of the specified roles
-   */
-  hasRequiredRoles(allowedRoles: string[]): boolean {
-    return this.authService.hasAnyRole(allowedRoles);
-  }
-
-  /**
-   * TrackBy functions for performance optimization
-   */
   trackByCardKey(index: number, card: DashboardCardDto): string {
     return card.key;
   }
@@ -580,8 +459,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
       this.saveCurrentLayout();
       this.toastService.show('Layout saved', 'success');
     }
-
-    console.log('Customization mode:', newMode);
   }
 
   /**
@@ -603,9 +480,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
         event.currentIndex
       );
       this.customLayout.set(updatedLayout);
-
-      console.log('Card moved from', event.previousIndex, 'to', event.currentIndex);
-      console.log('Updated layout:', updatedLayout);
     }
   }
 
@@ -618,7 +492,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     this.isCustomizationMode.set(false);
     this.updateDisplayCards();
     this.toastService.show('Layout reset to default', 'success');
-    console.log('Layout reset to default');
   }
 
   /**
@@ -640,7 +513,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
       const cardKeys = currentCards.map(card => card.key);
       currentLayout = this.layoutService.createDefaultLayout(cardKeys);
       this.customLayout.set(currentLayout);
-      console.log('Created default layout:', currentLayout);
     } else if (currentLayout.length > 0 && currentCards.length > 0) {
       // Ensure all current cards are in the layout
       const layoutKeys = new Set(currentLayout.map(l => l.cardKey));
@@ -656,7 +528,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
 
         const updatedLayout = [...currentLayout, ...newLayoutItems];
         this.customLayout.set(updatedLayout);
-        console.log('Added missing cards to layout:', newLayoutItems);
       }
     }
   }
@@ -668,87 +539,7 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     const currentLayout = this.customLayout();
     if (currentLayout && currentLayout.length > 0) {
       this.layoutService.saveLayout(currentLayout);
-      console.log('Layout saved to localStorage');
     }
-  }
-
-  /**
-   * Get performance metrics for debugging
-   */
-  getPerformanceMetrics(): any {
-    return {
-      loadTimeTarget: this.getLoadTimeTarget(),
-      autoRefreshInterval: this.autoRefreshStatus().isActive ? '5 minutes' : 'inactive',
-      networkInfo: this.getNetworkInfo(),
-      cacheStatus: 'enabled',
-      retryAttempts: this.getAutoRefreshRetryAttempts()
-    };
-  }
-
-  /**
-   * Check if dashboard meets performance targets
-   */
-  meetsPerformanceTargets(): boolean {
-    // Simple check - if auto-refresh is working and no excessive retries
-    return this.getAutoRefreshRetryAttempts() < 3;
-  }
-
-  /**
-   * Get current network connection info
-   */
-  getNetworkInfo(): any {
-    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-
-    if (connection) {
-      return {
-        effectiveType: connection.effectiveType,
-        downlink: connection.downlink,
-        rtt: connection.rtt,
-        saveData: connection.saveData
-      };
-    }
-
-    return { effectiveType: 'unknown' };
-  }
-
-  /**
-   * Optimize dashboard for current network conditions
-   */
-  /**
-   * Optimize dashboard for current network conditions
-   */
-  optimizeForNetwork(): void {
-    const networkInfo = this.getNetworkInfo();
-
-    if (networkInfo.effectiveType === 'slow-2g' || networkInfo.effectiveType === '2g' || networkInfo.saveData) {
-      this.optimizeForSlowNetwork();
-      this.toastService.show('Dashboard optimized for slow network', 'info');
-    } else {
-      // this.resetPerformanceOptimizations();
-      this.toastService.show('Dashboard performance settings reset', 'info');
-    }
-  }
-
-  /**
-   * Get dynamic sidebar column class based on data presence
-   */
-  getSidebarClass(): string {
-    const hasCharts = this.charts().length > 0;
-    const hasNotifications = this.notifications().length > 0;
-
-    if (hasCharts && hasNotifications) {
-      return 'col-lg-3'; // 3rd of 3-6-3
-    }
-
-    if (hasCharts && !hasNotifications) {
-      return 'col-lg-4'; // 4th of 4-8
-    }
-
-    if (!hasCharts && hasNotifications) {
-      return 'col-lg-5';
-    }
-
-    return 'col-lg-12';
   }
 
   /**

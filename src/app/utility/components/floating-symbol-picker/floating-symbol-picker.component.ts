@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, OnDestroy, NgZone } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SymbolGroup } from '../symbol-picker/symbol-picker.component';
 import { ActiveInputService } from '../symbol-picker/active-input.service';
@@ -402,7 +402,6 @@ export class FloatingSymbolPickerComponent implements OnInit, OnDestroy {
   private boundOnTouchEnd: ((e: TouchEvent) => void) | null = null;
 
   constructor(
-    private elRef: ElementRef,
     private activeInputService: ActiveInputService,
     private ngZone: NgZone,
   ) {}
@@ -417,17 +416,34 @@ export class FloatingSymbolPickerComponent implements OnInit, OnDestroy {
     this.removeDragListeners();
   }
 
+  /**
+   * Filtered groups are cached so the getter always returns the SAME array
+   * reference while the search term is unchanged. Without this, `*ngFor`
+   * (default trackBy = identity) would destroy and recreate every symbol
+   * button on every change-detection pass, so a real click could land on an
+   * already-detached node and the symbol never got inserted.
+   */
+  private filteredCacheKey = '';
+  private filteredCache: SymbolGroup[] = [];
+
   get filteredGroups(): SymbolGroup[] {
     if (!this.searchText.trim()) {
+      this.filteredCacheKey = '';
       return this.symbolGroups;
     }
+    if (this.filteredCacheKey === this.searchText) {
+      return this.filteredCache;
+    }
     const term = this.searchText.toLowerCase();
-    return this.symbolGroups
+    const groups = this.symbolGroups
       .map((g) => ({
         label: g.label,
         symbols: g.symbols.filter((s) => s.name.toLowerCase().includes(term) || s.char === term),
       }))
       .filter((g) => g.symbols.length > 0);
+    this.filteredCacheKey = this.searchText;
+    this.filteredCache = groups;
+    return groups;
   }
 
   toggle(): void {
@@ -597,12 +613,9 @@ export class FloatingSymbolPickerComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (this.isOpen && !this.elRef.nativeElement.contains(event.target)) {
-      this.isOpen = false;
-    }
-  }
+  // NOTE: there is deliberately NO document:click outside-click handler here.
+  // The panel must stay open while the user clicks around (e.g. back into a
+  // form field) and only closes via the close button / Ω toggle / Escape.
 
   // ── Persistence ──
   private showToast(message: string): void {

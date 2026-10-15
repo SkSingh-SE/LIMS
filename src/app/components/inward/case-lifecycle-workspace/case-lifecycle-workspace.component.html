@@ -16,7 +16,7 @@
           <span class="case-number-pill" *ngIf="caseInfo?.caseNo">{{ caseInfo.caseNo }}</span>
           <span class="case-title-text">Sample Case Lifecycle</span>
           <span class="customer-name-text" *ngIf="caseInfo?.customerName" [title]="caseInfo.customerName">
-            <i class="bi bi-building me-1"></i>{{ caseInfo.customerName }}
+            <i class="bi bi-building me-1"></i><span>{{ caseInfo.customerName }}</span>
           </span>
         </div>
       </div>
@@ -26,23 +26,23 @@
         <!-- Inline Compressed Metadata -->
         <div class="compact-kpi-strip" *ngIf="lifecycleSummary">
           <span class="kpi-mini-item" title="Turnaround Days">
-            <i class="bi bi-clock-history me-1"></i>{{ lifecycleSummary.daysSinceInward }}d
+            <i class="bi bi-clock-history me-1"></i><span>{{ lifecycleSummary.daysSinceInward }}d</span>
           </span>
           <span class="kpi-sep">·</span>
           <span class="kpi-mini-item" title="Active Samples">
-            <i class="bi bi-collection me-1"></i>{{ lifecycleSummary.activeSampleCount }} Samples
+            <i class="bi bi-collection me-1"></i><span>{{ lifecycleSummary.activeSampleCount }} Samples</span>
           </span>
           <span class="kpi-sep">·</span>
           <span class="kpi-mini-item" title="Allocated Tests (General + Chemical)">
-            <i class="bi bi-flask me-1"></i>{{ lifecycleSummary.totalTests }} Tests
+            <i class="bi bi-flask me-1"></i><span>{{ lifecycleSummary.totalTests }} Tests</span>
           </span>
           <span class="kpi-sep">·</span>
           <span class="kpi-mini-item" title="Billing Status">
-            <i class="bi bi-receipt me-1"></i>{{ lifecycleSummary.hasTaxInvoice ? 'Invoiced' : (lifecycleSummary.hasProformaInvoice ? 'PI Gen' : 'Billing Pend') }}
+            <i class="bi bi-receipt me-1"></i><span>{{ lifecycleSummary.hasTaxInvoice ? 'Invoiced' : (lifecycleSummary.hasProformaInvoice ? 'PI Gen' : 'Billing Pend') }}</span>
           </span>
           <span class="kpi-sep" *ngIf="lifecycleSummary.isReportStopped">·</span>
           <span class="kpi-mini-item text-danger fw-bold" *ngIf="lifecycleSummary.isReportStopped" title="Report Halted">
-            <i class="bi bi-pause-circle-fill me-1"></i>Hold
+            <i class="bi bi-pause-circle-fill me-1"></i><span>Hold</span>
           </span>
         </div>
 
@@ -144,7 +144,7 @@
         Click to open {{ hoveredStage.label }} workspace
       </div>
       <div class="text-danger mt-1" *ngIf="!hoveredStage.isAccessible && hoveredStage.status !== 'completed'">
-        <i class="bi bi-lock-fill me-1"></i> Locked until prerequisite stages finish
+        <i class="bi bi-lock-fill me-1"></i><span>Locked until prerequisite stages finish</span>
       </div>
     </div>
   </div>
@@ -160,13 +160,13 @@
         <!-- Case Information & Customer Details Card -->
         <div class="col-md-8">
           <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
-            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
-              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
-                <i class="bi bi-info-circle text-danger"></i> Case Information & Customer Details
+            <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1">
+                <i class="bi bi-info-circle text-danger"></i><span>Case Information & Customer Details</span>
               </span>
             </div>
 
-            <div class="row g-1.5">
+            <div class="row g-2">
               <div class="col-md-4 col-sm-6">
                 <div class="meta-field-box">
                   <span class="meta-field-label">Case Number</span>
@@ -210,9 +210,9 @@
         <!-- Financial & Accounts Status Card -->
         <div class="col-md-4">
           <div class="card p-2 h-100 shadow-sm border bg-white rounded-3">
-            <div class="d-flex justify-content-between align-items-center mb-1.5 border-bottom pb-1">
-              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1.5">
-                <i class="bi bi-wallet2 text-danger"></i> Billing & Accounts Status
+            <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+              <span class="fw-bold text-dark fs-7 d-flex align-items-center gap-1">
+                <i class="bi bi-wallet2 text-danger"></i><span>Billing & Accounts Status</span>
               </span>
             </div>
 
@@ -233,7 +233,7 @@
                 <span class="text-muted fs-7">Amount Received:</span>
                 <span class="fw-semibold text-success fs-7">₹{{ lifecycleSummary.totalReceivedAmount | number:'1.2-2' }}</span>
               </div>
-              <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-0.5">
+              <div class="d-flex justify-content-between align-items-center border-top pt-1 mt-1">
                 <span class="text-muted fs-7">Balance Due:</span>
                 <span class="fw-bold fs-7" [class.text-danger]="lifecycleSummary.balanceDueAmount > 0" [class.text-success]="lifecycleSummary.balanceDueAmount === 0">
                   ₹{{ lifecycleSummary.balanceDueAmount | number:'1.2-2' }}
@@ -279,11 +279,12 @@
     <!-- ── 3. PREPARATION STAGE ── -->
     <div *ngIf="activeStageId === 'preparation'" class="stage-pane-body">
       <div *ngIf="inwardId > 0">
-        <app-cutting-machining-plan-tab
-          [inwardId]="inwardId"
-          [isReadOnly]="isStageReadOnly('preparation')"
+        <app-sample-preparation-form
+          [embeddedInwardId]="inwardId"
+          [isEmbeddedMode]="true"
+          [isEmbeddedReadOnly]="isStageReadOnly('preparation')"
           (prepCompleted)="onPrepCompleted()">
-        </app-cutting-machining-plan-tab>
+        </app-sample-preparation-form>
       </div>
     </div>
 
@@ -298,15 +299,15 @@
 
       <div *ngIf="selectedSampleId && activeInlineAction === 'testing'" class="inline-form-panel mt-2">
         <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
-          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1.5">
-            <i class="bi bi-flask-fill"></i> Testing Execution: {{ getSelectedSample()?.sampleNo }}
+          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1">
+            <i class="bi bi-flask-fill"></i><span>Testing Execution: {{ getSelectedSample()?.sampleNo }}</span>
           </span>
           <div class="d-flex align-items-center gap-2">
             <a class="btn btn-sm btn-outline-primary py-0 px-2 fs-8" [routerLink]="['/test-result/entry', selectedSampleId]" target="_blank" title="Open full screen in a new tab">
-              <i class="bi bi-box-arrow-up-right me-1"></i> Fullpage
+              <i class="bi bi-box-arrow-up-right me-1"></i><span>Fullpage</span>
             </a>
             <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-8" (click)="onCloseInlineForm()">
-              <i class="bi bi-x-lg me-1"></i> Close
+              <i class="bi bi-x-lg me-1"></i><span>Close</span>
             </button>
           </div>
         </div>
@@ -332,15 +333,15 @@
 
       <div *ngIf="selectedSampleId && activeInlineAction === 'reporting'" class="inline-form-panel mt-2">
         <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
-          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1.5">
-            <i class="bi bi-file-earmark-text-fill"></i> Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}
+          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1">
+            <i class="bi bi-file-earmark-text-fill"></i><span>Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}</span>
           </span>
           <div class="d-flex align-items-center gap-2">
             <a class="btn btn-sm btn-outline-primary py-0 px-2 fs-8" [routerLink]="['/reporting/preview', selectedSampleId]" target="_blank" title="Open preview in a new tab">
-              <i class="bi bi-box-arrow-up-right me-1"></i> Fullpage
+              <i class="bi bi-box-arrow-up-right me-1"></i><span>Fullpage</span>
             </a>
             <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-8" (click)="onCloseInlineForm()">
-              <i class="bi bi-x-lg me-1"></i> Close
+              <i class="bi bi-x-lg me-1"></i><span>Close</span>
             </button>
           </div>
         </div>
@@ -359,7 +360,7 @@
       <div class="card p-3 shadow-sm border">
         <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
           <span class="fw-bold text-dark fs-7">
-            <i class="bi bi-receipt me-1.5 text-danger"></i> Accounts, Invoicing & Billing Summary
+            <i class="bi bi-receipt me-1.5 text-danger"></i><span>Accounts, Invoicing & Billing Summary</span>
           </span>
           <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
         </div>
@@ -394,13 +395,12 @@
       <div class="card p-3 shadow-sm border">
         <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
           <span class="fw-bold text-dark fs-7">
-            <i class="bi bi-check2-circle me-1.5 text-success"></i> Case Closure Verification
+            <i class="bi bi-check2-circle me-1.5 text-success"></i><span>Case Closure Verification</span>
           </span>
           <app-test-status-badge [status]="currentStageStatus"></app-test-status-badge>
         </div>
         <div class="alert alert-success fs-7 mb-0">
-          <i class="bi bi-info-circle me-1.5"></i>
-          Lifecycle stage 7: Case Close verification & formal closure workflow.
+          <i class="bi bi-info-circle me-1.5"></i><span>Lifecycle stage 7: Case Close verification & formal closure workflow.</span>
         </div>
       </div>
     </div>

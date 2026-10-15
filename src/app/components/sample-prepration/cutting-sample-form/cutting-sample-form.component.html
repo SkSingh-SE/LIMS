@@ -213,7 +213,7 @@
         <div *ngIf="!isViewMode" class="text-end gap-2">
           <button type="button" class="btn btn-cancel me-2" (click)="onCancel()">Cancel</button>
           <button type="button" class="btn btn-info me-2 text-white" (click)="printSampleCuttingRaw()">
-            <i class="bi bi-printer me-1"></i> Print Raw Format
+            <i class="bi bi-printer me-1"></i><span>Print Raw Format</span>
           </button>
           <button type="submit" class="btn btn-save" [disabled]="!selectedInwardId || !samplesFA.length">Save Cutting Charges</button>
         </div>

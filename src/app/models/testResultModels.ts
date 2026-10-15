@@ -34,6 +34,7 @@ export interface TestResultParameterDto {
   altered?: boolean;
   // Phase 2A fields
   formulaExpression?: string;
+  formulaDisplay?: string;
   dependsOnParamsJson?: string;
   specMinValue?: number | null;
   specMaxValue?: number | null;
@@ -50,6 +51,7 @@ export interface AddStandaloneParameterDto {
   parameterName: string;
   unit: string;
   formulaExpression?: string;
+  formulaDisplay?: string;
   specMinValue?: number | null;
   specMaxValue?: number | null;
 }

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SignalRService } from '../../services/signal-r.service';
 import { NotificationStoreService } from '../../services/notification-store.service';
 import { PushServiceService } from '../../services/push-service.service';
@@ -27,6 +27,7 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private signalR: SignalRService,
     private notificationStore: NotificationStoreService,
     private pushService: PushServiceService
@@ -64,7 +65,8 @@ export class LoginComponent {
             this.pushService.subscribeToPush();
           }
 
-          this.router.navigate(['/']); // Redirect to main dashboard
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+          this.router.navigateByUrl(returnUrl);
         },
         error: (err) => {
           this.errorMessage.set(err?.errorMessage || err?.message || 'Login failed. Please check your credentials.');

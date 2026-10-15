@@ -2,7 +2,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
         <label class="text-md fw-medium ms-3">{{ isViewMode ? 'View Calibration Agency' : (isEditMode ? 'Edit Calibration Agency' : 'Calibration Agency Form') }}</label>
         <a routerLink="/calibration-agency" class="btn btn-outline-light btn-sm me-3">
-            <i class="bi bi-arrow-left"></i> Back to List
+            <i class="bi bi-arrow-left"></i><span>Back to List</span>
         </a>
     </div>
     <div class="card-body">
@@ -32,7 +32,7 @@
                             <span class="text-truncate me-2" type="button"
                                 (click)="openFileInNewTab(calibrationForm.get('agreementFilePath')?.value)"
                                 title="{{ calibrationForm.get('agreementFilePath')?.value }}">
-                                <i class="bi bi-file-earmark-fill"></i> {{calibrationForm.get('fileName')?.value }}
+                                <i class="bi bi-file-earmark-fill"></i><span>{{calibrationForm.get('fileName')?.value }}</span>
                             </span>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
                                 (click)="removeFile()">
@@ -140,10 +140,10 @@
             </div>
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <a [routerLink]="['/calibration-agency']" class="btn btn-cancel">
-                    <i class="bi bi-x-circle"></i> Cancel
+                    <i class="bi bi-x-circle"></i><span>Cancel</span>
                 </a>
                 <button *ngIf="!isViewMode" type="submit" class="btn btn-save" [disabled]="calibrationForm.invalid">
-                    <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+                    <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
                 </button>
             </div>
 

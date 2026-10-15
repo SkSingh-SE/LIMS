@@ -3,8 +3,7 @@
     <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
       <label class="text-center text-md fw-medium ms-3">Invoice Case Config List</label>
       <a class="btn btn-outline-light me-3" (click)="openModal('create', 0)">
-        <i class="bi bi-plus-circle me-1"></i>
-        Create Invoice Case Config
+        <i class="bi bi-plus-circle me-1"></i><span>Create Invoice Case Config</span>
       </a>
     </div>
 
@@ -256,7 +255,7 @@
               </div>
               <!-- Dimension auto-detect hint -->
               <small *ngIf="currentConfig.dimensionHint" class="text-muted d-block mt-1">
-                <i class="bi bi-info-circle me-1"></i>{{ currentConfig.dimensionHint }}
+                <i class="bi bi-info-circle me-1"></i><span>{{ currentConfig.dimensionHint }}</span>
               </small>
               <span *ngIf="invoiceForm.get('value')?.invalid && invoiceForm.get('value')?.touched"
                     class="text-danger text-sm">Value is required.</span>
@@ -408,7 +407,7 @@
               </div>
               <!-- Dimension auto-detect hint for range types (e.g. SizeRange) -->
               <small *ngIf="currentConfig.dimensionHint" class="text-muted d-block mt-1">
-                <i class="bi bi-info-circle me-1"></i>{{ currentConfig.dimensionHint }}
+                <i class="bi bi-info-circle me-1"></i><span>{{ currentConfig.dimensionHint }}</span>
               </small>
               <!-- Range validation errors -->
               <span *ngIf="rangeError" class="text-danger text-sm">{{ rangeError }}</span>
@@ -445,7 +444,7 @@
 
               <!-- Quick suggestion pills (top contextual suggestions for quick 1-click apply) -->
               <div class="d-flex flex-wrap align-items-center gap-1 mt-1" *ngIf="!isViewMode && !isSpectroType && quickSuggestions.length > 0">
-                <span class="text-muted text-xs me-1"><i class="bi bi-lightbulb text-warning me-1"></i>Suggestions:</span>
+                <span class="text-muted text-xs me-1"><i class="bi bi-lightbulb text-warning me-1"></i><span>Suggestions:</span></span>
                 <button type="button"
                         *ngFor="let s of quickSuggestions"
                         class="lims-suggestion-chip"
@@ -563,7 +562,7 @@
               <div class="d-flex justify-content-between mb-1">
                 <label class="form-label mb-0">Alias Names</label>
                 <button type="button" class="btn btn-sm btn-add" (click)="addAlias()">
-                  <i class="bi bi-plus-circle me-1"></i> Add Alias
+                  <i class="bi bi-plus-circle me-1"></i><span>Add Alias</span>
                 </button>
               </div>
               <div formArrayName="aliasNames" class="d-flex flex-column gap-1">
@@ -585,12 +584,12 @@
         <!-- Footer -->
         <div *ngIf="!isViewMode" class="modal-footer">
           <button type="button" class="btn btn-cancel" (click)="closeModal()">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+            <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </button>
           <button type="button" class="btn btn-save"
                   [disabled]="invoiceForm.invalid || !!rangeError"
                   (click)="onSubmit()">
-            <i class="bi bi-check-circle me-1"></i> {{ isEditMode ? 'Update' : 'Save' }}
+            <i class="bi bi-check-circle me-1"></i><span>{{ isEditMode ? 'Update' : 'Save' }}</span>
           </button>
         </div>
       </form>

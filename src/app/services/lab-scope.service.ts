@@ -32,4 +32,13 @@ export class LabScopeService {
       return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
     }
 
+    getUnifiedTests(searchTerm?: string, pageNo: number = 1, pageSize: number = 50): Observable<any[]> {
+      const term = searchTerm ? encodeURIComponent(searchTerm) : '';
+      return this.http.get<any[]>(`${this.apiUrl}/unified-tests?searchTerm=${term}&pageNo=${pageNo}&pageSize=${pageSize}`);
+    }
+
+    getNablValidity(): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/nabl-validity`);
+    }
+
 }

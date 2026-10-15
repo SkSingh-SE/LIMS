@@ -17,8 +17,7 @@
     </div>
     <div class="notif-dropdown-body">
       <div *ngIf="notifications.length === 0" class="notif-empty">
-        <i class="bi bi-inbox"></i>
-        No new notifications
+        <i class="bi bi-inbox"></i><span>No new notifications</span>
       </div>
       <div *ngFor="let n of notifications"
         (click)="markAsRead(n)"
@@ -37,10 +36,10 @@
     <div class="notif-divider"></div>
     <div class="notif-actions notif-actions-row">
       <button class="notif-action-btn notif-action-btn-sm" (click)="enablePush()">
-        <i class="bi bi-broadcast"></i> Enable Push
+        <i class="bi bi-broadcast"></i><span>Enable Push</span>
       </button>
       <button class="notif-action-btn notif-action-btn-sm notif-action-viewall" (click)="markAllRead()">
-        <i class="bi bi-check2-all"></i> Mark Read All
+        <i class="bi bi-check2-all"></i><span>Mark Read All</span>
       </button>
     </div>
   </div>

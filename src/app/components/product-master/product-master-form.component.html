@@ -6,7 +6,7 @@
         {{ formTitle }}
       </label>
       <a routerLink="/product-master" class="btn btn-outline-light btn-sm cursor-pointer">
-        <i class="bi bi-arrow-left me-1"></i> Back to List
+        <i class="bi bi-arrow-left me-1"></i><span>Back to List</span>
       </a>
     </div>
 
@@ -34,7 +34,7 @@
                         Product Size <span class="text-danger" *ngIf="form.get('isSizeApplicable')?.value">*</span>
                       </label>
                       <a href="/product-size-master" target="_blank" class="btn-nav-link" *ngIf="!isViewMode" title="Manage Product Sizes">
-                        <i class="bi bi-box-arrow-up-right"></i> Manage Sizes
+                        <i class="bi bi-box-arrow-up-right"></i><span>Manage Sizes</span>
                       </a>
                       <div class="form-check form-check-inline m-0 p-0 d-flex align-items-center" (click)="$event.stopPropagation()">
                         <input class="form-check-input" type="checkbox" id="noSizeCheck"
@@ -79,7 +79,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label mb-0">Prefix <span class="text-danger">*</span></label>
                       <button type="button" class="btn-nav-link" (click)="openCustomPrefixModal()" *ngIf="!isViewMode" title="Add Custom Prefix">
-                        <i class="bi bi-plus-circle"></i> Add Prefix
+                        <i class="bi bi-plus-circle"></i><span>Add Prefix</span>
                       </button>
                     </div>
                     <div class="d-flex gap-1">
@@ -189,7 +189,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label mb-0">Std Org <span class="text-danger">*</span></label>
                       <a href="/standard-organization" target="_blank" class="btn-nav-link" *ngIf="!isViewMode" title="Manage Standard Organizations">
-                        <i class="bi bi-box-arrow-up-right"></i> Manage Organizations
+                        <i class="bi bi-box-arrow-up-right"></i><span>Manage Organizations</span>
                       </a>
                     </div>
                     <app-searchable-dropdown
@@ -256,7 +256,7 @@
                       </span>
                       <input type="file" #fileInput class="d-none" (change)="onFileUpload($event)" accept=".pdf" />
                       <button type="button" class="btn btn-outline-secondary btn-sm" (click)="fileInput.click()" *ngIf="!isViewMode">
-                        <i class="bi bi-upload me-1"></i> Upload
+                        <i class="bi bi-upload me-1"></i><span>Upload</span>
                       </button>
                     </div>
                   </div>
@@ -271,7 +271,7 @@
                 <div class="border-top pt-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="fw-bold mb-0" style="color: var(--primary-color); font-size: 0.85rem;">
-                      <i class="bi bi-diagram-3 me-1"></i> Grade Configuration (Version {{ currentVersionGroup.get('versionNumber')?.value || 1 }})
+                      <i class="bi bi-diagram-3 me-1"></i><span>Grade Configuration (Version {{ currentVersionGroup.get('versionNumber')?.value || 1 }})</span>
                     </h6>
                   </div>
 
@@ -288,7 +288,7 @@
                       </app-searchable-dropdown>
                     </div>
                     <button type="button" class="btn-lims btn-lims-add py-1 px-3" (click)="onGradeAdded(activeVersionIndex)">
-                      <i class="bi bi-plus-circle me-1"></i> Add Grade
+                      <i class="bi bi-plus-circle me-1"></i><span>Add Grade</span>
                     </button>
                   </div>
 
@@ -327,7 +327,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                               <span class="fw-bold text-xs" style="color: var(--primary-color);">Condition {{ cIdx + 1 }}</span>
                               <button type="button" class="btn btn-link text-danger p-0 text-xs" (click)="removeCondition(activeVersionIndex, activeGradeTabMap[activeVersionIndex], cIdx); $event.stopPropagation()" *ngIf="!isViewMode">
-                                <i class="bi bi-trash"></i> Remove
+                                <i class="bi bi-trash"></i><span>Remove</span>
                               </button>
                             </div>
 
@@ -380,7 +380,7 @@
                           <!-- Add Condition Button -->
                           <div class="d-flex gap-2 mt-2">
                             <button type="button" class="btn btn-outline-theme btn-sm w-100" (click)="addCondition(activeVersionIndex, activeGradeTabMap[activeVersionIndex])" *ngIf="!isViewMode">
-                              <i class="bi bi-plus-circle me-1"></i> Add Condition
+                              <i class="bi bi-plus-circle me-1"></i><span>Add Condition</span>
                             </button>
                             <button type="button" class="btn btn-outline-secondary btn-sm" (click)="clearConditionSelection(activeVersionIndex, activeGradeTabMap[activeVersionIndex])" *ngIf="grade.activeConditionIdx !== null">
                               Clear Filter
@@ -519,8 +519,7 @@
 
                   <ng-template #noGradesAdded>
                     <div class="text-center py-4 text-muted small border rounded bg-white mt-2">
-                      <i class="bi bi-box-seam fs-3 d-block mb-1 text-secondary"></i>
-                      No grades added to Version {{ currentVersionGroup.get('versionNumber')?.value || 1 }}. Use the grade dropdown above to search and add grades.
+                      <i class="bi bi-box-seam fs-3 d-block mb-1 text-secondary"></i><span>No grades added to Version {{ currentVersionGroup.get('versionNumber')?.value || 1 }}. Use the grade dropdown above to search and add grades.</span>
                     </div>
                   </ng-template>
                 </div>
@@ -532,10 +531,10 @@
         <!-- Sticky Footer Actions -->
         <div class="sticky-bottom bg-white p-3 border-top d-flex justify-content-end align-items-center gap-2 mt-3 shadow-sm rounded-bottom-3" *ngIf="!isViewMode">
           <a [routerLink]="['/product-master']" class="btn-lims btn-lims-cancel">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+            <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </a>
           <button type="submit" class="btn-lims btn-lims-save">
-            <i class="bi bi-check-circle me-1"></i> Save & Publish
+            <i class="bi bi-check-circle me-1"></i><span>Save & Publish</span>
           </button>
         </div>
 

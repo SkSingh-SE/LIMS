@@ -11,7 +11,7 @@ export const authGuard: CanActivateFn = (route, state) => {
   const userData = authService.getUserData();
 
   if (!userData) {
-    router.navigate(['/login']);
+    router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
     return of(false);
   }
 
@@ -24,14 +24,14 @@ export const authGuard: CanActivateFn = (route, state) => {
           return true;
         } else {
           authService.logout();
-          router.navigate(['/login']);
+          router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
           return false;
         }
       }),
       catchError((error) => {
         console.error('Token refresh failed in guard:', error);
         authService.logout();
-        router.navigate(['/login']);
+        router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
         return of(false);
       })
     );

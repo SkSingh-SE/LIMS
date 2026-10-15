@@ -2,7 +2,7 @@
   <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
     <label class="text-md fw-medium ms-3">{{ isViewMode ? 'View Equipment' : (isEditMode ? 'Edit Equipment' : 'Equipment Form') }}</label>
     <a routerLink="/equipment" class="btn btn-outline-light btn-sm me-3">
-      <i class="bi bi-arrow-left"></i> Back to List
+      <i class="bi bi-arrow-left"></i><span>Back to List</span>
     </a>
   </div>
 
@@ -208,13 +208,18 @@
         </div>
         <div>
           <label class="form-label">Calibration Frequency (Days)</label>
-          <input
-            type="number"
-            class="form-control"
-            formControlName="calibrationFrequencyDays"
-            placeholder="e.g. 365"
-            min="1"
-          />
+          <select class="form-select" formControlName="calibrationFrequencyDays">
+            <option [ngValue]="null">Select Frequency</option>
+            <option *ngFor="let opt of calibrationFrequencyOptions" [ngValue]="opt.value">
+              {{ opt.label }}
+            </option>
+            <option *ngIf="isCustomFrequency(equipmentForm.get('calibrationFrequencyDays')?.value)" [ngValue]="equipmentForm.get('calibrationFrequencyDays')?.value">
+              {{ equipmentForm.get('calibrationFrequencyDays')?.value }} Days (Custom)
+            </option>
+          </select>
+          <small class="text-muted d-block mt-0.5" *ngIf="equipmentForm.get('nextCalibrationDueDate')?.value">
+            Next Due: {{ equipmentForm.get('nextCalibrationDueDate')?.value | date: 'dd-MMM-yyyy' }}
+          </small>
         </div>
         <div>
           <label class="form-label">Maintenance Schedule</label>
@@ -271,8 +276,7 @@
                 class="btn btn-add btn-sm"
                 (click)="openCalibrationModal()"
               >
-                <i class="bi bi-plus-circle-dotted"></i>
-                Add Calibration
+                <i class="bi bi-plus-circle-dotted"></i><span>Add Calibration</span>
               </button>
             </div>
             <div class="table-responsive">
@@ -296,8 +300,7 @@
                         class="btn btn-sm btn-add"
                         (click)="openFileInNewTab(record.get('certificatePath')?.value)"
                       >
-                        <i class="bi bi-file-earmark-fill"></i>
-                        {{ record.get("certificate")?.value }}
+                        <i class="bi bi-file-earmark-fill"></i><span>{{ record.get("certificate")?.value }}</span>
                       </button>
                     </td>
                     <td>{{ record.get("agency")?.value || "-" }}</td>
@@ -314,8 +317,7 @@
                   </tr>
                   <tr *ngIf="calibrationRecords.length === 0">
                     <td colspan="5" class="text-center text-muted py-3">
-                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
-                      No calibration records found
+                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i><span>No calibration records found</span>
                     </td>
                   </tr>
                 </tbody>
@@ -333,8 +335,7 @@
                 class="btn btn-add btn-sm"
                 (click)="openMaintenanceModal()"
               >
-                <i class="bi bi-plus-circle-dotted"></i>
-                Add Maintenance
+                <i class="bi bi-plus-circle-dotted"></i><span>Add Maintenance</span>
               </button>
             </div>
             <div class="table-responsive">
@@ -356,15 +357,13 @@
                         class="btn btn-sm btn-add"
                         (click)="openFileInNewTab(record.get('certificatePath')?.value)"
                       >
-                        <i class="bi bi-file-earmark-fill"></i>
-                        {{ record.get("certificate")?.value }}
+                        <i class="bi bi-file-earmark-fill"></i><span>{{ record.get("certificate")?.value }}</span>
                       </button>
                     </td>
                   </tr>
                   <tr *ngIf="maintenanceRecords.length === 0">
                     <td colspan="3" class="text-center text-muted py-3">
-                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
-                      No maintenance records found
+                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i><span>No maintenance records found</span>
                     </td>
                   </tr>
                 </tbody>
@@ -378,12 +377,10 @@
               <label class="section-divider">SOP Attachments</label>
               <div class="d-flex gap-2">
                 <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm" (click)="openAttachmentModal()">
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Add Attachment
+                  <i class="bi bi-plus-circle-dotted"></i><span>Add Attachment</span>
                 </button>
                 <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm" (click)="openVideoModal()">
-                  <i class="bi bi-plus-circle-dotted"></i>
-                  Add Video
+                  <i class="bi bi-plus-circle-dotted"></i><span>Add Video</span>
                 </button>
               </div>
             </div>
@@ -424,8 +421,7 @@
                         <td>{{ attachment.title || '-' }}</td>
                         <td>
                           <button type="button" class="btn btn-sm btn-add" (click)="openFileInNewTab(attachment.url)">
-                            <i class="bi bi-file-earmark-fill"></i>
-                            {{ attachment.name }}
+                            <i class="bi bi-file-earmark-fill"></i><span>{{ attachment.name }}</span>
                           </button>
                         </td>
                         <td *ngIf="!isViewMode" class="text-center">
@@ -436,8 +432,7 @@
                       </tr>
                       <tr *ngIf="sopAttachments.length === 0">
                         <td [attr.colspan]="isViewMode ? 3 : 4" class="text-center text-muted py-3">
-                          <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
-                          No attachments found
+                          <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i><span>No attachments found</span>
                         </td>
                       </tr>
                     </tbody>
@@ -455,14 +450,13 @@
                         Your browser does not support the video tag.
                       </video>
                       <button *ngIf="!isViewMode" type="button" class="btn btn-remove btn-sm mt-2" (click)="deleteVideo(video)">
-                        <i class="bi bi-trash3"></i> Delete
+                        <i class="bi bi-trash3"></i><span>Delete</span>
                       </button>
                     </div>
                   </div>
                 </div>
                 <div *ngIf="sopVideos.length === 0" class="text-center text-muted py-3">
-                  <i class="bi bi-camera-video fs-4 d-block mb-1"></i>
-                  No videos found
+                  <i class="bi bi-camera-video fs-4 d-block mb-1"></i><span>No videos found</span>
                 </div>
               </div>
             </div>
@@ -478,8 +472,7 @@
                 class="btn btn-add btn-sm"
                 (click)="openRefMaterialModal()"
               >
-                <i class="bi bi-plus-circle-dotted"></i>
-                Add Reference Material
+                <i class="bi bi-plus-circle-dotted"></i><span>Add Reference Material</span>
               </button>
             </div>
             <div class="table-responsive">
@@ -517,8 +510,7 @@
                   </tr>
                   <tr *ngIf="referenceMaterials.length === 0">
                     <td [attr.colspan]="isEditMode ? 8 : 7" class="text-center text-muted py-3">
-                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
-                      No reference materials found
+                      <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i><span>No reference materials found</span>
                     </td>
                   </tr>
                 </tbody>
@@ -529,10 +521,10 @@
       </ng-container>
       <div class="d-flex justify-content-end gap-2 mt-4">
         <a [routerLink]="['/equipment']" class="btn btn-cancel">
-          <i class="bi bi-x-circle"></i> Cancel
+          <i class="bi bi-x-circle"></i><span>Cancel</span>
         </a>
         <button *ngIf="!isViewMode" type="submit" class="btn btn-save" [disabled]="equipmentForm.invalid">
-          <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+          <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
         </button>
       </div>
     </form>
@@ -589,8 +581,7 @@
                     (click)="openFileInNewTab(calibrationForm.get('certificatePath')?.value)"
                     title="{{ calibrationForm.get('certificatePath')?.value }}"
                   >
-                    <i class="bi bi-file-earmark-fill"></i>
-                    {{ calibrationForm.get("certificate")?.value }}
+                    <i class="bi bi-file-earmark-fill"></i><span>{{ calibrationForm.get("certificate")?.value }}</span>
                   </span>
                   <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeFile()">
                     <i class="bi bi-trash-fill fs-6 me-1"></i>
@@ -652,8 +643,7 @@
                     (click)="openFileInNewTab(maintenanceForm.get('certificatePath')?.value)"
                     title="{{ maintenanceForm.get('certificatePath')?.value }}"
                   >
-                    <i class="bi bi-file-earmark-fill"></i>
-                    {{ maintenanceForm.get("certificate")?.value }}
+                    <i class="bi bi-file-earmark-fill"></i><span>{{ maintenanceForm.get("certificate")?.value }}</span>
                   </span>
                   <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0" (click)="removeFile()">
                     <i class="bi bi-trash-fill fs-6 me-1"></i>
@@ -676,10 +666,10 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Close
+          <i class="bi bi-x-circle"></i><span>Close</span>
         </button>
         <button type="button" class="btn btn-save" (click)="submitMaintenanceForm()">
-          <i class="bi bi-check-circle"></i> Save
+          <i class="bi bi-check-circle"></i><span>Save</span>
         </button>
       </div>
     </div>
@@ -723,10 +713,10 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Close
+          <i class="bi bi-x-circle"></i><span>Close</span>
         </button>
         <button type="button" class="btn btn-save" (click)="submitSOPAttachmentForm()">
-          <i class="bi bi-check-circle"></i> Save
+          <i class="bi bi-check-circle"></i><span>Save</span>
         </button>
       </div>
     </div>
@@ -763,10 +753,10 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Close
+          <i class="bi bi-x-circle"></i><span>Close</span>
         </button>
         <button type="button" class="btn btn-save" (click)="submitSOPVideoForm()">
-          <i class="bi bi-check-circle"></i> Save
+          <i class="bi bi-check-circle"></i><span>Save</span>
         </button>
       </div>
     </div>
@@ -838,10 +828,10 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Close
+          <i class="bi bi-x-circle"></i><span>Close</span>
         </button>
         <button type="button" class="btn btn-save" (click)="submitRefMaterialForm()">
-          <i class="bi bi-check-circle"></i> Save
+          <i class="bi bi-check-circle"></i><span>Save</span>
         </button>
       </div>
     </div>

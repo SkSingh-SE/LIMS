@@ -113,33 +113,44 @@
   font-size: 0.9rem;
 }
 
-/* ─── SM Mode (when smallInput=true adds form-control-sm) ─── */
+/* ─── SM Mode (when smallInput=true adds form-control-sm and input-group-sm) ─── */
+.input-group.input-group-sm,
 .input-group:has(.form-control-sm) {
-  min-height: 30px;
+  min-height: 28px;
+  height: 28px;
 }
 
+.input-group.input-group-sm .form-control-sm,
 .input-group:has(.form-control-sm) .form-control-sm {
-  font-size: var(--font-sm, 0.8125rem);
-  padding: 0.2rem 0.5rem;
-  line-height: 1.4;
+  font-size: var(--font-sm, 0.78rem);
+  padding: 0.15rem 0.5rem;
+  line-height: 1.35;
+  height: 26px;
 }
 
+.input-group.input-group-sm .form-control-sm::placeholder,
 .input-group:has(.form-control-sm) .form-control-sm::placeholder {
-  font-size: var(--font-sm, 0.8125rem);
+  font-size: var(--font-sm, 0.78rem);
 }
 
+.input-group.input-group-sm .input-group-text,
 .input-group:has(.form-control-sm) .input-group-text.dropdown-toggle-icon {
   padding: 0 0.35rem;
+  height: 26px;
 }
 
+.input-group.input-group-sm .input-group-text.dropdown-toggle-icon i,
 .input-group:has(.form-control-sm) .input-group-text.dropdown-toggle-icon i {
   font-size: 0.55rem;
 }
 
+.input-group.input-group-sm .input-group-text.clear-icon,
 .input-group:has(.form-control-sm) .input-group-text.clear-icon {
   padding: 0 0.2rem;
+  height: 26px;
 }
 
+.input-group.input-group-sm .input-group-text.clear-icon i,
 .input-group:has(.form-control-sm) .input-group-text.clear-icon i {
   font-size: 0.5rem;
 }

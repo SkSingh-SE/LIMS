@@ -179,8 +179,7 @@
 <div class="modal-custom" *ngIf="showRemarkModal" role="dialog" aria-modal="true">
   <div class="modal-header card-form-header text-white d-flex justify-content-between align-items-center">
     <label class="modal-title fw-medium">
-      <i class="bi me-2" [ngClass]="getActionCfg(pendingAction?.action).icon"></i>
-      {{ pendingAction?.name }} - Case {{ pendingItem?.caseNo }}
+      <i class="bi me-2" [ngClass]="getActionCfg(pendingAction?.action).icon"></i><span>{{ pendingAction?.name }} - Case {{ pendingItem?.caseNo }}</span>
     </label>
     <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeRemarkModal()"></button>
   </div>
@@ -202,7 +201,7 @@
       [disabled]="!actionRemark.trim() || isSubmittingAction"
       (click)="confirmRemarkAction()"
     >
-      <i class="bi bi-send-check me-1"></i>Submit
+      <i class="bi bi-send-check me-1"></i><span>Submit</span>
     </button>
   </div>
 </div>

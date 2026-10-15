@@ -16,6 +16,7 @@ import {
   gstinValidator,
   panValidator,
   financialYearRangeValidator,
+  dateRangeValidator,
 } from '../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
 
@@ -106,7 +107,10 @@ export class SettingsComponent implements OnInit {
           }
         }
         if (res.nablAccreditation) {
-          this.settingsForm.get('nablAccreditation')?.patchValue(res.nablAccreditation);
+          const nablData = { ...res.nablAccreditation };
+          if (nablData.issueDate) nablData.issueDate = nablData.issueDate.split('T')[0];
+          if (nablData.expiryDate) nablData.expiryDate = nablData.expiryDate.split('T')[0];
+          this.settingsForm.get('nablAccreditation')?.patchValue(nablData);
           if (res.nablAccreditation.nablLogo) {
             this.nablLogoPreview = this.normalizeFileUrl(res.nablAccreditation.nablLogo);
           }
@@ -163,9 +167,12 @@ export class SettingsComponent implements OnInit {
       nablAccreditation: this.fb.group({
         nablEnabled: [true],
         nablTcNumber: ['', [Validators.maxLength(100)]],
+        issueDate: [''],
+        expiryDate: [''],
+        isActive: [true],
         nablCertificate: [''],
         nablLogo: ['']
-      }),
+      }, { validators: dateRangeValidator('issueDate', 'expiryDate') }),
 
       // Numbering & Identity
       numbering: this.fb.group({
@@ -210,12 +217,20 @@ export class SettingsComponent implements OnInit {
     // NABL conditional validation
     this.settingsForm.get('nablAccreditation.nablEnabled')?.valueChanges.subscribe(enabled => {
       const tcNumberControl = this.settingsForm.get('nablAccreditation.nablTcNumber');
+      const issueDateControl = this.settingsForm.get('nablAccreditation.issueDate');
+      const expiryDateControl = this.settingsForm.get('nablAccreditation.expiryDate');
       if (enabled) {
         tcNumberControl?.setValidators([Validators.required, noWhitespaceValidator(), Validators.maxLength(100)]);
+        issueDateControl?.setValidators([Validators.required]);
+        expiryDateControl?.setValidators([Validators.required]);
       } else {
         tcNumberControl?.setValidators([Validators.maxLength(100)]);
+        issueDateControl?.clearValidators();
+        expiryDateControl?.clearValidators();
       }
       tcNumberControl?.updateValueAndValidity();
+      issueDateControl?.updateValueAndValidity();
+      expiryDateControl?.updateValueAndValidity();
     });
 
     // GST conditional validation — all GST fields mandatory only when applicable
@@ -239,8 +254,14 @@ export class SettingsComponent implements OnInit {
     const nablEnabled = this.settingsForm.get('nablAccreditation.nablEnabled')?.value;
     if (nablEnabled) {
       const tcNumberControl = this.settingsForm.get('nablAccreditation.nablTcNumber');
+      const issueDateControl = this.settingsForm.get('nablAccreditation.issueDate');
+      const expiryDateControl = this.settingsForm.get('nablAccreditation.expiryDate');
       tcNumberControl?.setValidators([Validators.required, noWhitespaceValidator(), Validators.maxLength(100)]);
+      issueDateControl?.setValidators([Validators.required]);
+      expiryDateControl?.setValidators([Validators.required]);
       tcNumberControl?.updateValueAndValidity();
+      issueDateControl?.updateValueAndValidity();
+      expiryDateControl?.updateValueAndValidity();
     }
 
     // Apply initial GST validators based on current value

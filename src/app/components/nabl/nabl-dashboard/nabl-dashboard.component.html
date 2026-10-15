@@ -4,10 +4,10 @@
         <h4 class="mb-0 fw-bold">NABL Dashboard</h4>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary btn-sm" (click)="loadDashboard()">
-                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                <i class="bi bi-arrow-clockwise me-1"></i><span>Refresh</span>
             </button>
             <a routerLink="/nabl/audit-print" class="btn btn-primary btn-sm">
-                <i class="bi bi-printer me-1"></i> Audit Print
+                <i class="bi bi-printer me-1"></i><span>Audit Print</span>
             </a>
         </div>
     </div>
@@ -85,8 +85,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white border-bottom">
                         <h6 class="mb-0 fw-bold">
-                            <i class="bi bi-pie-chart text-primary me-2"></i>
-                            Status Distribution
+                            <i class="bi bi-pie-chart text-primary me-2"></i><span>Status Distribution</span>
                         </h6>
                     </div>
                     <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 280px;">
@@ -104,8 +103,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-bold">
-                            <i class="bi bi-hourglass-split text-warning me-2"></i>
-                            Pending Reviews
+                            <i class="bi bi-hourglass-split text-warning me-2"></i><span>Pending Reviews</span>
                             <span *ngIf="dashboard.pendingReviews.length > 0" class="badge bg-warning text-dark ms-2">
                                 {{ dashboard.pendingReviews.length }}
                             </span>
@@ -172,8 +170,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-bottom">
                         <h6 class="mb-0 fw-bold">
-                            <i class="bi bi-calendar-event text-primary me-2"></i>
-                            Upcoming Review Dates
+                            <i class="bi bi-calendar-event text-primary me-2"></i><span>Upcoming Review Dates</span>
                         </h6>
                     </div>
                     <div class="card-body p-0">
@@ -223,8 +220,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-bottom">
                         <h6 class="mb-0 fw-bold">
-                            <i class="bi bi-exclamation-triangle text-danger me-2"></i>
-                            Expiring / Overdue Documents
+                            <i class="bi bi-exclamation-triangle text-danger me-2"></i><span>Expiring / Overdue Documents</span>
                             <span *ngIf="dashboard.overdueCount > 0" class="badge bg-danger ms-2">
                                 {{ dashboard.overdueCount }} overdue
                             </span>
@@ -277,8 +273,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-bottom">
                         <h6 class="mb-0 fw-bold">
-                            <i class="bi bi-table text-primary me-2"></i>
-                            Forms Summary by Type
+                            <i class="bi bi-table text-primary me-2"></i><span>Forms Summary by Type</span>
                         </h6>
                     </div>
                     <div class="card-body p-0">

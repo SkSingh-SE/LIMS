@@ -1,9 +1,6 @@
 <div
   class="dashboard-card"
-  [class.clickable]="!isLoading && !isCustomizationMode && !hasError"
-  [class]="'card-status-' + (card.status.toLowerCase() || 'normal')"
-  [class.loading]="isLoading"
-  [class.error]="hasError"
+  [ngClass]="['card-status-' + (card.status?.toLowerCase() || 'normal'), isLoading ? 'loading' : '', hasError ? 'error' : '', (!isLoading && !isCustomizationMode && !hasError) ? 'clickable' : '']"
   (click)="onCardClick()"
   role="button"
   [tabindex]="isCustomizationMode || hasError ? -1 : 0">
@@ -28,7 +25,7 @@
         <i [class]="getStatusIcon()"></i>
       </div>
       <div class="urgent-indicator" *ngIf="card.metadata?.['HasUrgent']">
-        <i class="bi bi-lightning-fill"></i> URGENT
+        <i class="bi bi-lightning-fill"></i><span>URGENT</span>
       </div>
     </header>
 

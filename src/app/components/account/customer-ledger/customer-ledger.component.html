@@ -4,10 +4,10 @@
       <label class="text-md fw-medium ms-3">Customer Ledger</label>
       <div class="d-flex gap-2 me-3" *ngIf="selectedCustomerId">
         <button class="btn btn-outline-light btn-sm" (click)="exportToExcel()" [disabled]="!ledgerEntries.length">
-          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i><span>Export CSV</span>
         </button>
         <button class="btn btn-outline-light btn-sm" (click)="printStatement()">
-          <i class="bi bi-printer me-1"></i> Print Statement
+          <i class="bi bi-printer me-1"></i><span>Print Statement</span>
         </button>
       </div>
     </div>
@@ -37,7 +37,7 @@
         </div>
         <div class="col-md-2">
           <button class="btn btn-primary w-100" (click)="loadLedger()" [disabled]="!selectedCustomerId">
-            <i class="bi bi-search me-1"></i> Search
+            <i class="bi bi-search me-1"></i><span>Search</span>
           </button>
         </div>
       </div>
@@ -86,7 +86,7 @@
   <!-- Period Summary -->
   <div class="card mb-4 shadow-sm" *ngIf="selectedCustomerId">
     <div class="card-header bg-white">
-      <h6 class="mb-0"><i class="bi bi-calendar-range me-2"></i>Period Summary</h6>
+      <h6 class="mb-0"><i class="bi bi-calendar-range me-2"></i><span>Period Summary</span></h6>
     </div>
     <div class="card-body">
       <div class="row g-3 align-items-end mb-3">
@@ -101,8 +101,7 @@
         <div class="col-md-4">
           <button class="btn btn-add w-100" (click)="loadPeriodSummary()" [disabled]="isLoadingPeriodSummary">
             <span *ngIf="isLoadingPeriodSummary" class="spinner-border spinner-border-sm me-1"></span>
-            <i *ngIf="!isLoadingPeriodSummary" class="bi bi-graph-up me-1"></i>
-            {{ isLoadingPeriodSummary ? 'Loading...' : 'View Period Summary' }}
+            <i *ngIf="!isLoadingPeriodSummary" class="bi bi-graph-up me-1"></i><span>{{ isLoadingPeriodSummary ? 'Loading...' : 'View Period Summary' }}</span>
           </button>
         </div>
       </div>
@@ -189,8 +188,7 @@
             </tr>
             <tr *ngIf="!ledgerEntries.length">
               <td colspan="7" class="text-center py-4 text-muted">
-                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                No ledger entries found for the selected period.
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i><span>No ledger entries found for the selected period.</span>
               </td>
             </tr>
           </tbody>

@@ -76,16 +76,16 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
     private toastService: ToastService
   ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     if (this.visible) {
-      this.loadParameters();
+      await this.loadParameters();
       this.parseInitialFormula();
     }
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
+  async ngOnChanges(changes: SimpleChanges): Promise<void> {
     if (changes['visible'] && this.visible) {
-      this.loadParameters();
+      await this.loadParameters();
       this.parseInitialFormula();
       this.validationError = null;
       this.isValid = false;
@@ -103,12 +103,6 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
   async loadParameters() {
     try {
       // Load all parameters for the given type to build the list
-      const payload = {
-        pageNumber: 1,
-        pageSize: 1000,
-        searchTerm: ''
-      };
-
       let res;
       if (this.parameterType === 'Chemical') {
         res = await firstValueFrom(this.parameterService.getChemicalParameterDropdown('', 0, 1000));
@@ -133,16 +127,67 @@ export class FormulaBuilderComponent implements OnInit, OnChanges {
 
   parseInitialFormula() {
     this.tokens = [];
-    if (!this.currentFormula) return;
-    
-    // For now, if editing an existing formula, we'll just show it as a single generic block 
-    // unless we write a full parser. A simple fallback is to add it as a single token.
-    // In a full implementation, you would lex the string back into tokens.
-    this.tokens.push({
-      type: 'function',
-      value: this.currentFormula,
-      display: this.currentFormulaDisplay || this.currentFormula
-    });
+    if (!this.currentFormula || !this.currentFormula.trim()) return;
+
+    // Tokenize currentFormula into tokens: {P123}, numbers, operators, parens, functions
+    const regex = /(\{P\d+\}|P\d+|[0-9]*\.?[0-9]+|[a-zA-Z_][a-zA-Z0-9_]*\(|[+\-*/(),])/g;
+    const matches = this.currentFormula.match(regex);
+    if (!matches || matches.length === 0) {
+      this.tokens.push({
+        type: 'function',
+        value: this.currentFormula,
+        display: this.currentFormulaDisplay || this.currentFormula
+      });
+      return;
+    }
+
+    const operators = new Set(['+', '-', '*', '/']);
+    const parens = new Set(['(', ')']);
+
+    for (const m of matches) {
+      const pMatch = m.match(/^\{?P(\d+)\}?$/i);
+      if (pMatch) {
+        const id = Number(pMatch[1]);
+        const param = this.availableParameters.find(p => (p.id === id || p.value === id));
+        const name = param ? (param.name || param.displayText) : `Param #${id}`;
+        this.tokens.push({
+          type: 'param',
+          value: `{P${id}}`,
+          display: name,
+          paramId: id,
+          paramName: name
+        });
+        continue;
+      }
+
+      if (/^[0-9]*\.?[0-9]+$/.test(m)) {
+        this.tokens.push({ type: 'number', value: m, display: m });
+        continue;
+      }
+
+      if (operators.has(m)) {
+        this.tokens.push({ type: 'operator', value: m, display: m });
+        continue;
+      }
+
+      if (parens.has(m)) {
+        this.tokens.push({ type: 'paren', value: m, display: m });
+        continue;
+      }
+
+      if (m === ',') {
+        this.tokens.push({ type: 'comma', value: ',', display: ',' });
+        continue;
+      }
+
+      if (m.endsWith('(')) {
+        const fnName = m.slice(0, -1).toUpperCase();
+        this.tokens.push({ type: 'function', value: m, display: fnName });
+        continue;
+      }
+
+      this.tokens.push({ type: 'function', value: m, display: m });
+    }
   }
 
   addParameterToken(param: any) {

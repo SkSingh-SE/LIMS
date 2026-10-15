@@ -34,4 +34,9 @@ export class AnalysisTechniqueService {
   getAnalysisTechniqueDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
+
+  getDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+    return this.getAnalysisTechniqueDropdown(searchTerm, pageNumber, pageSize);
+  }
 }
+

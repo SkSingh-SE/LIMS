@@ -204,30 +204,29 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   // ─── Overlay ─────────────────────────────────────────────────────────────────
 
   private openDropdown(): void {
-    if (!this.triggerRef) return;
+    if (!this.triggerRef || this.isDisabled) return;
     const triggerWidth = this.triggerRef.nativeElement.getBoundingClientRect().width;
 
-    const positionStrategy = this.overlay
-      .position()
-      .flexibleConnectedTo(this.triggerRef.nativeElement)
-      .withPositions([
-        { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top' },
-        { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom' },
-      ])
-      .withFlexibleDimensions(false)
-      .withPush(false);
-
     if (!this.overlayRef) {
+      const positionStrategy = this.overlay
+        .position()
+        .flexibleConnectedTo(this.triggerRef.nativeElement)
+        .withPositions([
+          { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
+          { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 },
+        ])
+        .withFlexibleDimensions(false)
+        .withPush(false);
+
       this.overlayRef = this.overlay.create({
         positionStrategy,
         scrollStrategy: this.overlay.scrollStrategies.reposition(),
         hasBackdrop: false,
-        width: triggerWidth,
+        width: Math.max(triggerWidth, 240),
         panelClass: 'ms-overlay-panel',
       });
     } else {
-      this.overlayRef.updatePositionStrategy(positionStrategy);
-      this.overlayRef.updateSize({ width: triggerWidth });
+      this.overlayRef.updateSize({ width: Math.max(triggerWidth, 240) });
     }
 
     if (!this.overlayRef.hasAttached()) {
@@ -245,10 +244,8 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
       this.isOpen = true;
       this.cdr.markForCheck();
 
-      // mousedown capture fires before Angular handlers — immune to stopPropagation.
-      // setTimeout defers registration so the opening mousedown itself doesn't close immediately.
       setTimeout(() => {
-        document.addEventListener('mousedown', this.handleOutsideClick, true);
+        document.addEventListener('click', this.handleOutsideClick, true);
         this.panelRef?.instance?.focusSearch();
       });
     } else {
@@ -269,7 +266,7 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
     if (this.overlayRef?.hasAttached()) {
       this.overlayRef.detach();
     }
-    document.removeEventListener('mousedown', this.handleOutsideClick, true);
+    document.removeEventListener('click', this.handleOutsideClick, true);
     this.isOpen = false;
     this.cdr.markForCheck();
 
@@ -289,15 +286,6 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   onTriggerClick(): void {
     if (this.isDisabled) return;
     this.touched = true;
-    if (!this.overlayRef?.hasAttached()) {
-      this.openDropdown();
-    }
-  }
-
-  onChevronClick(event: Event): void {
-    event.stopPropagation();
-    if (this.isDisabled) return;
-    this.touched = true;
     if (this.overlayRef?.hasAttached()) {
       this.closeDropdown();
     } else {
@@ -305,15 +293,23 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
     }
   }
 
+  onChevronClick(event: Event): void {
+    event.stopPropagation();
+    this.onTriggerClick();
+  }
+
   handleOutsideClick = (event: MouseEvent) => {
     // Auto-remove listener if overlay was already detached externally
     if (!this.overlayRef?.hasAttached()) {
-      document.removeEventListener('mousedown', this.handleOutsideClick, true);
+      document.removeEventListener('click', this.handleOutsideClick, true);
       return;
     }
     const triggerEl = this.triggerRef?.nativeElement;
     const overlayEl = this.overlayRef?.overlayElement;
-    if (!triggerEl?.contains(event.target as Node) && !overlayEl?.contains(event.target as Node)) {
+    const clickedInsideTrigger = triggerEl?.contains(event.target as Node);
+    const clickedInsideDropdown = overlayEl?.contains(event.target as Node);
+
+    if (!clickedInsideTrigger && !clickedInsideDropdown) {
       this.closeDropdown();
       this.cdr.markForCheck();
     }
@@ -365,6 +361,6 @@ export class MultiSelectDropdownComponent implements OnInit, OnChanges, OnDestro
   ngOnDestroy(): void {
     this.subs.unsubscribe();
     this.overlayRef?.dispose();
-    document.removeEventListener('mousedown', this.handleOutsideClick, true);
+    document.removeEventListener('click', this.handleOutsideClick, true);
   }
 }

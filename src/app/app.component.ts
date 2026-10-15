@@ -3,10 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NotificationStoreService } from './services/notification-store.service';
 import { ThemeService } from './services/theme.service';
+import { PerfHudComponent } from './utility/performance/perf-hud/perf-hud.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule],
+  imports: [RouterOutlet, CommonModule, PerfHudComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })

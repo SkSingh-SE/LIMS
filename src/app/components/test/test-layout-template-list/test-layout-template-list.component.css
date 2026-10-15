@@ -1,0 +1,47 @@
+.basic-data-table {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.card-form-header {
+  background: linear-gradient(135deg, var(--primary-color, #da261c) 0%, #a61a12 100%);
+  border-bottom: none;
+}
+
+.custom-search {
+  max-width: 280px;
+}
+
+.bordered-table th,
+.bordered-table td {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+  border-color: #f1f5f9;
+}
+
+.actions-col {
+  width: 110px;
+  min-width: 110px;
+}
+
+.archetype-summary-text {
+  max-width: 220px;
+  display: inline-block;
+}
+
+.bg-indigo-subtle {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.text-indigo {
+  color: #4f46e5 !important;
+}
+
+.border-indigo-subtle {
+  border-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+.cursor {
+  cursor: pointer;
+  user-select: none;
+}

@@ -5,7 +5,7 @@
       <div class="card shadow border-0 h-100 rounded-4">
         <div class="card-header bg-gradient-primary text-white py-3 rounded-top-4">
           <h6 class="mb-0 d-flex align-items-center fw-bold">
-            <i class="bi bi-list-check me-2 fs-5"></i> Available Permissions
+            <i class="bi bi-list-check me-2 fs-5"></i><span>Available Permissions</span>
           </h6>
         </div>
         <div class="card-body bg-light-subtle">
@@ -100,7 +100,7 @@
       <div class="card shadow border-0 h-100 rounded-4">
         <div class="card-header bg-success text-white py-3 rounded-top-4">
            <h6 class="mb-0 d-flex align-items-center fw-bold">
-            <i class="bi bi-person-check-fill me-2 fs-5"></i> User Special Permissions
+            <i class="bi bi-person-check-fill me-2 fs-5"></i><span>User Special Permissions</span>
           </h6>
         </div>
         <div class="card-body bg-light-subtle">
@@ -165,17 +165,17 @@
   <!-- Bottom Actions -->
   <div class="fixed-bottom bg-white border-top shadow-lg py-3 px-4 d-flex justify-content-between align-items-center z-3" *ngIf="!isViewMode">
     <div class="text-muted small">
-      <i class="bi bi-info-circle me-1"></i> Changes are not saved until you click 'Save Permissions'.
+      <i class="bi bi-info-circle me-1"></i><span>Changes are not saved until you click 'Save Permissions'.</span>
     </div>
     <div class="d-flex gap-2">
       <button type="button" (click)="clearUserSelection()" class="btn btn-light border shadow-sm px-4 fw-medium">
-        <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+        <i class="bi bi-arrow-counterclockwise me-2"></i><span>Reset</span>
       </button>
       <button type="button" routerLink="/employee" class="btn btn-cancel shadow-sm px-4 fw-medium text-white">
-        <i class="bi bi-x-lg me-2"></i>Cancel
+        <i class="bi bi-x-lg me-2"></i><span>Cancel</span>
       </button>
       <button type="button" class="btn btn-save shadow-sm px-5 fw-bold" (click)="savePermissions()">
-        <i class="bi bi-check-lg me-2"></i>Save Permissions
+        <i class="bi bi-check-lg me-2"></i><span>Save Permissions</span>
       </button>
     </div>
   </div>

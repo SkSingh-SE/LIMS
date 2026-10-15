@@ -84,6 +84,14 @@ export class SampleInwardService {
     return this.http.post<any>(`${this.planApiUrl}/reject-replan/${requestId}`, { remarks: remarks || '' });
   }
 
+  approveReplanByPlan(planId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.planApiUrl}/approve-replan-by-plan/${planId}`, { remarks: remarks || '' });
+  }
+
+  rejectReplanByPlan(planId: number, remarks?: string): Observable<any> {
+    return this.http.post<any>(`${this.planApiUrl}/reject-replan-by-plan/${planId}`, { remarks: remarks || '' });
+  }
+
   assignGrade(payload: { sampleID: number; specificationGradeID: number; notes?: string }): Observable<any> {
     return this.http.post<any>(`${this.planApiUrl}/assign-grade`, payload);
   }

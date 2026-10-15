@@ -32,7 +32,7 @@ export class MultiSelectPanelComponent {
 
   /** Called by parent after overlay attaches */
   focusSearch(): void {
-    setTimeout(() => this.panelSearchRef?.nativeElement?.focus());
+    setTimeout(() => this.panelSearchRef?.nativeElement?.focus({ preventScroll: true }));
   }
 
   /** Called by parent before closing to reset search state */

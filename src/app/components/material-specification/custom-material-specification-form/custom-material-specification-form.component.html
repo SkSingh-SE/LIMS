@@ -3,7 +3,7 @@
     <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
       <label class="text-md fw-medium ms-3">Custom Material Specification Form</label>
       <a routerLink="/custom-material-specification" class="btn btn-outline-light btn-sm me-3">
-        <i class="bi bi-arrow-left"></i> Back to List
+        <i class="bi bi-arrow-left"></i><span>Back to List</span>
       </a>
     </div>
   <div class="card-body">
@@ -56,7 +56,7 @@
             <div class="col-12">
               <div class="identifier-box d-flex flex-wrap align-items-center gap-2">
                 <span class="identifier-box-label">
-                  <i class="bi bi-tags-fill me-1"></i>Grade Identifiers
+                  <i class="bi bi-tags-fill me-1"></i><span>Grade Identifiers</span>
                   <small class="text-muted fw-normal">(shown on each grade)</small>
                 </span>
                 <div class="vr d-none d-md-block"></div>
@@ -75,7 +75,7 @@
                       (click)="removeCustomIdentifier(ci)" *ngIf="!isViewMode"><i class="bi bi-x-lg"></i></button>
                   </div>
                   <button type="button" class="btn btn-sm btn-outline-primary" (click)="addCustomIdentifier()"
-                    *ngIf="!isViewMode && customIdentifiers.length < 3"><i class="bi bi-plus-lg"></i> Custom Box</button>
+                    *ngIf="!isViewMode && customIdentifiers.length < 3"><i class="bi bi-plus-lg"></i><span>Custom Box</span></button>
                 </div>
               </div>
             </div>
@@ -110,7 +110,7 @@
             </ul>
             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add mb-1"
               (click)="addHeaderParameter($any(selectedHeaderTab))">
-              <i class="bi bi-plus-circle-dotted"></i> Add Parameter
+              <i class="bi bi-plus-circle-dotted"></i><span>Add Parameter</span>
             </button>
           </div>
 
@@ -179,11 +179,10 @@
         <div *ngIf="!isViewMode" class="d-flex justify-content-end align-items-center gap-2 mb-2">
           <button type="button" class="btn btn-sm btn-cancel" (click)="downloadSpecTemplate()" [disabled]="importBuilding"
             title="Download a multi-sheet Excel template (all grades & sections)">
-            <i class="bi" [ngClass]="importBuilding ? 'bi-hourglass-split' : 'bi-download'"></i>
-            {{ importBuilding ? 'Preparing…' : 'Download Template' }}
+            <i class="bi" [ngClass]="importBuilding ? 'bi-hourglass-split' : 'bi-download'"></i><span>{{ importBuilding ? 'Preparing…' : 'Download Template' }}</span>
           </button>
           <button type="button" class="btn btn-sm btn-cancel" (click)="specXlsx.click()" title="Import grades & lines from filled Excel template">
-            <i class="bi bi-upload"></i> Import Excel
+            <i class="bi bi-upload"></i><span>Import Excel</span>
           </button>
           <input #specXlsx type="file" accept=".xlsx" hidden (change)="onSpecFileSelected($event)" />
         </div>
@@ -197,7 +196,7 @@
                title="Remove grade" (click)="removeGradeTab(gi, $event)"></i>
           </li>
           <li *ngIf="!isViewMode" class="grade-tab-add" (click)="addGrade()" title="Add a new grade">
-            <i class="bi bi-plus-circle"></i> Add Grade
+            <i class="bi bi-plus-circle"></i><span>Add Grade</span>
           </li>
         </ul>
 
@@ -225,7 +224,7 @@
                   <div class="form-field-header">
                     <label class="form-label">Metal Classification</label>
                     <a *ngIf="!isViewMode" class="btn-nav-link" (click)="openLinkedMaster('/metal-classification')" title="Manage Metal Classification">
-                      <i class="bi bi-box-arrow-up-right me-1"></i>Manage
+                      <i class="bi bi-box-arrow-up-right me-1"></i><span>Manage</span>
                     </a>
                   </div>
                   <app-searchable-dropdown [smallInput]="true"
@@ -296,8 +295,7 @@
                         class="btn btn-sm btn-add mt-1"
                         (click)="addSpecificationLine(gi, 'chemical')"
                       >
-                        <i class="bi bi-plus-circle-dotted"></i>
-                        Add Line
+                        <i class="bi bi-plus-circle-dotted"></i><span>Add Line</span>
                       </button>
                       <button
                         type="button"
@@ -711,8 +709,7 @@
                         class="btn btn-sm btn-add mt-1"
                         (click)="addSpecificationLine(gi, 'mechanical')"
                       >
-                        <i class="bi bi-plus-circle-dotted"></i>
-                        Add Line
+                        <i class="bi bi-plus-circle-dotted"></i><span>Add Line</span>
                       </button>
                       <button
                         type="button"
@@ -1124,8 +1121,7 @@
                       class="btn btn-sm btn-remove mt-1"
                       (click)="addSpecificationLine(gi, 'other')"
                     >
-                      <i class="bi bi-plus-circle-dotted"></i>
-                      Add Line
+                      <i class="bi bi-plus-circle-dotted"></i><span>Add Line</span>
                     </button>
                   </div>
 
@@ -1446,7 +1442,7 @@
                       Add parameters in the <strong>Chemical</strong> tab first.
                     </div>
                     <div class="alert alert-danger small py-1 mb-2" *ngIf="getSpecificationLinesByTab(gi, 'chemical').errors?.['duplicateTestMethod']">
-                      <i class="bi bi-exclamation-triangle me-1"></i> Duplicate Test Method Specification found. Each method can be assigned only once across all rows.
+                      <i class="bi bi-exclamation-triangle me-1"></i><span>Duplicate Test Method Specification found. Each method can be assigned only once across all rows.</span>
                     </div>
                     <div class="table-responsive custom-scroll" *ngIf="getSpecificationLinesByTab(gi, 'chemical').length" style="max-height: calc(100vh - 200px)">
                       <table class="table spec-table align-middle mb-0" style="min-width: 1100px">
@@ -1493,7 +1489,7 @@
                       Add parameters in the <strong>General</strong> tab first.
                     </div>
                     <div class="alert alert-danger small py-1 mb-2" *ngIf="getSpecificationLinesByTab(gi, 'mechanical').errors?.['duplicateTestMethod']">
-                      <i class="bi bi-exclamation-triangle me-1"></i> Duplicate Test Method Specification found. Each method can be assigned only once across all rows.
+                      <i class="bi bi-exclamation-triangle me-1"></i><span>Duplicate Test Method Specification found. Each method can be assigned only once across all rows.</span>
                     </div>
                     <div class="table-responsive custom-scroll" *ngIf="getSpecificationLinesByTab(gi, 'mechanical').length" style="max-height: calc(100vh - 200px)">
                       <table class="table spec-table align-middle mb-0" style="min-width: 1100px">
@@ -1538,10 +1534,10 @@
       </div>
       <div *ngIf="!isViewMode" class="form-action-bar">
         <a [routerLink]="['/custom-material-specification']" class="btn btn-cancel">
-          <i class="bi bi-x-circle"></i> Cancel
+          <i class="bi bi-x-circle"></i><span>Cancel</span>
         </a>
         <button type="submit" class="btn btn-save">
-          <i class="bi bi-check-circle"></i> {{ isEditMode ? "Update" : "Save" }}
+          <i class="bi bi-check-circle"></i><span>{{ isEditMode ? "Update" : "Save" }}</span>
         </button>
       </div>
     </form>
@@ -1572,32 +1568,32 @@
                 [ngClass]="{ 'active-filter': importFilter === 'all' }"
                 (click)="setImportFilter('all')"
                 title="Click to view all rows">
-            <i class="bi bi-list-ul me-1"></i>All ({{ importPreviewRows.length }})
+            <i class="bi bi-list-ul me-1"></i><span>All ({{ importPreviewRows.length }})</span>
           </span>
           <span class="import-filter-badge badge bg-success"
                 [ngClass]="{ 'active-filter': importFilter === 'ok' }"
                 (click)="setImportFilter('ok')"
                 title="Click to filter OK rows only">
-            <i class="bi bi-check-circle me-1" *ngIf="importFilter === 'ok'"></i>{{ importOkCount }} OK
+            <i class="bi bi-check-circle me-1" *ngIf="importFilter === 'ok'"></i><span>{{ importOkCount }} OK</span>
           </span>
           <span class="import-filter-badge badge bg-warning text-dark"
                 [ngClass]="{ 'active-filter': importFilter === 'warning' }"
                 (click)="setImportFilter('warning')"
                 title="Click to filter Warning rows only">
-            <i class="bi bi-exclamation-triangle me-1" *ngIf="importFilter === 'warning'"></i>{{ importWarnCount }} Warning
+            <i class="bi bi-exclamation-triangle me-1" *ngIf="importFilter === 'warning'"></i><span>{{ importWarnCount }} Warning</span>
           </span>
           <span class="import-filter-badge badge bg-danger"
                 [ngClass]="{ 'active-filter': importFilter === 'error' }"
                 (click)="setImportFilter('error')"
                 title="Click to filter Error rows only">
-            <i class="bi bi-x-circle me-1" *ngIf="importFilter === 'error'"></i>{{ importErrorCount }} Error
+            <i class="bi bi-x-circle me-1" *ngIf="importFilter === 'error'"></i><span>{{ importErrorCount }} Error</span>
           </span>
           <span *ngIf="importMissingMasterCount > 0"
                 class="import-filter-badge badge bg-danger-subtle text-danger border border-danger-subtle"
                 [ngClass]="{ 'active-filter': importFilter === 'missing' }"
                 (click)="setImportFilter('missing')"
                 title="Click to filter rows with missing master records">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ importMissingMasterCount }} with Missing Master(s)
+            <i class="bi bi-exclamation-triangle-fill me-1"></i><span>{{ importMissingMasterCount }} with Missing Master(s)</span>
           </span>
           <span *ngIf="importFilter !== 'all'" class="text-primary fw-semibold ms-2">
             Showing {{ filteredImportPreviewRows.length }} of {{ importPreviewRows.length }} rows
@@ -1635,7 +1631,7 @@
                 <td>
                   {{ r.parameterName }}
                   <span *ngIf="!r.parameterID && r.status === 'error'" class="badge bg-danger text-white ms-1" title="Parameter not found in master database">
-                    <i class="bi bi-x-circle me-0.5"></i>Missing
+                    <i class="bi bi-x-circle me-0.5"></i><span>Missing</span>
                   </span>
                   <span *ngIf="r.minEquation || r.maxEquation || r.equationFx" class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 font-monospace"
                         [title]="r.equationFx || r.minEquation || r.maxEquation">
@@ -1674,7 +1670,7 @@
                 <td>
                   <span *ngIf="r.equationFx || r.minEquation || r.maxEquation" class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace text-wrap text-start"
                         [title]="r.equationFx || r.minEquation || r.maxEquation">
-                    <i class="bi bi-calculator me-1"></i>{{ r.equationFx || (r.minEquation ? ('Min: ' + r.minEquation) : ('Max: ' + r.maxEquation)) }}
+                    <i class="bi bi-calculator me-1"></i><span>{{ r.equationFx || (r.minEquation ? ('Min: ' + r.minEquation) : ('Max: ' + r.maxEquation)) }}</span>
                   </span>
                   <span *ngIf="!r.equationFx && !r.minEquation && !r.maxEquation" class="text-muted">-</span>
                 </td>
@@ -1703,10 +1699,10 @@
       </div>
       <div class="custom-modal-footer">
         <button type="button" class="btn btn-sm btn-cancel" (click)="cancelImport()">
-          <i class="bi bi-x-circle"></i> Cancel
+          <i class="bi bi-x-circle"></i><span>Cancel</span>
         </button>
         <button type="button" class="btn btn-sm btn-save" (click)="commitImport()" [disabled]="!importHasImportable">
-          <i class="bi bi-file-earmark-arrow-down"></i> Import {{ importOkCount + importWarnCount }} line(s)
+          <i class="bi bi-file-earmark-arrow-down"></i><span>Import {{ importOkCount + importWarnCount }} line(s)</span>
         </button>
       </div>
     </div>
@@ -1718,7 +1714,7 @@
       <div class="custom-modal-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fs-6 fw-semibold">
-            <i class="bi bi-calculator me-1"></i>Formula Builder
+            <i class="bi bi-calculator me-1"></i><span>Formula Builder</span>
           </span>
           <span *ngIf="equationModalLine" class="fw-semibold text-dark fs-6">
             {{ equationModalLine.get('parameterName')?.value || 'Parameter' }}
@@ -1735,13 +1731,13 @@
         <div *ngIf="paramMasterFormula" class="d-flex justify-content-between align-items-center bg-white border border-primary-subtle rounded p-2 mb-2 shadow-xs">
           <div class="d-flex align-items-center gap-2 text-truncate">
             <span class="badge bg-primary text-white px-2 py-1 small fw-semibold">
-              <i class="bi bi-lightning-charge-fill me-0.5"></i>Master Formula Available
+              <i class="bi bi-lightning-charge-fill me-0.5"></i><span>Master Formula Available</span>
             </span>
             <code class="text-dark fw-bold fs-6 text-truncate" [title]="paramMasterFormula">{{ paramMasterFormula }}</code>
           </div>
           <button type="button" class="btn btn-sm btn-primary py-0.5 px-2.5 fw-semibold flex-shrink-0"
             (click)="applyMasterFormulaOneClick()" title="Apply master formula into equation in 1-click">
-            <i class="bi bi-magic me-1"></i>Apply Formula
+            <i class="bi bi-magic me-1"></i><span>Apply Formula</span>
           </button>
         </div>
 
@@ -1754,7 +1750,7 @@
           <button type="button" class="btn btn-sm py-0.5 px-2"
             [ngClass]="showCalculator ? 'btn-outline-danger' : 'btn-outline-secondary'"
             (click)="toggleCalculator()">
-            <i class="bi bi-calculator me-1"></i>{{ showCalculator ? 'Hide Calculator' : 'Test Calculator' }}
+            <i class="bi bi-calculator me-1"></i><span>{{ showCalculator ? 'Hide Calculator' : 'Test Calculator' }}</span>
           </button>
         </div>
 
@@ -1762,7 +1758,7 @@
         <div class="formula-toolbar-container">
           <div class="d-flex justify-content-between align-items-center mb-1.5 flex-wrap gap-1">
             <span class="small fw-semibold text-muted">
-              <i class="bi bi-tags me-1"></i>Insert Parameter:
+              <i class="bi bi-tags me-1"></i><span>Insert Parameter:</span>
             </span>
             <input type="text" class="form-control form-control-sm w-auto equation-param-search py-0 px-2"
               placeholder="Search parameter..." [(ngModel)]="equationParamSearch" [ngModelOptions]="{ standalone: true }">
@@ -1794,7 +1790,7 @@
           <div class="d-flex justify-content-between align-items-center mb-1.5 flex-wrap gap-1">
             <div class="d-flex align-items-center gap-1.5">
               <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-1.5 py-0.5 small fw-semibold">
-                <i class="bi bi-play-circle-fill me-1"></i>Live Calculator
+                <i class="bi bi-play-circle-fill me-1"></i><span>Live Calculator</span>
               </span>
               <span class="small text-muted font-monospace">Target: {{ equationActiveField === 'calc' ? 'Calculation' : (equationActiveField === 'min' ? 'Min' : 'Max') }} Formula</span>
             </div>
@@ -1839,16 +1835,16 @@
           <div class="d-flex justify-content-between align-items-center mb-1">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <span class="badge bg-indigo-subtle text-indigo border border-indigo-subtle px-1.5 py-0.5 small fw-semibold">
-                <i class="bi bi-calculator me-1"></i>Parameter Calculation Formula (Result Value)
+                <i class="bi bi-calculator me-1"></i><span>Parameter Calculation Formula (Result Value)</span>
               </span>
               <span class="small text-muted">Auto-calculates this parameter's actual value during test result entry</span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
               <span *ngIf="equationDraft.trim() && calcEquationValid" class="text-success small fw-semibold text-nowrap d-inline-flex align-items-center">
-                <i class="bi bi-check2-circle me-1"></i>Valid
+                <i class="bi bi-check2-circle me-1"></i><span>Valid</span>
               </span>
               <span *ngIf="equationDraft.trim() && !calcEquationValid" class="text-danger small fw-semibold text-nowrap d-inline-flex align-items-center">
-                <i class="bi bi-exclamation-circle me-1"></i>Error
+                <i class="bi bi-exclamation-circle me-1"></i><span>Error</span>
               </span>
               <button *ngIf="equationDraft.trim()" type="button" class="btn btn-sm btn-outline-danger py-0 px-1.5 d-inline-flex align-items-center gap-1 text-nowrap"
                 (click)="clearEquation('calc')" title="Clear Calculation Formula">
@@ -1898,7 +1894,7 @@
           </div>
           <div *ngIf="calcEquationErrors.length > 0" class="mt-1">
             <div *ngFor="let err of calcEquationErrors" class="text-danger small">
-              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ err }}
+              <i class="bi bi-exclamation-triangle-fill me-1"></i><span>{{ err }}</span>
             </div>
           </div>
         </div>
@@ -1911,10 +1907,10 @@
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
               <span *ngIf="minEquationDraft.trim() && minEquationValid" class="text-success small fw-semibold text-nowrap d-inline-flex align-items-center">
-                <i class="bi bi-check2-circle me-1"></i>Valid
+                <i class="bi bi-check2-circle me-1"></i><span>Valid</span>
               </span>
               <span *ngIf="minEquationDraft.trim() && !minEquationValid" class="text-danger small fw-semibold text-nowrap d-inline-flex align-items-center">
-                <i class="bi bi-exclamation-circle me-1"></i>Error
+                <i class="bi bi-exclamation-circle me-1"></i><span>Error</span>
               </span>
               <button *ngIf="minEquationDraft.trim()" type="button" class="btn btn-sm btn-outline-danger py-0 px-1.5 d-inline-flex align-items-center gap-1 text-nowrap"
                 (click)="clearEquation('min')" title="Clear Min Equation">
@@ -1964,7 +1960,7 @@
           </div>
           <div *ngIf="minEquationErrors.length > 0" class="mt-1">
             <div *ngFor="let err of minEquationErrors" class="text-danger small">
-              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ err }}
+              <i class="bi bi-exclamation-triangle-fill me-1"></i><span>{{ err }}</span>
             </div>
           </div>
         </div>
@@ -1977,10 +1973,10 @@
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
               <span *ngIf="maxEquationDraft.trim() && maxEquationValid" class="text-success small fw-semibold text-nowrap d-inline-flex align-items-center">
-                <i class="bi bi-check2-circle me-1"></i>Valid
+                <i class="bi bi-check2-circle me-1"></i><span>Valid</span>
               </span>
               <span *ngIf="maxEquationDraft.trim() && !maxEquationValid" class="text-danger small fw-semibold text-nowrap d-inline-flex align-items-center">
-                <i class="bi bi-exclamation-circle me-1"></i>Error
+                <i class="bi bi-exclamation-circle me-1"></i><span>Error</span>
               </span>
               <button *ngIf="maxEquationDraft.trim()" type="button" class="btn btn-sm btn-outline-danger py-0 px-1.5 d-inline-flex align-items-center gap-1 text-nowrap"
                 (click)="clearEquation('max')" title="Clear Max Equation">
@@ -2030,7 +2026,7 @@
           </div>
           <div *ngIf="maxEquationErrors.length > 0" class="mt-1">
             <div *ngFor="let err of maxEquationErrors" class="text-danger small">
-              <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ err }}
+              <i class="bi bi-exclamation-triangle-fill me-1"></i><span>{{ err }}</span>
             </div>
           </div>
         </div>
@@ -2038,14 +2034,14 @@
 
       <div class="custom-modal-footer d-flex justify-content-between align-items-center">
         <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearAllEquations()">
-          <i class="bi bi-eraser me-1"></i> Clear All
+          <i class="bi bi-eraser me-1"></i><span>Clear All</span>
         </button>
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-sm btn-cancel" (click)="closeEquationModal()">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+            <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </button>
           <button type="button" class="btn btn-sm btn-save" (click)="saveEquation()" [disabled]="!isEquationValidToSave">
-            <i class="bi bi-check-circle me-1"></i> Apply to Limits
+            <i class="bi bi-check-circle me-1"></i><span>Apply to Limits</span>
           </button>
         </div>
       </div>

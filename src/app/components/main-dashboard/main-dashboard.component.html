@@ -1,79 +1,72 @@
 <div class="main-dashboard-container" role="main" aria-label="Main Dashboard">
-  <!-- Enhanced Dashboard Header -->
+  <!-- Compact Dashboard Header -->
   <header class="dashboard-header">
-    <div class="row align-items-center">
-      <div class="col-md-8">
-        <div class="header-content">
-          <h4 class="dashboard-title">
-            <i class="bi bi-speedometer2 me-2"></i>
-            Dashboard
-          </h4>
-          <p class="dashboard-subtitle">Welcome back, {{ currentUser?.userName || 'User' }}</p>
-          <div class="header-stats">
-            <span class="stat-item">
-              <i class="bi bi-grid-3x3-gap"></i>
-              <span class="stat-value">{{ displayCards().length }}</span>
-              <span class="stat-label">Cards</span>
-            </span>
-            <span class="stat-item">
-              <i class="bi bi-graph-up"></i>
-              <span class="stat-value">{{ charts().length }}</span>
-              <span class="stat-label">Charts</span>
-            </span>
-            <span class="stat-item">
-              <i class="bi bi-bell"></i>
-              <span class="stat-value">{{ notifications().length }}</span>
-              <span class="stat-label">Notifications</span>
-            </span>
-          </div>
-        </div>
+    <div class="header-left">
+      <div class="title-row">
+        <span class="title-icon"><i class="bi bi-speedometer2"></i></span>
+        <h4 class="dashboard-title">Dashboard</h4>
+        <span class="live-badge" [class.live-on]="isLive()" [class.live-off]="!isLive()" [title]="isLive() ? 'SignalR live connected' : 'Polling every 30s'">
+          <span class="live-dot"></span>
+          {{ isLive() ? 'Live' : 'Polling' }}
+        </span>
+        <span class="urgent-badge" *ngIf="getUrgentCount() > 0">
+          <i class="bi bi-lightning-fill me-1"></i><span>{{ getUrgentCount() }} Urgent</span>
+        </span>
       </div>
-      <div class="col-md-4">
-        <div class="header-actions">
-          <div class="action-group">
-            <button
-              class="btn btn-primary btn-sm"
-              (click)="onRefresh()"
-              [disabled]="false"
-              aria-label="Refresh dashboard data"
-              title="Refresh dashboard">
-              <i class="bi bi-arrow-clockwise" [class.spin]="false" aria-hidden="true"></i>
-              <span class="btn-text">Refresh</span>
-            </button>
-            <button
-              *ngIf="hasCustomLayout()"
-              class="btn btn-cancel btn-sm"
-              (click)="resetLayout()"
-              title="Reset to default layout">
-              <i class="bi bi-arrow-counterclockwise"></i>
-              <span class="btn-text">Reset</span>
-            </button>
-          </div>
-        </div>
-        <div class="refresh-status" role="status" aria-live="polite">
-          <div class="status-item">
-            <i class="bi bi-clock me-1" aria-hidden="true"></i>
-            <span class="status-text">Last updated: {{ formatTimestamp(lastRefresh()) }}</span>
-          </div>
-          <div class="status-item" *ngIf="isAutoRefreshActive()">
-            <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
-            <span class="status-text">Next refresh: {{ timeUntilNextRefresh() }}</span>
-          </div>
-          <div class="status-item warning" *ngIf="getAutoRefreshRetryAttempts() > 0">
-            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
-            <span class="status-text">Retry attempt: {{ getAutoRefreshRetryAttempts() }}</span>
-          </div>
-        </div>
+      <p class="dashboard-subtitle">Welcome back, {{ currentUser?.userName || 'User' }} · {{ getTotalPending() }} open items</p>
+      <div class="header-stats">
+        <span class="stat-item">
+          <i class="bi bi-grid-3x3-gap"></i>
+          <span class="stat-value">{{ displayCards().length }}</span>
+          <span class="stat-label">Cards</span>
+        </span>
+        <span class="stat-item">
+          <i class="bi bi-graph-up"></i>
+          <span class="stat-value">{{ charts().length }}</span>
+          <span class="stat-label">Charts</span>
+        </span>
+        <span class="stat-item">
+          <i class="bi bi-bell"></i>
+          <span class="stat-value">{{ notifications().length }}</span>
+          <span class="stat-label">Notifications</span>
+        </span>
+        <span class="stat-item live-events" *ngIf="liveEventCount() > 0">
+          <i class="bi bi-broadcast"></i>
+          <span class="stat-value">{{ liveEventCount() }}</span>
+          <span class="stat-label">Live events</span>
+        </span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="action-group">
+        <button class="btn-lims btn-lims-save btn-lims-sm" (click)="onRefresh()" aria-label="Refresh dashboard data" title="Refresh dashboard">
+          <i class="bi bi-arrow-clockwise me-1"></i><span>Refresh</span>
+        </button>
+        <button class="btn-lims btn-lims-secondary btn-lims-sm" (click)="toggleCustomizationMode()" [class.active]="isCustomizationMode()" title="Rearrange cards">
+          <i class="bi bi-gear me-1"></i><span>{{ isCustomizationMode() ? 'Done' : 'Customize' }}</span>
+        </button>
+        <button *ngIf="hasCustomLayout()" class="btn-lims btn-lims-cancel btn-lims-sm" (click)="resetLayout()" title="Reset to default layout">
+          <i class="bi bi-arrow-counterclockwise me-1"></i><span>Reset</span>
+        </button>
+      </div>
+      <div class="refresh-status" role="status" aria-live="polite">
+        <span class="status-item">
+          <i class="bi bi-clock me-1"></i><span>Last updated: {{ formatTimestamp(lastRefresh()) }}</span>
+        </span>
+        <span class="status-item" *ngIf="isAutoRefreshActive()">
+          <i class="bi bi-arrow-repeat me-1"></i><span>Next refresh: {{ timeUntilNextRefresh() || '30s' }}</span>
+        </span>
+        <span class="status-item warning" *ngIf="getAutoRefreshRetryAttempts() > 0">
+          <i class="bi bi-exclamation-triangle me-1"></i><span>Retry: {{ getAutoRefreshRetryAttempts() }}</span>
+        </span>
       </div>
     </div>
   </header>
 
-  <!-- Enhanced Error State -->
+  <!-- Error State -->
   <div *ngIf="error()" class="alert alert-danger alert-dismissible fade show modern-alert" role="alert" aria-live="assertive">
     <div class="alert-content">
-      <div class="alert-icon">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-      </div>
+      <div class="alert-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
       <div class="alert-message">
         <strong>Error:</strong> {{ error() }}
         <p class="alert-description">Please check your connection and try again.</p>
@@ -82,65 +75,46 @@
     </div>
   </div>
 
-  <!-- Enhanced Loading State -->
-  <div *ngIf="false" class="loading-container" aria-label="Loading dashboard data">
-    <div class="loading-content">
-      <div class="loading-spinner">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-      <div class="loading-text">
-        <h4>Loading Dashboard</h4>
-        <p>Please wait while we prepare your dashboard...</p>
-      </div>
-    </div>
-    <div class="dashboard-section">
-      <h6 class="section-title">Overview</h6>
-      <div class="row" role="list" aria-label="Dashboard cards loading">
-        <!-- Enhanced Card Skeletons -->
-        <div class="col-xxl-2 col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12"
-             *ngFor="let item of getSkeletonArray(12); trackBy: trackByIndex"
-             role="listitem">
-          <div class="skeleton-card">
-            <div class="skeleton-header">
-              <div class="skeleton-icon"></div>
-              <div class="skeleton-title"></div>
-            </div>
-            <div class="skeleton-body">
-              <div class="skeleton-count"></div>
-              <div class="skeleton-description"></div>
-            </div>
-          </div>
-        </div>
+  <!-- Loading skeletons -->
+  <div *ngIf="isLoading()" class="dashboard-section skeleton-section" aria-label="Loading dashboard data">
+    <div class="cards-grid">
+      <div class="skeleton-card" *ngFor="let item of getSkeletonArray(8); trackBy: trackByIndex">
+        <div class="skeleton-top"><div class="skeleton-icon"></div><div class="skeleton-pill"></div></div>
+        <div class="skeleton-count"></div>
+        <div class="skeleton-line"></div>
       </div>
     </div>
   </div>
 
-  <!-- Dashboard Content: Modern Grid Layout -->
-  <div class="dashboard-content">
+  <div class="dashboard-content" *ngIf="!isLoading()">
+    <!-- Lab workflow pipeline -->
+    <section class="dashboard-section pipeline-section" aria-label="Laboratory workflow status" *ngIf="displayCards().length > 0">
+      <div class="section-header">
+        <h6 class="section-title"><i class="bi bi-diagram-3 me-1"></i><span>Lab Workflow</span></h6>
+        <span class="section-hint">Live counts · click a stage to open it</span>
+      </div>
+      <div class="pipeline-track">
+        <button
+          *ngFor="let step of workflowSteps(); let last = last"
+          class="pipeline-step"
+          [class.has-urgent]="step.urgent"
+          (click)="goToStep(step)"
+          [title]="'Open ' + step.label">
+          <span class="step-icon"><i class="bi" [ngClass]="step.icon"></i></span>
+          <span class="step-count">{{ step.count }}</span>
+          <span class="step-label">{{ step.label }}</span>
+          <span class="step-urgent" *ngIf="step.urgent"><i class="bi bi-lightning-fill"></i></span>
+        </button>
+      </div>
+    </section>
 
-    <!-- Stats Area: Overview Cards -->
+    <!-- KPI cards -->
     <div class="dashboard-stats-area" *ngIf="displayCards().length > 0">
       <section class="dashboard-section stats-section" aria-label="Dashboard overview cards">
         <div class="section-header">
-          <div class="section-content">
-            <h6 class="section-title">
-              <i class="bi bi-grid-3x3-gap me-2"></i>
-              Key Metrics
-            </h6>
-          </div>
-          <div class="layout-controls">
-            <button
-              class="btn btn-sm"
-              (click)="toggleCustomizationMode()"
-              [class.active]="isCustomizationMode()"
-              title="Rearrange cards">
-              <i class="bi bi-gear"></i>
-            </button>
-          </div>
+          <h6 class="section-title"><i class="bi bi-grid-3x3-gap me-1"></i><span>Key Metrics</span></h6>
+          <span class="section-hint" *ngIf="isCustomizationMode()">Drag cards to rearrange, then press Done</span>
         </div>
-
         <div
           class="cards-grid"
           cdkDropList
@@ -151,13 +125,12 @@
             *ngFor="let card of displayCards(); trackBy: trackByCardKey"
             cdkDrag
             [cdkDragDisabled]="!isCustomizationMode()">
-
             <div *ngIf="isCustomizationMode()" class="drag-handle" cdkDragHandle>
               <i class="bi bi-grip-vertical"></i>
             </div>
-
             <app-dashboard-card
               [card]="card"
+              [icon]="getCardIcon(card)"
               [isLoading]="false"
               [isCustomizationMode]="isCustomizationMode()"
               (cardClick)="onCardClick($event)">
@@ -167,39 +140,27 @@
       </section>
     </div>
 
-    <!-- Main Area: Analytics + Activity -->
+    <!-- Analytics + Activity -->
     <div class="dashboard-main-area">
-      <!-- Analytics Area: Charts -->
       <div class="dashboard-analytics-area" *ngIf="charts().length > 0">
         <section class="dashboard-section analytics-section" aria-label="Analytics charts">
           <div class="section-header">
-            <div class="section-content">
-              <h6 class="section-title">
-                <i class="bi bi-graph-up me-2"></i>
-                Analytics
-              </h6>
-            </div>
+            <h6 class="section-title"><i class="bi bi-graph-up me-1"></i><span>Analytics</span></h6>
+            <span class="section-hint">Last 30 days · auto-updates live</span>
           </div>
           <div [class]="getChartGridClass()" class="charts-container">
-            <div
-              class="chart-item-wrapper"
-              *ngFor="let chart of charts(); trackBy: trackByChartKey">
+            <div class="chart-item-wrapper" *ngFor="let chart of charts(); trackBy: trackByChartKey">
               <app-dashboard-chart [chartData]="chart"></app-dashboard-chart>
             </div>
           </div>
         </section>
       </div>
 
-      <!-- Activity Area: Notifications -->
       <div class="dashboard-activity-area" *ngIf="notifications().length > 0">
         <section class="dashboard-section activity-section" aria-label="Recent notifications">
           <div class="section-header">
-            <div class="section-content">
-              <h6 class="section-title">
-                <i class="bi bi-bell me-2"></i>
-                Activity
-              </h6>
-            </div>
+            <h6 class="section-title"><i class="bi bi-bell me-1"></i><span>Activity</span></h6>
+            <span class="section-hint" *ngIf="isLive()">Live via SignalR</span>
           </div>
           <div class="notifications-wrapper">
             <app-dashboard-notification-panel
@@ -214,31 +175,24 @@
       </div>
     </div>
 
-    <!-- Enhanced Empty State -->
+    <!-- Empty State -->
     <div *ngIf="displayCards().length === 0 && charts().length === 0 && notifications().length === 0"
          class="empty-state modern-empty-state"
          role="status"
          aria-live="polite">
       <div class="empty-content">
-        <div class="empty-icon">
-          <i class="bi bi-speedometer2"></i>
-        </div>
+        <div class="empty-icon"><i class="bi bi-speedometer2"></i></div>
         <h3>No Dashboard Data Available</h3>
         <p class="empty-description">
           All dashboard data will be displayed here once it's available.
+          <span *ngIf="!isLive()">Live connection is reconnecting — data refreshes automatically.</span>
         </p>
         <div class="empty-actions">
-          <button class="btn btn-primary me-2" (click)="onRefresh()" aria-label="Refresh dashboard">
-            <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>
-            Refresh Dashboard
-          </button>
-          <button class="btn btn-cancel" (click)="optimizeForNetwork()" aria-label="Optimize network settings">
-            <i class="bi bi-gear me-2" aria-hidden="true"></i>
-            Check Network
+          <button class="btn-lims btn-lims-save" (click)="onRefresh()" aria-label="Refresh dashboard">
+            <i class="bi bi-arrow-clockwise me-1"></i><span>Refresh Dashboard</span>
           </button>
         </div>
       </div>
     </div>
-
   </div>
 </div>

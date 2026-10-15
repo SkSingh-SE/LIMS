@@ -4,7 +4,7 @@
       <label class="text-md fw-medium ms-3">Account Dashboard</label>
       <div class="d-flex align-items-center gap-2 me-3">
         <button class="btn btn-outline-light btn-sm" (click)="loadDashboard()">
-          <i class="bi bi-arrow-clockwise"></i> Refresh
+          <i class="bi bi-arrow-clockwise"></i><span>Refresh</span>
         </button>
         <div class="refresh-status" *ngIf="lastUpdated">
           <small>{{ formatTimestamp(lastUpdated) }}</small>
@@ -16,7 +16,7 @@
 
         <!-- ═══ Financial Summary ═══ -->
         <div class="dashboard-section">
-          <h4 class="section-title"><i class="bi bi-currency-rupee"></i> Financial Summary</h4>
+          <h4 class="section-title"><i class="bi bi-currency-rupee"></i><span>Financial Summary</span></h4>
           <div class="fin-grid">
             <div class="fin-card fin-card--revenue">
               <div class="fin-icon fin-icon--green"><i class="bi bi-graph-up-arrow"></i></div>
@@ -51,7 +51,7 @@
 
         <!-- ═══ Case Status ═══ -->
         <div class="dashboard-section">
-          <h4 class="section-title"><i class="bi bi-folder2-open"></i> Case Status</h4>
+          <h4 class="section-title"><i class="bi bi-folder2-open"></i><span>Case Status</span></h4>
           <div class="status-grid">
             <div class="status-card status-card--warning" (click)="navigateToCaseList('pi-pending')" role="button" tabindex="0">
               <div class="status-icon status-icon--warning"><i class="bi bi-file-earmark-text"></i></div>
@@ -90,7 +90,7 @@
 
         <!-- ═══ Customer Type Breakdown ═══ -->
         <div class="dashboard-section" *ngIf="dashboardData.customerTypeBreakdown?.length">
-          <h4 class="section-title"><i class="bi bi-people"></i> By Customer Type</h4>
+          <h4 class="section-title"><i class="bi bi-people"></i><span>By Customer Type</span></h4>
           <table class="table table-sm breakdown-table mb-0">
             <thead>
               <tr>
@@ -125,31 +125,31 @@
 
         <!-- ═══ Quick Actions ═══ -->
         <div class="dashboard-section">
-          <h4 class="section-title"><i class="bi bi-lightning"></i> Quick Actions</h4>
+          <h4 class="section-title"><i class="bi bi-lightning"></i><span>Quick Actions</span></h4>
           <div class="actions-grid">
             <button class="action-btn action-btn--primary" (click)="navigateToCaseList()">
-              <i class="bi bi-list-ul"></i> All Cases
+              <i class="bi bi-list-ul"></i><span>All Cases</span>
             </button>
             <button class="action-btn action-btn--success" (click)="navigateTo('/accounts/record-payment')">
-              <i class="bi bi-currency-rupee"></i> Record Payment
+              <i class="bi bi-currency-rupee"></i><span>Record Payment</span>
             </button>
             <button class="action-btn action-btn--info" (click)="navigateTo('/accounts/ledger')">
-              <i class="bi bi-journal-text"></i> Customer Ledger
+              <i class="bi bi-journal-text"></i><span>Customer Ledger</span>
             </button>
             <button class="action-btn action-btn--info" (click)="navigateTo('/accounts/outstanding-report')">
-              <i class="bi bi-bar-chart"></i> Outstanding
+              <i class="bi bi-bar-chart"></i><span>Outstanding</span>
             </button>
             <button class="action-btn action-btn--warning" (click)="navigateTo('/accounts/aging-report')">
-              <i class="bi bi-clock-history"></i> Aging Report
+              <i class="bi bi-clock-history"></i><span>Aging Report</span>
             </button>
             <button class="action-btn action-btn--success" (click)="navigateToCaseList('fully-settled')">
-              <i class="bi bi-check-circle"></i> Settled Cases
+              <i class="bi bi-check-circle"></i><span>Settled Cases</span>
             </button>
             <button class="action-btn action-btn--warning" (click)="navigateToCaseList('pi-pending')">
-              <i class="bi bi-file-earmark-text"></i> Pending PIs
+              <i class="bi bi-file-earmark-text"></i><span>Pending PIs</span>
             </button>
             <button class="action-btn action-btn--danger" (click)="navigateToCaseList('payment-pending')">
-              <i class="bi bi-credit-card"></i> Pending Payments
+              <i class="bi bi-credit-card"></i><span>Pending Payments</span>
             </button>
           </div>
         </div>
@@ -160,7 +160,7 @@
           <h4>No Account Data Available</h4>
           <p class="text-muted small">Data will appear once cases are available.</p>
           <button class="btn btn-sm btn-outline-danger" (click)="loadDashboard()">
-            <i class="bi bi-arrow-clockwise"></i> Refresh
+            <i class="bi bi-arrow-clockwise"></i><span>Refresh</span>
           </button>
         </div>
 

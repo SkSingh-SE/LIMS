@@ -8,7 +8,7 @@ Write-Host "==========================================" -ForegroundColor Cyan
 
 Set-Location $PSScriptRoot
 $env:NODE_OPTIONS = "--max-old-space-size=8192"
-npx ng build --configuration dev
+cmd.exe /c "npx ng build --configuration dev"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed! Deployment cancelled." -ForegroundColor Red

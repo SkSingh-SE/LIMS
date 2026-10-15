@@ -22,13 +22,12 @@ export class ListDesignationComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Name', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
-    { key: 'createdBy', type: 'string', label: 'Created By', filter: true }
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     description: 'string',
-    createdBy: 'string',
-    modifiedOn: 'date'
+    modifiedOn: 'date',
+    modifiedByName: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

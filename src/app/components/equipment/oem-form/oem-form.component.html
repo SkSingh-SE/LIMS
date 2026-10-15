@@ -56,19 +56,20 @@
                 <!--Contact No 1-->
                 <div>
                     <label class="form-label">Contact No 1</label>
-                    <input type="text" class="form-control" formControlName="contactNo1"
-                        placeholder="Enter Contact No 1" maxlength="20"
-                        [ngClass]="{ 'is-invalid': OEMForm.get('contactNo1')?.touched && OEMForm.get('contactNo1')?.invalid }" />
-                    <span *ngIf="OEMForm.get('contactNo1')?.hasError('pattern') && OEMForm.get('contactNo1')?.touched"
-                        class="text-danger text-sm">Please enter a valid contact number.</span>
+                    <app-phone-input formControlName="contactNo1" [submitted]="OEMForm.touched"></app-phone-input>
                 </div>
 
                 <!--Email Id 1-->
                 <div>
                     <label class="form-label">Email Id 1</label>
-                    <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': OEMForm.get('emailId1')?.touched && OEMForm.get('emailId1')?.invalid }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': OEMForm.get('emailId1')?.touched && OEMForm.get('emailId1')?.invalid }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <div *ngIf="OEMForm.get('emailId1')?.touched && OEMForm.get('emailId1')?.invalid"
                         class="text-danger text-sm">Email Id 1 must be a valid email address.</div>
                 </div>
@@ -83,19 +84,20 @@
                 <!--Contact No 2-->
                 <div>
                     <label class="form-label">Contact No 2</label>
-                    <input type="text" class="form-control" formControlName="contactNo2"
-                        placeholder="Enter Contact No 2" maxlength="20"
-                        [ngClass]="{ 'is-invalid': OEMForm.get('contactNo2')?.touched && OEMForm.get('contactNo2')?.invalid }" />
-                    <span *ngIf="OEMForm.get('contactNo2')?.hasError('pattern') && OEMForm.get('contactNo2')?.touched"
-                        class="text-danger text-sm">Please enter a valid contact number.</span>
+                    <app-phone-input formControlName="contactNo2" [submitted]="OEMForm.touched"></app-phone-input>
                 </div>
 
                 <!--Email Id 2-->
                 <div>
                     <label class="form-label">Email Id 2</label>
-                    <input type="email" class="form-control" formControlName="emailId2" placeholder="Enter Email Id 2"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': OEMForm.get('emailId2')?.touched && OEMForm.get('emailId2')?.invalid }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId2" placeholder="Enter Email Id 2"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': OEMForm.get('emailId2')?.touched && OEMForm.get('emailId2')?.invalid }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <div *ngIf="OEMForm.get('emailId2')?.touched && OEMForm.get('emailId2')?.invalid"
                         class="text-danger text-sm">Email Id 2 must be a valid email address.</div>
                 </div>
@@ -110,19 +112,20 @@
                 <!--Contact No 3-->
                 <div>
                     <label class="form-label">Contact No 3</label>
-                    <input type="text" class="form-control" formControlName="contactNo3"
-                        placeholder="Enter Contact No 3" maxlength="20"
-                        [ngClass]="{ 'is-invalid': OEMForm.get('contactNo3')?.touched && OEMForm.get('contactNo3')?.invalid }" />
-                    <span *ngIf="OEMForm.get('contactNo3')?.hasError('pattern') && OEMForm.get('contactNo3')?.touched"
-                        class="text-danger text-sm">Please enter a valid contact number.</span>
+                    <app-phone-input formControlName="contactNo3" [submitted]="OEMForm.touched"></app-phone-input>
                 </div>
 
                 <!--Email Id 3-->
                 <div>
                     <label class="form-label">Email Id 3</label>
-                    <input type="email" class="form-control" formControlName="emailId3" placeholder="Enter Email Id 3"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': OEMForm.get('emailId3')?.touched && OEMForm.get('emailId3')?.invalid }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId3" placeholder="Enter Email Id 3"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': OEMForm.get('emailId3')?.touched && OEMForm.get('emailId3')?.invalid }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <div *ngIf="OEMForm.get('emailId3')?.touched && OEMForm.get('emailId3')?.invalid"
                         class="text-danger text-sm">Email Id 3 must be a valid email address.</div>
                 </div>

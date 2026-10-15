@@ -21,8 +21,7 @@ export class CuttingSamplesComponent implements OnInit {
     { key: 'totalRequired', type: 'string', label: 'Prep Required', filter: true },
     { key: 'completedCount', type: 'string', label: 'Completed', filter: true },
     { key: 'preparationStatus', type: 'string', label: 'Status', filter: true },
-    { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
-    { key: 'modifiedOn', type: 'date', label: 'Modified On', filter: false },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: false },
   ];
 
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
@@ -31,8 +30,8 @@ export class CuttingSamplesComponent implements OnInit {
     prepRequired: 'string',
     completed: 'string',
     preparationStatus: 'string',
-    modifiedBy: 'string',
-    modifiedOn: 'date'
+    modifiedOn: 'date',
+    modifiedByName: 'string'
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

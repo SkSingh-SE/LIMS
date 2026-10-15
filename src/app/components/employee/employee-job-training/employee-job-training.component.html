@@ -88,7 +88,7 @@
           <table class="table bordered-table align-middle w-100">
             <thead class="table-light">
               <tr class="align-middle">
-                <th>SN</th>
+                <th class="col-sn">SN</th>
                 <th *ngFor="let column of inductionColumns">
                   <div class="d-flex align-items-center">
                     <span class="dt-column-order">{{ column.label }}</span>
@@ -110,7 +110,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let record of inductionRecords; let i = index" class="text-sm">
-                <td>{{ (inductionPageNumber - 1) * inductionPageSize + i + 1 }}</td>
+                <td class="text-center col-sn">{{ (inductionPageNumber - 1) * inductionPageSize + i + 1 }}</td>
                 <td>{{ record.formCode }}</td>
                 <td>{{ record.trainerName || '-' }}</td>
                 <td>{{ record.trainerDesignation || '-' }}</td>
@@ -174,7 +174,7 @@
           <table class="table bordered-table align-middle w-100">
             <thead class="table-light">
               <tr class="align-middle">
-                <th>SN</th>
+                <th class="col-sn">SN</th>
                 <th *ngFor="let column of trainingPlanColumns">
                   <div class="d-flex align-items-center">
                     <span class="dt-column-order">{{ column.label }}</span>
@@ -196,7 +196,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let record of trainingPlanRecords; let i = index" class="text-sm">
-                <td>{{ (trainingPlanPageNumber - 1) * trainingPlanPageSize + i + 1 }}</td>
+                <td class="text-center col-sn">{{ (trainingPlanPageNumber - 1) * trainingPlanPageSize + i + 1 }}</td>
                 <td>{{ record.formCode }}</td>
                 <td>{{ record.trainingTopic || '-' }}</td>
                 <td>

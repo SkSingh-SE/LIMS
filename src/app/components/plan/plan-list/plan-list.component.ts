@@ -23,8 +23,7 @@ export class PlanListComponent implements OnInit {
     { key: 'contactPhone', type: 'string', label: 'Contact Phone', filter: true },
     { key: 'collectionTime', type: 'string', label: 'Collection Time', filter: true },
     { key: 'planStatus', type: 'string', label: 'Status', filter: true },
-    { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: false },
-    { key: 'modifiedOn', type: 'string', label: 'Modified On', filter: false },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
@@ -34,8 +33,8 @@ export class PlanListComponent implements OnInit {
     contactPhone: 'string',
     collectionTime: 'string',
     planStatus: 'string',
-    modifiedBy: 'string',
-    modifiedOn: 'string',
+    modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

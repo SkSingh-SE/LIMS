@@ -104,9 +104,14 @@
                 <label class="form-label">
                   Contact Email <span class="required text-danger">*</span>
                 </label>
-                <input type="email" class="form-control form-control-sm" formControlName="contactEmail"
-                  placeholder="contact@lab.com"
-                  [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'contactEmail') }" maxlength="200" />
+                <div class="input-with-icon-wrapper">
+                  <input type="email" class="form-control form-control-sm" formControlName="contactEmail"
+                    placeholder="contact@lab.com"
+                    [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'contactEmail') }" maxlength="200" />
+                  <span class="input-trailing-icon">
+                    <i class="bi bi-envelope"></i>
+                  </span>
+                </div>
                 <div class="invalid-feedback" *ngIf="isFieldInvalid('organizationInfo', 'contactEmail')">
                   {{ getFieldError('organizationInfo', 'contactEmail') }}
                 </div>
@@ -115,17 +120,14 @@
                 <label class="form-label">
                   Contact Phone <span class="required text-danger">*</span>
                 </label>
-                <input type="text" class="form-control form-control-sm" formControlName="contactPhone"
-                  placeholder="+91 00 0000 0000"
-                  [ngClass]="{ 'is-invalid': isFieldInvalid('organizationInfo', 'contactPhone') }" maxlength="20" />
+                <app-phone-input formControlName="contactPhone" [submitted]="tabSubmitted[1]"></app-phone-input>
                 <div class="invalid-feedback" *ngIf="isFieldInvalid('organizationInfo', 'contactPhone')">
                   {{ getFieldError('organizationInfo', 'contactPhone') }}
                 </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Mobile No</label>
-                <input type="text" class="form-control form-control-sm" formControlName="mobileNo"
-                  placeholder="+91 00000 00000" maxlength="20" />
+                <app-phone-input formControlName="mobileNo" [submitted]="tabSubmitted[1]"></app-phone-input>
               </div>
             </div>
           </fieldset>

@@ -21,8 +21,8 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th class="align-middle text-center fw-semibold" style="width: 130px; min-width: 130px;">Actions</th>
-              <th class="fw-semibold">#</th>
+              <th class="align-middle text-center fw-semibold col-actions-4">Actions</th>
+              <th class="fw-semibold col-sn">#</th>
               <th *ngFor="let column of columns; let i = index" class="fw-semibold">
                 <div class="d-flex align-items-center justify-content-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -59,14 +59,15 @@
           <tbody>
             <tr *ngFor="let item of filteredData; let i = index" class="text-sm align-middle text-center">
               <!-- Actions — first column -->
-              <td class="text-center">
-                <div class="d-flex justify-content-center gap-1 align-items-center">
+              <td class="text-center col-actions-4">
+                <div class="d-flex justify-content-center align-items-center gap-1.5">
                   <a [routerLink]="['/reporting/preview', item.sampleId || item.reportHeaderId]"
-                    class="btn btn-sm btn-outline-info" title="Preview Report">
+                    class="btn-lims-icon btn-lims-view" title="Preview Report">
                     <i class="bi bi-eye"></i>
                   </a>
                   <button *ngIf="item.reportHeaderId"
-                    class="btn btn-sm btn-outline-danger"
+                    type="button"
+                    class="btn-lims-icon btn-lims-print"
                     title="Generate PDF"
                     (click)="generatePdf(item, $event)"
                     [disabled]="pdfGeneratingId === item.reportHeaderId">
@@ -74,15 +75,14 @@
                     <span *ngIf="pdfGeneratingId === item.reportHeaderId" class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>
                   </button>
                   <button *ngIf="canAmend(item.status)"
-                    class="btn btn-sm btn-outline-warning" title="Amend Report"
+                    type="button"
+                    class="btn-lims-icon btn-lims-edit" title="Amend Report"
                     (click)="openAmendment(item)">
                     <i class="bi bi-pencil-square"></i>
                   </button>
                   <ng-container *ngIf="item.canTakeAction && item.actions">
-                    <button *ngFor="let action of item.actions" class="icon-action-btn"
-                      [class.text-success]="action.action.toLowerCase().includes('next')"
-                      [class.text-danger]="action.action.toLowerCase().includes('cancel')"
-                      [class.text-secondary]="action.action.toLowerCase().includes('back')"
+                    <button *ngFor="let action of item.actions" type="button" class="btn-lims-icon"
+                      [ngClass]="action.action.toLowerCase().includes('next') ? 'btn-lims-success' : (action.action.toLowerCase().includes('cancel') ? 'btn-lims-delete' : 'btn-lims-copy')"
                       [title]="action.name"
                       [disabled]="isSubmitting"
                       (click)="performWorkflowAction(item, action.action)">
@@ -95,7 +95,7 @@
               </td>
 
               <!-- Sr. No. -->
-              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="text-center col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
 
               <!-- Data columns -->
               <td class="fw-semibold">

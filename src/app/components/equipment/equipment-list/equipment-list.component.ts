@@ -21,7 +21,7 @@ export class EquipmentListComponent implements OnInit {
     { key: 'equipmentNo', type: 'string', label: 'Equipment Number', filter: true },
     { key: 'departmentName', type: 'string', label: 'Department', filter: true },
     { key: 'equipmentType', type: 'string', label: 'Equipment Type', filter: true },
-    { key: 'oemName', type: 'string', label: 'OEM Name', filter: true },
+    { key: 'supplierName', type: 'string', label: 'Supplier / Manufacturer', filter: true },
     { key: 'nextCalibrationDueDate', type: 'date', label: 'Calibration', filter: true },
     { key: 'nextMaintenanceDueDate', type: 'date', label: 'Maintenance', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
@@ -31,10 +31,12 @@ export class EquipmentListComponent implements OnInit {
     equipmentNo: 'string',
     departmentName: 'string',
     equipmentType: 'string',
+    supplierName: 'string',
     oemName: 'string',
     nextCalibrationDueDate: 'date',
     nextMaintenanceDueDate: 'date',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

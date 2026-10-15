@@ -51,9 +51,14 @@
                 <!--Email Id 1-->
                 <div>
                     <label class="form-label">Email Id 1</label>
-                    <input type="email" class="form-control" formControlName="emailId1" placeholder="e.g. contact@supplier.com"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': isFieldInvalid('emailId1') }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId1" placeholder="e.g. contact@supplier.com"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': isFieldInvalid('emailId1') }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <app-field-error [control]="supplierForm.get('emailId1')" label="Email Id 1" [submitted]="submitted"/>
                 </div>
 
@@ -75,9 +80,14 @@
                 <!--Email Id 2-->
                 <div>
                     <label class="form-label">Email Id 2</label>
-                    <input type="email" class="form-control" formControlName="emailId2" placeholder="e.g. contact@supplier.com"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': isFieldInvalid('emailId2') }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId2" placeholder="e.g. contact@supplier.com"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': isFieldInvalid('emailId2') }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <app-field-error [control]="supplierForm.get('emailId2')" label="Email Id 2" [submitted]="submitted"/>
                 </div>
 
@@ -99,9 +109,14 @@
                 <!--Email Id 3-->
                 <div>
                     <label class="form-label">Email Id 3</label>
-                    <input type="email" class="form-control" formControlName="emailId3" placeholder="e.g. contact@supplier.com"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': isFieldInvalid('emailId3') }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId3" placeholder="e.g. contact@supplier.com"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': isFieldInvalid('emailId3') }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <app-field-error [control]="supplierForm.get('emailId3')" label="Email Id 3" [submitted]="submitted"/>
                 </div>
 
@@ -121,11 +136,11 @@
                 <div>
                     <label class="form-label">Agreement File </label>
                     <ng-container *ngIf="supplierForm.get('agreementFilePath')?.value || supplierForm.get('fileName')?.value; else uploadField">
-                        <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
+                        <div class="d-flex align-items-center justify-content-between bg-light border rounded file-preview-box">
                             <span class="text-truncate me-2" type="button"
                                 (click)="openFileInNewTab(supplierForm.get('agreementFilePath')?.value)"
                                 title="{{ supplierForm.get('agreementFilePath')?.value }}">
-                                <i class="bi bi-file-earmark-fill"></i><span>{{supplierForm.get('fileName')?.value }}</span>
+                                <i class="bi bi-file-earmark-fill me-1"></i><span>{{supplierForm.get('fileName')?.value }}</span>
                             </span>
                             <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
                                 (click)="removeFile()">

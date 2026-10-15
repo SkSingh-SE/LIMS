@@ -27,6 +27,7 @@ export class LaboratoryTestListComponent implements OnInit {
     departmentName: 'string',
     isChemicalTest: 'bool',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

@@ -19,13 +19,12 @@ export class WorkflowListComponent implements OnInit {
     { key: 'name', type: 'string', label: 'Title', filter: true },
     { key: 'entityType', type: 'string', label: 'Entity Type', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
-    { key: 'createdBy', type: 'string', label: 'Created By', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
     entityType: 'string',
     modifiedOn: 'date',
-    createdBy: 'string'
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

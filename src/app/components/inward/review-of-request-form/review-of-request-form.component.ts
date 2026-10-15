@@ -17,6 +17,7 @@ import { ToastService } from '../../../services/toast.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
+import { PhoneInputComponent } from '../../../utility/components/phone-input/phone-input.component';
 
 export interface TpiPerson {
   name: string;
@@ -35,7 +36,8 @@ export interface TpiPerson {
     ReactiveFormsModule,
     FormsModule,
     SearchableDropdownComponent,
-    PlanFormComponent
+    PlanFormComponent,
+    PhoneInputComponent
   ]
 })
 export class ReviewOfRequestFormComponent implements OnInit {

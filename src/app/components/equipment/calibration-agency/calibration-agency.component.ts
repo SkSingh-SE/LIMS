@@ -31,6 +31,7 @@ export class CalibrationAgencyComponent implements OnInit {
     emailId1: 'string',
     address: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

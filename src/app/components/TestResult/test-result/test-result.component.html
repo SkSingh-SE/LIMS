@@ -19,7 +19,7 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 180px; min-width: 180px;">Actions</th>
+                            <th class="align-middle text-center col-actions">Actions</th>
               <th *ngFor="let column of columns; let i = index">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
@@ -55,31 +55,31 @@
 
           <tbody>
             <tr *ngFor="let item of listData" class="align-middle">
-              <td class="text-center">
-                <div class="d-flex gap-2 justify-content-center align-items-center">
+              <td class="text-center col-actions">
+                <div class="d-flex gap-1.5 justify-content-center align-items-center">
                   <a
                     *ngIf="item.canPerformTesting"
                     [routerLink]="['/testing/perform', item.sampleId]"
-                    class="icon-link action-icon-link"
+                    class="btn-lims-icon btn-lims-success"
                     title="Perform Testing"
                   >
-                    <i class="bi bi-play-circle-fill text-success action-icon"></i>
+                    <i class="bi bi-play-circle-fill"></i>
                   </a>
                   <a
                     [routerLink]="['/testing/results', item.sampleId]"
                     [state]="{ mode: 'view' }"
-                    class="icon-link"
+                    class="btn-lims-icon btn-lims-view"
                     title="View Results"
                   >
-                    <img src="/icons/view.svg" alt="View" class="icon-svg">
+                    <i class="bi bi-eye"></i>
                   </a>
                   <a
                     *ngIf="item.hasLongTermTests"
                     routerLink="/testing/longterm"
-                    class="icon-link"
+                    class="btn-lims-icon btn-lims-copy"
                     title="Long-Term Tracking"
                   >
-                    <i class="bi bi-clock-history" style="font-size: 1.3rem; color: #e65100;"></i>
+                    <i class="bi bi-clock-history"></i>
                   </a>
                 </div>
               </td>

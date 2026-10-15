@@ -21,18 +21,25 @@
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
-/* Medium / Default (matches Bootstrap standard .form-control: 36px) */
-.phone-control-group,
-.phone-control-group.phone-size-md {
-  height: 36px;
-  min-height: 36px;
-  border-radius: 4px;
+/* Extra Small (matches 24px compact micro-inputs) */
+.phone-control-group.phone-size-xs {
+  height: 24px;
+  min-height: 24px;
+  border-radius: 3px;
 }
 
 /* Small (matches Bootstrap .form-control-sm: 28px) */
 .phone-control-group.phone-size-sm {
   height: 28px;
   min-height: 28px;
+  border-radius: 4px;
+}
+
+/* Medium / Default (matches Bootstrap standard .form-control: 36px) */
+.phone-control-group,
+.phone-control-group.phone-size-md {
+  height: 36px;
+  min-height: 36px;
   border-radius: 4px;
 }
 
@@ -81,12 +88,11 @@
   transition: background-color 0.15s ease;
 }
 
-/* Trigger Button Sizing: Default / MD (36px) */
-.phone-control-group .country-trigger-btn,
-.phone-control-group.phone-size-md .country-trigger-btn {
-  padding: 0 10px 0 12px;
-  font-size: 0.8125rem;
-  gap: 6px;
+/* Trigger Button Sizing: Extra Small (24px) */
+.phone-control-group.phone-size-xs .country-trigger-btn {
+  padding: 0 4px 0 6px;
+  font-size: 0.72rem;
+  gap: 4px;
 }
 
 /* Trigger Button Sizing: Small (28px) */
@@ -94,6 +100,14 @@
   padding: 0 6px 0 8px;
   font-size: 0.76rem;
   gap: 5px;
+}
+
+/* Trigger Button Sizing: Default / MD (36px) */
+.phone-control-group .country-trigger-btn,
+.phone-control-group.phone-size-md .country-trigger-btn {
+  padding: 0 10px 0 12px;
+  font-size: 0.8125rem;
+  gap: 6px;
 }
 
 /* Trigger Button Sizing: Large (46px) */
@@ -119,15 +133,20 @@
   justify-content: center;
 }
 
-.phone-control-group .flag-icon-container,
-.phone-control-group.phone-size-md .flag-icon-container {
-  width: 20px;
-  height: 15px;
+.phone-control-group.phone-size-xs .flag-icon-container {
+  width: 16px;
+  height: 11px;
 }
 
 .phone-control-group.phone-size-sm .flag-icon-container {
   width: 18px;
   height: 13px;
+}
+
+.phone-control-group .flag-icon-container,
+.phone-control-group.phone-size-md .flag-icon-container {
+  width: 20px;
+  height: 15px;
 }
 
 .phone-control-group.phone-size-lg .flag-icon-container {
@@ -154,13 +173,17 @@
   color: #1e293b;
 }
 
-.phone-control-group .dial-code-text,
-.phone-control-group.phone-size-md .dial-code-text {
-  font-size: 0.8125rem;
+.phone-control-group.phone-size-xs .dial-code-text {
+  font-size: 0.72rem;
 }
 
 .phone-control-group.phone-size-sm .dial-code-text {
   font-size: 0.76rem;
+}
+
+.phone-control-group .dial-code-text,
+.phone-control-group.phone-size-md .dial-code-text {
+  font-size: 0.8125rem;
 }
 
 .phone-control-group.phone-size-lg .dial-code-text {
@@ -173,13 +196,17 @@
   margin-left: 1px;
 }
 
-.phone-control-group .caret-icon,
-.phone-control-group.phone-size-md .caret-icon {
-  font-size: 0.6rem;
+.phone-control-group.phone-size-xs .caret-icon {
+  font-size: 0.5rem;
 }
 
 .phone-control-group.phone-size-sm .caret-icon {
   font-size: 0.55rem;
+}
+
+.phone-control-group .caret-icon,
+.phone-control-group.phone-size-md .caret-icon {
+  font-size: 0.6rem;
 }
 
 .phone-control-group.phone-size-lg .caret-icon {
@@ -199,11 +226,10 @@
   box-sizing: border-box;
 }
 
-/* Text Input Sizing: Default / MD */
-.phone-control-group .phone-text-input,
-.phone-control-group.phone-size-md .phone-text-input {
-  padding: 0 8px 0 12px;
-  font-size: 0.8125rem;
+/* Text Input Sizing: Extra Small */
+.phone-control-group.phone-size-xs .phone-text-input {
+  padding: 0 4px 0 6px;
+  font-size: 0.74rem;
 }
 
 /* Text Input Sizing: Small */
@@ -212,21 +238,33 @@
   font-size: 0.78rem;
 }
 
+/* Text Input Sizing: Default / MD */
+.phone-control-group .phone-text-input,
+.phone-control-group.phone-size-md .phone-text-input {
+  padding: 0 8px 0 12px;
+  font-size: 0.8125rem;
+}
+
 /* Text Input Sizing: Large */
 .phone-control-group.phone-size-lg .phone-text-input {
   padding: 0 12px 0 16px;
   font-size: 1rem;
 }
 
-.phone-control-group .phone-text-input::placeholder,
-.phone-control-group.phone-size-md .phone-text-input::placeholder {
+.phone-control-group.phone-size-xs .phone-text-input::placeholder {
   color: #94a3b8;
-  font-size: 0.8125rem;
+  font-size: 0.72rem;
 }
 
 .phone-control-group.phone-size-sm .phone-text-input::placeholder {
   color: #94a3b8;
   font-size: 0.75rem;
+}
+
+.phone-control-group .phone-text-input::placeholder,
+.phone-control-group.phone-size-md .phone-text-input::placeholder {
+  color: #94a3b8;
+  font-size: 0.8125rem;
 }
 
 .phone-control-group.phone-size-lg .phone-text-input::placeholder {
@@ -248,15 +286,20 @@
   pointer-events: none;
 }
 
-.phone-control-group .trailing-icon,
-.phone-control-group.phone-size-md .trailing-icon {
-  padding: 0 12px;
-  font-size: 0.875rem;
+.phone-control-group.phone-size-xs .trailing-icon {
+  padding: 0 6px;
+  font-size: 0.72rem;
 }
 
 .phone-control-group.phone-size-sm .trailing-icon {
   padding: 0 8px;
   font-size: 0.78rem;
+}
+
+.phone-control-group .trailing-icon,
+.phone-control-group.phone-size-md .trailing-icon {
+  padding: 0 12px;
+  font-size: 0.875rem;
 }
 
 .phone-control-group.phone-size-lg .trailing-icon {

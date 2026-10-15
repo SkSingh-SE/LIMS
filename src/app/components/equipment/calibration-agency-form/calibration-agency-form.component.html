@@ -61,22 +61,22 @@
                 <!--Contact No 1-->
                 <div>
                     <label class="form-label">Contact No 1 <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="contactNo1"
-                        placeholder="Enter Contact No 1" maxlength="12" appNumberOnly
-                        (blur)="checkPhoneNumber($event)"
-                        [ngClass]="{ 'is-invalid': calibrationForm.get('contactNo1')?.touched && calibrationForm.get('contactNo1')?.invalid }" />
+                    <app-phone-input formControlName="contactNo1" [submitted]="calibrationForm.touched"></app-phone-input>
                     <span *ngIf="calibrationForm.get('contactNo1')?.hasError('required') && calibrationForm.get('contactNo1')?.touched"
                         class="text-danger text-sm">Contact No 1 is required.</span>
-                    <span *ngIf="calibrationForm.get('contactNo1')?.hasError('pattern') && !calibrationForm.get('contactNo1')?.hasError('required') && calibrationForm.get('contactNo1')?.touched"
-                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
                 </div>
 
                 <!--Email Id 1-->
                 <div>
                     <label class="form-label">Email Id 1 <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': calibrationForm.get('emailId1')?.touched && calibrationForm.get('emailId1')?.invalid }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId1" placeholder="Enter Email Id 1"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': calibrationForm.get('emailId1')?.touched && calibrationForm.get('emailId1')?.invalid }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <div *ngIf="calibrationForm.get('emailId1')?.touched && calibrationForm.get('emailId1')?.invalid"
                         class="text-danger text-sm">Email Id 1 must be a valid email address.</div>
                 </div>
@@ -91,20 +91,20 @@
                 <!--Contact No 2-->
                 <div>
                     <label class="form-label">Contact No 2</label>
-                    <input type="text" class="form-control" formControlName="contactNo2"
-                        placeholder="Enter Contact No 2" maxlength="12" appNumberOnly
-                        (blur)="checkPhoneNumber($event)"
-                        [ngClass]="{ 'is-invalid': calibrationForm.get('contactNo2')?.touched && calibrationForm.get('contactNo2')?.invalid }" />
-                    <span *ngIf="calibrationForm.get('contactNo2')?.hasError('pattern') && calibrationForm.get('contactNo2')?.touched"
-                        class="text-danger text-sm">Contact Number must be 10-13 digits.</span>
+                    <app-phone-input formControlName="contactNo2" [submitted]="calibrationForm.touched"></app-phone-input>
                 </div>
 
                 <!--Email Id 2-->
                 <div>
                     <label class="form-label">Email Id 2</label>
-                    <input type="email" class="form-control" formControlName="emailId2" placeholder="Enter Email Id 2"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': calibrationForm.get('emailId2')?.touched && calibrationForm.get('emailId2')?.invalid }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId2" placeholder="Enter Email Id 2"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': calibrationForm.get('emailId2')?.touched && calibrationForm.get('emailId2')?.invalid }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <div *ngIf="calibrationForm.get('emailId2')?.touched && calibrationForm.get('emailId2')?.invalid"
                         class="text-danger text-sm">Email Id 2 must be a valid email address.</div>
                 </div>
@@ -119,20 +119,20 @@
                 <!--Contact No 3-->
                 <div>
                     <label class="form-label">Contact No 3</label>
-                    <input type="text" class="form-control" formControlName="contactNo3"
-                        placeholder="Enter Contact No 3" maxlength="12" appNumberOnly
-                        (blur)="checkPhoneNumber($event)"
-                        [ngClass]="{ 'is-invalid': calibrationForm.get('contactNo3')?.touched && calibrationForm.get('contactNo3')?.invalid }" />
-                    <span *ngIf="calibrationForm.get('contactNo3')?.hasError('pattern') && calibrationForm.get('contactNo3')?.touched"
-                        class="text-danger text-sm">Please enter a valid contact number.</span>
+                    <app-phone-input formControlName="contactNo3" [submitted]="calibrationForm.touched"></app-phone-input>
                 </div>
 
                 <!--Email Id 3-->
                 <div>
                     <label class="form-label">Email Id 3</label>
-                    <input type="email" class="form-control" formControlName="emailId3" placeholder="Enter Email Id 3"
-                        maxlength="100"
-                        [ngClass]="{ 'is-invalid': calibrationForm.get('emailId3')?.touched && calibrationForm.get('emailId3')?.invalid }" />
+                    <div class="input-with-icon-wrapper">
+                        <input type="email" class="form-control" formControlName="emailId3" placeholder="Enter Email Id 3"
+                            maxlength="100"
+                            [ngClass]="{ 'is-invalid': calibrationForm.get('emailId3')?.touched && calibrationForm.get('emailId3')?.invalid }" />
+                        <span class="input-trailing-icon">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                    </div>
                     <div *ngIf="calibrationForm.get('emailId3')?.touched && calibrationForm.get('emailId3')?.invalid"
                         class="text-danger text-sm">Email Id 3 must be a valid email address.</div>
                 </div>

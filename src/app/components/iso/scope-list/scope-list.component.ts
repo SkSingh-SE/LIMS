@@ -29,6 +29,7 @@ export class ScopeListComponent implements OnInit {
     testMethodSpecificationName: 'string',
     isUnderISO: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

@@ -25,8 +25,7 @@ export class SampleInwardListComponent implements OnInit {
     { key: 'contactPhone', type: 'string', label: 'Contact Phone', filter: true },
     { key: 'collectionTime', type: 'string', label: 'Collection Time', filter: true },
     { key: 'inwardStatus', type: 'string', label: 'Status', filter: true },
-    { key: 'modifiedBy', type: 'string', label: 'Modified By', filter: true },
-    { key: 'modifiedOn', type: 'date', label: 'Modified On', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     caseNo: 'string',
@@ -36,8 +35,8 @@ export class SampleInwardListComponent implements OnInit {
     contactPhone: 'string',
     collectionTime: 'string',
     inwardStatus: 'string',
-    modifiedBy: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

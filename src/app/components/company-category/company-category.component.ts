@@ -31,6 +31,7 @@ export class CompanyCategoryComponent implements OnInit {
     name: 'string',
     description: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

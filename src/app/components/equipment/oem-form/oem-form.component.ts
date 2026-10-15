@@ -10,9 +10,11 @@ import { Observable } from 'rxjs';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 
+import { PhoneInputComponent } from '../../../utility/components/phone-input/phone-input.component';
+
 @Component({
   selector: 'app-oem-form',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NumberOnlyDirective, RouterLink, PhoneInputComponent],
   templateUrl: './oem-form.component.html',
   styleUrl: './oem-form.component.css'
 })

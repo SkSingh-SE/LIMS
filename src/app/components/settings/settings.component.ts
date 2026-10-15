@@ -19,11 +19,12 @@ import {
   dateRangeValidator,
 } from '../../utility/validators/custom-validators';
 import { FormValidationHelper } from '../../utility/helper/form-validation.helper';
+import { PhoneInputComponent } from '../../utility/components/phone-input/phone-input.component';
 
 @Component({
   selector: 'app-settings',
 
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css']
 })
@@ -154,7 +155,7 @@ export class SettingsComponent implements OnInit {
         labCode: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(50)]],
         labAddress: ['', [Validators.required, noWhitespaceValidator(), Validators.maxLength(500)]],
         contactEmail: ['', [Validators.required, Validators.email, Validators.maxLength(200)]],
-        contactPhone: ['', [Validators.required, phoneValidator()]],
+        contactPhone: ['', [Validators.required]],
         mobileNo: [''],
         website: [''],
         cin: [''],

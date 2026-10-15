@@ -35,6 +35,7 @@ export class EmployeeListComponent implements OnInit {
     departmentName: 'string',
     designationName: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

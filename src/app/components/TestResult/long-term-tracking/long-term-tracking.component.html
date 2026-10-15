@@ -134,6 +134,7 @@
               </th>
 
               <!-- Actions -->
+              <th class="align-middle text-center col-actions">Actions</th>
             </tr>
           </thead>
 
@@ -149,38 +150,38 @@
               <td>
                 <span class="badge bg-info">{{ test?.readings?.length || 0 }}</span>
               </td>
-              <td>
-                <div class="d-flex gap-1 justify-content-center flex-wrap">
+              <td class="text-center col-actions">
+                <div class="d-flex gap-1.5 justify-content-center align-items-center">
                   <!-- View Details -->
                   <button
-                    class="btn btn-sm btn-outline-info"
+                    type="button"
+                    class="btn-lims-icon btn-lims-view"
                     (click)="viewDetails(test.id)"
                     title="View Details"
                   >
                     <i class="bi bi-eye"></i>
-                    <span class="d-none d-sm-inline">View</span>
                   </button>
 
                   <!-- Record Reading -->
                   <button
-                    class="btn btn-sm btn-add"
+                    type="button"
+                    class="btn-lims-icon btn-lims-edit"
                     (click)="recordReading(test)"
                     [disabled]="!canRecordReading(test) || isSaving()"
                     title="Record Reading"
                   >
-                    <i class="bi bi-plus"></i>
-                    <span class="d-none d-sm-inline">Record</span>
+                    <i class="bi bi-plus-lg"></i>
                   </button>
 
                   <!-- Complete Test -->
                   <button
-                    class="btn btn-sm btn-outline-success"
+                    type="button"
+                    class="btn-lims-icon btn-lims-success"
                     (click)="completeTest(test)"
                     [disabled]="!canCompleteTest(test) || isSaving()"
                     title="Complete Test"
                   >
-                    <i class="bi bi-check"></i>
-                    <span class="d-none d-sm-inline">Done</span>
+                    <i class="bi bi-check-lg"></i>
                   </button>
                 </div>
               </td>

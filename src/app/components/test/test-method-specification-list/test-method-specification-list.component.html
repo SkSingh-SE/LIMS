@@ -37,8 +37,8 @@
         <table class="table bordered-table align-middle w-100">
           <thead class="table-light">
             <tr class="text-center align-middle">
-                            <th class="align-middle text-center" style="width: 130px; min-width: 130px;">Actions</th>
-              <th *ngFor="let column of columns; let i = index">
+                            <th class="align-middle text-center col-actions">Actions</th>
+              <th *ngFor="let column of columns; let i = index" [ngClass]="column.key === 'id' ? 'col-sn' : ''">
                 <div class="d-flex align-items-center">
                   <span class="dt-column-order">{{ column.label }}</span>
                   <span class="d-flex flex-column ms-2 mt-2">
@@ -67,22 +67,29 @@
             <tr *ngFor="let supplier of testMethodSpecificationList; let i = index" class="text-sm">
 
 
-              <td class="text-center">
-                <div class="d-flex justify-content-center gap-3">
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center align-items-center gap-1.5">
                   <!-- Flex for spacing -->
-                  <a *hasPermission="'CanViewTestMethodSpecification'" [routerLink]="['/test-specification/details', supplier.id]" [state]="{ mode: 'view' }" class="icon-link" title="View">
-                    <img src="/icons/view.svg" alt="View" class="icon-svg" />
+                  <a *hasPermission="'CanViewTestMethodSpecification'" [routerLink]="['/test-specification/details', supplier.id]" [state]="{ mode: 'view' }" class="btn-lims-icon btn-lims-view" title="View">
+                    <i class="bi bi-eye"></i>
                   </a>
-                  <a *hasPermission="'CanEditTestMethodSpecification'" [routerLink]="['/test-specification/edit', supplier.id]" [state]="{ mode: 'edit' }" class="icon-link" title="Edit">
-                    <img src="/icons/edit.svg" alt="Edit" class="icon-svg" />
+                  <a *hasPermission="'CanEditTestMethodSpecification'" [routerLink]="['/test-specification/edit', supplier.id]" [state]="{ mode: 'edit' }" class="btn-lims-icon btn-lims-edit" title="Edit">
+                    <i class="bi bi-pencil"></i>
                   </a>
-                  <a *hasPermission="'CanDeleteTestMethodSpecification'" class="icon-link" title="Delete" (click)="deleteFn(supplier.id)">
-                    <img src="/icons/delete.svg" alt="Delete" class="icon-svg" />
-                  </a>
+                  <button type="button" *hasPermission="'CanDeleteTestMethodSpecification'" class="btn-lims-icon btn-lims-delete" title="Delete" (click)="deleteFn(supplier.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </div>
               </td>
-              <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-              <td>{{ supplier.displayTitle || supplier.name || '-' }}</td>
+              <td class="text-center col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td class="fw-semibold">
+                <a [routerLink]="['/test-specification/details', supplier.id]"
+                   [state]="{ mode: 'view' }"
+                   class="text-primary text-decoration-none cursor-pointer"
+                   [title]="'View details for ' + (supplier.displayTitle || supplier.name)">
+                  {{ supplier.displayTitle || supplier.name || '-' }}
+                </a>
+              </td>
               <td>{{ supplier.standardOrganizationName }}</td>
               <td>{{ supplier.testMethodStandard }}</td>
               <td>{{ supplier.defaultVersion || '-' }}</td>
@@ -91,7 +98,7 @@
               <td>
                 <div class="cell-audit" [title]="'Modified by ' + (supplier.modifiedByName || supplier.createdByName || '-') + ' on ' + ((supplier.modifiedOn || supplier.createdOn) | date:'dd MMM, yyyy hh:mm a')">
                   <span class="cell-audit-name">{{ supplier.modifiedByName || supplier.createdByName || '-' }}</span>
-                  <span class="cell-audit-time">· {{ (supplier.modifiedOn || supplier.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                  <span class="cell-audit-time">{{ (supplier.modifiedOn || supplier.createdOn) | date:"dd MMM, hh:mm a" }}</span>
                 </div>
               </td>
             </tr>

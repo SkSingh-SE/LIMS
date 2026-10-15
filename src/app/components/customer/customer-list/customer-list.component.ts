@@ -31,6 +31,7 @@ export class CustomerListComponent  implements OnInit {
     GSTNo: 'string',
     SampleReturn: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

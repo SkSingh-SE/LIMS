@@ -14,7 +14,10 @@ export function noWhitespaceValidator(): ValidatorFn {
 export function phoneValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     if (!control.value) return null;
-    return /^[+]?\d{10,13}$/.test(control.value.toString().trim()) ? null : { phone: true };
+    // App-phone-input emits "dial code + space + number" (e.g. "+91 9876543210"), so validate
+    // on digits only instead of the raw string — otherwise the space fails the old pattern.
+    const digits = control.value.toString().replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 13 ? null : { phone: true };
   };
 }
 

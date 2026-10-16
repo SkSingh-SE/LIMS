@@ -68,7 +68,12 @@
 
                             <td class="text-center col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td><a class="text-primary cell-record-link fw-medium cursor-pointer text-decoration-none" (click)="openModal('view', item.id)" [title]="'View details for ' + item.name">{{ item.name }}</a></td>
-                            <td>{{ item.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
+                            <td>
+                                <div class="cell-audit" [title]="(item.modifiedByName || item.createdByName ? (item.modifiedByName || item.createdByName) + ' | ' : '') + ((item.modifiedOn || item.createdOn) | date:'medium')">
+                                    <span class="cell-audit-name">{{ item.modifiedByName || item.createdByName || '-' }}</span>
+                                    <span class="cell-audit-time">{{ (item.modifiedOn || item.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                                </div>
+                            </td>                        </tr>
                     </tbody>
                 </table>
 

@@ -41,6 +41,7 @@ export class ProductSizeMasterComponent implements OnInit {
     minValue: 'number',
     maxValue: 'number',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

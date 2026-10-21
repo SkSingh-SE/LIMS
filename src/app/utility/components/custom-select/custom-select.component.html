@@ -1,0 +1,133 @@
+<!-- Custom Select Host / Trigger -->
+<div class="custom-select-container"
+     [ngClass]="[
+       'size-' + size,
+       'variant-' + variant,
+       isOpen ? 'is-open' : '',
+       disabled ? 'is-disabled' : '',
+       selectedOption ? 'has-value' : 'is-empty'
+     ]">
+
+  <!-- Trigger Button -->
+  <button #triggerEl
+          type="button"
+          class="custom-select-trigger"
+          [ngClass]="[triggerClass, selectedOption?.triggerClass || '']"
+          cdkOverlayOrigin
+          #triggerOrigin="cdkOverlayOrigin"
+          [disabled]="disabled"
+          (click)="toggleDropdown($event)"
+          [attr.aria-haspopup]="'listbox'"
+          [attr.aria-expanded]="isOpen">
+
+    <!-- Selected Item Icon (Optional) -->
+    <i *ngIf="selectedOption?.icon"
+       class="bi custom-select-icon"
+       [ngClass]="selectedOption?.icon"></i>
+
+    <!-- Selected Label or Placeholder -->
+    <span class="custom-select-label text-truncate"
+          [class.placeholder-text]="!selectedOption">
+      {{ selectedOption ? (selectedOption.shortLabel || selectedOption.label) : placeholder }}
+    </span>
+
+    <!-- Selected Item Badge (Optional, pill style) -->
+    <span *ngIf="showBadgeOnTrigger && selectedOption?.badge"
+          class="badge custom-select-badge ms-auto me-1"
+          [ngClass]="selectedOption?.badgeClass || 'bg-light text-secondary'">
+      {{ selectedOption?.badge }}
+    </span>
+
+    <!-- Clear Button (Optional) -->
+    <button *ngIf="clearable && selectedOption && !disabled"
+            type="button"
+            class="custom-select-clear-btn"
+            (click)="clearSelection($event)"
+            title="Clear">
+      <i class="bi bi-x"></i>
+    </button>
+
+    <!-- Animated Chevron Down -->
+    <i class="bi bi-chevron-down custom-select-chevron ms-1"
+       [class.is-open]="isOpen"></i>
+  </button>
+</div>
+
+<!-- CDK Floating Overlay for Dropdown Menu -->
+<ng-template cdkConnectedOverlay
+             [cdkConnectedOverlayOrigin]="triggerOrigin"
+             [cdkConnectedOverlayOpen]="isOpen"
+             [cdkConnectedOverlayPositions]="overlayPositions"
+             [cdkConnectedOverlayWidth]="panelWidth ? panelWidth : triggerWidth"
+             [cdkConnectedOverlayMinWidth]="panelWidth ? panelWidth : triggerWidth"
+             [cdkConnectedOverlayHasBackdrop]="false"
+             (overlayOutsideClick)="close()"
+             (overlayKeydown)="handleKeydown($event)">
+
+  <div class="custom-select-menu shadow-lg"
+       [ngClass]="['size-' + size, panelClass]"
+       [style.width]="panelWidth ? panelWidth : null">
+
+    <!-- Search Header (shown if enabled) -->
+    <div *ngIf="isSearchEnabled" class="custom-select-search-header">
+      <i class="bi bi-search search-icon"></i>
+      <input #searchInput
+             type="text"
+             class="search-input"
+             [value]="searchQuery"
+             (input)="onSearchInput($any($event.target).value)"
+             [placeholder]="searchPlaceholder" />
+      <button *ngIf="searchQuery"
+              type="button"
+              class="search-clear-btn"
+              (click)="clearSearch($event)"
+              title="Clear search">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Options List Container -->
+    <ul #listEl
+        class="custom-select-options-list"
+        role="listbox"
+        tabindex="-1">
+      <li *ngFor="let opt of filteredOptions; let i = index"
+          class="custom-select-option"
+          role="option"
+          [attr.aria-selected]="isValueEqual(opt.value, selectedOption?.value)"
+          [class.is-selected]="isValueEqual(opt.value, selectedOption?.value)"
+          [class.is-highlighted]="i === highlightedIndex"
+          [class.is-disabled]="opt.disabled"
+          (click)="selectOption(opt, $event)"
+          (mouseenter)="highlightedIndex = i">
+
+        <!-- Optional Option Icon -->
+        <i *ngIf="opt.icon"
+           class="bi option-icon"
+           [ngClass]="opt.icon"></i>
+
+        <!-- Option Label -->
+        <span class="option-label text-truncate">{{ opt.label }}</span>
+
+        <!-- Optional Badge (e.g. LIMS DB, Fixed Val, User Entry) -->
+        <span *ngIf="opt.badge"
+              class="badge option-badge ms-auto"
+              [ngClass]="opt.badgeClass || 'bg-light-subtle text-secondary'">
+          {{ opt.badge }}
+        </span>
+
+        <!-- Selected Checkmark Icon -->
+        <i *ngIf="isValueEqual(opt.value, selectedOption?.value)"
+           class="bi bi-check2 option-check-icon"
+           [class.ms-auto]="!opt.badge"
+           [class.ms-2]="opt.badge"></i>
+      </li>
+
+      <!-- Empty State -->
+      <li *ngIf="filteredOptions.length === 0" class="custom-select-empty">
+        <i class="bi bi-inbox text-muted me-2"></i>
+        <span>No matching options</span>
+      </li>
+    </ul>
+  </div>
+</ng-template>

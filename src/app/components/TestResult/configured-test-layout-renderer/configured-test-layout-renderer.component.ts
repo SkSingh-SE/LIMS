@@ -1,10 +1,12 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { ParameterService } from '../../../services/parameter.service';
 
 export interface SpecimenData {
   id: string;
@@ -34,6 +36,44 @@ export interface ChecklistItem {
   status: 'Pass' | 'Fail' | 'NA';
 }
 
+export interface LocationData {
+  id?: number;
+  locationCode: string;
+  locationName: string;
+  displayOrder: number;
+  isReportable: boolean;
+  remarks?: string;
+}
+
+export interface ObservationData {
+  id?: number;
+  category: string;
+  observationText: string;
+  displayOrder: number;
+  isReportable: boolean;
+}
+
+export interface DecisionRuleData {
+  ruleType: string;
+  confidenceLevel: number;
+  guardBandMultiplier: number;
+  acceptanceStatus: 'Pass' | 'Fail' | 'Inconclusive' | 'Conditional';
+  statementText: string;
+}
+
+export interface ClassificationData {
+  classificationStandard: string;
+  ratingType: string;
+  selectedCategory: string;
+  severity: string;
+  remarks: string;
+}
+
+export interface CustomAttribute {
+  key: string;
+  value: string;
+}
+
 @Component({
   selector: 'app-configured-test-layout-renderer',
   standalone: true,
@@ -43,7 +83,8 @@ export interface ChecklistItem {
     ReactiveFormsModule,
     RouterModule,
     DecimalOnlyDirective,
-    TestStatusBadgeComponent
+    TestStatusBadgeComponent,
+    SearchableDropdownComponent
   ],
   templateUrl: './configured-test-layout-renderer.component.html',
   styleUrls: ['./configured-test-layout-renderer.component.css']
@@ -91,7 +132,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   // Quick-Add Parameter modal state
   showAddParamModal = false;
+  selectedParamDropdownItem: any = null;
   newParamData: {
+    parameterID: number | null;
     parameterName: string;
     unit: string;
     inputType: string;
@@ -100,7 +143,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     acceptanceCriteria: string;
     testMethodUsed: string;
     applyTo: 'all' | 'current';
+    isReportable: boolean;
+    decimalPrecision: number;
+    dropdownOptions: any[];
   } = {
+    parameterID: null,
     parameterName: '',
     unit: '',
     inputType: 'Decimal',
@@ -108,7 +155,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     maxValue: null,
     acceptanceCriteria: '',
     testMethodUsed: '',
-    applyTo: 'all'
+    applyTo: 'all',
+    isReportable: true,
+    decimalPrecision: 2,
+    dropdownOptions: []
   };
 
   // Multi-reading state
@@ -138,6 +188,28 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Custom condition values
   conditionValues: Record<string, any> = {};
 
+  // Hybrid Relational Collections & Extra state
+  locations: LocationData[] = [];
+  observations: ObservationData[] = [];
+  decisionRule: DecisionRuleData = {
+    ruleType: 'Simple Acceptance',
+    confidenceLevel: 95,
+    guardBandMultiplier: 1.0,
+    acceptanceStatus: 'Pass',
+    statementText: 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).'
+  };
+  classification: ClassificationData = {
+    classificationStandard: 'ASTM E45',
+    ratingType: 'Inclusion Rating',
+    selectedCategory: 'Type A (Sulfides)',
+    severity: 'Thin 1.0 / Heavy 0.5',
+    remarks: ''
+  };
+  customAttributes: CustomAttribute[] = [
+    { key: 'Machine Serial', value: 'UTM-500KN-02' },
+    { key: 'Calibration Due', value: '2027-03-31' }
+  ];
+
   // Active section mapping name
   componentNames: Record<string, string> = {
     parameter: 'Parameters Table',
@@ -157,13 +229,70 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     checklist: 'Quality Checklist',
     photo: 'Micrograph Gallery',
     location: 'Location Survey',
+    loc: 'Location Survey',
     traceability: 'Context & Traceability',
     hdr: 'Context Header',
     sign: 'Sign-off Block',
-    rule: 'Decision Rule'
+    rule: 'Decision Rule',
+    decision: 'Decision Rule',
+    classification: 'Material Classification',
+    class: 'Material Classification',
+    custom: 'Custom Attributes',
+    attrs: 'Custom Attributes'
   };
 
-  constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef,
+    private parameterService: ParameterService
+  ) {}
+
+  fetchParametersDropdown = (searchTerm: string, page: number, pageSize: number) => {
+    return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
+  };
+
+  onMasterParameterSelected(item: any): void {
+    if (!item) {
+      this.selectedParamDropdownItem = null;
+      this.newParamData.parameterID = null;
+      this.newParamData.parameterName = '';
+      return;
+    }
+    this.selectedParamDropdownItem = item;
+    this.newParamData.parameterID = item.id;
+    this.newParamData.parameterName = item.name;
+
+    // Fetch full parameter details to populate unit, inputType, precision, etc.
+    this.parameterService.getParameterById(item.id).subscribe({
+      next: (res: any) => {
+        const details = res?.data || res;
+        if (details) {
+          if (details.parameterUnit?.name) {
+            this.newParamData.unit = details.parameterUnit.name;
+          } else if (details.unit) {
+            this.newParamData.unit = details.unit;
+          }
+          if (details.inputType) {
+            this.newParamData.inputType = details.inputType;
+          }
+          if (details.decimalPrecision != null) {
+            this.newParamData.decimalPrecision = details.decimalPrecision;
+          }
+          if (details.dropdownOptions && Array.isArray(details.dropdownOptions)) {
+            this.newParamData.dropdownOptions = details.dropdownOptions.map((o: any) => ({
+              id: o.id || o.ID,
+              displayText: o.displayText || o.DisplayText,
+              value: o.value || o.Value
+            }));
+          }
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.initLayoutData();
@@ -237,9 +366,19 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       case 'photo':
         return 'bi bi-camera text-danger';
       case 'location':
+      case 'loc':
         return 'bi bi-geo-alt text-danger';
       case 'sign':
         return 'bi bi-pen text-danger';
+      case 'rule':
+      case 'decision':
+        return 'bi bi-shield-check text-danger';
+      case 'classification':
+      case 'class':
+        return 'bi bi-tags text-danger';
+      case 'custom':
+      case 'attrs':
+        return 'bi bi-sliders2 text-danger';
       default:
         return 'bi bi-sliders text-danger';
     }
@@ -273,6 +412,69 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     // Initialize Conditions
     this.initConditions();
+
+    // Initialize Locations
+    this.initLocations();
+
+    // Initialize Observations
+    this.initObservations();
+
+    // Initialize Execution Extra
+    this.initExecutionExtra();
+  }
+
+  private initLocations(): void {
+    if (this.test?.locations && Array.isArray(this.test.locations) && this.test.locations.length > 0) {
+      this.locations = this.test.locations.map((loc: any, idx: number) => ({
+        id: loc.id,
+        locationCode: loc.locationCode || `LOC${idx + 1}`,
+        locationName: loc.locationName || `Zone ${idx + 1}`,
+        displayOrder: loc.displayOrder || (idx + 1),
+        isReportable: loc.isReportable !== false,
+        remarks: loc.remarks || ''
+      }));
+    } else if (this.locations.length === 0) {
+      this.locations = [
+        { locationCode: 'SURF', locationName: 'Surface Zone', displayOrder: 1, isReportable: true, remarks: '0-2mm depth' },
+        { locationCode: 'CORE', locationName: 'Core / Mid-Radius', displayOrder: 2, isReportable: true, remarks: 'Center axis' }
+      ];
+    }
+  }
+
+  private initObservations(): void {
+    if (this.test?.observations && Array.isArray(this.test.observations) && this.test.observations.length > 0) {
+      this.observations = this.test.observations.map((obs: any, idx: number) => ({
+        id: obs.id,
+        category: obs.category || 'General',
+        observationText: obs.observationText || '',
+        displayOrder: obs.displayOrder || (idx + 1),
+        isReportable: obs.isReportable !== false
+      }));
+    }
+  }
+
+  private initExecutionExtra(): void {
+    if (this.test?.executionExtraJson) {
+      try {
+        const extra = typeof this.test.executionExtraJson === 'string'
+          ? JSON.parse(this.test.executionExtraJson)
+          : this.test.executionExtraJson;
+        if (extra?.decisionRule) {
+          this.decisionRule = { ...this.decisionRule, ...extra.decisionRule };
+        }
+        if (extra?.classification) {
+          this.classification = { ...this.classification, ...extra.classification };
+        }
+        if (Array.isArray(extra?.custom) && extra.custom.length > 0) {
+          this.customAttributes = extra.custom;
+        }
+        if (extra?.conditionValues) {
+          this.conditionValues = { ...this.conditionValues, ...extra.conditionValues };
+        }
+      } catch (e) {
+        console.warn('Could not parse test.executionExtraJson', e);
+      }
+    }
   }
 
   // =========================================================================
@@ -921,7 +1123,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   openAddParamModal(): void {
     if (this.isViewMode || this.isLocked) return;
+    this.selectedParamDropdownItem = null;
     this.newParamData = {
+      parameterID: null,
       parameterName: '',
       unit: '',
       inputType: 'Decimal',
@@ -929,13 +1133,17 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       maxValue: null,
       acceptanceCriteria: '',
       testMethodUsed: this.getCleanTestMethod(),
-      applyTo: 'all'
+      applyTo: 'all',
+      isReportable: true,
+      decimalPrecision: 2,
+      dropdownOptions: []
     };
     this.showAddParamModal = true;
   }
 
   closeAddParamModal(): void {
     this.showAddParamModal = false;
+    this.selectedParamDropdownItem = null;
   }
 
   submitAddParam(): void {
@@ -944,6 +1152,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const count = this.newParamData.applyTo === 'all' ? this.specimens.length : 1;
     for (let i = 0; i < count; i++) {
       const newCtrl = this.createParamControl({
+        parameterID: this.newParamData.parameterID,
         parameterName: this.newParamData.parameterName.trim(),
         unit: this.newParamData.unit.trim(),
         inputType: this.newParamData.inputType,
@@ -951,6 +1160,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         maxValue: this.newParamData.maxValue,
         acceptanceCriteria: this.newParamData.acceptanceCriteria.trim(),
         testMethodUsed: this.newParamData.testMethodUsed.trim(),
+        decimalPrecision: this.newParamData.decimalPrecision ?? 2,
+        dropdownOptions: this.newParamData.dropdownOptions || [],
+        isReportable: this.newParamData.isReportable,
         isStandalone: true,
         isCalculated: false,
         isBillable: true
@@ -997,22 +1209,51 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   // =========================================================================
-  // Multi-Reading Matrix Operations
+  // Multi-Reading Matrix Operations (Adjustable Spots & Template Defaults)
   // =========================================================================
   private initReadings(): void {
-    const readingSec = this.sections.find(s => s.type === 'reading');
-    const count = parseInt(readingSec?.config?.readingCount || '5', 10) || 5;
+    const readingSections = this.sections.filter(s => s.type === 'reading');
+    if (readingSections.length === 0) return;
 
-    // Find target parameter name (e.g. Hardness or Impact)
-    const targetName = readingSec?.config?.targetParameter || this.getTargetParamName();
-    if (!this.readingValues[targetName]) {
-      this.readingValues[targetName] = Array(count).fill(null);
-      this.loadSavedReadingsFromForm(targetName, count);
-      this.recalculateReadingStats(targetName);
-    }
+    readingSections.forEach(s => {
+      const defaultCount = parseInt(s.config?.count || s.config?.readingCount || '5', 10) || 5;
+      const targets = this.getReadingTargetParameters(s);
+
+      targets.forEach(targetName => {
+        if (!this.readingValues[targetName] || this.readingValues[targetName].length === 0) {
+          this.readingValues[targetName] = Array(defaultCount).fill(null);
+          this.loadSavedReadingsFromForm(targetName, defaultCount);
+          this.recalculateReadingStats(targetName);
+        }
+      });
+    });
   }
 
   private loadSavedReadingsFromForm(targetName: string, count: number): void {
+    // 1. Check if this.test?.readings contains persisted readings from database
+    if (this.test?.readings && Array.isArray(this.test.readings) && this.test.readings.length > 0) {
+      const testReadings = this.test.readings.filter((r: any) => {
+        const pName = (r.parameterName || r.parameterCode || '').trim().toLowerCase();
+        return pName === targetName.trim().toLowerCase() ||
+               (targetName.toLowerCase().includes('hardness') && pName.includes('hardness')) ||
+               (targetName.toLowerCase().includes('impact') && pName.includes('impact'));
+      });
+      if (testReadings.length > 0) {
+        const maxSeq = Math.max(...testReadings.map((r: any) => r.readingNumber || r.sequenceNo || 1));
+        const actualCount = Math.max(count, maxSeq);
+        this.readingValues[targetName] = Array(actualCount).fill(null);
+        testReadings.forEach((r: any) => {
+          const idx = (r.readingNumber || r.sequenceNo || 1) - 1;
+          const val = r.readingValue != null ? r.readingValue : r.value;
+          if (idx >= 0 && val != null && !isNaN(Number(val))) {
+            this.readingValues[targetName][idx] = Number(val);
+          }
+        });
+        return;
+      }
+    }
+
+    // 2. Check form array remarks (where serialized readings JSON was stored)
     if (!this.parametersFormArray) return;
     for (let i = 0; i < this.parametersFormArray.length; i++) {
       const ctrl = this.parametersFormArray.at(i);
@@ -1023,8 +1264,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           try {
             const parsed = JSON.parse(remarks);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              for (let r = 0; r < Math.min(count, parsed.length); r++) {
-                this.readingValues[targetName][r] = parsed[r] != null ? Number(parsed[r]) : null;
+              const actualCount = Math.max(count, parsed.length);
+              this.readingValues[targetName] = Array(actualCount).fill(null);
+              for (let r = 0; r < parsed.length; r++) {
+                this.readingValues[targetName][r] = parsed[r] != null && !isNaN(Number(parsed[r])) ? Number(parsed[r]) : null;
               }
               return;
             }
@@ -1042,15 +1285,216 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
   }
 
+  getReadingTargetParameters(s: any): string[] {
+    if (s?.config?.parameters && Array.isArray(s.config.parameters) && s.config.parameters.length > 0) {
+      return s.config.parameters;
+    }
+    const specified = s?.config?.targetParameter;
+    const names: string[] = [];
+
+    if (this.parametersFormArray && this.parametersFormArray.length > 0) {
+      for (let i = 0; i < this.parametersFormArray.length; i++) {
+        const pName = (this.parametersFormArray.at(i).get('parameterName')?.value || '').trim();
+        if (!pName) continue;
+        const lower = pName.toLowerCase();
+        // Skip auxiliary pseudo-parameters that are not indentation readings
+        if (lower.includes('scale') || lower.includes('test point') || lower.includes('average hardness')) {
+          continue;
+        }
+        if (!names.includes(pName)) {
+          names.push(pName);
+        }
+      }
+    }
+
+    if (names.length > 0) {
+      return names;
+    }
+    if (specified) {
+      return [specified];
+    }
+    return [this.getTargetParamName()];
+  }
+
   getTargetParamName(): string {
     if (!this.parametersFormArray || this.parametersFormArray.length === 0) return 'Test Parameter';
     const first = this.parametersFormArray.at(0).value;
     return first.parameterName || 'Test Parameter';
   }
 
+  getReadingIndices(s: any): number[] {
+    const count = this.getReadingCount(s);
+    return Array.from({ length: count }, (_, i) => i);
+  }
+
+  getReadingCount(s: any): number {
+    const targets = this.getReadingTargetParameters(s);
+    const primary = targets[0] || this.getTargetParamName();
+    if (this.readingValues[primary] && this.readingValues[primary].length > 0) {
+      return this.readingValues[primary].length;
+    }
+    return parseInt(s?.config?.count || s?.config?.readingCount || '5', 10) || 5;
+  }
+
+  getDefaultReadingCount(s: any): number {
+    return parseInt(s?.config?.count || s?.config?.readingCount || '5', 10) || 5;
+  }
+
+  getParamControl(targetName: string): AbstractControl | null {
+    if (!this.parametersFormArray) return null;
+    for (let i = 0; i < this.parametersFormArray.length; i++) {
+      const ctrl = this.parametersFormArray.at(i);
+      const name = (ctrl.get('parameterName')?.value || '').trim();
+      if (name.toLowerCase() === targetName.trim().toLowerCase() ||
+         (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+         (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+        return ctrl;
+      }
+    }
+    return null;
+  }
+
+  formatSpecRange(param: any): string {
+    if (!param) return '—';
+    const min = param.specMinValue != null ? param.specMinValue : param.minValue;
+    const max = param.specMaxValue != null ? param.specMaxValue : param.maxValue;
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return param.acceptanceCriteria || '—';
+  }
+
+  getParamStatusLabel(targetName: string): string {
+    const ctrl = this.getParamControl(targetName);
+    if (!ctrl) return 'PENDING';
+    const val = ctrl.get('value')?.value;
+    if (val === null || val === undefined || val === '') return 'PENDING';
+    const isWithin = ctrl.get('isWithinLimit')?.value;
+    if (isWithin === true) return 'PASS';
+    if (isWithin === false) return 'FAIL';
+    const status = ctrl.get('resultStatus')?.value;
+    if (status) return String(status).toUpperCase();
+    return 'PENDING';
+  }
+
+  getParamStatusBadgeClass(targetName: string): string {
+    const status = this.getParamStatusLabel(targetName);
+    if (status === 'PASS' || status === 'WITHIN RANGE') return 'bg-success text-white';
+    if (status === 'FAIL' || status === 'OUT OF RANGE') return 'bg-danger text-white';
+    return 'bg-light text-muted border';
+  }
+
+  getReadingRowClass(targetName: string): string {
+    const status = this.getParamStatusLabel(targetName);
+    if (status === 'FAIL') return 'table-danger bg-danger-subtle';
+    if (status === 'PASS') return 'table-success bg-success-subtle';
+    return '';
+  }
+
+  hasSectionOfType(type: string): boolean {
+    return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param'));
+  }
+
+  getReadingColumnHeader(s: any, idx: number): string {
+    const rawPrefix = s?.config?.readingLabel || s?.config?.readingPrefix;
+    let prefix = 'R';
+    if (rawPrefix && typeof rawPrefix === 'string') {
+      const trimmed = rawPrefix.trim();
+      if (!trimmed.includes('to') && !trimmed.includes('/')) {
+        prefix = trimmed.endsWith(' ') ? trimmed : `${trimmed} `;
+      } else if (trimmed.toLowerCase().startsWith('spot')) {
+        prefix = 'Spot ';
+      }
+    }
+    return `${prefix}${idx + 1}`;
+  }
+
+  getSectionTitle(s: any): string {
+    if (s?.type === 'reading') {
+      const count = this.getReadingCount(s);
+      const title = s.title || 'Indentation Spot Readings';
+      if (/\(\d+\s*Spots?\)/i.test(title)) {
+        return title.replace(/\(\d+\s*Spots?\)/i, `(${count} Spots)`);
+      }
+      if (/\(\d+\s*Readings?\)/i.test(title)) {
+        return title.replace(/\(\d+\s*Readings?\)/i, `(${count} Readings)`);
+      }
+    }
+    return s?.title || '';
+  }
+
+  adjustReadingCount(s: any, delta: number): void {
+    if (this.isViewMode || this.isLocked) return;
+    const current = this.getReadingCount(s);
+    const newCount = Math.min(25, Math.max(1, current + delta));
+    if (newCount !== current) {
+      this.setReadingCount(s, newCount);
+    }
+  }
+
+  onReadingCountInputChange(s: any, event: Event): void {
+    if (this.isViewMode || this.isLocked) return;
+    const input = event.target as HTMLInputElement;
+    const val = parseInt(input.value, 10);
+    if (isNaN(val)) return;
+    const count = Math.min(25, Math.max(1, val));
+    input.value = String(count);
+    this.setReadingCount(s, count);
+  }
+
+  setReadingCount(s: any, count: number): void {
+    if (this.isViewMode || this.isLocked) return;
+    const validCount = Math.min(25, Math.max(1, count));
+    const targets = this.getReadingTargetParameters(s);
+
+    targets.forEach(targetName => {
+      if (!this.readingValues[targetName]) {
+        this.readingValues[targetName] = [];
+      }
+      const arr = this.readingValues[targetName];
+      while (arr.length < validCount) {
+        arr.push(null);
+      }
+      while (arr.length > validCount) {
+        arr.pop();
+      }
+      this.recalculateReadingStats(targetName);
+
+      const avg = this.readingStats[targetName]?.avg;
+      const readingsJson = JSON.stringify(arr);
+      if (this.parametersFormArray) {
+        this.parametersFormArray.controls.forEach((ctrl, idx) => {
+          const name = (ctrl.get('parameterName')?.value || '').trim();
+          if (name.toLowerCase() === targetName.toLowerCase() ||
+             (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+             (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+            ctrl.patchValue({ value: avg, remarks: readingsJson });
+            this.evaluateLimitForControl(ctrl);
+            this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
+          }
+        });
+      }
+    });
+
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  resetReadingCountToTemplate(s: any): void {
+    if (this.isViewMode || this.isLocked) return;
+    const defaultCount = this.getDefaultReadingCount(s);
+    this.setReadingCount(s, defaultCount);
+  }
+
   onReadingChange(targetName: string, rIdx: number, val: any): void {
-    const parsed = val !== null && val !== '' ? parseFloat(val) : null;
-    this.readingValues[targetName][rIdx] = parsed as any;
+    const parsed = val !== null && val !== '' && !isNaN(Number(val)) ? parseFloat(val) : null;
+    if (!this.readingValues[targetName]) {
+      this.readingValues[targetName] = [];
+    }
+    while (this.readingValues[targetName].length <= rIdx) {
+      this.readingValues[targetName].push(null);
+    }
+    this.readingValues[targetName][rIdx] = parsed;
     this.recalculateReadingStats(targetName);
 
     // Update target parameter form control with average and serialize readings in remarks
@@ -1058,32 +1502,37 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const readingsJson = JSON.stringify(this.readingValues[targetName]);
     if (this.parametersFormArray) {
       this.parametersFormArray.controls.forEach((ctrl, idx) => {
-        const name = ctrl.get('parameterName')?.value || '';
-        if (name === targetName || (targetName.includes('Hardness') && name.includes('Hardness')) || (targetName.includes('Impact') && name.includes('Impact'))) {
+        const name = (ctrl.get('parameterName')?.value || '').trim();
+        if (name.toLowerCase() === targetName.toLowerCase() ||
+           (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+           (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
           ctrl.patchValue({ value: avg, remarks: readingsJson });
           this.evaluateLimitForControl(ctrl);
           this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
         }
       });
     }
+
+    this.syncCollectionsToTest();
   }
 
   private recalculateReadingStats(targetName: string): void {
-    const arr = (this.readingValues[targetName] || []).filter((v): v is number => v != null && !isNaN(v));
+    const arr = (this.readingValues[targetName] || []).filter((v): v is number => v != null && !isNaN(v) && v !== ('' as any));
     if (arr.length === 0) {
       this.readingStats[targetName] = { avg: null, min: null, max: null, stdev: null };
       return;
     }
 
-    const sum = arr.reduce((a, b) => a + b, 0);
-    const avg = Number((sum / arr.length).toFixed(1));
-    const min = Math.min(...arr);
-    const max = Math.max(...arr);
+    const numVals = arr.map(Number);
+    const sum = numVals.reduce((a, b) => a + b, 0);
+    const avg = Number((sum / numVals.length).toFixed(1));
+    const min = Math.min(...numVals);
+    const max = Math.max(...numVals);
 
     let stdev: number | null = null;
-    if (arr.length > 1) {
-      const sqDiffs = arr.map(v => Math.pow(v - avg, 2));
-      const variance = sqDiffs.reduce((a, b) => a + b, 0) / (arr.length - 1);
+    if (numVals.length > 1) {
+      const sqDiffs = numVals.map(v => Math.pow(v - avg, 2));
+      const variance = sqDiffs.reduce((a, b) => a + b, 0) / (numVals.length - 1);
       stdev = Number(Math.sqrt(variance).toFixed(2));
     }
 
@@ -1316,4 +1765,261 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     return points.join(' ');
   }
+
+  // =========================================================================
+  // Location Section Operations (Gap 1)
+  // =========================================================================
+  addLocation(): void {
+    if (this.isViewMode || this.isLocked) return;
+    const nextIdx = this.locations.length + 1;
+    this.locations.push({
+      locationCode: `LOC${nextIdx}`,
+      locationName: `Zone ${nextIdx}`,
+      displayOrder: nextIdx,
+      isReportable: true,
+      remarks: ''
+    });
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  removeLocation(idx: number): void {
+    if (this.isViewMode || this.isLocked || this.locations.length <= 1) return;
+    this.locations.splice(idx, 1);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  toggleLocationReportable(idx: number): void {
+    if (this.isViewMode || this.isLocked) return;
+    this.locations[idx].isReportable = !this.locations[idx].isReportable;
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Traverse Point Operations (Gap 2)
+  // =========================================================================
+  addTraversePoint(): void {
+    if (this.isViewMode || this.isLocked) return;
+    const lastDist = this.traversePoints.length > 0 ? this.traversePoints[this.traversePoints.length - 1].distance : 0.0;
+    const nextDist = Number((lastDist + 0.2).toFixed(2));
+    this.traversePoints.push({ distance: nextDist, hardness: null });
+    this.recalculateEffectiveCaseDepth();
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  removeTraversePoint(idx: number): void {
+    if (this.isViewMode || this.isLocked || this.traversePoints.length <= 1) return;
+    this.traversePoints.splice(idx, 1);
+    this.recalculateEffectiveCaseDepth();
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Checklist Item Operations (Gap 3)
+  // =========================================================================
+  addChecklistItem(): void {
+    if (this.isViewMode || this.isLocked) return;
+    const nextId = this.checklistItems.length + 1;
+    this.checklistItems.push({
+      id: nextId,
+      label: `Inspection check #${nextId}`,
+      status: 'Pass'
+    });
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  removeChecklistItem(idx: number): void {
+    if (this.isViewMode || this.isLocked || this.checklistItems.length <= 1) return;
+    this.checklistItems.splice(idx, 1);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Structured Observation Operations (Gap 4)
+  // =========================================================================
+  addObservation(): void {
+    if (this.isViewMode || this.isLocked) return;
+    const nextOrder = this.observations.length + 1;
+    this.observations.push({
+      category: 'General',
+      observationText: '',
+      displayOrder: nextOrder,
+      isReportable: true
+    });
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  removeObservation(idx: number): void {
+    if (this.isViewMode || this.isLocked) return;
+    this.observations.splice(idx, 1);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  toggleObservationReportable(idx: number): void {
+    if (this.isViewMode || this.isLocked) return;
+    this.observations[idx].isReportable = !this.observations[idx].isReportable;
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Custom Lab Attribute Operations (Gap 7)
+  // =========================================================================
+  addCustomAttribute(): void {
+    if (this.isViewMode || this.isLocked) return;
+    this.customAttributes.push({ key: '', value: '' });
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  removeCustomAttribute(idx: number): void {
+    if (this.isViewMode || this.isLocked) return;
+    this.customAttributes.splice(idx, 1);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Decision Rule & Classification Operations (Gaps 5 & 6)
+  // =========================================================================
+  onDecisionRuleTypeChange(type: string): void {
+    this.decisionRule.ruleType = type;
+    if (type === 'Simple Acceptance') {
+      this.decisionRule.statementText = 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).';
+    } else if (type === 'Guard Banded (ILAC-G8)') {
+      this.decisionRule.statementText = 'Statements of conformity apply ILAC-G8:09/2019 binary decision rule with guard band w = 1.0 U (95% coverage probability).';
+    } else {
+      this.decisionRule.statementText = 'Non-binary acceptance criteria evaluated with conditional pass / inconclusive zone.';
+    }
+    this.syncCollectionsToTest();
+  }
+
+  onClassificationChange(): void {
+    this.syncCollectionsToTest();
+  }
+
+  // =========================================================================
+  // Parameter Reportability Toggle (Gap 10)
+  // =========================================================================
+  isParamReportable(rowIdx: number): boolean {
+    const ctrl = this.parametersFormArray?.at(rowIdx);
+    if (!ctrl) return true;
+    return ctrl.get('isReportable')?.value !== false;
+  }
+
+  toggleParamReportable(rowIdx: number): void {
+    if (this.isViewMode || this.isLocked) return;
+    const ctrl = this.parametersFormArray?.at(rowIdx);
+    if (!ctrl) return;
+    const current = ctrl.get('isReportable')?.value !== false;
+    ctrl.patchValue({ isReportable: !current });
+    this.paramValueChanged.emit({ rowIdx, param: ctrl.value });
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Sync Collections to Test Object & Extra JSON Serialization
+  // =========================================================================
+  syncCollectionsToTest(): void {
+    if (!this.test) return;
+    const headerId = this.test.headerId || 0;
+
+    this.test.locations = this.locations.map((loc, idx) => ({
+      ...loc,
+      displayOrder: idx + 1,
+      testResultHeaderId: headerId
+    }));
+
+    this.test.traversePoints = this.traversePoints.map((pt, idx) => ({
+      pointSequence: idx + 1,
+      distanceMm: pt.distance,
+      hardnessValue: pt.hardness,
+      testResultHeaderId: headerId,
+      isBelowCutoff: pt.hardness != null ? pt.hardness < this.cutoffLimit : null,
+      isReportable: true
+    }));
+
+    this.test.checklist = this.checklistItems.map((chk, idx) => ({
+      checklistCode: `CHK-${idx + 1}`,
+      itemLabel: chk.label,
+      status: chk.status,
+      testResultHeaderId: headerId,
+      isMandatory: true
+    }));
+
+    this.test.observations = this.observations.map((obs, idx) => ({
+      ...obs,
+      displayOrder: idx + 1,
+      testResultHeaderId: headerId
+    }));
+
+    this.test.readings = this.buildReadingsArray();
+    this.test.executionExtraJson = this.getExecutionExtraJson();
+  }
+
+  buildReadingsArray(): any[] {
+    const readings: any[] = [];
+    const headerId = this.test?.headerId || 0;
+
+    Object.keys(this.readingValues).forEach(paramName => {
+      const vals = this.readingValues[paramName] || [];
+      let paramId: number | null = null;
+      let paramCode = '';
+      if (this.parametersFormArray) {
+        for (let i = 0; i < this.parametersFormArray.length; i++) {
+          const ctrl = this.parametersFormArray.at(i);
+          if ((ctrl.get('parameterName')?.value || '').trim().toLowerCase() === paramName.trim().toLowerCase()) {
+            const rawId = ctrl.get('id')?.value;
+            paramId = (rawId && Number(rawId) > 0) ? Number(rawId) : null;
+            paramCode = ctrl.get('parameterCode')?.value || ctrl.get('parameterName')?.value || '';
+            break;
+          }
+        }
+      }
+
+      vals.forEach((v, idx) => {
+        if (v !== null && v !== undefined && (v as any) !== '') {
+          readings.push({
+            id: 0,
+            testResultHeaderId: headerId,
+            testResultParameterId: paramId,
+            parameterCode: paramCode || paramName,
+            parameterName: paramName,
+            specimenCode: `S${idx + 1}`,
+            sequenceNo: idx + 1,
+            readingNumber: idx + 1,
+            value: Number(v),
+            readingValue: Number(v),
+            displayOrder: idx + 1,
+            isExcluded: false,
+            isVoided: false,
+            unit: '',
+            remarks: '',
+            voidReason: null
+          });
+        }
+      });
+    });
+
+    return readings;
+  }
+
+  getExecutionExtraJson(): string {
+    const extra = {
+      decisionRule: this.decisionRule,
+      classification: this.classification,
+      custom: this.customAttributes,
+      conditionValues: this.conditionValues
+    };
+    return JSON.stringify(extra);
+  }
 }
+

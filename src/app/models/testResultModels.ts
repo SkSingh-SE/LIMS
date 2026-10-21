@@ -42,6 +42,127 @@ export interface TestResultParameterDto {
   isStandalone?: boolean;
   sourceTestMethodId?: number | null;
   resultStatus?: 'Pass' | 'Fail' | 'Marginal' | null;
+  isReportable?: boolean;
+}
+
+// ================================================================
+// Hybrid Architecture Typed Collections DTOs
+// ================================================================
+export interface TestResultReadingDto {
+  id?: number;
+  testResultHeaderId?: number;
+  testResultParameterId?: number | null;
+  parameterCode?: string;
+  parameterName?: string;
+  specimenCode?: string;
+  locationCode?: string;
+  sequenceNo?: number;
+  readingNumber?: number;
+  value?: number | null;
+  readingValue?: number | null;
+  unit?: string;
+  isVoided?: boolean;
+  voidReason?: string | null;
+  displayOrder?: number;
+  isExcluded?: boolean;
+  remarks?: string;
+}
+
+export interface TestResultLocationDto {
+  id?: number;
+  testResultHeaderId?: number;
+  locationCode: string;
+  displayName?: string;
+  locationName?: string;
+  sequenceNo?: number;
+  displayOrder?: number;
+  isReportable: boolean;
+  isRuntimeAdded?: boolean;
+  addedReason?: string | null;
+  isVoided?: boolean;
+  voidReason?: string | null;
+  remarks?: string;
+}
+
+export interface TestResultTraversePointDto {
+  id?: number;
+  testResultHeaderId?: number;
+  specimenCode?: string;
+  traverseCode?: string;
+  sequenceNo?: number;
+  pointSequence?: number;
+  distance?: number;
+  distanceMm?: number;
+  hardnessValue: number | null;
+  hardnessUnit?: string;
+  depthRatio?: number | null;
+  isBelowCutoff?: boolean | null;
+  isReportable?: boolean;
+  isVoided?: boolean;
+}
+
+export interface TestResultChecklistItemDto {
+  id?: number;
+  testResultHeaderId?: number;
+  itemCode?: string;
+  checklistCode?: string;
+  itemDescription?: string;
+  itemLabel?: string;
+  category?: string;
+  status: 'Pass' | 'Fail' | 'NA' | 'Pending' | string;
+  verifiedBy?: string;
+  remarks?: string;
+  checkedBy?: number;
+  checkedAt?: string;
+  isMandatory?: boolean;
+  isReportable?: boolean;
+  isVoided?: boolean;
+}
+
+export interface TestResultObservationDto {
+  id?: number;
+  testResultHeaderId?: number;
+  observationCode?: string;
+  category: string;
+  observationText: string;
+  displayOrder?: number;
+  sequenceNo?: number;
+  isReportable: boolean;
+  isRuntimeAdded?: boolean;
+  addedReason?: string | null;
+  isVoided?: boolean;
+  voidReason?: string | null;
+}
+
+export interface TestResultAuditLogDto {
+  id: number;
+  testResultHeaderId: number;
+  action: string;
+  fieldName: string;
+  oldValue?: string;
+  newValue?: string;
+  changedBy: string;
+  changedAt: string;
+  reason?: string;
+}
+
+export interface RetestComparisonDto {
+  currentHeaderId: number;
+  retestOfHeaderId: number;
+  retestReasonCode?: string;
+  approvalSealHash?: string;
+  isApprovedAndLocked: boolean;
+  parameterComparisons: Array<{
+    parameterName: string;
+    unit: string;
+    originalValue?: number | null;
+    originalStatus?: string;
+    retestValue?: number | null;
+    retestStatus?: string;
+    delta?: number | null;
+    deltaPercent?: number | null;
+    isSignificantDifference: boolean;
+  }>;
 }
 
 // ================================================================
@@ -80,6 +201,20 @@ export interface TestResultGroupDto {
   reportNo?: string;
   parameters: TestResultParameterDto[];
   supportsLongTerm?: boolean;
+  // Execution Layout Hybrid fields
+  layoutTemplateId?: number | null;
+  layoutVersion?: string | null;
+  layoutSnapshotJson?: string | null;
+  executionExtraJson?: string | null;
+  roomTemperature?: number | null;
+  roomHumidity?: number | null;
+  retestOfHeaderId?: number | null;
+  retestReasonCode?: string | null;
+  readings?: TestResultReadingDto[];
+  locations?: TestResultLocationDto[];
+  traversePoints?: TestResultTraversePointDto[];
+  checklist?: TestResultChecklistItemDto[];
+  observations?: TestResultObservationDto[];
 }
 
 // ================================================================

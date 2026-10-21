@@ -5,9 +5,20 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { ToastService } from '../../../services/toast.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
+import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
+import { ParameterService } from '../../../services/parameter.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { CustomSelectComponent } from '../../../utility/components/custom-select/custom-select.component';
 import { TestLayoutService, TestLayoutTemplateDto } from '../../../services/test-layout.service';
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
+
+export interface HeaderMergeConfig {
+  title?: string;
+  startCol?: string;
+  colspan?: number;
+  showSubLabels?: boolean;
+  isMerged?: boolean;
+}
 
 export interface SectionColumnsConfig {
   unit?: boolean;
@@ -19,6 +30,11 @@ export interface SectionColumnsConfig {
   uncertainty?: boolean;
   dl?: boolean;
   scope?: boolean;
+  mergedHeader?: string;
+  mergedStartCol?: string;
+  mergedColspan?: number;
+  showSubLabels?: boolean;
+  isMerged?: boolean;
 }
 
 export interface DatasetParameter {
@@ -100,6 +116,7 @@ export interface SectionConfig {
   decimals?: string;
   subset?: string[];
   columns?: SectionColumnsConfig;
+  headerMerge?: HeaderMergeConfig;
 
   // Specimen
   specimenSource?: string;
@@ -115,6 +132,9 @@ export interface SectionConfig {
   ident?: string[];
   specimenColumns?: string[];
   dimensionSubset?: string[];
+  specimenRows?: string[];
+  specimenNames?: string;
+  specimenColHeader?: string;
 
   // Reading
   readingSource?: string;
@@ -130,6 +150,8 @@ export interface SectionConfig {
   locationSource?: string;
   locationMode?: string;
   locationNames?: string;
+  locationRows?: string[];
+  locationColHeader?: string;
   allowRuntimeAdd?: boolean;
 
   // Condition & Traceability
@@ -227,6 +249,51 @@ export interface SectionConfig {
   showConformity?: boolean;
   showScopeMark?: boolean;
   showEquipment?: boolean;
+
+  // Corner Technical Annotations
+  topLeft?: string;
+  topRight?: string;
+  bottomLeft?: string;
+  bottomRight?: string;
+
+  // Universal Data Binding & Row/Column Configuration
+  dataBindingMode?: DataBindingMode;
+  tableColumns?: LayoutColumnItem[];
+  tableRows?: LayoutRowItem[];
+  activeBindingTab?: 'rows' | 'columns' | 'merge';
+
+  // Custom Columns & Rows Structure
+  customColumns?: Array<{ label: string; type: string; unit?: string; default?: string }>;
+  customRows?: string[];
+}
+
+export type DataBindingMode = 'runtime' | 'static' | 'manual';
+
+export interface LayoutColumnItem {
+  id?: string;
+  key: string;
+  label: string;
+  bindingMode: DataBindingMode;
+  staticValue?: string;
+  width?: string;
+  visible: boolean;
+  align?: 'left' | 'center' | 'right';
+  removable?: boolean;
+}
+
+export interface LayoutRowItem {
+  id?: string;
+  key: string;
+  label: string;
+  bindingMode: DataBindingMode;
+  staticValue?: string;
+  requirement?: string;
+  unit?: string;
+  visible: boolean;
+  isCalculated?: boolean;
+  formula?: string;
+  values?: { [colKey: string]: string };
+  removable?: boolean;
 }
 
 export interface ExecutionSection {
@@ -263,7 +330,7 @@ export interface TestDef {
 @Component({
   selector: 'app-test-layout-archetype-designer',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, CustomSelectComponent],
   templateUrl: './test-layout-archetype-designer.component.html',
   styleUrls: ['./test-layout-archetype-designer.component.css']
 })
@@ -273,6 +340,160 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   private testLayoutService = inject(TestLayoutService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+
+  /** Standard options for row/column data binding selection (CustomSelectComponent) */
+  readonly bindingModeSelectOptions = [
+    {
+      value: 'runtime',
+      label: 'Runtime',
+      shortLabel: 'Run',
+      icon: 'bi-lightning-charge-fill text-theme',
+      triggerClass: 'binding-pill-runtime',
+    },
+    {
+      value: 'static',
+      label: 'Static',
+      shortLabel: 'Static',
+      icon: 'bi-pin-angle-fill text-warning-emphasis',
+      triggerClass: 'binding-pill-static',
+    },
+    {
+      value: 'manual',
+      label: 'Manual',
+      shortLabel: 'Manual',
+      icon: 'bi-pencil-square text-success',
+      triggerClass: 'binding-pill-manual',
+    },
+  ];
+
+  /** Standard dropdown option definitions for studio CustomSelectComponent instances */
+  readonly selectOptions = {
+    width: [
+      { value: 'Full Width', label: 'Full Width' },
+      { value: 'Half Width', label: 'Half Width' },
+      { value: 'Auto', label: 'Auto' },
+    ],
+    visibility: [
+      { value: 'Always', label: 'Always' },
+      { value: 'Only when data exists', label: 'Only when data exists' },
+      { value: 'Only when PASS', label: 'Only when PASS' },
+      { value: 'Only when FAIL', label: 'Only when FAIL' },
+    ],
+    parameterMode: [
+      { value: 'All runtime parameters', label: 'All runtime parameters' },
+      { value: 'Configured parameter subset', label: 'Configured parameter subset' },
+      { value: 'Runtime parameters by leaf node', label: 'Runtime parameters by leaf node' },
+    ],
+    resultMode: [
+      { value: 'Observed Result', label: 'Observed Result' },
+      { value: 'Observed + Calculated Result', label: 'Observed + Calculated Result' },
+      { value: 'Calculated Result only', label: 'Calculated Result only' },
+    ],
+    requirement: [
+      { value: 'Runtime Requirement', label: 'Runtime Requirement' },
+      { value: 'Hide Requirement', label: 'Hide Requirement' },
+      { value: 'Show only when available', label: 'Show only when available' },
+    ],
+    orientation: [
+      { value: 'Parameters × Specimens', label: 'Parameters × Specimens' },
+      { value: 'Specimens × Parameters', label: 'Specimens × Parameters' },
+    ],
+    specimenSource: [
+      { value: 'Execution Specimens', label: 'Execution Specimens' },
+      { value: 'Runtime specimen list', label: 'Runtime specimen list' },
+      { value: 'Sample preparation specimens', label: 'Sample preparation specimens' },
+    ],
+    layout: [
+      { value: 'Compact cards', label: 'Compact cards' },
+      { value: 'Two-column cards', label: 'Two-column cards' },
+      { value: 'Table', label: 'Table' },
+    ],
+    aggregation: [
+      { value: 'Average', label: 'Average' },
+      { value: 'Minimum', label: 'Minimum' },
+      { value: 'Maximum', label: 'Maximum' },
+      { value: 'Median', label: 'Median' },
+      { value: 'Standard Deviation', label: 'Standard Deviation' },
+    ],
+    chartType: [
+      { value: 'line', label: 'Line Chart' },
+      { value: 'scatter', label: 'Scatter Plot' },
+      { value: 'bar', label: 'Bar Chart' },
+    ],
+    operator: [
+      { value: '≥', label: '≥ (Greater than or equal)' },
+      { value: '≤', label: '≤ (Less than or equal)' },
+      { value: '=', label: '= (Equal)' },
+      { value: 'Within Range', label: 'Within Range' },
+    ],
+    decisionRule: [
+      { value: 'Simple acceptance (no guard band)', label: 'Simple acceptance (no guard band)' },
+      { value: 'Guard band (uncertainty considered)', label: 'Guard band (uncertainty considered)' },
+      { value: 'Customer specified rule', label: 'Customer specified rule' },
+    ],
+    inputType: [
+      { value: 'Multi-line', label: 'Multi-line' },
+      { value: 'Single line', label: 'Single line' },
+    ],
+    responseType: [
+      { value: 'Pass / Fail / NA', label: 'Pass / Fail / NA' },
+      { value: 'Yes / No', label: 'Yes / No' },
+    ],
+    checklistResponse: [
+      { value: 'PASS', label: 'Pass / Acceptable' },
+      { value: 'FAIL', label: 'Fail / Non-Conforming' },
+      { value: 'NA', label: 'Not Applicable' },
+    ],
+  };
+
+  /** Dynamic options for dataset parameters */
+  get datasetParameterSelectOptions(): Array<{ value: string; label: string }> {
+    return (this.currentDataset?.parameters || []).map(p => ({
+      value: p.name,
+      label: `${p.name}${p.unit ? ' (' + p.unit + ')' : ''}`,
+    }));
+  }
+
+  /** Dynamic options for traverse X-axis */
+  get traverseXSelectOptions(): Array<{ value: string; label: string }> {
+    const dimOptions = (this.currentDataset?.dimensions || []).map(d => ({
+      value: d.label,
+      label: `${d.label} (${d.unit})`,
+    }));
+    return [
+      ...dimOptions,
+      { value: 'Depth from Surface', label: 'Depth from Surface (mm)' },
+      { value: 'Distance from Centerline', label: 'Distance from Centerline (mm)' },
+      { value: 'Exposure Time', label: 'Exposure Time (Hours)' },
+    ];
+  }
+
+  /** Dynamic options for chart X-axis */
+  get chartXSelectOptions(): Array<{ value: string; label: string }> {
+    const dims = (this.currentDataset?.dimensions || []).map(d => ({
+      value: d.label,
+      label: `[Dim] ${d.label} (${d.unit})`,
+    }));
+    const params = (this.currentDataset?.parameters || []).map(p => ({
+      value: p.name,
+      label: `[Param] ${p.name} (${p.unit})`,
+    }));
+    return [...dims, ...params];
+  }
+
+  /** Dynamic options for formula target output parameter */
+  get formulaTargetSelectOptions(): Array<{ value: string; label: string }> {
+    const calcs = (this.currentDataset?.calculations || []).map(c => ({
+      value: c.targetParam || c.field,
+      label: `${c.label} (${c.formula})`,
+    }));
+    const params = (this.currentDataset?.parameters || []).map(p => ({
+      value: p.name,
+      label: `${p.name} (${p.unit})`,
+    }));
+    return [...calcs, ...params];
+  }
+
 
   // Layout View Mode & Source Tracking
   isViewMode: boolean = false;
@@ -292,9 +513,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   currentVersion: number = 1;
 
   // Actual Laboratory Test (Unified Searchable Selection from Database)
-  selectedUnifiedTestId: number | string | null = 1;
+  selectedUnifiedTestId: number | string | null = null;
   selectedUnifiedTestItem: any = null;
-  selectedLabTestId: number = 1;
+  selectedLabTestId: number = 0;
   actualLabTests: Array<{
     id: number;
     name: string;
@@ -318,27 +539,80 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     fullDisplayName: string;
     isChemical: boolean;
   } = {
-    groupId: 1,
-    groupName: 'Tensile Test',
-    subGroupId: 1,
-    subGroupName: 'Room Temperature',
+    groupId: null,
+    groupName: 'All Tests (Global)',
+    subGroupId: null,
+    subGroupName: '',
     analysisTypeId: null,
-    leafName: 'Room Temperature',
-    fullDisplayName: 'Tensile Test - Room Temperature',
+    leafName: 'Global Runtime Standard',
+    fullDisplayName: 'Global Standard Runtime Format',
     isChemical: false
   };
+
+  private testMethodSpecService = inject(TestMethodSpecificationService);
+  private parameterService = inject(ParameterService);
+
+  fetchMasterParameterDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.parameterService.getParameterDropdown(term, page, pageSize);
+  };
+
+  // Dual-Key Test Mapping (Key 1: Laboratory Test, Key 2: Test Method Specification)
+  selectedTestMethodId: number | null = null;
+  selectedTestMethodName: string = '';
+
+  // JSON Export & Inspection Modal
+  showExportJsonModal: boolean = false;
+  exportedJsonContent: string = '';
 
   fetchUnifiedLabTestFn = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.labService.getUnifiedTestMethodDropdown(term, page, pageSize);
   };
 
+  fetchTestMethodSpecFn = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.testMethodSpecService.getTestMethodSpecificationDropdown(term, page, pageSize);
+  };
+
+  onTestMethodSpecSelected(item: any): void {
+    if (!item) {
+      this.selectedTestMethodId = null;
+      this.selectedTestMethodName = '';
+    } else {
+      this.selectedTestMethodId = Number(item.id || item.ID);
+      this.selectedTestMethodName = item.name || item.TestStandard || item.testStandard || '';
+    }
+    // Refresh 3-tier cascade resolution with Test Method included
+    this.loadDatabaseLayoutForHierarchy(
+      this.selectedLabTestId,
+      this.selectedSubGroupId,
+      this.selectedAnalysisTypeId,
+      this.leafNode,
+      this.selectedArchetypeKey
+    );
+  }
+
+  openExportJsonModal(): void {
+    this.exportedJsonContent = this.getJsonPayloadPreview();
+    this.showExportJsonModal = true;
+  }
+
+  closeExportJsonModal(): void {
+    this.showExportJsonModal = false;
+  }
+
+  copyExportJsonContent(): void {
+    if (this.exportedJsonContent) {
+      navigator.clipboard.writeText(this.exportedJsonContent);
+      this.toastService.show('Format JSON copied to clipboard', 'success');
+    }
+  }
+
   // Layout Structure Archetype (Center Canvas Top Bar Selection)
-  selectedArchetypeKey: string = 'tensile';
-  selectedTestKey: string = 'tensile';
+  selectedArchetypeKey: string = 'generic';
+  selectedTestKey: string = 'generic';
   selectedPresetToLoad: string = '';
-  leafNode: string = 'General / Strength / Tensile';
-  paperSub: string = 'Tensile Test • ASTM E8 / IS 1608';
-  layoutName: string = 'Universal Execution Layout';
+  leafNode: string = 'Global / All Tests';
+  paperSub: string = 'Standard Test Execution Format';
+  layoutName: string = 'Global Standard Test Execution Layout';
   layoutRev: string = '1.0';
   applyToLeaf: boolean = true;
   isMapped: boolean = false;
@@ -367,6 +641,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   // Layout Structure Archetypes (Structural Recipes to map to Actual Laboratory Tests)
   readonly layoutArchetypeList = [
+    { key: 'generic', label: 'Default Generic Runtime Structure (Conditions + Runtime Parameters + Statement)', icon: '▦' },
+    { key: 'blank', label: 'Blank Canvas (Empty Layout - Build from Scratch)', icon: '◻' },
     { key: 'tensile', label: 'Tensile Structure (Specimen Matrix + Stress-Strain Curve)', icon: '▦' },
     { key: 'rockwell', label: 'Multi-Reading Indentation Structure (5-Spot Readings + Statistics)', icon: '◫' },
     { key: 'impact', label: 'Charpy Impact Structure (Multi-Notch Readings + Limit Rule)', icon: '▤' },
@@ -391,6 +667,15 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   private startWidth: number = 270;
   private readonly STORAGE_KEY_LEFT_WIDTH = 'lims_studio_left_panel_width';
   private readonly STORAGE_KEY_LEFT_COLLAPSED = 'lims_studio_left_panel_collapsed';
+
+  // Right Panel Dynamic Resizing & Responsive State
+  rightPanelWidth: number = 380;
+  rightPanelCollapsed: boolean = false;
+  isResizingRight: boolean = false;
+  private startRightX: number = 0;
+  private startRightWidth: number = 380;
+  private readonly STORAGE_KEY_RIGHT_WIDTH = 'lims_studio_right_panel_width';
+  private readonly STORAGE_KEY_RIGHT_COLLAPSED = 'lims_studio_right_panel_collapsed';
 
   // Section Selection
   selectedSectionId: number | null = null;
@@ -437,8 +722,35 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     traceability: '🧾'
   };
 
-  // Master Test Database (All 14 Report Format Presets)
+  // Master Test Database (All Report Format Presets)
   testDatabase: Record<string, TestDef> = {
+    generic: {
+      key: 'generic',
+      label: 'Standard Execution Format',
+      leaf: 'Global / Standard / Runtime',
+      sub: 'Generic Test Execution Standard',
+      dbTestId: 0,
+      isChemical: false,
+      params: [
+        { name: 'Yield Strength', unit: 'MPa', requirement: '≥ 250', isCalculated: true, formulaDisplay: 'YS = Yield Load / S0' },
+        { name: 'Ultimate Tensile Strength', unit: 'MPa', requirement: '≥ 410', isCalculated: true, formulaDisplay: 'UTS = Peak Load / S0' },
+        { name: 'Elongation', unit: '%', requirement: '≥ 20', isCalculated: true, formulaDisplay: 'EL% = ((Lu - L0) / L0) * 100' },
+        { name: 'Reduction of Area', unit: '%', requirement: '≥ 40', isCalculated: true, formulaDisplay: 'RA% = ((S0 - Su) / S0) * 100' },
+        { name: 'Hardness (HV / HRC)', unit: 'HRC', requirement: '28 - 34', isCalculated: false },
+        { name: 'Runtime Parameter (Auto-bound)', unit: '—', requirement: 'Runtime Limit' }
+      ],
+      demo: ['450', '620', '25.5', '55.0', '32.0', '—']
+    },
+    blank: {
+      key: 'blank',
+      label: 'Blank Canvas',
+      leaf: 'Custom / Scratch',
+      sub: 'Blank Test Structure',
+      dbTestId: 0,
+      isChemical: false,
+      params: [],
+      demo: []
+    },
     tensile: {
       key: 'tensile',
       label: 'Tensile Test',
@@ -686,6 +998,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   ngOnInit(): void {
     this.initResponsiveLeftPanel();
+    this.initResponsiveRightPanel();
     this.loadCustomPoolsFromStorage();
     this.initDefaultSections();
     this.loadDatabaseTests();
@@ -809,11 +1122,114 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     localStorage.setItem(this.STORAGE_KEY_LEFT_COLLAPSED, 'false');
   }
 
+  // -------------------------------------------------------------------------
+  // Right Panel Resizing & Responsive Helpers
+  // -------------------------------------------------------------------------
+  initResponsiveRightPanel(): void {
+    const savedCollapsed = localStorage.getItem(this.STORAGE_KEY_RIGHT_COLLAPSED);
+    if (savedCollapsed !== null) {
+      this.rightPanelCollapsed = savedCollapsed === 'true';
+    }
+
+    const savedWidth = localStorage.getItem(this.STORAGE_KEY_RIGHT_WIDTH);
+    if (savedWidth) {
+      const parsed = parseInt(savedWidth, 10);
+      if (!isNaN(parsed) && parsed >= 260 && parsed <= 650) {
+        this.rightPanelWidth = parsed;
+        return;
+      }
+    }
+
+    // Adaptive default based on viewport width
+    const winWidth = window.innerWidth;
+    if (winWidth >= 1800) {
+      this.rightPanelWidth = 440;
+    } else if (winWidth >= 1440) {
+      this.rightPanelWidth = 380;
+    } else if (winWidth <= 1200) {
+      this.rightPanelWidth = 320;
+    } else {
+      this.rightPanelWidth = 360;
+    }
+  }
+
+  startResizeRight(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isResizingRight = true;
+    this.startRightX = event.clientX;
+    this.startRightWidth = this.rightPanelWidth;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!this.isResizingRight) return;
+      // Dragging left makes the right panel wider
+      const delta = this.startRightX - moveEvent.clientX;
+      let newWidth = this.startRightWidth + delta;
+
+      // Limits: min 260px, max 55% of viewport width or 650px
+      const minWidth = 260;
+      const maxWidth = Math.min(650, Math.floor(window.innerWidth * 0.55));
+
+      if (newWidth < minWidth) newWidth = minWidth;
+      if (newWidth > maxWidth) newWidth = maxWidth;
+
+      this.rightPanelWidth = newWidth;
+      if (this.rightPanelCollapsed) {
+        this.rightPanelCollapsed = false;
+      }
+    };
+
+    const onMouseUp = () => {
+      if (this.isResizingRight) {
+        this.isResizingRight = false;
+        localStorage.setItem(this.STORAGE_KEY_RIGHT_WIDTH, this.rightPanelWidth.toString());
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      }
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  toggleRightPanel(): void {
+    this.rightPanelCollapsed = !this.rightPanelCollapsed;
+    localStorage.setItem(this.STORAGE_KEY_RIGHT_COLLAPSED, this.rightPanelCollapsed.toString());
+  }
+
+  resetRightWidth(): void {
+    const winWidth = window.innerWidth;
+    if (winWidth >= 1800) {
+      this.rightPanelWidth = 440;
+    } else if (winWidth >= 1440) {
+      this.rightPanelWidth = 380;
+    } else if (winWidth <= 1200) {
+      this.rightPanelWidth = 320;
+    } else {
+      this.rightPanelWidth = 360;
+    }
+    this.rightPanelCollapsed = false;
+    localStorage.setItem(this.STORAGE_KEY_RIGHT_WIDTH, this.rightPanelWidth.toString());
+    localStorage.setItem(this.STORAGE_KEY_RIGHT_COLLAPSED, 'false');
+    this.toastService.show(`Section Inspector width reset to default (${this.rightPanelWidth}px)`, 'info');
+  }
+
+  setRightPreset(width: number): void {
+    this.rightPanelWidth = width;
+    this.rightPanelCollapsed = false;
+    localStorage.setItem(this.STORAGE_KEY_RIGHT_WIDTH, this.rightPanelWidth.toString());
+    localStorage.setItem(this.STORAGE_KEY_RIGHT_COLLAPSED, 'false');
+  }
+
   @HostListener('window:resize')
   onWindowResize(): void {
     const maxAllowed = Math.min(550, Math.floor(window.innerWidth * 0.45));
     if (this.leftPanelWidth > maxAllowed && maxAllowed >= 190) {
       this.leftPanelWidth = maxAllowed;
+    }
+    const maxAllowedRight = Math.min(650, Math.floor(window.innerWidth * 0.55));
+    if (this.rightPanelWidth > maxAllowedRight && maxAllowedRight >= 260) {
+      this.rightPanelWidth = maxAllowedRight;
     }
   }
 
@@ -822,6 +1238,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if ((event.ctrlKey || event.altKey) && event.key === '[') {
       event.preventDefault();
       this.toggleLeftPanel();
+    }
+    if ((event.ctrlKey || event.altKey) && event.key === ']') {
+      event.preventDefault();
+      this.toggleRightPanel();
     }
   }
 
@@ -847,7 +1267,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   get currentTest(): TestDef {
-    return this.testDatabase[this.selectedArchetypeKey] || this.testDatabase[this.selectedTestKey] || this.testDatabase['tensile'];
+    return this.testDatabase[this.selectedArchetypeKey] || this.testDatabase[this.selectedTestKey] || this.testDatabase['generic'];
   }
 
   get selectedSection(): ExecutionSection | null {
@@ -1064,6 +1484,25 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   // Master Default Atomic Stacks for all 14 Reference Report Formats
   getDefaultSectionsForTest(testKey: string): ExecutionSection[] {
     switch (testKey) {
+      case 'blank': {
+        return [];
+      }
+
+      case 'generic':
+      case 'standard': {
+        const cond = this.createSectionObject('condition', 'Test Conditions & Environment');
+        cond.config.fields = ['Temperature', 'Relative Humidity', 'Equipment Used', 'Test Speed'];
+        const param = this.createSectionObject('parameter', 'Parameters & Runtime Requirements');
+        param.config.dataSource = 'Runtime Laboratory Test → Parameters';
+        param.config.parameterMode = 'All runtime parameters';
+        param.config.requirement = 'Runtime Requirement';
+        param.config.status = 'Runtime PASS / FAIL';
+        const form = this.createSectionObject('formula', 'Derived Result & Calculations');
+        const narr = this.createSectionObject('narrative', 'Observations & Conformance Remarks');
+        const trace = this.createSectionObject('traceability', 'Traceability & Technical Record');
+        return [cond, param, form, narr, trace];
+      }
+
       case 'tensile': {
         const cond = this.createSectionObject('condition', 'Tensile Test Environment & Grip Conditions');
         cond.config.fields = ['Temperature', 'Relative Humidity', 'Test Speed', 'Load Rate'];
@@ -1446,7 +1885,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (raw.includes('metallograph') || raw.includes('microstructure')) return 'metallography';
     if (raw.includes('salt spray') || raw.includes('corrosion')) return 'corrosion_sst';
 
-    return 'tensile';
+    return 'generic';
   }
 
   syncLiveParametersForUnifiedSelection(archetypeKey: string, item: any): void {
@@ -1645,7 +2084,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (n.includes('metallograph') || n.includes('microstructure')) return 'metallography';
     if (n.includes('salt spray') || n.includes('corrosion')) return 'corrosion_sst';
 
-    return 'tensile';
+    return 'generic';
   }
 
   loadSubGroupsForTest(labTestId: number): void {
@@ -1717,12 +2156,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.toastService.show('Section removed', 'info');
   }
 
-  duplicateSection(): void {
-    if (!this.selectedSectionId) {
+  duplicateSection(id?: number): void {
+    const targetId = id || this.selectedSectionId;
+    if (!targetId) {
       this.toastService.show('Please select a section to duplicate', 'warning');
       return;
     }
-    const idx = this.sections.findIndex(s => s.id === this.selectedSectionId);
+    const idx = this.sections.findIndex(s => s.id === targetId);
     if (idx === -1) return;
     const orig = this.sections[idx];
     const newId = Date.now() + Math.floor(Math.random() * 1000);
@@ -1739,6 +2179,19 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.sections.splice(idx + 1, 0, dup);
     this.selectedSectionId = dup.id;
     this.toastService.show('Section duplicated', 'success');
+  }
+
+  toggleOrientation(sec?: ExecutionSection): void {
+    const s = sec || this.selectedSection;
+    if (!s) return;
+    s.config.orientation = s.config.orientation === 'Specimens × Parameters'
+      ? 'Parameters × Specimens'
+      : 'Specimens × Parameters';
+    delete s.config.tableColumns;
+    delete s.config.tableRows;
+    this.ensureTableColumns(s);
+    this.ensureTableRows(s);
+    this.toastService.show(`Matrix orientation: ${s.config.orientation}`, 'info');
   }
 
   moveSection(dir: number, id?: number): void {
@@ -1922,7 +2375,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       return;
     }
 
-    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leaf).subscribe({
+    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leaf, this.selectedTestMethodId, this.selectedTestMethodName).subscribe({
       next: (res) => {
         if (res && res.id) {
           this.currentLayoutId = res.id;
@@ -1935,6 +2388,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           this.isGlobalDefault = res.isGlobalDefault ?? false;
           this.applyToLeaf = res.applyToLeaf ?? true;
           this.loadedSource = 'db';
+          if (res.testMethodSpecificationID) {
+            this.selectedTestMethodId = res.testMethodSpecificationID;
+          }
+          if (res.testMethodName) {
+            this.selectedTestMethodName = res.testMethodName;
+          }
 
           let parsedMappedLeafKeys: string[] = [];
           try {
@@ -1997,6 +2456,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           this.leafNode = res.leafNode || this.leafNode;
           this.loadedSource = 'db';
           this.selectedPresetToLoad = ''; // Ensure no preset is selected when editing from list
+
+          if (res.testMethodSpecificationID) {
+            this.selectedTestMethodId = res.testMethodSpecificationID;
+          } else {
+            this.selectedTestMethodId = null;
+          }
+          if (res.testMethodName) {
+            this.selectedTestMethodName = res.testMethodName;
+          } else {
+            this.selectedTestMethodName = '';
+          }
 
           if (res.laboratoryTestID) {
             this.selectedLabTestId = res.laboratoryTestID;
@@ -2114,8 +2584,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (!this.layoutName || this.layoutName.includes('Universal Layout') || this.layoutName.includes('Tensile')) {
         this.layoutName = 'Global Default Test Execution Layout';
       }
-      this.toastService.show('Global Default enabled: this layout will apply as fallback for all unmapped tests', 'info');
+      this.selectedArchetypeKey = 'generic';
+      this.selectedTestKey = 'generic';
+      this.sections = this.getDefaultSectionsForTest('generic');
+      if (this.sections.length > 0) {
+        this.selectedSectionId = this.sections[0].id;
+      }
+      this.toastService.show('Global Default enabled: generic runtime layout loaded (fallback for all tests)', 'info');
     } else {
+      const archKey = this.resolvedHierarchy?.groupName ? this.getArchetypeKeyForUnifiedItem(this.selectedUnifiedTestItem, this.resolvedHierarchy.groupName) : 'generic';
+      this.selectedArchetypeKey = archKey;
+      this.selectedTestKey = archKey;
       this.layoutCode = `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${this.selectedLabTestId || 1}`;
       this.toastService.show('Global Default disabled: mapped to specific laboratory test', 'info');
     }
@@ -2253,6 +2732,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       layoutName: this.layoutName,
       revision: this.layoutRev,
       sections: this.sections,
+      testMethodSpecificationID: this.selectedTestMethodId,
+      testMethodName: this.selectedTestMethodName,
       customConditions: this.customConditionsMap[this.selectedTestKey] || [],
       customDimensions: this.customDimensionsMap[this.selectedTestKey] || [],
       deselectedConditions: this.deselectedConditionsMap[this.selectedTestKey] || [],
@@ -2290,6 +2771,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       mappedLeafNodes: mappedLeafNodes,
       laboratoryTestSubGroupID: this.isGlobalDefault ? null : (this.selectedSubGroupId || this.resolvedHierarchy.subGroupId),
       laboratoryTestAnalysisTypeID: this.isGlobalDefault ? null : (this.selectedAnalysisTypeId || this.resolvedHierarchy.analysisTypeId),
+      testMethodSpecificationID: this.selectedTestMethodId,
+      testMethodName: this.selectedTestMethodName,
       leafNode: this.isGlobalDefault ? 'Global / All Tests' : this.leafNode,
       applyToLeaf: this.applyToLeaf,
       sectionCount: this.sections.length,
@@ -2705,18 +3188,228 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     return String(raw).split(',').map(i => i.trim()).filter(Boolean);
   }
 
+  ensureSpecimenRows(sec: ExecutionSection): string[] {
+    if (!sec || !sec.config) return [];
+    if (Array.isArray(sec.config.specimenRows) && sec.config.specimenRows.length > 0) {
+      return sec.config.specimenRows;
+    }
+    let initialRows: string[] = [];
+    if (sec.config.specimenNames && typeof sec.config.specimenNames === 'string' && sec.config.specimenNames.trim()) {
+      initialRows = sec.config.specimenNames.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (!initialRows.length) {
+      const n = Math.max(1, Math.min(20, Number(sec.config.count) || 3));
+      const prefix = sec.config.prefix || 'S';
+      initialRows = Array.from({ length: n }, (_, i) => `${prefix}${i + 1}`);
+    }
+    sec.config.specimenRows = initialRows;
+    sec.config.count = initialRows.length;
+    sec.config.specimenNames = initialRows.join(', ');
+    return sec.config.specimenRows;
+  }
+
+  getSpecimenList(sec: ExecutionSection): string[] {
+    return this.ensureSpecimenRows(sec);
+  }
+
+  addSpecimenRow(sec: ExecutionSection, customName?: string): void {
+    const rows = this.ensureSpecimenRows(sec);
+    const prefix = sec.config.prefix || 'S';
+    const newName = customName || `${prefix}${rows.length + 1}`;
+    rows.push(newName);
+    sec.config.specimenRows = rows;
+    sec.config.count = rows.length;
+    sec.config.specimenNames = rows.join(', ');
+    delete sec.config.tableColumns;
+    delete sec.config.tableRows;
+    this.ensureTableColumns(sec);
+    this.ensureTableRows(sec);
+    this.toastService.show(`Added specimen: "${newName}"`, 'success');
+  }
+
+  removeSpecimenRow(sec: ExecutionSection, index: number): void {
+    const rows = this.ensureSpecimenRows(sec);
+    if (rows.length <= 1) {
+      this.toastService.show('At least one specimen is required', 'warning');
+      return;
+    }
+    const removed = rows.splice(index, 1);
+    sec.config.specimenRows = rows;
+    sec.config.count = rows.length;
+    sec.config.specimenNames = rows.join(', ');
+    delete sec.config.tableColumns;
+    delete sec.config.tableRows;
+    this.ensureTableColumns(sec);
+    this.ensureTableRows(sec);
+    this.toastService.show(`Removed specimen: "${removed[0]}"`, 'info');
+  }
+
+  updateSpecimenRow(sec: ExecutionSection, index: number, value: string): void {
+    const rows = this.ensureSpecimenRows(sec);
+    if (rows && rows[index] !== undefined) {
+      rows[index] = value;
+      sec.config.specimenNames = rows.join(', ');
+      if (sec.config.tableColumns && sec.config.orientation !== 'Specimens × Parameters') {
+        const targetCol = sec.config.tableColumns.find(c => c.key === `spec_${index + 1}`);
+        if (targetCol) targetCol.label = value;
+      } else if (sec.config.tableRows && sec.config.orientation === 'Specimens × Parameters') {
+        if (sec.config.tableRows[index]) sec.config.tableRows[index].label = value;
+      }
+    }
+  }
+
+  moveSpecimenRow(sec: ExecutionSection, index: number, direction: 'up' | 'down'): void {
+    const rows = this.ensureSpecimenRows(sec);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= rows.length) return;
+    const temp = rows[index];
+    rows[index] = rows[target];
+    rows[target] = temp;
+    sec.config.specimenNames = rows.join(', ');
+    delete sec.config.tableColumns;
+    delete sec.config.tableRows;
+    this.ensureTableColumns(sec);
+    this.ensureTableRows(sec);
+  }
+
+  applySpecimenPreset(sec: ExecutionSection, preset: 's1-3' | 's1-5' | 'specimens' | 'samples' | 'trans-long' | 'bend' | 'notches'): void {
+    let names: string[] = [];
+    if (preset === 's1-3') {
+      names = ['S1', 'S2', 'S3'];
+    } else if (preset === 's1-5') {
+      names = ['S1', 'S2', 'S3', 'S4', 'S5'];
+    } else if (preset === 'specimens') {
+      names = ['Specimen 1', 'Specimen 2', 'Specimen 3'];
+    } else if (preset === 'samples') {
+      names = ['Sample A', 'Sample B', 'Sample C'];
+    } else if (preset === 'trans-long') {
+      names = ['Transverse (T)', 'Longitudinal (L)'];
+    } else if (preset === 'bend') {
+      names = ['Root Bend', 'Face Bend', 'Side Bend'];
+    } else if (preset === 'notches') {
+      names = ['Notch 1', 'Notch 2', 'Notch 3'];
+    }
+    sec.config.specimenRows = names;
+    sec.config.count = names.length;
+    sec.config.specimenNames = names.join(', ');
+    delete sec.config.tableColumns;
+    delete sec.config.tableRows;
+    this.ensureTableColumns(sec);
+    this.ensureTableRows(sec);
+    this.toastService.show(`Applied specimen preset: ${preset.toUpperCase()}`, 'info');
+  }
+
+  getSpecimenTableColCount(sec: ExecutionSection): number {
+    if (sec.config.orientation === 'Specimens × Parameters') {
+      return 1 + (this.getSpecimenParamsForSection(sec)?.length || 1);
+    }
+    let count = 1; // Parameter column
+    count += this.getSpecimenList(sec).length;
+    if (sec.config.showAverage) count++;
+    if (sec.config.showMinMax) count += 2;
+    if (sec.config.showRequirement) count++;
+    return count;
+  }
+
   getSpecimenCount(sec: ExecutionSection): number[] {
-    const n = Math.max(1, Math.min(10, Number(sec.config.count) || 3));
-    return Array.from({ length: n }, (_, i) => i + 1);
+    const list = this.getSpecimenList(sec);
+    return list.map((_, i) => i + 1);
+  }
+
+  ensureLocationRows(sec: ExecutionSection): string[] {
+    if (!sec || !sec.config) return [];
+    if (Array.isArray(sec.config.locationRows) && sec.config.locationRows.length > 0) {
+      return sec.config.locationRows;
+    }
+    let initialRows: string[] = [];
+    if (sec.config.locationNames && typeof sec.config.locationNames === 'string' && sec.config.locationNames.trim()) {
+      initialRows = sec.config.locationNames.split(',').map(l => l.trim()).filter(Boolean);
+    }
+    if (!initialRows.length) {
+      const n = Math.max(1, Math.min(15, Number(sec.config.count) || 3));
+      const prefix = sec.config.prefix || 'Zone';
+      initialRows = Array.from({ length: n }, (_, i) => `${prefix} ${i + 1}`);
+    }
+    sec.config.locationRows = initialRows;
+    sec.config.count = initialRows.length;
+    sec.config.locationNames = initialRows.join(', ');
+    return sec.config.locationRows;
   }
 
   getLocationList(sec: ExecutionSection): string[] {
-    if (sec.config.locationMode === 'Named locations' && sec.config.locationNames) {
-      return sec.config.locationNames.split(',').map(l => l.trim()).filter(Boolean);
-    }
-    const n = Math.max(1, Math.min(10, Number(sec.config.count) || 3));
+    return this.ensureLocationRows(sec);
+  }
+
+  addLocationRow(sec: ExecutionSection, customName?: string): void {
+    const rows = this.ensureLocationRows(sec);
     const prefix = sec.config.prefix || 'Zone';
-    return Array.from({ length: n }, (_, i) => `${prefix} ${i + 1}`);
+    const newName = customName || `${prefix} ${rows.length + 1}`;
+    rows.push(newName);
+    sec.config.locationRows = [...rows];
+    sec.config.count = rows.length;
+    sec.config.locationNames = rows.join(', ');
+    this.toastService.show(`Added location row: "${newName}"`, 'success');
+  }
+
+  removeLocationRow(sec: ExecutionSection, index: number): void {
+    const rows = this.ensureLocationRows(sec);
+    if (rows.length <= 1) {
+      this.toastService.show('At least one location row is required', 'warning');
+      return;
+    }
+    const removed = rows.splice(index, 1);
+    sec.config.locationRows = [...rows];
+    sec.config.count = rows.length;
+    sec.config.locationNames = rows.join(', ');
+    this.toastService.show(`Removed location row: "${removed[0]}"`, 'info');
+  }
+
+  trackByIndex(index: number, _item?: any): number {
+    return index;
+  }
+
+  updateLocationRow(sec: ExecutionSection, index: number, value: string): void {
+    const rows = this.ensureLocationRows(sec);
+    if (rows && rows[index] !== undefined) {
+      rows[index] = value;
+      sec.config.locationNames = rows.join(', ');
+    }
+  }
+
+  moveLocationRow(sec: ExecutionSection, index: number, direction: 'up' | 'down'): void {
+    const rows = this.ensureLocationRows(sec);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= rows.length) return;
+    const temp = rows[index];
+    rows[index] = rows[target];
+    rows[target] = temp;
+    sec.config.locationRows = [...rows];
+    sec.config.locationNames = rows.join(', ');
+  }
+
+  applyLocationPreset(sec: ExecutionSection, preset: 'weld' | 'zones' | 'samples' | 'levels'): void {
+    let names: string[] = [];
+    if (preset === 'weld') {
+      names = ['Base Metal (BM)', 'Heat Affected Zone (HAZ)', 'Weld Metal (WM)'];
+    } else if (preset === 'zones') {
+      names = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4'];
+    } else if (preset === 'samples') {
+      names = ['Sample A', 'Sample B', 'Sample C'];
+    } else if (preset === 'levels') {
+      names = ['Top Level', 'Mid Depth', 'Root / Bottom'];
+    }
+    sec.config.locationRows = names;
+    sec.config.count = names.length;
+    sec.config.locationNames = names.join(', ');
+    this.toastService.show(`Applied preset: ${preset.toUpperCase()}`, 'info');
+  }
+
+  getLocationTableColCount(sec: ExecutionSection): number {
+    let count = 1; // Location column
+    count += (this.currentTest?.params?.slice(0, 3)?.length || 3);
+    if (sec.config.showAverage) count++;
+    if (sec.config.showRequirement) count++;
+    return count;
   }
 
   toggleArrayItem(arr: string[] | undefined, item: string): string[] {
@@ -2765,6 +3458,23 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
     // Rich domain datasets tailored per test
     switch (testKey) {
+      case 'generic':
+        pool.conditions = [
+          { field: 'Temperature', label: 'Test Temperature', unit: '°C', demoValue: '23.0 °C' },
+          { field: 'Relative Humidity', label: 'Relative Humidity', unit: '%', demoValue: '50 %' },
+          { field: 'Equipment', label: 'Equipment Used', demoValue: 'Runtime Equipment' },
+          { field: 'Method', label: 'Test Standard', demoValue: 'IS / ASTM / ISO' }
+        ];
+        pool.dimensions = [];
+        pool.calculations = [];
+        break;
+
+      case 'blank':
+        pool.conditions = [];
+        pool.dimensions = [];
+        pool.calculations = [];
+        break;
+
       case 'tensile':
         pool.conditions = [
           { field: 'Temperature', label: 'Test Temperature', unit: '°C', demoValue: '23.0 °C' },
@@ -3087,6 +3797,46 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     return sec.config.subset.includes(paramName);
   }
 
+  syncRowsWithParameterSubset(sec: ExecutionSection): void {
+    if (!sec || sec.type !== 'parameter' || !sec.config) return;
+    const rows = this.ensureTableRows(sec);
+    const subset = sec.config.subset || [];
+    const mode = sec.config.parameterMode || 'All runtime parameters';
+
+    if (mode === 'Configured parameter subset' && subset.length > 0) {
+      rows.forEach(r => {
+        r.visible = subset.includes(r.label);
+      });
+      const existingLabels = rows.map(r => r.label);
+      subset.forEach(paramName => {
+        if (!existingLabels.includes(paramName)) {
+          const matched = (this.currentDataset?.parameters || []).find(p => p.name === paramName);
+          rows.push({
+            key: `param_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            label: paramName,
+            bindingMode: sec.config.dataBindingMode || 'runtime',
+            unit: matched?.unit || '',
+            requirement: matched?.requirement || '',
+            isCalculated: matched?.isCalculated,
+            visible: true
+          });
+        }
+      });
+    } else {
+      rows.forEach(r => {
+        r.visible = true;
+      });
+    }
+    sec.config.tableRows = [...rows];
+  }
+
+  onParameterModeChange(sec: ExecutionSection): void {
+    if (sec.config.parameterMode === 'Configured parameter subset' && (!sec.config.subset || sec.config.subset.length === 0)) {
+      sec.config.subset = (this.currentDataset?.parameters || []).map(p => p.name);
+    }
+    this.syncRowsWithParameterSubset(sec);
+  }
+
   toggleParameterInSubset(sec: ExecutionSection, paramName: string): void {
     if (!sec.config.subset) {
       sec.config.subset = this.currentDataset.parameters.map(p => p.name);
@@ -3101,18 +3851,200 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     } else {
       sec.config.subset.push(paramName);
     }
+    this.syncRowsWithParameterSubset(sec);
   }
 
   selectAllParameters(sec: ExecutionSection): void {
     sec.config.subset = this.currentDataset.parameters.map(p => p.name);
+    this.syncRowsWithParameterSubset(sec);
     this.toastService.show('All parameters selected for section', 'info');
+  }
+
+  // Enhanced Parameter Configuration & Search Filter State
+  parameterFilterQuery: string = '';
+  isAnnotationsExpanded: boolean = false;
+  isMergeSectionExpanded: boolean = false;
+
+  getFilteredParameters(sec: ExecutionSection): DatasetParameter[] {
+    const list = this.currentDataset?.parameters || [];
+    if (!this.parameterFilterQuery || !this.parameterFilterQuery.trim()) {
+      return list;
+    }
+    const q = this.parameterFilterQuery.trim().toLowerCase();
+    return list.filter(p =>
+      (p.name && p.name.toLowerCase().includes(q)) ||
+      (p.unit && p.unit.toLowerCase().includes(q)) ||
+      (p.requirement && p.requirement.toLowerCase().includes(q))
+    );
+  }
+
+  selectCalculatedOnly(sec: ExecutionSection): void {
+    const calcs = (this.currentDataset?.parameters || [])
+      .filter(p => p.isCalculated)
+      .map(p => p.name);
+    if (calcs.length > 0) {
+      sec.config.subset = calcs;
+      this.syncRowsWithParameterSubset(sec);
+      this.toastService.show(`${calcs.length} calculated parameters (ƒx) selected`, 'info');
+    } else {
+      this.toastService.show('No calculated parameters found in current dataset', 'warning');
+    }
+  }
+
+  getSelectedParametersCount(sec: ExecutionSection): number {
+    if (sec.config.parameterMode === 'Configured parameter subset' && sec.config.subset) {
+      return sec.config.subset.length;
+    }
+    return (this.currentDataset?.parameters || []).length;
+  }
+
+  toggleAnnotations(): void {
+    this.isAnnotationsExpanded = !this.isAnnotationsExpanded;
+  }
+
+  toggleMergeSection(): void {
+    this.isMergeSectionExpanded = !this.isMergeSectionExpanded;
+  }
+
+  getAnnotationsCount(sec: ExecutionSection): number {
+    if (!sec || !sec.config) return 0;
+    let count = 0;
+    if (sec.config.topLeft && sec.config.topLeft.trim()) count++;
+    if (sec.config.topRight && sec.config.topRight.trim()) count++;
+    if (sec.config.bottomLeft && sec.config.bottomLeft.trim()) count++;
+    if (sec.config.bottomRight && sec.config.bottomRight.trim()) count++;
+    return count;
   }
 
   deselectAllParameters(sec: ExecutionSection): void {
     if (this.currentDataset.parameters.length > 0) {
       sec.config.subset = [this.currentDataset.parameters[0].name];
+      this.syncRowsWithParameterSubset(sec);
       this.toastService.show('Only primary parameter selected', 'info');
     }
+  }
+
+  selectedMasterParamToAdd: string = '';
+
+  get availableParametersOptions(): Array<{ value: string; label: string; unit?: string; requirement?: string; isCalculated?: boolean }> {
+    const list: Array<{ value: string; label: string; unit?: string; requirement?: string; isCalculated?: boolean }> = [];
+    const seen = new Set<string>();
+
+    (this.currentDataset?.parameters || []).forEach(p => {
+      if (p.name && !seen.has(p.name)) {
+        seen.add(p.name);
+        list.push({
+          value: p.name,
+          label: p.unit && p.unit !== '—' ? `${p.name} (${p.unit})` : p.name,
+          unit: p.unit,
+          requirement: p.requirement,
+          isCalculated: p.isCalculated
+        });
+      }
+    });
+
+    Object.values(this.testDatabase).forEach(t => {
+      (t.params || []).forEach(p => {
+        if (p.name && !seen.has(p.name) && p.name !== 'Runtime Parameter (Auto-bound)') {
+          seen.add(p.name);
+          list.push({
+            value: p.name,
+            label: p.unit && p.unit !== '—' ? `${p.name} (${p.unit})` : p.name,
+            unit: p.unit,
+            requirement: p.requirement,
+            isCalculated: p.isCalculated
+          });
+        }
+      });
+    });
+
+    return list;
+  }
+
+  addParameterFromMaster(sec: ExecutionSection, paramName?: string): void {
+    const nameToAdd = paramName || this.selectedMasterParamToAdd;
+    if (!nameToAdd) {
+      this.toastService.show('Please select a parameter from the list', 'warning');
+      return;
+    }
+    const rows = this.ensureTableRows(sec);
+    const matched = (this.currentDataset?.parameters || []).find(p => p.name === nameToAdd) ||
+      this.availableParametersOptions.find(p => p.value === nameToAdd);
+
+    // If the only row is the dummy placeholder, replace it with this real parameter
+    if (rows.length === 1 && rows[0].label === 'Runtime Parameter (Auto-bound)') {
+      rows[0].label = nameToAdd;
+      rows[0].unit = matched?.unit || '';
+      rows[0].requirement = matched?.requirement || '';
+      rows[0].isCalculated = matched?.isCalculated || false;
+      sec.config.tableRows = [...rows];
+      if (sec.config.subset) {
+        sec.config.subset = [nameToAdd];
+      }
+      this.selectedMasterParamToAdd = '';
+      this.toastService.show(`Parameter "${nameToAdd}" configured as primary row`, 'success');
+      return;
+    }
+
+    if (rows.some(r => r.label === nameToAdd)) {
+      this.toastService.show(`Parameter "${nameToAdd}" is already in table`, 'info');
+      return;
+    }
+
+    rows.push({
+      key: `param_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      label: nameToAdd,
+      bindingMode: sec.config.dataBindingMode || 'runtime',
+      unit: matched?.unit || '',
+      requirement: matched?.requirement || '',
+      isCalculated: matched?.isCalculated || false,
+      visible: true,
+      removable: true
+    });
+    sec.config.tableRows = [...rows];
+    if (sec.config.subset && !sec.config.subset.includes(nameToAdd)) {
+      sec.config.subset.push(nameToAdd);
+    }
+    this.selectedMasterParamToAdd = '';
+    this.toastService.show(`Added parameter: "${nameToAdd}"`, 'success');
+  }
+
+  selectParameterForRow(sec: ExecutionSection, rIdx: number, paramName: string): void {
+    const rows = this.ensureTableRows(sec);
+    if (!rows[rIdx] || !paramName) return;
+    const matched = (this.currentDataset?.parameters || []).find(p => p.name === paramName) ||
+      this.availableParametersOptions.find(p => p.value === paramName);
+    rows[rIdx].label = paramName;
+    if (matched) {
+      rows[rIdx].unit = matched.unit || '';
+      rows[rIdx].requirement = matched.requirement || '';
+      rows[rIdx].isCalculated = matched.isCalculated || false;
+    }
+    sec.config.tableRows = [...rows];
+    this.toastService.show(`Row ${rIdx + 1} updated to "${paramName}"`, 'success');
+  }
+
+  populateAllMasterParameters(sec: ExecutionSection): void {
+    const params = (this.currentDataset?.parameters || []).filter(p => p.name !== 'Runtime Parameter (Auto-bound)');
+    if (params.length === 0) {
+      this.toastService.show('No master parameters available for this test', 'info');
+      return;
+    }
+    const defaultMode = sec.config.dataBindingMode || 'runtime';
+    const rows: LayoutRowItem[] = params.map((p, idx) => ({
+      key: `param_${idx}_${Date.now()}`,
+      label: p.name,
+      bindingMode: defaultMode,
+      requirement: p.requirement || '',
+      unit: p.unit || '',
+      isCalculated: p.isCalculated,
+      formula: p.formula,
+      visible: true,
+      removable: true
+    }));
+    sec.config.tableRows = rows;
+    sec.config.subset = params.map(p => p.name);
+    this.toastService.show(`Loaded ${rows.length} test parameters into table`, 'success');
   }
 
   getSpecimenParamsForSection(sec: ExecutionSection): DatasetParameter[] {
@@ -3622,6 +4554,891 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     }
 
     return JSON.stringify(payload, null, 2);
+  }
+
+  hasMergedHeader(s: ExecutionSection): boolean {
+    if (!s || !s.config) return false;
+    const merge = s.config.headerMerge;
+    const cols = s.config.columns;
+    const title = merge?.title || cols?.mergedHeader;
+    const isMerged = merge?.isMerged ?? (cols?.isMerged ?? (!!title && title.trim().length > 0));
+    return !!(isMerged && title && title.trim().length > 0);
+  }
+
+  isSubLabelsVisible(s: ExecutionSection): boolean {
+    if (!s || !s.config) return true;
+    if (s.config.headerMerge?.showSubLabels !== undefined) {
+      return s.config.headerMerge.showSubLabels;
+    }
+    if (s.config.columns?.showSubLabels !== undefined) {
+      return s.config.columns.showSubLabels;
+    }
+    return true;
+  }
+
+  getMergedHeaderText(s: ExecutionSection): string {
+    if (!s || !s.config) return '';
+    return s.config.headerMerge?.title || s.config.columns?.mergedHeader || '';
+  }
+
+  // =========================================================================
+  // UNIVERSAL DATA BINDING & ROW / COLUMN MANAGEMENT (ALL TABLE ARCHETYPES)
+  // =========================================================================
+
+  readonly standardParamColDefinitions: { [key: string]: { label: string; bindingMode: DataBindingMode; width?: string } } = {
+    param: { label: 'Parameter', bindingMode: 'runtime', width: '28%' },
+    unit: { label: 'Unit', bindingMode: 'runtime', width: '12%' },
+    requirement: { label: 'Requirement', bindingMode: 'runtime', width: '20%' },
+    result: { label: 'Observed Result', bindingMode: 'runtime', width: '24%' },
+    status: { label: 'Status', bindingMode: 'runtime', width: '16%' },
+    method: { label: 'Method / Standard', bindingMode: 'runtime', width: '18%' },
+    remarks: { label: 'Remarks', bindingMode: 'manual', width: '18%' },
+    uncertainty: { label: 'Uncertainty (±)', bindingMode: 'runtime', width: '14%' },
+    dl: { label: 'Detection Limit', bindingMode: 'runtime', width: '14%' },
+    scope: { label: 'Scope Mark', bindingMode: 'runtime', width: '12%' }
+  };
+
+  readonly standardParamColOrder: string[] = [
+    'param', 'unit', 'requirement', 'result', 'status', 'method', 'remarks', 'uncertainty', 'dl', 'scope'
+  ];
+
+  syncParameterColumnsState(sec: ExecutionSection): void {
+    if (!sec || sec.type !== 'parameter' || !sec.config || !sec.config.columns) return;
+    const cfgCols: Record<string, any> = sec.config.columns;
+    const cols = sec.config.tableColumns;
+    if (!Array.isArray(cols)) return;
+
+    // Synchronize sec.config.columns flags from current tableColumns visibility
+    cols.forEach(col => {
+      if (col.key in this.standardParamColDefinitions && col.key !== 'param') {
+        cfgCols[col.key] = col.visible !== false;
+      }
+    });
+
+    // Recreate any column that has been enabled via config.columns if not present in tableColumns
+    Object.keys(this.standardParamColDefinitions).forEach(key => {
+      if (key === 'param') return;
+      if (cfgCols[key] === true && !cols.some(c => c.key === key)) {
+        const def = this.standardParamColDefinitions[key];
+        const newCol: LayoutColumnItem = {
+          key,
+          label: def.label,
+          bindingMode: def.bindingMode,
+          visible: true,
+          width: def.width
+        };
+        const targetCanonicalIdx = this.standardParamColOrder.indexOf(key);
+        let insertIdx = cols.length;
+        if (targetCanonicalIdx !== -1) {
+          for (let i = 0; i < cols.length; i++) {
+            const currCanonicalIdx = this.standardParamColOrder.indexOf(cols[i].key);
+            if (currCanonicalIdx > targetCanonicalIdx) {
+              insertIdx = i;
+              break;
+            }
+          }
+        }
+        cols.splice(insertIdx, 0, newCol);
+      }
+    });
+  }
+
+  ensureTableColumns(sec: ExecutionSection): LayoutColumnItem[] {
+    if (!sec || !sec.config) return [];
+    if (Array.isArray(sec.config.tableColumns) && sec.config.tableColumns.length > 0) {
+      if (sec.type === 'parameter' && sec.config.columns) {
+        this.syncParameterColumnsState(sec);
+      }
+      return sec.config.tableColumns;
+    }
+    const defaultMode: DataBindingMode = sec.config.dataBindingMode || 'runtime';
+    const cols: LayoutColumnItem[] = [];
+
+    if (sec.type === 'parameter') {
+      cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '28%' });
+      if (sec.config.columns?.unit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '12%' });
+      if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true, width: '20%' });
+      cols.push({
+        key: 'result',
+        label: sec.config.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result',
+        bindingMode: defaultMode,
+        visible: true,
+        width: '24%'
+      });
+      if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '16%' });
+      if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', visible: true, width: '18%' });
+      if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', visible: true, width: '18%' });
+      if (sec.config.columns?.uncertainty) cols.push({ key: 'uncertainty', label: 'Uncertainty (±)', bindingMode: 'runtime', visible: true, width: '14%' });
+      if (sec.config.columns?.dl) cols.push({ key: 'dl', label: 'Detection Limit', bindingMode: 'runtime', visible: true, width: '14%' });
+      if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', visible: true, width: '12%' });
+    } else if (sec.type === 'specimen') {
+      if (sec.config.orientation === 'Specimens × Parameters') {
+        cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen / Sample', bindingMode: 'static', visible: true, width: '30%' });
+        const params = this.getSpecimenParamsForSection(sec);
+        params.forEach((p, idx) => {
+          cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true });
+        });
+      } else {
+        cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '30%' });
+        const specList = this.getSpecimenList(sec);
+        specList.forEach((specName, idx) => {
+          cols.push({ key: `spec_${idx + 1}`, label: specName, bindingMode: defaultMode, visible: true });
+        });
+        if (sec.config.showAverage) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
+        if (sec.config.showRequirement) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+      }
+    } else if (sec.type === 'reading') {
+      cols.push({
+        key: 'target',
+        label: sec.config.readingLabel || (this.getReadingTargetForSection(sec).name + ' Readings'),
+        bindingMode: 'runtime',
+        visible: true,
+        width: '35%'
+      });
+      const rNums = this.getSpecimenCount(sec);
+      rNums.forEach(num => {
+        cols.push({ key: `reading_${num}`, label: `R${num}`, bindingMode: 'manual', visible: true });
+      });
+      cols.push({ key: 'agg', label: sec.config.aggregation || 'Average', bindingMode: 'runtime', visible: true });
+    } else if (sec.type === 'location') {
+      cols.push({ key: 'loc', label: sec.config.locationColHeader || 'Zone / Location', bindingMode: 'static', visible: true, width: '30%' });
+      this.currentTest.params.slice(0, 3).forEach((p, idx) => {
+        cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true });
+      });
+      if (sec.config.showAverage) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
+      if (sec.config.showRequirement) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+    } else if (sec.type === 'traverse') {
+      cols.push({ key: 'x', label: sec.config.xField || 'Depth / Distance', bindingMode: 'static', visible: true });
+      cols.push({ key: 'y', label: sec.config.yField || 'Hardness Result', bindingMode: defaultMode, visible: true });
+      cols.push({ key: 'unit', label: 'Unit', bindingMode: 'static', visible: true });
+      cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+    } else if (sec.type === 'classification') {
+      cols.push({ key: 'grade', label: 'Class / Grade', bindingMode: 'static', visible: true });
+      if (sec.config.showCriteria) cols.push({ key: 'criteria', label: 'Criteria / Scale', bindingMode: 'static', visible: true });
+      cols.push({ key: 'system', label: 'Rating System', bindingMode: 'static', visible: true });
+      cols.push({ key: 'result', label: 'Classification Result', bindingMode: defaultMode, visible: true });
+    } else if (sec.type === 'custom') {
+      if (sec.config.customColumns && sec.config.customColumns.length > 0) {
+        sec.config.customColumns.forEach((c, idx) => {
+          cols.push({ key: `col_${idx}`, label: c.label || `Col ${idx + 1}`, bindingMode: defaultMode, visible: true });
+        });
+      } else {
+        ['Col 1', 'Col 2', 'Col 3', 'Col 4'].forEach((c, idx) => {
+          cols.push({ key: `col_${idx}`, label: c, bindingMode: defaultMode, visible: true });
+        });
+      }
+    } else if (sec.type === 'condition') {
+      cols.push({ key: 'field', label: 'Condition / Parameter', bindingMode: 'static', visible: true });
+      cols.push({ key: 'val', label: 'Observed Reading', bindingMode: defaultMode, visible: true });
+    } else if (sec.type === 'checklist') {
+      cols.push({ key: 'item', label: 'Inspection Point', bindingMode: 'static', visible: true });
+      cols.push({ key: 'resp', label: 'Compliance Response', bindingMode: 'manual', visible: true });
+    } else {
+      cols.push({ key: 'col_1', label: 'Parameter / Feature', bindingMode: 'runtime', visible: true });
+      cols.push({ key: 'col_2', label: 'Observed Result', bindingMode: defaultMode, visible: true });
+    }
+
+    sec.config.tableColumns = cols;
+    return sec.config.tableColumns;
+  }
+
+  ensureTableRows(sec: ExecutionSection): LayoutRowItem[] {
+    if (!sec || !sec.config) return [];
+    if (Array.isArray(sec.config.tableRows) && sec.config.tableRows.length > 0) {
+      return sec.config.tableRows;
+    }
+    const defaultMode: DataBindingMode = sec.config.dataBindingMode || 'runtime';
+    const rows: LayoutRowItem[] = [];
+
+    if (sec.type === 'parameter') {
+      const params = this.currentDataset?.parameters?.length ? this.currentDataset.parameters : this.currentTest.params;
+      params.forEach((p, idx) => {
+        rows.push({
+          key: `param_${idx}`,
+          label: p.name,
+          bindingMode: defaultMode,
+          requirement: p.requirement || '',
+          unit: p.unit || '',
+          isCalculated: p.isCalculated,
+          visible: true
+        });
+      });
+    } else if (sec.type === 'specimen') {
+      if (sec.config.orientation === 'Specimens × Parameters') {
+        const specList = this.getSpecimenList(sec);
+        specList.forEach((spec, idx) => {
+          rows.push({
+            key: `spec_${idx}`,
+            label: spec,
+            bindingMode: defaultMode,
+            visible: true
+          });
+        });
+      } else {
+        const params = this.getSpecimenParamsForSection(sec);
+        params.forEach((p, idx) => {
+          rows.push({
+            key: `param_${idx}`,
+            label: p.name,
+            bindingMode: defaultMode,
+            requirement: p.requirement,
+            unit: p.unit,
+            visible: true
+          });
+        });
+      }
+    } else if (sec.type === 'location') {
+      const locList = this.getLocationList(sec);
+      locList.forEach((loc, idx) => {
+        rows.push({
+          key: `loc_${idx}`,
+          label: loc,
+          bindingMode: defaultMode,
+          visible: true
+        });
+      });
+    } else if (sec.type === 'reading') {
+      const target = this.getReadingTargetForSection(sec);
+      rows.push({
+        key: 'target_0',
+        label: `${target.name} (${target.unit})`,
+        bindingMode: defaultMode,
+        unit: target.unit,
+        visible: true
+      });
+    } else if (sec.type === 'traverse') {
+      [0.10, 0.20, 0.40, 0.60, 0.80, 1.00].forEach((step, idx) => {
+        rows.push({
+          key: `step_${idx}`,
+          label: step.toFixed(2),
+          bindingMode: defaultMode,
+          unit: sec.config.xUnit || 'mm',
+          visible: true
+        });
+      });
+    } else if (sec.type === 'classification') {
+      rows.push({
+        key: 'class_0',
+        label: 'Observed Structural Rating',
+        bindingMode: defaultMode,
+        visible: true
+      });
+    } else if (sec.type === 'custom') {
+      ['Row 1', 'Row 2', 'Row 3'].forEach((r, idx) => {
+        rows.push({
+          key: `row_${idx}`,
+          label: r,
+          bindingMode: defaultMode,
+          visible: true
+        });
+      });
+    } else if (sec.type === 'condition') {
+      const conds = this.getConditionFields(sec);
+      conds.forEach((c, idx) => {
+        rows.push({
+          key: `cond_${idx}`,
+          label: this.getConditionLabel(c),
+          bindingMode: defaultMode,
+          visible: true
+        });
+      });
+    } else if (sec.type === 'checklist') {
+      const items = this.getChecklistItems(sec);
+      items.forEach((it, idx) => {
+        rows.push({
+          key: `chk_${idx}`,
+          label: it,
+          bindingMode: 'manual',
+          visible: true
+        });
+      });
+    } else {
+      rows.push({
+        key: 'row_1',
+        label: 'Observation 1',
+        bindingMode: defaultMode,
+        visible: true
+      });
+    }
+
+    sec.config.tableRows = rows;
+    return sec.config.tableRows;
+  }
+
+  getTableColumns(sec: ExecutionSection): LayoutColumnItem[] {
+    return this.ensureTableColumns(sec);
+  }
+
+  getVisibleTableColumns(sec: ExecutionSection): LayoutColumnItem[] {
+    return this.getTableColumns(sec).filter(c => c.visible !== false);
+  }
+
+  getTableRows(sec: ExecutionSection): LayoutRowItem[] {
+    return this.ensureTableRows(sec);
+  }
+
+  getVisibleTableRows(sec: ExecutionSection): LayoutRowItem[] {
+    return this.getTableRows(sec).filter(r => r.visible !== false);
+  }
+
+  // Row Manipulation
+  addTableRow(sec: ExecutionSection, customLabel?: string): void {
+    const rows = this.ensureTableRows(sec);
+    const newIdx = rows.length + 1;
+    const label = customLabel || `New Row ${newIdx}`;
+    const newRow: LayoutRowItem = {
+      key: `custom_row_${Date.now()}`,
+      label: label,
+      bindingMode: sec.config.dataBindingMode || 'runtime',
+      visible: true,
+      removable: true
+    };
+    rows.push(newRow);
+    sec.config.tableRows = [...rows];
+    this.toastService.show(`Added row: "${label}"`, 'success');
+  }
+
+  removeTableRow(sec: ExecutionSection, index: number): void {
+    const rows = this.ensureTableRows(sec);
+    if (rows.length <= 1) {
+      this.toastService.show('At least one row is required in table', 'warning');
+      return;
+    }
+    const removed = rows.splice(index, 1);
+    sec.config.tableRows = [...rows];
+    this.toastService.show(`Removed row: "${removed[0]?.label || 'Row'}"`, 'info');
+  }
+
+  moveTableRow(sec: ExecutionSection, index: number, direction: 'up' | 'down'): void {
+    const rows = this.ensureTableRows(sec);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= rows.length) return;
+    const temp = rows[index];
+    rows[index] = rows[target];
+    rows[target] = temp;
+    sec.config.tableRows = [...rows];
+  }
+
+  toggleTableRowVisibility(sec: ExecutionSection, index: number): void {
+    const rows = this.ensureTableRows(sec);
+    if (rows[index]) {
+      rows[index].visible = rows[index].visible === false ? true : false;
+      sec.config.tableRows = [...rows];
+    }
+  }
+
+  updateTableRowLabel(sec: ExecutionSection, index: number, label: string): void {
+    const rows = this.ensureTableRows(sec);
+    if (rows[index]) {
+      rows[index].label = label;
+      if (sec.type === 'location' && sec.config.locationRows && sec.config.locationRows[index] !== undefined) {
+        sec.config.locationRows[index] = label;
+      }
+      if (sec.type === 'specimen' && sec.config.specimenRows && sec.config.orientation === 'Specimens × Parameters' && sec.config.specimenRows[index] !== undefined) {
+        sec.config.specimenRows[index] = label;
+      }
+    }
+  }
+
+  updateTableRowBindingMode(sec: ExecutionSection, index: number, mode: DataBindingMode): void {
+    const rows = this.ensureTableRows(sec);
+    if (rows[index]) {
+      rows[index].bindingMode = mode;
+      sec.config.tableRows = [...rows];
+    }
+  }
+
+  updateTableRowStaticValue(sec: ExecutionSection, index: number, val: string): void {
+    const rows = this.ensureTableRows(sec);
+    if (rows[index]) {
+      rows[index].staticValue = val;
+    }
+  }
+
+  // Column Manipulation
+  addTableColumn(sec: ExecutionSection, customLabel?: string): void {
+    const cols = this.ensureTableColumns(sec);
+    const newIdx = cols.length + 1;
+    const label = customLabel || `New Column ${newIdx}`;
+    const newCol: LayoutColumnItem = {
+      key: `custom_col_${Date.now()}`,
+      label: label,
+      bindingMode: sec.config.dataBindingMode || 'runtime',
+      visible: true,
+      removable: true
+    };
+    cols.push(newCol);
+    sec.config.tableColumns = [...cols];
+    this.toastService.show(`Added column: "${label}"`, 'success');
+  }
+
+  isParameterColVisible(sec: ExecutionSection, colKey: string): boolean {
+    if (!sec || !sec.config) return false;
+    if (Array.isArray(sec.config.tableColumns) && sec.config.tableColumns.length > 0) {
+      const col = sec.config.tableColumns.find(c => c.key === colKey);
+      if (col) {
+        return col.visible !== false;
+      }
+      return false;
+    }
+    if (!sec.config.columns) return false;
+    const cfgCols: Record<string, any> = sec.config.columns;
+    if (colKey === 'unit' || colKey === 'requirement' || colKey === 'status') {
+      return cfgCols[colKey] !== false;
+    }
+    if (colKey === 'result') {
+      return cfgCols['result'] !== false;
+    }
+    return !!cfgCols[colKey];
+  }
+
+  toggleParameterColumn(sec: ExecutionSection, colKey: string, isVisible: boolean): void {
+    if (!sec || !sec.config) return;
+    if (!sec.config.columns) {
+      sec.config.columns = {};
+    }
+    const cfgCols: Record<string, any> = sec.config.columns;
+    cfgCols[colKey] = isVisible;
+
+    const cols = this.ensureTableColumns(sec);
+    const existingCol = cols.find(c => c.key === colKey);
+
+    if (existingCol) {
+      existingCol.visible = isVisible;
+    } else if (isVisible) {
+      const def = this.standardParamColDefinitions[colKey] || {
+        label: colKey.charAt(0).toUpperCase() + colKey.slice(1),
+        bindingMode: 'runtime' as DataBindingMode
+      };
+      const label = colKey === 'result' && sec.config.resultMode === 'Calculated Result only'
+        ? 'Calculated Result'
+        : def.label;
+
+      const newCol: LayoutColumnItem = {
+        key: colKey,
+        label,
+        bindingMode: def.bindingMode,
+        visible: true,
+        width: def.width
+      };
+
+      const targetCanonicalIdx = this.standardParamColOrder.indexOf(colKey);
+      let insertIdx = cols.length;
+      if (targetCanonicalIdx !== -1) {
+        for (let i = 0; i < cols.length; i++) {
+          const currCanonicalIdx = this.standardParamColOrder.indexOf(cols[i].key);
+          if (currCanonicalIdx > targetCanonicalIdx) {
+            insertIdx = i;
+            break;
+          }
+        }
+      }
+      cols.splice(insertIdx, 0, newCol);
+    }
+
+    sec.config.tableColumns = [...cols];
+    this.validateHeaderMergeAfterColumnChange(sec);
+  }
+
+  validateHeaderMergeAfterColumnChange(sec: ExecutionSection): void {
+    if (!this.hasMergedHeader(sec)) return;
+    const mergeState = this.ensureHeaderMergeState(sec);
+    const visibleCols = this.getVisibleTableColumns(sec);
+
+    if (visibleCols.length < 2) {
+      this.resetHeaderMerge(sec);
+      return;
+    }
+
+    let startIdx = visibleCols.findIndex(c => c.key === mergeState.startCol);
+    if (startIdx === -1) {
+      startIdx = 0;
+      mergeState.startCol = visibleCols[0].key;
+    }
+
+    const maxPossibleColspan = visibleCols.length - startIdx;
+    if (maxPossibleColspan < 2) {
+      if (visibleCols.length >= 2) {
+        startIdx = visibleCols.length - 2;
+        mergeState.startCol = visibleCols[startIdx].key;
+        mergeState.colspan = 2;
+      } else {
+        this.resetHeaderMerge(sec);
+        return;
+      }
+    } else if ((mergeState.colspan || 2) > maxPossibleColspan) {
+      mergeState.colspan = maxPossibleColspan;
+    }
+  }
+
+  removeTableColumn(sec: ExecutionSection, index: number): void {
+    const cols = this.ensureTableColumns(sec);
+    if (cols.length <= 1) {
+      this.toastService.show('At least one column is required in table', 'warning');
+      return;
+    }
+    const removed = cols.splice(index, 1);
+    const key = removed[0]?.key;
+    if (sec.type === 'parameter' && sec.config.columns && key && key in this.standardParamColDefinitions) {
+      const cfgCols: Record<string, any> = sec.config.columns;
+      cfgCols[key] = false;
+    }
+    sec.config.tableColumns = [...cols];
+    this.validateHeaderMergeAfterColumnChange(sec);
+    this.toastService.show(`Removed column: "${removed[0]?.label || 'Column'}"`, 'info');
+  }
+
+  moveTableColumn(sec: ExecutionSection, index: number, direction: 'up' | 'down'): void {
+    const cols = this.ensureTableColumns(sec);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= cols.length) return;
+    const temp = cols[index];
+    cols[index] = cols[target];
+    cols[target] = temp;
+    sec.config.tableColumns = [...cols];
+  }
+
+  toggleTableColumnVisibility(sec: ExecutionSection, index: number): void {
+    const cols = this.ensureTableColumns(sec);
+    if (cols[index]) {
+      cols[index].visible = cols[index].visible === false ? true : false;
+      const key = cols[index].key;
+      if (sec.type === 'parameter' && sec.config.columns && key && key in this.standardParamColDefinitions) {
+        const cfgCols: Record<string, any> = sec.config.columns;
+        cfgCols[key] = cols[index].visible !== false;
+      }
+      sec.config.tableColumns = [...cols];
+      this.validateHeaderMergeAfterColumnChange(sec);
+    }
+  }
+
+  updateTableColumnLabel(sec: ExecutionSection, index: number, label: string): void {
+    const cols = this.ensureTableColumns(sec);
+    if (cols[index]) {
+      cols[index].label = label;
+      if (sec.type === 'specimen' && sec.config.specimenRows && sec.config.orientation !== 'Specimens × Parameters') {
+        const specIdx = index - 1;
+        if (specIdx >= 0 && specIdx < sec.config.specimenRows.length) {
+          sec.config.specimenRows[specIdx] = label;
+        }
+      }
+    }
+  }
+
+  updateTableColumnBindingMode(sec: ExecutionSection, index: number, mode: DataBindingMode): void {
+    const cols = this.ensureTableColumns(sec);
+    if (cols[index]) {
+      cols[index].bindingMode = mode;
+      sec.config.tableColumns = [...cols];
+    }
+  }
+
+  activeBindingDropdownKey: string | null = null;
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeBindingDropdown();
+  }
+
+  toggleBindingDropdown(key: string, event: Event): void {
+    event.stopPropagation();
+    this.activeBindingDropdownKey = this.activeBindingDropdownKey === key ? null : key;
+  }
+
+  closeBindingDropdown(): void {
+    this.activeBindingDropdownKey = null;
+  }
+
+  selectRowBindingMode(sec: ExecutionSection, index: number, mode: DataBindingMode): void {
+    this.updateTableRowBindingMode(sec, index, mode);
+    this.closeBindingDropdown();
+  }
+
+  selectColumnBindingMode(sec: ExecutionSection, index: number, mode: DataBindingMode): void {
+    this.updateTableColumnBindingMode(sec, index, mode);
+    this.closeBindingDropdown();
+  }
+
+  getBindingIcon(mode?: DataBindingMode): string {
+    if (mode === 'static') return 'bi-pin-angle-fill';
+    if (mode === 'manual') return 'bi-pencil-square';
+    return 'bi-lightning-charge-fill';
+  }
+
+  getBindingColorClass(mode?: DataBindingMode): string {
+    if (mode === 'static') return 'text-warning-emphasis';
+    if (mode === 'manual') return 'text-success';
+    return 'text-theme';
+  }
+
+  getBindingShortLabel(mode?: DataBindingMode): string {
+    if (mode === 'static') return 'Static';
+    if (mode === 'manual') return 'Manual';
+    return 'Run';
+  }
+
+  getBindingBadgeClass(mode?: DataBindingMode): string {
+    if (mode === 'static') return 'binding-pill-static';
+    if (mode === 'manual') return 'binding-pill-manual';
+    return 'binding-pill-runtime';
+  }
+
+  setSectionDefaultBinding(sec: ExecutionSection, mode: DataBindingMode, propagate: boolean = false): void {
+    sec.config.dataBindingMode = mode;
+    if (propagate) {
+      if (sec.config.tableRows) {
+        sec.config.tableRows.forEach(r => r.bindingMode = mode);
+      }
+      if (sec.config.tableColumns) {
+        sec.config.tableColumns.forEach(c => {
+          if (c.key === 'result' || (!['param', 'unit', 'requirement', 'status'].includes(c.key))) {
+            c.bindingMode = mode;
+          }
+        });
+      }
+    }
+    this.toastService.show(`Set section default binding mode to ${mode.toUpperCase()}`, 'info');
+  }
+
+  getCellDisplayValue(sec: ExecutionSection, row: LayoutRowItem, col: LayoutColumnItem, colIdx: number, rowIdx: number): string {
+    if (col.key === 'unit') return row.unit || (this.demoMode ? 'MPa' : '—');
+    if (col.key === 'requirement') return row.requirement || (this.demoMode ? '≥ 420' : 'Runtime');
+    if (col.key === 'status') return this.demoMode ? 'PASS' : 'Runtime';
+    if (col.key === 'method') return this.demoMode ? 'IS 1608 : 2022' : '—';
+    if (col.key === 'remarks') return this.demoMode ? 'Conforms' : '—';
+    if (col.key === 'uncertainty') return this.demoMode ? '± 2.5%' : '—';
+    if (col.key === 'dl') return this.demoMode ? '0.01' : '—';
+    if (col.key === 'scope') return this.demoMode ? 'NABL Scope' : '—';
+
+    const mode = row.bindingMode || col.bindingMode || sec.config.dataBindingMode || 'runtime';
+    if (mode === 'static') {
+      return row.staticValue || col.staticValue || (this.demoMode ? 'Static 420' : 'Static');
+    }
+    if (mode === 'manual') {
+      return this.demoMode ? 'Manual Entry' : '—';
+    }
+    if (this.demoMode) {
+      return (480 + rowIdx * 15 + colIdx * 5).toString();
+    }
+    return '—';
+  }
+
+  isTableSection(s: ExecutionSection): boolean {
+    if (!s) return false;
+    return ['parameter', 'specimen', 'reading', 'location', 'rule', 'traverse', 'custom', 'classification'].includes(s.type);
+  }
+
+  getVisibleColumnsForSection(s: ExecutionSection): { key: string; label: string; bindingMode?: DataBindingMode; staticValue?: string }[] {
+    if (!s) return [];
+    if (s.config?.tableColumns && s.config.tableColumns.length > 0) {
+      return s.config.tableColumns
+        .filter(c => c.visible !== false)
+        .map(c => ({ key: c.key, label: c.label, bindingMode: c.bindingMode, staticValue: c.staticValue }));
+    }
+    if (s.type === 'parameter') {
+      const list: { key: string; label: string }[] = [];
+      list.push({ key: 'param', label: 'Parameter' });
+      if (s.config?.columns?.unit !== false) list.push({ key: 'unit', label: 'Unit' });
+      if (s.config?.columns?.requirement !== false) list.push({ key: 'requirement', label: 'Requirement' });
+      list.push({
+        key: 'result',
+        label: s.config?.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result'
+      });
+      if (s.config?.columns?.uncertainty) list.push({ key: 'uncertainty', label: 'Uncertainty (±)' });
+      if (s.config?.columns?.dl) list.push({ key: 'dl', label: 'DL / LOQ' });
+      if (s.config?.columns?.status !== false) list.push({ key: 'status', label: 'Status' });
+      if (s.config?.columns?.method) list.push({ key: 'method', label: 'Method / Standard' });
+      if (s.config?.columns?.scope) list.push({ key: 'scope', label: 'NABL Scope' });
+      if (s.config?.columns?.remarks) list.push({ key: 'remarks', label: 'Remarks' });
+      return list;
+    }
+    if (s.type === 'specimen') {
+      const list: { key: string; label: string }[] = [];
+      if (s.config?.orientation === 'Specimens × Parameters') {
+        list.push({ key: 'specimen', label: s.config?.specimenColHeader || 'Specimen / Sample' });
+        const params = this.getSpecimenParamsForSection(s);
+        params.forEach((p, idx) => {
+          list.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})` });
+        });
+      } else {
+        list.push({ key: 'param', label: 'Parameter' });
+        const specList = this.getSpecimenList(s);
+        specList.forEach((specName, idx) => {
+          list.push({ key: `spec_${idx + 1}`, label: specName });
+        });
+        if (s.config?.showAverage) list.push({ key: 'avg', label: 'Average' });
+        if (s.config?.showMinMax) {
+          list.push({ key: 'min', label: 'Min' });
+          list.push({ key: 'max', label: 'Max' });
+        }
+        if (s.config?.showRequirement) list.push({ key: 'requirement', label: 'Requirement' });
+      }
+      return list;
+    }
+    if (s.type === 'reading') {
+      const list: { key: string; label: string }[] = [];
+      list.push({
+        key: 'target',
+        label: s.config?.readingLabel || (this.getReadingTargetForSection(s).name + ' Readings')
+      });
+      const rNums = this.getSpecimenCount(s);
+      rNums.forEach(num => {
+        list.push({ key: `reading_${num}`, label: `R${num}` });
+      });
+      list.push({ key: 'agg', label: s.config?.aggregation || 'Average' });
+      return list;
+    }
+    if (s.type === 'location') {
+      const list: { key: string; label: string }[] = [];
+      list.push({ key: 'loc', label: s.config?.locationColHeader || 'Zone / Location' });
+      this.currentTest.params.slice(0, 3).forEach((p, idx) => {
+        list.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})` });
+      });
+      if (s.config?.showAverage) list.push({ key: 'avg', label: 'Average' });
+      if (s.config?.showRequirement) list.push({ key: 'requirement', label: 'Requirement' });
+      return list;
+    }
+    if (s.type === 'rule') {
+      const list: { key: string; label: string }[] = [];
+      list.push({ key: 'param', label: 'Parameter' });
+      list.push({ key: 'operator', label: 'Operator' });
+      list.push({ key: 'source', label: 'Value Source' });
+      list.push({ key: 'result', label: 'Observed Result' });
+      list.push({ key: 'eval', label: 'Evaluation' });
+      return list;
+    }
+    if (s.type === 'traverse') {
+      const list: { key: string; label: string }[] = [];
+      list.push({ key: 'x', label: s.config?.xField || 'Depth / Distance' });
+      list.push({ key: 'y', label: s.config?.yField || 'Hardness Result' });
+      list.push({ key: 'unit', label: 'Unit' });
+      list.push({ key: 'requirement', label: 'Requirement' });
+      return list;
+    }
+    if (s.type === 'custom') {
+      const list: { key: string; label: string }[] = [];
+      if (s.config?.customColumns && s.config.customColumns.length > 0) {
+        s.config.customColumns.forEach((c, idx: number) => {
+          list.push({ key: `col_${idx}`, label: c.label || `Col ${idx + 1}` });
+        });
+      } else {
+        ['Col 1', 'Col 2', 'Col 3', 'Col 4'].forEach((c, idx: number) => {
+          list.push({ key: `col_${idx}`, label: c });
+        });
+      }
+      return list;
+    }
+    return [];
+  }
+
+  getMergedColumnsList(s: ExecutionSection): { key: string; label: string }[] {
+    const allCols = this.getVisibleColumnsForSection(s);
+    if (!allCols.length) return [];
+
+    let defaultStart = 'result';
+    if (s.type === 'specimen') defaultStart = 'spec_1';
+    if (s.type === 'reading') defaultStart = 'reading_1';
+
+    const startKey = s.config?.headerMerge?.startCol || s.config?.columns?.mergedStartCol || defaultStart;
+    let startIndex = allCols.findIndex(c => c.key === startKey);
+    if (startIndex === -1) {
+      startIndex = allCols.findIndex(c => c.key === defaultStart);
+      if (startIndex === -1) startIndex = 0;
+    }
+
+    const rawColspan = s.config?.headerMerge?.colspan || s.config?.columns?.mergedColspan || 2;
+    const maxPossible = allCols.length - startIndex;
+    const colspan = Math.min(Math.max(2, rawColspan), maxPossible);
+
+    return allCols.slice(startIndex, startIndex + colspan);
+  }
+
+  getPreMergedColumns(s: ExecutionSection): { key: string; label: string }[] {
+    const allCols = this.getVisibleColumnsForSection(s);
+    const merged = this.getMergedColumnsList(s);
+    if (!merged.length) return [];
+    const firstMergedKey = merged[0].key;
+    const firstIndex = allCols.findIndex(c => c.key === firstMergedKey);
+    if (firstIndex <= 0) return [];
+    return allCols.slice(0, firstIndex);
+  }
+
+  getPostMergedColumns(s: ExecutionSection): { key: string; label: string }[] {
+    const allCols = this.getVisibleColumnsForSection(s);
+    const merged = this.getMergedColumnsList(s);
+    if (!merged.length) return [];
+    const lastMergedKey = merged[merged.length - 1].key;
+    const lastIndex = allCols.findIndex(c => c.key === lastMergedKey);
+    if (lastIndex === -1 || lastIndex >= allCols.length - 1) return [];
+    return allCols.slice(lastIndex + 1);
+  }
+
+  ensureHeaderMergeState(s: ExecutionSection): HeaderMergeConfig {
+    if (!s) return {};
+    if (!s.config) s.config = {};
+    if (!s.config.headerMerge) {
+      let defaultStart = 'result';
+      if (s.type === 'specimen') defaultStart = 'spec_1';
+      if (s.type === 'reading') defaultStart = 'reading_1';
+
+      s.config.headerMerge = {
+        title: s.config.columns?.mergedHeader || '',
+        startCol: s.config.columns?.mergedStartCol || defaultStart,
+        colspan: s.config.columns?.mergedColspan || 2,
+        showSubLabels: s.config.columns?.showSubLabels !== false,
+        isMerged: !!(s.config.columns?.mergedHeader && s.config.columns.mergedHeader.trim().length > 0)
+      };
+    }
+    return s.config.headerMerge;
+  }
+
+  applyHeaderMerge(s: ExecutionSection): void {
+    if (!s || !s.config) return;
+    const hm = this.ensureHeaderMergeState(s);
+    if (!hm.title || !hm.title.trim()) {
+      if (s.type === 'parameter') hm.title = 'Test Observations';
+      else if (s.type === 'specimen') hm.title = 'Specimen Test Values';
+      else if (s.type === 'reading') hm.title = 'Indentation Spot Readings';
+      else hm.title = 'Grouped Observations';
+    }
+    if (!hm.startCol) {
+      if (s.type === 'parameter') hm.startCol = 'result';
+      else if (s.type === 'specimen') hm.startCol = 'spec_1';
+      else if (s.type === 'reading') hm.startCol = 'reading_1';
+      else hm.startCol = this.getVisibleColumnsForSection(s)[0]?.key || 'col_1';
+    }
+    if (!hm.colspan || hm.colspan < 2) {
+      hm.colspan = 2;
+    }
+    if (hm.showSubLabels === undefined) {
+      hm.showSubLabels = true;
+    }
+    hm.isMerged = true;
+
+    // Sync with columns config for backwards compatibility
+    if (!s.config.columns) {
+      s.config.columns = { unit: true, requirement: true, result: true, status: true, method: true, remarks: true };
+    }
+    s.config.columns.mergedHeader = hm.title;
+    s.config.columns.mergedStartCol = hm.startCol;
+    s.config.columns.mergedColspan = hm.colspan;
+    s.config.columns.showSubLabels = hm.showSubLabels;
+    s.config.columns.isMerged = true;
+
+    this.toastService.show(`Header merge applied: "${hm.title}"`, 'success');
+  }
+
+  resetHeaderMerge(s: ExecutionSection): void {
+    if (!s || !s.config) return;
+    if (s.config.headerMerge) {
+      s.config.headerMerge.isMerged = false;
+      s.config.headerMerge.title = '';
+    }
+    if (s.config.columns) {
+      s.config.columns.isMerged = false;
+      s.config.columns.mergedHeader = '';
+    }
+    this.toastService.show('Header merge removed. Reverted to standard flat columns.', 'info');
   }
 
   openPayloadPreview() {

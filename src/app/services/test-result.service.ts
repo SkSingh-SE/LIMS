@@ -355,4 +355,24 @@ export class TestResultService {
   getEnvironmentAtTime(headerId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/environment-at-time/${headerId}`);
   }
+
+  // ================================================================
+  // Execution Layout Hybrid Architecture Endpoints
+  // ================================================================
+  getRetestComparison(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/retest-comparison/${headerId}`);
+  }
+
+  getAuditLogs(headerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/audit-logs/${headerId}`);
+  }
+
+  approvalLock(headerId: number, comments?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/approval-lock/${headerId}`, { comments });
+  }
+
+  patchSection(headerId: number, dto: { sectionType: string; payloadJson: string }): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/patch-section/${headerId}`, dto);
+  }
 }
+

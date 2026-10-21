@@ -2109,6 +2109,38 @@ select:focus option:checked {
   transform: translateY(0);
 }
 
+/* ── LIMS Compact Button Modifier (Standard 26px height) ── */
+.btn-lims.btn-compact,
+.btn-compact {
+  height: 26px !important;
+  min-height: 26px !important;
+  min-width: unset !important;
+  padding: 0.18rem 0.6rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  gap: 4px !important;
+}
+
+.btn-lims.btn-compact i,
+.btn-compact i {
+  font-size: 0.74rem !important;
+  margin-right: 0 !important;
+}
+
+/* ── Dynamic Theme Utility Classes (Adheres to active selected theme) ── */
+.text-theme {
+  color: var(--primary-color, #da261c) !important;
+}
+
+.bg-theme-subtle {
+  background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.08) !important;
+}
+
+.border-theme-subtle {
+  border-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.22) !important;
+}
+
 /* ── Compact Table Header & Cell Icon Action Buttons ── */
 th .btn.btn-add,
 th .btn-add,
@@ -4397,7 +4429,9 @@ fieldset.border {
 .form-label i.bi,
 .form-label .bi,
 legend i.bi,
-legend .bi {
+legend .bi,
+.btn-xs-action i.bi,
+.btn-xs-action .bi {
   margin-right: 6px;
 }
 

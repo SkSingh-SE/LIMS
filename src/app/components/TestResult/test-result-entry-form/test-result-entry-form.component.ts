@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TestResultService } from '../../../services/test-result.service';
@@ -36,6 +36,7 @@ import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../util
   ],
 })
 export class TestResultEntryFormComponent implements OnInit, OnChanges {
+  @ViewChild('layoutRenderer') layoutRendererComponent?: ConfiguredTestLayoutRendererComponent;
   @Input() inputSampleId?: number;
   @Input() isInline: boolean = false;
   @Output() resultSaved = new EventEmitter<any>();
@@ -489,6 +490,26 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       return;
     }
 
+    // Priority 1: If test header already has a saved layoutSnapshotJson, restore it immediately
+    const savedSnapshot = plan.tests?.[0]?.layoutSnapshotJson || plan.layoutSnapshotJson;
+    if (savedSnapshot && typeof savedSnapshot === 'string' && savedSnapshot.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(savedSnapshot);
+        const configJson = parsed.layoutConfigJson ? JSON.parse(parsed.layoutConfigJson) : (parsed.parsedConfig || parsed);
+        this.currentTestLayout = {
+          ...parsed,
+          parsedConfig: configJson,
+          sections: configJson.sections || parsed.sections || []
+        };
+        this.selectedLayoutTemplateId = this.currentTestLayout?.id || null;
+        this.layoutCache[cacheKey] = this.currentTestLayout;
+        this.activeLayoutMode = 'configured';
+        return;
+      } catch (e) {
+        console.warn('Could not parse saved layoutSnapshotJson, falling back to hierarchy lookup', e);
+      }
+    }
+
     this.loadingLayout = true;
     this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leafNode).subscribe({
       next: (template: any) => {
@@ -547,17 +568,38 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     if (!plan) return this.availableLayoutTemplates;
 
     const testId = plan.labTestId;
+    const subGroupId = plan.subGroupId;
+    const analysisTypeId = plan.analysisTypeId;
     const testName = (plan.tests?.[0]?.name || plan.type || '').trim().toLowerCase();
 
     return this.availableLayoutTemplates.filter(t => {
       // Global default templates apply to all tests
       if (t.isGlobalDefault) return true;
-      // Explicit match by LaboratoryTestId
-      if (t.laboratoryTestId && testId && Number(t.laboratoryTestId) === Number(testId)) return true;
-      // Explicit match by LaboratoryTestName
-      if (t.laboratoryTestName && t.laboratoryTestName.trim().toLowerCase() === testName) return true;
+      // Explicit match by LaboratoryTestId (handles both casing conventions)
+      const templateLabTestId = t.laboratoryTestId ?? t.laboratoryTestID;
+      if (templateLabTestId && testId && Number(templateLabTestId) === Number(testId)) return true;
+      // Explicit match by SubGroupID
+      const templateSubGroupId = t.laboratoryTestSubGroupID ?? t.laboratoryTestSubGroupId;
+      if (templateSubGroupId && subGroupId && Number(templateSubGroupId) === Number(subGroupId)) return true;
+      // Explicit match by AnalysisTypeID
+      const templateAnalysisTypeId = t.laboratoryTestAnalysisTypeID ?? t.laboratoryTestAnalysisTypeId;
+      if (templateAnalysisTypeId && analysisTypeId && Number(templateAnalysisTypeId) === Number(analysisTypeId)) return true;
+      if (templateAnalysisTypeId && testId && Number(templateAnalysisTypeId) === Number(testId)) return true;
+      // Explicit match by Name
+      const templateLabTestName = (t.laboratoryTestName ?? t.laboratoryTest?.name ?? '').trim().toLowerCase();
+      if (templateLabTestName && (templateLabTestName === testName || testName.includes(templateLabTestName) || templateLabTestName.includes(testName))) return true;
+      const templateAnalysisTypeName = (t.analysisTypeName ?? '').trim().toLowerCase();
+      if (templateAnalysisTypeName && (templateAnalysisTypeName === testName || testName.includes(templateAnalysisTypeName) || templateAnalysisTypeName.includes(testName))) return true;
+      const templateSubGroupName = (t.subGroupName ?? '').trim().toLowerCase();
+      if (templateSubGroupName && (templateSubGroupName === testName || testName.includes(templateSubGroupName) || templateSubGroupName.includes(testName))) return true;
       return false;
     });
+  }
+
+  getOtherLayoutTemplatesForActiveTest(): any[] {
+    const matched = this.getAvailableLayoutTemplatesForActiveTest();
+    const matchedIds = new Set(matched.map(m => m.id));
+    return this.availableLayoutTemplates.filter(t => !matchedIds.has(t.id));
   }
 
   onLayoutTemplateSelect(layoutId: any, showToast: boolean = true): void {
@@ -581,6 +623,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const targetId = Number(layoutId);
     this.selectedLayoutTemplateId = targetId;
 
+    const plan = this.plans[this.activePlanIndex];
+    const testId = plan?.labTestId;
+    const subGroupId = plan?.subGroupId || null;
+    const analysisTypeId = plan?.analysisTypeId || null;
+    const leafNode = plan?.leafNode || plan?.tests?.[0]?.name || null;
+    const headerId = plan?.headerId || plan?.tests?.[0]?.headerId || `plan_${this.activePlanIndex}`;
+    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}`;
+
     const found = this.availableLayoutTemplates.find(t => t.id === targetId);
     if (found && found.layoutConfigJson) {
       try {
@@ -590,6 +640,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           parsedConfig: parsed,
           sections: parsed.sections || []
         };
+        this.layoutCache[cacheKey] = this.currentTestLayout;
         this.activeLayoutMode = 'configured';
         if (showToast) this.toastService.show(`Applied Layout Template: ${found.layoutName}`, 'success');
         return;
@@ -610,6 +661,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               parsedConfig: parsed,
               sections: parsed.sections || []
             };
+            this.layoutCache[cacheKey] = this.currentTestLayout;
             this.activeLayoutMode = 'configured';
             if (showToast) this.toastService.show(`Applied Layout Template: ${template.layoutName}`, 'success');
           } catch (e) {
@@ -799,29 +851,40 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   mapApiResponseToComponentFormat(apiData: any): void {
     // Set Inward Details
     this.inward = {
-      caseNo: apiData.inward.caseNo || '',
-      customerName: apiData.inward.customerName || '',
-      receivedOn: apiData.inward.receivedOn ? this.formatDateDisplay(apiData.inward.receivedOn) : '',
+      caseNo: apiData.inward?.caseNo || '',
+      customerName: apiData.inward?.customerName || '',
+      poNo: apiData.inward?.poNo || '',
+      receivedOn: apiData.inward?.receivedOn ? this.formatDateDisplay(apiData.inward.receivedOn) : '',
+      statementOfConformity: apiData.inward?.statementOfConformity || '',
+      decisionRule: apiData.inward?.decisionRule || '',
+      sampleReceiptNote: apiData.inward?.sampleReceiptNote || ''
     };
 
     // Set Sample Details
-    const sampleData = apiData.sample;
+    const sampleData = apiData.sample || {};
     this.sample = {
       sampleNo: sampleData.sampleNo || '',
       sampleStatus: sampleData.sampleStatus || '',
-      material: sampleData.details || '',
+      material: sampleData.details || sampleData.productMasterName || '',
       metalClassification: sampleData.metalClassification || '',
       productCondition: sampleData.productCondition || '',
       productForm: sampleData.productForm || '',
       productMasterName: sampleData.productMasterName || '',
       productSizeDescription: sampleData.productSizeDescription || '',
       productSizeFormatted: sampleData.productSizeFormatted || (sampleData.productForm ? sampleData.productForm : '-'),
-      batchNo: this.getBatchNoFromAdditionalDetails(sampleData.additionalDetails),
+      batchNo: sampleData.batchNo || this.getBatchNoFromAdditionalDetails(sampleData.additionalDetails),
+      heatNo: sampleData.heatNo || this.getBatchNoFromAdditionalDetails(sampleData.additionalDetails),
+      stampedAs: sampleData.stampedAs || sampleData.details || '',
+      natureOfSample: sampleData.natureOfSample || sampleData.productForm || sampleData.productMasterName || '',
+      heatTreatment: sampleData.heatTreatment || '',
+      specimenOrientation: sampleData.specimenOrientation || '',
       remarks: sampleData.remarks || '',
       thickness: sampleData.thickness,
       diameter: sampleData.diameter,
       width: sampleData.width,
       length: sampleData.length,
+      crossSectionArea: sampleData.crossSectionArea,
+      gaugeLength: sampleData.gaugeLength
     };
 
     // Map Plans
@@ -881,6 +944,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               equipmentId: generalTest.equipmentId || null,
               roomTemperature: generalTest.roomTemperature ?? null,
               roomHumidity: generalTest.roomHumidity ?? null,
+              layoutTemplateId: generalTest.layoutTemplateId ?? null,
+              layoutVersion: generalTest.layoutVersion || '1.0',
+              layoutSnapshotJson: generalTest.layoutSnapshotJson || null,
+              executionExtraJson: generalTest.executionExtraJson || null,
+              readings: generalTest.readings || [],
+              locations: generalTest.locations || [],
+              traversePoints: generalTest.traversePoints || [],
+              checklist: generalTest.checklist || [],
+              observations: generalTest.observations || [],
               // Drive initial parameters strictly by plannedQuantity to prevent change detection mismatch
               parameters: (() => {
                 const allParams = generalTest.parameters || [];
@@ -921,6 +993,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                   selectedUnit: param.selectedUnit || param.unit || '',
                   unitOptions: param.unitOptions || [],
                   isBillable: param.isBillable ?? true,
+                  isReportable: param.isReportable !== false,
                   inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
                   dropdownOptions: param.dropdownOptions || []
                 }));
@@ -979,6 +1052,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               equipmentId: chemicalTest.equipmentId || null,
               roomTemperature: chemicalTest.roomTemperature ?? null,
               roomHumidity: chemicalTest.roomHumidity ?? null,
+              layoutTemplateId: chemicalTest.layoutTemplateId ?? null,
+              layoutVersion: chemicalTest.layoutVersion || '1.0',
+              layoutSnapshotJson: chemicalTest.layoutSnapshotJson || null,
+              executionExtraJson: chemicalTest.executionExtraJson || null,
+              readings: chemicalTest.readings || [],
+              locations: chemicalTest.locations || [],
+              traversePoints: chemicalTest.traversePoints || [],
+              checklist: chemicalTest.checklist || [],
+              observations: chemicalTest.observations || [],
               parameters: (chemicalTest.parameters || []).map((param: any) => ({
                 id: param.id,
                 parameterID: param.parameterID || null,
@@ -1007,6 +1089,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                 selectedUnit: param.selectedUnit || param.unit || '',
                 unitOptions: param.unitOptions || [],
                 isBillable: param.isBillable ?? true,
+                isReportable: param.isReportable !== false,
                 inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
                 dropdownOptions: param.dropdownOptions || []
               }))
@@ -1185,7 +1268,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     return (this.plansFA?.at(planIndex)?.get('tests') as FormArray) || this.fb.array([]);
   }
 
- createTestGroup(test: any, planType: string): FormGroup {
+  createTestGroup(test: any, planType: string): FormGroup {
     return this.fb.group({
       id: [test.id],
       headerId: [test.headerId],
@@ -1193,6 +1276,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       reportNo: [test.reportNo],
       testPurpose: [test.testPurpose || 'Material Qualification'],
       remarks: [test.remarks || ''],
+      roomTemperature: [test.roomTemperature ?? null],
+      roomHumidity: [test.roomHumidity ?? null],
+      layoutTemplateId: [test.layoutTemplateId ?? null],
+      layoutVersion: [test.layoutVersion || '1.0'],
+      layoutSnapshotJson: [test.layoutSnapshotJson || null],
+      executionExtraJson: [test.executionExtraJson || null],
       parameters: this.fb.array(test.parameters.map((p: any) => this.createParamGroup(p, planType)))
     });
   }
@@ -1238,7 +1327,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       convertedValue: [p.convertedValue ?? null],
       selectedUnit: [p.selectedUnit || p.unit || ''],
       unitOptions: [p.unitOptions || []],
-      isBillable: [p.isBillable ?? true]
+      isBillable: [p.isBillable ?? true],
+      isReportable: [p.isReportable !== false]
     });
   }
 
@@ -1404,7 +1494,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     });
   }
 
-  saveTestWise(planIndex: number, testIndex: number): void {
+  saveTestWise(planIndex: number, testIndex: number, onSaved?: (res?: any) => void): void {
     const planGroup = (this.resultForm.get('plans') as FormArray).at(planIndex) as FormGroup;
     const testGroup = (planGroup.get('tests') as FormArray).at(testIndex) as FormGroup;
     const testParams = testGroup.get('parameters') as FormArray;
@@ -1414,7 +1504,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       return;
     }
 
-    const headerId = this.plans[planIndex].tests[testIndex].headerId;
+    if (this.layoutRendererComponent && planIndex === this.activePlanIndex) {
+      this.layoutRendererComponent.syncCollectionsToTest();
+    }
+
+    const testObj = this.plans[planIndex]?.tests?.[testIndex] || {};
+    const headerId = testObj.headerId;
     const equipmentIds = this.selectedEquipmentMap[headerId] || [];
     const equipmentIdsJson = equipmentIds.length > 0 ? JSON.stringify(equipmentIds.map((e: any) => e.id || e)) : null;
 
@@ -1429,46 +1524,78 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       chemicalTests: []
     };
 
-    const params = testParams.value;
+    const isCurrentActive = planIndex === this.activePlanIndex;
+    const layoutTemplateId = testGroup.get('layoutTemplateId')?.value || testObj.layoutTemplateId || (isCurrentActive ? this.currentTestLayout?.id : null);
+    const rawVersion = testGroup.get('layoutVersion')?.value || testObj.layoutVersion || (isCurrentActive ? this.currentTestLayout?.version : 1);
+    const layoutVersion = typeof rawVersion === 'number' ? Math.floor(rawVersion) : (parseInt(String(rawVersion).replace(/[^0-9]/g, ''), 10) || 1);
+    const layoutSnapshotJson = (isCurrentActive && this.currentTestLayout) ? JSON.stringify(this.currentTestLayout) : (testGroup.get('layoutSnapshotJson')?.value || testObj.layoutSnapshotJson || null);
+    const executionExtraJson = testObj.executionExtraJson || (isCurrentActive && this.layoutRendererComponent ? this.layoutRendererComponent.getExecutionExtraJson() : null);
+
+    const commonData = {
+      headerId,
+      equipmentIdsJson,
+      testPurpose: testGroup.get('testPurpose')?.value || 'Material Qualification',
+      remarks: testGroup.get('remarks')?.value || '',
+      roomTemperature: testGroup.get('roomTemperature')?.value ?? null,
+      roomHumidity: testGroup.get('roomHumidity')?.value ?? null,
+      layoutTemplateId: layoutTemplateId || null,
+      layoutVersion: layoutVersion || 1,
+      layoutSnapshotJson: layoutSnapshotJson || null,
+      retestOfHeaderId: testObj.retestOfHeaderId || null,
+      retestReasonCode: testObj.retestReasonCode || null,
+      executionExtraJson: executionExtraJson || null,
+      readings: testObj.readings || [],
+      locations: testObj.locations || [],
+      traversePoints: testObj.traversePoints || [],
+      checklist: testObj.checklist || [],
+      observations: testObj.observations || [],
+      parameters: testParams.value.map((p: any) => ({
+        id: p.id,
+        parameterID: p.parameterID,
+        parameterName: p.parameterName,
+        unit: p.unit,
+        value: (p.value !== '' && p.value !== null && p.value !== undefined && !isNaN(Number(p.value))) ? Number(p.value) : (p.value ?? null),
+        remarks: p.remarks,
+        minValue: p.minValue,
+        maxValue: p.maxValue,
+        isWithinLimit: p.isWithinLimit,
+        altered: p.altered || false,
+        formula: p.formulaExpression || '',
+        testMethodUsed: p.testMethodUsed || '',
+        convertedValue: p.convertedValue ?? null,
+        selectedUnit: p.selectedUnit || '',
+        isBillable: p.isBillable ?? true,
+        isReportable: p.isReportable !== false
+      }))
+    };
+
     if (apiGeneral) {
       payload.generalTests.push({
-        headerId, generalTestId: apiGeneral.generalTestId, testMethodId: apiGeneral.testMethodId,
-        laboratoryTestId: apiGeneral.laboratoryTestId, equipmentIdsJson,
-        testPurpose: testGroup.get('testPurpose')?.value || 'Material Qualification',
-        remarks: testGroup.get('remarks')?.value || '',
-        parameters: params.map((p: any) => ({
-          id: p.id, parameterID: p.parameterID, parameterName: p.parameterName, unit: p.unit,
-          value: p.value, remarks: p.remarks, minValue: p.minValue, maxValue: p.maxValue,
-          isWithinLimit: p.isWithinLimit, altered: p.altered || false,
-          formula: p.formulaExpression || '', testMethodUsed: p.testMethodUsed || '',
-          convertedValue: p.convertedValue ?? null, selectedUnit: p.selectedUnit || '',
-          isBillable: p.isBillable ?? true
-        }))
+        ...commonData,
+        generalTestId: apiGeneral.generalTestId,
+        testMethodId: apiGeneral.testMethodId,
+        laboratoryTestId: apiGeneral.laboratoryTestId
       });
     } else if (apiChemical) {
       payload.chemicalTests.push({
-        headerId, chemicalTestId: apiChemical.chemicalTestId, testMethodId: apiChemical.testMethodId,
-        laboratoryTestId: apiChemical.laboratoryTestId, equipmentIdsJson,
-        testPurpose: testGroup.get('testPurpose')?.value || 'Material Qualification',
-        remarks: testGroup.get('remarks')?.value || '',
-        parameters: params.map((p: any) => ({
-          id: p.id, parameterID: p.parameterID, parameterName: p.parameterName, unit: p.unit,
-          value: p.value, remarks: p.remarks, minValue: p.minValue, maxValue: p.maxValue,
-          isWithinLimit: p.isWithinLimit, altered: p.altered || false,
-          formula: p.formulaExpression || '', testMethodUsed: p.testMethodUsed || '',
-          convertedValue: p.convertedValue ?? null, selectedUnit: p.selectedUnit || '',
-          isBillable: p.isBillable ?? true
-        }))
+        ...commonData,
+        chemicalTestId: apiChemical.chemicalTestId,
+        generalTestId: apiChemical.chemicalTestId,
+        testMethodId: apiChemical.testMethodId,
+        laboratoryTestId: apiChemical.laboratoryTestId || apiChemical.labTestId
       });
     }
 
-    const testName = this.plans[planIndex].tests[testIndex].name || 'Test';
+    const testName = testObj.name || 'Test';
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
         this.toastService.show(`${testName} — saved successfully`, 'success');
         this.resultSaved.emit(response);
         // Automatically evaluate formula parameters on backend
         this.calculateParameters(planIndex, testIndex);
+        if (onSaved) {
+          onSaved(response);
+        }
       },
       error: (error) => {
         this.toastService.show(`Error saving ${testName}`, 'error');
@@ -1522,6 +1649,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // Build Payload for Save
   // ----------------------------------------------------------------
   buildSavePayload(): any {
+    if (this.layoutRendererComponent) {
+      this.layoutRendererComponent.syncCollectionsToTest();
+    }
+
     const formValue = this.resultForm.value;
     const payload: any = {
       inwardId: this.apiMetadata.inwardId,
@@ -1533,7 +1664,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
 
     formValue.plans.forEach((plan: any, planIdx: number) => {
       plan.tests.forEach((test: any, testIdx: number) => {
-        const headerId = plan.headerId;
+        const testObj = this.plans[planIdx]?.tests?.[testIdx] || {};
+        const headerId = testObj.headerId || plan.headerId;
         const testParams = test.parameters;
 
         // Determine if general or chemical test
@@ -1544,58 +1676,65 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         const equipmentIds = this.selectedEquipmentMap[headerId] || [];
         const equipmentIdsJson = equipmentIds.length > 0 ? JSON.stringify(equipmentIds.map((e: any) => e.id || e)) : null;
 
+        const isCurrentActive = planIdx === this.activePlanIndex;
+        const layoutTemplateId = test.layoutTemplateId || testObj.layoutTemplateId || (isCurrentActive ? this.currentTestLayout?.id : null);
+        const rawVersion = test.layoutVersion || testObj.layoutVersion || (isCurrentActive ? this.currentTestLayout?.version : 1);
+        const layoutVersion = typeof rawVersion === 'number' ? Math.floor(rawVersion) : (parseInt(String(rawVersion).replace(/[^0-9]/g, ''), 10) || 1);
+        const layoutSnapshotJson = (isCurrentActive && this.currentTestLayout) ? JSON.stringify(this.currentTestLayout) : (test.layoutSnapshotJson || testObj.layoutSnapshotJson || null);
+        const executionExtraJson = testObj.executionExtraJson || (isCurrentActive && this.layoutRendererComponent ? this.layoutRendererComponent.getExecutionExtraJson() : null);
+
+        const commonData = {
+          headerId: headerId,
+          equipmentIdsJson: equipmentIdsJson,
+          testPurpose: test.testPurpose || 'Material Qualification',
+          remarks: test.remarks || '',
+          roomTemperature: test.roomTemperature ?? null,
+          roomHumidity: test.roomHumidity ?? null,
+          layoutTemplateId: layoutTemplateId || null,
+          layoutVersion: layoutVersion || 1,
+          layoutSnapshotJson: layoutSnapshotJson || null,
+          retestOfHeaderId: testObj.retestOfHeaderId || null,
+          retestReasonCode: testObj.retestReasonCode || null,
+          executionExtraJson: executionExtraJson || null,
+          readings: testObj.readings || [],
+          locations: testObj.locations || [],
+          traversePoints: testObj.traversePoints || [],
+          checklist: testObj.checklist || [],
+          observations: testObj.observations || [],
+          parameters: testParams.map((param: any) => ({
+            id: param.id,
+            parameterID: param.parameterID,
+            parameterName: param.parameterName,
+            unit: param.unit,
+            value: param.value,
+            remarks: param.remarks,
+            minValue: param.minValue,
+            maxValue: param.maxValue,
+            isWithinLimit: param.isWithinLimit,
+            altered: param.altered || false,
+            formula: param.formulaExpression || '',
+            testMethodUsed: param.testMethodUsed || '',
+            convertedValue: param.convertedValue ?? null,
+            selectedUnit: param.selectedUnit || '',
+            isBillable: param.isBillable ?? true,
+            isReportable: param.isReportable !== false
+          }))
+        };
+
         if (apiGeneral) {
           payload.generalTests.push({
-            headerId: headerId,
+            ...commonData,
             generalTestId: apiGeneral.generalTestId,
             testMethodId: apiGeneral.testMethodId,
-            laboratoryTestId: apiGeneral.laboratoryTestId,
-            equipmentIdsJson: equipmentIdsJson,
-            testPurpose: test.testPurpose || 'Material Qualification',
-            remarks: test.remarks || '',
-            parameters: testParams.map((param: any) => ({
-              id: param.id,
-              parameterID: param.parameterID,
-              parameterName: param.parameterName,
-              unit: param.unit,
-              value: param.value,
-              remarks: param.remarks,
-              minValue: param.minValue,
-              maxValue: param.maxValue,
-              isWithinLimit: param.isWithinLimit,
-              altered: param.altered || false,
-              formula: param.formulaExpression || '',
-              testMethodUsed: param.testMethodUsed || '',
-              convertedValue: param.convertedValue ?? null,
-              selectedUnit: param.selectedUnit || '',
-              isBillable: param.isBillable ?? true
-            }))
+            laboratoryTestId: apiGeneral.laboratoryTestId
           });
         } else if (apiChemical) {
           payload.chemicalTests.push({
-            headerId: headerId,
+            ...commonData,
+            chemicalTestId: apiChemical.chemicalTestId,
             generalTestId: apiChemical.chemicalTestId,
-            laboratoryTestId: apiChemical.labTestId,
-            equipmentIdsJson: equipmentIdsJson,
-            testPurpose: test.testPurpose || 'Material Qualification',
-            remarks: test.remarks || '',
-            parameters: testParams.map((param: any) => ({
-              id: param.id,
-              parameterID: param.parameterID,
-              parameterName: param.parameterName,
-              unit: param.unit,
-              value: param.value,
-              remarks: param.remarks,
-              minValue: param.minValue,
-              maxValue: param.maxValue,
-              isWithinLimit: param.isWithinLimit,
-              altered: param.altered || false,
-              formula: param.formulaExpression || '',
-              testMethodUsed: param.testMethodUsed || '',
-              convertedValue: param.convertedValue ?? null,
-              selectedUnit: param.selectedUnit || '',
-              isBillable: param.isBillable ?? true
-            }))
+            testMethodId: apiChemical.testMethodId,
+            laboratoryTestId: apiChemical.laboratoryTestId || apiChemical.labTestId
           });
         }
       });
@@ -2045,6 +2184,24 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     return !status || status === 'Pending' || status === 'VerificationRejected';
   }
 
+  canViewRawDataSheet(status?: string): boolean {
+    if (!status) return false;
+    const completedStatuses = [
+      'Completed',
+      'PendingVerification',
+      'Verified',
+      'VerificationRejected',
+      'ReportGenerated',
+      'REPORT_UNDER_REVIEW',
+      'FINAL_REPORT_APPROVED',
+      'REPORT_APPROVED',
+      'COMPLETED',
+      'REPORT_DISPATCHED',
+      'Closed'
+    ];
+    return completedStatuses.includes(status);
+  }
+
   isHardnessTest(test: any): boolean {
     const name = (test?.name || '').toLowerCase();
     return name.includes('hardness') || name.includes('rockwell') || name.includes('brinell') || name.includes('vickers');
@@ -2082,6 +2239,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   openMultipleReadingsModal(planIndex: number, testIndex: number, paramIndex: number): void {
     this.readingTarget = { planIndex, testIndex, paramIndex };
     const paramGroup = this.getParameters(planIndex, testIndex).at(paramIndex);
+
+    // Check if remarks already has serialized readings array
+    const remarks = paramGroup.get('remarks')?.value;
+    if (remarks && typeof remarks === 'string' && remarks.startsWith('[') && remarks.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(remarks);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.readingValues = parsed.map(v => (v !== null && v !== undefined && !isNaN(Number(v))) ? Number(v) : null);
+          this.recomputeReadingAverage();
+          this.showReadingsModal = true;
+          return;
+        }
+      } catch (e) {
+        // Fallback to single value
+      }
+    }
+
     const currVal = parseFloat(paramGroup.get('value')?.value);
     if (!isNaN(currVal) && currVal > 0) {
       this.readingValues = [currVal, null, null];
@@ -2090,6 +2264,27 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }
     this.recomputeReadingAverage();
     this.showReadingsModal = true;
+  }
+
+  addModalReading(): void {
+    if (this.readingValues.length < 25) {
+      this.readingValues.push(null);
+    }
+  }
+
+  removeModalReading(index?: number): void {
+    if (this.readingValues.length > 1) {
+      if (index !== undefined && index >= 0) {
+        this.readingValues.splice(index, 1);
+      } else {
+        this.readingValues.pop();
+      }
+      this.recomputeReadingAverage();
+    }
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 
   recomputeReadingAverage(): void {
@@ -2107,6 +2302,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const { planIndex, testIndex, paramIndex } = this.readingTarget;
     const paramGroup = this.getParameters(planIndex, testIndex).at(paramIndex);
     paramGroup.get('value')?.setValue(this.calculatedAverage);
+    paramGroup.patchValue({ remarks: JSON.stringify(this.readingValues) });
     this.onValueChanged(planIndex, testIndex, paramIndex);
     this.closeMultipleReadingsModal();
   }
@@ -2212,32 +2408,32 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.calculateParameters(planIndex, testIndex);
 
     if (confirm(`Complete test "${test.name}"? This will finalize test results, evaluate overall pass/fail status, and generate audit record.`)) {
-      // Save test data first
-      this.saveTestWise(planIndex, testIndex);
-
-      this.testResultService.completeTest(headerId).subscribe({
-        next: (response) => {
-          test.status = 'Completed';
-          test.isOverallPass = response.isOverallPass;
-          const msg = response.isOverallPass
-            ? `Test Completed! Overall Result: PASS.`
-            : `Test Completed! Overall Result: FAIL (Parameters out of specification limit).`;
-          this.toastService.show(msg, response.isOverallPass ? 'success' : 'warning');
-          this.resultCompleted.emit({ headerId, status: 'Completed', isOverallPass: response.isOverallPass });
-          if (response?.testEndTime) {
-            this.testTimingMap[headerId] = {
-              ...this.testTimingMap[headerId],
-              testEndTime: response.testEndTime,
-              performedByName: response.performedByName || this.testTimingMap[headerId]?.performedByName
-            };
-          } else {
-            this.fetchEnvironmentData(headerId);
+      // Save test data first, then trigger completion sequentially
+      this.saveTestWise(planIndex, testIndex, () => {
+        this.testResultService.completeTest(headerId).subscribe({
+          next: (response) => {
+            test.status = 'Completed';
+            test.isOverallPass = response.isOverallPass;
+            const msg = response.isOverallPass
+              ? `Test Completed! Overall Result: PASS.`
+              : `Test Completed! Overall Result: FAIL (Parameters out of specification limit).`;
+            this.toastService.show(msg, response.isOverallPass ? 'success' : 'warning');
+            this.resultCompleted.emit({ headerId, status: 'Completed', isOverallPass: response.isOverallPass });
+            if (response?.testEndTime) {
+              this.testTimingMap[headerId] = {
+                ...this.testTimingMap[headerId],
+                testEndTime: response.testEndTime,
+                performedByName: response.performedByName || this.testTimingMap[headerId]?.performedByName
+              };
+            } else {
+              this.fetchEnvironmentData(headerId);
+            }
+          },
+          error: (error) => {
+            console.error('Error completing test:', error);
+            this.toastService.show('Error completing test: ' + (error?.error?.message || error?.message || 'Server error'), 'error');
           }
-        },
-        error: (error) => {
-          console.error('Error completing test:', error);
-          this.toastService.show('Error completing test: ' + (error?.error?.message || error?.message || 'Server error'), 'error');
-        }
+        });
       });
     }
   }
@@ -4029,6 +4225,138 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   onFormulaInputChange(event: Event): void {
     const input = event.target as HTMLTextAreaElement;
     this.formulaCursorPos = input.selectionStart || 0;
+  }
+
+  // =========================================================================
+  // Technical Raw Data Sheet Preview (ISO 17025 Clause 7.5)
+  // =========================================================================
+  showRawDataSheetModal = false;
+  rawDataSheetData: any = null;
+
+  openRawDataSheetModal(planIndex?: number, testIndex?: number): void {
+    const pIdx = planIndex ?? this.activePlanIndex;
+    const tIdx = testIndex ?? 0;
+    const plan = this.plans[pIdx];
+    if (!plan) return;
+    const test = plan.tests?.[tIdx];
+    if (!test) return;
+
+    if (!this.canViewRawDataSheet(test.status)) {
+      this.toastService.show('Technical Raw Data Sheet is available only after the test is completed.', 'warning');
+      return;
+    }
+
+    // Retrieve active configured renderer if rendered for this test
+    const renderer = (this.activePlanIndex === pIdx && this.layoutRendererComponent)
+      ? this.layoutRendererComponent
+      : (this.configuredRenderers?.find(r => r.test === test || r.testPlan === plan) || null);
+
+    const layout = (this.activePlanIndex === pIdx && this.currentTestLayout)
+      ? this.currentTestLayout
+      : (renderer?.layoutConfig || null);
+
+    // Collect reading table data
+    const readingSections = (layout?.sections || []).filter((s: any) => s.type === 'reading');
+    const readingRows: any[] = [];
+    if (renderer && readingSections.length > 0) {
+      readingSections.forEach((s: any) => {
+        const targets = renderer.getReadingTargetParameters(s);
+        const count = renderer.getReadingCount(s);
+        targets.forEach((targetName: string) => {
+          const ctrl = renderer.getParamControl(targetName);
+          const vals = Array.from({ length: count }, (_, i) => renderer.getReadingVal(targetName, i) ?? null);
+          const stats = renderer.readingStats[targetName] || { avg: null, min: null, max: null, stdev: null };
+          readingRows.push({
+            name: targetName,
+            unit: ctrl?.get('unit')?.value || '—',
+            values: vals,
+            avg: stats.avg != null ? stats.avg : (ctrl?.get('value')?.value ?? '—'),
+            min: stats.min != null ? stats.min : '—',
+            max: stats.max != null ? stats.max : '—',
+            stdev: stats.stdev != null ? stats.stdev : '—',
+            requirement: renderer.formatSpecRange(ctrl?.value),
+            status: renderer.getParamStatusLabel(targetName),
+            statusBadgeClass: renderer.getParamStatusBadgeClass(targetName)
+          });
+        });
+      });
+    }
+
+    // Collect specimen tensile data
+    const specimenData = renderer?.specimens || [];
+    const specimenAverages = renderer?.specimenAverages || null;
+
+    // Collect traverse data
+    const traversePoints = renderer?.traversePoints || [];
+    const effectiveCaseDepth = renderer?.effectiveCaseDepth || null;
+
+    // Collect checklist
+    const checklist = renderer?.checklistItems || [];
+
+    // Collect observations
+    const observations = renderer?.observations || [];
+
+    // Decision rule
+    const decisionRule = renderer?.decisionRule || {
+      ruleType: this.inward?.decisionRule || 'Simple Acceptance (Binary, w = 0)',
+      confidenceLevel: 95,
+      guardBandMultiplier: 1,
+      acceptanceStatus: 'Pass',
+      statementText: this.inward?.statementOfConformity || 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).'
+    };
+
+    // Environmental conditions
+    const envData = {
+      temperature: test.roomTemperature ?? renderer?.conditionValues?.['Temperature'] ?? 23,
+      humidity: test.roomHumidity ?? renderer?.conditionValues?.['Relative Humidity'] ?? 50,
+      speed: renderer?.conditionValues?.['Test Speed'] ?? '2 mm/min',
+      medium: renderer?.conditionValues?.['Medium'] ?? 'Ambient Air'
+    };
+
+    // Parameters fallback if no reading or specimen sections
+    const planGroup = (this.resultForm.get('plans') as FormArray)?.at(pIdx) as FormGroup;
+    const testGroup = (planGroup?.get('tests') as FormArray)?.at(tIdx) as FormGroup;
+    const testParamsFA = testGroup?.get('parameters') as FormArray;
+    const currentParams = (testParamsFA && testParamsFA.length > 0) ? testParamsFA.value : (test.parameters || []);
+
+    const rawParameters: any[] = (currentParams || []).map((p: any) => ({
+      name: p.parameterName,
+      unit: p.unit,
+      value: p.value,
+      requirement: this.formatRequirement(p),
+      status: this.getParameterStatus(p)
+    }));
+
+    this.rawDataSheetData = {
+      sample: this.sample,
+      inward: this.inward,
+      plan,
+      test,
+      layout: layout || this.currentTestLayout,
+      readingRows,
+      specimenData,
+      specimenAverages,
+      traversePoints,
+      effectiveCaseDepth,
+      checklist,
+      observations,
+      decisionRule,
+      envData,
+      rawParameters,
+      timing: this.testTimingMap[test.headerId] || {},
+      generatedAt: new Date()
+    };
+
+    this.showRawDataSheetModal = true;
+  }
+
+  closeRawDataSheetModal(): void {
+    this.showRawDataSheetModal = false;
+    this.rawDataSheetData = null;
+  }
+
+  printRawDataSheet(): void {
+    window.print();
   }
 
 }

@@ -36,7 +36,7 @@
                 </div>
                 <!--Contact Person 1-->
                 <div>
-                    <label class="form-label">Contact Person 1</label>
+                    <label class="form-label">Contact Person 1 <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" formControlName="contactPerson1"
                         placeholder="Enter Contact Person 1" maxlength="100"
                         [ngClass]="{ 'is-invalid': isFieldInvalid('contactPerson1') }" />
@@ -44,8 +44,9 @@
                 </div>
                 <!--Contact No 1-->
                 <div>
-                    <label class="form-label">Contact No 1</label>
+                    <label class="form-label">Contact No 1 <span class="text-danger">*</span></label>
                     <app-phone-input formControlName="contactNo1" [submitted]="submitted"></app-phone-input>
+                    <app-field-error [control]="supplierForm.get('contactNo1')" label="Contact No 1" [submitted]="submitted"/>
                 </div>
 
                 <!--Email Id 1-->
@@ -134,7 +135,7 @@
 
                 <!--Agreement File Path-->
                 <div>
-                    <label class="form-label">Agreement File </label>
+                    <label class="form-label">Agreement File <span class="text-danger">*</span></label>
                     <ng-container *ngIf="supplierForm.get('agreementFilePath')?.value || supplierForm.get('fileName')?.value; else uploadField">
                         <div class="d-flex align-items-center justify-content-between bg-light border rounded file-preview-box">
                             <span class="text-truncate me-2" type="button"
@@ -154,6 +155,7 @@
                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                             [disabled]="isViewMode" (change)="onFileChange($event)" />
                     </ng-template>
+                    <app-field-error [control]="supplierForm.get('fileName')" label="Agreement File" [submitted]="submitted"/>
                 </div>
 
                 <div>

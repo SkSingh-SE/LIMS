@@ -1525,5 +1525,164 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* ─── ISO/IEC 17025 Clause 7.5 Technical Raw Data Sheet Preview Modal ─── */
+.raw-data-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(3px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 1rem;
+}
 
+.raw-data-modal-dialog {
+  width: 100%;
+  max-width: 980px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+}
 
+.raw-data-modal-header {
+  background: #1e293b;
+  color: #ffffff;
+  border-bottom: 2px solid var(--primary-color, #da261c);
+}
+
+.raw-data-document {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1e293b;
+  font-size: 0.76rem;
+  background-color: #ffffff;
+  line-height: 1.4;
+}
+
+.raw-data-brand-box {
+  min-width: 58px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.text-xxs {
+  font-size: 0.68rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.08em;
+}
+
+.raw-data-section-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-bottom: 1.5px solid #e2e8f0;
+  padding-bottom: 0.2rem;
+  letter-spacing: 0.02em;
+}
+
+.raw-data-meta-table {
+  font-size: 0.73rem;
+  border-color: #e2e8f0;
+}
+
+.raw-data-meta-table td,
+.raw-data-meta-table th {
+  padding: 0.32rem 0.5rem;
+  vertical-align: middle;
+}
+
+.raw-data-reading-table {
+  font-size: 0.73rem;
+  border-color: #cbd5e1;
+}
+
+.raw-data-reading-table th,
+.raw-data-reading-table td {
+  padding: 0.35rem 0.45rem;
+  vertical-align: middle;
+}
+
+.raw-data-sig-line {
+  width: 60%;
+  height: 24px;
+}
+
+/* Modal Table Column Width Utility Classes */
+.col-w-5 {
+  width: 5%;
+}
+
+.col-w-8 {
+  width: 8%;
+}
+
+.col-w-10 {
+  width: 10%;
+}
+
+.col-w-14 {
+  width: 14%;
+}
+
+.col-w-15 {
+  width: 15%;
+}
+
+.col-w-20 {
+  width: 20%;
+}
+
+.col-w-25 {
+  width: 25%;
+}
+
+.col-w-35 {
+  width: 35%;
+}
+
+.col-w-75 {
+  width: 75%;
+}
+
+.col-spot-cell {
+  min-width: 65px;
+}
+
+/* Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .raw-data-document,
+  .raw-data-document * {
+    visibility: visible;
+  }
+  .raw-data-document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

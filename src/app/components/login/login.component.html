@@ -24,8 +24,13 @@
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <div class="input-with-icon-wrapper">
-                            <input type="text" id="email" class="form-control" formControlName="email"
+                            <input type="email" id="email" name="email" class="form-control" formControlName="email"
+                                autocomplete="username email"
                                 placeholder="Enter Email"
+                                (input)="onInputActivity()"
+                                (change)="onInputActivity()"
+                                (blur)="onInputActivity()"
+                                (focus)="onInputActivity()"
                                 [ngClass]="{'is-invalid': isFieldInvalid('email')}"/>
                             <span class="input-trailing-icon">
                                 <i class="bi bi-envelope"></i>
@@ -38,8 +43,13 @@
                     <div class="mb-3 position-relative">
                         <label for="password" class="form-label">Password</label>
                         <div class="input-group">
-                            <input [type]="showPassword() ? 'text' : 'password'" id="password" class="form-control"
+                            <input [type]="showPassword() ? 'text' : 'password'" id="password" name="password" class="form-control"
                                 formControlName="password" placeholder="Enter Password"
+                                autocomplete="current-password"
+                                (input)="onInputActivity()"
+                                (change)="onInputActivity()"
+                                (blur)="onInputActivity()"
+                                (focus)="onInputActivity()"
                                 aria-describedby="password-icon"
                                 [ngClass]="{'is-invalid': isFieldInvalid('password')}" />
                             <span type="button" (click)="togglePassword()" class="input-group-text cursor-pointer" id="password-icon"

@@ -33,6 +33,7 @@ export class AnalysisTechniqueComponent implements OnInit {
     code: 'string',
     aliasNames: 'string',
     modifiedOn: 'date',
+    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

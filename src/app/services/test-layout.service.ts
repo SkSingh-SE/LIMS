@@ -21,6 +21,8 @@ export interface TestLayoutTemplateDto {
   subGroupName?: string;
   laboratoryTestAnalysisTypeID?: number | null;
   analysisTypeName?: string;
+  testMethodSpecificationID?: number | null;
+  testMethodName?: string;
   leafNode?: string | null;
   applyToLeaf: boolean;
   sectionCount: number;
@@ -47,13 +49,15 @@ export class TestLayoutService {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }
 
-  getLayoutByHierarchy(testId?: number | null, subGroupId?: number | null, analysisTypeId?: number | null, leafNode?: string | null): Observable<any> {
+  getLayoutByHierarchy(testId?: number | null, subGroupId?: number | null, analysisTypeId?: number | null, leafNode?: string | null, testMethodId?: number | null, testMethodName?: string | null): Observable<any> {
     let url = `${this.apiUrl}/by-hierarchy`;
     const params: string[] = [];
     if (testId && testId > 0) params.push(`testId=${testId}`);
     if (subGroupId && subGroupId > 0) params.push(`subGroupId=${subGroupId}`);
     if (analysisTypeId && analysisTypeId > 0) params.push(`analysisTypeId=${analysisTypeId}`);
     if (leafNode) params.push(`leafNode=${encodeURIComponent(leafNode)}`);
+    if (testMethodId && testMethodId > 0) params.push(`testMethodId=${testMethodId}`);
+    if (testMethodName && testMethodName.trim() !== '') params.push(`testMethodName=${encodeURIComponent(testMethodName.trim())}`);
     if (params.length > 0) {
       url += `?${params.join('&')}`;
     }

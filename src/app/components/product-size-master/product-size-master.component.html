@@ -67,7 +67,12 @@
                             <td>{{ item.minValue }}</td>
                             <td>{{ item.maxValue }}</td>
                             <td>{{ item.unitName || '-' }}</td>
-                            <td>{{ item.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+                            <td>
+                                <div class="cell-audit" [title]="(item.modifiedByName || item.createdByName ? (item.modifiedByName || item.createdByName) + ' | ' : '') + ((item.modifiedOn || item.createdOn) | date:'medium')">
+                                    <span class="cell-audit-name">{{ item.modifiedByName || item.createdByName || '-' }}</span>
+                                    <span class="cell-audit-time">{{ (item.modifiedOn || item.createdOn) | date:"dd MMM, hh:mm a" }}</span>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

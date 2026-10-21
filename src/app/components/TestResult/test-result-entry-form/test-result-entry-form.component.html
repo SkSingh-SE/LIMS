@@ -20,12 +20,15 @@
   <!-- ================================================================ -->
   <!-- 2. MATERIAL METADATA BAR                                         -->
   <!-- ================================================================ -->
-  <div class="materialbar">
-    <span>Material: <strong>{{ sample?.material || 'ASTM A105 Carbon Steel Forged Flange' }}</strong></span>
+  <div class="materialbar flex-wrap gap-3">
+    <span>Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
+    <span *ngIf="inward?.poNo">PO / Ref: <strong>{{ inward.poNo }}</strong></span>
+    <span>Material: <strong>{{ sample?.material || sample?.productMasterName || 'Structural Steel' }}</strong></span>
     <span>Class: <strong>{{ sample?.metalClassification || 'Not specified' }}</strong></span>
     <span>Size: <strong>{{ sample?.productSizeFormatted || 'Not specified' }}</strong></span>
-    <span *ngIf="sample?.batchNo">Batch: <strong>{{ sample.batchNo }}</strong></span>
-    <span>Received: <strong>{{ inward?.receivedOn || '05-Oct-2026' }}</strong></span>
+    <span *ngIf="sample?.batchNo || sample?.heatNo">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
+    <span *ngIf="sample?.heatTreatment">Heat Treatment: <strong>{{ sample.heatTreatment }}</strong></span>
+    <span>Received: <strong>{{ inward?.receivedOn || '—' }}</strong></span>
   </div>
 
   <!-- ================================================================ -->
@@ -50,9 +53,14 @@
         [ngModel]="selectedLayoutTemplateId" (ngModelChange)="onLayoutTemplateSelect($event)">
         <option [ngValue]="null">Auto: {{ currentTestLayout ? currentTestLayout.layoutName : 'By Test Hierarchy' }}
         </option>
-        <optgroup label="Available Layout Templates" *ngIf="getAvailableLayoutTemplatesForActiveTest().length > 0">
+        <optgroup label="Recommended Layouts" *ngIf="getAvailableLayoutTemplatesForActiveTest().length > 0">
           <option *ngFor="let tpl of getAvailableLayoutTemplatesForActiveTest()" [ngValue]="tpl.id">
             {{ tpl.layoutName }} ({{ tpl.isGlobalDefault ? 'Global' : (tpl.laboratoryTestName || tpl.layoutCode) }})
+          </option>
+        </optgroup>
+        <optgroup label="Other Available Layouts" *ngIf="getOtherLayoutTemplatesForActiveTest().length > 0">
+          <option *ngFor="let tpl of getOtherLayoutTemplatesForActiveTest()" [ngValue]="tpl.id">
+            {{ tpl.layoutName }} ({{ tpl.laboratoryTestName || tpl.layoutCode }})
           </option>
         </optgroup>
         <option [ngValue]="-1">Standard Layout (No Template)</option>
@@ -167,6 +175,10 @@
                     (click)="startTest(p, t)" [disabled]="isViewMode">
                     <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
                   </button>
+                  <button *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)" type="button" class="btn btn-lims btn-lims-print small"
+                    (click)="openRawDataSheetModal(p, t)" title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
+                    <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
+                  </button>
                 </div>
               </div>
 
@@ -181,6 +193,22 @@
                     <div class="detail">
                       <div class="ico">◇</div>
                       <div><label>Test Name</label><strong>{{ plans[p].tests[t]?.name }}</strong></div>
+                    </div>
+                    <div class="detail" *ngIf="inward?.customerName">
+                      <div class="ico">🏢</div>
+                      <div><label>Customer Name</label><strong>{{ inward.customerName }}</strong></div>
+                    </div>
+                    <div class="detail" *ngIf="inward?.poNo">
+                      <div class="ico">📄</div>
+                      <div><label>PO / Letter Reference</label><strong>{{ inward.poNo }}</strong></div>
+                    </div>
+                    <div class="detail" *ngIf="sample?.heatNo || sample?.batchNo">
+                      <div class="ico">🏷</div>
+                      <div><label>Heat / Batch No</label><strong>{{ sample.heatNo || sample.batchNo }}</strong></div>
+                    </div>
+                    <div class="detail" *ngIf="sample?.stampedAs">
+                      <div class="ico">🔖</div>
+                      <div><label>Stamped As</label><strong>{{ sample.stampedAs }}</strong></div>
                     </div>
                     <div class="detail">
                       <div class="ico">⌘</div>
@@ -431,6 +459,11 @@
                   <span class="state" [ngClass]="isConfigLocked(plans[p].tests[t]?.status) ? 'amber' : 'green'">
                     {{ isConfigLocked(plans[p].tests[t]?.status) ? '🔒 Configuration locked' : 'Active' }}
                   </span>
+                  <button *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)" type="button"
+                    class="btn btn-lims btn-lims-print small" (click)="openRawDataSheetModal(p, t)"
+                    title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
+                    <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
+                  </button>
                   <button *ngIf="!isViewMode && !isTestFinalized(plans[p].tests[t]?.status)" type="button"
                     class="btn primary small" (click)="onWorkbenchSpecimenCountAdjust(1)">
                     <i class="bi bi-plus-lg me-1"></i><span>Add Specimen</span>
@@ -440,7 +473,7 @@
 
               <!-- Configured Execution View (Matrix, Curve, Parameters, Checklist, Remarks) -->
               <ng-container *ngIf="currentTestLayout">
-                <app-configured-test-layout-renderer [layoutConfig]="currentTestLayout" [testPlan]="plans[p]"
+                <app-configured-test-layout-renderer #layoutRenderer [layoutConfig]="currentTestLayout" [testPlan]="plans[p]"
                   [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
                   [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
                   [activeTabSection]="'execution'"
@@ -1293,6 +1326,11 @@
                 ✿ &nbsp; ISO/IEC 17025:2017 Compliance <span class="muted">· Validated test execution workbench</span>
               </div>
               <div class="footeractions">
+                <button type="button" class="btn btn-lims btn-lims-print me-1" (click)="openRawDataSheetModal(p, t)"
+                  *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)"
+                  title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
+                  <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
+                </button>
                 <button type="button" class="btn" (click)="saveAsDraft(p, t)" [disabled]="isViewMode">
                   <i class="bi bi-bookmark me-1"></i><span>Save Draft</span>
                 </button>
@@ -1631,23 +1669,32 @@
           Enter individual test readings. The arithmetic average will be automatically calculated and applied as the
           test result.
         </p>
-        <div class="row g-2 mb-3">
-          <div class="col-4">
-            <label class="form-label small fw-semibold">Reading 1</label>
-            <input type="number" step="0.01" class="form-control form-control-sm text-center"
-              [(ngModel)]="readingValues[0]" (input)="recomputeReadingAverage()" placeholder="R1" />
-          </div>
-          <div class="col-4">
-            <label class="form-label small fw-semibold">Reading 2</label>
-            <input type="number" step="0.01" class="form-control form-control-sm text-center"
-              [(ngModel)]="readingValues[1]" (input)="recomputeReadingAverage()" placeholder="R2" />
-          </div>
-          <div class="col-4">
-            <label class="form-label small fw-semibold">Reading 3</label>
-            <input type="number" step="0.01" class="form-control form-control-sm text-center"
-              [(ngModel)]="readingValues[2]" (input)="recomputeReadingAverage()" placeholder="R3" />
+
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+          <span class="small fw-semibold text-secondary">Individual Spot Readings ({{ readingValues.length }} Spots):</span>
+          <div class="d-flex align-items-center gap-1">
+            <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addModalReading()" [disabled]="readingValues.length >= 25" title="Add spot">
+              <i class="bi bi-plus-circle me-1"></i><span>Add Spot</span>
+            </button>
+            <button type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="removeModalReading()" [disabled]="readingValues.length <= 1" title="Remove last spot">
+              <i class="bi bi-dash-circle me-1"></i><span>Remove Spot</span>
+            </button>
           </div>
         </div>
+
+        <div class="row g-2 mb-3">
+          <div *ngFor="let val of readingValues; let i = index; trackBy: trackByIndex" class="col-4 col-md-3">
+            <div class="d-flex justify-content-between align-items-center mb-0.5">
+              <label class="form-label small fw-semibold mb-0">Spot {{ i + 1 }}</label>
+              <button *ngIf="readingValues.length > 1" type="button" class="btn btn-link text-danger p-0 fs-8 lh-1" (click)="removeModalReading(i)" title="Remove this spot">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+            <input type="number" step="any" class="form-control form-control-sm text-center font-monospace"
+              [(ngModel)]="readingValues[i]" (input)="recomputeReadingAverage()" [placeholder]="'R' + (i + 1)" />
+          </div>
+        </div>
+
         <div class="p-2 bg-light rounded border text-center">
           <span class="detail-label text-muted">Computed Arithmetic Average</span>
           <div class="fs-5 fw-bold text-primary mt-1">{{ calculatedAverage }}</div>
@@ -1728,6 +1775,339 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TECHNICAL RAW DATA SHEET PREVIEW MODAL (ISO 17025 Clause 7.5)   -->
+<!-- ================================================================ -->
+<div *ngIf="showRawDataSheetModal" class="modal d-block modal-backdrop-custom" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <!-- Modal Header (no-print) -->
+      <div class="modal-header raw-data-modal-header py-2 px-3 no-print d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-file-earmark-ruled fs-5 text-white"></i>
+          <div>
+            <h6 class="modal-title m-0 fw-bold text-white">TECHNICAL RAW DATA & OBSERVATION RECORD</h6>
+            <span class="text-white-50 text-xxs font-monospace">ISO/IEC 17025:2017 Clause 7.5 · Format No: DMSPL/L4/TRD/01</span>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-light fw-bold text-dark d-inline-flex align-items-center" (click)="printRawDataSheet()">
+            <i class="bi bi-printer-fill text-danger me-1"></i><span>Print Raw Data Sheet</span>
+          </button>
+          <button type="button" class="btn-close btn-close-white" (click)="closeRawDataSheetModal()"></button>
+        </div>
+      </div>
+
+      <!-- Modal Body / Document Sheet -->
+      <div class="modal-body p-3 bg-light">
+        <div class="raw-data-document bg-white p-4 border rounded shadow-sm">
+          
+          <!-- Document Header -->
+          <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="raw-data-brand-box bg-danger text-white fw-bold px-3 py-2 rounded text-center">
+                <div class="fs-4 lh-1">DMS</div>
+                <div class="text-xxs tracking-wider">LABS</div>
+              </div>
+              <div>
+                <h5 class="fw-bold text-dark m-0">DEEP METALLURGICAL SERVICES</h5>
+                <div class="text-muted small">NABL ACCREDITED TESTING LABORATORY (ISO/IEC 17025:2017)</div>
+                <div class="text-secondary text-xxs">Testing of Metals, Mechanical, Metallurgical & Chemical Properties</div>
+              </div>
+            </div>
+            <div class="text-end">
+              <span class="badge bg-danger-subtle text-danger border border-danger fw-bold px-2 py-1 mb-1 d-inline-block">
+                TECHNICAL RAW DATA SHEET
+              </span>
+              <div class="text-xxs font-monospace text-muted">Clause 7.5 Technical Records</div>
+              <div class="text-xxs font-monospace text-secondary">Date: {{ rawDataSheetData?.generatedAt | date:'dd-MMM-yyyy HH:mm' }}</div>
+            </div>
+          </div>
+
+          <!-- Section 1: Sample & Customer Identification -->
+          <div class="mb-3">
+            <div class="raw-data-section-title">
+              <i class="bi bi-tag-fill text-danger me-1"></i>I. SAMPLE IDENTIFICATION & CUSTOMER CONTEXT
+            </div>
+            <table class="table table-bordered table-sm raw-data-meta-table mb-0">
+              <tbody>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary col-w-15">Sample ID / UID</td>
+                  <td class="fw-bold font-monospace text-danger col-w-35">{{ rawDataSheetData?.sample?.sampleNo || '—' }}</td>
+                  <td class="bg-light fw-semibold text-secondary col-w-15">Case / Inward No</td>
+                  <td class="fw-bold font-monospace col-w-35">{{ rawDataSheetData?.inward?.caseNo || '—' }}</td>
+                </tr>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary">Customer Name</td>
+                  <td class="fw-bold">{{ rawDataSheetData?.inward?.customerName || '—' }}</td>
+                  <td class="bg-light fw-semibold text-secondary">PO / Ref No</td>
+                  <td class="font-monospace">{{ rawDataSheetData?.inward?.poNo || '—' }}</td>
+                </tr>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary">Material / Grade</td>
+                  <td class="fw-bold">{{ rawDataSheetData?.sample?.material || '—' }}</td>
+                  <td class="bg-light fw-semibold text-secondary">Metal Classification</td>
+                  <td>{{ rawDataSheetData?.sample?.metalClassification || '—' }}</td>
+                </tr>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary">Heat / Batch No</td>
+                  <td class="font-monospace">{{ rawDataSheetData?.sample?.heatNo || rawDataSheetData?.sample?.batchNo || '—' }}</td>
+                  <td class="bg-light fw-semibold text-secondary">Sampling Method</td>
+                  <td>{{ rawDataSheetData?.plan?.sampling || 'Customer Supplied (As Received)' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section 2: Test Method, Equipment & Environmental Conditions -->
+          <div class="mb-3">
+            <div class="raw-data-section-title">
+              <i class="bi bi-gear-fill text-danger me-1"></i>II. TEST METHOD, EQUIPMENT & ENVIRONMENTAL TRACEABILITY
+            </div>
+            <table class="table table-bordered table-sm raw-data-meta-table mb-0">
+              <tbody>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary col-w-15">Test Name</td>
+                  <td class="fw-bold text-dark col-w-35">{{ rawDataSheetData?.test?.name || rawDataSheetData?.plan?.type }}</td>
+                  <td class="bg-light fw-semibold text-secondary col-w-15">Standard Method</td>
+                  <td class="fw-bold col-w-35">{{ rawDataSheetData?.plan?.methodName || 'Standard Method' }}</td>
+                </tr>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary">Testing Equipment</td>
+                  <td class="fw-semibold">{{ rawDataSheetData?.test?.equipmentName || 'Laboratory Test Apparatus' }}</td>
+                  <td class="bg-light fw-semibold text-secondary">Equipment Calibration</td>
+                  <td><span class="badge bg-success-subtle text-success border border-success">Valid & Traceable</span></td>
+                </tr>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary">Ambient Temperature</td>
+                  <td>{{ rawDataSheetData?.envData?.temperature }} °C</td>
+                  <td class="bg-light fw-semibold text-secondary">Relative Humidity</td>
+                  <td>{{ rawDataSheetData?.envData?.humidity }} % RH</td>
+                </tr>
+                <tr>
+                  <td class="bg-light fw-semibold text-secondary">Testing Medium</td>
+                  <td>{{ rawDataSheetData?.envData?.medium || 'Ambient Air' }}</td>
+                  <td class="bg-light fw-semibold text-secondary">Test Speed / Rate</td>
+                  <td>{{ rawDataSheetData?.envData?.speed || '2 mm/min' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section 3: UNIFIED RAW DATA MEASUREMENT MATRIX -->
+          <div class="mb-3">
+            <div class="raw-data-section-title">
+              <i class="bi bi-table text-danger me-1"></i>III. UNIFIED TECHNICAL RAW DATA MATRIX (OBSERVED READINGS)
+            </div>
+
+            <!-- Reading Matrix (Spots / Indentations / Specimens) -->
+            <div *ngIf="rawDataSheetData?.readingRows?.length > 0" class="table-responsive">
+              <table class="table table-bordered table-sm raw-data-reading-table text-center mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="text-start col-w-25">Target Parameter</th>
+                    <th class="col-w-8">Unit</th>
+                    <th *ngFor="let val of rawDataSheetData.readingRows[0]?.values; let spotIdx = index" class="col-spot-cell">
+                      Spot {{ spotIdx + 1 }}
+                    </th>
+                    <th class="bg-primary-subtle text-primary col-w-10">Mean / Avg</th>
+                    <th class="col-w-8">Min</th>
+                    <th class="col-w-8">Max</th>
+                    <th class="col-w-8">Std Dev (σ)</th>
+                    <th class="col-w-14">Requirement</th>
+                    <th class="col-w-10">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of rawDataSheetData.readingRows">
+                    <td class="text-start fw-bold">{{ row.name }}</td>
+                    <td class="text-secondary font-monospace">{{ row.unit }}</td>
+                    <td *ngFor="let v of row.values" class="font-monospace fw-semibold">
+                      {{ v != null ? v : '—' }}
+                    </td>
+                    <td class="bg-primary-subtle text-primary fw-bold font-monospace">{{ row.avg }}</td>
+                    <td class="text-secondary font-monospace">{{ row.min }}</td>
+                    <td class="text-secondary font-monospace">{{ row.max }}</td>
+                    <td class="text-muted font-monospace">{{ row.stdev }}</td>
+                    <td class="fw-medium text-dark">{{ row.requirement }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="row.statusBadgeClass">
+                        {{ row.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Specimen Matrix (Tensile) -->
+            <div *ngIf="rawDataSheetData?.specimenData?.length > 0 && (!rawDataSheetData?.readingRows || rawDataSheetData.readingRows.length === 0)" class="table-responsive">
+              <table class="table table-bordered table-sm raw-data-reading-table text-center mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Specimen</th>
+                    <th>Dia / Thick (mm)</th>
+                    <th>Width (mm)</th>
+                    <th>Area (mm²)</th>
+                    <th>Gauge L0 (mm)</th>
+                    <th>Yield Load (kN)</th>
+                    <th>Peak Load (kN)</th>
+                    <th>Yield Strength (MPa)</th>
+                    <th>Tensile Strength (MPa)</th>
+                    <th>% Elongation</th>
+                    <th>% Red. Area</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let spm of rawDataSheetData.specimenData">
+                    <td class="fw-bold">{{ spm.id }}</td>
+                    <td>{{ spm.diameter || spm.thickness || '—' }}</td>
+                    <td>{{ spm.width || '—' }}</td>
+                    <td class="font-monospace">{{ spm.area || '—' }}</td>
+                    <td>{{ spm.gaugeLength || '—' }}</td>
+                    <td class="font-monospace">{{ spm.yieldLoad || '—' }}</td>
+                    <td class="font-monospace">{{ spm.peakLoad || '—' }}</td>
+                    <td class="fw-bold text-primary font-monospace">{{ spm.proofStress || '—' }}</td>
+                    <td class="fw-bold text-primary font-monospace">{{ spm.uts || '—' }}</td>
+                    <td class="font-monospace">{{ spm.elongation != null ? spm.elongation + '%' : '—' }}</td>
+                    <td class="font-monospace">{{ spm.reductionOfArea != null ? spm.reductionOfArea + '%' : '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- General Parameters Fallback -->
+            <div *ngIf="(!rawDataSheetData?.readingRows || rawDataSheetData.readingRows.length === 0) && (!rawDataSheetData?.specimenData || rawDataSheetData.specimenData.length === 0)" class="table-responsive">
+              <table class="table table-bordered table-sm raw-data-reading-table text-center mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="text-start">Parameter Name</th>
+                    <th>Unit</th>
+                    <th>Observed Result</th>
+                    <th>Requirement Limit</th>
+                    <th>Conformity Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of rawDataSheetData.rawParameters">
+                    <td class="text-start fw-bold">{{ p.name }}</td>
+                    <td class="text-secondary font-monospace">{{ p.unit || '—' }}</td>
+                    <td class="fw-bold font-monospace text-primary">{{ p.value != null ? p.value : '—' }}</td>
+                    <td>{{ p.requirement || '—' }}</td>
+                    <td>
+                      <span class="badge" [ngClass]="p.status === 'pass' ? 'bg-success text-white' : p.status === 'fail' ? 'bg-danger text-white' : 'bg-light text-muted border'">
+                        {{ (p.status || 'PENDING') | uppercase }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Microhardness Traverse Profile (if present) -->
+            <div *ngIf="rawDataSheetData?.traversePoints?.length > 0" class="mt-2 p-2 bg-light rounded border">
+              <div class="fw-semibold text-secondary small mb-1">
+                <i class="bi bi-graph-up text-danger me-1"></i>Microhardness Traverse Profile (Distance from Surface vs HV):
+              </div>
+              <div class="d-flex flex-wrap gap-2">
+                <span *ngFor="let pt of rawDataSheetData.traversePoints" class="badge bg-white text-dark border font-monospace">
+                  {{ pt.distance }} mm: <strong>{{ pt.hardness != null ? pt.hardness + ' HV' : '—' }}</strong>
+                </span>
+                <span *ngIf="rawDataSheetData.effectiveCaseDepth != null" class="badge bg-danger text-white font-monospace ms-auto">
+                  Effective Case Depth (Cutoff 550 HV): <strong>{{ rawDataSheetData.effectiveCaseDepth }} mm</strong>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: SOP Checklist & Inspection Verification -->
+          <div *ngIf="rawDataSheetData?.checklist?.length > 0" class="mb-3">
+            <div class="raw-data-section-title">
+              <i class="bi bi-check2-square text-danger me-1"></i>IV. SOP & TECHNICAL QUALITY VERIFICATION
+            </div>
+            <table class="table table-bordered table-sm raw-data-meta-table mb-0">
+              <tbody>
+                <tr *ngFor="let c of rawDataSheetData.checklist; let cIdx = index">
+                  <td class="text-secondary font-monospace col-w-5">#{{ cIdx + 1 }}</td>
+                  <td class="col-w-75">{{ c.label || c.itemDescription }}</td>
+                  <td class="text-center col-w-20">
+                    <span class="badge" [ngClass]="c.status === 'Pass' ? 'bg-success text-white' : c.status === 'Fail' ? 'bg-danger text-white' : 'bg-secondary text-white'">
+                      {{ c.status || 'Verified' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section 5: Decision Rule & Statement of Conformity -->
+          <div class="mb-3">
+            <div class="raw-data-section-title">
+              <i class="bi bi-shield-check text-danger me-1"></i>V. ISO/IEC 17025 ILAC-G8 STATEMENT OF CONFORMITY
+            </div>
+            <div class="p-2 border rounded bg-light">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold text-dark">
+                  Decision Rule: <strong>{{ rawDataSheetData?.decisionRule?.ruleType || 'Simple Acceptance (Binary, w = 0)' }}</strong>
+                  <span class="text-muted ms-2">(Confidence Level: {{ rawDataSheetData?.decisionRule?.confidenceLevel || 95 }}%)</span>
+                </span>
+                <span class="badge bg-success text-white px-2 py-1">
+                  <i class="bi bi-check-circle me-1"></i>{{ rawDataSheetData?.decisionRule?.acceptanceStatus || 'CONFORMING (PASS)' }}
+                </span>
+              </div>
+              <div class="text-secondary text-xxs fst-italic">
+                "{{ rawDataSheetData?.decisionRule?.statementText || 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).' }}"
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 6: Governance & Traceability Sign-off -->
+          <div>
+            <div class="raw-data-section-title">
+              <i class="bi bi-pen text-danger me-1"></i>VI. EXECUTION & TECHNICAL VERIFICATION SIGN-OFF
+            </div>
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="p-3 border rounded text-center h-100">
+                  <div class="text-xxs fw-semibold text-secondary text-uppercase mb-3">Tested & Recorded By (Analyst)</div>
+                  <div class="raw-data-sig-line border-bottom border-dark mx-auto mb-1"></div>
+                  <div class="fw-bold small text-dark">{{ rawDataSheetData?.timing?.performedByName || 'Laboratory Analyst' }}</div>
+                  <div class="text-xxs text-muted">Date: {{ rawDataSheetData?.timing?.testEndTime || (rawDataSheetData?.generatedAt | date:'dd-MMM-yyyy') }}</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-3 border rounded text-center h-100">
+                  <div class="text-xxs fw-semibold text-secondary text-uppercase mb-3">Technical Verification (ISO 17025 Cl 7.7)</div>
+                  <div class="raw-data-sig-line border-bottom border-dark mx-auto mb-1"></div>
+                  <div class="fw-bold small text-dark">Technical Reviewer / Signatory</div>
+                  <div class="text-xxs text-muted">Status: {{ rawDataSheetData?.status || 'In Progress' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Modal Footer (no-print) -->
+      <div class="modal-footer py-2 px-3 bg-light border-top no-print d-flex justify-content-between">
+        <span class="text-xxs text-muted">
+          <i class="bi bi-lock me-1"></i>ISO/IEC 17025:2017 Clause 7.5 Technical Record Integrity Guard Active
+        </span>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-lims btn-lims-cancel" (click)="closeRawDataSheetModal()">
+            <i class="bi bi-x-circle me-1"></i><span>Close</span>
+          </button>
+          <button type="button" class="btn btn-lims btn-lims-print" (click)="printRawDataSheet()">
+            <i class="bi bi-printer me-1"></i><span>Print Raw Data Sheet</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

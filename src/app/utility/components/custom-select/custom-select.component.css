@@ -1,0 +1,456 @@
+/* ========================================================
+   CUSTOM SELECT COMPONENT (LIMS DESIGN SYSTEM)
+   - Multi-size support: xs, sm, md, lg, xl
+   - Global theme variables & Poppins font
+   - Modern floating card dropdown matching reference
+   ======================================================== */
+
+:host {
+  display: inline-block;
+  width: 100%;
+  font-family: inherit;
+  vertical-align: middle;
+}
+
+.custom-select-container {
+  position: relative;
+  width: 100%;
+}
+
+/* ========================================================
+   TRIGGER BUTTON BASE
+   ======================================================== */
+.custom-select-trigger {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1e293b;
+  text-align: left;
+  user-select: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.3;
+}
+
+.custom-select-trigger:hover:not(:disabled) {
+  border-color: #94a3b8;
+  background-color: #ffffff;
+}
+
+.custom-select-trigger:focus,
+.custom-select-trigger:focus-visible,
+.custom-select-container.is-open .custom-select-trigger {
+  border-color: var(--primary-color, #da261c);
+  box-shadow: 0 0 0 2.5px rgba(218, 38, 28, 0.15);
+  background-color: #ffffff;
+}
+
+.custom-select-container.is-disabled .custom-select-trigger {
+  opacity: 0.6;
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+  color: #94a3b8;
+}
+
+/* Label & Placeholder */
+.custom-select-label {
+  flex-grow: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.custom-select-label.placeholder-text {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* Chevron & Clear */
+.custom-select-chevron {
+  font-size: 0.68rem;
+  color: #64748b;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.custom-select-chevron.is-open {
+  transform: rotate(180deg);
+  color: var(--primary-color, #da261c);
+}
+
+.custom-select-clear-btn {
+  background: transparent;
+  border: none;
+  padding: 0 3px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  margin-right: 2px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.custom-select-clear-btn:hover {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.08);
+}
+
+/* Badges & Icons */
+.custom-select-icon {
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.custom-select-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+
+/* ========================================================
+   SIZE MODIFIERS (MATCHING BOOTSTRAP SCALE)
+   ======================================================== */
+
+/* Extra Small (xs) */
+.custom-select-container.size-xs .custom-select-trigger {
+  min-height: 22px;
+  height: 22px;
+  padding: 1px 6px;
+  font-size: 0.70rem;
+  border-radius: 4px;
+}
+.custom-select-container.size-xs .custom-select-icon {
+  font-size: 0.70rem;
+}
+.custom-select-container.size-xs .custom-select-chevron {
+  font-size: 0.60rem;
+}
+
+/* Small (sm - LIMS Standard Compact) */
+.custom-select-container.size-sm .custom-select-trigger {
+  min-height: 28px;
+  height: 28px;
+  padding: 3px 8px;
+  font-size: 0.78rem;
+  border-radius: 5px;
+}
+.custom-select-container.size-sm .custom-select-icon {
+  font-size: 0.78rem;
+}
+.custom-select-container.size-sm .custom-select-chevron {
+  font-size: 0.68rem;
+}
+
+/* Medium (md - Bootstrap Default) */
+.custom-select-container.size-md .custom-select-trigger {
+  min-height: 34px;
+  height: 34px;
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+.custom-select-container.size-md .custom-select-icon {
+  font-size: 0.85rem;
+}
+.custom-select-container.size-md .custom-select-chevron {
+  font-size: 0.75rem;
+}
+
+/* Large (lg - Bootstrap lg) */
+.custom-select-container.size-lg .custom-select-trigger {
+  min-height: 42px;
+  height: 42px;
+  padding: 8px 14px;
+  font-size: 0.95rem;
+  border-radius: 7px;
+}
+.custom-select-container.size-lg .custom-select-icon {
+  font-size: 0.95rem;
+}
+.custom-select-container.size-lg .custom-select-chevron {
+  font-size: 0.82rem;
+}
+
+/* Extra Large (xl) */
+.custom-select-container.size-xl .custom-select-trigger {
+  min-height: 50px;
+  height: 50px;
+  padding: 10px 16px;
+  font-size: 1.05rem;
+  border-radius: 8px;
+}
+.custom-select-container.size-xl .custom-select-icon {
+  font-size: 1.05rem;
+}
+.custom-select-container.size-xl .custom-select-chevron {
+  font-size: 0.90rem;
+}
+
+/* ========================================================
+   VARIANT MODIFIERS
+   ======================================================== */
+
+/* Pill Variant (as seen in Row Binding dropdown) */
+.custom-select-container.variant-pill .custom-select-trigger {
+  border-radius: 999px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.custom-select-container.variant-pill .custom-select-trigger:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* Subtle Variant */
+.custom-select-container.variant-subtle .custom-select-trigger {
+  background-color: transparent;
+  border-color: transparent;
+}
+.custom-select-container.variant-subtle .custom-select-trigger:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+/* ========================================================
+   DROPDOWN PANEL / MENU (CDK OVERLAY)
+   ======================================================== */
+.custom-select-menu {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 1050;
+  animation: customSelectFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+@keyframes customSelectFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Search Header */
+.custom-select-search-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.custom-select-search-header .search-icon {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.custom-select-search-header .search-input {
+  flex-grow: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: #1e293b;
+  outline: none;
+  padding: 2px 4px;
+}
+
+.custom-select-search-header .search-input::placeholder {
+  color: #94a3b8;
+}
+
+.custom-select-search-header .search-clear-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  padding: 2px 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-select-search-header .search-clear-btn:hover {
+  color: #dc2626;
+}
+
+/* Options List */
+.custom-select-options-list {
+  position: relative;
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Scrollbar */
+.custom-select-options-list::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-select-options-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-select-options-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.custom-select-options-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Option Item */
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.78rem;
+  color: #334155;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  line-height: 1.35;
+  min-height: 28px;
+}
+
+.custom-select-option:hover,
+.custom-select-option.is-highlighted {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.custom-select-option.is-highlighted:not(.is-selected) {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  outline: 1px solid #cbd5e1;
+  outline-offset: -1px;
+}
+
+/* Selected State */
+.custom-select-option.is-selected {
+  background-color: var(--primary-50, rgba(218, 38, 28, 0.08));
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+}
+
+.custom-select-option.is-selected.is-highlighted {
+  background-color: rgba(218, 38, 28, 0.14);
+}
+
+.custom-select-option.is-selected .option-icon {
+  color: var(--primary-color, #da261c);
+}
+
+.custom-select-option.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.option-icon {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  margin-right: 6px;
+}
+
+.option-label {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.option-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+
+.option-check-icon {
+  font-size: 0.82rem;
+  color: var(--primary-color, #da261c);
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* Empty State */
+.custom-select-empty {
+  padding: 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Size Adjustments inside Overlay Menu */
+.custom-select-menu.size-xs .custom-select-option {
+  font-size: 0.70rem;
+  padding: 3px 6px;
+  min-height: 22px;
+}
+.custom-select-menu.size-xs .option-badge {
+  font-size: 0.62rem;
+  padding: 0.1rem 0.35rem;
+}
+
+.custom-select-menu.size-sm .custom-select-option {
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  min-height: 28px;
+}
+
+.custom-select-menu.size-md .custom-select-option {
+  font-size: 0.85rem;
+  padding: 7px 12px;
+  min-height: 34px;
+}
+.custom-select-menu.size-md .option-badge {
+  font-size: 0.72rem;
+}
+
+.custom-select-menu.size-lg .custom-select-option {
+  font-size: 0.95rem;
+  padding: 9px 14px;
+  min-height: 40px;
+}
+
+.custom-select-menu.size-xl .custom-select-option {
+  font-size: 1.05rem;
+  padding: 11px 16px;
+  min-height: 48px;
+}

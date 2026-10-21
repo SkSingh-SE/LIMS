@@ -315,6 +315,10 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
                         this.checkForm.disable();
                         this.isViewMode = true;
                     }
+
+                    else if (this.isViewMode) {
+                        this.checkForm.disable();
+                    }
                     // Re-disable system fields
                     this.checkForm.get('documentNo')?.disable();
                     this.checkForm.get('issueNo')?.disable();
@@ -351,7 +355,14 @@ export class IntermediateCheckFormComponent implements CanComponentDeactivate, O
             });
         }
     }
-
+    removeEntry(index: number): void {
+        if (this.intermediateCheckLogs.length > 1) {
+            this.intermediateCheckLogs.removeAt(index);
+            this.intermediateCheckLogs.controls.forEach((ctrl, idx) => {
+                ctrl.get('srNo')?.setValue(idx + 1);
+            });
+        }
+    }
     onCancel(): void {
         this.router.navigate(['/intermediate-check-records']);
     }

@@ -50,6 +50,7 @@
     "@angular/compiler-cli": "^19.1.0",
     "@playwright/test": "^1.58.2",
     "@types/bootstrap": "^5.2.10",
+    "@types/exceljs": "^0.5.3",
     "@types/jasmine": "^6.0.0",
     "angular-eslint": "21.0.1",
     "eslint": "^9.39.1",

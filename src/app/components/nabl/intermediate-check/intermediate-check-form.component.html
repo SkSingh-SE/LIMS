@@ -69,33 +69,38 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label">Equipment Name</label>
-                <input type="text" class="form-control bg-light border-dashed" formControlName="equipmentName" readonly>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="equipmentName"
+                  placeholder="Equipment Name" readonly>
               </div>
 
               <div class="col-md-4">
                 <label class="form-label">Equipment No</label>
-                <input type="text" class="form-control bg-light border-dashed" formControlName="equipmentNo" readonly>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="equipmentNo"
+                  placeholder="Equipment No" readonly>
               </div>
 
               <div class="col-md-4">
                 <label class="form-label">Department</label>
                 <input type="text" class="form-control bg-light border-dashed" formControlName="departmentName"
-                  readonly>
+                  placeholder="Department" readonly>
               </div>
 
               <div class="col-md-4">
                 <label class="form-label">Equipment Type</label>
-                <input type="text" class="form-control bg-light border-dashed" formControlName="equipmentType" readonly>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="equipmentType"
+                  placeholder="Equipment Type" readonly>
               </div>
 
               <div class="col-md-4">
                 <label class="form-label">OEM</label>
-                <input type="text" class="form-control bg-light border-dashed" formControlName="oemName" readonly>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="oemName"
+                  placeholder="OEM" readonly>
               </div>
 
               <div class="col-md-4">
                 <label class="form-label">Model Number</label>
-                <input type="text" class="form-control bg-light border-dashed" formControlName="modelNumber" readonly>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="modelNumber"
+                  placeholder="Model Number" readonly>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Last Calibration Date</label>
@@ -106,7 +111,7 @@
               <div class="col-md-4">
                 <label class="form-label">Calibration Frequency (Days)</label>
                 <input type="number" class="form-control bg-light border-dashed"
-                  formControlName="calibrationFrequencyDays" readonly>
+                  formControlName="calibrationFrequencyDays" placeholder="Calibration Frequency (Days)" readonly>
               </div>
 
               <div class="col-md-4">
@@ -118,7 +123,7 @@
               <div class="col-md-4">
                 <label class="form-label">Intermediate Check Interval</label>
                 <input type="text" class="form-control bg-light border-dashed"
-                  formControlName="intermediateCheckInterval" readonly>
+                  formControlName="intermediateCheckInterval" placeholder="Intermediate Check Interval" readonly>
               </div>
             </div>
           </div>
@@ -145,6 +150,7 @@
                     <th>Acceptance Criteria</th>
                     <th>Result</th>
                     <th>Checked By</th>
+                    <th *ngIf="!isViewMode" style="width:60px">Action</th>
                   </tr>
                 </thead>
 
@@ -242,7 +248,7 @@
                     <td>
                       <app-searchable-dropdown [hideLabel]="true" [placeholder]="'Search Employee'"
                         [fetchDataFn]="getEmployees" (itemSelected)="onAuditeeSelected($event, i)"
-                        [selectedItem]="param.get('auditeeId')?.value">
+                        [selectedItem]="param.get('auditeeId')?.value" [isDisabled]="isViewMode">
                       </app-searchable-dropdown>
 
                       <small class="text-danger" *ngIf="
@@ -252,7 +258,12 @@
                         Checked By is required.
                       </small>
                     </td>
-
+                    <td *ngIf="!isViewMode" class="text-center">
+                      <button type="button" class="btn btn-sm text-danger" (click)="removeEntry(i)"
+                        [disabled]="intermediateCheckLogs.length === 1">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
                   </tr>
 
                 </tbody>

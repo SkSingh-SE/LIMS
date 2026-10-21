@@ -355,35 +355,36 @@ export class DocumentChangeRequestFormComponent implements CanComponentDeactivat
 
                     // DCR came from Document Review
                     if (response.reviewId) {
-                        this.router.navigate(['/document-review/edit', response.reviewId]);
-                        return;
-                    }
+                        this.router.navigate(['/document-review']);
+            // this.router.navigate(['/document-review/edit', response.reviewId]);
+            return;
+        }
 
-                    // Normal/direct DCR
-                    this.router.navigate(['/document-change-request']);
-                },
-                error: (error: any) => {
+        // Normal/direct DCR
+        this.router.navigate(['/document-change-request']);
+    },
+    error: (error: any) => {
                     this.toastService.show(
-                        error?.error?.message || 'Failed to create record', 'error');
+        error?.error?.message || 'Failed to create record', 'error');
                 }
             });
         }
     }
 
-    onCancel() {
-        this.router.navigate(['/document-change-request']);
-    }
+onCancel() {
+    this.router.navigate(['/document-change-request']);
+}
 
-    canDeactivate(): Observable<boolean> | boolean {
-        if (!this.changeForm.dirty || this.saved) return true;
-        return this.unsavedChangesService.confirm();
-    }
+canDeactivate(): Observable<boolean> | boolean {
+    if (!this.changeForm.dirty || this.saved) return true;
+    return this.unsavedChangesService.confirm();
+}
 
-    @HostListener('window:beforeunload', ['$event'])
-    onBeforeUnload(event: BeforeUnloadEvent) {
-        if (this.changeForm?.dirty && !this.saved) {
-            event.preventDefault();
-            event.returnValue = '';
-        }
+@HostListener('window:beforeunload', ['$event'])
+onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.changeForm?.dirty && !this.saved) {
+        event.preventDefault();
+        event.returnValue = '';
     }
+}
 }

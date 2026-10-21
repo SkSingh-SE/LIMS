@@ -209,7 +209,7 @@
                 <app-multi-select-dropdown [labelName]="'ISO Clauses (Select All that apply)'"
                   [placeholder]="'Select ISO Clauses'" [fetchDataFn]="getISOClauses"
                   (itemsSelected)="onISOClausesSelected($event)" [selectedValues]="selectedISOClauseIds"
-                  [isDisabled]="isViewMode">
+                  [isDisabled]="isViewMode" [required]="true">
                 </app-multi-select-dropdown>
 
                 <div *ngIf="isoClauses.invalid && isoClauses.touched" class="text-danger text-sm mt-1">
@@ -220,7 +220,7 @@
                 <app-multi-select-dropdown [labelName]="'Authorized Areas (Departments / Processes)'"
                   [placeholder]="'Select Department'" [fetchDataFn]="getAuthorizedDepartments"
                   (itemsSelected)="onAuthrizedDept($event)" [selectedValues]="selectedDepartmentIds"
-                  [isDisabled]="isViewMode">
+                  [isDisabled]="isViewMode" [required]="true">
                 </app-multi-select-dropdown>
 
                 <div *ngIf="departmentList.invalid && departmentList.touched" class="text-danger text-sm mt-1">

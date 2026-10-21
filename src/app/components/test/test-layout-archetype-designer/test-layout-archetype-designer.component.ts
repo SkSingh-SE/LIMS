@@ -181,8 +181,10 @@ export interface SectionConfig {
   stepValue?: string;
   cutoffMode?: string;
   cutoffHardness?: number | string;
+  cutoff?: string;
   showTable?: boolean;
   showCurve?: boolean;
+  showStatus?: boolean;
 
   // Chart
   chartType?: string;
@@ -3387,7 +3389,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     sec.config.locationNames = rows.join(', ');
   }
 
-  applyLocationPreset(sec: ExecutionSection, preset: 'weld' | 'zones' | 'samples' | 'levels'): void {
+  applyLocationPreset(sec: ExecutionSection, preset: string): void {
     let names: string[] = [];
     if (preset === 'weld') {
       names = ['Base Metal (BM)', 'Heat Affected Zone (HAZ)', 'Weld Metal (WM)'];
@@ -3397,10 +3399,25 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       names = ['Sample A', 'Sample B', 'Sample C'];
     } else if (preset === 'levels') {
       names = ['Top Level', 'Mid Depth', 'Root / Bottom'];
+    } else if (preset === 'weldment') {
+      names = ['Weld Cap (Crown Face)', 'Weld Mid-Thickness', 'Weld Root Pass', 'Heat Affected Zone (HAZ)', 'Base Metal Parent Material'];
+    } else if (preset === 'cross_section') {
+      names = ['Outer Surface (0-1 mm)', 'Quarter Radius (T/4)', 'Center Core (T/2)'];
+    } else {
+      names = ['Zone 1', 'Zone 2', 'Zone 3'];
     }
     sec.config.locationRows = names;
     sec.config.count = names.length;
     sec.config.locationNames = names.join(', ');
+
+    const defaultMode = sec.config.dataBindingMode || 'runtime';
+    sec.config.tableRows = names.map((name, i) => ({
+      key: `loc_${i}`,
+      label: name,
+      visible: true,
+      removable: true,
+      bindingMode: defaultMode
+    }));
     this.toastService.show(`Applied preset: ${preset.toUpperCase()}`, 'info');
   }
 
@@ -4673,66 +4690,102 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', visible: true, width: '12%' });
     } else if (sec.type === 'specimen') {
       if (sec.config.orientation === 'Specimens × Parameters') {
-        cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen / Sample', bindingMode: 'static', visible: true, width: '30%' });
+        cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen / Sample', bindingMode: 'static', visible: true, width: '28%' });
         const params = this.getSpecimenParamsForSection(sec);
         params.forEach((p, idx) => {
-          cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true });
+          cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true, removable: true });
         });
+        if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
+        if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
       } else {
-        cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '30%' });
+        cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '28%' });
+        if (sec.config.showUnit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '12%' });
         const specList = this.getSpecimenList(sec);
         specList.forEach((specName, idx) => {
-          cols.push({ key: `spec_${idx + 1}`, label: specName, bindingMode: defaultMode, visible: true });
+          cols.push({ key: `spec_${idx + 1}`, label: specName, bindingMode: defaultMode, visible: true, removable: true });
         });
-        if (sec.config.showAverage) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
-        if (sec.config.showRequirement) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+        if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
+        if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+        if (sec.config.showStatus !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
       }
     } else if (sec.type === 'reading') {
       cols.push({
         key: 'target',
-        label: sec.config.readingLabel || (this.getReadingTargetForSection(sec).name + ' Readings'),
+        label: sec.config.readingLabel || (this.getReadingTargetForSection(sec).name + ' Target Parameter'),
         bindingMode: 'runtime',
         visible: true,
-        width: '35%'
+        width: '30%'
       });
+      cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '10%' });
       const rNums = this.getSpecimenCount(sec);
       rNums.forEach(num => {
-        cols.push({ key: `reading_${num}`, label: `R${num}`, bindingMode: 'manual', visible: true });
+        cols.push({ key: `reading_${num}`, label: `R${num}`, bindingMode: 'manual', visible: true, removable: true });
       });
-      cols.push({ key: 'agg', label: sec.config.aggregation || 'Average', bindingMode: 'runtime', visible: true });
-    } else if (sec.type === 'location') {
-      cols.push({ key: 'loc', label: sec.config.locationColHeader || 'Zone / Location', bindingMode: 'static', visible: true, width: '30%' });
-      this.currentTest.params.slice(0, 3).forEach((p, idx) => {
-        cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true });
-      });
-      if (sec.config.showAverage) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
-      if (sec.config.showRequirement) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
-    } else if (sec.type === 'traverse') {
-      cols.push({ key: 'x', label: sec.config.xField || 'Depth / Distance', bindingMode: 'static', visible: true });
-      cols.push({ key: 'y', label: sec.config.yField || 'Hardness Result', bindingMode: defaultMode, visible: true });
-      cols.push({ key: 'unit', label: 'Unit', bindingMode: 'static', visible: true });
+      cols.push({ key: 'agg', label: sec.config.aggregation || 'Average / Mean', bindingMode: 'runtime', visible: true });
+      if (sec.config.showMinMax) {
+        cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', visible: true });
+        cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', visible: true });
+      }
       cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
+    } else if (sec.type === 'location') {
+      cols.push({ key: 'loc', label: sec.config.locationColHeader || 'Location / Sampling Zone', bindingMode: 'static', visible: true, width: '28%' });
+      const testParams = this.currentTest.params?.length ? this.currentTest.params.slice(0, 3) : [{ name: 'Hardness', unit: 'HV' }, { name: 'Ferrite', unit: '%' }];
+      testParams.forEach((p, idx) => {
+        cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true, removable: true });
+      });
+      if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Zone Average', bindingMode: 'runtime', visible: true });
+      if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
+    } else if (sec.type === 'traverse') {
+      cols.push({ key: 'x', label: sec.config.xField || 'Depth / Distance (mm)', bindingMode: 'static', visible: true, width: '25%' });
+      cols.push({ key: 'y', label: sec.config.yField || 'Hardness (HV)', bindingMode: defaultMode, visible: true, width: '25%' });
+      cols.push({ key: 'y2', label: 'Hardness (HRC)', bindingMode: 'runtime', visible: true, width: '18%' });
+      cols.push({ key: 'requirement', label: 'Cutoff / Requirement', bindingMode: 'static', visible: true, width: '18%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '14%' });
     } else if (sec.type === 'classification') {
-      cols.push({ key: 'grade', label: 'Class / Grade', bindingMode: 'static', visible: true });
-      if (sec.config.showCriteria) cols.push({ key: 'criteria', label: 'Criteria / Scale', bindingMode: 'static', visible: true });
-      cols.push({ key: 'system', label: 'Rating System', bindingMode: 'static', visible: true });
-      cols.push({ key: 'result', label: 'Classification Result', bindingMode: defaultMode, visible: true });
+      cols.push({ key: 'grade', label: 'Inclusion / Structure Class', bindingMode: 'static', visible: true, width: '26%' });
+      cols.push({ key: 'system', label: 'Standard / System', bindingMode: 'static', visible: true, width: '18%' });
+      cols.push({ key: 'thin', label: 'Thin Series', bindingMode: 'manual', visible: true, width: '14%' });
+      cols.push({ key: 'heavy', label: 'Heavy Series', bindingMode: 'manual', visible: true, width: '14%' });
+      cols.push({ key: 'limit', label: 'Specified Limit', bindingMode: 'static', visible: true, width: '14%' });
+      cols.push({ key: 'result', label: 'Result', bindingMode: defaultMode, visible: true, width: '14%' });
     } else if (sec.type === 'custom') {
       if (sec.config.customColumns && sec.config.customColumns.length > 0) {
         sec.config.customColumns.forEach((c, idx) => {
-          cols.push({ key: `col_${idx}`, label: c.label || `Col ${idx + 1}`, bindingMode: defaultMode, visible: true });
+          cols.push({ key: `col_${idx}`, label: c.label || `Col ${idx + 1}`, bindingMode: defaultMode, visible: true, removable: true });
         });
       } else {
-        ['Col 1', 'Col 2', 'Col 3', 'Col 4'].forEach((c, idx) => {
-          cols.push({ key: `col_${idx}`, label: c, bindingMode: defaultMode, visible: true });
+        ['Feature / Test Point', 'Specified Nominal', 'Observed Value', 'Evaluation Status'].forEach((c, idx) => {
+          cols.push({ key: `col_${idx}`, label: c, bindingMode: defaultMode, visible: true, removable: true });
         });
       }
     } else if (sec.type === 'condition') {
-      cols.push({ key: 'field', label: 'Condition / Parameter', bindingMode: 'static', visible: true });
-      cols.push({ key: 'val', label: 'Observed Reading', bindingMode: defaultMode, visible: true });
+      cols.push({ key: 'field', label: 'Condition / Parameter', bindingMode: 'static', visible: true, width: '28%' });
+      cols.push({ key: 'setpoint', label: 'Specified Set Point', bindingMode: 'static', visible: true, width: '20%' });
+      cols.push({ key: 'tolerance', label: 'Tolerance Range', bindingMode: 'static', visible: true, width: '18%' });
+      cols.push({ key: 'val', label: 'Observed Reading', bindingMode: defaultMode, visible: true, width: '18%' });
+      cols.push({ key: 'sensor', label: 'Sensor / Instrument ID', bindingMode: 'manual', visible: true, width: '16%' });
     } else if (sec.type === 'checklist') {
-      cols.push({ key: 'item', label: 'Inspection Point', bindingMode: 'static', visible: true });
-      cols.push({ key: 'resp', label: 'Compliance Response', bindingMode: 'manual', visible: true });
+      cols.push({ key: 'clause', label: 'Standard Clause', bindingMode: 'static', visible: true, width: '18%' });
+      cols.push({ key: 'item', label: 'Inspection Point Description', bindingMode: 'static', visible: true, width: '38%' });
+      cols.push({ key: 'method', label: 'Verification Mode', bindingMode: 'static', visible: true, width: '18%' });
+      cols.push({ key: 'resp', label: 'Compliance Response', bindingMode: 'manual', visible: true, width: '16%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '10%' });
+    } else if (sec.type === 'rule') {
+      cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '25%' });
+      cols.push({ key: 'limit', label: 'Specification Limit', bindingMode: 'static', visible: true, width: '20%' });
+      cols.push({ key: 'operator', label: 'Operator', bindingMode: 'static', visible: true, width: '12%' });
+      cols.push({ key: 'uncertainty', label: 'Uncertainty (U)', bindingMode: 'static', visible: true, width: '15%' });
+      cols.push({ key: 'val', label: 'Observed Value', bindingMode: defaultMode, visible: true, width: '15%' });
+      cols.push({ key: 'decision', label: 'Conformance Decision', bindingMode: 'runtime', visible: true, width: '13%' });
+    } else if (sec.type === 'traceability') {
+      cols.push({ key: 'equip', label: 'Equipment Name', bindingMode: 'static', visible: true, width: '28%' });
+      cols.push({ key: 'tag', label: 'Asset Tag / ID', bindingMode: 'static', visible: true, width: '16%' });
+      cols.push({ key: 'cert', label: 'Cal Certificate No', bindingMode: 'static', visible: true, width: '18%' });
+      cols.push({ key: 'calDate', label: 'Cal Date', bindingMode: 'static', visible: true, width: '13%' });
+      cols.push({ key: 'dueDate', label: 'Due Date', bindingMode: 'static', visible: true, width: '13%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '12%' });
     } else {
       cols.push({ key: 'col_1', label: 'Parameter / Feature', bindingMode: 'runtime', visible: true });
       cols.push({ key: 'col_2', label: 'Observed Result', bindingMode: defaultMode, visible: true });
@@ -4760,7 +4813,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           requirement: p.requirement || '',
           unit: p.unit || '',
           isCalculated: p.isCalculated,
-          visible: true
+          visible: true,
+          removable: true
         });
       });
     } else if (sec.type === 'specimen') {
@@ -4771,7 +4825,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             key: `spec_${idx}`,
             label: spec,
             bindingMode: defaultMode,
-            visible: true
+            visible: true,
+            removable: true
           });
         });
       } else {
@@ -4783,7 +4838,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             bindingMode: defaultMode,
             requirement: p.requirement,
             unit: p.unit,
-            visible: true
+            visible: true,
+            removable: true
           });
         });
       }
@@ -4794,7 +4850,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           key: `loc_${idx}`,
           label: loc,
           bindingMode: defaultMode,
-          visible: true
+          visible: true,
+          removable: true
         });
       });
     } else if (sec.type === 'reading') {
@@ -4804,52 +4861,124 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         label: `${target.name} (${target.unit})`,
         bindingMode: defaultMode,
         unit: target.unit,
-        visible: true
+        requirement: target.requirement || '≥ 30 HRC',
+        visible: true,
+        removable: true
       });
+      if (this.currentTest.params?.length > 1) {
+        const p2 = this.currentTest.params[1];
+        rows.push({
+          key: 'target_1',
+          label: `${p2.name} (${p2.unit})`,
+          bindingMode: defaultMode,
+          unit: p2.unit,
+          requirement: p2.requirement || '≥ 250 MPa',
+          visible: true,
+          removable: true
+        });
+      }
     } else if (sec.type === 'traverse') {
-      [0.10, 0.20, 0.40, 0.60, 0.80, 1.00].forEach((step, idx) => {
+      [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.80, 1.00, 1.20].forEach((step, idx) => {
         rows.push({
           key: `step_${idx}`,
           label: step.toFixed(2),
           bindingMode: defaultMode,
           unit: sec.config.xUnit || 'mm',
-          visible: true
+          requirement: sec.config.cutoff || '550 HV',
+          visible: true,
+          removable: true
         });
       });
     } else if (sec.type === 'classification') {
-      rows.push({
-        key: 'class_0',
-        label: 'Observed Structural Rating',
-        bindingMode: defaultMode,
-        visible: true
+      [
+        { key: 'e45_a', label: 'Type A — Sulfides (Manganese Sulfide)', req: 'Thin ≤ 1.5, Heavy ≤ 1.0' },
+        { key: 'e45_b', label: 'Type B — Alumina (Alumina stringers)', req: 'Thin ≤ 1.5, Heavy ≤ 1.0' },
+        { key: 'e45_c', label: 'Type C — Silicates (Silicate stringers)', req: 'Thin ≤ 1.0, Heavy ≤ 0.5' },
+        { key: 'e45_d', label: 'Type D — Globular Oxides', req: 'Thin ≤ 1.5, Heavy ≤ 1.0' }
+      ].forEach(item => {
+        rows.push({
+          key: item.key,
+          label: item.label,
+          requirement: item.req,
+          bindingMode: defaultMode,
+          visible: true,
+          removable: true
+        });
       });
     } else if (sec.type === 'custom') {
-      ['Row 1', 'Row 2', 'Row 3'].forEach((r, idx) => {
+      ['Observation Line 1', 'Observation Line 2', 'Observation Line 3'].forEach((r, idx) => {
         rows.push({
           key: `row_${idx}`,
           label: r,
           bindingMode: defaultMode,
-          visible: true
+          visible: true,
+          removable: true
         });
       });
     } else if (sec.type === 'condition') {
-      const conds = this.getConditionFields(sec);
-      conds.forEach((c, idx) => {
+      [
+        { key: 'temp', label: 'Ambient Temperature', req: '23.0 ± 2.0 °C', unit: '°C', staticVal: '23.0 °C' },
+        { key: 'humidity', label: 'Relative Humidity', req: '50.0 ± 10.0 %', unit: '% RH', staticVal: '50.0 %' },
+        { key: 'speed', label: 'Test Speed / Strain Rate', req: '2.0 mm/min', unit: 'mm/min', staticVal: '2.0 mm/min' },
+        { key: 'medium', label: 'Testing Medium / Environment', req: 'Ambient Air', unit: '—', staticVal: 'Ambient Air' }
+      ].forEach(cond => {
         rows.push({
-          key: `cond_${idx}`,
-          label: this.getConditionLabel(c),
+          key: cond.key,
+          label: cond.label,
+          requirement: cond.req,
+          unit: cond.unit,
+          staticValue: cond.staticVal,
           bindingMode: defaultMode,
-          visible: true
+          visible: true,
+          removable: true
         });
       });
     } else if (sec.type === 'checklist') {
-      const items = this.getChecklistItems(sec);
-      items.forEach((it, idx) => {
+      [
+        { key: 'chk_1', label: 'Sample identification & labeling integrity verified', req: 'ISO 17025 Cl. 7.4.2' },
+        { key: 'chk_2', label: 'Test machine calibration validity & zero balance checked', req: 'ISO 17025 Cl. 6.4.1' },
+        { key: 'chk_3', label: 'Ambient temperature and relative humidity logged', req: 'ISO 17025 Cl. 6.3' },
+        { key: 'chk_4', label: 'Standard test method & test parameters confirmed', req: 'ISO 17025 Cl. 7.2' },
+        { key: 'chk_5', label: 'Raw data recorded contemporaneously with audit trail', req: 'ISO 17025 Cl. 7.5' }
+      ].forEach(item => {
         rows.push({
-          key: `chk_${idx}`,
-          label: it,
+          key: item.key,
+          label: item.label,
+          requirement: item.req,
           bindingMode: 'manual',
-          visible: true
+          visible: true,
+          removable: true
+        });
+      });
+    } else if (sec.type === 'rule') {
+      const pList = this.currentTest.params?.length ? this.currentTest.params.slice(0, 3) : [{ name: 'Tensile Strength', req: '≥ 420 MPa' }];
+      pList.forEach((p, idx) => {
+        rows.push({
+          key: `rule_${idx}`,
+          label: p.name,
+          requirement: (p as any).requirement || (p as any).req || '≥ 420 MPa',
+          unit: (p as any).unit || 'MPa',
+          bindingMode: defaultMode,
+          visible: true,
+          removable: true
+        });
+      });
+    } else if (sec.type === 'traceability') {
+      [
+        { key: 'tr_1', label: 'Universal Testing Machine (UTM-600kN)', req: 'Cal Cert: NABL/2026/1104', unit: 'Due: 2027-02-15', val: 'Instron 600kN' },
+        { key: 'tr_2', label: 'Digital Extensometer (EXT-50-25)', req: 'Cal Cert: NABL/2026/0928', unit: 'Due: 2027-01-30', val: 'Instron 2630-100' },
+        { key: 'tr_3', label: 'Digital Vernier Calliper (CAL-01)', req: 'Cal Cert: NABL/2026/0512', unit: 'Due: 2026-11-20', val: 'Mitutoyo 500-196' },
+        { key: 'tr_4', label: 'Ambient Temp / Humidity Logger (TH-LOG-01)', req: 'Cal Cert: NABL/2026/0304', unit: 'Due: 2027-03-10', val: 'Testo 174H' }
+      ].forEach(tr => {
+        rows.push({
+          key: tr.key,
+          label: tr.label,
+          requirement: tr.req,
+          unit: tr.unit,
+          staticValue: tr.val,
+          bindingMode: 'static',
+          visible: true,
+          removable: true
         });
       });
     } else {
@@ -4857,7 +4986,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         key: 'row_1',
         label: 'Observation 1',
         bindingMode: defaultMode,
-        visible: true
+        visible: true,
+        removable: true
       });
     }
 
@@ -5190,15 +5320,148 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         sec.config.tableRows.forEach(r => r.bindingMode = mode);
       }
       if (sec.config.tableColumns) {
-        sec.config.tableColumns.forEach(c => {
-          if (c.key === 'result' || (!['param', 'unit', 'requirement', 'status'].includes(c.key))) {
-            c.bindingMode = mode;
-          }
-        });
+        sec.config.tableColumns.forEach(c => c.bindingMode = mode);
       }
     }
-    this.toastService.show(`Set section default binding mode to ${mode.toUpperCase()}`, 'info');
   }
+
+  // Auto-Step Generator State for Hardness Traverse & Surveys
+  autoStepStart: number = 0.05;
+  autoStepIncrement: number = 0.05;
+  autoStepPoints: number = 10;
+
+  generateTraverseAutoStep(sec: ExecutionSection, start?: number, step?: number, points?: number): void {
+    const s = start !== undefined ? start : this.autoStepStart;
+    const inc = step !== undefined ? step : this.autoStepIncrement;
+    const count = points !== undefined ? points : this.autoStepPoints;
+    const rows: LayoutRowItem[] = [];
+    const defaultMode = sec.config.dataBindingMode || 'runtime';
+    for (let i = 0; i < count; i++) {
+      const val = s + i * inc;
+      rows.push({
+        key: `step_${i}`,
+        label: val.toFixed(2),
+        bindingMode: defaultMode,
+        unit: sec.config.xUnit || 'mm',
+        requirement: sec.config.cutoff || '550 HV',
+        visible: true,
+        removable: true
+      });
+    }
+    sec.config.tableRows = rows;
+    this.toastService.show(`Generated ${count} stepped traverse points (${s.toFixed(2)} to ${(s + (count - 1) * inc).toFixed(2)} mm)`, 'success');
+  }
+
+  adjustReadingSpots(sec: ExecutionSection, delta: number): void {
+    const cols = this.ensureTableColumns(sec);
+    const readingCols = cols.filter(c => c.key.startsWith('reading_'));
+    if (delta > 0) {
+      if (readingCols.length >= 25) {
+        this.toastService.show('Maximum 25 reading spots reached', 'warning');
+        return;
+      }
+      const newNum = readingCols.length + 1;
+      const newCol: LayoutColumnItem = {
+        key: `reading_${newNum}`,
+        label: `R${newNum}`,
+        bindingMode: 'manual',
+        visible: true,
+        removable: true
+      };
+      const aggIdx = cols.findIndex(c => c.key === 'agg');
+      if (aggIdx !== -1) {
+        cols.splice(aggIdx, 0, newCol);
+      } else {
+        cols.push(newCol);
+      }
+      sec.config.tableColumns = [...cols];
+      this.toastService.show(`Added reading spot R${newNum}`, 'success');
+    } else if (delta < 0) {
+      if (readingCols.length <= 1) {
+        this.toastService.show('At least 1 reading spot required', 'warning');
+        return;
+      }
+      const lastReadingCol = readingCols[readingCols.length - 1];
+      const idx = cols.findIndex(c => c.key === lastReadingCol.key);
+      if (idx !== -1) {
+        cols.splice(idx, 1);
+        sec.config.tableColumns = [...cols];
+        this.validateHeaderMergeAfterColumnChange(sec);
+        this.toastService.show(`Removed reading spot ${lastReadingCol.label}`, 'info');
+      }
+    }
+  }
+
+  applyConditionPreset(sec: ExecutionSection, presetKey: string): void {
+    const defaultMode = sec.config.dataBindingMode || 'runtime';
+    const rows: LayoutRowItem[] = [];
+    if (presetKey === 'standard') {
+      rows.push({ key: 'temp', label: 'Ambient Temperature', requirement: '23.0 ± 2.0 °C', unit: '°C', staticValue: '23.0 °C', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'humidity', label: 'Relative Humidity', requirement: '50.0 ± 10.0 %', unit: '% RH', staticValue: '50.0 %', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'speed', label: 'Test Speed / Strain Rate', requirement: '2.0 mm/min', unit: 'mm/min', staticValue: '2.0 mm/min', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'medium', label: 'Testing Medium / Environment', requirement: 'Ambient Air', unit: '—', staticValue: 'Ambient Air', bindingMode: 'static', visible: true, removable: true });
+    } else if (presetKey === 'elevated') {
+      rows.push({ key: 'temp', label: 'Furnace Temperature', requirement: '650 ± 5 °C', unit: '°C', staticValue: '650 °C', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'soak', label: 'Soak Duration', requirement: '30 min', unit: 'min', staticValue: '30 min', bindingMode: 'static', visible: true, removable: true });
+      rows.push({ key: 'rate', label: 'Heating Rate', requirement: '10 °C/min', unit: '°C/min', staticValue: '10 °C/min', bindingMode: 'static', visible: true, removable: true });
+      rows.push({ key: 'atmosphere', label: 'Chamber Atmosphere', requirement: 'Argon Purged', unit: '—', staticValue: 'Inert Argon', bindingMode: 'static', visible: true, removable: true });
+    } else if (presetKey === 'subzero') {
+      rows.push({ key: 'temp', label: 'Chamber Temperature', requirement: '-40.0 ± 1.0 °C', unit: '°C', staticValue: '-40.0 °C', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'medium', label: 'Cooling Bath Medium', requirement: 'Liquid Nitrogen / Alcohol', unit: '—', staticValue: 'Liquid N2', bindingMode: 'static', visible: true, removable: true });
+      rows.push({ key: 'soak', label: 'Pre-chill Soak Duration', requirement: '20 min', unit: 'min', staticValue: '20 min', bindingMode: 'static', visible: true, removable: true });
+    }
+    sec.config.tableRows = rows;
+    this.toastService.show(`Applied condition preset: ${presetKey.toUpperCase()}`, 'success');
+  }
+
+  applyChecklistPreset(sec: ExecutionSection, presetKey: string): void {
+    const rows: LayoutRowItem[] = [];
+    if (presetKey === 'iso17025') {
+      rows.push({ key: 'chk_1', label: 'Sample identification & labeling integrity verified', requirement: 'ISO 17025 Cl. 7.4.2', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'chk_2', label: 'Test machine calibration validity & zero balance checked', requirement: 'ISO 17025 Cl. 6.4.1', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'chk_3', label: 'Ambient temperature and relative humidity logged', requirement: 'ISO 17025 Cl. 6.3', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'chk_4', label: 'Standard test method & test parameters confirmed', requirement: 'ISO 17025 Cl. 7.2', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'chk_5', label: 'Raw data recorded contemporaneously with audit trail', requirement: 'ISO 17025 Cl. 7.5', bindingMode: 'manual', visible: true, removable: true });
+    } else if (presetKey === 'pretest') {
+      rows.push({ key: 'pre_1', label: 'Specimen surface finish, parallelism & dimensions checked', requirement: 'ASTM E8 / ISO 6892', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'pre_2', label: 'Grip alignment and hydraulic clamping pressure verified', requirement: 'SOP-MEC-01', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'pre_3', label: 'Extensometer knife-edge gauge length confirmed', requirement: 'Class 0.5 Calibration', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'pre_4', label: 'Emergency stop and protective interlock operational', requirement: 'Lab Safety Manual', bindingMode: 'manual', visible: true, removable: true });
+    }
+    sec.config.tableRows = rows;
+    this.toastService.show(`Loaded ${rows.length} checklist items for ${presetKey.toUpperCase()}`, 'success');
+  }
+
+  applyClassificationPreset(sec: ExecutionSection, scaleKey: string): void {
+    const defaultMode = sec.config.dataBindingMode || 'runtime';
+    const rows: LayoutRowItem[] = [];
+    if (scaleKey === 'astm_e45') {
+      rows.push({ key: 'e45_a', label: 'Type A — Sulfides (Manganese Sulfide)', requirement: 'Thin ≤ 1.5, Heavy ≤ 1.0', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'e45_b', label: 'Type B — Alumina (Alumina stringers)', requirement: 'Thin ≤ 1.5, Heavy ≤ 1.0', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'e45_c', label: 'Type C — Silicates (Silicate stringers)', requirement: 'Thin ≤ 1.0, Heavy ≤ 0.5', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'e45_d', label: 'Type D — Globular Oxides', requirement: 'Thin ≤ 1.5, Heavy ≤ 1.0', bindingMode: defaultMode, visible: true, removable: true });
+    } else if (scaleKey === 'astm_e112') {
+      rows.push({ key: 'e112_g', label: 'ASTM Grain Size Number (G)', requirement: 'G ≥ 5 (Fine grain)', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'e112_diam', label: 'Mean Grain Intercept / Diameter (µm)', requirement: '≤ 65 µm', bindingMode: defaultMode, visible: true, removable: true });
+    } else if (scaleKey === 'astm_a247') {
+      rows.push({ key: 'a247_form', label: 'Graphite Form (Flake / Nodular / Compacted)', requirement: 'Type VII (Flake)', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'a247_dist', label: 'Graphite Distribution (Type A/B/C/D/E)', requirement: 'Type A (Uniform random)', bindingMode: defaultMode, visible: true, removable: true });
+      rows.push({ key: 'a247_size', label: 'Graphite Flake Size Class (1 to 8)', requirement: 'Size 4 to 6', bindingMode: defaultMode, visible: true, removable: true });
+    }
+    sec.config.tableRows = rows;
+    this.toastService.show(`Loaded classification scale: ${scaleKey.toUpperCase()}`, 'success');
+  }
+
+  applyTraceabilityPreset(sec: ExecutionSection): void {
+    const rows: LayoutRowItem[] = [];
+    rows.push({ key: 'tr_1', label: 'Universal Testing Machine (UTM-600kN)', requirement: 'Cal Cert: NABL/2026/1104', unit: 'Due: 2027-02-15', staticValue: 'Instron 600kN', bindingMode: 'static', visible: true, removable: true });
+    rows.push({ key: 'tr_2', label: 'Digital Extensometer (EXT-50-25)', requirement: 'Cal Cert: NABL/2026/0928', unit: 'Due: 2027-01-30', staticValue: 'Instron 2630-100', bindingMode: 'static', visible: true, removable: true });
+    rows.push({ key: 'tr_3', label: 'Digital Vernier Calliper (CAL-01)', requirement: 'Cal Cert: NABL/2026/0512', unit: 'Due: 2026-11-20', staticValue: 'Mitutoyo 500-196', bindingMode: 'static', visible: true, removable: true });
+    rows.push({ key: 'tr_4', label: 'Ambient Temp / Humidity Logger (TH-LOG-01)', requirement: 'Cal Cert: NABL/2026/0304', unit: 'Due: 2027-03-10', staticValue: 'Testo 174H', bindingMode: 'static', visible: true, removable: true });
+    sec.config.tableRows = rows;
+    this.toastService.show('Loaded Equipment Calibration Traceability Records', 'success');
+  }
+
 
   getCellDisplayValue(sec: ExecutionSection, row: LayoutRowItem, col: LayoutColumnItem, colIdx: number, rowIdx: number): string {
     if (col.key === 'unit') return row.unit || (this.demoMode ? 'MPa' : '—');
@@ -5209,6 +5472,21 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (col.key === 'uncertainty') return this.demoMode ? '± 2.5%' : '—';
     if (col.key === 'dl') return this.demoMode ? '0.01' : '—';
     if (col.key === 'scope') return this.demoMode ? 'NABL Scope' : '—';
+    if (col.key === 'setpoint') return row.staticValue || row.requirement || (this.demoMode ? '23.0 °C' : '—');
+    if (col.key === 'tolerance') return row.requirement || (this.demoMode ? '± 2.0 °C' : '—');
+    if (col.key === 'sensor') return this.demoMode ? 'TH-LOG-01' : '—';
+    if (col.key === 'clause') return row.requirement || 'ISO 17025 Cl. 7.4';
+    if (col.key === 'resp') return this.demoMode ? 'Conforming' : '—';
+    if (col.key === 'thin') return this.demoMode ? '1.0' : '—';
+    if (col.key === 'heavy') return this.demoMode ? '0.5' : '—';
+    if (col.key === 'limit') return row.requirement || (this.demoMode ? '≤ 1.5' : '—');
+    if (col.key === 'decision') return this.demoMode ? 'CONFORMS' : '—';
+    if (col.key === 'cert') return row.requirement || 'CAL/2026/0421';
+    if (col.key === 'calDate') return this.demoMode ? '2026-04-15' : '—';
+    if (col.key === 'dueDate') return row.unit || (this.demoMode ? '2027-04-14' : '—');
+    if (col.key === 'tag') return this.demoMode ? `EQ-00${rowIdx + 1}` : '—';
+    if (col.key === 'y2') return this.demoMode ? (30 + rowIdx * 1.5).toFixed(1) : '—';
+    if (col.key === 'avg') return this.demoMode ? (430 + rowIdx * 10).toString() : '—';
 
     const mode = row.bindingMode || col.bindingMode || sec.config.dataBindingMode || 'runtime';
     if (mode === 'static') {
@@ -5218,6 +5496,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       return this.demoMode ? 'Manual Entry' : '—';
     }
     if (this.demoMode) {
+      if (sec.type === 'traverse') return (620 - rowIdx * 20).toString();
+      if (sec.type === 'reading') return (60 + rowIdx * 5 + colIdx * 2).toString();
+      if (sec.type === 'condition') return (22.5 + rowIdx * 0.4).toFixed(1);
       return (480 + rowIdx * 15 + colIdx * 5).toString();
     }
     return '—';
@@ -5225,7 +5506,19 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   isTableSection(s: ExecutionSection): boolean {
     if (!s) return false;
-    return ['parameter', 'specimen', 'reading', 'location', 'rule', 'traverse', 'custom', 'classification'].includes(s.type);
+    return [
+      'parameter',
+      'specimen',
+      'reading',
+      'location',
+      'condition',
+      'rule',
+      'traverse',
+      'custom',
+      'classification',
+      'checklist',
+      'traceability'
+    ].includes(s.type);
   }
 
   getVisibleColumnsForSection(s: ExecutionSection): { key: string; label: string; bindingMode?: DataBindingMode; staticValue?: string }[] {
@@ -5235,100 +5528,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         .filter(c => c.visible !== false)
         .map(c => ({ key: c.key, label: c.label, bindingMode: c.bindingMode, staticValue: c.staticValue }));
     }
-    if (s.type === 'parameter') {
-      const list: { key: string; label: string }[] = [];
-      list.push({ key: 'param', label: 'Parameter' });
-      if (s.config?.columns?.unit !== false) list.push({ key: 'unit', label: 'Unit' });
-      if (s.config?.columns?.requirement !== false) list.push({ key: 'requirement', label: 'Requirement' });
-      list.push({
-        key: 'result',
-        label: s.config?.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result'
-      });
-      if (s.config?.columns?.uncertainty) list.push({ key: 'uncertainty', label: 'Uncertainty (±)' });
-      if (s.config?.columns?.dl) list.push({ key: 'dl', label: 'DL / LOQ' });
-      if (s.config?.columns?.status !== false) list.push({ key: 'status', label: 'Status' });
-      if (s.config?.columns?.method) list.push({ key: 'method', label: 'Method / Standard' });
-      if (s.config?.columns?.scope) list.push({ key: 'scope', label: 'NABL Scope' });
-      if (s.config?.columns?.remarks) list.push({ key: 'remarks', label: 'Remarks' });
-      return list;
-    }
-    if (s.type === 'specimen') {
-      const list: { key: string; label: string }[] = [];
-      if (s.config?.orientation === 'Specimens × Parameters') {
-        list.push({ key: 'specimen', label: s.config?.specimenColHeader || 'Specimen / Sample' });
-        const params = this.getSpecimenParamsForSection(s);
-        params.forEach((p, idx) => {
-          list.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})` });
-        });
-      } else {
-        list.push({ key: 'param', label: 'Parameter' });
-        const specList = this.getSpecimenList(s);
-        specList.forEach((specName, idx) => {
-          list.push({ key: `spec_${idx + 1}`, label: specName });
-        });
-        if (s.config?.showAverage) list.push({ key: 'avg', label: 'Average' });
-        if (s.config?.showMinMax) {
-          list.push({ key: 'min', label: 'Min' });
-          list.push({ key: 'max', label: 'Max' });
-        }
-        if (s.config?.showRequirement) list.push({ key: 'requirement', label: 'Requirement' });
-      }
-      return list;
-    }
-    if (s.type === 'reading') {
-      const list: { key: string; label: string }[] = [];
-      list.push({
-        key: 'target',
-        label: s.config?.readingLabel || (this.getReadingTargetForSection(s).name + ' Readings')
-      });
-      const rNums = this.getSpecimenCount(s);
-      rNums.forEach(num => {
-        list.push({ key: `reading_${num}`, label: `R${num}` });
-      });
-      list.push({ key: 'agg', label: s.config?.aggregation || 'Average' });
-      return list;
-    }
-    if (s.type === 'location') {
-      const list: { key: string; label: string }[] = [];
-      list.push({ key: 'loc', label: s.config?.locationColHeader || 'Zone / Location' });
-      this.currentTest.params.slice(0, 3).forEach((p, idx) => {
-        list.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})` });
-      });
-      if (s.config?.showAverage) list.push({ key: 'avg', label: 'Average' });
-      if (s.config?.showRequirement) list.push({ key: 'requirement', label: 'Requirement' });
-      return list;
-    }
-    if (s.type === 'rule') {
-      const list: { key: string; label: string }[] = [];
-      list.push({ key: 'param', label: 'Parameter' });
-      list.push({ key: 'operator', label: 'Operator' });
-      list.push({ key: 'source', label: 'Value Source' });
-      list.push({ key: 'result', label: 'Observed Result' });
-      list.push({ key: 'eval', label: 'Evaluation' });
-      return list;
-    }
-    if (s.type === 'traverse') {
-      const list: { key: string; label: string }[] = [];
-      list.push({ key: 'x', label: s.config?.xField || 'Depth / Distance' });
-      list.push({ key: 'y', label: s.config?.yField || 'Hardness Result' });
-      list.push({ key: 'unit', label: 'Unit' });
-      list.push({ key: 'requirement', label: 'Requirement' });
-      return list;
-    }
-    if (s.type === 'custom') {
-      const list: { key: string; label: string }[] = [];
-      if (s.config?.customColumns && s.config.customColumns.length > 0) {
-        s.config.customColumns.forEach((c, idx: number) => {
-          list.push({ key: `col_${idx}`, label: c.label || `Col ${idx + 1}` });
-        });
-      } else {
-        ['Col 1', 'Col 2', 'Col 3', 'Col 4'].forEach((c, idx: number) => {
-          list.push({ key: `col_${idx}`, label: c });
-        });
-      }
-      return list;
-    }
-    return [];
+    return this.ensureTableColumns(s).filter(c => c.visible !== false);
   }
 
   getMergedColumnsList(s: ExecutionSection): { key: string; label: string }[] {
@@ -5338,6 +5538,11 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     let defaultStart = 'result';
     if (s.type === 'specimen') defaultStart = 'spec_1';
     if (s.type === 'reading') defaultStart = 'reading_1';
+    if (s.type === 'traverse') defaultStart = 'y';
+    if (s.type === 'condition') defaultStart = 'setpoint';
+    if (s.type === 'classification') defaultStart = 'thin';
+    if (s.type === 'checklist') defaultStart = 'clause';
+    if (s.type === 'location') defaultStart = 'param_0';
 
     const startKey = s.config?.headerMerge?.startCol || s.config?.columns?.mergedStartCol || defaultStart;
     let startIndex = allCols.findIndex(c => c.key === startKey);
@@ -5380,6 +5585,11 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       let defaultStart = 'result';
       if (s.type === 'specimen') defaultStart = 'spec_1';
       if (s.type === 'reading') defaultStart = 'reading_1';
+      if (s.type === 'traverse') defaultStart = 'y';
+      if (s.type === 'condition') defaultStart = 'setpoint';
+      if (s.type === 'classification') defaultStart = 'thin';
+      if (s.type === 'checklist') defaultStart = 'clause';
+      if (s.type === 'location') defaultStart = 'param_0';
 
       s.config.headerMerge = {
         title: s.config.columns?.mergedHeader || '',
@@ -5399,12 +5609,23 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (s.type === 'parameter') hm.title = 'Test Observations';
       else if (s.type === 'specimen') hm.title = 'Specimen Test Values';
       else if (s.type === 'reading') hm.title = 'Indentation Spot Readings';
+      else if (s.type === 'location') hm.title = 'Location Zone Observations';
+      else if (s.type === 'condition') hm.title = 'Environmental Criteria';
+      else if (s.type === 'traverse') hm.title = 'Hardness Depth Profile';
+      else if (s.type === 'classification') hm.title = 'Structural Inclusion Severity';
+      else if (s.type === 'checklist') hm.title = 'Technical Compliance Verification';
+      else if (s.type === 'rule') hm.title = 'Decision Rule & Guard Band';
+      else if (s.type === 'traceability') hm.title = 'Equipment Calibration Ledger';
       else hm.title = 'Grouped Observations';
     }
     if (!hm.startCol) {
       if (s.type === 'parameter') hm.startCol = 'result';
       else if (s.type === 'specimen') hm.startCol = 'spec_1';
       else if (s.type === 'reading') hm.startCol = 'reading_1';
+      else if (s.type === 'traverse') hm.startCol = 'y';
+      else if (s.type === 'condition') hm.startCol = 'setpoint';
+      else if (s.type === 'classification') hm.startCol = 'thin';
+      else if (s.type === 'checklist') hm.startCol = 'clause';
       else hm.startCol = this.getVisibleColumnsForSection(s)[0]?.key || 'col_1';
     }
     if (!hm.colspan || hm.colspan < 2) {

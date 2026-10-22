@@ -862,27 +862,21 @@
                         <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE (2-Tier Header) -->
                         <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
                           <tr class="table-merged-header-row">
-                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}
-                            </th>
-                            <th [attr.colspan]="getMergedColumnsList(s).length"
-                              class="text-center table-merged-group-title">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
                               <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
                             </th>
-                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}
-                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
                           </tr>
                           <tr>
-                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">
-                              {{ c.label }}
-                            </th>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
                           </tr>
                         </ng-container>
 
                         <!-- Mode 2: Merged Header Active + Show Sub-Labels = FALSE (Clean 1-Tier Header with Merged Banner) -->
                         <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
                           <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
-                          <th [attr.colspan]="getMergedColumnsList(s).length"
-                            class="text-center table-merged-group-title">
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
                             <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
                           </th>
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
@@ -890,19 +884,96 @@
 
                         <!-- Mode 3: Normal Flat Single Header (When NOT Merged) -->
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th>{{ s.config.readingLabel || (getReadingTargetForSection(s).name + ' Readings') }}</th>
-                          <th *ngFor="let rNum of getSpecimenCount(s)">R{{ rNum }}</th>
-                          <th>{{ s.config.aggregation || 'Average' }}</th>
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr *ngFor="let p of [getReadingTargetForSection(s)]; let pIdx = index">
-                          <td class="fw-semibold text-start">{{ p.name }} ({{ p.unit }})</td>
-                          <td *ngFor="let rNum of getSpecimenCount(s)" class="font-monospace">
-                            {{ demoMode ? (60 + pIdx * 2 + rNum) : '—' }}
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Row Label">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
                           </td>
-                          <td class="fw-bold text-primary font-monospace">
-                            {{ demoMode ? (62 + pIdx * 2) : '—' }}
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span *ngIf="c.key === 'unit'" class="text-muted">{{ r.unit || (demoMode ? 'HRC' : '—') }}</span>
+                                <span *ngIf="c.key === 'requirement'" class="text-muted">{{ r.requirement || (demoMode ? '58–62 HRC' : 'Runtime') }}</span>
+                                <span *ngIf="c.key === 'avg'" class="fw-bold text-theme font-monospace">{{ demoMode ? (60.4 + rIdx * 0.5).toFixed(1) : '—' }}</span>
+                                <span *ngIf="c.key !== 'unit' && c.key !== 'requirement' && c.key !== 'avg'" class="text-muted">
+                                  {{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}
+                                </span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Reading Row</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="adjustReadingSpots(s, 1)" title="Add Spot Column">
+                                  <i class="bi bi-plus me-1"></i><span>+ Spot</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="adjustReadingSpots(s, -1)" title="Remove Spot Column" [disabled]="getVisibleTableColumns(s).length <= 2">
+                                  <i class="bi bi-dash me-1"></i><span>- Spot</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                </span>
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       </tbody>
@@ -918,27 +989,21 @@
                         <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE -->
                         <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
                           <tr class="table-merged-header-row">
-                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}
-                            </th>
-                            <th [attr.colspan]="getMergedColumnsList(s).length"
-                              class="text-center table-merged-group-title">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
                               <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
                             </th>
-                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}
-                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
                           </tr>
                           <tr>
-                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">
-                              {{ c.label }}
-                            </th>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
                           </tr>
                         </ng-container>
 
                         <!-- Mode 2: Merged Header Active + Show Sub-Labels = FALSE -->
                         <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
                           <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
-                          <th [attr.colspan]="getMergedColumnsList(s).length"
-                            class="text-center table-merged-group-title">
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
                             <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
                           </th>
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
@@ -946,53 +1011,86 @@
 
                         <!-- Mode 3: Normal Flat Single Header -->
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th>{{ s.config.locationColHeader || 'Zone / Location' }}</th>
-                          <th *ngFor="let p of currentTest.params.slice(0, 3)">{{ p.name }} ({{ p.unit }})</th>
-                          <th *ngIf="s.config.showAverage">Average</th>
-                          <th *ngIf="s.config.showRequirement">Requirement</th>
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr *ngFor="let loc of getLocationList(s); let locIdx = index; trackBy: trackByIndex"
-                          class="location-canvas-row">
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
                           <td class="fw-semibold text-start location-row-cell">
                             <div class="d-flex align-items-center gap-1.5">
-                              <span class="location-row-idx">{{ locIdx + 1 }}</span>
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
-                                [ngModel]="s.config.locationRows ? s.config.locationRows[locIdx] : loc"
-                                (ngModelChange)="updateLocationRow(s, locIdx, $event)" placeholder="Row Label">
-                              <button type="button" class="btn-cell-row-del" (click)="removeLocationRow(s, locIdx)"
-                                *ngIf="getLocationList(s).length > 1" title="Remove this row">
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Row Label">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
                               </button>
                             </div>
                           </td>
-                          <td *ngFor="let p of currentTest.params.slice(0, 3); let pIdx = index" class="font-monospace">
-                            {{ demoMode ? (220 + locIdx * 15 + pIdx * 5) : '—' }}
-                          </td>
-                          <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">
-                            {{ demoMode ? (225 + locIdx * 15) : '—' }}
-                          </td>
-                          <td *ngIf="s.config.showRequirement" class="text-muted">
-                            {{ demoMode ? '≥ 200 HV' : 'Runtime' }}
-                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span *ngIf="c.key === 'requirement'" class="text-muted">{{ r.requirement || (demoMode ? '≥ 200 HV' : 'Runtime') }}</span>
+                                <span *ngIf="c.key === 'avg'" class="fw-bold text-theme font-monospace">{{ demoMode ? (225 + rIdx * 15) : '—' }}</span>
+                                <span *ngIf="c.key !== 'requirement' && c.key !== 'avg'" class="text-muted">
+                                  {{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}
+                                </span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
                         </tr>
-                        <!-- Canvas Inline Add Row Footer Row -->
                         <tr class="table-add-row-tr">
-                          <td [attr.colspan]="getLocationTableColCount(s)"
-                            class="text-start py-1.5 px-2 bg-light-subtle">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
                             <div class="d-flex align-items-center justify-content-between">
-                              <button type="button" class="btn-table-inline-add" (click)="addLocationRow(s)">
-                                <i class="bi bi-plus-circle me-1.5"></i><span>Add Location Row</span>
-                              </button>
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Location Row</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
-                                  {{ getLocationList(s).length }} rows
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
-                                <span
-                                  class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace text-xxs"
-                                  *ngIf="s.config.allowRuntimeAdd">
-                                  <i class="bi bi-lightning-charge-fill me-1.5"></i>Runtime Dynamic Add
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>
@@ -1005,13 +1103,123 @@
 
                 <!-- 5. Condition / Environment -->
                 <ng-container *ngIf="s.type === 'condition'">
-                  <div class="condition-cards-grid" [ngClass]="{ 'two-col': s.config.layout === 'Two-column cards' }">
+                  <!-- Cards Mode -->
+                  <div *ngIf="s.config.layout !== 'Table'" class="condition-cards-grid" [ngClass]="{ 'two-col': s.config.layout === 'Two-column cards' }">
                     <div *ngFor="let cond of getConditionFields(s)" class="condition-card">
                       <span class="condition-label">{{ getConditionLabel(cond) }}</span>
                       <strong class="condition-val font-monospace">
                         {{ demoMode ? getConditionValue(cond) : 'Runtime' }}
                       </strong>
                     </div>
+                  </div>
+
+                  <!-- Table Mode -->
+                  <div *ngIf="s.config.layout === 'Table'" class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
+                          <tr class="table-merged-header-row">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                              <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                          </tr>
+                          <tr>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
+                          </tr>
+                        </ng-container>
+                        <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
+                          <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                            <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                          </th>
+                          <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
+                        </tr>
+                        <tr *ngIf="!hasMergedHeader(s)">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Variable">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span class="text-muted">{{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}</span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Condition Variable</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </ng-container>
 
@@ -1023,27 +1231,21 @@
                         <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE -->
                         <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
                           <tr class="table-merged-header-row">
-                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}
-                            </th>
-                            <th [attr.colspan]="getMergedColumnsList(s).length"
-                              class="text-center table-merged-group-title">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
                               <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
                             </th>
-                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}
-                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
                           </tr>
                           <tr>
-                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">
-                              {{ c.label }}
-                            </th>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
                           </tr>
                         </ng-container>
 
                         <!-- Mode 2: Merged Header Active + Show Sub-Labels = FALSE -->
                         <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
                           <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
-                          <th [attr.colspan]="getMergedColumnsList(s).length"
-                            class="text-center table-merged-group-title">
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
                             <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
                           </th>
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
@@ -1051,99 +1253,224 @@
 
                         <!-- Mode 3: Normal Flat Single Header -->
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th>Parameter</th>
-                          <th>Operator</th>
-                          <th>Value Source</th>
-                          <th>Observed Result</th>
-                          <th>Evaluation</th>
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr *ngFor="let p of currentTest.params; let pIdx = index">
-                          <td class="fw-semibold text-start">{{ p.name }}</td>
-                          <td class="font-monospace">{{ s.config.operator || '≥' }}</td>
-                          <td class="text-muted">{{ s.config.valueSource === 'Runtime Requirement' ? (demoMode ?
-                            p.requirement : 'Runtime Requirement') : s.config.valueSource }}</td>
-                          <td class="font-monospace">{{ demoMode ? (currentTest.demo[pIdx] || '420') : '—' }}</td>
-                          <td>
-                            <span *ngIf="demoMode" class="badge-status-pass">PASS</span>
-                            <span *ngIf="!demoMode" class="text-muted">Runtime</span>
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Rule Parameter">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span *ngIf="c.key === 'eval'" [class.badge-status-pass]="demoMode" [class.text-muted]="!demoMode">
+                                  {{ demoMode ? 'PASS' : 'Runtime' }}
+                                </span>
+                                <span *ngIf="c.key !== 'eval'" class="text-muted">
+                                  {{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}
+                                </span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Rule Row</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                </span>
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                   <div *ngIf="s.config.showRule" class="rule-footer-note mt-1">
-                    <span><strong>Decision Rule:</strong> {{ s.config.decisionRule || 'Simple acceptance (no guard
-                      band)' }}</span>
-                    <span class="ms-2"><strong>Fail Action:</strong> {{ s.config.failAction || 'Mark parameter FAIL'
-                      }}</span>
+                    <span><strong>Decision Rule:</strong> {{ s.config.decisionRule || 'Simple acceptance (no guard band)' }}</span>
+                    <span class="ms-2"><strong>Fail Action:</strong> {{ s.config.failAction || 'Mark parameter FAIL' }}</span>
                   </div>
                 </ng-container>
 
                 <!-- 7. Traverse / Sequence -->
                 <ng-container *ngIf="s.type === 'traverse'">
                   <div class="row g-2 align-items-center">
-                    <div [ngClass]="s.config.showCurve !== false ? 'col-md-7' : 'col-12'"
-                      *ngIf="s.config.showTable !== false">
-                      <table class="table-exec">
-                        <thead>
-                          <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE -->
-                          <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
-                            <tr class="table-merged-header-row">
-                              <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label
-                                }}</th>
-                              <th [attr.colspan]="getMergedColumnsList(s).length"
-                                class="text-center table-merged-group-title">
+                    <div [ngClass]="s.config.showCurve !== false ? 'col-md-7' : 'col-12'" *ngIf="s.config.showTable !== false">
+                      <div class="table-responsive">
+                        <table class="table-exec">
+                          <thead>
+                            <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE -->
+                            <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
+                              <tr class="table-merged-header-row">
+                                <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                                <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                                  <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                                </th>
+                                <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                              </tr>
+                              <tr>
+                                <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
+                              </tr>
+                            </ng-container>
+
+                            <!-- Mode 2: Merged Header Active + Show Sub-Labels = FALSE -->
+                            <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
+                              <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
+                              <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
                                 <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
                               </th>
-                              <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label
-                                }}</th>
+                              <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
                             </tr>
-                            <tr>
-                              <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">
-                                {{ c.label }}
+
+                            <!-- Mode 3: Normal Flat Single Header -->
+                            <tr *ngIf="!hasMergedHeader(s)">
+                              <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                  <i class="bi"
+                                    [ngClass]="getBindingIcon(c.bindingMode)"
+                                    [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                    [class.text-success]="c.bindingMode === 'manual'"
+                                    [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                    [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                                  </i>
+                                  <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                    (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                                  <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                    *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                    <i class="bi bi-x"></i>
+                                  </button>
+                                </div>
                               </th>
                             </tr>
-                          </ng-container>
-
-                          <!-- Mode 2: Merged Header Active + Show Sub-Labels = FALSE -->
-                          <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
-                            <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
-                            <th [attr.colspan]="getMergedColumnsList(s).length"
-                              class="text-center table-merged-group-title">
-                              <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
-                            </th>
-                            <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
-                          </tr>
-
-                          <!-- Mode 3: Normal Flat Single Header -->
-                          <tr *ngIf="!hasMergedHeader(s)">
-                            <th>{{ s.config.xField || 'Depth / Distance' }}</th>
-                            <th>{{ s.config.yField || 'Hardness Result' }}</th>
-                            <th>Unit</th>
-                            <th>Requirement</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let step of [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]; let sIdx = index">
-                            <td class="font-monospace">{{ step.toFixed(2) }}</td>
-                            <td class="font-monospace">{{ demoMode ? (610 - sIdx * 25) : '—' }}</td>
-                            <td>{{ s.config.xUnit || 'mm' }}</td>
-                            <td class="text-muted">{{ s.config.cutoffMode === 'No cutoff' ? '—' : 'Runtime Cutoff' }}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                              <td class="fw-semibold text-start location-row-cell font-monospace">
+                                <div class="d-flex align-items-center gap-1.5">
+                                  <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                                  <input type="text" class="form-control form-control-sm table-cell-inline-input font-monospace"
+                                    [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Depth mm">
+                                  <i class="bi"
+                                    [ngClass]="getBindingIcon(r.bindingMode)"
+                                    [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                    [class.text-success]="r.bindingMode === 'manual'"
+                                    [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                    [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                                  </i>
+                                  <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                    *ngIf="getVisibleTableRows(s).length > 1" title="Remove this step">
+                                    <i class="bi bi-x"></i>
+                                  </button>
+                                </div>
+                              </td>
+                              <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                                <td class="text-center font-monospace">
+                                  <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                    class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                    [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                    {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                                  </span>
+                                  <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                    class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                    {{ demoMode ? 'Manual Entry' : '—' }}
+                                  </span>
+                                  <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                    <span class="text-muted">{{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}</span>
+                                  </ng-container>
+                                </td>
+                              </ng-container>
+                            </tr>
+                            <tr class="table-add-row-tr">
+                              <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                                <div class="d-flex align-items-center justify-content-between">
+                                  <div class="d-flex align-items-center gap-1.5">
+                                    <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                      <i class="bi bi-plus-circle me-1.5"></i><span>Add Step Point</span>
+                                    </button>
+                                    <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                      <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                    </button>
+                                  </div>
+                                  <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                      {{ getVisibleTableRows(s).length }} points × {{ getVisibleTableColumns(s).length }} cols
+                                    </span>
+                                    <span class="badge font-monospace text-xxs border"
+                                      [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                      <i class="bi"
+                                        [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                      {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                    <div [ngClass]="s.config.showTable !== false ? 'col-md-5' : 'col-12'"
-                      *ngIf="s.config.showCurve !== false">
+                    <div [ngClass]="s.config.showTable !== false ? 'col-md-5' : 'col-12'" *ngIf="s.config.showCurve !== false">
                       <div class="chart-box">
                         <svg viewBox="0 0 400 130" class="svg-chart">
                           <line x1="30" y1="10" x2="30" y2="110" stroke="#cbd5e1" />
                           <line x1="30" y1="110" x2="380" y2="110" stroke="#cbd5e1" />
-                          <polyline points="35,25 90,38 150,55 220,78 300,98 370,105" fill="none" stroke="#da261c"
-                            stroke-width="2.5" />
+                          <polyline points="35,25 90,38 150,55 220,78 300,98 370,105" fill="none" stroke="#da261c" stroke-width="2.5" />
                           <line x1="30" y1="75" x2="380" y2="75" stroke="#b54708" stroke-dasharray="4 3" />
                           <text x="375" y="72" font-size="8" fill="#b54708" text-anchor="end">Cutoff 500 HV</text>
                         </svg>
@@ -1215,46 +1542,224 @@
 
                 <!-- 9. Rating / Classification -->
                 <ng-container *ngIf="s.type === 'classification'">
-                  <table class="table-exec">
-                    <thead>
-                      <tr>
-                        <th>Class / Grade</th>
-                        <th *ngIf="s.config.showCriteria">Criteria / Scale</th>
-                        <th>Rating System</th>
-                        <th>Classification Result</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td class="fw-semibold text-start">Observed Structural Rating</td>
-                        <td *ngIf="s.config.showCriteria" class="text-muted">Standard reference comparison</td>
-                        <td>{{ s.config.ratingSystem }}</td>
-                        <td>
-                          <span *ngIf="demoMode" class="badge bg-success-subtle text-success fw-bold">Type A (Thin 1.0,
-                            Heavy 1.5)</span>
-                          <span *ngIf="!demoMode" class="text-muted">Runtime</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
+                          <tr class="table-merged-header-row">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                              <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                          </tr>
+                          <tr>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
+                          </tr>
+                        </ng-container>
+                        <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
+                          <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                            <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                          </th>
+                          <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
+                        </tr>
+                        <tr *ngIf="!hasMergedHeader(s)">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Classification Row">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span class="text-muted">{{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}</span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Class Row</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </ng-container>
 
                 <!-- 10. Custom Table -->
                 <ng-container *ngIf="s.type === 'custom'">
-                  <table class="table-exec">
-                    <thead *ngIf="s.config.showHeader !== false">
-                      <tr>
-                        <th *ngFor="let col of getCustomColumns(s)">{{ col }}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td *ngFor="let col of getCustomColumns(s)" class="text-muted">
-                          {{ demoMode ? 'Observed ' + col : 'Runtime' }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
+                          <tr class="table-merged-header-row">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                              <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                          </tr>
+                          <tr>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
+                          </tr>
+                        </ng-container>
+                        <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
+                          <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                            <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                          </th>
+                          <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
+                        </tr>
+                        <tr *ngIf="!hasMergedHeader(s)">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Custom Row">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span class="text-muted">{{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}</span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Row</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </ng-container>
 
                 <!-- 11. Photo / Attachment -->
@@ -1327,32 +1832,123 @@
 
                 <!-- 14. Checklist -->
                 <ng-container *ngIf="s.type === 'checklist'">
-                  <table class="table-exec">
-                    <thead>
-                      <tr>
-                        <th>Inspection Point</th>
-                        <th *ngIf="s.config.showCriteria">Criteria</th>
-                        <th>Observation Response</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let item of getChecklistItems(s)">
-                        <td class="fw-semibold text-start">{{ item }}</td>
-                        <td *ngIf="s.config.showCriteria" class="text-muted">Configured standard criteria</td>
-                        <td class="font-monospace">{{ demoMode ? 'Conforming' : 'Runtime' }}</td>
-                        <td>
-                          <span *ngIf="demoMode" class="badge-status-pass">PASS</span>
-                          <span *ngIf="!demoMode" class="text-muted">Runtime</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
+                          <tr class="table-merged-header-row">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                              <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                          </tr>
+                          <tr>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
+                          </tr>
+                        </ng-container>
+                        <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
+                          <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                            <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                          </th>
+                          <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
+                        </tr>
+                        <tr *ngIf="!hasMergedHeader(s)">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Inspection Point">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span *ngIf="c.key === 'status'" [class.badge-status-pass]="demoMode" [class.text-muted]="!demoMode">
+                                  {{ demoMode ? 'PASS' : 'Runtime' }}
+                                </span>
+                                <span *ngIf="c.key !== 'status'" class="text-muted">
+                                  {{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}
+                                </span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Inspection Item</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </ng-container>
 
                 <!-- 15. Traceability / Tech Record -->
                 <ng-container *ngIf="s.type === 'traceability'">
-                  <div class="condition-cards-grid" [ngClass]="{ 'two-col': s.config.layout === 'Two-column cards' }">
+                  <div *ngIf="s.config.layout !== 'Table'" class="condition-cards-grid" [ngClass]="{ 'two-col': s.config.layout === 'Two-column cards' }">
                     <div *ngFor="let f of s.config.fields" class="condition-card">
                       <span class="condition-label">{{ f }}</span>
                       <strong class="condition-val font-monospace">
@@ -1360,6 +1956,119 @@
                         : f.includes('Equipment') ? 'UTM-Instron 600kN' : 'Runtime') : 'Runtime' }}
                       </strong>
                     </div>
+                  </div>
+
+                  <div *ngIf="s.config.layout === 'Table'" class="table-responsive">
+                    <table class="table-exec">
+                      <thead>
+                        <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
+                          <tr class="table-merged-header-row">
+                            <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                            <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                              <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                            </th>
+                            <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle">{{ c.label }}</th>
+                          </tr>
+                          <tr>
+                            <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
+                          </tr>
+                        </ng-container>
+                        <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
+                          <th *ngFor="let c of getPreMergedColumns(s)">{{ c.label }}</th>
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                            <i class="bi bi-tag-fill me-1.5"></i>{{ getMergedHeaderText(s) }}
+                          </th>
+                          <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
+                        </tr>
+                        <tr *ngIf="!hasMergedHeader(s)">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(c.bindingMode)"
+                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
+                                [class.text-success]="c.bindingMode === 'manual'"
+                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
+                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
+                              </i>
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Standard / Equipment">
+                              <i class="bi"
+                                [ngClass]="getBindingIcon(r.bindingMode)"
+                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
+                                [class.text-success]="r.bindingMode === 'manual'"
+                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
+                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
+                              </i>
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
+                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
+                              </span>
+                              <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
+                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
+                                {{ demoMode ? 'Manual Entry' : '—' }}
+                              </span>
+                              <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                <span *ngIf="c.key === 'status'" [class.badge-status-pass]="demoMode" [class.text-muted]="!demoMode">
+                                  {{ demoMode ? 'VALID' : 'Runtime' }}
+                                </span>
+                                <span *ngIf="c.key !== 'status'" class="text-muted">
+                                  {{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}
+                                </span>
+                              </ng-container>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Traceability Row</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                                <span class="badge font-monospace text-xxs border"
+                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
+                                  <i class="bi"
+                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
+                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </ng-container>
 
@@ -2441,6 +3150,25 @@
             </div>
           </div>
 
+          <!-- Quick Presets -->
+          <div class="mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label compact-label mb-0">Quick Presets</label>
+              <span class="text-xxs text-muted font-monospace">Auto-Fill</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'ambient')" title="23°C / 50% RH Standard Lab">
+                <i class="bi bi-thermometer-sun me-1 text-danger"></i>Ambient (23°C/50%RH)
+              </button>
+              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'elevated')" title="650°C Furnace Test">
+                <i class="bi bi-fire me-1 text-danger"></i>Elevated (650°C)
+              </button>
+              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'subzero')" title="-40°C Impact Bath">
+                <i class="bi bi-snow me-1 text-primary"></i>Sub-Zero (-40°C)
+              </button>
+            </div>
+          </div>
+
           <div class="row g-2 mb-2">
             <div class="col-6">
               <label class="form-label compact-label">Layout</label>
@@ -2476,7 +3204,11 @@
         <div class="config-card mb-2" *ngIf="s.type === 'reading'">
           <div class="config-card-title d-flex align-items-center justify-content-between">
             <span><i class="bi bi-123 me-1.5 text-danger"></i><span>Multi-Reading Settings</span></span>
-            <span class="badge bg-secondary font-monospace">{{ s.config.count || 3 }} Readings</span>
+            <div class="d-flex align-items-center gap-1">
+              <button type="button" class="btn-xs-action text-theme fw-semibold" (click)="adjustReadingSpots(s, 1)" title="Add Spot Column">+ Spot</button>
+              <button type="button" class="btn-xs-action text-secondary" (click)="adjustReadingSpots(s, -1)" title="Remove Last Spot Column" [disabled]="getVisibleTableColumns(s).length <= 2">- Spot</button>
+              <span class="badge bg-secondary font-monospace ms-1">{{ getVisibleTableColumns(s).length }} Cols</span>
+            </div>
           </div>
 
           <div class="row g-2 mb-2">
@@ -2660,7 +3392,7 @@
                 placeholder="0.05 mm">
             </div>
           </div>
-          <div class="config-checks-grid">
+          <div class="config-checks-grid mb-2">
             <label class="form-check compact-check">
               <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showTable">
               <span class="form-check-label">Show Table</span>
@@ -2669,6 +3401,32 @@
               <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showCurve">
               <span class="form-check-label">Show Curve</span>
             </label>
+          </div>
+
+          <!-- Auto Step Generator Tool -->
+          <div class="border-top pt-2 mt-2">
+            <div class="fw-semibold small text-dark d-flex align-items-center gap-1.5 mb-1.5">
+              <i class="bi bi-magic text-danger"></i>
+              <span>Traverse Auto-Step Generator</span>
+            </div>
+            <div class="row g-1 mb-1.5">
+              <div class="col-4">
+                <label class="form-label compact-label">Start (mm)</label>
+                <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepStart">
+              </div>
+              <div class="col-4">
+                <label class="form-label compact-label">Pitch (mm)</label>
+                <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepIncrement">
+              </div>
+              <div class="col-4">
+                <label class="form-label compact-label">Points</label>
+                <input type="number" min="1" max="50" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepPoints">
+              </div>
+            </div>
+            <button type="button" class="btn-lims btn-lims-save btn-sm w-100 py-1"
+              (click)="generateTraverseAutoStep(s)">
+              <i class="bi bi-play-circle-fill me-1.5"></i><span>Generate {{ autoStepPoints }} Stepped Points</span>
+            </button>
           </div>
         </div>
 
@@ -2781,6 +3539,28 @@
               <label class="form-label compact-label">Rating Method</label>
               <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.decision"
                 placeholder="Comparison method, Planimetric">
+            </div>
+          </div>
+
+          <!-- Standard Classification Presets -->
+          <div class="border-top pt-2 mt-2">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <label class="form-label compact-label mb-0 fw-semibold text-dark">Standard Classification Scales</label>
+              <span class="text-xxs text-muted font-monospace">Auto-Configure</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_e45')"
+                title="Load ASTM E45 Inclusion Rating (Type A, B, C, D)">
+                ASTM E45 (Inclusions)
+              </button>
+              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_e112')"
+                title="Load ASTM E112 Grain Size Number & Diameter">
+                ASTM E112 (Grain Size)
+              </button>
+              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_a247')"
+                title="Load ASTM A247 Graphite Microstructure Classification">
+                ASTM A247 (Graphite)
+              </button>
             </div>
           </div>
         </div>
@@ -2923,6 +3703,24 @@
               </label>
             </div>
           </div>
+
+          <!-- Standard Checklist Presets -->
+          <div class="border-top pt-2 mt-2">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <label class="form-label compact-label mb-0 fw-semibold text-dark">Predefined Checklists</label>
+              <span class="text-xxs text-muted font-monospace">ISO 17025</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applyChecklistPreset(s, 'iso17025')"
+                title="Load ISO 17025 Standard Quality & Technical Checkpoints">
+                ISO 17025 Compliance
+              </button>
+              <button type="button" class="btn-preset-chip" (click)="applyChecklistPreset(s, 'pretest')"
+                title="Load Pre-Test Equipment & Specimen Verification Checkpoints">
+                Pre-Test Verification
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- 18. Traceability (Type: Traceability) -->
@@ -2936,6 +3734,13 @@
                 (change)="s.config.fields = toggleArrayItem(s.config.fields, tf)">
               <span class="form-check-label">{{ tf }}</span>
             </label>
+          </div>
+
+          <div class="border-top pt-2 mt-2">
+            <button type="button" class="btn-lims btn-lims-save btn-sm w-100 py-1"
+              (click)="applyTraceabilityPreset(s)">
+              <i class="bi bi-shield-check me-1.5"></i><span>Load Equipment Calibration Traceability</span>
+            </button>
           </div>
         </div>
 
@@ -3103,12 +3908,43 @@
 
               <!-- Condition live entry -->
               <ng-container *ngIf="s.type === 'condition'">
-                <div class="row g-2">
+                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let f of getConditionFields(s)" class="col-md-3">
                     <label class="form-label compact-label">{{ getConditionLabel(f) }}</label>
                     <input type="text" class="form-control form-control-sm compact-input font-monospace"
                       [placeholder]="getConditionValue(f) || ('Enter ' + f)" [(ngModel)]="previewEntries['cond_' + f]">
                   </div>
+                </div>
+                <div class="table-responsive" *ngIf="s.config.layout === 'Table'">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center font-monospace">
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                              [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || '23.0 °C' }}
+                            </span>
+                            <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <input type="text" class="form-control form-control-sm text-center entry-input font-monospace"
+                                [placeholder]="c.label"
+                                [ngModel]="previewEntries['cond_' + s.id + '_' + rIdx + '_' + cIdx] || (c.key === 'setpoint' ? (r.staticValue || '23.0 °C') : (c.key === 'tolerance' ? (r.requirement || '± 2.0 °C') : ''))"
+                                (ngModelChange)="previewEntries['cond_' + s.id + '_' + rIdx + '_' + cIdx] = $event">
+                            </ng-container>
+                          </td>
+                        </ng-container>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </ng-container>
 
@@ -3122,25 +3958,43 @@
 
               <!-- Checklist live entry -->
               <ng-container *ngIf="s.type === 'checklist'">
-                <table class="table-exec">
-                  <thead>
-                    <tr>
-                      <th>Inspection Point</th>
-                      <th>Response</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let item of getChecklistItems(s); let itIdx = index">
-                      <td class="fw-semibold text-start">{{ item }}</td>
-                      <td>
-                        <app-custom-select [options]="selectOptions.checklistResponse"
-                          [(ngModel)]="previewEntries['chk_' + itIdx]" size="sm" [searchable]="false"
-                          placeholder="Select Response">
-                        </app-custom-select>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div class="table-responsive">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center">
+                            <span *ngIf="c.key === 'clause'" class="text-muted small font-monospace">
+                              {{ r.requirement || 'ISO 17025 Cl. 7.4' }}
+                            </span>
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || 'Conforming' }}
+                            </span>
+                            <ng-container *ngIf="c.key === 'resp' && r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <app-custom-select [options]="selectOptions.checklistResponse"
+                                [(ngModel)]="previewEntries['chk_' + s.id + '_' + rIdx]" size="sm" [searchable]="false"
+                                placeholder="Select Response">
+                              </app-custom-select>
+                            </ng-container>
+                            <ng-container *ngIf="c.key !== 'clause' && c.key !== 'resp' && r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <input type="text" class="form-control form-control-sm text-center entry-input"
+                                [placeholder]="c.label" [(ngModel)]="previewEntries['chk_' + s.id + '_' + rIdx + '_' + cIdx]">
+                            </ng-container>
+                          </td>
+                        </ng-container>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </ng-container>
 
               <!-- Reading live entry -->
@@ -3148,28 +4002,53 @@
                 <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let i of getReadingCount(s)"
                     [ngClass]="{'col-md-3': s.config.layout === 'Compact cards', 'col-md-6': s.config.layout === 'Two-column cards', 'col-12': !s.config.layout}">
-                    <label class="form-label compact-label">Reading {{ i }} ({{ s.config.unit }})</label>
+                    <label class="form-label compact-label">Reading {{ i }} ({{ s.config.unit || 'HV' }})</label>
                     <input type="number" class="form-control form-control-sm compact-input text-center font-monospace"
                       [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
                   </div>
                 </div>
-                <table class="table-exec" *ngIf="s.config.layout === 'Table'">
-                  <thead>
-                    <tr>
-                      <th *ngFor="let i of getReadingCount(s)">R{{ i }}</th>
-                      <th *ngIf="s.config.showAverage">Average</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td *ngFor="let i of getReadingCount(s)">
-                        <input type="number" class="form-control form-control-sm text-center entry-input"
-                          [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
-                      </td>
-                      <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">—</td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div class="table-responsive" *ngIf="s.config.layout === 'Table'">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center font-monospace">
+                            <!-- Static Mode -->
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                              [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || 'Static' }}
+                            </span>
+
+                            <!-- Calculated / Read-only Columns -->
+                            <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <span *ngIf="c.key === 'avg'" class="fw-bold text-primary font-monospace">
+                                {{ previewEntries['read_' + s.id + '_' + rIdx + '_0'] ? previewEntries['read_' + s.id + '_' + rIdx + '_0'] : '585' }}
+                              </span>
+                              <span *ngIf="c.key === 'requirement'" class="text-muted">
+                                {{ r.requirement || '≥ 550 HV' }}
+                              </span>
+                              <span *ngIf="c.key !== 'avg' && c.key !== 'requirement'">
+                                <input type="number" class="form-control form-control-sm text-center entry-input"
+                                  [placeholder]="c.label"
+                                  [ngModel]="previewEntries['read_' + s.id + '_' + rIdx + '_' + cIdx] || (580 + rIdx * 5 + cIdx * 2)"
+                                  (ngModelChange)="previewEntries['read_' + s.id + '_' + rIdx + '_' + cIdx] = $event">
+                              </span>
+                            </ng-container>
+                          </td>
+                        </ng-container>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </ng-container>
 
               <!-- Location live entry -->
@@ -3178,20 +4057,34 @@
                   <table class="table-exec">
                     <thead>
                       <tr>
-                        <th>{{ s.config.locationColHeader || 'Location / Zone' }}</th>
-                        <th *ngFor="let p of currentTest.params.slice(0, 3)">{{ p.name }} ({{ p.unit }})</th>
-                        <th *ngIf="s.config.showAverage">Live Average</th>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let loc of getLocationList(s); let locIdx = index; trackBy: trackByIndex">
-                        <td class="fw-semibold text-start">{{ loc }}</td>
-                        <td *ngFor="let p of currentTest.params.slice(0, 3); let pIdx = index">
-                          <input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="Enter value"
-                            [(ngModel)]="previewEntries['loc_' + s.id + '_' + locIdx + '_' + pIdx]">
-                        </td>
-                        <td *ngIf="s.config.showAverage" class="fw-bold text-primary font-monospace">—</td>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center font-monospace">
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                              [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || 'Static' }}
+                            </span>
+                            <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <span *ngIf="c.key === 'avg'" class="fw-bold text-primary font-monospace">
+                                {{ previewEntries['loc_' + s.id + '_' + rIdx + '_0'] ? previewEntries['loc_' + s.id + '_' + rIdx + '_0'] : '450' }}
+                              </span>
+                              <span *ngIf="c.key !== 'avg'">
+                                <input type="number" class="form-control form-control-sm text-center entry-input"
+                                  [placeholder]="c.label"
+                                  [ngModel]="previewEntries['loc_' + s.id + '_' + rIdx + '_' + cIdx] || (440 + rIdx * 10 + cIdx * 5)"
+                                  (ngModelChange)="previewEntries['loc_' + s.id + '_' + rIdx + '_' + cIdx] = $event">
+                              </span>
+                            </ng-container>
+                          </td>
+                        </ng-container>
                       </tr>
                     </tbody>
                   </table>
@@ -3212,23 +4105,27 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let p of currentTest.params; let pIdx = index">
-                        <td class="fw-semibold text-start">{{ p.name }}</td>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
                         <td class="font-monospace">{{ s.config.operator || '≥' }}</td>
-                        <td class="text-muted">{{ s.config.valueSource === 'Runtime Requirement' ? p.requirement :
-                          s.config.valueSource }}</td>
+                        <td class="text-muted">{{ r.requirement || '≥ 420' }}</td>
                         <td>
-                          <input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="Enter value" [ngModel]="previewEntries['rule_' + s.id + '_' + pIdx] || ''"
-                            (ngModelChange)="onPreviewEntryChange('rule_' + s.id + '_' + pIdx, $event, p.requirement)">
+                          <span *ngIf="r.bindingMode === 'static'"
+                            class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5">
+                            <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || 'Static Fixed' }}
+                          </span>
+                          <input *ngIf="r.bindingMode !== 'static'" type="number"
+                            class="form-control form-control-sm text-center entry-input"
+                            placeholder="Enter value" [ngModel]="previewEntries['rule_' + s.id + '_' + rIdx] || ''"
+                            (ngModelChange)="onPreviewEntryChange('rule_' + s.id + '_' + rIdx, $event, r.requirement)">
                         </td>
                         <td>
-                          <span *ngIf="previewStatus['rule_' + s.id + '_' + pIdx] === true"
+                          <span *ngIf="previewStatus['rule_' + s.id + '_' + rIdx] === true"
                             class="badge-status-pass">PASS</span>
-                          <span *ngIf="previewStatus['rule_' + s.id + '_' + pIdx] === false"
+                          <span *ngIf="previewStatus['rule_' + s.id + '_' + rIdx] === false"
                             class="badge-status-fail">FAIL</span>
                           <span
-                            *ngIf="previewStatus['rule_' + s.id + '_' + pIdx] === undefined || previewStatus['rule_' + s.id + '_' + pIdx] === null"
+                            *ngIf="previewStatus['rule_' + s.id + '_' + rIdx] === undefined || previewStatus['rule_' + s.id + '_' + rIdx] === null"
                             class="text-muted">—</span>
                         </td>
                       </tr>
@@ -3243,28 +4140,33 @@
                   <table class="table-exec table-bordered">
                     <thead>
                       <tr>
-                        <th class="bg-light">{{ s.config.xField || 'Depth' }} ({{ s.config.xUnit || 'mm' }})</th>
-                        <th class="bg-light">{{ s.config.yField || 'Hardness' }} ({{ s.config.yUnit || 'HV' }})</th>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="0.1"></td>
-                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="300"></td>
-                      </tr>
-                      <tr>
-                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="0.2"></td>
-                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="280"></td>
-                      </tr>
-                      <tr>
-                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="0.4"></td>
-                        <td><input type="number" class="form-control form-control-sm text-center entry-input"
-                            placeholder="260"></td>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start font-monospace">{{ r.label }} {{ r.unit || s.config.xUnit || 'mm' }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center font-monospace">
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || 'Static' }}
+                            </span>
+                            <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <span *ngIf="c.key === 'limit' || c.key === 'cutoff'" class="text-muted">
+                                {{ r.requirement || s.config.cutoffHardness || '550 HV' }}
+                              </span>
+                              <span *ngIf="c.key !== 'limit' && c.key !== 'cutoff'">
+                                <input type="number" class="form-control form-control-sm text-center entry-input font-monospace"
+                                  [placeholder]="c.label"
+                                  [ngModel]="previewEntries['trav_' + s.id + '_' + rIdx + '_' + cIdx] || (620 - rIdx * 15)"
+                                  (ngModelChange)="previewEntries['trav_' + s.id + '_' + rIdx + '_' + cIdx] = $event">
+                              </span>
+                            </ng-container>
+                          </td>
+                        </ng-container>
                       </tr>
                     </tbody>
                   </table>
@@ -3333,42 +4235,65 @@
 
               <!-- Classification live entry -->
               <ng-container *ngIf="s.type === 'classification'">
-                <table class="table-exec">
-                  <thead>
-                    <tr>
-                      <th>Rating System</th>
-                      <th *ngIf="s.config.showCriteria">Criteria / Scale</th>
-                      <th>Observed Classification / Grade</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td class="fw-semibold text-start">{{ s.config.ratingSystem || 'Standard System' }}</td>
-                      <td *ngIf="s.config.showCriteria" class="text-muted">Standard reference comparison</td>
-                      <td>
-                        <input type="text" class="form-control form-control-sm text-center entry-input font-monospace"
-                          placeholder="e.g. Type A (Thin 1.0, Heavy 1.5)" [(ngModel)]="previewEntries['class_' + s.id]">
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div class="table-responsive">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center font-monospace">
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || 'Static' }}
+                            </span>
+                            <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <span *ngIf="c.key === 'limit'" class="text-muted">{{ r.requirement || '≤ 1.5' }}</span>
+                              <input *ngIf="c.key !== 'limit'" type="text"
+                                class="form-control form-control-sm text-center entry-input font-monospace"
+                                [placeholder]="c.label"
+                                [ngModel]="previewEntries['class_' + s.id + '_' + rIdx + '_' + cIdx] || (c.key === 'thin' ? '1.0' : (c.key === 'heavy' ? '0.5' : 'Conforming'))"
+                                (ngModelChange)="previewEntries['class_' + s.id + '_' + rIdx + '_' + cIdx] = $event">
+                            </ng-container>
+                          </td>
+                        </ng-container>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </ng-container>
 
               <!-- Custom Table live entry -->
               <ng-container *ngIf="s.type === 'custom'">
                 <div class="table-responsive">
                   <table class="table-exec">
-                    <thead *ngIf="s.config.showHeader !== false">
+                    <thead>
                       <tr>
-                        <th *ngFor="let col of getCustomColumns(s)">{{ col }}</th>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td *ngFor="let col of getCustomColumns(s); let cIdx = index">
-                          <input type="text" class="form-control form-control-sm text-center entry-input"
-                            [placeholder]="'Enter ' + col" [(ngModel)]="previewEntries['custom_' + s.id + '_' + cIdx]">
-                        </td>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center font-monospace">
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || 'Static' }}
+                            </span>
+                            <input *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'" type="text"
+                              class="form-control form-control-sm text-center entry-input"
+                              [placeholder]="c.label" [(ngModel)]="previewEntries['custom_' + s.id + '_' + rIdx + '_' + cIdx]">
+                          </td>
+                        </ng-container>
                       </tr>
                     </tbody>
                   </table>
@@ -3415,13 +4340,45 @@
 
               <!-- Traceability live entry -->
               <ng-container *ngIf="s.type === 'traceability'">
-                <div class="row g-2">
+                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let f of s.config.fields" class="col-md-3">
                     <label class="form-label compact-label">{{ f }}</label>
                     <input type="text" class="form-control form-control-sm compact-input font-monospace"
                       [placeholder]="f.includes('Analyst') ? 'Enter Analyst ID' : f.includes('Date') ? 'YYYY-MM-DD' : f.includes('Equipment') ? 'Equipment ID' : ('Enter ' + f)"
                       [(ngModel)]="previewEntries['trace_' + s.id + '_' + f]">
                   </div>
+                </div>
+                <div class="table-responsive" *ngIf="s.config.layout === 'Table'">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
+                          {{ col.label }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                          <td class="text-center font-monospace">
+                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                              [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
+                              <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || (c.key === 'tag' ? 'EQ-00' + (rIdx + 1) : 'Instron 600kN') }}
+                            </span>
+                            <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                              <span *ngIf="c.key === 'cert'" class="text-muted small">{{ r.requirement || 'CAL/2026/0421' }}</span>
+                              <span *ngIf="c.key === 'dueDate'" class="text-muted small">{{ r.unit || '2027-04-14' }}</span>
+                              <input *ngIf="c.key !== 'cert' && c.key !== 'dueDate'" type="text"
+                                class="form-control form-control-sm text-center entry-input font-monospace"
+                                [placeholder]="c.label" [(ngModel)]="previewEntries['trace_' + s.id + '_' + rIdx + '_' + cIdx]">
+                            </ng-container>
+                          </td>
+                        </ng-container>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </ng-container>
             </div>

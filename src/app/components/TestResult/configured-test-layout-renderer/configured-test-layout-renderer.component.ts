@@ -416,6 +416,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Initialize Locations
     this.initLocations();
 
+    // Initialize Traverse Points from Layout Config
+    this.initTraverse();
+
+    // Initialize Checklist Items from Layout Config
+    this.initChecklist();
+
     // Initialize Observations
     this.initObservations();
 
@@ -424,6 +430,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private initLocations(): void {
+    const locSec = this.sections.find(s => s.type === 'location' || s.type === 'loc');
     if (this.test?.locations && Array.isArray(this.test.locations) && this.test.locations.length > 0) {
       this.locations = this.test.locations.map((loc: any, idx: number) => ({
         id: loc.id,
@@ -433,11 +440,51 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         isReportable: loc.isReportable !== false,
         remarks: loc.remarks || ''
       }));
+    } else if (locSec?.config?.tableRows && Array.isArray(locSec.config.tableRows) && locSec.config.tableRows.length > 0) {
+      this.locations = locSec.config.tableRows.map((r: any, idx: number) => ({
+        locationCode: r.key || `LOC${idx + 1}`,
+        locationName: r.label,
+        displayOrder: idx + 1,
+        isReportable: true,
+        remarks: ''
+      }));
     } else if (this.locations.length === 0) {
       this.locations = [
         { locationCode: 'SURF', locationName: 'Surface Zone', displayOrder: 1, isReportable: true, remarks: '0-2mm depth' },
         { locationCode: 'CORE', locationName: 'Core / Mid-Radius', displayOrder: 2, isReportable: true, remarks: 'Center axis' }
       ];
+    }
+  }
+
+  private initTraverse(): void {
+    const travSec = this.sections.find(s => s.type === 'traverse');
+    if (this.test?.traversePoints && Array.isArray(this.test.traversePoints) && this.test.traversePoints.length > 0) {
+      this.traversePoints = this.test.traversePoints.map((pt: any) => ({
+        distance: pt.distance != null ? pt.distance : pt.depth,
+        hardness: pt.hardness != null ? pt.hardness : pt.value
+      }));
+    } else if (travSec?.config?.tableRows && Array.isArray(travSec.config.tableRows) && travSec.config.tableRows.length > 0) {
+      this.traversePoints = travSec.config.tableRows.map((r: any) => ({
+        distance: parseFloat(r.label) || 0.1,
+        hardness: null
+      }));
+    }
+  }
+
+  private initChecklist(): void {
+    const chkSec = this.sections.find(s => s.type === 'checklist');
+    if (this.test?.checklist && Array.isArray(this.test.checklist) && this.test.checklist.length > 0) {
+      this.checklistItems = this.test.checklist.map((chk: any, idx: number) => ({
+        id: chk.id || (idx + 1),
+        label: chk.label || chk.inspectionPoint || `Item ${idx + 1}`,
+        status: chk.status || 'Pass'
+      }));
+    } else if (chkSec?.config?.tableRows && Array.isArray(chkSec.config.tableRows) && chkSec.config.tableRows.length > 0) {
+      this.checklistItems = chkSec.config.tableRows.map((r: any, idx: number) => ({
+        id: idx + 1,
+        label: r.label,
+        status: 'Pass'
+      }));
     }
   }
 
@@ -1216,7 +1263,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (readingSections.length === 0) return;
 
     readingSections.forEach(s => {
-      const defaultCount = parseInt(s.config?.count || s.config?.readingCount || '5', 10) || 5;
+      const tableReadingCols = s.config?.tableColumns?.filter((c: any) => c.key && c.key.startsWith('reading_'))?.length;
+      const defaultCount = tableReadingCols || parseInt(s.config?.count || s.config?.readingCount || '5', 10) || 5;
       const targets = this.getReadingTargetParameters(s);
 
       targets.forEach(targetName => {

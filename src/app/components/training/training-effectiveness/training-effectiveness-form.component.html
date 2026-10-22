@@ -8,167 +8,470 @@
     </div>
 
     <div class="card-body">
-      <form [formGroup]="effectivenessForm" (ngSubmit)="onSubmit()" [class.ra-form-disabled]="isViewMode">
+      <form [formGroup]="effectivenessForm" (ngSubmit)="onSubmit()">
 
         <!-- Section I: Header Information (Mandatory Pattern) -->
         <div class="accordion-section mb-3">
           <div class="section-header" (click)="toggleSection('header')">
             <i class="bi" [ngClass]="openSections['header'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
             <span class="fw-bold ms-2">I. Header Information</span>
-            <div class="ms-auto pe-3 text-muted small">NABL Compliance Header</div>
+
           </div>
           <div *ngIf="openSections['header']" class="section-body">
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbersList" placeholder="e.g. F-10">
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbersList"
+                  placeholder="e.g. F-10">
                 <datalist id="formNumbersList">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
               </div>
-              <div class="col-md-2">
+              <div class="col-md-3">
                 <label class="form-label">Issue No</label>
                 <input type="text" class="form-control bg-light" formControlName="issueNo" readonly>
               </div>
-              <div class="col-md-2">
+              <div class="col-md-3">
                 <label class="form-label">Rev No</label>
                 <input type="text" class="form-control bg-light" formControlName="revNo" readonly>
               </div>
-              <div class="col-md-2">
+              <div class="col-md-3">
                 <label class="form-label">Date</label>
                 <input type="date" class="form-control bg-light" formControlName="date" readonly>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <div class="accordion-section mb-3">
+
+          <div class="section-header" (click)="toggleSection('training')">
+
+            <i class="bi" [ngClass]="openSections['training']
+          ? 'bi-chevron-down'
+          : 'bi-chevron-right'">
+            </i>
+
+            <span class="fw-bold ms-2">
+              II. Training Information
+            </span>
+
+          </div>
+
+
+          <div *ngIf="openSections['training']" class="section-body">
+
+            <div class="row g-3">
+
+              <!-- Training Plan -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Training Plan
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="trainingPlan"
+                  placeholder="Training Plan" readonly>
+
+              </div>
+
+
+              <!-- Training Date -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Training Date
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="date" class="form-control bg-light" formControlName="trainingDate" readonly>
+
+              </div>
+
+
+              <!-- Planning Year -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Planning Year
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="planningYear"
+                  placeholder="Planning Year" readonly>
+
+              </div>
+
+
+              <!-- Month -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Month
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="month" placeholder="Month" readonly>
+
+              </div>
+
+
+              <!-- Agency -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Agency
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="agency" placeholder="Agency" readonly>
+
+              </div>
+
+
+              <!-- Provider / Agency Name -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Provider / Agency Name
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="providerName"
+                  placeholder="Provider / Agency Name" readonly>
+
+              </div>
+
+
+              <!-- Training Venue -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Training Venue
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="trainingVenue"
+                  placeholder="Training Venue" readonly>
+
+              </div>
+
+
+              <!-- Faculty Name -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Faculty Name
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="facultyName"
+                  placeholder="Faculty Name" readonly>
+
+              </div>
+
+
+              <!-- Date & Time -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Date & Time
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="datetime-local" class="form-control bg-light" formControlName="trainingDatetime" readonly>
+
+              </div>
+
+
+              <!-- Question Set -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Question Set
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="questionSet"
+                  placeholder="Question Set" readonly>
+
               </div>
               <div class="col-md-3">
                 <label class="form-label">Evaluation Date</label>
                 <input type="date" class="form-control" formControlName="evaluationDate">
               </div>
             </div>
+
           </div>
+
         </div>
 
-        <!-- Section II: Employee & Training Information -->
         <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('employee')">
-            <i class="bi" [ngClass]="openSections['employee'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">II. Employee & Training Information</span>
+
+          <div class="section-header" (click)="toggleSection('participant')">
+
+            <i class="bi" [ngClass]="openSections['participant']
+          ? 'bi-chevron-down'
+          : 'bi-chevron-right'">
+            </i>
+
+            <span class="fw-bold ms-2">
+              III. Participant Information
+            </span>
+
           </div>
-          <div *ngIf="openSections['employee']" class="section-body">
+
+
+          <div *ngIf="openSections['participant']" class="section-body">
+
             <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Employee Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="employeeName" placeholder="Enter Full Name"
-                  [class.is-invalid]="effectivenessForm.get('employeeName')?.invalid && effectivenessForm.get('employeeName')?.touched">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Course Title <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="courseTitle" placeholder="e.g. ISO 17025 Awareness">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Training Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" formControlName="trainingDate">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Trainer Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="trainerName" placeholder="Enter Trainer's Name">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Organization / Agency</label>
-                <input type="text" class="form-control" formControlName="organization" placeholder="Internal / Name of External Agency">
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Section III: Pre-Training Assessment -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('pre')">
-            <i class="bi" [ngClass]="openSections['pre'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">III. Pre-Training Assessment</span>
-            <div class="ms-auto pe-3 text-muted small">Score range: 1-10</div>
+              <!-- Participant Name -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Participant Name
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="participantName"
+                  placeholder="Participant Name" readonly>
+
+              </div>
+
+
+              <!-- Designation -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Designation
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="designation" placeholder="Designation"
+                  readonly>
+
+              </div>
+
+
+              <!-- Attendance Status -->
+              <div class="col-md-4">
+
+                <label class="form-label">
+                  Attendance Status
+                  <span class="text-danger">*</span>
+                </label>
+
+                <input type="text" class="form-control bg-light" formControlName="status"
+                  placeholder="Attendance Status" readonly>
+
+              </div>
+
+            </div>
+
           </div>
-          <div *ngIf="openSections['pre']" class="section-body">
-            <div formArrayName="preAssessment">
-              <div *ngFor="let item of preAssessment.controls; let i = index" [formGroupName]="i" class="flat-card mb-3 p-3">
-                <div class="row g-3 align-items-center">
-                  <div class="col-md-9">
-                    <label class="form-label fw-medium">Criterion #{{ i + 1 }}</label>
-                    <input type="text" class="form-control bg-light" formControlName="criterion" readonly>
+
+        </div>
+        <!-- Section III: Knowledge Assessment -->
+        <div class="accordion-section mb-3">
+
+          <div class="section-header" (click)="toggleSection('questions')">
+
+            <i class="bi" [ngClass]="openSections['questions']
+         ? 'bi-chevron-down'
+         : 'bi-chevron-right'">
+            </i>
+
+            <span class="fw-bold ms-2">
+              III. Knowledge Assessment
+            </span>
+
+          </div>
+
+          <div *ngIf="openSections['questions']" class="section-body">
+
+            <div formArrayName="questions">
+
+              <div *ngFor="let q of questions.controls; let i = index" [formGroupName]="i"
+                class="question-card mb-3 p-3 border rounded">
+
+                <!-- Question Header -->
+                <div class="mb-3">
+
+                  <label class="form-label fw-bold mb-1">
+                    Question {{ i + 1 }}
+                  </label>
+
+                  <div class="question-text">
+                    {{ q.get('question')?.value }}
                   </div>
-                  <div class="col-md-3">
-                    <label class="form-label fw-medium">Score (1-10) <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" formControlName="score" min="1" max="10" placeholder="Score">
-                    <div *ngIf="item.get('score')?.invalid && item.get('score')?.touched" class="text-danger small mt-1">Required (1-10)</div>
-                  </div>
+
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Section IV: Post-Training Assessment -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('post')">
-            <i class="bi" [ngClass]="openSections['post'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">IV. Post-Training Assessment</span>
-            <div class="ms-auto pe-3 text-muted small">Score range: 1-10</div>
-          </div>
-          <div *ngIf="openSections['post']" class="section-body">
-            <div formArrayName="postAssessment">
-              <div *ngFor="let item of postAssessment.controls; let i = index" [formGroupName]="i" class="flat-card mb-3 p-3">
-                <div class="row g-3 align-items-center">
-                  <div class="col-md-9">
-                    <label class="form-label fw-medium">Criterion #{{ i + 1 }}</label>
-                    <input type="text" class="form-control bg-light" formControlName="criterion" readonly>
+
+                <!-- Options -->
+                <div class="row g-3">
+
+                  <!-- Option A -->
+                  <div class="col-md-6">
+
+                    <label class="option-box">
+
+                      <input type="radio" class="form-check-input me-2" value="A" formControlName="selectedAnswer">
+
+                      <span class="option-label">
+                        A.
+                      </span>
+
+                      <span class="option-text">
+                        {{ q.get('optionA')?.value }}
+                      </span>
+
+                    </label>
+
                   </div>
-                  <div class="col-md-3">
-                    <label class="form-label fw-medium">Score (1-10) <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" formControlName="score" min="1" max="10" placeholder="Score">
-                    <div *ngIf="item.get('score')?.invalid && item.get('score')?.touched" class="text-danger small mt-1">Required (1-10)</div>
+
+
+                  <!-- Option B -->
+                  <div class="col-md-6">
+
+                    <label class="option-box">
+
+                      <input type="radio" class="form-check-input me-2" value="B" formControlName="selectedAnswer">
+
+                      <span class="option-label">
+                        B.
+                      </span>
+
+                      <span class="option-text">
+                        {{ q.get('optionB')?.value }}
+                      </span>
+
+                    </label>
+
                   </div>
+
+
+                  <!-- Option C -->
+                  <div class="col-md-6">
+
+                    <label class="option-box">
+
+                      <input type="radio" class="form-check-input me-2" value="C" formControlName="selectedAnswer">
+
+                      <span class="option-label">
+                        C.
+                      </span>
+
+                      <span class="option-text">
+                        {{ q.get('optionC')?.value }}
+                      </span>
+
+                    </label>
+
+                  </div>
+
+
+                  <!-- Option D -->
+                  <div class="col-md-6">
+
+                    <label class="option-box">
+
+                      <input type="radio" class="form-check-input me-2" value="D" formControlName="selectedAnswer">
+
+                      <span class="option-label">
+                        D.
+                      </span>
+
+                      <span class="option-text">
+                        {{ q.get('optionD')?.value }}
+                      </span>
+
+                    </label>
+
+                  </div>
+
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Section V: Effectiveness Evaluation & Recommendations -->
-        <div class="accordion-section mb-3">
-          <div class="section-header" (click)="toggleSection('evaluation')">
-            <i class="bi" [ngClass]="openSections['evaluation'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-            <span class="fw-bold ms-2">V. Effectiveness Evaluation & Recommendations</span>
+
+                <!-- Required validation -->
+                <div *ngIf="
+          q.get('selectedAnswer')?.invalid &&
+          q.get('selectedAnswer')?.touched
+        " class="text-danger small mt-2">
+
+                  Please select one answer.
+
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
-          <div *ngIf="openSections['evaluation']" class="section-body">
+
+        </div>
+        <div class="accordion-section mb-3" *ngIf="recordId != 0">
+
+          <div class="section-header" (click)="toggleSection('result')">
+
+            <i class="bi" [ngClass]="openSections['result']
+         ? 'bi-chevron-down'
+         : 'bi-chevron-right'">
+            </i>
+
+            <span class="fw-bold ms-2">
+              IV. Evaluation Result
+            </span>
+
+          </div>
+
+          <div *ngIf="openSections['result']" class="section-body">
+
             <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Evaluation Mode</label>
-                <select class="form-select" formControlName="evaluationMode">
-                  <option *ngFor="let mode of evaluationModes" [value]="mode">{{ mode }}</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Evaluator Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="evaluatorName" placeholder="Enter Evaluator Name">
-              </div>
-              <div class="col-md-4">
-                <div class="form-switch switch-primary mt-4 pt-2">
-                  <input class="form-check-input mt-1" type="checkbox" id="isEffective" formControlName="isEffective">
-                  <label class="form-check-label fw-bold ms-2" for="isEffective">Is Training Effective?</label>
+
+              <!-- Correct Answer / Total Questions -->
+              <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+
+                  <div class="text-muted small mb-1">
+                    Correct Answer / Total Questions
+                  </div>
+
+                  <div class="fw-semibold fs-5">
+                    {{ effectivenessForm.get('correctAnswers')?.value || 0 }}
+                    /
+                    {{ effectivenessForm.get('totalQuestions')?.value || 0 }}
+                  </div>
+
                 </div>
               </div>
-              <div class="row mt-2">
-                <label class="form-label fw-bold">Recommendations & Further Training Needs</label>
-                <quill-editor formControlName="recommendations" [modules]="quillModules" [readOnly]="isViewMode"
-                  placeholder="Enter detailed recommendations or future training requirements..."></quill-editor>
+
+              <!-- Result -->
+              <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+
+                  <div class="text-muted small mb-1">
+                    Result
+                  </div>
+
+                  <div class="fw-semibold fs-5">
+                    {{ effectivenessForm.get('result')?.value || '-' }}
+                  </div>
+
+                </div>
               </div>
+
             </div>
+
           </div>
+
         </div>
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-save" [disabled]="effectivenessForm.invalid">
-            <i class="bi bi-save me-1"></i> {{ isViewMode ? 'Record Details' : (isEditMode ? 'Update Record' : 'Save Record') }}
+          <button type="submit" class="btn btn-save">
+            <i class="bi bi-save me-1"></i> {{ isViewMode ? 'Record Details' : (isEditMode ? 'Update Record' : 'Submit')
+            }}
           </button>
         </div>
 

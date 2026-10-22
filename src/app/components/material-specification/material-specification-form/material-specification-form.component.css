@@ -31,20 +31,20 @@
 .nav-tabs .nav-link {
   color: #495057;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: var(--font-sm);
   border: none;
   padding: 0.5rem 1rem;
   transition: all 0.2s ease;
 }
 
 .nav-tabs .nav-link:hover {
-  color: #DA261C;
-  border-bottom: 2px solid #DA261C;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
 }
 
 .nav-tabs .nav-link.active {
   color: #fff;
-  background: linear-gradient(135deg, #FF2C1F, #DA261C);
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
   border-radius: 6px 6px 0 0;
   border: none;
 }
@@ -53,14 +53,14 @@
 .spec-table {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.825rem;
+  font-size: var(--font-sm);
 }
 
 .spec-th {
   background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
   color: #495057;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: var(--font-xs);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 10px 12px;
@@ -111,7 +111,7 @@
 /* Compact form controls inside table */
 .spec-table .form-control,
 .spec-table .form-select {
-  font-size: 0.825rem;
+  font-size: var(--font-sm);
   padding: 0.3rem 0.5rem;
   border-radius: 4px;
   border: 1px solid #ced4da;
@@ -120,7 +120,7 @@
 
 .spec-table .form-control:focus,
 .spec-table .form-select:focus {
-  border-color: #DA261C;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 0.15rem rgba(218, 38, 28, 0.15);
 }
 
@@ -148,26 +148,20 @@
   border-color: #dc3545;
 }
 
-/* Header Styling */
-.card-form-header {
-  background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
-  border-bottom: none;
-  padding: 0.75rem 1.25rem;
-}
-
+/* Header Styling — background/font inherit from global .card-form-header (styles.css) */
 .navbar-background {
-  background-color: #DA261C !important;
+  background-color: var(--primary-color) !important;
 }
 
 /* ─── Compact dropdowns inside spec table ─── */
 .spec-table app-multi-select-dropdown,
 .spec-table app-searchable-dropdown {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .spec-table app-searchable-dropdown .input-group .form-control {
   padding: 0.2rem 0.5rem;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   line-height: 1.4;
 }
 
@@ -186,7 +180,7 @@
 /* ─── Compact ng-select inside spec table ─── */
 .spec-table ::ng-deep .ng-select .ng-select-container {
   min-height: 30px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .spec-table ::ng-deep .ng-select .ng-select-container .ng-value-container {
@@ -196,15 +190,431 @@
 /* ─── Scroll Navigation Buttons ─── */
 .btn-scroll-nav {
   color: #6c757d;
-  border: 1px solid #6c757d;
-  background-color: transparent;
-  font-size: 0.8rem;
-  padding: 0.25rem 0.5rem;
-  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  font-size: var(--font-xs);
+  padding: 0.2rem 0.45rem;
+  line-height: 1.3;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .btn-scroll-nav:hover {
-  background-color: #6c757d;
-  border-color: #6c757d;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
   color: #fff;
 }
+
+.scroll-nav-bar {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.scroll-nav-sep {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: #dee2e6;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* ── MS-A: compact (density-only) form styling ─────────────────────────────── */
+:host .form-control,
+:host .form-select {
+  min-height: 30px;
+  padding: 0.15rem 0.4rem;
+}
+:host .form-label {
+  font-size: var(--font-xs);
+  margin-bottom: 0.15rem;
+  font-weight: 500;
+  color: var(--neutral-700);
+}
+:host .section-body {
+  padding: 0.6rem 0.75rem;
+}
+:host .table-sm > :not(caption) > * > * {
+  padding: 0.25rem 0.4rem;
+}
+:host .table thead th {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+:host .table td,
+:host .table th {
+  vertical-align: middle;
+}
+:host .btn-sm {
+  font-size: var(--font-xs);
+  padding: 0.15rem 0.5rem;
+}
+/* keep the first (Parameter) column readable while scrolling wide line tables */
+:host .table-responsive {
+  scrollbar-width: thin;
+}
+:host .nav-tabs .nav-link {
+  font-size: var(--font-sm);
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+}
+
+/* MS-D: custom equation modal */
+:host .custom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1060;
+}
+:host .custom-modal-dialog {
+  background: #fff;
+  width: 540px;
+  max-width: 92vw;
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  border-top: 3px solid var(--primary-color);
+}
+:host .import-preview-dialog {
+  width: 1000px;
+}
+:host .import-preview-table {
+  max-height: 55vh;
+  overflow: auto;
+}
+:host .import-preview-table table {
+  font-size: var(--font-xs);
+}
+:host .import-preview-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f7f8fa;
+  z-index: 1;
+  white-space: nowrap;
+}
+:host .custom-modal-header,
+:host .custom-modal-footer {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+}
+:host .custom-modal-header {
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+}
+:host .custom-modal-footer {
+  justify-content: flex-end;
+  gap: 0.5rem;
+  border-top: 1px solid #eee;
+}
+:host .custom-modal-body {
+  padding: 0.9rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* ── Compact + enhanced Header Information & Parameter List ─────────────────── */
+/* Section header polish: accent bar, gradient, hover */
+:host .accordion-section {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+:host .section-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  background: linear-gradient(90deg, #fafbfc 0%, #fff 100%);
+  border-left: 3px solid var(--primary-color);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+:host .section-header:hover {
+  background: linear-gradient(90deg, #f3f4f6 0%, #fff 100%);
+}
+:host .section-header .bi {
+  /* color: var(--primary-color); */
+  font-size: 0.8rem;
+}
+
+/* Header Information compact grid: tighter labels/fields */
+:host .compact-grid .form-label {
+  font-size: var(--font-xs);
+  margin-bottom: 0.1rem;
+  color: var(--neutral-700);
+  font-weight: 500;
+}
+:host .compact-grid .form-control,
+:host .compact-grid .form-select {
+  min-height: 28px;
+}
+:host .compact-grid input[readonly] {
+  background: #f8f9fa;
+  font-style: italic;
+  color: #6c757d;
+}
+
+/* Grade Identifiers: compact pill strip */
+:host .identifier-box {
+  background: #fafbfc;
+  border: 1px dashed #d5d9df;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+:host .identifier-box-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+:host .identifier-box .form-check {
+  margin-bottom: 0;
+}
+:host .identifier-box .form-check-label {
+  font-size: var(--font-xs);
+}
+:host .identifier-box .vr {
+  align-self: stretch;
+  opacity: 0.25;
+}
+
+/* Parameter List: tab count badges + tighter rows */
+:host .nav-tabs .nav-link .badge {
+  font-size: 0.62rem;
+  padding: 0.18em 0.45em;
+  border: 1px solid #e0e0e0;
+}
+:host .nav-tabs .nav-link.active .badge {
+  background: var(--primary-color) !important;
+  color: #fff;
+  border-color: var(--primary-color);
+}
+:host .param-list-wrap {
+  max-width: 760px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+}
+:host .param-list-table {
+  margin-bottom: 0;
+}
+:host .param-list-table thead th {
+  background: #f7f8fa;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.4rem 0.5rem;
+}
+:host .param-list-table tbody td {
+  padding: 0.3rem 0.5rem;
+  vertical-align: middle;
+}
+:host .param-list-table tbody tr:hover {
+  background: #fafbfc;
+}
+:host .param-list-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid #f1f3f5;
+}
+:host .param-list-empty {
+  text-align: center;
+  padding: 1.1rem 0.5rem;
+  color: #8a929c;
+}
+:host .param-list-empty .bi {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #c2c8d0;
+}
+
+/* ── Grade tabs (tab-wise grades, like year-wise reference) ────────────────── */
+:host .grade-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-bottom: 2px solid #e9ecef;
+}
+:host .grade-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  margin-bottom: -2px;
+  background: #f8f9fa;
+  transition: all 0.15s ease;
+  max-width: 220px;
+}
+:host .grade-tab:hover {
+  background: #f1f3f5;
+  color: var(--primary-color);
+}
+:host .grade-tab.active {
+  background: #fff;
+  color: var(--primary-color);
+  border-color: #e9ecef;
+  border-top: 2px solid var(--primary-color);
+  font-weight: 600;
+}
+:host .grade-tab .grade-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:host .grade-tab-remove {
+  font-size: 0.65rem;
+  color: #adb5bd;
+  border-radius: 50%;
+  padding: 2px;
+  transition: all 0.15s ease;
+}
+:host .grade-tab-remove:hover {
+  color: #fff;
+  background: var(--primary-color);
+}
+:host .grade-tab-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--primary-color);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+:host .grade-tab-add:hover {
+  background: rgba(218, 38, 28, 0.08);
+}
+:host .grade-body {
+  border: 1px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  background: #fff;
+}
+
+/* ── Sticky columns ────────────────────────────────────────────────────────── */
+.spec-col-num {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: 44px;
+  width: 44px;
+}
+.spec-col-param {
+  position: sticky;
+  left: 44px;
+  z-index: 3;
+  min-width: 210px;
+  box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.18);
+}
+.spec-col-action {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  width: 44px;
+  min-width: 44px;
+  box-shadow: -4px 0 6px -4px rgba(0, 0, 0, 0.18);
+}
+/* Sticky header cells need higher z-index so they sit above sticky body cells */
+.spec-th.spec-col-num,
+.spec-th.spec-col-param {
+  z-index: 5;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+}
+.spec-th.spec-col-action {
+  z-index: 5;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+}
+/* Body cell backgrounds for sticky columns */
+.spec-row td.spec-col-num,
+.spec-row td.spec-col-param,
+.spec-row td.spec-col-action { background: #fff; }
+.spec-row:hover td.spec-col-num,
+.spec-row:hover td.spec-col-param,
+.spec-row:hover td.spec-col-action { background: #f8f9fa; }
+
+/* ── Active row highlight ──────────────────────────────────────────────────── */
+.spec-row-active td { background: #fff3f0 !important; }
+.spec-row-active td.spec-col-num { border-left: 2.5px solid var(--primary-color) !important; }
+
+/* ── Save Parameters button ────────────────────────────────────────────────── */
+:host .btn-primary-action {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+  font-size: var(--font-xs);
+  padding: 0.15rem 0.6rem;
+  transition: background 0.15s ease;
+}
+:host .btn-primary-action:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* ── Grade tab: missing-params warning icon ─────────────────────────────────── */
+:host .grade-tab-warn {
+  font-size: 0.65rem;
+  color: #f59e0b;
+}
+:host .grade-tab.active .grade-tab-warn {
+  color: #d97706;
+}
+
+/* ── Missing params alert strip inside grade body ───────────────────────────── */
+:host .missing-params-alert {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  font-size: var(--font-xs);
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+:host .missing-params-alert .bi {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* ── Empty state when no grades added ──────────────────────────────────────── */
+:host .grade-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  color: #6b7280;
+  background: #fafafa;
+}
+:host .grade-empty-state .bi {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #c2c8d0;
+}
+

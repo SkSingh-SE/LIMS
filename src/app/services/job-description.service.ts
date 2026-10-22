@@ -14,7 +14,7 @@ export class JobDescriptionService {
         'The incumbent is responsible for maintaining the confidentiality of all customer information and ensuring impartiality in all testing activities. ' +
         'Any breach of confidentiality or conflict of interest must be reported immediately to the Quality Manager.';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getDefaultConfidentialityClause(): string {
         return this.DEFAULT_CONFIDENTIALITY_CLAUSE;
@@ -42,5 +42,18 @@ export class JobDescriptionService {
 
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
+    }
+    getDesignationEmployees(searchTerm: string, pageNumber: number, pageSize: number, jobDescId?: number | null): Observable<any[]> {
+
+        let url =
+            `${this.apiUrl}/designation-dropdown` +
+            `?searchTerm=${(searchTerm || '')}` +
+            `&pageNo=${pageNumber}` +
+            `&pageSize=${pageSize}`;
+        if (jobDescId) {
+            url += `&recordId=${jobDescId}`;
+        }
+        return this.http.get<any[]>(url);
+
     }
 }

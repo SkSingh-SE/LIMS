@@ -11,10 +11,11 @@ import { UnsavedChangesService } from '../../../../services/unsaved-changes.serv
 import { ToastService } from '../../../../services/toast.service';
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
+import { SearchableDropdownComponent } from '../../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 @Component({
     selector: 'app-purchase-material-verification-form',
 
-    imports: [CommonModule, ReactiveFormsModule, QuillModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, QuillModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './purchase-material-verification-form.component.html',
     styleUrls: ['./purchase-material-verification-form.component.css']
 })
@@ -74,7 +75,6 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
             },
             error: () => { }
         });
-        this.loadPONoList();
         this.route.params.subscribe(params => {
             if (params['id']) {
                 this.recordId = +params['id'];
@@ -131,26 +131,20 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
         this.verificationForm.get('documentNo')?.disable();
         this.verificationForm.get('formatNo')?.disable();
     }
-    loadPONoList(): void {
-        this.service.getAllPONoetails().subscribe({
-            next: (res) => {
-                this.PurchaseOrderNoList = res;
-            },
-            error: () => {
-                this.PurchaseOrderNoList = [];
-            }
-        })
+    loadPONoList = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.service.getAllPONoetails(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
+    onPoNoChange(item: any): void {
 
-    onPoNoChange(event: any): void {
-        const selectedId = Number(event.target.value);
-        const items = this.PurchaseOrderNoList.find((x: any) => x.id === selectedId || x.Id === selectedId);
-        if (!items) {
+        if (!item) {
             this.items.clear();
             return;
         }
-        this.incomingId = selectedId;
-        const data = items.additionalValues || items.AdditionalValues || {};
+
+        this.incomingId = item.id || item.ID;
+
+        const data = item.additionalValues || item.AdditionalValues || {};
+
         this.verificationForm.patchValue({
             supplierName: data.SupplierName || '',
             purchaseOrderNo: data.PurchaseOrderNo || '',
@@ -164,7 +158,9 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
             deviations: data.Deviations || '',
             verifiedBy: data.ReceivedBy || '',
             inspectionBy: data.InspectionBy || '',
+            poNo: item.id ?? null
         });
+
         let parameters: any[] = [];
 
         try {
@@ -188,7 +184,6 @@ export class PurchaseMaterialVerificationFormComponent implements CanComponentDe
                 verificationDetails: ['', Validators.required],
                 inspectionQtyStatus: ['Approved'],
                 verificationDone: ['', Validators.required],
-
             }));
         });
     }

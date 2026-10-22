@@ -25,11 +25,18 @@ export class EmployeeService {
   deleteEmployee(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/delete/${id}`);
   }
-  getEmployeeDropdown(searchTerm: string, pageNumber: number, pageSize: number, departmentId?: number): Observable<any> {
+
+  getEmployeeDropdown(searchTerm: string, pageNumber: number, pageSize: number, departmentId?: number, recordId?: number | null): Observable<any> {
+
     let url = `${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`;
     if (departmentId) {
       url += `&departmentId=${departmentId}`;
     }
+
+    if (recordId) {
+      url += `&recordId=${recordId}`;
+    }
+
     return this.http.get<any>(url);
   }
 

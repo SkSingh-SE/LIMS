@@ -52,13 +52,14 @@
           </div>
           <div *ngIf="openSections['employee']" class="section-body">
             <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Employee Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="employeeName" placeholder="Enter Full Name"
-                  [ngClass]="{'is-invalid': trainingForm.get('employeeName')?.invalid && trainingForm.get('employeeName')?.touched}">
-                <div *ngIf="trainingForm.get('employeeName')?.touched && trainingForm.get('employeeName')?.invalid"
+              <div class="col-3">
+                <app-searchable-dropdown [required]="true" [fetchDataFn]="getEmployees"
+                  [placeholder]="'Search Employee Name'" [labelName]="'Employee Name'" [isDisabled]="isViewMode"
+                  (itemSelected)="onEmployeeSelected($event)" [selectedItem]="trainingForm.get('employeeId')?.value">
+                </app-searchable-dropdown>
+                <div *ngIf="trainingForm.get('employeeId')?.invalid && trainingForm.get('employeeId')?.touched"
                   class="text-danger text-sm mt-1">
-                  employee name is required.
+                  employee name is required
                 </div>
               </div>
               <div class="col-md-4">
@@ -115,14 +116,15 @@
                   placeholder="Enter Trainer's Name">
                 <div *ngIf="trainingForm.get('trainerName')?.touched && trainingForm.get('trainerName')?.invalid"
                   class="text-danger text-sm mt-1">
-                 trainer name is required.
+                  trainer name is required.
                 </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Trainer Designation <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="trainerDesignation"
                   placeholder="e.g. Lab Head">
-                <div *ngIf="trainingForm.get('trainerDesignation')?.touched && trainingForm.get('trainerDesignation')?.invalid"
+                <div
+                  *ngIf="trainingForm.get('trainerDesignation')?.touched && trainingForm.get('trainerDesignation')?.invalid"
                   class="text-danger text-sm mt-1">
                   trainer designation is required.
                 </div>
@@ -133,7 +135,7 @@
                   placeholder="e.g. Water for Testing">
                 <div *ngIf="trainingForm.get('sampleName')?.touched && trainingForm.get('sampleName')?.invalid"
                   class="text-danger text-sm mt-1">
-                 sample name is required.
+                  sample name is required.
                 </div>
               </div>
               <div class="col-md-6">
@@ -149,7 +151,7 @@
                 <input type="text" class="form-control" formControlName="parameter" placeholder="e.g. pH Value">
                 <div *ngIf="trainingForm.get('parameter')?.touched && trainingForm.get('parameter')?.invalid"
                   class="text-danger text-sm mt-1">
-                 parameter is required.
+                  parameter is required.
                 </div>
               </div>
               <div class="col-md-6">
@@ -175,7 +177,7 @@
               <div class="col-md-4">
                 <label class="form-label">Evaluation Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="evaluationDate">
-                 <div *ngIf="trainingForm.get('evaluationDate')?.touched && trainingForm.get('evaluationDate')?.invalid"
+                <div *ngIf="trainingForm.get('evaluationDate')?.touched && trainingForm.get('evaluationDate')?.invalid"
                   class="text-danger text-sm mt-1">
                   evaluation date is required.
                 </div>
@@ -186,15 +188,15 @@
                   <option value="Retesting">Retesting</option>
                   <option value="Replicate testing">Replicate testing</option>
                 </select>
-                 <div *ngIf="trainingForm.get('evaluationMode')?.touched && trainingForm.get('evaluationMode')?.invalid"
+                <div *ngIf="trainingForm.get('evaluationMode')?.touched && trainingForm.get('evaluationMode')?.invalid"
                   class="text-danger text-sm mt-1">
-                 evaluation mode is required.
+                  evaluation mode is required.
                 </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Parameter <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="evalParameter" placeholder="e.g. pH Value">
-                 <div *ngIf="trainingForm.get('evalParameter')?.touched && trainingForm.get('evalParameter')?.invalid"
+                <div *ngIf="trainingForm.get('evalParameter')?.touched && trainingForm.get('evalParameter')?.invalid"
                   class="text-danger text-sm mt-1">
                   eval parameter is required.
                 </div>
@@ -203,9 +205,10 @@
                 <label class="form-label">Test Method / SOP <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="evalTestMethodSop"
                   placeholder="e.g. SOP-CHE-01">
-                   <div *ngIf="trainingForm.get('evalTestMethodSop')?.touched && trainingForm.get('evalTestMethodSop')?.invalid"
+                <div
+                  *ngIf="trainingForm.get('evalTestMethodSop')?.touched && trainingForm.get('evalTestMethodSop')?.invalid"
                   class="text-danger text-sm mt-1">
-                 eval test method/sop is required.
+                  eval test method/sop is required.
                 </div>
               </div>
               <div class="col-md-3">

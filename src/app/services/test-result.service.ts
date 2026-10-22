@@ -275,6 +275,10 @@ export class TestResultService {
     return this.http.post<any>(`${this.apiUrl}/submit-sample-for-verification/${sampleId}`, {});
   }
 
+  submitForReportReview(sampleId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/submit-for-report-review/${sampleId}`, {});
+  }
+
   getVerificationList(filter: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/verification-list`, filter);
   }

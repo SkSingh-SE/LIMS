@@ -107,6 +107,10 @@
           </div>
         </div>
         <div>
+          <label class="form-label">Last Maintenance Date</label>
+          <input type="date" class="form-control" formControlName="lastMaintenanceDate" />
+        </div>
+        <div>
           <label class="form-label">Maintenance Interval</label>
           <select class="form-select" formControlName="maintenanceInterval">
             <option value="">Select Interval</option>
@@ -131,6 +135,15 @@
             <option value="">Select Interval</option>
             <option *ngFor="let option of intermediateCheckintervalOptions" [value]="option">{{ option }}</option>
           </select>
+        </div>
+        <!-- Analysis Techniques (A4) — which instrument-based techniques this equipment can perform -->
+        <div class="w-100 mb-1">
+          <app-multi-select-dropdown [placeholder]="'Select analysis techniques...'" [isDisabled]="isViewMode"
+            [labelName]="'Analysis Techniques'" [fetchDataFn]="getAnalysisTechnique"
+            [selectedValues]="equipmentForm.get('techniqueIds')?.value" (itemsSelected)="onTechniqueSelected($event)">
+          </app-multi-select-dropdown>
+          <small class="text-muted">Instruments/techniques this equipment can perform
+            (OES/ICP/WET/LECO/WDXRF/EDXRF).</small>
         </div>
         <div>
           <label class="form-label">Last Calibration Date</label>
@@ -180,9 +193,9 @@
           <div class="tab-pane fade show active" id="calibration" role="tabpanel" aria-labelledby="calibration-tab">
             <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
               <label class="section-divider">Calibration History</label>
-              <button *ngIf="isEditMode || calibrationDue" type="button" class="btn btn-add btn-sm"
+              <button *ngIf="isEditMode && calibrationDue" type="button" class="btn btn-add btn-sm"
                 (click)="openCalibrationModal()">
-                <i class="bi bi-plus-cir-cle-dotted"></i>
+                <i class="bi bi-plus-circle-dotted"></i>
                 Add Calibration
               </button>
             </div>
@@ -194,6 +207,8 @@
                     <th class="spec-th">Date</th>
                     <th class="spec-th">Certificate</th>
                     <th class="spec-th">Agency</th>
+                    <th class="spec-th">Status</th>
+                    <th class="spec-th">Review Remarks</th>
                     <th class="spec-th text-center">Action</th>
                   </tr>
                 </thead>
@@ -202,22 +217,31 @@
                     <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
                     <td>{{ record.get("calibrationDate")?.value }}</td>
                     <td>
-                      <button type="button" class="btn btn-sm btn-add"
-                        (click)="openFileInNewTab(record.get('certificatePath')?.value)">
-                        <i class="bi bi-file-earmark-fill"></i>
-                        {{ record.get("certificate")?.value }}
-                      </button>
+                      <div class="d-flex align-items-center gap-2 border bg-light px-1 rounded w-100">
+                        <span class="text-truncate text-muted flex-grow-1 ms-1" type="button"
+                          [title]="record.get('certificate')?.value"
+                          (click)="openFileInNewTab(record.get('certificatePath')?.value)">
+                          <i class="bi bi-file-earmark-fill"></i>
+                          {{ record.get('certificate')?.value }}
+                        </span>
+                      </div>
                     </td>
                     <td>{{ record.get("agency")?.value || "-" }}</td>
+                    <td>{{ record.get("isReviewed")?.value ? "Reviewed" : "Not Reviewed" }}</td>
+                    <td>{{ record.get("reviewReason")?.value || "-" }}</td>
                     <td class="text-center">
+
                       <button *ngIf="!record.get('isReviewed')?.value" type="button" class="btn btn-sm btn-add"
                         (click)="review(i)">
+
                         Review
+
                       </button>
+
                     </td>
                   </tr>
                   <tr *ngIf="calibrationRecords.length === 0">
-                    <td colspan="5" class="text-center text-muted py-3">
+                    <td colspan="6" class="text-center text-muted py-3">
                       <i class="bi bi-file-earmark-x fs-4 d-block mb-1"></i>
                       No calibration records found
                     </td>
@@ -231,7 +255,7 @@
           <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
             <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
               <label class="section-divider">Maintenance History</label>
-              <button *ngIf="isEditMode || maintenanceDue" type="button" class="btn btn-add btn-sm"
+              <button *ngIf="isEditMode && maintenanceDue " type="button" class="btn btn-add btn-sm"
                 (click)="openMaintenanceModal()">
                 <i class="bi bi-plus-circle-dotted"></i>
                 Add Maintenance
@@ -251,11 +275,14 @@
                     <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
                     <td>{{ record.get("maintenanceDate")?.value | date: "MMM dd, yyyy" }}</td>
                     <td>
-                      <button type="button" class="btn btn-sm btn-add"
-                        (click)="openFileInNewTab(record.get('certificatePath')?.value)">
-                        <i class="bi bi-file-earmark-fill"></i>
-                        {{ record.get("certificate")?.value }}
-                      </button>
+                      <div class="d-flex align-items-center gap-2 border bg-light px-1 rounded w-100">
+                        <span class="text-truncate text-muted flex-grow-1 ms-1" type="button"
+                          [title]="record.get('certificate')?.value"
+                          (click)="openFileInNewTab(record.get('certificatePath')?.value)">
+                          <i class="bi bi-file-earmark-fill"></i>
+                          {{ record.get('certificate')?.value }}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                   <tr *ngIf="maintenanceRecords.length === 0">
@@ -315,10 +342,17 @@
                         <td class="text-center text-muted small fw-medium">{{ i + 1 }}</td>
                         <td>{{ attachment.title || '-' }}</td>
                         <td>
-                          <button type="button" class="btn btn-sm btn-add" (click)="openFileInNewTab(attachment.url)">
+                          <!-- <button type="button" class="btn btn-sm btn-add" (click)="openFileInNewTab(attachment.url)">
                             <i class="bi bi-file-earmark-fill"></i>
                             {{ attachment.name }}
-                          </button>
+                          </button> -->
+                          <div class="d-flex align-items-center gap-2 border bg-light px-1 rounded w-100">
+                            <span class="text-truncate text-muted flex-grow-1 ms-1" type="button" (click)="
+                              openFileInNewTab(attachment.url)">
+                              <i class="bi bi-file-earmark-fill"></i>
+                              {{ attachment.name }}
+                            </span>
+                          </div>
                         </td>
                         <td *ngIf="!isViewMode" class="text-center">
                           <button type="button" class="btn btn-sm btn-remove" (click)="deleteAttachment(attachment)">
@@ -439,10 +473,18 @@
             <div>
               <label class="form-label">Calibration Date</label>
               <input type="date" class="form-control" formControlName="calibrationDate" />
+              <div *ngIf="calibrationForm.get('calibrationDate')?.touched &&
+           calibrationForm.get('calibrationDate')?.hasError('required')" class="text-danger text-sm mt-1">
+                Calibration Date is required.
+              </div>
             </div>
             <div>
               <label class="form-label">Calibration Due Date</label>
               <input type="date" class="form-control" formControlName="calibrationDueDate" />
+              <div *ngIf="calibrationForm.get('calibrationDueDate')?.touched &&
+           calibrationForm.get('calibrationDueDate')?.hasError('required')" class="text-danger text-sm mt-1">
+                Calibration Due Date is required.
+              </div>
             </div>
             <div>
               <app-searchable-dropdown-modal class="w-100" [placeholder]="'Search Agency'"
@@ -450,6 +492,10 @@
                 (itemSelected)="onCalibrationAgencySelected($event)" [hideLabel]="false" [required]="false"
                 [isDisabled]="isViewMode"
                 [selectedItem]="calibrationForm.get('calibrationAgencyID')?.value"></app-searchable-dropdown-modal>
+              <div *ngIf="calibrationForm.get('calibrationAgencyID')?.touched &&
+           calibrationForm.get('calibrationAgencyID')?.hasError('required')" class="text-danger text-sm mt-1">
+                Calibration Agency is required.
+              </div>
             </div>
             <!--Calibration Certificate-->
             <div>
@@ -470,9 +516,22 @@
               </ng-container>
 
               <ng-template #uploadField>
-                <input class="form-control form-control-sm input-file" type="file" accept=".pdf,.doc,.docx"
-                  [disabled]="isViewMode" (change)="onFileChange($event, 'calibration')" />
+                <input id="calibrationCertificate" class="form-control form-control-sm input-file" type="file"
+                  accept=".pdf,.doc,.docx" [disabled]="isViewMode" (change)="onFileChange($event, 'calibration')" />
               </ng-template>
+              <div *ngIf="calibrationForm.get('certificate')?.touched &&
+         !calibrationForm.get('certificate')?.value &&
+         !calibrationForm.get('certificatePath')?.value" class="text-danger text-sm mt-1">
+                Calibration Certificate is required.
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Desrciption</label>
+              <input type="text" class="form-control" formControlName="desrciption" placeholder="Enter Description" />
+              <!-- <div *ngIf="calibrationForm.get('calibrationDate')?.touched &&
+           calibrationForm.get('calibrationDate')?.hasError('required')" class="text-danger text-sm mt-1">
+                Calibration Date is required.
+              </div> -->
             </div>
           </div>
         </form>
@@ -500,6 +559,11 @@
             <div>
               <label class="form-label">Date of Maintenance</label>
               <input type="date" class="form-control" formControlName="maintenanceDate" />
+              <div *ngIf="maintenanceForm.get('maintenanceDate')?.touched &&
+           maintenanceForm.get('maintenanceDate')?.hasError('required')" class="text-danger text-sm mt-1">
+                Date of Maintenance is required.
+              </div>
+
             </div>
             <!--Maintenance Certificate-->
             <div>
@@ -520,11 +584,25 @@
               </ng-container>
 
               <ng-template #uploadMaintenanceField>
-                <input class="form-control form-control-sm input-file" type="file"
+                <input id="maintenanceCertificate" class="form-control form-control-sm input-file" type="file"
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" [disabled]="isViewMode"
                   (change)="onFileChange($event, 'maintenance')" />
               </ng-template>
+              <div *ngIf="maintenanceForm.get('certificate')?.touched &&
+         !maintenanceForm.get('certificate')?.value &&
+         !maintenanceForm.get('certificatePath')?.value" class="text-danger text-sm mt-1">
+                Maintenance Certificate is required.
+              </div>
             </div>
+            <div>
+              <label class="form-label">Desrciption</label>
+              <input type="text" class="form-control" formControlName="desrciption" placeholder="Enter Description" />
+              <!-- <div *ngIf="calibrationForm.get('calibrationDate')?.touched &&
+           calibrationForm.get('calibrationDate')?.hasError('required')" class="text-danger text-sm mt-1">
+                Calibration Date is required.
+              </div> -->
+            </div>
+
           </div>
         </form>
       </div>
@@ -679,4 +757,147 @@
       </div>
     </div>
   </div>
+</div>
+<!-- REVIEW CALIBRATION MODAL -->
+<div class="modal fade modal-lg" id="reviewCalibrationModal" tabindex="-1" aria-hidden="true">
+
+  <div class="modal-dialog modal-dialog-centered">
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Review Calibration
+        </h5>
+
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+        </button>
+      </div>
+
+      <form [formGroup]="reviewForm">
+
+        <div class="modal-body">
+
+          <div class="mb-3">
+
+            <label class="form-label">
+              Reason <span class="text-danger">*</span>
+            </label>
+
+            <textarea class="form-control" rows="4" formControlName="reason" placeholder="Enter review reason">
+            </textarea>
+
+            <div *ngIf="
+                reviewForm.get('reason')?.touched &&
+                reviewForm.get('reason')?.hasError('required')
+              " class="text-danger small mt-1">
+
+              Review reason is required.
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+
+            Cancel
+
+          </button>
+
+          <button type="button" class="btn btn-add" (click)="saveCalibrationReview()">
+
+            Save Review
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+</div>
+<!-- REVIEW CALIBRATION MODAL -->
+<div class="modal fade modal-lg" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel"
+  data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+
+  <div class="modal-dialog modal-dialog-centered">
+
+    <div class="modal-content">
+
+      <!-- HEADER -->
+      <div class="modal-header card-form-header text-white">
+
+        <label class="modal-title fw-medium" id="reviewModalLabel">
+          Review Calibration
+        </label>
+
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" data-bs-dismiss="modal">
+        </button>
+
+      </div>
+
+      <!-- BODY -->
+      <div class="modal-body">
+
+        <form [formGroup]="reviewForm">
+
+          <div class="row row-cols-1 g-2">
+
+            <div>
+
+              <label class="form-label">
+                Reason <span class="text-danger">*</span>
+              </label>
+
+              <textarea class="form-control" rows="4" formControlName="reason" placeholder="Enter review reason"
+                [class.is-invalid]="
+                  reviewForm.get('reason')?.invalid &&
+                  reviewForm.get('reason')?.touched
+                ">
+              </textarea>
+
+              <div *ngIf="
+                  reviewForm.get('reason')?.invalid &&
+                  reviewForm.get('reason')?.touched
+                " class="invalid-feedback">
+
+                Review reason is required.
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </form>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div class="modal-footer">
+
+        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
+
+          Cancel
+
+        </button>
+
+        <button type="button" class="btn btn-save" (click)="saveCalibrationReview()">
+
+          Save Review
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
 </div>

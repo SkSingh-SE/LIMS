@@ -15,8 +15,12 @@ export class TrainingPlanListComponent implements OnInit {
 
   columns: RegisterColumn[] = [
     { key: 'documentNo', label: 'Document No', type: 'string', filter: true },
+    { key: 'trainingTopic', label: 'Plan Decription', type: 'string', filter: true },
     { key: 'planningYear', label: 'Year', type: 'number', filter: true },
-    { key: 'approvalStatus', label: 'Status', type: 'string', filter: true }
+    { key: 'agency', label: 'Agency', type: 'string', filter: true },
+    { key: 'provider', label: 'Provider/Agency Name', type: 'string', filter: true },
+    { key: 'evaluationRequired', label: 'Evaluation Required', type: 'string', filter: true },
+    { key: 'questionSetName', label: 'Question Set', type: 'string', filter: true },
   ];
 
   trainingPlans: any[] = [];

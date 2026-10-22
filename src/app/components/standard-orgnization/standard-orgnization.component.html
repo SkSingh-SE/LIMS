@@ -68,7 +68,6 @@
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td>{{ customerType.name }}</td>
-                            <td>{{ customerType.numberType === 'SteelNumber' ? 'Steel Number' : customerType.numberType }}</td>
                             <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>
@@ -156,20 +155,6 @@
                             [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                             [attr.disabled]="isViewMode ? true : null" />
                         <app-field-error [control]="StandardOrganizationForm.get('name')" label="Name" [submitted]="submitted"/>
-                    </div>
-
-                    <!-- Number Type -->
-                    <div class="mb-1">
-                        <label class="form-label">Number Type <span class="text-danger">*</span></label>
-                        <div class="d-flex gap-3">
-                            <div class="form-check" *ngFor="let option of numberTypeOptions">
-                                <input class="form-check-input" type="radio" formControlName="numberType"
-                                    [value]="option" [id]="'numberType-' + option" />
-                                <label class="form-check-label" [for]="'numberType-' + option">
-                                    {{ option === 'SteelNumber' ? 'Steel Number' : option }}
-                                </label>
-                            </div>
-                        </div>
                     </div>
 
                 </div>

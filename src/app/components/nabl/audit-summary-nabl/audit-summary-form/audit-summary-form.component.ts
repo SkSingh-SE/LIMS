@@ -1,4 +1,4 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -19,7 +19,7 @@ import { NablHeaderService } from '../../../../services/nabl-header.service';
     styleUrl: './audit-summary-form.component.css'
 })
 export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     isSubmitting = false;
     summaryForm!: FormGroup;
     isEditMode = false;
@@ -27,10 +27,15 @@ export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit
     recordId: number = 0;
     formTitle = 'Audit Summary Report';
     formNumbers = NablFormsHelper.getFormNumbers();
+    departmentSummary: any[] = [];
 
     openSections: { [key: string]: boolean } = {
         header: true,
-        summaryDetails: true
+        summaryDetails: true,
+        auditPlanDetails: true,
+        executionSummary: true,
+        findingsSummary: true,
+        departmentSummary: true,
     };
 
     quillModules = {
@@ -46,50 +51,105 @@ export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit
         private route: ActivatedRoute,
         private router: Router,
         private service: AuditSummaryService
-    , private unsavedChangesService: UnsavedChangesService,
+        , private unsavedChangesService: UnsavedChangesService,
         private nablHeaderService: NablHeaderService) {
         this.initForm();
         this.nablHeaderService.getFormDefaults('AuditSummary').subscribe({
             next: (defaults) => {
                 this.summaryForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
     }
+    auditPlanId: number = 0;
 
     ngOnInit() {
         this.route.paramMap.subscribe(params => {
+
             const id = params.get('id');
             const mode = this.route.snapshot.url[1]?.path;
 
-            if (id && id !== 'create') {
-                this.recordId = +id;
-                this.isEditMode = mode === 'edit';
+            if (id) {
+
+                this.auditPlanId = +id;
+
                 this.isViewMode = mode === 'details';
-                this.formTitle = this.isViewMode ? 'View Audit Summary' : 'Edit Audit Summary';
-                this.loadRecord();
+                this.formTitle = 'Audit Summary';
+
+                this.loadRecord(this.auditPlanId);
             }
         });
-    }
-
-    private initForm() {
+    } private initForm() {
         this.summaryForm = this.fb.group({
             formatNo: ['F-52'],
-            docNo: [''],
+            docNo: ['F-52'],
             issueNo: ['03'],
             issueDate: ['', Validators.required],
             revNo: ['00'],
             revDate: ['--', Validators.required],
 
-            auditDate: ['', Validators.required],
-            areasCovered: ['', Validators.required],
-            majorNCs: [0, [Validators.required, Validators.min(0)]],
-            minorNCs: [0, [Validators.required, Validators.min(0)]],
-            observationSummary: ['', Validators.required],
-            conclusion: ['', Validators.required],
-            preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            auditPlanId: [null],
+
+            auditPlanNo: [''],
+
+            auditType: [''],
+
+            planningYear: [null],
+
+            leadAuditorId: [null],
+
+            leadAuditor: [''],
+
+            auditFrom: [null],
+
+            auditTo: [null],
+
+            auditCriteria: [''],
+
+            scopeOfAudit: [''],
+
+            auditObjective: [''],
+
+            overallAuditStatus: [''],
+
+
+            // ==========================
+            // III. Audit Execution
+            // ==========================
+
+            totalAudits: [0],
+
+            completed: [0],
+
+            inProgress: [0],
+
+            scheduled: [0],
+
+
+            // ==========================
+            // IV. Audit Findings
+            // ==========================
+
+            totalNcrs: [0],
+
+            majorNcrs: [0],
+
+            minorNcrs: [0],
+
+            observations: [0],
+
+            closedNcrs: [0],
+
+            pendingNcrs: [0],
+            preparedBy: [null],
+            preparedDate: [null],
+
+            reviewedBy: [null],
+            reviewedDate: [null],
+
+            approvedBy: [null],
+            approvedDate: [null]
+
         });
 
         // System-managed fields — always readonly
@@ -99,62 +159,72 @@ export class AuditSummaryFormComponent implements CanComponentDeactivate, OnInit
         this.summaryForm.get('formatNo')?.disable();
     }
 
-    private loadRecord() {
-        this.service.getById(this.recordId).subscribe(data => {
-            if (data) {
-                this.summaryForm.patchValue(data);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.summaryForm.disable();
-                    this.isViewMode = true;
-                } else if (this.isViewMode) {
-                    this.summaryForm.disable();
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.summaryForm.get('docNo')?.disable();
-                this.summaryForm.get('issueNo')?.disable();
-                this.summaryForm.get('revNo')?.disable();
-                this.summaryForm.get('formatNo')?.disable();
+    private loadRecord(auditPlanId: number) {
+        this.service.getSummaryByAuditPlanId(auditPlanId).subscribe(data => {
+            if (!data) {
+                return;
             }
+
+            // Overall Audit Status calculate
+            let overallAuditStatus = 'Scheduled';
+
+            if (data.totalAudits > 0 && data.completed === data.totalAudits) {
+                overallAuditStatus = 'Completed';
+            }
+            else if (
+                data.inProgress > 0 ||
+                data.completed > 0
+            ) {
+                overallAuditStatus = 'InProgress';
+            }
+
+            // Form patch
+            this.summaryForm.patchValue({
+                ...data,
+
+                auditFrom: NablFormsHelper.formatDateForInput(
+                    data.auditFrom
+                ),
+
+                auditTo: NablFormsHelper.formatDateForInput(
+                    data.auditTo
+                ),
+
+                overallAuditStatus: overallAuditStatus
+            });
+
+            // Department Summary
+            this.departmentSummary =
+                data.departmentSummary || [];
+
+            // Summary is read-only
+            this.summaryForm.disable();
+
+            // System fields
+            this.summaryForm.get('docNo')?.disable();
+            this.summaryForm.get('issueNo')?.disable();
+            this.summaryForm.get('revNo')?.disable();
+            this.summaryForm.get('formatNo')?.disable();
         });
     }
-
     toggleSection(section: string) {
         this.openSections[section] = !this.openSections[section];
     }
 
-    onSubmit() {
-        if (this.summaryForm.valid) {
-            this.isSubmitting = true;
-            if (this.isEditMode) {
-                this.service.update(this.recordId, this.summaryForm.getRawValue()).subscribe({
-                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
-                    error: () => { this.isSubmitting = false; }
-                });
-            } else {
-                this.service.create(this.summaryForm.getRawValue()).subscribe({
-                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
-                    error: () => { this.isSubmitting = false; }
-                });
-            }
+    onCancel() {
+        this.router.navigate(['/audit-plan']);
+    }
+
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.summaryForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
+    }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.summaryForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
         }
     }
-
-    onCancel() {
-        this.router.navigate(['/audit-summary']);
-    }
-
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.summaryForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.summaryForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
-    }
-  }
 }

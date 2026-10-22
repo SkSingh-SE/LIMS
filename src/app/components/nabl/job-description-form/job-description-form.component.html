@@ -40,7 +40,6 @@
                 <label class="form-label">Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control bg-light" formControlName="date" readonly>
               </div>
-            
               <div class="col-md-3">
                 <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
                   [required]="true" [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
@@ -53,24 +52,15 @@
                 </span>
               </div>
 
-              <div class="col-md-3">
-                <app-searchable-dropdown [placeholder]="'Search Department'" [labelName]="'Department'"
-                  [required]="true" [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
-                  [isDisabled]="isViewMode" [selectedItem]="jobDescForm.get('departmentId')?.value">
+              <div class="col-3">
+                <app-searchable-dropdown [required]="true" [fetchDataFn]="getEmployees"
+                  [placeholder]="'Search reporting By'" [labelName]="'reporting By'" [isDisabled]="isViewMode"
+                  (itemSelected)="onEmployeeSelected($event)" [selectedItem]="jobDescForm.get('reportingToId')?.value">
                 </app-searchable-dropdown>
-
-                <span *ngIf="jobDescForm.get('departmentId')?.invalid && jobDescForm.get('departmentId')?.touched"
-                  class="text-danger text-sm small">
-                  Department is required.
-                </span>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Reporting To <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="reportingTo"
-                  placeholder="Immediate Superior" />
-                <app-field-error [control]="jobDescForm.get('reportingTo')" label="Reporting To"
-                  [submitted]="isSubmitting" />
-
+                <div *ngIf="jobDescForm.get('reportingToId')?.invalid && jobDescForm.get('reportingToId')?.touched"
+                  class="text-danger text-sm mt-1">
+                  reporting to is required
+                </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Doc No <span class="text-danger">*</span></label>

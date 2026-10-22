@@ -2,13 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, timer, throwError, of, forkJoin } from 'rxjs';
 import { catchError, map, tap, switchMap, takeUntil, timeout } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { 
-  DashboardResponseDto, 
-  DashboardCardDto, 
-  DashboardChartDto, 
+import {
+  DashboardResponseDto,
+  DashboardCardDto,
+  DashboardChartDto,
   DashboardNotificationDto,
-  DashboardState 
+  DashboardState
 } from '../models/dashboardModels';
 import { ToastService } from './toast.service';
 import { DashboardErrorHandlerService, ErrorContext } from './dashboard-error-handler.service';
@@ -66,7 +67,8 @@ export class DashboardService {
   constructor(
     private http: HttpClient,
     private toastService: ToastService,
-    private errorHandler: DashboardErrorHandlerService
+    private errorHandler: DashboardErrorHandlerService,
+    private router: Router
   ) {
     this.loadCustomLayout();
     this.setupTabVisibilityListener();
@@ -212,7 +214,9 @@ export class DashboardService {
       context
     ).subscribe({
       next: (data) => {
-        this.toastService.show('Dashboard refreshed successfully', 'success');
+        if (this.router.url === '/dashboard' || this.router.url === '/') {
+          this.toastService.show('Dashboard refreshed successfully', 'success');
+        }
         this.restoreUserInteractionState();
       },
       error: (error) => {
@@ -670,8 +674,9 @@ export class DashboardService {
         console.log('Tab became inactive - auto-refresh will be paused');
       } else {
         console.log('Tab became active - auto-refresh will resume');
-        // Optionally trigger immediate refresh when tab becomes active
-        if (this.isAutoRefreshActive && this.shouldRefreshOnTabActive()) {
+        // Only trigger refresh when on the dashboard page
+        if (this.isAutoRefreshActive && this.shouldRefreshOnTabActive() &&
+            (this.router.url === '/dashboard' || this.router.url === '/')) {
           console.log('Triggering refresh due to tab becoming active');
           this.refreshDashboard();
         }

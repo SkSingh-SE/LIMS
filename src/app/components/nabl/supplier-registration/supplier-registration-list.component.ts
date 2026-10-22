@@ -33,7 +33,14 @@ export class SupplierRegistrationListComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        this.loadRecords();
+        this.loadRecords({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
     loadRecords(params: any = {}): void {
@@ -73,8 +80,15 @@ export class SupplierRegistrationListComponent implements OnInit {
     onDelete(id: number): void {
         if (confirm('Are you sure you want to delete this registration record?')) {
             this.service.delete(id).subscribe(() => {
-                  this.toastService.show('delete supplier registration record', 'success');
-                this.loadRecords({ PageNumber: 1, PageSize: 10 });
+                this.toastService.show('delete supplier registration record', 'success');
+                this.loadRecords({
+                    PageNumber: 1,
+                    PageSize: 10,
+                    searchTerm: '',
+                    sortByColumn: 'id',
+                    sortOrder: 'desc',
+                    filter: []
+                });
             });
         }
     }

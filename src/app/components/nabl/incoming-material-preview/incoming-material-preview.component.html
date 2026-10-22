@@ -98,11 +98,18 @@
               <th>Ordered Qty </th>
               <th>Unit </th>
               <th>Received Qty</th>
+              <th>Material</th>
+              <th>Code </th>
+              <th style="width: 120px">Ordered Qty </th>
+              <th>Unit Price </th>
+              <th style="width: 120px">Received Qty</th>
+
               <th>Batch No </th>
               <th>Lot No </th>
               <th>Invoice No</th>
               <th>Expiry Date </th>
               <th>COA Available </th>
+
             </tr>
           </thead>
           <tbody class="small">
@@ -116,7 +123,7 @@
               <td class="text-center">{{ r.batchNo }}</td>
               <td class="text-center">{{ r.lotNo }}</td>
               <td class="text-center">{{ r.invoiceNo }}</td>
-              <td class="text-center">{{ r.expiryDate }}</td>
+              <td class="text-center">{{ r.expiryDate | date: 'dd-MM-yyyy' }}</td>
               <td class="text-center">{{ r.coaAvailable }}</td>
             </tr>
           </tbody>

@@ -40,3 +40,42 @@
   font-size: 24px;
   line-height: 1;
 }
+
+.inventory-modal {
+  width: 90%;
+  max-width: 1000px;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1055;
+}
+
+.modal-header-custom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.modal-body-custom {
+  padding: 16px;
+  max-height: calc(90vh - 60px);
+  overflow-y: auto;
+}
+
+.close-btn {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+}

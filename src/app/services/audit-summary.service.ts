@@ -10,7 +10,7 @@ import { AuditSummary } from '../models/audit-summary';
 export class AuditSummaryService {
     private apiUrl = environment.apiUrl + '/Nabl/AuditSummary';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -19,7 +19,6 @@ export class AuditSummaryService {
     getById(id: number): Observable<AuditSummary | undefined> {
         return this.http.get<AuditSummary>(`${this.apiUrl}/details/${id}`);
     }
-
     create(data: AuditSummary): Observable<AuditSummary> {
         return this.http.post<AuditSummary>(`${this.apiUrl}/save`, data);
     }
@@ -31,5 +30,10 @@ export class AuditSummaryService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getSummaryByAuditPlanId(auditPlanId: number): Observable<any> {
+        return this.http.get<any>(
+            `${this.apiUrl}/audit-plan/${auditPlanId}`
+        );
     }
 }

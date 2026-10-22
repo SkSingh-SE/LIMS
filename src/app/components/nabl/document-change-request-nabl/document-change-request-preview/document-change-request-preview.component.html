@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,87 +46,293 @@
 
   <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="data.formatNo"
-        [mainTitle]="'DOCUMENT CHANGE REQUEST FORM'"
-        [docNo]="data.docNo"
-        [issueNo]="data.headerIssueNo"
-        [issueDate]="data.headerIssueDate"
-        [revNo]="data.headerRevNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'DOCUMENT CHANGE REQUEST FORM'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
 
-      <!-- Document Details -->
+      <!-- ===================================================== -->
+      <!-- I. REQUEST DETAILS -->
+      <!-- ===================================================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">DOCUMENT DETAILS</div>
+
+        <div class="sec-title">
+          I. REQUEST DETAILS
+        </div>
+
         <table class="table table-bordered inner-table">
+
+          <thead>
+            <tr>
+              <td class="lbl">
+                Change Request No.
+              </td>
+              <td class="lbl"> 
+                Request Date
+              </td>
+              <td class="lbl">
+                Priority
+              </td>
+            </tr>
+          </thead>
           <tbody>
+
             <tr>
-              <td class="lbl" style="width: 30%">Date</td>
-              <td>{{ data.date | date: "dd.MM.yyyy" }}</td>
+              <td>
+                {{data.requestNo}}
+              </td>
+              <td>
+                {{data.requestDate | date:'dd.MM.yyyy'}}
+              </td>
+              <td>
+                {{data.priority}}
+              </td>
             </tr>
-            <tr>
-              <td class="lbl">Document Title</td>
-              <td>{{ data.documentTitle }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Doc. No.</td>
-              <td>{{ data.documentNo }}</td>
-            </tr>
-            <tr>
-              <td class="lbl">Issue No. / Rev. No.</td>
-              <td>{{ data.issueNo }} / {{ data.revNo }}</td>
-            </tr>
+
           </tbody>
+
         </table>
+
       </div>
 
-      <!-- Changes Required -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">CHANGES REQUIRED</div>
-        <div class="sec-body" [innerHTML]="data.changesRequired"></div>
-      </div>
 
-      <!-- Justification -->
-      <div class="doc-section mb-3">
-        <div class="sec-title">JUSTIFICATION</div>
-        <div class="sec-body" [innerHTML]="data.justification"></div>
-      </div>
 
-      <!-- Authorization -->
+      <!-- ===================================================== -->
+      <!-- II. DOCUMENT INFORMATION -->
+      <!-- ===================================================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">AUTHORIZATION</div>
+
+        <div class="sec-title">
+          II. DOCUMENT INFORMATION
+        </div>
+
         <table class="table table-bordered inner-table">
+
           <tbody>
+
             <tr>
-              <td class="lbl" style="width: 30%">Initiated By</td>
-              <td>{{ data.initiatedBy }}</td>
+
+              <td class="lbl" style="width:25%">
+                Document
+              </td>
+
+              <td style="width:25%">
+                {{data.documentName}}
+              </td>
+
+              <td class="lbl" style="width:25%">
+                Document Type
+              </td>
+
+              <td style="width:25%">
+                {{data.documentType}}
+              </td>
+
             </tr>
+
             <tr>
-              <td class="lbl">Approved By (Director)</td>
-              <td>{{ data.approvedBy }}</td>
+
+              <td class="lbl">
+                Department
+              </td>
+
+              <td>
+                {{data.departmentDoc}}
+              </td>
+
+              <td class="lbl">
+                Document Owner
+              </td>
+
+              <td>
+                {{data.documentOwner}}
+              </td>
+
             </tr>
+
+            <tr>
+
+              <td class="lbl">
+                Current Issue No.
+              </td>
+
+              <td>
+                {{data.currentIssue}}
+              </td>
+
+              <td class="lbl">
+                Current Revision No.
+              </td>
+
+              <td>
+                {{data.currentRevision}}
+              </td>
+
+            </tr>
+
+            <tr>
+
+              <td class="lbl">
+                Effective Date
+              </td>
+
+              <td>
+                {{data.effectiveDate | date:'dd.MM.yyyy'}}
+              </td>
+
+              <td class="lbl">
+                Next Review Date
+              </td>
+
+              <td>
+                {{data.nextReviewDate | date:'dd.MM.yyyy'}}
+              </td>
+
+            </tr>
+
           </tbody>
+
         </table>
+
       </div>
 
-      <!-- Action Taken by Quality Manager -->
+
+
+      <!-- ===================================================== -->
+      <!-- III. CHANGE REQUEST DETAILS -->
+      <!-- ===================================================== -->
+
       <div class="doc-section mb-3">
-        <div class="sec-title">ACTION TAKEN BY QUALITY MANAGER</div>
-        <div class="sec-body" [innerHTML]="data.actionTaken"></div>
+
+        <div class="sec-title">
+          III. CHANGE REQUEST DETAILS
+        </div>
+
+        <table class="table table-bordered inner-table">
+
+          <tbody>
+
+            <tr>
+
+              <td class="lbl" style="width:25%">
+                Type Of Change
+              </td>
+
+              <td style="width:25%">
+                {{data.changeType}}
+              </td>
+
+              <td class="lbl" style="width:25%">
+                Impact Of Change
+              </td>
+
+              <td style="width:25%">
+                {{data.impactOfChange}}
+              </td>
+
+            </tr>
+
+            <tr>
+
+              <td class="lbl">
+                Reason For Change
+              </td>
+
+              <td>
+                {{data.reasonForChange}}
+              </td>
+              <td class="lbl">
+                Description Of Change
+              </td>
+
+              <td>
+                {{data.descriptionOfChange}}
+              </td>
+
+            </tr>
+
+            <tr>
+
+
+            </tr>
+
+            <tr>
+
+              <td class="lbl">
+                Reference (If Any)
+              </td>
+
+              <td colspan="3">
+
+                <div [innerHTML]="data.reference"></div>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+
+      <!-- ===================================================== -->
+      <!-- IV. CHANGE REQUIRED & JUSTIFICATION -->
+      <!-- ===================================================== -->
+
+      <div class="doc-section">
+
+        <div class="sec-title">
+          IV. CHANGE REQUIRED & JUSTIFICATION
+        </div>
+
+        <table class="table table-bordered inner-table">
+          <thead>
+            <tr>
+              <td class="lbl">
+                Request By
+              </td>
+
+              <td class="lbl">
+                Department
+              </td>
+
+              <td class="lbl">
+                Designation
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr>
+              <td>
+                {{data.requestByName}}
+              </td>
+              <td>
+                {{data.departmentName}}
+              </td>
+              <td>
+                {{data.designation}}
+              </td>
+            </tr>
+
+          </tbody>
+
+        </table>
+
       </div>
 
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'General Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

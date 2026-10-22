@@ -49,15 +49,17 @@ export class EmployeeCompetencePreviewComponent implements OnInit {
     loadEmployeeReports(employeeId: number): void {
         this.loading = true;
         this.competenceService.getByEmployeeId(employeeId).subscribe({
-            next: (res: any) => {
-                this.reports = res.items || [];
-                if (this.reports.length > 0) {
-                    this.report = this.reports[0];
+            next: (res) => {
+                if (res) {
+                    this.report = res;
                 }
+                // if (this.report != null) {
+                //     this.report = this.report;
+                // }
                 this.loading = false;
             },
             error: () => {
-                this.reports = [];
+                this.report = null;
                 this.loading = false;
             }
         });

@@ -27,6 +27,7 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
     saved = false;
     materialForm!: FormGroup;
     qtyForm!: FormGroup;
+    inventoryForm!: FormGroup;
     recordId: number = 0;
     isEditMode = false;
     isViewMode = false;
@@ -36,9 +37,10 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
     inventoryList: any[] = [];
     quantityLogs: any[] = [];
     showQtyPopup = false;
+    showInvntPopup = false;
     selectedInventory: any = null;
-    isInventoryFound = false;
-    showManualInventoryFields = true;
+    isInventoryFound = true;
+    showManualInventoryFields = false;
     isInventoryLinked = false;
     openSections: { [key: string]: boolean } = {
         header: true,
@@ -151,6 +153,24 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
         this.qtyForm = this.fb.group({
             addedQuantity: [null, [Validators.required, Validators.min(1)]]
         });
+        this.inventoryForm = this.fb.group({
+            id: [0],
+            itemCode: ['', Validators.required],
+            itemCategory: ['', Validators.required],
+            itemName: ['', Validators.required],
+            itemDescription: [''],
+            departmentID: [0],
+            supplierId: [''],
+            supplierName: [''],
+            manufacturer: [''],
+            batchNo: [''],
+            unit: ['', Validators.required],
+            quantity: [0, Validators.required],
+            minimumQuantity: [0],
+            storageLocation: [''],
+            date: [this.today],
+            remarks: ['']
+        });
         // System-managed fields — always readonly
         this.materialForm.get('documentNo')?.disable();
         this.materialForm.get('issueDate')?.disable();
@@ -158,6 +178,16 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
         this.materialForm.get('revNo')?.disable();
         this.materialForm.get('formatNo')?.disable();
         this.materialForm.get('rmCode')?.disable();
+        this.inventoryForm.get('itemCategory')?.disable();
+        // Disable all specified fields from your form
+        this.materialForm.get('manufacturer')?.disable();
+        this.materialForm.get('supplierId')?.disable();
+        this.materialForm.get('batchNo')?.disable();
+        this.materialForm.get('departmentID')?.disable();
+        this.materialForm.get('storageLocation')?.disable();
+        this.materialForm.get('initialQuantity')?.disable();
+        this.materialForm.get('minimumQuantity')?.disable();
+        this.materialForm.get('unitOfMeasure')?.disable();
 
     }
     setInventoryValidators(): void {
@@ -297,8 +327,91 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
         if (!item) { this.materialForm.patchValue({ departmentID: null }); return; }
         this.materialForm.patchValue({ departmentID: item.id });
     }
+    onDepartmentSelect(item: any) {
+        if (!item) { this.inventoryForm.patchValue({ departmentID: null }); return; }
+        this.inventoryForm.patchValue({ departmentID: item.id });
+    }
+    onSupplierChange(event: any) {
+        // 1. Select ki gayi ID get karein
+        const selectedId = this.inventoryForm.get('supplierId')?.value;
+
+        // 2. supplierList me se us ID ka object dhoondein
+        const selectedSupplier = this.supplierList.find(
+            supplier => (supplier.id || supplier.Id) === selectedId
+        );
+
+        // 3. Agar supplier mil jata hai, to uska naam form me store karein
+        if (selectedSupplier) {
+            const name = selectedSupplier.name || selectedSupplier.Name;
+            this.inventoryForm.patchValue({
+                supplierName: name
+            });
+        } else {
+            // Agar 'Select Supplier' choose kiya hai to naam khali kar dein
+            this.inventoryForm.patchValue({
+                supplierName: ''
+            });
+        }
+    }
+    // onItemChange(event: Event): void {
+    //     const selectEl = event.target as HTMLSelectElement;
+    //     let item = selectEl.value;
+
+    //     if (!item) {
+    //         this.isInventoryLinked = false;
+    //         this.clearInventoryFields();
+    //         this.enableInventoryFields();
+    //         return;
+    //     }
+
+    //     if (item.includes(':')) {
+    //         item = item.split(':')[1].trim();
+    //     }
+
+    //     if (!item.includes('/')) {
+    //         this.isInventoryLinked = false;
+    //         this.clearInventoryFields();
+    //         this.enableInventoryFields();
+    //         return;
+    //     }
+
+    //     const slashIndex = item.indexOf('/');
+    //     const itemCode = item.substring(0, slashIndex).trim();
+    //     const itemName = item.substring(slashIndex + 1).trim();
+
+    //     this.service.getItemData(itemCode, itemName).subscribe({
+    //         next: (res) => {
+    //             this.isInventoryLinked = true;
+
+    //             this.materialForm.patchValue({
+    //                 manufacturer: res.manufacturer || '',
+    //                 supplierId: res.supplierId || null,
+    //                 supplier: res.supplierName || null,
+    //                 batchNo: res.batchNo || '',
+    //                 initialQuantity: res.quantity || 0,
+    //                 minimumQuantity: res.minimumQuantity || 0,
+    //                 storageLocation: res.storageLocation || '',
+    //                 inventoryId: res.inventoryId || null,
+    //                 itemName: res.itemName || '',
+    //                 itemCode: res.itemCode || '',
+    //                 departmentID: res.departmentID || null,
+    //                 unitOfMeasure: res.unit || ''
+    //             });
+
+    //             this.disableInventoryFields();
+    //             this.setInventoryValidators();
+    //         },
+    //         error: () => {
+    //             this.isInventoryLinked = false;
+    //             this.clearInventoryFields();
+    //             this.enableInventoryFields();
+    //             this.setInventoryValidators();
+    //         }
+    //     });
+    // }
 
     onItemChange(event: Event): void {
+
         const selectEl = event.target as HTMLSelectElement;
         let item = selectEl.value;
 
@@ -309,43 +422,55 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
             return;
         }
 
-        if (item.includes(':')) {
-            item = item.split(':')[1].trim();
+        // If value contains ":" then remove only the prefix
+        const colonIndex = item.indexOf(':');
+
+        if (colonIndex !== -1) {
+            item = item.substring(colonIndex + 1).trim();
         }
 
-        if (!item.includes('/')) {
+        // Find FIRST "/" only
+        const slashIndex = item.indexOf('/');
+
+        if (slashIndex === -1) {
             this.isInventoryLinked = false;
-            this.clearInventoryFields();
-            this.enableInventoryFields();
+            this.disableInventoryFields();
+            // this.setInventoryValidators();
+
             return;
         }
 
-        const slashIndex = item.indexOf('/');
         const itemCode = item.substring(0, slashIndex).trim();
         const itemName = item.substring(slashIndex + 1).trim();
 
+        console.log('Full Item:', item);
+        console.log('Item Code:', itemCode);
+        console.log('Item Name:', itemName);
+
         this.service.getItemData(itemCode, itemName).subscribe({
             next: (res) => {
+
                 this.isInventoryLinked = true;
 
                 this.materialForm.patchValue({
                     manufacturer: res.manufacturer || '',
-                    supplierId: res.supplierId || null,
+                    supplierId: res.supplierId || 0,
                     supplier: res.supplierName || null,
                     batchNo: res.batchNo || '',
                     initialQuantity: res.quantity || 0,
                     minimumQuantity: res.minimumQuantity || 0,
                     storageLocation: res.storageLocation || '',
                     inventoryId: res.inventoryId || null,
-                    itemName: res.itemName || '',
-                    itemCode: res.itemCode || '',
-                    departmentID: res.departmentID || null,
+                    itemName: res.itemName || itemName,
+                    itemCode: res.itemCode || itemCode,
+                    departmentID: res.departmentID || 0,
                     unitOfMeasure: res.unit || ''
                 });
 
                 this.disableInventoryFields();
                 this.setInventoryValidators();
             },
+
             error: () => {
                 this.isInventoryLinked = false;
                 this.clearInventoryFields();
@@ -354,21 +479,20 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
             }
         });
     }
-
     clearInventoryFields(): void {
         this.materialForm.patchValue({
             inventoryId: null,
             itemCode: '',
             itemName: '',
             manufacturer: '',
-            supplierId: null,
+            supplierId: 0,
             supplier: null,
             batchNo: '',
-            initialQuantity: null,
-            minimumQuantity: null,
+            initialQuantity: 0,
+            minimumQuantity: 0,
             unitOfMeasure: '',
             storageLocation: '',
-            departmentID: null
+            departmentID: 0
         });
     }
 
@@ -385,6 +509,8 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
         const inventoryId = this.materialForm.get('inventoryId')?.value;
 
         if (!inventoryId) {
+            this.toastService.show(
+                'Please select Inventory Item before adding quantity.', 'warning');
             return;
         }
 
@@ -400,6 +526,27 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
         this.showQtyPopup = true;
 
         this.loadQuantityLogs(inventoryId);
+    }
+    openInvtPopup(): void {
+
+        const materialtype = this.materialForm.get('type')?.value;
+        if (!materialtype) {
+            this.toastService.show(
+                'Please select Material Type before adding inventory.', 'warning');
+            return;
+        }
+        this.inventoryForm.reset();
+        this.inventoryForm.patchValue({
+            itemCategory: materialtype,
+            quantity: 0,
+            minimumQuantity: 0,
+        });
+        this.showInvntPopup = true;
+
+    }
+    closeInvtPopup(): void {
+        this.showInvntPopup = false;
+        this.inventoryForm.reset();
     }
 
     loadQuantityLogs(inventoryId: number): void {
@@ -424,13 +571,13 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
             itemCode: '',
             itemName: '',
             manufacturer: '',
-            supplierId: null,
+            supplierId: 0,
             batchNo: '',
-            initialQuantity: '',
-            minimumQuantity: '',
-            unitOfMeasure: '',
+            initialQuantity: 0,
+            minimumQuantity: 0,
+            unitOfMeasure: null,
             storageLocation: '',
-            departmentID: ''
+            departmentID: 0
         });
         if (!type) return;
 
@@ -439,18 +586,18 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
                 this.inventoryList = [];
                 this.inventoryList = [...(res || [])];
                 this.inventoryList = res;
-                if (this.inventoryList.length > 0) {
-                    this.isInventoryFound = true;
-                    this.showManualInventoryFields = false;
-                    this.isInventoryLinked = true;
-                    this.setInventoryValidators();
-                }
-                else {
-                    this.isInventoryFound = false;
-                    this.showManualInventoryFields = true;
-                    this.isInventoryLinked = false;
-                    this.setInventoryValidators();
-                }
+                // if (this.inventoryList.length > 0) {
+                this.isInventoryFound = true;
+                this.showManualInventoryFields = false;
+                this.isInventoryLinked = true;
+                this.setInventoryValidators();
+                // }
+                // else {
+                //     this.isInventoryFound = false;
+                //     this.showManualInventoryFields = true;
+                //     this.isInventoryLinked = false;
+                //     this.setInventoryValidators();
+                // }
             },
             error: () => {
                 this.inventoryList = [];
@@ -463,70 +610,128 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
         })
     }
     saveInventory(): void {
+
         const requiredFields = [
             'itemCode',
+            'itemCategory',
             'itemName',
-            'manufacturer',
-            'batchNo',
-            'initialQuantity',
-            'minimumQuantity',
-            'unitOfMeasure'
+            'unit'
         ];
+
         let isValid = true;
+
         requiredFields.forEach(field => {
-            const control = this.materialForm.get(field);
+            const control = this.inventoryForm.get(field);
+
             if (control?.invalid) {
                 control.markAsTouched();
                 isValid = false;
             }
         });
+
         if (!isValid) {
             return;
         }
-        const formValue = this.materialForm.getRawValue();
+
+        const formValue = this.inventoryForm.getRawValue();
+
         const payload: Inventorymanagement = {
             id: 0,
             itemCode: formValue.itemCode,
+            itemCategory: formValue.itemCategory,
             itemName: formValue.itemName,
-            itemCategory: formValue.type,
-            departmentID: formValue.departmentID || null,
-            supplierId: formValue.supplierId || null,
-            manufacturer: formValue.manufacturer,
-            batchNo: formValue.batchNo,
-            quantity: Number(formValue.initialQuantity),
-            minimumQuantity: Number(formValue.minimumQuantity),
-            unit: formValue.unitOfMeasure,
-            storageLocation: formValue.storageLocation || null,
-            remarks: formValue.remarks || null,
-            supplier: formValue.supplier || null,
-            date: new Date()
+            itemDescription: formValue.itemDescription || null,
 
+            departmentID: formValue.departmentID || 0,
+
+            supplierId: formValue.supplierId || 0,
+
+
+            manufacturer: formValue.manufacturer || null,
+            batchNo: formValue.batchNo || null,
+
+            unit: formValue.unit,
+
+            quantity: Number(formValue.quantity || 0),
+            minimumQuantity: Number(formValue.minimumQuantity || 0),
+
+            storageLocation: formValue.storageLocation || null,
+            date: formValue.date || new Date(),
+
+            remarks: formValue.remarks || null
         };
+
         this.inventorymanagementService.create(payload).subscribe({
             next: (res: any) => {
-                const inventoryId = res.Id || res.id || res.data?.id;
 
-                const itemCode = this.materialForm.get('itemCode')?.value;
-                const itemName = this.materialForm.get('itemName')?.value;
+                const inventoryId =
+                    res?.id ||
+                    res?.Id ||
+                    res?.data?.id ||
+                    res?.data?.Id;
 
+                const itemCode = formValue.itemCode;
+                const itemName = formValue.itemName;
                 const newInventoryItem = {
-                    name: `${itemCode}/${itemName}`,
+                    id: inventoryId,
+                    name: `${formValue.itemCode}/${formValue.itemName}`
                 };
-                this.inventoryList = [newInventoryItem];
 
+                // Inventory dropdown/list update
+                this.inventoryList = [newInventoryItem];
+                // Set inventory reference in material form
                 this.materialForm.patchValue({
                     inventoryId: inventoryId,
-                    itemId: newInventoryItem.name
+                    itemId: `${itemCode}/${itemName}`
                 });
 
-                this.isInventoryLinked = true;
-                this.isInventoryFound = true;
-                this.showManualInventoryFields = false;
+                // Fetch created inventory details
+                this.service.getItemData(itemCode, itemName).subscribe({
+                    next: (res) => {
 
-                this.toastService.show('Inventory saved successfully', 'success');
+                        this.isInventoryLinked = true;
+
+                        this.materialForm.patchValue({
+                            manufacturer: res.manufacturer || '',
+                            supplierId: res.supplierId || 0,
+                            supplier: res.supplierName || null,
+                            batchNo: res.batchNo || '',
+                            initialQuantity: res.quantity || 0,
+                            minimumQuantity: res.minimumQuantity || 0,
+                            storageLocation: res.storageLocation || '',
+                            inventoryId: res.inventoryId || inventoryId,
+                            itemName: res.itemName || itemName,
+                            itemCode: res.itemCode || itemCode,
+                            departmentID: res.departmentID || 0,
+                            unitOfMeasure: res.unit || ''
+                        });
+
+                        this.disableInventoryFields();
+                        this.setInventoryValidators();
+
+                        // Close popup
+                        this.showInvntPopup = false;
+
+                        this.toastService.show(
+                            'Inventory saved successfully',
+                            'success'
+                        );
+                    },
+
+                    error: () => {
+                        this.toastService.show(
+                            'Inventory saved, but details could not be loaded.',
+                            'warning'
+                        );
+                    }
+                });
             },
+
             error: () => {
-                this.toastService.show('Error while saving inventory', 'error');
+                this.toastService.show(
+                    'Error while saving inventory',
+                    'error'
+                );
             }
         });
     }

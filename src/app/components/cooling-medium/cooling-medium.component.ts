@@ -284,7 +284,7 @@ export class CoolingMediumComponent implements OnInit {
       this.CoolingMediumForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

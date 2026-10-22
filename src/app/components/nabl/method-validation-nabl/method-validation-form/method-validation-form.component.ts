@@ -30,6 +30,7 @@ export class MethodValidationNablFormComponent implements CanComponentDeactivate
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
     quillModules = { toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']] };
     testMethodList: any[] = [];
+    savedMethodValidationList: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         methodInfo: true,
@@ -63,17 +64,50 @@ export class MethodValidationNablFormComponent implements CanComponentDeactivate
         , private unsavedChangesService: UnsavedChangesService,
         private nablHeaderService: NablHeaderService) { }
 
+    // ngOnInit(): void {
+    //     this.initForm();
+    //     this.nablHeaderService.getFormDefaults('MethodValidation').subscribe({
+    //         next: (defaults) => {
+    //             this.requestForm.patchValue({ formatNo: defaults.formCode });
+    //         },
+    //         error: () => { }
+    //     });
+    //     this.loadTestMethodList();
+    //     this.loadsavedMethodValidationList();
+    //     this.recordId = Number(this.route.snapshot.params['id']);
+    //     const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
+    //     if (path === 'details') {
+    //         this.isViewMode = true;
+    //         this.formTitle = 'View Method Validation Record';
+    //         this.requestForm.disable();
+    //     } else if (path === 'edit') {
+    //         this.isEditMode = true;
+    //         this.formTitle = 'Edit Method Validation Record';
+    //     }
+
+    //     if (this.recordId) {
+    //         this.loadData();
+    //     }
+    // }
+
     ngOnInit(): void {
         this.initForm();
+
+        // Set recordId before loading data or checking duplicates
+        this.recordId = Number(this.route.snapshot.params['id']) || 0;
+
         this.nablHeaderService.getFormDefaults('MethodValidation').subscribe({
             next: (defaults) => {
                 this.requestForm.patchValue({ formatNo: defaults.formCode });
             },
             error: () => { }
         });
+
         this.loadTestMethodList();
-        this.recordId = Number(this.route.snapshot.params['id']);
+        this.loadsavedMethodValidationList();
+
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
+
         if (path === 'details') {
             this.isViewMode = true;
             this.formTitle = 'View Method Validation Record';
@@ -87,7 +121,6 @@ export class MethodValidationNablFormComponent implements CanComponentDeactivate
             this.loadData();
         }
     }
-
     initForm(): void {
         this.requestForm = this.fb.group({
             id: [0],
@@ -173,6 +206,33 @@ export class MethodValidationNablFormComponent implements CanComponentDeactivate
         //     reasonControl?.updateValueAndValidity();
         // });
     }
+
+    loadsavedMethodValidationList(): void {
+        this.service.getAll().subscribe({
+            next: (response: any) => {
+                this.savedMethodValidationList = response?.items ?? [];
+
+                console.log(
+                    'Saved verification records:',
+                    this.savedMethodValidationList.length
+                );
+                console.log(
+                    'Saved Test Methods:',
+                    this.savedMethodValidationList.map((x: any) => ({
+                        id: x.id,
+                        testMethodCode: x.testMethodCode,
+                        testMethodName: x.testMethodName
+                    }))
+                );
+            },
+            error: (error) => {
+                console.error('Failed to load saved methods:', error);
+                this.savedMethodValidationList = [];
+            }
+        });
+    }
+
+
     loadTestMethodList(): void {
         this.service.getTestMethodList().subscribe({
             next: (data) => {
@@ -180,6 +240,9 @@ export class MethodValidationNablFormComponent implements CanComponentDeactivate
             },
             error: () => {
                 this.testMethodList = [];
+                // if (this.recordId > 0) {
+                //     this.setSelectedTestMethod(this.requestForm.getRawValue());
+                // }
             }
         });
     }
@@ -195,37 +258,158 @@ export class MethodValidationNablFormComponent implements CanComponentDeactivate
         return this.requestForm.get('precisionStudy') as FormArray;
     }
 
+    // onChangeTestMethodCode(event: any): void {
+    //     const testmethodCode = event.target.value;
+
+    //     if (!testmethodCode) {
+    //         return;
+    //     }
+
+    //     this.service.getTestMethodDetails(testmethodCode).subscribe({
+    //         next: (data) => {
+    //             this.requestForm.patchValue({
+    //                 testMethodName: data?.testMethodName || '',
+    //                 referenceStandard: data?.referenceStandard || '',
+    //                 revIssue: data?.revIssue || '', 
+    //                 verificationDate: NablFormsHelper.formatDateForInput(data?.verificationDate),
+
+    //                 verifiedBy: data?.verifiedBy || '',
+    //                 humidity: data?.humidity || '',
+    //                 temperature: data?.temperature || '',
+    //                 equipmentId: data?.equipmentId || '',
+    //                 equipmentName: data?.equipmentName || ''
+    //             });
+
+    //             if (data?.crmMaterialParameters) {
+    //                 this.setCRMRows(data.crmMaterialParameters);
+    //             }
+    //         },
+    //         error: () => {
+    //             console.log('Failed to fetch test method details');
+    //         }
+    //     });
+    // }
+
+
+
     onChangeTestMethodCode(event: any): void {
-        const testmethodCode = event.target.value;
+        const testmethodCode = String(event.target.value || '').trim();
 
-        if (!testmethodCode) {
-            return;
-        }
+        if (!testmethodCode) return;
 
-        this.service.getTestMethodDetails(testmethodCode).subscribe({
-            next: (data) => {
-                this.requestForm.patchValue({
-                    testMethodName: data?.testMethodName || '',
-                    referenceStandard: data?.referenceStandard || '',
-                    revIssue: data?.revIssue || '',
-                    verificationDate: NablFormsHelper.formatDateForInput(data?.verificationDate),
+        this.service.getAll().subscribe({
+            next: (response: any) => {
+                const savedRecords = response?.items ?? [];
 
-                    verifiedBy: data?.verifiedBy || '',
-                    humidity: data?.humidity || '',
-                    temperature: data?.temperature || '',
-                    equipmentId: data?.equipmentId || '',
-                    equipmentName: data?.equipmentName || ''
+                const selectedMethod = this.testMethodList.find(
+                    (method: any) =>
+                        String(method.name ?? method.Name ?? '').trim().toLowerCase() ===
+                        testmethodCode.toLowerCase()
+                );
+
+                const additional =
+                    selectedMethod?.additionalValues ??
+                    selectedMethod?.AdditionalValues ??
+                    {};
+
+                const selectedCode = String(
+                    additional.SpecificationCode ??
+                    selectedMethod?.name ??
+                    selectedMethod?.Name ??
+                    testmethodCode
+                ).trim();
+
+                const selectedName = String(
+                    additional.MethodName ??
+                    additional.methodName ??
+                    ''
+                ).trim();
+
+                console.log('Selected method:', selectedMethod);
+                console.log('Selected code:', selectedCode);
+                console.log('Selected name:', selectedName);
+                console.log('Saved records:', savedRecords);
+
+                const isDuplicate = savedRecords.some((record: any) => {
+                    const savedCode = String(
+                        record.testMethodCode ?? record.TestMethodCode ?? ''
+                    ).trim();
+
+                    const savedId = Number(record.id ?? record.ID ?? 0);
+
+                    // Exclude the current record while editing
+                    if (this.recordId > 0 && savedId === this.recordId) {
+                        return false;
+                    }
+
+                    const codeMatches =
+                        savedCode.toLowerCase() === selectedCode.toLowerCase();
+
+                    console.log('Duplicate comparison:', {
+                        savedId,
+                        savedCode,
+                        selectedCode,
+                        codeMatches
+                    });
+
+                    // Duplicate check based only on Test Method Code
+                    return codeMatches;
                 });
 
-                if (data?.crmMaterialParameters) {
-                    this.setCRMRows(data.crmMaterialParameters);
+                console.log('Is duplicate:', isDuplicate);
+
+                if (isDuplicate) {
+                    this.toastService.show(
+                        'This Test Method is already used in another verification record.',
+                        'warning'
+                    );
+
+                    this.requestForm.patchValue({
+                        testMethodCode: '',
+                        testMethodName: '',
+                        referenceStandard: '',
+                        revIssue: ''
+                    });
+
+                    return;
                 }
+
+                // Existing detail-fetching logic
+                this.service.getTestMethodDetails(testmethodCode).subscribe({
+                    next: (data) => {
+                        this.requestForm.patchValue({
+                            testMethodName: data?.testMethodName || '',
+                            referenceStandard: data?.referenceStandard || '',
+                            revIssue: data?.revIssue || '',
+                            verificationDate:
+                                NablFormsHelper.formatDateForInput(data?.verificationDate),
+                            verifiedBy: data?.verifiedBy || '',
+                            humidity: data?.humidity || '',
+                            temperature: data?.temperature || '',
+                            equipmentId: data?.equipmentId || '',
+                            equipmentName: data?.equipmentName || ''
+                        });
+
+                        if (data?.crmMaterialParameters) {
+                            this.setCRMRows(data.crmMaterialParameters);
+                        }
+                    },
+                    error: () => {
+                        console.log('Failed to fetch test method details');
+                    }
+                });
             },
-            error: () => {
-                console.log('Failed to fetch test method details');
+            error: (error) => {
+                console.error('Failed to load saved verification records:', error);
+
+                this.toastService.show(
+                    'Unable to check existing Test Methods. Please try again.',
+                    'error'
+                );
             }
         });
     }
+
 
     createCRMRow(crm?: any): FormGroup {
         const nextNo = this.crmMaterialParameters.length + 1;

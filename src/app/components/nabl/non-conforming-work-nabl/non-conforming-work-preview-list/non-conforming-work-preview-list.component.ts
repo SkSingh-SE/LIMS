@@ -44,7 +44,7 @@ export class NonConformingWorkPreviewListComponent implements OnInit {
             sortByColumn: 'id',
             sortOrder: 'desc',
             filter: []
-        }).subscribe({
+        }).subscribe({  
 
             next: (resp) => {
 

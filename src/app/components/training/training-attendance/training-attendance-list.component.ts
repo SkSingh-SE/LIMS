@@ -17,6 +17,7 @@ export class TrainingAttendanceListComponent implements OnInit {
     columns: RegisterColumn[] = [
         { key: 'formCode', label: 'Format No', type: 'string' },
         { key: 'trainingTopic', label: 'Program Title', type: 'string' },
+        { key: 'venueMode', label: 'Training Venue', type: 'string' },
         { key: 'trainerName', label: 'Faculty', type: 'string' },
         { key: 'trainingDatetime', label: 'Date & Time', type: 'string' }
     ];
@@ -28,7 +29,14 @@ export class TrainingAttendanceListComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        this.loadRecords();
+        this.loadRecords({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
     loadRecords(params: any = {}): void {
@@ -41,7 +49,7 @@ export class TrainingAttendanceListComponent implements OnInit {
                 this.records.set(res.items);
                 this.totalItems = res.totalRecords || res.items.length;
             },
-            error: () => {}
+            error: () => { }
         });
     }
 
@@ -54,11 +62,20 @@ export class TrainingAttendanceListComponent implements OnInit {
         if (confirm('Are you sure you want to delete this record?')) {
             this.service.delete(id).subscribe({
                 next: () => {
-                  this.toastService.show('Training attendance record deleted successfully', 'success');
-                    this.loadRecords({ pageNumber: 1, pageSize: 10 });
+  
+                    this.toastService.show('Training attendance record deleted successfully', 'success');
+                    this.loadRecords({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'desc',
+                        filter: []
+                    });
                 },
                 error: () => {
-                  this.toastService.show('Failed to delete training attendance record', 'error');
+                    this.toastService.show('Failed to delete training attendance record', 'error');
+
                 }
             });
         }

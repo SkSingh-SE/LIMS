@@ -57,14 +57,18 @@
           <div *ngIf="openSections['supplier']" class="section-body">
             <div class="row g-3">
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Purchase Order No <span
-                    class="text-danger">*</span></label>
-                <select class="form-select form-select-sm" formControlName="poNo" (change)="onPoNoChange($event)">
-                  <option value="" disabled>Select Plan No</option>
-                  <option *ngFor="let poNo of PurchaseOrderNoList" [value]="poNo.id || poNo.Id">
-                    {{ poNo.name || poNo.Name }}
-                  </option>
-                </select>
+                <!-- <label class="form-label fw-semibold text-dark small">Purchase Order No <span
+                      class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" formControlName="poNo" (change)="onPoNoChange($event)">
+                    <option value="" disabled>Select Plan No</option>
+                    <option *ngFor="let poNo of PurchaseOrderNoList" [value]="poNo.id || poNo.Id">
+                      {{ poNo.name || poNo.Name }}
+                    </option>
+                  </select> -->
+                <app-searchable-dropdown [placeholder]="'Search Purchase Order'" [labelName]="'Purchase Order No'"
+                  [fetchDataFn]="loadPONoList" (itemSelected)="onPoNoChange($event)" [isDisabled]="isViewMode"
+                  [required]="true" [selectedItem]="verificationForm.get('poNo')?.value">
+                </app-searchable-dropdown>
                 <div *ngIf="verificationForm.get('poNo')?.invalid && verificationForm.get('poNo')?.touched"
                   class="text-danger text-sm mt-1">
                   po no is required

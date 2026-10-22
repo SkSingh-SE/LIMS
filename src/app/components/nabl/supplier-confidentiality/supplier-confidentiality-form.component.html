@@ -24,7 +24,8 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Form Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers" placeholder="e.g. F-2">
+                <input type="text" class="form-control" formControlName="formatNo" list="formNumbers"
+                  placeholder="e.g. F-2">
                 <datalist id="formNumbers">
                   <option *ngFor="let form of formNumbers" [value]="form"></option>
                 </datalist>
@@ -59,21 +60,25 @@
                   <option value="null" disabled>Select a supplier</option>
                   <option *ngFor="let s of suppliers" [value]="s.id">{{ s.name }}</option>
                 </select>
-                 <app-field-error [control]="agreementForm.get('supplierId')" label="Supplier Name" [submitted]="submitted"/>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Supplier Name</label>
-                  <input type="text" class="form-control bg-light border-dashed" formControlName="supplierName" placeholder="supplier name" readonly>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Contact Person</label>
-                  <input type="text" class="form-control bg-light border-dashed" formControlName="contactPerson" placeholder="contact person" readonly>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Address</label>
-                  <textarea class="form-control bg-light border-dashed" formControlName="address" rows="1"  placeholder="address" readonly></textarea>
-                </div>
+                <app-field-error [control]="agreementForm.get('supplierId')" label="Supplier Name"
+                  [submitted]="submitted" />
               </div>
+              <div class="col-md-6">
+                <label class="form-label">Supplier Name</label>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="supplierName"
+                  placeholder="supplier name" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Contact Person</label>
+                <input type="text" class="form-control bg-light border-dashed" formControlName="contactPerson"
+                  placeholder="contact person" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Address</label>
+                <textarea class="form-control bg-light border-dashed" formControlName="address" rows="1"
+                  placeholder="address" readonly></textarea>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -88,11 +93,15 @@
               <div class="col-md-4">
                 <label class="form-label">Agreement Date <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="agreementDate" [readonly]="isViewMode">
+                <app-field-error [control]="agreementForm.get('agreementDate')" label="Valid Date"
+                  [submitted]="submitted" />
+
               </div>
               <div class="col-md-4">
                 <label class="form-label">Valid Until <span class="text-danger">*</span></label>
                 <input type="date" class="form-control" formControlName="agreementValidUpto" [readonly]="isViewMode">
-                <app-field-error [control]="agreementForm.get('agreementValidUpto')" label="Valid Date" [submitted]="submitted"/>
+                <app-field-error [control]="agreementForm.get('agreementValidUpto')" label="Valid Date"
+                  [submitted]="submitted" />
               </div>
               <div class="col-md-4">
                 <label class="form-label">Status <span class="text-danger">*</span></label>
@@ -104,7 +113,8 @@
               </div>
               <div class="row mt-3">
                 <label class="form-label">Agreement Terms / Confidentiality Items</label>
-                <quill-editor formControlName="confidentialItems" [modules]="quillModules" placeholder="Type agreement terms here..." [readOnly]="isViewMode"></quill-editor>
+                <quill-editor formControlName="confidentialItems" [modules]="quillModules"
+                  placeholder="Type agreement terms here..." [readOnly]="isViewMode"></quill-editor>
               </div>
             </div>
           </div>

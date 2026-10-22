@@ -14,9 +14,8 @@ import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-tab
 export class JobDescriptionListComponent implements OnInit {
 
     columns: RegisterColumn[] = [
-        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
+        { key: 'documentNo', type: 'string', label: 'Doc No' },
         { key: 'designationName', type: 'string', label: 'Designation', filter: true },
-        { key: 'departmentName', type: 'string', label: 'Department', filter: true },
         { key: 'reportingTo', type: 'string', label: 'Reporting To', filter: true },
         { key: 'createdOn', type: 'date', label: 'Created At', filter: true }
     ];

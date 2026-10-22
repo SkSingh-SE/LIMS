@@ -66,6 +66,10 @@
                                         title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
+                                    <a (click)="cloneAsNewVersion(material.id)" class="icon-link cursor-pointer"
+                                        title="Create New Version">
+                                        <i class="bi bi-files text-primary"></i>
+                                    </a>
                                     <a (click)="deleteMaterialSpecification(material.id)" class="icon-link"
                                         title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
@@ -79,14 +83,14 @@
                                 <a [routerLink]="['/material-specification/details', material.id]"
                                    [state]="{ mode: 'view' }"
                                    class="text-primary text-decoration-none cursor-pointer"
-                                   [title]="'View details for ' + material.aliasName">
-                                    {{ material.aliasName }}
+                                   [title]="'View details for ' + material.displayTitle">
+                                    {{ material.displayTitle }}
                                 </a>
                             </td>
                             <td>{{ material.standardOrganizationName }}</td>
-                            <td>{{ material.metalClassificationName }}</td>
+                            <td>{{ material.specificationNo }}</td>
                             <td>{{ material.standardYear }}</td>
-                            <td>{{material.grade}}</td>
+                            <td>{{ material.version }}</td>
                             <td>{{ material.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>

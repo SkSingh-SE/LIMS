@@ -13,4 +13,13 @@ export interface InternalAuditor {
     issueDate: string | Date;
     revNo: string | number;
     revDate: string | Date;
+    date: string | Date;
+    authorizationDate: string | Date;
+    authorizationValidUpto: string | Date;
+    certificateIssueDate: string | Date;
+    certificateExpiryDate: string | Date;
+    departmentList : { departmentId: number; departmentName: string }[];
+    isoClauses: { clauseId: number; clauseName: string }[];
 }
+
+ 

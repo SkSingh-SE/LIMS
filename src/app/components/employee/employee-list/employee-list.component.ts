@@ -5,10 +5,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
-
+import { Router } from '@angular/router';
+import { SkillMatrixService } from '../../../services/skill-matrix.service';
+import { EmployeeCompetenceService } from "../../../services/employee-competence.service";
 @Component({
   selector: 'app-employee-list',
-  imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
+  imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
   templateUrl: './employee-list.component.html',
   styleUrl: './employee-list.component.css'
 })
@@ -67,7 +69,7 @@ export class EmployeeListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private employeeService: EmployeeService, private toastService: ToastService, private router: Router, private skillMatrixService: SkillMatrixService, private employeeCompetenceService: EmployeeCompetenceService) {
     this.employeeForm = this.fb.group({
       searchTerm: '',
       sortByColumn: '',
@@ -251,4 +253,77 @@ export class EmployeeListComponent implements OnInit {
     }
   }
 
+  openSkillMatrix(employeeId: number): void {
+
+    this.skillMatrixService.getByEmployeeId(employeeId).subscribe({
+      next: (result) => {
+
+        if (result?.exists && result.recordId) {
+
+          // Existing Skill Matrix
+          this.router.navigate([
+            '/skill-matrix/edit',
+            result.recordId
+          ]);
+
+        } else {
+
+          // New Skill Matrix
+          this.router.navigate(
+            ['/skill-matrix/create'],
+            {
+              state: {
+                employeeId: employeeId
+              }
+            }
+          );
+
+        }
+      },
+
+      error: (error) => {
+        console.error('Error checking skill matrix:', error);
+        this.toastService.show(
+          error?.error?.message || 'Unable to open Skill Matrix',
+          'error'
+        );
+      }
+    });
+  }
+  openCompetenceReport(employeeId: number): void {
+    this.employeeCompetenceService.getByEmployeeId(employeeId).subscribe({
+      next: (result) => {
+
+        if (result?.exists && result.recordId) {
+
+          // Existing Skill Matrix
+          this.router.navigate([
+            '/employee/competence/edit',
+            result.recordId
+          ]);
+
+        } else {
+
+          // New Skill Matrix
+          this.router.navigate(
+            ['/employee/competence/create'],
+            {
+              state: {
+                employeeId: employeeId
+              }
+            }
+          );
+
+        }
+      },
+
+      error: (error) => {
+        console.error('Error checking skill matrix:', error);
+        this.toastService.show(
+          error?.error?.message || 'Unable to open Skill Matrix',
+          'error'
+        );
+      }
+    });
+  }
 }

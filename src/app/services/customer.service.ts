@@ -38,4 +38,17 @@ export class CustomerService {
   verifyCustomer(id: number, status: boolean): Observable<any> {
     return this.http.patch<any>(`${this.CustomerUrl}/verify/${id}?status=${status}`, null);
   }
+
+  // ── Level 2 Change Requests ──────────────────────────────────────────────────
+  getChangeRequests(customerId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.CustomerUrl}/change-requests/${customerId}`);
+  }
+
+  getPendingChange(customerId: number): Observable<any> {
+    return this.http.get<any>(`${this.CustomerUrl}/pending-change/${customerId}`);
+  }
+
+  reviewChangeRequest(dto: { changeRequestId: number; action: string; remarks?: string }): Observable<any> {
+    return this.http.post<any>(`${this.CustomerUrl}/change-request/review`, dto);
+  }
 }

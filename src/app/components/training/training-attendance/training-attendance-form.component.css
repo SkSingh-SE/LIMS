@@ -67,3 +67,67 @@
     cursor: pointer;
     font-size: 12px;
 }
+
+.evaluation-cell {
+    white-space: nowrap;
+    min-width: 160px;
+    text-align: center;
+}
+
+/* Evaluation column */
+.evaluation-btn {
+    min-width: 135px;
+    height: 32px;
+    padding: 4px 10px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+/* Evaluation table cell */
+td.text-center {
+    vertical-align: middle !important;
+}
+
+/* Evaluation Column */
+.sm-table th.evaluation-column,
+.sm-table td.evaluation-column {
+    width: 200px !important;
+    min-width: 200px !important;
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+/* Evaluation Button */
+.sm-table .evaluation-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: auto !important;
+    min-width: 135px !important;
+
+    padding: 6px 14px !important;
+
+    white-space: nowrap !important;
+    overflow: visible !important;
+
+    flex-shrink: 0 !important;
+
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+}
+
+.sm-table .evaluation-btn i {
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+    margin-right: 6px !important;
+}
+
+.sm-table .evaluation-btn span {
+    display: inline-block !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}

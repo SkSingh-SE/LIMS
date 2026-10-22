@@ -36,6 +36,9 @@ export class CaseAccountDetailComponent implements OnInit {
   isClosing = signal(false);
   paymentGatewayEnabled = false;
 
+  showExchangeRateModal = false;
+  exchangeRateInput: number | null = null;
+
   lineItems: any[] = [];
   showAddLineItem = false;
   newLineItem = { description: '', amount: 0, taxPercent: 18 };
@@ -137,7 +140,8 @@ export class CaseAccountDetailComponent implements OnInit {
   }
 
   /**
-   * Generate Final Invoice - Only after report approval and advance payment
+   * Generate Final Invoice - Only after report approval and advance payment.
+   * For non-INR customers, shows an exchange rate modal before proceeding.
    */
   generateInvoice(): void {
     if (!this.canGenerateInvoice()) {
@@ -145,13 +149,32 @@ export class CaseAccountDetailComponent implements OnInit {
       return;
     }
 
+    if (!this.caseSummary?.customerCurrencyIsDefault) {
+      this.exchangeRateInput = null;
+      this.showExchangeRateModal = true;
+      return;
+    }
+
     if (!confirm('Are you sure you want to generate a Final Invoice for this case?')) {
       return;
     }
 
+    this.doGenerateInvoice(null);
+  }
+
+  confirmExchangeRate(): void {
+    if (!this.exchangeRateInput || this.exchangeRateInput <= 0) {
+      this.toastService.show('Please enter a valid exchange rate greater than 0.', 'warning');
+      return;
+    }
+    this.showExchangeRateModal = false;
+    this.doGenerateInvoice(this.exchangeRateInput);
+  }
+
+  private doGenerateInvoice(exchangeRate: number | null): void {
     this.isGeneratingInvoice.set(true);
-    this.accountService.generateInvoice(this.inwardId).subscribe({
-      next: (response) => {
+    this.accountService.generateInvoice(this.inwardId, exchangeRate ?? undefined).subscribe({
+      next: () => {
         this.toastService.show('Final Invoice generated successfully', 'success');
         this.loadCaseSummary();
         this.isGeneratingInvoice.set(false);
@@ -179,16 +202,18 @@ export class CaseAccountDetailComponent implements OnInit {
    * Check if Final Invoice can be generated
    */
   canGenerateInvoice(): boolean {
+    debugger;
     if (!this.caseSummary) return false;
     const billingStatus = this.caseSummary.billingStatus || this.caseSummary.billing_status || '';
     const reportStatus = this.caseSummary.reportStatus || this.caseSummary.report_status || '';
     const piStatus = (this.caseSummary.piStatus || this.caseSummary.pi_status || '').toUpperCase();
 
-    // DirectTaxInvoice customers skip PI — allow invoice from PRICE_SNAPSHOT
+    // PI not required (DirectTaxInvoice customer or AdvancePIRequired=false) — allow invoice once pricing is done and reports are approved
     if (piStatus === 'NOT_REQUIRED') {
       const billingUpper = billingStatus.toUpperCase();
-      return (billingUpper === 'PRICE_SNAPSHOT' || billingUpper === 'ADVANCE_PAID')
-        && this.roleHelper.canGenerateInvoice();
+      const reportUpper = (reportStatus || '').toUpperCase();
+      const billingReady = billingUpper === 'PRICE_DRAFTED' || billingUpper === 'PRICE_SNAPSHOT' || billingUpper === 'ADVANCE_PAID';
+      return billingReady && reportUpper === 'FINAL_REPORT_APPROVED' && this.roleHelper.canGenerateInvoice();
     }
 
     return this.statusHelper.canGenerateInvoice(billingStatus, reportStatus) && this.roleHelper.canGenerateInvoice();
@@ -402,12 +427,24 @@ export class CaseAccountDetailComponent implements OnInit {
    * Recalculate pricing — deletes existing DRAFT ChargeEvents and creates fresh ones.
    * Only available when billing status is PRICE_DRAFTED (not SNAPSHOT/INVOICED).
    */
-  recalculatePricing(): void {
-    if (!confirm('This will delete existing draft prices and recalculate. Continue?')) return;
+  recalculatePricing(confirmed: boolean = false): void {
+    if (!confirmed && !confirm('This will delete existing draft prices and recalculate. Continue?')) return;
 
     this.isRecalculating.set(true);
-    this.accountService.calculatePricing(this.inwardId).subscribe({
+    this.accountService.calculatePricing(this.inwardId, confirmed).subscribe({
       next: (response) => {
+        // FY mismatch — sample's inward FY differs from the current FY.
+        // Confirm with the user, then re-run applying the older price list.
+        if (response?.requiresConfirmation) {
+          this.isRecalculating.set(false);
+          const message = response.confirmationMessage
+            || `Sample is from FY ${response.inwardFY} — the ${response.inwardFY} price list will be applied. Proceed?`;
+          if (confirm(message)) {
+            this.recalculatePricing(true);
+          }
+          return;
+        }
+
         const warnings = response?.warnings || [];
         const total = response?.totalAmount || 0;
         const failures = response?.failureCount || 0;

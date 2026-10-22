@@ -1,86 +1,229 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-  <!-- Action Bar (hidden on print) -->
-  <div class="d-flex justify-content-between w-100 mb-3 no-print container-width">
-    <button class="btn btn-cancel btn-sm" (click)="goBack()">
-      <i class="bi bi-arrow-left"></i> Back to List
-    </button>
-    <button class="btn btn-save btn-sm" (click)="printRecord()">
-      <i class="bi bi-printer"></i> Print
+<div class="preview-toolbar no-print">
+  <div class="toolbar-left">
+    <button class="toolbar-btn btn-outline-dark" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+      <span>Back</span>
     </button>
   </div>
 
-  <app-print-frame *ngIf="record" orientation="portrait">
+  <div class="toolbar-center">
+    <span class="doc-title-label">
+      <i class="bi bi-file-text me-1"></i>
+      Equipment History Preview
+    </span>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="orientation-toggle" title="Page orientation">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
+        <i class="bi bi-file-earmark"></i>
+        <span>Portrait</span>
+      </button>
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
+        <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
+        <span>Landscape</span>
+      </button>
+    </div>
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      <span>Auto</span>
+    </button>
+    <button class="toolbar-btn btn-primary-red" (click)="printPage()">
+      <i class="bi bi-printer-fill"></i>
+      <span>Print</span>
+    </button>
+  </div>
+</div>
+
+<div class="nabl-preview-page">
+
+  <app-print-frame *ngIf="data" [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-          [formatNo]="'F-14'"
-          mainTitle="EQUIPMENT HISTORY CARD"
-          [docNo]="'DMSPL / Level-04 / Format / F-14'"
-          [issueNo]="'01'"
-          [revNo]="'00'">
+      <app-nabl-print-header [formatNo]="'F-14'" mainTitle="EQUIPMENT HISTORY CARD"
+        [docNo]="'DMSPL / Level-04 / Format / F-14'" [issueNo]="'01'" [revNo]="'00'">
       </app-nabl-print-header>
+
     </ng-container>
 
     <ng-container body>
-      <!-- Equipment Details -->
-      <table class="table table-bordered border-2 border-dark mb-3 info-table">
-        <tbody>
-          <tr>
-            <td class="label-cell border-2 border-dark" style="width: 25%;">Equipment Details</td>
-            <td class="border-2 border-dark">
-              <div class="fw-bold">{{ record.equipmentName }} ({{ record.equipmentNo }})</div>
-              <div class="text-muted small">ID: {{ record.equipmentId }}</div>
-            </td>
-            <td class="label-cell border-2 border-dark" style="width: 25%;">Record Details</td>
-            <td class="border-2 border-dark">
-              <div>Type: <span class="fw-medium">{{ record.recordType | titlecase }}</span></div>
-              <div>Date: <span class="fw-medium">{{ record.recordDate | date:'dd.MM.yyyy' }}</span></div>
-            </td>
-          </tr>
-          <tr>
-            <td class="label-cell border-2 border-dark">Performed By</td>
-            <td class="border-2 border-dark">{{ record.performedBy }}</td>
-            <td class="label-cell border-2 border-dark">Status</td>
-            <td class="border-2 border-dark fw-bold">{{ record.status | titlecase }}</td>
-          </tr>
-          <tr *ngIf="record.recordType === 'calibration'">
-            <td class="label-cell border-2 border-dark">Agency / Cert No</td>
-            <td class="border-2 border-dark">{{ record.agency }} / {{ record.certificateNo }}</td>
-            <td class="label-cell border-2 border-dark">Next Due Date</td>
-            <td class="border-2 border-dark">{{ record.nextDueDate | date:'dd.MM.yyyy' }}</td>
-          </tr>
-        </tbody>
-      </table>
 
-      <div class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Description of Work Performed</div>
-        <div class="section-content ql-editor p-3" [innerHTML]="record.description"></div>
-      </div>
+      <!-- I. Equipment Information -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">I. EQUIPMENT INFORMATION</div>
 
-      <div *ngIf="record.observations" class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Observations</div>
-        <div class="section-content ql-editor p-3" [innerHTML]="record.observations"></div>
-      </div>
-
-      <div *ngIf="record.actionsTaken" class="section mb-3 border-2 border-dark">
-        <div class="section-title border-bottom-2">Actions Taken</div>
-        <div class="section-content ql-editor p-3" [innerHTML]="record.actionsTaken"></div>
-      </div>
-
-      <div class="mt-4 pt-5">
-        <table class="table table-bordered border-2 border-dark text-center">
+        <table class="table table-bordered inner-table">
           <tbody>
             <tr>
-              <td style="width: 33.33%; height: 80px;" class="align-bottom pb-1">
-                <div class="fw-bold">Performed By</div>
-                <div class="small">{{ record.performedBy }}</div>
+              <td class="lbl" style="width:20%">Equipment Name</td>
+              <td style="width:30%">{{ data.equipmentName }}</td>
+
+              <td class="lbl" style="width:20%">Equipment No.</td>
+              <td style="width:30%">{{ data.equipmentNo }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Department</td>
+              <td>{{ data.departmmentName }}</td>
+
+              <td class="lbl">Equipment Type</td>
+              <td>{{ data.equipmentType }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">OEM</td>
+              <td>{{ data.oemName }}</td>
+
+              <td class="lbl">Purchase Date</td>
+              <td>{{ data.purchaseDate }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Calibration Required</td>
+              <td>{{ data.calibrationReq ? 'Yes' : 'No' }}</td>
+
+              <td class="lbl">Calibration Frequency (Days)</td>
+              <td>{{ data.calibrationFrequencyDays }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Last Calibration Date</td>
+              <td>{{ data.lastCalibrationDate | date:'dd.MM.yyyy' }}</td>
+
+              <td class="lbl">Next Calibration Due Date</td>
+              <td>{{ data.nextCalibrationDueDate | date:'dd.MM.yyyy' }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Maintenance Required</td>
+              <td>{{ data.maintenanceReq ? 'Yes' : 'No' }}</td>
+
+              <td class="lbl">Maintenance Interval</td>
+              <td>{{ data.maintenanceInterval }}</td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Last Maintenance Date</td>
+              <td>{{ data.lastMaintenanceDate | date:'dd.MM.yyyy' }}</td>
+
+              <td class="lbl">Next Maintenance Due Date</td>
+              <td>{{ data.nextMaintenanceDueDate | date:'dd.MM.yyyy' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+
+      <!-- II. Calibration History -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">II. CALIBRATION HISTORY</div>
+
+        <table class="table table-bordered inner-table w-100">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 6%">Sr. No.</th>
+              <th style="width: 14%">Calibration Date</th>
+              <th style="width: 12%">Due Date</th>
+              <th style="width: 12%">Agency</th>
+              <th style="width: 11%">Status</th>
+              <th style="width: 12%">Review Remarks</th>
+              <th style="width: 15%">Calibrated By</th>
+              <th style="width: 15%">Reviewed By</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of data.calibrations; let i = index">
+
+              <td class="text-center">
+                {{ i + 1 }}
               </td>
-              <td style="width: 33.33%;" class="align-bottom pb-1">
-                <div class="fw-bold">Verified By</div>
-                <div class="small">(Quality Manager)</div>
+
+              <td class="text-center text-nowrap">
+                {{ item.calibrationDate | date:'dd.MM.yyyy' }}
               </td>
-              <td style="width: 33.33%;" class="align-bottom pb-1">
-                <div class="fw-bold">Approved By</div>
-                <div class="small">(Technical Manager)</div>
+
+              <td class="text-center text-nowrap">
+                {{ item.calibrationDueDate | date:'dd.MM.yyyy' }}
+              </td>
+
+              <td>
+                {{ item.agency }}
+              </td>
+
+              <td class="text-center">
+                {{ item.isReviewed ? 'Reviewed' : 'Not Reviewed' }}
+              </td>
+
+              <td>
+                {{ item.reviewReason }}
+              </td>
+
+              <td>
+                <span *ngIf="item.calibrationCreateBy">
+                  {{ item.calibrationCreateBy }} / {{ item.calibrationCreateDate | date:'dd.MM.yyyy' }}
+                </span>
+              </td>
+
+              <td>
+                <span *ngIf="item.reviewerBy">
+                  {{ item.reviewerBy }} / {{ item.reviewerDate | date:'dd.MM.yyyy' }}
+
+                </span>
+              </td>
+
+            </tr>
+
+            <tr *ngIf="!data.calibrations || data.calibrations.length === 0">
+              <td colspan="8" class="text-center">
+                No calibration history available
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- III. Maintenance History -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. MAINTENANCE HISTORY</div>
+
+        <table class="table table-bordered inner-table w-100">
+          <thead>
+            <tr class="tbl-head text-center">
+              <th style="width: 10%">Sr. No.</th>
+              <th style="width: 13%">Maintenance Date</th>
+              <th style="width: 43%">Description</th>
+              <th style="width: 25%">Maintenance By</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of data.maintenances; let i = index">
+
+              <td class="text-center">
+                {{ i + 1 }}
+              </td>
+
+              <td class="text-center text-nowrap">
+                {{ item.maintenanceDate | date:'dd.MM.yyyy' }}
+              </td>
+
+              <td>
+                {{ item.description }}
+              </td>
+
+              <td>
+                <span *ngIf="item.maintanceCreateBy">
+                  {{ item.maintanceCreateBy }} / {{ item.maintanceCreateDate | date:'dd.MM.yyyy' }}
+                </span>
+              </td>
+
+
+            </tr>
+
+            <tr *ngIf="!data.maintenances || data.maintenances.length === 0">
+              <td colspan="4" class="text-center">
+                No maintenance history available
               </td>
             </tr>
           </tbody>
@@ -89,14 +232,9 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 
-  <!-- Loading State -->
-  <div *ngIf="false" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
 </div>

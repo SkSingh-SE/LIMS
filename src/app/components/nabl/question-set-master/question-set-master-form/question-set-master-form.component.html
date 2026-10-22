@@ -1,0 +1,648 @@
+<div class="card shadow-lg m-2">
+
+    <!-- ================= HEADER ================= -->
+    <div class="card-header card-form-header text-white d-flex justify-content-between align-items-center">
+        <label class="fw-medium">Question Set Master</label>
+        <button type="button" class="btn btn-outline-light btn-sm me-3" (click)="onCancel()">
+            <i class="bi bi-arrow-left"></i>
+            Back to List
+        </button>
+    </div>
+
+    <div class="card-body">
+
+        <form *ngIf="questionSetMasterForm" [formGroup]="questionSetMasterForm" (ngSubmit)="onSubmit()">
+
+            <!-- ===================================================== -->
+            <!-- QUESTION SET INFORMATION -->
+            <!-- ===================================================== -->
+
+            <div class="form-section mb-4">
+
+                <div class="section-title">
+                    <span>QUESTION SET INFORMATION</span>
+                </div>
+
+                <div class="row g-3">
+
+                    <!-- Question Set No -->
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Question Set No.
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text" class="form-control" formControlName="questionNo"
+                            placeholder="Enter Question Set No." maxlength="100" [readonly]="isViewMode" [ngClass]="{
+                                   'is-invalid':
+                                   questionSetMasterForm.get('questionNo')?.touched &&
+                                   questionSetMasterForm.get('questionNo')?.invalid
+                               }" />
+
+                        <div *ngIf="
+                            questionSetMasterForm.get('questionNo')?.touched &&
+                            questionSetMasterForm.get('questionNo')?.invalid
+                            " class="text-danger text-sm mt-1">
+
+                            Question Set No. is required.
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Question Set Title -->
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Question Set Title
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="text" class="form-control" formControlName="title"
+                            placeholder="Enter Question Set Title" maxlength="200" [readonly]="isViewMode" [ngClass]="{
+                                   'is-invalid':
+                                   questionSetMasterForm.get('title')?.touched &&
+                                   questionSetMasterForm.get('title')?.invalid
+                               }" />
+
+                        <div *ngIf="
+                            questionSetMasterForm.get('title')?.touched &&
+                            questionSetMasterForm.get('title')?.invalid
+                            " class="text-danger text-sm mt-1">
+
+                            Question Set Title is required.
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Date -->
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Date
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="date" class="form-control" formControlName="date" [readonly]="isViewMode"
+                            [ngClass]="{
+                                   'is-invalid':
+                                   questionSetMasterForm.get('date')?.touched &&
+                                   questionSetMasterForm.get('date')?.invalid
+                               }" />
+
+                        <div *ngIf="
+                            questionSetMasterForm.get('date')?.touched &&
+                            questionSetMasterForm.get('date')?.invalid
+                            " class="text-danger text-sm mt-1">
+
+                            Date is required.
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Description -->
+                    <div class="col-md-12">
+
+                        <label class="form-label">
+                            Description
+                        </label>
+
+                        <textarea class="form-control" formControlName="description" placeholder="Enter Description"
+                            rows="3" maxlength="500" [readonly]="isViewMode">
+                        </textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- QUESTIONS & MCQ OPTIONS -->
+            <!-- ===================================================== -->
+            <div class="form-section mb-4">
+
+                <div class="section-title">
+                    <span>QUESTIONS & MCQ OPTIONS</span>
+                </div>
+
+
+                <!-- ========================================================= -->
+                <!-- QUESTIONS FORM ARRAY -->
+                <!-- ========================================================= -->
+
+                <div formArrayName="questions" class="questions-container">
+
+                    <!-- ========================================================= -->
+                    <!-- QUESTION CARD -->
+                    <!-- ========================================================= -->
+
+                    <div *ngFor="
+                let question of questions.controls;
+                let i = index
+             " [formGroupName]="i" class="question-card">
+
+
+                        <!-- ===================================================== -->
+                        <!-- QUESTION HEADER -->
+                        <!-- ===================================================== -->
+
+                        <div class="question-header">
+
+                            <div class="question-title">
+                                Question {{ i + 1 }}
+                            </div>
+
+                            <button type="button" class="btn btn-remove btn-sm" title="Remove Question"
+                                *ngIf="!isViewMode && questions.length > 1" (click)="removeQuestion(i)">
+
+                                <i class="bi bi-trash"></i>
+
+                            </button>
+
+                        </div>
+
+
+                        <!-- ===================================================== -->
+                        <!-- QUESTION -->
+                        <!-- ===================================================== -->
+
+                        <div class="row">
+
+                            <div class="col-md-12">
+
+                                <label class="form-label">
+                                    Question
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <textarea class="form-control question-input" formControlName="question"
+                                    placeholder="Enter Question" maxlength="500" rows="2" [readonly]="isViewMode"
+                                    [ngClass]="{
+                            'is-invalid':
+                            question.get('question')?.touched &&
+                            question.get('question')?.invalid
+                        }">
+                    </textarea>
+
+                                <div *ngIf="
+                        question.get('question')?.touched &&
+                        question.get('question')?.invalid
+                    " class="text-danger text-sm mt-1">
+
+                                    Question is required.
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ===================================================== -->
+                        <!-- MCQ OPTIONS - 2 OPTIONS PER ROW -->
+                        <!-- ===================================================== -->
+
+                        <div class="options-grid">
+
+
+                            <!-- ================================================= -->
+                            <!-- OPTION A -->
+                            <!-- ================================================= -->
+
+                            <div class="option-box">
+
+                                <label class="form-label">
+                                    Option A
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <div class="option-input-group">
+
+                                    <!-- RADIO -->
+                                    <div class="option-radio">
+
+                                        <input type="radio" class="form-check-input" [name]="'correctAnswer_' + i"
+                                            value="A" [checked]="question.get('correctAnswer')?.value === 'A'"
+                                            (change)="setCorrectAnswer(i, 'A')" [disabled]="isViewMode"
+                                            title="Mark Option A as correct" />
+
+                                    </div>
+
+
+                                    <!-- OPTION LABEL -->
+                                    <div class="option-label">
+                                        A
+                                    </div>
+
+
+                                    <!-- TEXTAREA -->
+                                    <textarea class="option-textarea" formControlName="optionA"
+                                        placeholder="Enter Option A" maxlength="250" rows="2" [readonly]="isViewMode"
+                                        [ngClass]="{
+                                'is-invalid':
+                                question.get('optionA')?.touched &&
+                                question.get('optionA')?.invalid
+                            }">
+                        </textarea>
+
+                                </div>
+
+
+                                <div *ngIf="
+                        question.get('optionA')?.touched &&
+                        question.get('optionA')?.invalid
+                    " class="text-danger text-sm mt-1">
+
+                                    Option A is required.
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- ================================================= -->
+                            <!-- OPTION B -->
+                            <!-- ================================================= -->
+
+                            <div class="option-box">
+
+                                <label class="form-label">
+                                    Option B
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <div class="option-input-group">
+
+                                    <!-- RADIO -->
+                                    <div class="option-radio">
+
+                                        <input type="radio" class="form-check-input" [name]="'correctAnswer_' + i"
+                                            value="B" [checked]="question.get('correctAnswer')?.value === 'B'"
+                                            (change)="setCorrectAnswer(i, 'B')" [disabled]="isViewMode"
+                                            title="Mark Option B as correct" />
+
+                                    </div>
+
+
+                                    <!-- OPTION LABEL -->
+                                    <div class="option-label">
+                                        B
+                                    </div>
+
+
+                                    <!-- TEXTAREA -->
+                                    <textarea class="option-textarea" formControlName="optionB"
+                                        placeholder="Enter Option B" maxlength="250" rows="2" [readonly]="isViewMode"
+                                        [ngClass]="{
+                                'is-invalid':
+                                question.get('optionB')?.touched &&
+                                question.get('optionB')?.invalid
+                            }">
+                        </textarea>
+
+                                </div>
+
+
+                                <div *ngIf="
+                        question.get('optionB')?.touched &&
+                        question.get('optionB')?.invalid
+                    " class="text-danger text-sm mt-1">
+
+                                    Option B is required.
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- ================================================= -->
+                            <!-- OPTION C -->
+                            <!-- ================================================= -->
+
+                            <div class="option-box">
+
+                                <label class="form-label">
+                                    Option C
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <div class="option-input-group">
+
+                                    <!-- RADIO -->
+                                    <div class="option-radio">
+
+                                        <input type="radio" class="form-check-input" [name]="'correctAnswer_' + i"
+                                            value="C" [checked]="question.get('correctAnswer')?.value === 'C'"
+                                            (change)="setCorrectAnswer(i, 'C')" [disabled]="isViewMode"
+                                            title="Mark Option C as correct" />
+
+                                    </div>
+
+
+                                    <!-- OPTION LABEL -->
+                                    <div class="option-label">
+                                        C
+                                    </div>
+
+
+                                    <!-- TEXTAREA -->
+                                    <textarea class="option-textarea" formControlName="optionC"
+                                        placeholder="Enter Option C" maxlength="250" rows="2" [readonly]="isViewMode"
+                                        [ngClass]="{
+                                'is-invalid':
+                                question.get('optionC')?.touched &&
+                                question.get('optionC')?.invalid
+                            }">
+                        </textarea>
+
+                                </div>
+
+
+                                <div *ngIf="
+                        question.get('optionC')?.touched &&
+                        question.get('optionC')?.invalid
+                    " class="text-danger text-sm mt-1">
+
+                                    Option C is required.
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- ================================================= -->
+                            <!-- OPTION D -->
+                            <!-- ================================================= -->
+
+                            <div class="option-box">
+
+                                <label class="form-label">
+                                    Option D
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <div class="option-input-group">
+
+                                    <!-- RADIO -->
+                                    <div class="option-radio">
+
+                                        <input type="radio" class="form-check-input" [name]="'correctAnswer_' + i"
+                                            value="D" [checked]="question.get('correctAnswer')?.value === 'D'"
+                                            (change)="setCorrectAnswer(i, 'D')" [disabled]="isViewMode"
+                                            title="Mark Option D as correct" />
+
+                                    </div>
+
+
+                                    <!-- OPTION LABEL -->
+                                    <div class="option-label">
+                                        D
+                                    </div>
+
+
+                                    <!-- TEXTAREA -->
+                                    <textarea class="option-textarea" formControlName="optionD"
+                                        placeholder="Enter Option D" maxlength="250" rows="2" [readonly]="isViewMode"
+                                        [ngClass]="{
+                                'is-invalid':
+                                question.get('optionD')?.touched &&
+                                question.get('optionD')?.invalid
+                            }">
+                        </textarea>
+
+                                </div>
+
+
+                                <div *ngIf="
+                        question.get('optionD')?.touched &&
+                        question.get('optionD')?.invalid
+                    " class="text-danger text-sm mt-1">
+
+                                    Option D is required.
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ===================================================== -->
+                        <!-- CORRECT ANSWER VALIDATION - ONLY ONE -->
+                        <!-- ===================================================== -->
+
+                        <div *ngIf="
+                question.get('correctAnswer')?.touched &&
+                question.get('correctAnswer')?.invalid
+            " class="text-danger text-sm mt-2">
+
+                            Please select the correct answer.
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ========================================================= -->
+                    <!-- NO QUESTIONS -->
+                    <!-- ========================================================= -->
+
+                    <div *ngIf="questions.length === 0" class="text-center text-muted py-4">
+
+                        No questions added.
+
+                    </div>
+
+                </div>
+
+
+                <!-- ========================================================= -->
+                <!-- ADD QUESTION -->
+                <!-- ========================================================= -->
+
+                <div class="skill-action-bar" *ngIf="!isViewMode">
+
+                    <button type="button" class="btn btn-primary btn-sm" (click)="addQuestion()">
+
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Add Question
+
+                    </button>
+
+                </div>
+
+            </div>
+            <!-- ========================================================= -->
+            <!-- RESULT CONFIGURATION -->
+            <!-- ========================================================= -->
+
+            <div class="form-section mb-4">
+
+                <div class="section-title">
+                    <span>RESULT CONFIGURATION</span>
+                </div>
+
+
+                <div class="result-config-container">
+
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered result-config-table mb-0">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th style="width: 30%;">
+                                        Marks Obtained
+                                    </th>
+
+                                    <th style="width: 25%;">
+                                        Percentage (%)
+                                    </th>
+
+                                    <th style="width: 45%;">
+                                        Interpretation
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody formArrayName="resultConfigurations">
+
+                                <tr *ngFor="
+                        let config of resultConfigurations.controls;
+                        let i = index
+                    " [formGroupName]="i">
+
+
+                                    <!-- ================================================= -->
+                                    <!-- MARKS OBTAINED -->
+                                    <!-- ================================================= -->
+
+                                    <td>
+
+                                        <input type="text" class="form-control result-readonly-field"
+                                            formControlName="marksObtained" readonly />
+
+                                    </td>
+
+
+                                    <!-- ================================================= -->
+                                    <!-- PERCENTAGE - STATIC -->
+                                    <!-- ================================================= -->
+
+                                    <td>
+
+                                        <input type="text" class="form-control result-readonly-field"
+                                            formControlName="percentage" readonly />
+
+                                    </td>
+
+
+                                    <!-- ================================================= -->
+                                    <!-- INTERPRETATION - USER INPUT -->
+                                    <!-- ================================================= -->
+
+                                    <td>
+
+                                        <input type="text" class="form-control" formControlName="interpretation"
+                                            placeholder="Enter interpretation" maxlength="250" [readonly]="isViewMode"
+                                            [ngClass]="{
+                                    'is-invalid':
+                                    config.get('interpretation')?.touched &&
+                                    config.get('interpretation')?.invalid
+                                }" />
+
+
+                                        <div *ngIf="
+                                    config.get('interpretation')?.touched &&
+                                    config.get('interpretation')?.invalid
+                                " class="text-danger text-sm mt-1">
+
+                                            Interpretation is required.
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- REMARKS -->
+            <!-- ===================================================== -->
+
+            <div class="form-section mb-4">
+
+                <div class="section-title">
+                    <span>REMARKS</span>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-12">
+
+                        <textarea class="form-control" formControlName="remarks" placeholder="Enter Remarks" rows="3"
+                            maxlength="500" [readonly]="isViewMode">
+                        </textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- FOOTER -->
+            <!-- ===================================================== -->
+
+            <div class="form-footer mt-3 mb-2">
+
+                <div></div>
+
+                <div class="d-flex justify-content-end gap-2">
+
+                    <a [routerLink]="['/question-set-master']" class="btn btn-cancel">
+
+                        Cancel
+
+                    </a>
+
+                    <button *ngIf="!isViewMode" type="submit" class="btn btn-save px-4">
+
+                        <i class="bi bi-save me-1"></i>
+
+                        Save
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

@@ -16,6 +16,8 @@ import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-si
 import { NablHeaderService } from '../../../services/nabl-header.service';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { SkillMatrixService } from '../../../services/skill-matrix.service';
+import { QualityControlPlanService } from '../../../services/quality-control-plan.service';
 
 @Component({
     selector: 'app-job-description-form',
@@ -75,7 +77,9 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         private departmentService: DepartmentService,
         private toastService: ToastService
         , private unsavedChangesService: UnsavedChangesService,
-        private nablHeaderService: NablHeaderService) { }
+        private nablHeaderService: NablHeaderService,
+        private qcControlPlanservice: QualityControlPlanService,
+    ) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -119,9 +123,10 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
             documentNo: ['F-3'],
             designationId: [null, Validators.required],
             designationName: [''],
-            departmentId: [null, Validators.required],
+            departmentId: [0, Validators.required],
             departmentName: [''],
-            reportingTo: ['', Validators.required],
+            reportingToId: ['', Validators.required],
+            reportingTo: [''],
 
             // Section II
             minimumQualification: ['', Validators.required],
@@ -193,12 +198,8 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
     }
 
     // Searchable dropdown callbacks
-    getDesignations = (term: string, page: number, pageSize: number): Observable<any[]> => {
-        return this.designationService.getDesignationDropdown(term, page, pageSize);
-    };
-
-    getDepartments = (term: string, page: number, pageSize: number): Observable<any[]> => {
-        return this.departmentService.getDepartmentDropdown(term, page, pageSize);
+    getDesignations = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+        return this.jobDescriptionService.getDesignationEmployees(searchTerm, pageNumber, pageSize, this.jobDescId > 0 ? this.jobDescId : null);
     };
 
     isFieldInvalid(path: string): boolean {
@@ -215,17 +216,13 @@ export class JobDescriptionFormComponent implements CanComponentDeactivate, OnIn
         });
     }
 
-    onDepartmentSelected(item: any): void {
-        if (!item) {
-            this.jobDescForm.patchValue({ departmentId: null, departmentName: '' });
-            return;
-        }
-        this.jobDescForm.patchValue({
-            departmentId: item.id,
-            departmentName: item.name
-        });
+    getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.qcControlPlanservice.getEmployeesDropdown(term, page, pageSize);
     }
-
+    onEmployeeSelected(item: any) {
+        if (!item) { this.jobDescForm.patchValue({ reviewedById: null }); return; }
+        this.jobDescForm.patchValue({ reportingToId: item.id, reportingTo: item.name });
+    }
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }

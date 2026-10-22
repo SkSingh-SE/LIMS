@@ -16,7 +16,7 @@ export class SkillMatrixService {
     private apiUrl = environment.apiUrl + '/Nabl/SkillMatrix';
     private decisionApiUrl = environment.apiUrl + '/Nabl/SkillMatrixDecision';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     // ============ Skill Matrix Methods ============
 
@@ -72,5 +72,38 @@ export class SkillMatrixService {
 
     deleteDecision(id: number): Observable<any> {
         return this.http.delete(`${this.decisionApiUrl}/delete/${id}`);
+    }
+    getByDesignationId(employeeId: number): Observable<SkillMatrix | undefined> {
+        return this.http.get<SkillMatrix>(`${this.apiUrl}/employee-role-wise-skills-details/${employeeId}`);
+    }
+    getEmployeeSkillMatrixDropdown(searchTerm: string, pageNumber: number, pageSize: number, recordId?: number | null): Observable<any[]> {
+
+        let url =
+            `${this.apiUrl}/competence-report` +
+            `?searchTerm=${(searchTerm || '')}` +
+            `&pageNo=${pageNumber}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
+    }
+    getDesignationDropdown(searchTerm: string, pageNumber: number, pageSize: number, roleWiseSkillsMasterId?: number | null): Observable<any[]> {
+
+        let url =
+            `${this.apiUrl}/role-wise-designations-dropdown` +
+            `?searchTerm=${(searchTerm || '')}` +
+            `&pageNo=${pageNumber}` +
+            `&pageSize=${pageSize}`;
+        if (roleWiseSkillsMasterId) {
+            url += `&roleWiseSkillsMasterId=${roleWiseSkillsMasterId}`;
+        }
+        return this.http.get<any[]>(url);
+    }
+    getByEmployeeId(employeeId: number): Observable<any> {
+
+        return this.http.get<any>(
+            `${this.apiUrl}/check-skill-matrix-employee/${employeeId}`
+        );
     }
 }

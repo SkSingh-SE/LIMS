@@ -16,8 +16,10 @@ export interface AuditChecklist {
     // Header standard fields
     formatNo: string;
     docNo: string;
+    scheduleItemId: number;
     issueNo: string | number;
     issueDate: string | Date;
     revNo: string | number;
     revDate: string | Date;
+    date: string | Date;
 }

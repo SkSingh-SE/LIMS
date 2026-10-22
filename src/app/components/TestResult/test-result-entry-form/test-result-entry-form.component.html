@@ -10,6 +10,10 @@
     <div class="header-meta">
       <span class="badge">{{ inward?.caseNo }}</span>
       <span class="badge" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" [title]="inward?.customerName">{{ inward?.customerName }}</span>
+      <app-test-status-badge *ngIf="sample?.sampleStatus" [status]="sample.sampleStatus"></app-test-status-badge>
+      <button class="btn btn-sm btn-outline-light ms-2" type="button" (click)="cancel()">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+      </button>
     </div>
   </div>
 
@@ -593,12 +597,12 @@
                               title="Save parameter">
                               <i class="bi bi-cloud-upload"></i>
                             </button>
-                            <button type="button" class="btn btn-cancel btn-sm"
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
                               (click)="openFormulaBuilder(p, t, r)"
                               title="Edit formula">
                               <i class="bi bi-calculator"></i>
                             </button>
-                            <button type="button" class="btn btn-remove btn-sm"
+                            <button type="button" class="btn btn-outline-danger btn-sm"
                               (click)="removeParameter(p, t, r)"
                               [disabled]="isParameterCalculated(row.value)"
                               title="Remove parameter">
@@ -843,6 +847,17 @@
       <button class="btn btn-secondary action-btn" type="button" (click)="cancel()">Cancel</button>
       <button class="btn action-btn action-btn-primary" type="button" (click)="saveResults()">
         <i class="bi bi-check-circle me-1"></i>Save Results
+      </button>
+    </div>
+
+    <!-- Submit for Report Review — shown only when tests are verified and report not yet submitted/reviewed/approved -->
+    <div class="action-bar" *ngIf="canSubmitForReportReview()">
+      <button class="btn btn-primary action-btn"
+              type="button"
+              [disabled]="isSubmittingReport"
+              (click)="submitForReportReview()">
+        <i class="bi bi-send me-1"></i>
+        {{ isSubmittingReport ? 'Submitting...' : 'Submit for Report Review' }}
       </button>
     </div>
   </div>

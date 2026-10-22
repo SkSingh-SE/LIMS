@@ -32,13 +32,16 @@ export class ApprovedSupplierService {
     delete(id: number): Observable<ApprovedSupplierResponse> {
         return this.http.delete<ApprovedSupplierResponse>(`${this.apiUrl}/delete/${id}`);
     }
-    getAllSuppliers(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20) {
-        return this.http.get<any[]>(`${this.apiUrl}/supplierlist`, {
-            params: {
-                searchTerm: searchTerm,
-                pageNo: pageNo,
-                pageSize: pageSize
-            }
-        });
+    getAllSuppliers(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/supplierlist` +
+            `?searchTearm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
 }

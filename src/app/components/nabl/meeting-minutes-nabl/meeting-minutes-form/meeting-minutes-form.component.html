@@ -8,7 +8,6 @@
         Back to List
       </button>
     </div>
-
     <div class="card-body">
       <form [formGroup]="minutesForm" (ngSubmit)="onSubmit()">
         <!-- Section I: Header Information -->
@@ -69,18 +68,19 @@
           <div *ngIf="openSections['meetingInfo']" class="section-body">
             <div class="row gy-3">
               <div class="col-md-4">
-                <label class="form-label">
+                <!-- <label class="form-label">
                   Meeting No
                   <span class="text-danger">*</span>
                 </label>
                 <select class="form-select" formControlName="meetingNo" (change)="onChangeMeetingNo($event)">
                   <option value="" disabled selected>Select Meeting No</option>
                   <option *ngFor="let method of meetingList" [value]="method.name">{{ method.name }}</option>
-                </select>
-                <div *ngIf="minutesForm.get('meetingNo')?.touched && minutesForm.get('meetingNo')?.hasError('required')"
-                  class="text-danger text-sm mt-1">
-                  meeting no is required.
-                </div>
+                </select> -->
+                <app-searchable-dropdown [placeholder]="'Search Meeting No'" [labelName]="'Meeting No'"
+                  [fetchDataFn]="loadMeetingList" (itemSelected)="onChangeMeetingNo($event)" [isDisabled]="isViewMode"
+                  [required]="true" [selectedItem]="minutesForm.get('meetingId')?.value">
+                </app-searchable-dropdown>
+
               </div>
 
               <div class="col-md-4">
@@ -88,6 +88,11 @@
                   Meeting Date
                 </label>
                 <input type="date" class="form-control" formControlName="meetingDate" readonly />
+                <div
+                  *ngIf="minutesForm.get('meetingDate')?.touched && minutesForm.get('meetingDate')?.hasError('required')"
+                  class="text-danger text-sm mt-1">
+                  meeting date is required.
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">

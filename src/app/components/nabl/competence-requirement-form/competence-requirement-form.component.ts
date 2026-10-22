@@ -33,7 +33,8 @@ export class CompetenceRequirementFormComponent implements CanComponentDeactivat
 
   openSections: { [key: string]: boolean } = {
     header: true,
-    criteria: true
+    criteria: true,
+    position: true,
   };
 
   quillModules = {

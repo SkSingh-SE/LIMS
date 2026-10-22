@@ -14,11 +14,14 @@ import { YearHelper } from '../../../utility/helper/year.helper';
 import { FormFieldErrorComponent } from '../../../utility/components/form-field-error/form-field-error.component';
 import { NablSignatureSectionComponent } from '../../nabl/nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../services/nabl-header.service';
+import { QuestionSetMasterService } from '../../../services/question-set-master.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { QualityControlPlanService } from '../../../services/quality-control-plan.service';
 
 @Component({
   selector: 'app-training-plan-form',
 
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormFieldErrorComponent, NablSignatureSectionComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormFieldErrorComponent, NablSignatureSectionComponent, SearchableDropdownComponent],
   templateUrl: './training-plan-form.component.html',
   styleUrl: './training-plan-form.component.css',
   providers: [DatePipe]
@@ -52,7 +55,10 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
     private datePipe: DatePipe,
     private toastService: ToastService,
     private unsavedChangesService: UnsavedChangesService,
-    private nablHeaderService: NablHeaderService) { }
+    private nablHeaderService: NablHeaderService,
+    private questionService: QuestionSetMasterService,
+    private qcControlPlanservice: QualityControlPlanService
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -99,32 +105,54 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
       approvalStatus: ['Draft', Validators.required],
       // courses: this.fb.array([]),
       preparedDate: [this.today],
+      evaluationRequired: [false],
       preparedBy: [''],
       approvedBy: [null],
       approvedDate: [''],
       reviewedBy: [null],
       reviewedDate: [''],
       trainingTopic: ['', Validators.required],
+      questionSetId: [null],
+      questionSetName: [null],
+      agencyId: [''],
       provider: [''],
       duration: ['1', Validators.required],
-      targetAudience: [''],
+      targetAudience: ['', Validators.required],
       planMonth: [],
-      agency: ['Internal'],
+      agency: ['Internal', Validators.required],
       completionRemarks: ['']
 
 
     });
   }
+  onEvaluationRequiredChange(): void {
 
-  // get courses(): FormArray {
-  //   return this.planForm.get('courses') as FormArray;
-  // }
+    const evaluationRequired =
+      this.planForm.get('evaluationRequired')?.value;
 
+    const questionSetControl =
+      this.planForm.get('questionSetId');
+
+    if (evaluationRequired) {
+
+      questionSetControl?.setValidators([
+        Validators.required
+      ]);
+
+    } else {
+
+      questionSetControl?.clearValidators();
+      questionSetControl?.setValue(null);
+
+    }
+
+    questionSetControl?.updateValueAndValidity();
+  }
   loadData(): void {
     this.trainingPlanService.getById(this.planId).subscribe({
       next: (data) => {
         if (data) {
-        
+
           // data.courses?.forEach(course => {
           //   this.courses.push(this.fb.group({
           //     courseCode: [course.courseCode, Validators.required],
@@ -159,32 +187,62 @@ export class TrainingPlanFormComponent implements CanComponentDeactivate, OnInit
       }
     });
   }
+  getQuestionSets = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.questionService.getQuestionSetsDropdown(term, page, pageSize);
+  }
 
+  onQuestionSelected(item: any) {
+    if (!item) { this.planForm.patchValue({ questionSetId: null }); return; }
+    this.planForm.patchValue({ questionSetId: item.id, questionSetName: item.name });
+  }
+  openQuestionSetMaster(route: string): void {
+    window.open(route, '_blank');
+  }
+  getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.qcControlPlanservice.getEmployeesDropdown(term, page, pageSize);
+  }
+  onEmployeeSelected(item: any) {
+    if (!item) { this.planForm.patchValue({ agencyId: null }); return; }
+    this.planForm.patchValue({ agencyId: item.id, provider: item.name });
+  }
   formatDate(dateStr: string | Date): string {
     return this.datePipe.transform(dateStr, 'yyyy-MM-dd') || '';
   }
+  onAgencyChange(): void {
 
-  // addCourse(): void {
-  //   if (!this.isViewMode) {
-  //     this.courses.push(this.fb.group({
-  //       courseCode: ['', [Validators.required, noWhitespaceValidator()]],
-  //       courseName: ['', [Validators.required, noWhitespaceValidator()]],
-  //       provider: [''],
-  //       duration: [1, Validators.required],
-  //       targetAudience: [''],
-  //       tentativeMonth: [''],
-  //       agency: ['Internal'],
-  //       remarks: ['']
-  //     }));
-  //   }
-  // }
+    const agency = this.planForm.get('agency')?.value;
 
-  // removeCourse(index: number): void {
-  //   if (!this.isViewMode) {
-  //     this.courses.removeAt(index);
-  //   }
-  // }
+    const agencyIdControl = this.planForm.get('agencyId');
+    const providerNameControl = this.planForm.get('provider');
 
+    if (agency === 'Internal') {
+
+      // Internal → Dropdown
+      agencyIdControl?.setValidators([
+        Validators.required
+      ]);
+
+      providerNameControl?.clearValidators();
+
+      // External textbox ki old value clear
+      providerNameControl?.setValue(null);
+
+    } else if (agency === 'External') {
+
+      // External → Textbox
+      providerNameControl?.setValidators([
+        Validators.required
+      ]);
+
+      agencyIdControl?.clearValidators();
+
+      // Internal dropdown ki old ID clear
+      agencyIdControl?.setValue(null);
+    }
+
+    agencyIdControl?.updateValueAndValidity();
+    providerNameControl?.updateValueAndValidity();
+  }
   isFieldInvalid(path: string): boolean {
     return FormValidationHelper.isFieldInvalid(this.planForm, path, this.submitted);
   }

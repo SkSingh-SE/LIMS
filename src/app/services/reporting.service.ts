@@ -18,6 +18,8 @@ export interface ReportingListItem {
   condition: string;
   status: 'Pending' | 'Completed' | 'ReadyForReport' | 'Report Pending' | 'Approved';
   reportHeaderId?: string;
+  reportNo?: string;
+  inwardId?: number;
   workflowInstanceId?: string;
   canTakeAction?: boolean;
   actions?: WorkflowAction[];
@@ -25,7 +27,6 @@ export interface ReportingListItem {
   price?: number;
   pricing?: any;
   customerID?: number;
-  inwardId?: number;
 }
 
 export interface TestParameter {
@@ -144,6 +145,7 @@ export interface ReportingPreview {
   equipmentUsed?: string;
   crossSectionArea?: number;
   gaugeLength?: number;
+  canSubmitForReportApproval?: boolean;
 }
 
 @Injectable({
@@ -252,6 +254,10 @@ export class ReportingService {
    */
   generateReportPdf(sampleId: string | number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/generate-pdf/${sampleId}`, {});
+  }
+
+  submitForReportApproval(sampleId: string | number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/TestResults/submit-for-report-review/${sampleId}`, {});
   }
 
   submitAmendment(formData: FormData): Observable<any> {

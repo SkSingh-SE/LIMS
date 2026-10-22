@@ -112,7 +112,7 @@ export class TestMethodNablFormComponent implements CanComponentDeactivate, OnIn
     get docEntries(): FormArray {
         return this.requestForm.get('docEntries') as FormArray;
     }
-  
+
     addDocEntry(): void {
         const index = this.docEntries.length;
         const entryGroup = this.fb.group({
@@ -120,8 +120,8 @@ export class TestMethodNablFormComponent implements CanComponentDeactivate, OnIn
             description: ['', Validators.required],
             docSource: ['', Validators.required],
             docType: ['Standard'],
-            issue: ['',Validators.required],
-            monthYear: ['',Validators.required],
+            issue: ['', Validators.required],
+            monthYear: ['', Validators.required],
             status: ['Active']
         });
 
@@ -149,6 +149,8 @@ export class TestMethodNablFormComponent implements CanComponentDeactivate, OnIn
             status: ['Active'],
             isVerified: [false],
             isValidated: [false]
+            // isVerified: [false],
+            // isValidated: [false]
         });
 
         this.testMethod.push(entryGroup);
@@ -181,8 +183,13 @@ export class TestMethodNablFormComponent implements CanComponentDeactivate, OnIn
                             revisionNo: [entry.revisionNo || '', Validators.required],
                             effectiveDate: NablFormsHelper.formatDateForInput(entry.effectiveDate) || null,
                             status: [entry.status || 'Active'],
+
                             isVerified: [entry.isVerified === true || entry.isVerified === 1],
                             isValidated: [entry.isValidated === true || entry.isValidated === 1]
+
+                            // isVerified: [entry.isVerified === true || entry.isVerified === 1],
+                            // isValidated: [entry.isValidated === true || entry.isValidated === 1]
+
                         }));
                     });
 

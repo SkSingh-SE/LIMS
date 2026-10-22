@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -50,12 +47,8 @@
   <app-print-frame *ngIf="requirement" [orientation]="orientation">
     <ng-container header>
       <!-- Reusable Document Header -->
-      <app-nabl-print-header
-          formatNo="F-7C"
-          mainTitle="COMPETENCE REQUIREMENT DOCUMENT"
-          [docNo]="'DMSPL / Level-04 / Format / F-7C'"
-          [issueNo]="'01'"
-          [revNo]="'00'">
+      <app-nabl-print-header formatNo="F-7C" mainTitle="COMPETENCE REQUIREMENT DOCUMENT"
+        [docNo]="'DMSPL / Level-04 / Format / F-7C'" [issueNo]="'01'" [revNo]="'00'">
       </app-nabl-print-header>
     </ng-container>
 
@@ -87,7 +80,7 @@
       <!-- Experience Requirements -->
       <div class="doc-section mb-3">
         <div class="sec-title">EXPERIENCE REQUIREMENTS</div>
-        <div class="sec-body" style="white-space: pre-wrap;">{{ requirement.minimumExperience }}</div>
+        <div class="sec-body" [innerHTML]="requirement.minimumExperience"></div>
       </div>
 
       <!-- Acceptance / Approval -->
@@ -108,10 +101,8 @@
     </ng-container>
 
     <ng-container footer>
-      <app-nabl-print-footer
-          [preparedByName]="requirement.preparedBy"
-          [issuedByName]="requirement.reviewedBy"
-          [reviewedApprovedByName]="requirement.approvedBy">
+      <app-nabl-print-footer [preparedByName]="requirement.preparedBy" [issuedByName]="requirement.reviewedBy"
+        [reviewedApprovedByName]="requirement.approvedBy">
       </app-nabl-print-footer>
     </ng-container>
   </app-print-frame>

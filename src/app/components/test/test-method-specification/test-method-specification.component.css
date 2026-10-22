@@ -15,6 +15,127 @@ input::file-selector-button:hover {
 
 .input-file {
   cursor: pointer !important;
-  line-height: 25px;
+  /* line-height: 25px; */
   font-size: 0.8rem;
+}
+
+/* ── Standard form density + section styling (mirrors material-specification form) ── */
+:host .form-control,
+:host .form-select {
+  min-height: 30px;
+  padding: 0.15rem 0.4rem;
+}
+:host .form-label {
+  font-size: var(--font-xs);
+  margin-bottom: 0.15rem;
+  font-weight: 500;
+  color: var(--neutral-700);
+}
+
+/* Accordion section: accent bar, gradient, hover */
+:host .accordion-section {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+:host .section-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  background: linear-gradient(90deg, #fafbfc 0%, #fff 100%);
+  border-left: 3px solid var(--primary-color);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--neutral-700);
+  user-select: none;
+  transition: background 0.15s ease;
+}
+:host .section-header:hover {
+  background: linear-gradient(90deg, #f3f4f6 0%, #fff 100%);
+}
+:host .section-header .bi {
+  font-size: 0.8rem;
+}
+:host .section-body {
+  padding: 0.75rem;
+}
+
+/* Header compact grid */
+:host .compact-grid .form-label {
+  font-size: var(--font-xs);
+  margin-bottom: 0.1rem;
+  color: var(--neutral-700);
+  font-weight: 500;
+}
+:host .compact-grid .form-control,
+:host .compact-grid .form-select {
+  min-height: 28px;
+}
+:host .compact-grid input[readonly] {
+  background: #f8f9fa;
+  font-style: italic;
+  color: #6c757d;
+}
+
+/* Empty parameter list placeholder */
+:host .param-list-empty {
+  text-align: center;
+  padding: 1.1rem 0.5rem;
+  color: #8a929c;
+  font-size: var(--font-sm);
+}
+:host .param-list-empty .bi {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #c2c8d0;
+}
+
+:host .btn-sm {
+  font-size: var(--font-xs);
+  padding: 0.15rem 0.5rem;
+}
+
+/* File pill: match form-select-sm height so the version row stays aligned */
+:host .file-pill {
+  height: 31px;
+  padding: 0 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+:host .file-pill .bi-file-earmark-fill {
+  color: var(--primary-color);
+}
+
+/* Version-level parameter block */
+:host .param-block {
+  border-top: 1px dashed #e0e3e8;
+  padding-top: 0.6rem;
+}
+:host .param-block-title {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--neutral-700);
+}
+:host .param-table thead th {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--neutral-700);
+  background: #fafbfc;
+  padding: 0.3rem 0.4rem;
+  vertical-align: middle;
+}
+:host .param-table tbody td {
+  padding: 0.25rem 0.4rem;
+  vertical-align: top;
+}
+:host .param-table .form-control,
+:host .param-table .form-select {
+  min-height: 28px;
+  font-size: var(--font-xs);
+}
+:host .param-table textarea.form-control {
+  min-height: 28px;
 }

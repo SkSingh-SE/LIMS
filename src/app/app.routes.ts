@@ -40,8 +40,6 @@ import { MaterialSpecificationFormComponent } from './components/material-specif
 import { MaterialSpecificationListComponent } from './components/material-specification/material-specification-list/material-specification-list.component';
 import { CustomMaterialSpecificationListComponent } from './components/material-specification/custom-material-specification-list/custom-material-specification-list.component';
 import { CustomMaterialSpecificationFormComponent } from './components/material-specification/custom-material-specification-form/custom-material-specification-form.component';
-import { ProductSpecificationComponent } from './components/product-specification/product-specification.component';
-import { CustomProductSpecificationComponent } from './components/product-specification/custom-product-specification/custom-product-specification.component';
 import { ToleranceMasterComponent } from './components/tolerance-master/tolerance-master.component';
 import { HardnessEquivalenceComponent } from './components/hardness-equivalence/hardness-equivalence.component';
 import { ParameterUnitComponent } from './components/parameter-unit/parameter-unit.component';
@@ -78,6 +76,7 @@ import { WorkflowListComponent } from './components/workflow/workflow-list/workf
 
 import { PlanListComponent } from './components/plan/plan-list/plan-list.component';
 import { ReviewOfRequestFormComponent } from './components/inward/review-of-request-form/review-of-request-form.component';
+import { CaseLifecycleWorkspaceComponent } from './components/inward/case-lifecycle-workspace/case-lifecycle-workspace.component';
 import { CuttingSamplesComponent } from './components/sample-prepration/cutting-samples/cutting-samples.component';
 import { TestResultComponent } from './components/TestResult/test-result/test-result.component';
 import { LongTermTrackingComponent } from './components/TestResult/long-term-tracking/long-term-tracking.component';
@@ -106,8 +105,8 @@ import { EmployeeCompetencePreviewComponent } from './components/nabl/employee-c
 import { EmployeeTrainingPreviewComponent } from './components/nabl/employee-training-preview/employee-training-preview.component';
 import { EmployeeAuthorizationPreviewComponent } from './components/nabl/employee-authorization-preview/employee-authorization-preview.component';
 import { SkillMatrixPreviewComponent } from './components/designation/skill-matrix/skill-matrix-preview/skill-matrix-preview.component';
-import { SkillMatrixListComponent } from './components/designation/skill-matrix/skill-matrix-list/skill-matrix-list.component';
-import { SkillMatrixFormComponent } from './components/designation/skill-matrix/skill-matrix-form/skill-matrix-form.component';
+import { SkillMatrixListComponent } from './components/nabl/skill-matrix-list/skill-matrix-list.component';
+import { SkillMatrixFormComponent } from './components/nabl/skill-matrix-form/skill-matrix-form.component';
 import { TrainingPlanListComponent } from './components/training/training-plan/training-plan-list.component';
 import { TrainingPlanFormComponent } from './components/training/training-plan/training-plan-form.component';
 import { TrainingPlanPreviewComponent } from './components/training/training-plan/training-plan-preview.component';
@@ -144,6 +143,12 @@ import { TechnicalRawDataPreviewComponent } from './components/nabl/technical-ra
 import { InventoryManagementListComponent } from './components/nabl/inventory-management/inventory-management-list/inventory-management-list.component';
 import { InventoryManagementFormComponent } from './components/nabl/inventory-management/inventory-management-form/inventory-management-form.component';
 import { EquipmentPrintListComponent } from './components/equipment/equipment-print/equipment-print-list.component';
+import { RoleWiseSkillsMasterFormComponent } from './components/role/role-wise-skills-master/role-wise-skills-master-form/role-wise-skills-master-form.component';
+import { RoleWiseSkillsMasterListComponent } from './components/role/role-wise-skills-master/role-wise-skills-master-list/role-wise-skills-master-list.component';
+import { QuestionSetMasterListComponent } from './components/nabl/question-set-master/question-set-master-list/question-set-master-list.component';
+import { QuestionSetMasterFormComponent } from './components/nabl/question-set-master/question-set-master-form/question-set-master-form.component';
+import { MyEvaluationsListComponent } from './components/nabl/my-evaluations/my-evaluations-list/my-evaluations-list.component';
+ 
 // Removed direct imports for lazy loading
 
 
@@ -183,6 +188,8 @@ export const routes: Routes = [
             { path: 'test/details/:id', component: LaboratoryTestComponent },
             { path: 'bank', component: BankComponent },
             { path: 'courier', component: CourierComponent },
+            { path: 'product-size-master', loadComponent: () => import('./components/product-size-master/product-size-master.component').then(m => m.ProductSizeMasterComponent) },
+            { path: 'analysis-technique', loadComponent: () => import('./components/analysis-technique/analysis-technique.component').then(m => m.AnalysisTechniqueComponent) },
             { path: 'tpi', component: TPIComponent },
             { path: 'tpi-inspection', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-list.component').then(m => m.TpiInspectionListComponent) },
             { path: 'tpi-inspection/create', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-form/tpi-inspection-form.component').then(m => m.TpiInspectionFormComponent), canDeactivate: [unsavedChangesGuard] },
@@ -197,6 +204,10 @@ export const routes: Routes = [
             { path: 'product-condition-category', component: ProductConditionCategoryComponent },
             { path: 'property-type', component: PropertyTypeComponent },
             { path: 'product-condition', component: ProductConditionComponent },
+            { path: 'product-master', loadComponent: () => import('./components/product-master/product-master-list.component').then(m => m.ProductMasterListComponent) },
+            { path: 'product-master/create', loadComponent: () => import('./components/product-master/product-master-form.component').then(m => m.ProductMasterFormComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'product-master/edit/:id', loadComponent: () => import('./components/product-master/product-master-form.component').then(m => m.ProductMasterFormComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'product-master/details/:id', loadComponent: () => import('./components/product-master/product-master-form.component').then(m => m.ProductMasterFormComponent) },
             { path: 'specimen-orientation', component: SpecimenOrientationComponent },
             { path: 'chemical-parameter', component: ChemicalParameterComponent },
             { path: 'mechanical-parameter', component: MechanicalParameterComponent },
@@ -331,8 +342,6 @@ export const routes: Routes = [
             { path: 'custom-material-specification/create', component: CustomMaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'custom-material-specification/edit/:id', component: CustomMaterialSpecificationFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'custom-material-specification/details/:id', component: CustomMaterialSpecificationFormComponent },
-            { path: 'product-specification', component: ProductSpecificationComponent },
-            { path: 'custom-product-specification', component: CustomProductSpecificationComponent },
             { path: 'metal-classification', component: MetalClassificationComponent },
             { path: 'tolerance-master', component: ToleranceMasterComponent },
             { path: 'hardness-equivalence', component: HardnessEquivalenceComponent },
@@ -369,10 +378,10 @@ export const routes: Routes = [
             { path: 'calibration-agency/edit/:id', component: CalibrationAgencyFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'calibration-agency/details/:id', component: CalibrationAgencyFormComponent },
             // Equipment History Card Routes (F-14)
-            { path: 'equipment-history-card', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-list.component').then(m => m.EquipmentHistoryListComponent) },
-            { path: 'equipment-history-card/create', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent), canDeactivate: [unsavedChangesGuard] },
-            { path: 'equipment-history-card/edit/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent), canDeactivate: [unsavedChangesGuard] },
-            { path: 'equipment-history-card/details/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent) },
+            // { path: 'equipment-history-card', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-list.component').then(m => m.EquipmentHistoryListComponent) },
+            // { path: 'equipment-history-card/create', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent), canDeactivate: [unsavedChangesGuard] },
+            // { path: 'equipment-history-card/edit/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent), canDeactivate: [unsavedChangesGuard] },
+            // { path: 'equipment-history-card/details/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-form.component').then(m => m.EquipmentHistoryFormComponent) },
             { path: 'equipment-history-card/preview/:id', loadComponent: () => import('./components/equipment/equipment-history-card/equipment-history-preview.component').then(m => m.EquipmentHistoryPreviewComponent) },
             // Supplier Confidentiality Agreement Routes (F-2)
             { path: 'supplier-confidentiality-agreement', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-list.component').then(m => m.SupplierConfidentialityListComponent) },
@@ -381,11 +390,11 @@ export const routes: Routes = [
             { path: 'supplier-confidentiality-agreement/details/:id', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-form.component').then(m => m.SupplierConfidentialityFormComponent) },
             { path: 'supplier-confidentiality-agreement/preview/:id', loadComponent: () => import('./components/nabl/supplier-confidentiality/supplier-confidentiality-preview.component').then(m => m.SupplierConfidentialityPreviewComponent) },
             // Calibration Review Routes (F-15)
-            { path: 'calibration-review', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-list.component').then(m => m.CalibrationReviewListComponent) },
-            { path: 'calibration-review/create', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
-            { path: 'calibration-review/edit/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
-            { path: 'calibration-review/details/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent) },
-            { path: 'calibration-review/preview/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-preview.component').then(m => m.CalibrationReviewPreviewComponent) },
+            // { path: 'calibration-review', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-list.component').then(m => m.CalibrationReviewListComponent) },
+            // { path: 'calibration-review/create', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
+            // { path: 'calibration-review/edit/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
+            // { path: 'calibration-review/details/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-form.component').then(m => m.CalibrationReviewFormComponent) },
+            // { path: 'calibration-review/preview/:id', loadComponent: () => import('./components/equipment/calibration-review/calibration-review-preview.component').then(m => m.CalibrationReviewPreviewComponent) },
             // Intermediate Check Records Routes (F-16)
             { path: 'intermediate-check-records', loadComponent: () => import('./components/nabl/intermediate-check/intermediate-check-list.component').then(m => m.IntermediateCheckListComponent) },
             { path: 'intermediate-check-records/create', loadComponent: () => import('./components/nabl/intermediate-check/intermediate-check-form.component').then(m => m.IntermediateCheckFormComponent), canDeactivate: [unsavedChangesGuard] },
@@ -522,7 +531,8 @@ export const routes: Routes = [
             { path: 'master-document/create', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'master-document/edit/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'master-document/details/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-form/master-document-form.component').then(m => m.MasterDocumentFormComponent) },
-            { path: 'master-document/preview', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-preview/master-document-preview.component').then(m => m.MasterDocumentPreviewComponent) },
+            { path: 'master-document/preview/:id', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-preview/master-document-preview.component').then(m => m.MasterDocumentPreviewComponent) },
+            { path: 'master-document/previewlist', loadComponent: () => import('./components/nabl/master-document-nabl/master-document-preview-list/master-document-preview-list.component').then(m => m.MasterDocumentPreviewListComponent) },
 
             // F-44: Document Change Request Form
             { path: 'document-change-request', loadComponent: () => import('./components/nabl/document-change-request-nabl/document-change-request-list/document-change-request-list.component').then(m => m.DocumentChangeRequestListComponent) },
@@ -536,7 +546,8 @@ export const routes: Routes = [
             { path: 'document-review/create', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'document-review/edit/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'document-review/details/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-form/document-review-form.component').then(m => m.DocumentReviewFormComponent) },
-            { path: 'document-review/preview', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-preview/document-review-preview.component').then(m => m.DocumentReviewPreviewComponent) },
+            { path: 'document-review/preview/:id', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-preview/document-review-preview.component').then(m => m.DocumentReviewPreviewComponent) },
+            { path: 'document-review/previewlist', loadComponent: () => import('./components/nabl/document-review-nabl/document-review-preview-list/document-review-preview-list.component').then(m => m.DocumentReviewPreviewListComponent) },
 
             // F-46: Risk & Opportunity Assessment
             { path: 'risk-assessment', loadComponent: () => import('./components/nabl/risk-assessment-nabl/risk-assessment-list/risk-assessment-list.component').then(m => m.RiskAssessmentListComponent) },
@@ -571,7 +582,7 @@ export const routes: Routes = [
             { path: 'audit-plan/create', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'audit-plan/edit/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent), canDeactivate: [unsavedChangesGuard] },
             { path: 'audit-plan/details/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-form/audit-plan-form.component').then(m => m.AuditPlanFormComponent) },
-            { path: 'audit-plan/preview', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-preview/audit-plan-preview.component').then(m => m.AuditPlanPreviewComponent) },
+            { path: 'audit-plan/preview/:id', loadComponent: () => import('./components/nabl/audit-plan-nabl/audit-plan-preview/audit-plan-preview.component').then(m => m.AuditPlanPreviewComponent) },
 
             // F-51: Audit Checklist & Observation
             { path: 'audit-checklist', loadComponent: () => import('./components/nabl/audit-checklist-nabl/audit-checklist-list/audit-checklist-list.component').then(m => m.AuditChecklistListComponent) },
@@ -603,6 +614,7 @@ export const routes: Routes = [
 
             // Training Effectiveness Routes (F-10)
             { path: 'cutting-price-master', component: CuttingPriceMasterComponent },
+            { path: 'machining-charge-master', loadComponent: () => import('./components/sample-prepration/machining-charge-master/machining-charge-master.component').then(m => m.MachiningChargeMasterComponent) },
             { path: 'sample-preparation-master', loadComponent: () => import('./components/sample-prepration/sample-preparation-master/sample-preparation-master.component').then(m => m.SamplePreparationMasterComponent) },
             { path: 'sample/prepration', component: CuttingSamplesComponent },
             // Old cutting/machining routes — replaced by unified /sample/preparation
@@ -624,6 +636,7 @@ export const routes: Routes = [
             { path: 'sample/inward/create', component: SampleInwardFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'sample/inward/edit/:id', component: SampleInwardFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'sample/inward/details/:id', component: SampleInwardFormComponent },
+            { path: 'sample/case/:id', component: CaseLifecycleWorkspaceComponent },
             { path: 'profile', loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent) },
             { path: 'settings', component: SettingsComponent },
             { path: 'config', component: ConfigManagerComponent },
@@ -642,7 +655,7 @@ export const routes: Routes = [
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
-            { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            // { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
             { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
@@ -672,6 +685,21 @@ export const routes: Routes = [
             { path: 'inventory-management/create', component: InventoryManagementFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'inventory-management/edit/:id', component: InventoryManagementFormComponent, canDeactivate: [unsavedChangesGuard] },
             { path: 'inventory-management/details/:id', component: InventoryManagementFormComponent },
+            // Role-wise skill master routes
+            { path: 'role-wise-skills-master', component: RoleWiseSkillsMasterListComponent },
+            { path: 'role-wise-skills-master/create', component: RoleWiseSkillsMasterFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'role-wise-skills-master/edit/:id', component: RoleWiseSkillsMasterFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'role-wise-skills-master/details/:id', component: RoleWiseSkillsMasterFormComponent },
+
+            { path: 'question-set-master', component: QuestionSetMasterListComponent },
+            { path: 'question-set-master/create', component: QuestionSetMasterFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'question-set-master/edit/:id', component: QuestionSetMasterFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'question-set-master/details/:id', component: QuestionSetMasterFormComponent },
+
+            { path: 'my-evaluations', component: MyEvaluationsListComponent },
+            { path: 'question-set-master/create', component: QuestionSetMasterFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'question-set-master/edit/:id', component: QuestionSetMasterFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'question-set-master/details/:id', component: QuestionSetMasterFormComponent },
 
             { path: 'nabl/dashboard', loadComponent: () => import('./components/nabl/nabl-dashboard/nabl-dashboard.component').then(m => m.NablDashboardComponent) },
             { path: 'nabl/audit-print', loadComponent: () => import('./components/nabl/nabl-audit-print/nabl-audit-print.component').then(m => m.NablAuditPrintComponent) },

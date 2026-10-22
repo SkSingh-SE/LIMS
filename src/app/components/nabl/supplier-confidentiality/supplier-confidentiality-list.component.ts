@@ -32,7 +32,14 @@ export class SupplierConfidentialityListComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        this.loadRecords();
+        this.loadRecords({
+            PageNumber: 1,
+            PageSize: 10,
+            searchTerm: '',
+            sortByColumn: 'id',
+            sortOrder: 'desc',
+            filter: []
+        });
     }
 
     loadRecords(params: any = {}): void {
@@ -75,7 +82,16 @@ export class SupplierConfidentialityListComponent implements OnInit {
             this.service.delete(id).subscribe({
                 next: () => {
                     this.toastService.show('Supplier confidentiality agreement deleted successfully', 'success');
-                    this.loadRecords({ PageNumber: 1, PageSize: 10 });
+
+                    this.loadRecords({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'desc',
+                        filter: []
+                    });
+
                 },
                 error: (err) => {
                     this.toastService.show(err?.error?.message || 'Failed to delete record', 'error');

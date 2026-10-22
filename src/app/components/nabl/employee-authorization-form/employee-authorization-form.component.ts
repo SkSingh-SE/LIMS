@@ -120,9 +120,9 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
         this.authForm.get('documentNo')?.disable();
         this.authForm.get('issueNo')?.disable();
         this.authForm.get('revNo')?.disable();
+        this.authForm.get('date')?.disable();
     }
 
-    
     loadData(): void {
         this.authService.getById(this.recordId).subscribe({
             next: (data) => {
@@ -224,7 +224,7 @@ export class EmployeeAuthorizationFormComponent implements CanComponentDeactivat
             return of([]);
         }
 
-        return this.employeeService.getEmployeeDropdown(term, page, pageSize, deptId);
+        return this.employeeService.getEmployeeDropdown(term, page, pageSize, deptId, this.recordId > 0 ? this.recordId : null);
     };
     fetchEquipmentList = (term: string, page: number, pageSize: number): Observable<any[]> => {
         // Replace with actual service call to fetch equipment list

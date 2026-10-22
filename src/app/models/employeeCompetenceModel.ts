@@ -10,6 +10,7 @@ export interface EmployeeCompetenceReport {
     documentNo: string;
     designationName: string;
     evaluationPeriodFrom: string | Date;
+    date: string | Date;
     evaluationPeriodTo: string | Date;
     parameters: CompetenceEvaluationParameter[];
     overallRating: number;

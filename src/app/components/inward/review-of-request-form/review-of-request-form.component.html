@@ -1,113 +1,53 @@
 <div class="review-page">
-  <!-- Page Header -->
-  <div class="review-header">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-      <div>
-        <h5 class="mb-1 fw-bold">
-          <i class="bi bi-clipboard-check me-2 text-muted"></i>
-          Review of Request
-          <span class="text-muted fw-normal ms-2" *ngIf="plan?.caseNo">{{ plan.caseNo }}</span>
-        </h5>
-        <div class="text-muted small" *ngIf="plan?.customerName">{{ plan.customerName }}</div>
-      </div>
-      <app-test-status-badge [status]="reviewStatus"></app-test-status-badge>
-    </div>
-  </div>
+  <!-- Page Header & Sub-Tabs -->
+  <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom flex-wrap gap-2">
+    <ul class="nav nav-tabs border-0 flex-grow-1" id="reviewSubTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link fw-semibold px-3 py-1.5"
+          [class.active]="activeSubTab === 'plan'"
+          (click)="setSubTab('plan')"
+          type="button"
+        >
+          <i class="bi bi-journal-text me-1.5 text-primary"></i> 1. Plan Review & Update
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link fw-semibold px-3 py-1.5"
+          [class.active]="activeSubTab === 'prep'"
+          (click)="setSubTab('prep')"
+          type="button"
+        >
+          <i class="bi bi-scissors me-1.5 text-warning"></i> 2. Sample Preparation & Cutting Plan
+        </button>
+      </li>
+    </ul>
 
-  <!-- Customer & Case Info -->
-  <div class="row g-3 mb-3">
-    <!-- Customer Info -->
-    <div class="col-md-6">
-      <div class="review-section">
-        <div class="review-section-title">
-          <i class="bi bi-person me-2"></i>Customer Information
-        </div>
-        <div class="row g-2 p-3">
-          <div class="col-12">
-            <div class="review-field">
-              <label class="review-label">Customer</label>
-              <div class="review-value">{{ plan?.customerName || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Contact Person</label>
-              <div class="review-value">{{ plan?.customerContact || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-12">
-            <div class="review-field">
-              <label class="review-label">Address</label>
-              <div class="review-value">{{ plan?.customerAddress || '-' }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button
+        class="btn-lims btn-lims-print btn-sm"
+        (click)="printInwardChallan()"
+        title="Print Formal Sample Inward Receipt Challan PDF"
+      >
+        <i class="bi bi-printer me-1.5"></i> Print Inward Challan
+      </button>
 
-    <!-- Case Info -->
-    <div class="col-md-6">
-      <div class="review-section">
-        <div class="review-section-title">
-          <i class="bi bi-folder me-2"></i>Case Information
-        </div>
-        <div class="row g-2 p-3">
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Case No</label>
-              <div class="review-value">{{ plan?.caseNo || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Receipt Note</label>
-              <div class="review-value">{{ plan?.sampleReceiptNote || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="review-field">
-              <label class="review-label">Urgent</label>
-              <div>
-                <span class="badge" [ngClass]="plan?.urgent ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary'">
-                  {{ plan?.urgent ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="review-field">
-              <label class="review-label">Return Sample</label>
-              <div>
-                <span class="badge" [ngClass]="plan?.returnSample ? 'bg-info-subtle text-info' : 'bg-secondary-subtle text-secondary'">
-                  {{ plan?.returnSample ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="review-field">
-              <label class="review-label">Not Destroyed</label>
-              <div>
-                <span class="badge" [ngClass]="plan?.notDestroyed ? 'bg-warning-subtle text-warning' : 'bg-secondary-subtle text-secondary'">
-                  {{ plan?.notDestroyed ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Conformity</label>
-              <div class="review-value">{{ plan?.statementOfConformity || '-' }}</div>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="review-field">
-              <label class="review-label">Decision Rule</label>
-              <div class="review-value">{{ plan?.decisionRule || '-' }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <button
+        *ngIf="!isEmbeddedReadOnly"
+        class="btn-lims btn-lims-save btn-sm"
+        (click)="verifyAndLockReview()"
+      >
+        <i class="bi bi-check-circle me-1.5"></i> Approve & Finalize Review
+      </button>
+
+      <button
+        *ngIf="isEmbeddedReadOnly"
+        class="btn-lims btn-lims-cancel btn-sm"
+        (click)="openReplanModal()"
+      >
+        <i class="bi bi-arrow-counterclockwise me-1.5"></i> Request Re-Plan
+      </button>
     </div>
   </div>
 
@@ -195,7 +135,7 @@
             <!-- Preparation Flags -->
             <div class="d-flex flex-wrap gap-2 mt-2">
               <span *ngIf="sample.preparationRequired" class="prep-chip prep-chip--cutting">
-                <i class="bi bi-scissors me-1"></i>Cutting Required
+                <i class="bi bi-scissors me-1"></i>Sample Preparation Required
               </span>
               <span *ngIf="sample.machiningRequired" class="prep-chip prep-chip--machining">
                 <i class="bi bi-gear me-1"></i>Machining Required
@@ -206,8 +146,106 @@
                 <small *ngIf="sample.otherPreparationCharge" class="ms-1">({{ sample.otherPreparationCharge | currency:'INR':'symbol':'1.0-0' }})</small>
               </span>
               <span *ngIf="sample.tpiRequired" class="prep-chip prep-chip--tpi">
-                <i class="bi bi-eye me-1"></i>TPI Required
+                <i class="bi bi-eye me-1"></i>TPI: {{ getTpiAgencyName(sample.tpiAgencyID) }}
               </span>
+              <span *ngIf="!sample.preparationRequired && !sample.machiningRequired && !sample.otherPreparation && !sample.tpiRequired"
+                    class="text-muted small fst-italic">No preparation required</span>
+            </div>
+
+            <!-- Collapsible Prep Edit Section -->
+            <div class="prep-toggle" (click)="togglePrepSection(sample.id)">
+              <span class="fw-semibold small">
+                <i class="bi bi-tools me-1"></i> Sample Preparation Details
+                <span class="ms-2 text-muted small fw-normal">
+                  Prep: <span [class]="sample.preparationRequired ? 'text-success' : 'text-danger'">{{ sample.preparationRequired ? 'Yes' : 'No' }}</span>
+                  &nbsp;| Machining: <span [class]="sample.machiningRequired ? 'text-success' : 'text-danger'">{{ sample.machiningRequired ? 'Yes' : 'No' }}</span>
+                  &nbsp;| Other: <span [class]="sample.otherPreparation ? 'text-success' : 'text-danger'">{{ sample.otherPreparation ? 'Yes' : 'No' }}</span>
+                  &nbsp;| TPI: <span [class]="sample.tpiRequired ? 'text-success' : 'text-danger'">{{ sample.tpiRequired ? 'Yes' : 'No' }}</span>
+                </span>
+              </span>
+              <i class="bi" [ngClass]="openPrepSections[sample.id] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div *ngIf="openPrepSections[sample.id] && prepForms[sample.id]" [formGroup]="prepForms[sample.id]" class="ps-2 pe-2 pb-2">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">Sample Preparation Required</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="preparationRequired" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="preparationRequired" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">Machining Required</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="machiningRequired" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="machiningRequired" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <ng-container *ngIf="prepForms[sample.id]?.get('machiningRequired')?.value === true">
+                  <div class="col-md-3">
+                    <label class="form-label small mb-1">Machining Amount</label>
+                    <input type="number" class="form-control form-control-sm" formControlName="machiningAmount" />
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small mb-1">Specimen</label>
+                    <input type="text" class="form-control form-control-sm" formControlName="specimen" />
+                  </div>
+                </ng-container>
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">Other Preparation</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="otherPreparation" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="otherPreparation" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <div class="col-md-3" *ngIf="prepForms[sample.id]?.get('otherPreparation')?.value === true">
+                  <label class="form-label small mb-1">Other Prep Charge</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="otherPreparationCharge" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small d-block mb-1">TPI Required</label>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="true" formControlName="tpiRequired" />
+                    <label class="form-check-label small">Yes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input type="radio" class="form-check-input" [value]="false" formControlName="tpiRequired" />
+                    <label class="form-check-label small">No</label>
+                  </div>
+                </div>
+                <div class="col-md-6" *ngIf="prepForms[sample.id]?.get('tpiRequired')?.value === true">
+                  <label class="form-label small mb-1">TPI Agency</label>
+                  <app-searchable-dropdown
+                    placeholder="Select TPI Agency"
+                    [fetchDataFn]="getTPIAgencies"
+                    [hideLabel]="true"
+                    [smallInput]="true"
+                    [selectedItem]="prepForms[sample.id].get('tpiAgencyID')?.value ? { id: prepForms[sample.id].get('tpiAgencyID')?.value, name: getTpiAgencyName(prepForms[sample.id].get('tpiAgencyID')?.value) } : null"
+                    (itemSelected)="onTPIAgencySelected($event, sample.id)">
+                  </app-searchable-dropdown>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small mb-1">Test Instructions</label>
+                  <textarea class="form-control form-control-sm" rows="2" formControlName="testInstructions"></textarea>
+                </div>
+                <div class="col-12 text-end">
+                  <button type="button" class="btn btn-sm btn-save px-3" (click)="savePrepForSample(sample.id)">
+                    <i class="bi bi-check-circle me-1"></i> Save Prep
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -254,6 +292,7 @@
                   <th>Specification 1</th>
                   <th>Specification 2</th>
                   <th>Lab Test</th>
+                  <th>Standard</th>
                   <th class="text-center">Qty</th>
                   <th>Report No</th>
                   <th>ULR No</th>
@@ -269,6 +308,7 @@
                       {{ testMethodName }}
                     </ng-container>
                   </td>
+                  <td>{{ test.standardName || '-' }}</td>
                   <td class="text-center">{{ test.quantity }}</td>
                   <td>{{ test.reportNo || '-' }}</td>
                   <td>{{ test.ulrNo || '-' }}</td>

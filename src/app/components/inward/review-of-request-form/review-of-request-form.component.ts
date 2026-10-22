@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Component, Input, OnInit, signal } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
@@ -9,23 +9,46 @@ import { MetalClassificationService } from '../../../services/metal-classificati
 import { ParameterService } from '../../../services/parameter.service';
 import { StandardOrgnizationService } from '../../../services/standard-orgnization.service';
 import { ProductConditionService } from '../../../services/product-condition.service';
+import { TPIService } from '../../../services/tpi.service';
 import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../../services/workflow.service';
 import { ToastService } from '../../../services/toast.service';
 import { routes } from '../../../app.routes';
 import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/test-status-badge.component';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { PlanFormComponent } from '../../plan/plan-form/plan-form.component';
+import { CuttingMachiningPlanTabComponent } from '../cutting-machining-plan-tab/cutting-machining-plan-tab.component';
 import { SampleStatus } from '../../../utility/status_flow/enums/sample-status.enum';
 
 @Component({
   selector: 'app-review-of-request-form',
   templateUrl: './review-of-request-form.component.html',
   styleUrls: ['./review-of-request-form.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, TestStatusBadgeComponent]
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    TestStatusBadgeComponent,
+    SearchableDropdownComponent,
+    PlanFormComponent,
+    CuttingMachiningPlanTabComponent
+  ]
 })
 export class ReviewOfRequestFormComponent implements OnInit {
   inwardId: number = 0;
+
+  // ─── Embedding support: used by CaseLifecycleWorkspaceComponent ───
+  @Input() embeddedInwardId: number = 0;
+  @Input() isEmbeddedMode: boolean = false;
+  @Input() isEmbeddedReadOnly: boolean = false;
+
+  activeSubTab: 'plan' | 'prep' = 'plan';
+  showReplanModal: boolean = false;
+  replanReason: string = '';
+
   plan: any = null;
+
   baseUrl = environment.baseUrl;
   reviewRemark: string = '';
   submitAttempted = false;
@@ -39,6 +62,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
   metalClassificationMap: { [id: string]: string } = {};
   productConditionMap: { [id: string]: string } = {};
   parameterMap: { [id: string]: string } = {};
+  tpiAgencyMap: { [id: string]: string } = {};
 
   // Filtered test methods and standards for dependent dropdowns
   filteredTestMethods: { [key: string]: any[] } = {};
@@ -47,6 +71,9 @@ export class ReviewOfRequestFormComponent implements OnInit {
   actions: any[] = [];
   selectedAction: any = null;
   showReviewButton = signal(true);
+
+  prepForms: { [sampleId: number]: FormGroup } = {};
+  openPrepSections: { [sampleId: number]: boolean } = {};
 
   constructor(
     private fb: FormBuilder,
@@ -60,13 +87,19 @@ export class ReviewOfRequestFormComponent implements OnInit {
     private router: Router,
     private workflowService: WorkflowService,
     private toast: ToastService,
-    private productConditionService: ProductConditionService
+    private productConditionService: ProductConditionService,
+    private tpiService: TPIService
   ) { }
 
   ngOnInit(): void {
-    this.activeRoute.paramMap.subscribe((params) => {
-      this.inwardId = Number(params.get('id'));
-    });
+    // Support embedded mode from CaseLifecycleWorkspace
+    if (this.isEmbeddedMode && this.embeddedInwardId > 0) {
+      this.inwardId = this.embeddedInwardId;
+    } else {
+      this.activeRoute.paramMap.subscribe((params) => {
+        this.inwardId = Number(params.get('id'));
+      });
+    }
 
     this.fetchDropdowns();
     this.fetchSampleInwardDetails(this.inwardId);
@@ -98,7 +131,15 @@ export class ReviewOfRequestFormComponent implements OnInit {
       this.parameterMap = {};
       (list || []).forEach((item: any) => this.parameterMap[item.id] = item.name);
     });
+    this.tpiService.getTPIDropdown('', 0, 1000).subscribe(list => {
+      this.tpiAgencyMap = {};
+      (list || []).forEach((item: any) => this.tpiAgencyMap[item.id] = item.name);
+    });
   }
+
+  getTPIAgencies = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+    return this.tpiService.getTPIDropdown(searchTerm, pageNumber, pageSize);
+  };
 
 
   fetchSampleInwardDetails(inwardId: number): void {
@@ -145,6 +186,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                     methods: (gt.methods || []).map((m: any) => ({
                       testMethodID: m.testMethodID,
                       standardID: m.standardID,
+                      standardName: m.standardName,
                       quantity: m.quantity,
                       reportNo: m.reportNo,
                       ulrNo: m.ulrNo,
@@ -174,6 +216,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                 }));
 
               return {
+                id: s.id,
                 sampleNo: s.sampleNo,
                 details: s.details,
                 metalClassificationID: s.metalClassificationID,
@@ -189,6 +232,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
                 otherPreparation: s.otherPreparation ?? false,
                 otherPreparationCharge: s.otherPreparationCharge ?? 0,
                 tpiRequired: s.tpiRequired ?? false,
+                tpiAgencyID: s.tpiAgencyID ?? null,
                 testInstructions: s.testInstructions ?? '',
                 fileName: s.fileName ?? '',
                 sampleFilePath: s.sampleFilePath ?? '',
@@ -197,6 +241,25 @@ export class ReviewOfRequestFormComponent implements OnInit {
               };
             })
           };
+
+          // Build prep FormGroups for each sample
+          this.prepForms = {};
+          this.openPrepSections = {};
+          (this.plan.samples || []).forEach((s: any) => {
+            this.prepForms[s.id] = this.fb.group({
+              preparationRequired: [s.preparationRequired],
+              machiningRequired: [s.machiningRequired],
+              machiningAmount: [s.machiningAmount],
+              specimen: [s.specimen],
+              otherPreparation: [s.otherPreparation],
+              otherPreparationCharge: [s.otherPreparationCharge],
+              testInstructions: [s.testInstructions],
+              tpiRequired: [s.tpiRequired],
+              tpiAgencyID: [s.tpiAgencyID]
+            });
+            this.openPrepSections[s.id] = !!(s.preparationRequired || s.machiningRequired || s.otherPreparation || s.tpiRequired);
+          });
+
           this.reviewStatus = data.status;
           this.showReviewButton.set(data.canTakeAction);
           this.actions = data.actions || [];
@@ -233,6 +296,7 @@ export class ReviewOfRequestFormComponent implements OnInit {
               specification1: gt.specification1,
               specification2: gt.specification2,
               standardID: method.standardID,
+              standardName: method.standardName,
               testMethodID: method.testMethodID,
               quantity: method.quantity,
               reportNo: method.reportNo,
@@ -334,6 +398,28 @@ export class ReviewOfRequestFormComponent implements OnInit {
     }
   }
 
+  togglePrepSection(sampleId: number): void {
+    this.openPrepSections[sampleId] = !this.openPrepSections[sampleId];
+  }
+
+  savePrepForSample(sampleId: number): void {
+    const form = this.prepForms[sampleId];
+    if (!form) return;
+    this.inwardService.updateSamplePrep(sampleId, form.value).subscribe({
+      next: () => this.toast.show('Preparation details saved.', 'success'),
+      error: () => this.toast.show('Failed to save preparation details.', 'error')
+    });
+  }
+
+  onTPIAgencySelected(item: any, sampleId: number): void {
+    this.prepForms[sampleId]?.patchValue({ tpiAgencyID: item?.id ?? null });
+  }
+
+  getTpiAgencyName(id: any): string {
+    if (!id) return '-';
+    return this.tpiAgencyMap[id] || String(id);
+  }
+
   submitReview() {
     this.submitAttempted = true;
     if (!this.selectedAction) return;
@@ -371,4 +457,67 @@ export class ReviewOfRequestFormComponent implements OnInit {
         return 'bg-secondary';
     }
   }
+
+  setSubTab(tab: 'plan' | 'prep'): void {
+    this.activeSubTab = tab;
+  }
+
+  verifyAndLockReview(): void {
+    if (!this.inwardId) return;
+    this.inwardService.verifyAndLockReview(this.inwardId).subscribe({
+      next: (res) => {
+        this.toast.show(res.message || 'Review of Request verified and locked successfully!', 'success');
+        this.isEmbeddedReadOnly = true;
+        this.reviewStatus = SampleStatus.REQUEST_APPROVED;
+        this.fetchSampleInwardDetails(this.inwardId);
+      },
+      error: () => {
+        this.toast.show('Failed to verify and lock Review of Request.', 'error');
+      }
+    });
+  }
+
+  openReplanModal(): void {
+    this.replanReason = '';
+    this.showReplanModal = true;
+  }
+
+  closeReplanModal(): void {
+    this.showReplanModal = false;
+    this.replanReason = '';
+  }
+
+  submitReplanRequest(): void {
+    if (!this.replanReason.trim()) {
+      this.toast.show('Please enter a valid reason for requesting a re-plan.', 'error');
+      return;
+    }
+    this.inwardService.requestInwardReplan(this.inwardId, this.replanReason.trim()).subscribe({
+
+      next: (res) => {
+        this.toast.show(res.message || 'Re-Plan request submitted successfully!', 'success');
+        this.closeReplanModal();
+        this.fetchSampleInwardDetails(this.inwardId);
+      },
+      error: () => {
+        this.toast.show('Failed to submit re-plan request.', 'error');
+      }
+    });
+  }
+
+  printInwardChallan(): void {
+    if (!this.inwardId) return;
+    this.inwardService.downloadInwardChallanPdf(this.inwardId).subscribe({
+      next: (blob: Blob) => {
+        const fileURL = URL.createObjectURL(blob);
+        window.open(fileURL, '_blank');
+        this.toast.show('Inward Receipt Challan generated successfully!', 'success');
+      },
+      error: () => {
+        this.toast.show('Failed to generate Inward Receipt Challan PDF.', 'error');
+      }
+    });
+  }
 }
+
+

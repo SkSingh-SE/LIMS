@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, signal, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { ToastService } from '../../../services/toast.service';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
@@ -17,19 +17,19 @@ export class MaterialSpecificationListComponent implements OnInit {
 
   columns = [
     { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'aliasName', type: 'string', label: 'Specification Name', filter: true },
+    { key: 'displayTitle', type: 'string', label: 'Display Title', filter: true },
     { key: 'standardOrganizationName', type: 'string', label: 'Standard Organization', filter: true },
-    { key: 'metalClassificationName', type: 'string', label: 'Metal Classification', filter: true },
-    { key: 'standardYear', type: 'string', label: 'StandardYear', filter: true },
-    { key: 'grade', type: 'string', label: 'Grade', filter: true },
+    { key: 'specificationNo', type: 'string', label: 'Specification No', filter: true },
+    { key: 'standardYear', type: 'string', label: 'Standard Year', filter: true },
+    { key: 'version', type: 'string', label: 'Version', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
-    aliasName: 'string',
-    metalClassificationName: 'string',
+    displayTitle: 'string',
     standardOrganizationName: 'string',
+    specificationNo: 'string',
     standardYear: 'string',
-    grade: 'string',
+    version: 'string',
     modifiedOn: 'date',
   };
 
@@ -62,7 +62,17 @@ export class MaterialSpecificationListComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService, private toastService: ToastService) {
+  constructor(private fb: FormBuilder, private materialSpecificationService: MaterialSpecificationService, private toastService: ToastService, private router: Router) {
+  }
+
+  // MS-A: fetch a detached clone of the spec and open the create form pre-filled for a new version.
+  cloneAsNewVersion(id: number) {
+    this.materialSpecificationService.getCloneTemplate(id).subscribe({
+      next: (template) => {
+        this.router.navigate(['/material-specification/create'], { state: { mode: 'clone', cloneData: template } });
+      },
+      error: (err) => this.toastService.show(err?.error?.message || 'Failed to load specification for cloning.', 'error')
+    });
   }
 
 

@@ -327,7 +327,7 @@ export class DimensionalFactorComponent implements OnInit {
       this.DimensionalFactorForm.disable();
     }
 
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 
@@ -348,8 +348,9 @@ export class DimensionalFactorComponent implements OnInit {
 
   // Dropdown functions
   getUnitDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.parameterUnitService.getParameterUnitDropdown(searchTerm, pageNo, pageSize);
+    return this.parameterUnitService.getGroupedParameterUnitDropdown(searchTerm, pageNo, pageSize);
   };
+  getParameterUnitDropdown = this.getUnitDropdown;
 
   getProductFormDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
     return this.productFormService.getProductFormDropdown(searchTerm, pageNo, pageSize);

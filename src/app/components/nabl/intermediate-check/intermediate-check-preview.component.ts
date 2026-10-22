@@ -15,7 +15,7 @@ import { NablPrintFooterComponent } from '../nabl-print-footer/nabl-print-footer
     styleUrl: './intermediate-check-preview.component.css'
 })
 export class IntermediateCheckPreviewComponent implements OnInit {
-    record = signal<IntermediateCheckRecord | null>(null);
+    record: any = null;
     orientation: 'portrait' | 'landscape' = 'portrait';
     orientationManual = false;
     private orientationDetected = false;
@@ -37,10 +37,10 @@ export class IntermediateCheckPreviewComponent implements OnInit {
     loadRecord(id: number): void {
         this.service.getById(id).subscribe({
             next: (data) => {
-                this.record.set(data);
+                this.record = data;
                 setTimeout(() => this.autoDetectOrientation(), 300);
             },
-            error: () => {}
+            error: () => { }
         });
     }
 

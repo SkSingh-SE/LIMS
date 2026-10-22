@@ -20,7 +20,7 @@ export class InductionTrainingListComponent implements OnInit {
         { key: 'position', label: 'Position', type: 'string', filter: true },
         { key: 'trainingDate', label: 'Training Date', type: 'date', filter: true },
         { key: 'trainerName', label: 'Trainer', type: 'string', filter: true },
-        { key: 'remarks', label: 'Remarks', type: 'string', filter: true }
+        // { key: 'remarks', label: 'Remarks', type: 'string', filter: true }
     ];
 
     records: any[] = [];

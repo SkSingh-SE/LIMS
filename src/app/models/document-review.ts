@@ -13,4 +13,7 @@ export interface DocumentReview {
     issueDate: string | Date;
     revNo: string | number;
     revDate: string | Date;
+    date: string | Date;
+    canEditReview: boolean;
+    effectiveDate: string | Date;
 }

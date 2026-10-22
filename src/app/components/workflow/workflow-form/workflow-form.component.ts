@@ -32,7 +32,7 @@ export class WorkflowFormComponent implements OnInit, CanComponentDeactivate {
   selectedUsers: any[][] = [];
 
   // Add mock data for dropdowns
-  entityTypes = ['Sample', 'Plan', 'Report'];
+  entityTypes = ['Request Review', 'Test Result Verification', 'Report Review', 'Report Amendment', 'Customer Field Change'];
   users = ['Lab Technician', 'Receptionist', 'Manager'];
   roles = ['Receptionist', 'Quality Manager', 'Lab Supervisor'];
   permissions = ['Approve Sample', 'View Report', 'Edit Plan'];

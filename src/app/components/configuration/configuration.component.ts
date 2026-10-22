@@ -142,7 +142,7 @@ export class ConfigManagerComponent implements OnInit {
           this.onGroupChange();
 
           // Show modal only after data is successfully loaded
-          this.bsModal = new Modal(this.modalElement.nativeElement);
+          this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
           this.bsModal.show();
         }
       },
@@ -305,7 +305,7 @@ export class ConfigManagerComponent implements OnInit {
       this.configForm.enable();
 
       // Show modal immediately for create mode
-      this.bsModal = new Modal(this.modalElement.nativeElement);
+      this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
       this.bsModal.show();
     } else if (type === 'edit') {
       this.isEditMode = true;

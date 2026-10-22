@@ -103,7 +103,7 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
             title: item.name
         });
         // Auto-load employees
-        this.employeeService.getAllEmployees({ designationId: item.id }).subscribe(resp => {
+        this.designationService.getDesignationEmployees(item.id, 1, 100).subscribe(resp => {
             const emps = resp?.items || [];
             this.employeeSkills.clear();
             emps.forEach((e: any) => {
@@ -125,7 +125,7 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
         this.matrixForm = this.fb.group({
             id: [0],
             formatNo: ['F-6'],
-            designationId: ['',Validators.required],
+            designationId: ['', Validators.required],
             designationName: [''],
             issueNo: ['01', Validators.required],
             date: [this.today, Validators.required],
@@ -137,8 +137,8 @@ export class SkillMatrixFormComponent implements CanComponentDeactivate, OnInit 
             preparedBy: [''],
             issuedBy: [''],
             reviewedApprovedBy: [''],
-            reviewedBy:[''],
-            approvedBy:['']
+            reviewedBy: [''],
+            approvedBy: ['']
         });
         this.matrixForm.get('formatNo')?.disable();
         this.matrixForm.get('issueNo')?.disable();

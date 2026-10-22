@@ -1,17 +1,53 @@
 export interface AuditPlan {
     id: number;
-    auditType: string; // e.g., "Internal Audit", "Surveillance Audit"
-    period: string; // e.g., "2024-25"
-    areaDepartment: string;
-    auditorName: string;
-    scheduleDate: string | Date;
-    scope: string;
 
-    // Header standard fields
+    auditType: string;
+    planningYear?: number | null;
+    leadAuditorId?: number | null;
+    leadAuditorName?: string;
+
+    scope: string;
+    auditObjective?: string;
+    auditCriteria?: string;
+    remarks?: string;
+
     formatNo: string;
     docNo: string;
     issueNo: string | number;
-    issueDate: string | Date;
+    issueDate: string | Date | null;
     revNo: string | number;
-    revDate: string | Date;
+    revDate: string | Date | null;
+    date: string | Date;
+
+    scheduleDateFrom: string | Date;
+    scheduleDateTo: string | Date;
+
+    scheduleItems: ScheduleItem[];
+}
+
+export interface ScheduleItem {
+    id: number;
+
+    auditPlanId?: number;
+
+    departmentId: number;
+    departmentName: string;
+
+    isoClauses: AuditScheduleIsoClause[];
+
+    scheduleDate: string | Date;
+
+    auditorId: number;
+    auditorName: string;
+
+    auditeeId: number;
+    auditeeName: string;
+
+    status: string;
+    checklistId: number | null;
+}
+
+export interface AuditScheduleIsoClause {
+    clauseId: number;
+    clauseName: string;
 }

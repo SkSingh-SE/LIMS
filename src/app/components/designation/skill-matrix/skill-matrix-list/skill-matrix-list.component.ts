@@ -244,7 +244,7 @@ export class SkillMatrixListComponent implements OnInit {
         this.router.navigate(['/skill-matrix/create']);
     }
 
-    edit(id: number) {
+    edit(id: number) {  
         this.router.navigate(['/skill-matrix/edit', id], { state: { mode: 'edit' } });
     }
 

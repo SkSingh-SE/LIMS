@@ -126,7 +126,10 @@
                         </label>
 
                         <input type="date" class="form-control" formControlName="ncDate">
-
+                        <div *ngIf="ncForm.get('ncDate')?.invalid && ncForm.get('ncDate')?.touched"
+                          class="text-danger text-sm mt-1">
+                          nc date is required
+                        </div>
                       </div>
 
                       <div class="col-md-3">
@@ -134,7 +137,8 @@
                         <app-searchable-dropdown [placeholder]="'Search Department'" [required]="true"
                           [labelName]="'Department'" [fetchDataFn]="getDepartments"
                           (itemSelected)="onDepartmentSelected($event)"
-                          [selectedItem]="ncForm.get('departmentId')?.value" [isDisabled]="isViewMode">
+                          [selectedItem]="ncForm.get('departmentId')?.value"
+                          [isDisabled]="isViewMode || isChecklistNcr">
                         </app-searchable-dropdown>
                         <div *ngIf="ncForm.get('departmentId')?.invalid && ncForm.get('departmentId')?.touched"
                           class="text-danger text-sm mt-1">
@@ -146,8 +150,14 @@
                       <div class="col-md-3">
                         <app-searchable-dropdown [fetchDataFn]="getEmployees" [labelName]="'Reported By'"
                           (itemSelected)="onEmployeeSelected($event, ncForm,'reportedByEmployeeId','reportedByEmployeeName')"
-                          [selectedItem]="ncForm.get('reportedByEmployeeId')?.value">
+                          [selectedItem]="ncForm.get('reportedByEmployeeId')?.value"
+                          [isDisabled]="isViewMode || isChecklistNcr">
                         </app-searchable-dropdown>
+                        <div
+                          *ngIf="ncForm.get('reportedByEmployeeId')?.invalid && ncForm.get('reportedByEmployeeId')?.touched"
+                          class="text-danger text-sm mt-1">
+                          reported by employee is required
+                        </div>
                       </div>
                     </div>
 
@@ -283,6 +293,10 @@
                       <quill-editor formControlName="immediateAction" [modules]="quillModules"
                         placeholder="Enter immediate action taken...">
                       </quill-editor>
+                      <div *ngIf="ncForm.get('immediateAction')?.invalid && ncForm.get('immediateAction')?.touched"
+                        class="text-danger text-sm mt-1">
+                        immediate action is required
+                      </div>
                     </div>
 
                   </div>
@@ -300,6 +314,10 @@
                       <quill-editor formControlName="problemDescription" [modules]="quillModules"
                         placeholder="Describe the problem description...">
                       </quill-editor>
+                      <div *ngIf="ncForm.get('problemDescription')?.invalid && ncForm.get('problemDescription')?.touched"
+                        class="text-danger text-sm mt-1">
+                        problem description is required
+                      </div>
                     </div>
 
                   </div>
@@ -339,8 +357,12 @@
                     </label>
                     <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
                       (itemSelected)="onEmployeeSelected($event, investigationForm,'assignedToEmployeeId','assignedToEmployeeName')"
-                      [selectedItem]="investigationForm.get('assignedToEmployeeId')?.value">
+                      [selectedItem]="investigationForm.get('assignedToEmployeeId')?.value" [isDisabled]="isViewMode">
                     </app-searchable-dropdown>
+                    <div *ngIf=" investigationForm.get('assignedToEmployeeId')?.invalid &&
+                      investigationForm.get('assignedToEmployeeId')?.touched" class="text-danger text-sm mt-1">
+                      assigned to employee is required
+                    </div>
                   </div>
 
                   <div class="col-md-6">
@@ -349,6 +371,10 @@
                     </label>
 
                     <input type="date" class="form-control" formControlName="investigationDate">
+                    <div *ngIf="investigationForm.get('investigationDate')?.invalid &&
+                     investigationForm.get('investigationDate')?.touched" class="text-danger text-sm mt-1">
+                      investigation date is required
+                    </div>
                   </div>
 
                 </div>
@@ -400,9 +426,11 @@
                           Other
                         </label>
                       </div>
-
                     </div>
-
+                    <div *ngIf="investigationForm.get('investigationMethod')?.invalid &&
+                   investigationForm.get('investigationMethod')?.touched" class="text-danger text-sm mt-1">
+                      investigation method is required
+                    </div>
                   </div>
 
                 </div>
@@ -419,6 +447,10 @@
                       <quill-editor formControlName="investigationDetails" [modules]="quillModules"
                         placeholder="Enter investigation summary...">
                       </quill-editor>
+                      <div *ngIf="investigationForm.get('investigationDetails')?.invalid &&
+                   investigationForm.get('investigationDetails')?.touched" class="text-danger text-sm mt-1">
+                        investigation summary is required
+                      </div>
                     </div>
                   </div>
 
@@ -438,6 +470,10 @@
                       <quill-editor formControlName="rootCause" [modules]="quillModules"
                         placeholder="Enter root cause analysis...">
                       </quill-editor>
+                      <div *ngIf="investigationForm.get('rootCause')?.invalid &&
+                   investigationForm.get('rootCause')?.touched" class="text-danger text-sm mt-1">
+                        root cause is required
+                      </div>
                     </div>
                   </div>
 
@@ -492,8 +528,12 @@
                     </label>
                     <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
                       (itemSelected)="onEmployeeSelected($event, correctiveActionForm,'responsiblePersonId','responsiblePersonName')"
-                      [selectedItem]="correctiveActionForm.get('responsiblePersonId')?.value">
+                      [selectedItem]="correctiveActionForm.get('responsiblePersonId')?.value" [isDisabled]="isViewMode">
                     </app-searchable-dropdown>
+                    <div *ngIf=" correctiveActionForm.get('responsiblePersonId')?.invalid &&
+                      correctiveActionForm.get('responsiblePersonId')?.touched" class="text-danger text-sm mt-1">
+                      responsible person is required
+                    </div>
                   </div>
 
                   <div class="col-md-3">
@@ -503,7 +543,10 @@
                     </label>
 
                     <input type="date" class="form-control" formControlName="targetDate">
-
+                    <div *ngIf="correctiveActionForm.get('targetDate')?.invalid &&
+                   correctiveActionForm.get('targetDate')?.touched" class="text-danger text-sm mt-1">
+                      target date is required
+                    </div>
                   </div>
 
                   <div class="col-md-3">
@@ -513,7 +556,10 @@
                     </label>
 
                     <input type="date" class="form-control" formControlName="completionDate">
-
+                    <div *ngIf="correctiveActionForm.get('completionDate')?.invalid &&
+                   correctiveActionForm.get('completionDate')?.touched" class="text-danger text-sm mt-1">
+                      completion date is required
+                    </div>
                   </div>
                 </div>
 
@@ -531,6 +577,10 @@
                       <quill-editor formControlName="correctiveAction" [modules]="quillModules"
                         placeholder="Enter corrective action...">
                       </quill-editor>
+                      <div *ngIf="correctiveActionForm.get('correctiveAction')?.invalid &&
+                   correctiveActionForm.get('correctiveAction')?.touched" class="text-danger text-sm mt-1">
+                        corrective action is required
+                      </div>
                     </div>
 
                   </div>
@@ -551,6 +601,10 @@
                       <quill-editor formControlName="resourcesRequired" [modules]="quillModules"
                         placeholder="Enter resources required...">
                       </quill-editor>
+                      <div *ngIf="correctiveActionForm.get('resourcesRequired')?.invalid &&
+                   correctiveActionForm.get('resourcesRequired')?.touched" class="text-danger text-sm mt-1">
+                        resources required is required
+                      </div>
                     </div>
 
                   </div>
@@ -570,6 +624,10 @@
                       <quill-editor formControlName="preventiveAction" [modules]="quillModules"
                         placeholder="Enter preventive action...">
                       </quill-editor>
+                      <div *ngIf="correctiveActionForm.get('preventiveAction')?.invalid &&
+                   correctiveActionForm.get('preventiveAction')?.touched" class="text-danger text-sm mt-1">
+                        preventive action is required
+                      </div>
                     </div>
 
                   </div>
@@ -611,7 +669,10 @@
                     </label>
 
                     <input type="date" class="form-control" formControlName="verificationDate">
-
+                    <div *ngIf="verificationForm.get('verificationDate')?.invalid &&
+                   verificationForm.get('verificationDate')?.touched" class="text-danger text-sm mt-1">
+                      verification date is required
+                    </div>
                   </div>
 
                   <div class="col-md-6">
@@ -621,9 +682,12 @@
                     </label>
                     <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
                       (itemSelected)="onEmployeeSelected($event, verificationForm,'verifiedByEmployeeId','verifiedByEmployeeName')"
-                      [selectedItem]="verificationForm.get('verifiedByEmployeeId')?.value">
+                      [selectedItem]="verificationForm.get('verifiedByEmployeeId')?.value" [isDisabled]="isViewMode">
                     </app-searchable-dropdown>
-
+                    <div *ngIf=" verificationForm.get('verifiedByEmployeeId')?.invalid &&
+                      verificationForm.get('verifiedByEmployeeId')?.touched" class="text-danger text-sm mt-1">
+                      verified by is required
+                    </div>
                   </div>
 
                 </div>
@@ -640,7 +704,10 @@
 
                     <input type="text" class="form-control" formControlName="verificationMethod"
                       placeholder="Enter verification method">
-
+                    <div *ngIf="verificationForm.get('verificationMethod')?.invalid &&
+                   verificationForm.get('verificationMethod')?.touched" class="text-danger text-sm mt-1">
+                      verification method is required
+                    </div>
                   </div>
 
                 </div>
@@ -658,6 +725,10 @@
                       <quill-editor formControlName="observation" [modules]="quillModules"
                         placeholder="Enter observation...">
                       </quill-editor>
+                      <div *ngIf="verificationForm.get('observation')?.invalid &&
+                   verificationForm.get('observation')?.touched" class="text-danger text-sm mt-1">
+                        observation is required
+                      </div>
                     </div>
 
                   </div>
@@ -703,7 +774,10 @@
                       </div>
 
                     </div>
-
+                    <div *ngIf="verificationForm.get('result')?.invalid &&
+                   verificationForm.get('result')?.touched" class="text-danger text-sm mt-1">
+                      result is required
+                    </div>
                   </div>
 
                 </div>
@@ -759,7 +833,10 @@
                     </label>
 
                     <input type="date" class="form-control" formControlName="closureDate">
-
+                    <div *ngIf="closureForm.get('closureDate')?.invalid &&
+                   closureForm.get('closureDate')?.touched" class="text-danger text-sm mt-1">
+                      closure date is required
+                    </div>
                   </div>
 
                   <div class="col-md-6">
@@ -769,8 +846,12 @@
                     </label>
                     <app-searchable-dropdown [fetchDataFn]="getEmployees" [hideLabel]="true"
                       (itemSelected)="onEmployeeSelected($event, closureForm,'closedByEmployeeId','closedByEmployeeName')"
-                      [selectedItem]="closureForm.get('closedByEmployeeId')?.value">
+                      [selectedItem]="closureForm.get('closedByEmployeeId')?.value" [isDisabled]="isViewMode">
                     </app-searchable-dropdown>
+                    <div *ngIf="closureForm.get('closedByEmployeeId')?.invalid &&
+                   closureForm.get('closedByEmployeeId')?.touched" class="text-danger text-sm mt-1">
+                      closed by employee is required
+                    </div>
 
                   </div>
 
@@ -790,6 +871,10 @@
                       <quill-editor formControlName="finalRemarks" [modules]="quillModules"
                         placeholder="Enter final remarks...">
                       </quill-editor>
+                      <div *ngIf="closureForm.get('finalRemarks')?.invalid &&
+                   closureForm.get('finalRemarks')?.touched" class="text-danger text-sm mt-1">
+                        final remarks is required
+                      </div>
                     </div>
 
                   </div>
@@ -865,6 +950,10 @@
 
         <!-- Footer Actions -->
         <div *ngIf="!isViewMode" class="d-flex justify-content-end gap-2 mt-3 mb-2">
+          <button *ngIf="isChecklistNcr && recordId > 0" type="button" class="btn btn-secondary"
+            (click)="backToChecklist()">
+            Back to Checklist
+          </button>
           <button type="button" class="btn btn-cancel" (click)="onCancel()">Cancel</button>
           <button type="submit" class="btn btn-save">
             {{ isEditMode ? "Save Record" : "Save Record" }}

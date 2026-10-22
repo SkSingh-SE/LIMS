@@ -29,6 +29,14 @@ export class NotificationBellComponent implements OnInit {
     this.signalR.startConnection();
     await this.store.loadUnread();
     this.store.notifications.subscribe(list => this.notifications = list);
+
+    // Silently re-register push if permission is already granted (no prompt shown)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        await this.pushService.registerServiceWorker();
+        await this.pushService.subscribeToPush();
+      } catch { /* ignore — doesn't affect UI */ }
+    }
   }
 
   async enablePush() {

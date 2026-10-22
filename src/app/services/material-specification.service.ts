@@ -24,6 +24,11 @@ export class MaterialSpecificationService {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }
 
+  // MS-A: detached deep-copy of a spec (IDs=0, Version cleared) to seed a new-version create form.
+  getCloneTemplate(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/clone-template/${id}`);
+  }
+
   createMaterialSpecification(payload: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/create`, payload);
   }
@@ -42,6 +47,10 @@ export class MaterialSpecificationService {
 
   getMaterialSpecificationGradeDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/grade-dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
+  }
+
+  getGradeDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
+    return this.getMaterialSpecificationGradeDropdown(searchTerm, pageNumber, pageSize);
   }
 
   getGradeDropdownByMetalId(searchTerm: string, pageNumber: number, pageSize: number, metalId: number = 0): Observable<any> {

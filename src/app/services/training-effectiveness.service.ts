@@ -10,14 +10,14 @@ import { TrainingEffectiveness, TrainingEffectivenessListResponse, TrainingEffec
 export class TrainingEffectivenessService {
     private apiUrl = environment.apiUrl + '/Nabl/TrainingEffectiveness';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params?: any): Observable<TrainingEffectivenessListResponse> {
         return this.http.post<TrainingEffectivenessListResponse>(this.apiUrl + '/list', params || {});
     }
 
-    getById(id: number): Observable<TrainingEffectiveness | null> {
-        return this.http.get<TrainingEffectiveness>(`${this.apiUrl}/details/${id}`);
+    getById(id: number): Observable<any | null> {
+        return this.http.get<any>(`${this.apiUrl}/details/${id}`);
     }
 
     create(data: TrainingEffectiveness): Observable<TrainingEffectivenessResponse> {
@@ -31,5 +31,22 @@ export class TrainingEffectivenessService {
 
     delete(id: number): Observable<TrainingEffectivenessResponse> {
         return this.http.delete<TrainingEffectivenessResponse>(`${this.apiUrl}/delete/${id}`);
+    }
+    getEvaluationContext(
+        attendanceId: number,
+        trainingPlanId: number,
+        questionSetId: number
+    ): Observable<any> {
+
+        return this.http.get<any>(
+            `${this.apiUrl}/evaluation-context-details`,
+            {
+                params: {
+                    attendanceId: attendanceId,
+                    trainingPlanId: trainingPlanId,
+                    questionSetId: questionSetId
+                }
+            }
+        );
     }
 }

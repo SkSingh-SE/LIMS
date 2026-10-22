@@ -64,7 +64,7 @@
                             <td>{{ item.materialType }}</td>
                             <td>{{ item.charges }}</td>
                             <td>{{ item.laboratoryTestName }}</td>
-                            <td>{{ item.testMethodStandard }}</td>                        </tr>
+                            <td>{{ item.testMethodSpecificationName }}</td>                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -167,10 +167,8 @@
                         </app-searchable-dropdown-modal>
                     </div>
                     <div>
-                        <label for="testMethodStandard" class="form-label">Test Method Standard</label>
-                        <input type="text" id="testMethodStandard" class="form-control" formControlName="testMethodStandard"
-                            placeholder="Enter Test Method Standard"
-                            [attr.disabled]="isViewMode ? true : null" />
+                        <label for="testMethodStandardID" class="form-label">Test Method Specification</label>
+                        <input type="text" id="testMethodStandardID" class="form-control" formControlName="testMethodStandardID" placeholder="Enter Test Method Specification" [attr.disabled]="isViewMode ? true : null" />
                     </div>
                 </div>
 

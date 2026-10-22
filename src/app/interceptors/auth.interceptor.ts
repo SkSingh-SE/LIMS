@@ -31,9 +31,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   let token = authService.getUserData()?.token; // Retrieve token from service
   const excludedUrls = ['/api/Auth/login', 'api/Auth/refresh-token', '/api/Auth/forgot'];
-  const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/DepartmentMaster/dropdown', '/api/DesignationMaster/dropdown', '/api/EmployeeMaster/dropdown'];
+  const excludeLoaderUrl = ['/api/Auth/login', '/api/Auth/forgot', '/api/GstValidator', '/api/ParameterUnitMaster/equivalents'];
 
-  const isDropdownCall = req.url.includes('/dropdown');
+  const isDropdownCall = req.url.includes('dropdown');
   const shouldExclude = excludedUrls.some(url => req.url.includes(url));
 
   const getErrorMessage = (error: HttpErrorResponse): string => {
@@ -81,8 +81,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       setHeaders: { Authorization: `Bearer ${accessToken}` }
     });
 
+    let showedLoader = false;
     if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
       loaderService.show();
+      showedLoader = true;
     }
 
     let responseReceived = false;
@@ -113,8 +115,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => enhancedError);
       }),
       finalize(() => {
-        // Always hide loader: covers success, error, AND cancel
-        loaderService.hide();
+        if (showedLoader) {
+          loaderService.hide();
+        }
       })
     );
   }
@@ -141,9 +144,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
         const enhancedError = Object.assign(error, { errorMessage: message, message });
         return throwError(() => enhancedError);
-      }),
-      finalize(() => {
-        loaderService.hide();
       })
     );
   }
@@ -154,8 +154,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   // No token or excluded — show loader for non-excluded URLs
+  let showedLoader = false;
   if (!isDropdownCall && !excludeLoaderUrl.some(url => req.url.includes(url))) {
     loaderService.show();
+    showedLoader = true;
   }
 
   return next(req).pipe(
@@ -183,7 +185,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       return throwError(() => enhancedError);
     }),
     finalize(() => {
-      loaderService.hide();
+      if (showedLoader) {
+        loaderService.hide();
+      }
     })
   );
 };

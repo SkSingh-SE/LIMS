@@ -66,20 +66,13 @@
           </div>
           <div *ngIf="openSections['supplier']" class="section-body p-3 border border-top-0 rounded-bottom">
             <div class="row g-3">
-              <!-- <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Supplier Name <span
-                    class="text-danger">*</span></label>
-                <input type="text" class="form-control shadow-sm" formControlName="supplierName">
-              </div> -->
               <div class="col-md-3">
-                <label class="form-label">Supplier Name <span class="text-danger">*</span></label>
-                <select class="form-select form-select-sm" formControlName="supplierRegisterId"
-                  (change)="onSupplierChange($event)">
-                  <option [ngValue]="null">Select Supplier</option>
-                  <option *ngFor="let supplier of supplierList" [value]="supplier.id || supplier.Id">
-                    {{ supplier.name || supplier.Name }}
-                  </option>
-                </select>
+
+                <app-searchable-dropdown [placeholder]="'Search Supplier'" [labelName]="'Supplier Name'"
+                  [fetchDataFn]="loadSupplierList" (itemSelected)="onSupplierChange($event)" [isDisabled]="isViewMode"
+                  [required]="true" [selectedItem]="supplierForm.get('supplierRegisterId')?.value">
+                </app-searchable-dropdown>
+
                 <div
                   *ngIf="supplierForm.get('supplierRegisterId')?.invalid && supplierForm.get('supplierRegisterId')?.touched"
                   class="text-danger text-sm mt-1">
@@ -149,8 +142,7 @@
                 </label>
                 <input type="email" class="form-control shadow-sm" formControlName="email" placeholder="email"
                   readonly />
-                <span
-                  *ngIf="supplierForm.get('email')?.hasError('required') && supplierForm.get('email')?.touched"
+                <span *ngIf="supplierForm.get('email')?.hasError('required') && supplierForm.get('email')?.touched"
                   class="text-danger text-sm">
                   email Id is required.
                 </span>

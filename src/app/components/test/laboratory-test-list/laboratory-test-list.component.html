@@ -85,7 +85,11 @@
                                 </a>
                             </td>
                             <td>{{ lab.departmentName }}</td>
-                            <td>{{ lab.subGroup || '-' }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="lab.isChemicalTest ? 'bg-danger text-white' : 'bg-primary text-white'">
+                                    {{ lab.isChemicalTest ? 'Chemical' : 'General' }}
+                                </span>
+                            </td>
                             <td>{{ lab.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>

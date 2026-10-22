@@ -84,6 +84,48 @@
                 </div>
               </div>
               <div class="col-md-3">
+                <label class="form-label small fw-bold">Planning Year</label>
+                <input type="text" class="form-control" formControlName="planningYear" placeholder="Planning Year">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Month</label>
+                <input type="text" class="form-control" formControlName="month" placeholder="Month">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Training Plan Date</label>
+                <input type="date" class="form-control" formControlName="planDate" placeholder="Plan Date">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">To be attended by (Audience)</label>
+                <input type="text" class="form-control" formControlName="audience"
+                  placeholder="To be attended by (Audience)">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Agency</label>
+                <input type="text" class="form-control" formControlName="agency" placeholder="Provider/Agency Name">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Provider/Agency Name</label>
+                <input type="text" class="form-control" formControlName="providerAgencyName"
+                  placeholder="Provider/Agency Name">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Evaluation Required</label>
+                <input type="text" class="form-control" formControlName="evaluationRequired"
+                  placeholder="Evaluation Required">
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Question Set</label>
+                <input type="text" class="form-control" formControlName="questionSet" placeholder="Question Set">
+              </div>
+
+
+              <div class="col-md-3">
                 <label class="form-label fw-semibold text-dark small">
                   Training Venue
                   <span class="text-danger">*</span>
@@ -120,12 +162,38 @@
                   training datetime is required.
                 </div>
               </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold text-dark small">
+                  Types of Participant
+                  <span class="text-danger">*</span>
+                </label>
+
+                <select class="form-select form-select-sm" formControlName="participant">
+
+                  <option *ngFor="let p of typesofParticipants" [value]="p">
+                    {{ p }}
+                  </option>
+
+                </select>
+              </div>
+
+              <div class="col-md-3" *ngIf="!isViewMode">
+                <br>
+
+                <button type="button" class="btn btn-light px-4 fw-semibold border shadow-sm"
+                  (click)="applyParticipantTypeToAll()">
+
+                  Apply to all Participants
+
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
 
         <!-- Section III: Participants -->
-        <div class="accordion-section mb-4">
+        <div class=" accordion-section mb-4">
           <div class="section-header d-flex align-items-center py-2 px-3 bg-light rounded-top"
             (click)="toggleSection('participants')" style="cursor: pointer">
             <i class="bi" [ngClass]="openSections['participants'] ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
@@ -136,20 +204,29 @@
               <table class="table table-bordered align-middle sm-table">
                 <thead class="table-light text-center">
                   <tr>
-                    <th width="80">Sl. No.</th>
-                    <th>
+                    <th width="5">SR.</th>
+                    <th width="80">
+                      Types of Participant
+                    </th>
+                    <th width="120">
                       Name of Participant
-                      <span class="text-danger">*</span>
                     </th>
-                    <th width="300">
+                    <th width="120">
+                      Designation
+                    </th>
+                    <th width="80">
+                      Attendance Status
+                    </th>
+                    <th width="200">
                       Participant's Feedback
-                      <span class="text-danger">*</span>
                     </th>
-                    <th width="300">
+                    <th width="100">
                       Participant's Signature
-                      <span class="text-danger"></span>
                     </th>
-                    <th width="80" *ngIf="!isViewMode">Action</th>
+                    <th width="80" class="evaluation-column" *ngIf="!isViewMode">
+                      Evaluation
+                    </th>
+                    <th width=" 80" *ngIf="!isViewMode">Action</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="participants">
@@ -157,13 +234,65 @@
                     [formGroupName]="i">
                     <td class="text-center fw-bold text-secondary">{{ p.get("slNo")?.value }}</td>
                     <td>
-                      <input type="text" class="form-control form-control-sm" formControlName="participantName"
-                        placeholder="Enter name" />
+                      <select class="form-select form-select-sm" formControlName="typesofParticipant"
+                        (change)="onChangeParticipant(i)">
+                        <option *ngFor="let p of typesofParticipants" [value]="p">{{ p
+                          }}</option>
+                      </select>
                     </td>
                     <td>
-                      <select class="form-select form-select-sm" formControlName="feedback">
-                        <option *ngFor="let f of feedbacks" [value]="f">{{ f }}</option>
+
+                      <!-- INTERNAL -->
+                      <div *ngIf="p.get('typesofParticipant')?.value === 'Internal'">
+
+                        <app-searchable-dropdown class="w-100" [placeholder]="'Search Employee'"
+                          [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event, i)" [hideLabel]="true"
+                          [isDisabled]="isViewMode" [selectedItem]="p.get('participantId')?.value">
+                        </app-searchable-dropdown>
+
+                      </div>
+
+
+                      <!-- EXTERNAL -->
+                      <div *ngIf="p.get('typesofParticipant')?.value === 'External'">
+
+                        <input type="text" class="form-control form-control-sm" formControlName="participantName"
+                          placeholder="Enter participant name" />
+
+                      </div>
+
+
+                      <div *ngIf="
+            p.get('participantName')?.touched &&
+            p.get('participantName')?.invalid
+        " class="text-danger text-sm mt-1">
+
+                        Participant Name is required.
+
+                      </div>
+
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="designation"
+                        placeholder="Designation" [readonly]="p.get('typesofParticipant')?.value === 'Internal'" />
+
+                      <div *ngIf="
+                                        p.get('designation')?.touched &&
+                                        p.get('designation')?.invalid
+                                        " class="text-danger text-sm mt-1">
+
+                        designation is required.
+
+                      </div>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="status">
+                        <option *ngFor="let a of attendanceStatuses" [value]="a">{{ a }}</option>
                       </select>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" formControlName="feedback"
+                        placeholder="Enter feedback" />
                     </td>
 
                     <div class="signature-upload-box" [class.has-file]="p.get('signaturePreview')?.value"
@@ -198,10 +327,82 @@
 
                     </div>
 
+                    <td class="text-center evaluation-column" *ngIf="!isViewMode">
+
+                      <!-- ================================= -->
+                      <!-- EVALUATION NOT AVAILABLE -->
+                      <!-- External OR Evaluation Not Required -->
+                      <!-- ================================= -->
+
+                      <span *ngIf="!isParticipantEvaluationAllowed(i)" class="text-muted">
+                        -
+                      </span>
 
 
+                      <!-- ================================= -->
+                      <!-- PARTICIPANT ABSENT -->
+                      <!-- ================================= -->
+
+                      <span *ngIf="
+        isParticipantEvaluationAllowed(i) &&
+        !isParticipantPresent(i)
+    " class="text-muted">
+                        -
+                      </span>
 
 
+                      <!-- ================================= -->
+                      <!-- SAVE ATTENDANCE FIRST -->
+                      <!-- ================================= -->
+
+                      <button *ngIf="
+            isParticipantEvaluationAllowed(i) &&
+            isParticipantPresent(i) &&
+            !isAttendanceSaved()
+        " type="button" class="btn btn-sm btn-outline-secondary evaluation-btn text-nowrap" disabled
+                        title="Save attendance first">
+
+                        <i class="bi bi-lock me-1"></i>
+                        <span>Save First</span>
+
+                      </button>
+
+
+                      <!-- ================================= -->
+                      <!-- START NEW EVALUATION -->
+                      <!-- ================================= -->
+
+                      <button *ngIf="
+            isParticipantEvaluationAllowed(i) &&
+            isParticipantPresent(i) &&
+            isAttendanceSaved() &&
+            !hasEvaluation(i)
+        " type="button" class="btn btn-sm btn-primary evaluation-btn text-nowrap" (click)="openEvaluation(i)"
+                        title="Start Evaluation">
+
+                        <i class="bi bi-clipboard-check me-1"></i>
+                        <span>Evaluation</span>
+
+                      </button>
+
+
+                      <!-- ================================= -->
+                      <!-- VIEW EXISTING EVALUATION -->
+                      <!-- ================================= -->
+
+                      <button *ngIf="
+            isParticipantEvaluationAllowed(i) &&
+            isParticipantPresent(i) &&
+            hasEvaluation(i)
+        " type="button" class="btn btn-sm btn-outline-success evaluation-btn text-nowrap" (click)="openEvaluation(i)"
+                        title="View Evaluation">
+
+                        <i class="bi bi-eye me-1"></i>
+                        <span>View Evaluation</span>
+
+                      </button>
+
+                    </td>
                     <td class="text-center" *ngIf="!isViewMode">
                       <button type="button" class="btn btn-sm btn-remove border-0" (click)="removeParticipant(p,$event)"
                         [disabled]="participants.length === 1">

@@ -14,4 +14,25 @@ export interface AuditSummary {
     issueDate: string | Date;
     revNo: string | number;
     revDate: string | Date;
+    departmentSummary: AuditDepartmentSummary[];
+}
+interface AuditDepartmentSummary {
+
+    departmentId: number;
+
+    departmentName: string;
+
+    totalAudits: number;
+
+    completedAudits: number;
+
+    inProgressAudits: number;
+
+    scheduledAudits: number;
+
+    majorNcrs: number;
+
+    minorNcrs: number;
+
+    observations: number;
 }

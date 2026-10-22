@@ -3,6 +3,12 @@ export interface AttendanceParticipant {
     id?: number;
     slNo: number;
     participantName: string;
+    typesofParticipant: string;
+    participantId: number;
+    designation: string;
+    evaluation: string;
+    evaluationId: number;
+    status: string;
     feedback: 'Good' | 'Satisfactory' | 'Not Good';
     uploadReferenceID?: number; // ID returned from file upload API
     filePath?: string; // Path returned from file upload API
@@ -15,17 +21,25 @@ export interface TrainingAttendance {
     issueNo: string;
     revNo: string;
     date: Date | string;
+    planDate: Date | string;
 
     // Specific fields
     trainingPlanName: string;
+    trainingTopic: string;
+    month: string;
     trainingPlanId: number;
+    planningYear: number;
     venueMode: string;
     trainerName: string;
     trainingDatetime: string; // e.g., "03/09/25 & 4:00 pm"
+    audience: string; // e.g., "03/09/25 & 4:00 pm"
+    agency: string; // e.g., "03/09/25 & 4:00 pm"
+    providerAgencyName: string; // e.g., "03/09/25 & 4:00 pm"
 
     participants: AttendanceParticipant[];
     genearalRemarks?: string;
     facultySignature?: string;
+    questionSet?: string;
 
     // Approval
     preparedBy?: string;
@@ -38,6 +52,7 @@ export interface TrainingAttendance {
     modifiedBy?: string;
     modifiedOn?: Date | string;
     isActive?: boolean;
+    evaluationRequired?: boolean;
 }
 
 export interface TrainingAttendanceResponse {

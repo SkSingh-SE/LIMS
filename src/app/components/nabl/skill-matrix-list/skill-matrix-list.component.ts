@@ -10,7 +10,7 @@ import { PaginationComponent } from '../../../utility/components/pagination/pagi
 @Component({
     selector: 'app-skill-matrix-list',
 
-    imports: [ CommonModule, RouterModule, FormsModule, PaginationComponent ],
+    imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
     templateUrl: './skill-matrix-list.component.html',
     styleUrl: './skill-matrix-list.component.css'
 })
@@ -18,14 +18,12 @@ export class SkillMatrixListComponent implements OnInit {
     @ViewChild('filterModal') filterModal!: ElementRef;
 
     columns = [
-        { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
+        // { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'id', type: 'number', label: 'SN', filter: false },
+        { key: 'employeeName', type: 'string', label: 'Employee Name', filter: true },
         { key: 'designationName', type: 'string', label: 'Designation', filter: true },
-        { key: 'formatNo', type: 'string', label: 'Form Number', filter: true },
-        { key: 'issueNo', type: 'string', label: 'Issue No', filter: true },
         { key: 'date', type: 'date', label: 'Date', filter: true },
-        { key: 'decision', type: 'string', label: 'Decision', filter: true },
-        { key: 'remarks', type: 'string', label: 'Remarks', filter: true }
+        // { key: 'remarks', type: 'string', label: 'Remarks', filter: true }
     ];
 
     filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
@@ -170,13 +168,13 @@ export class SkillMatrixListComponent implements OnInit {
 
             // Clamp to viewport so the popup doesn't overflow
             requestAnimationFrame(() => {
-              const modalRect = modal.getBoundingClientRect();
-              if (modalRect.right > window.innerWidth) {
-                modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-              }
-              if (modalRect.bottom > window.innerHeight) {
-                modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-              }
+                const modalRect = modal.getBoundingClientRect();
+                if (modalRect.right > window.innerWidth) {
+                    modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+                }
+                if (modalRect.bottom > window.innerHeight) {
+                    modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+                }
             });
         }
     }
@@ -225,13 +223,13 @@ export class SkillMatrixListComponent implements OnInit {
     get totalPages(): number[] {
         return Array.from({ length: Math.ceil(this.filteredList.length / this.pageSize) }, (_, i) => i + 1);
     }
-  getStartRecord(): number {
-    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
-  }
+    getStartRecord(): number {
+        return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
+    }
 
-  getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
-  }
+    getEndRecord(): number {
+        return Math.min(this.pageNumber * this.pageSize, this.totalItems);
+    }
 
 
     get paginatedList(): SkillMatrix[] {

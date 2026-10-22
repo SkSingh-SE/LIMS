@@ -7,14 +7,13 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
 import { ToastService } from '../../../services/toast.service';
 import { StatusHelperService } from '../../../utility/status-helpers/status-helper.service';
 import { RoleHelperService } from '../../../utility/role-helpers/role-helper.service';
-import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
 import { PaginationComponent } from '../../../utility/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-reporting-list',
   templateUrl: './reporting-list.component.html',
   styleUrls: ['./reporting-list.component.css'],
-  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, HasPermissionDirective, PaginationComponent ]
+  imports: [ CommonModule, RouterModule, FormsModule, TestStatusBadgeComponent, PaginationComponent ]
 })
 export class ReportingListComponent implements OnInit {
   @ViewChild('filterModal') filterModal!: ElementRef;
@@ -59,17 +58,8 @@ export class ReportingListComponent implements OnInit {
   pageNumber: number = 1;
   pageSize: number = 10;
   pageSizes = [10, 25, 50, 100, 200, 500];
-  totalRecords: number = 0;
-
+  isSubmitting = false;
   totalItems = 0;
-  payload = {
-    PageNumber: this.pageNumber,
-    PageSize: this.pageSize,
-    searchTerm: this.searchTerm,
-    sortByColumn: this.sortByColumn,
-    sortOrder: this.sortOrder,
-    filter: this.filters ?? null
-  };
   // Available filter values (dummy)
   customers: string[] = ['ABC Metals', 'Shreenath Steel', 'Tata Steel', 'JSW Steel', 'ArcelorMittal', 'SAIL'];
   materials: string[] = ['TMT', 'Billet', 'Wire Rod', 'Plate', 'Coil', 'Bar'];
@@ -88,79 +78,28 @@ export class ReportingListComponent implements OnInit {
   }
 
   fetchData(): void {
-    // Prefer dashboard API which supports paging/filtering. Fall back to local list when not available.
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
-    this.payload.searchTerm = this.searchTerm;
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
-    this.payload.filter = this.filters ?? null;
+    const payload = {
+      PageNumber: this.pageNumber,
+      PageSize: this.pageSize,
+      searchTerm: this.searchTerm,
+      sortByColumn: this.sortByColumn,
+      sortOrder: this.sortOrder,
+      filter: this.filters ?? null
+    };
 
-    this.reportingService.getReportDashboardList(this.payload).subscribe({
+    this.reportingService.getReportDashboardList(payload).subscribe({
       next: (resp) => {
-        // Response shapes vary: try common properties
-        const items = resp?.items || resp?.data || resp || [];
-        this.reportingData = Array.isArray(items) ? items : [];
-
-        this.totalRecords = resp?.totalRecords || this.reportingData.length;
+        const items = resp?.items ?? resp?.data ?? [];
+        this.filteredData = Array.isArray(items) ? items : [];
+        this.totalItems = resp?.totalRecords ?? this.filteredData.length;
         this.pageSize = resp?.pageSize || this.pageSize;
         this.pageNumber = resp?.pageNumber || this.pageNumber;
-        this.applyFiltersAndSort();
       },
       error: (error) => {
-        console.error('Error loading reporting data (dashboard API):', error);
-        // fallback
-        this.reportingService.getReportingList().subscribe({
-          next: (data) => {
-            this.reportingData = data || [];
-            this.applyFiltersAndSort();
-          },
-          error: (err) => {
-            console.error('Fallback error loading reporting data:', err);
-          }
-        });
+        console.error('Error loading reporting data:', error);
+        this.toast.show('Failed to load reporting data', 'error');
       }
     });
-  }
-
-  applyFiltersAndSort(): void {
-    let filtered = [...this.reportingData];
-
-    // Apply search filter
-    if (this.searchTerm.trim()) {
-      const searchLower = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(item =>
-        item.sampleNo.toLowerCase().includes(searchLower) ||
-        item.caseNo.toLowerCase().includes(searchLower) ||
-        item.customer.toLowerCase().includes(searchLower)
-      );
-    }
-
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let valueA = (a as any)[this.sortByColumn];
-      let valueB = (b as any)[this.sortByColumn];
-
-      if (typeof valueA === 'string') {
-        valueA = valueA.toLowerCase();
-        valueB = (valueB as any).toLowerCase();
-      }
-
-      if (valueA < valueB) {
-        return this.sortOrder === 'asc' ? -1 : 1;
-      } else if (valueA > valueB) {
-        return this.sortOrder === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-
-    this.totalRecords = filtered.length;
-    this.pageNumber = 1; // Reset to first page
-
-    // Apply pagination
-    const startIndex = (this.pageNumber - 1) * this.pageSize;
-    this.filteredData = filtered.slice(startIndex, startIndex + this.pageSize);
   }
 
   performWorkflowAction(item: any, action: 'Next' | 'Cancel' | 'Back') {
@@ -198,14 +137,16 @@ export class ReportingListComponent implements OnInit {
       remarks: comments || ''
     };
 
+    this.isSubmitting = true;
     this.reportingService.takeWorkflowAction(payload).subscribe({
       next: () => {
+        this.isSubmitting = false;
         this.toast.show('Action completed successfully.', 'success');
         this.fetchData();
       },
       error: (err) => {
-        console.error('Workflow action failed:', err);
-        this.toast.show('Action failed. See console for details.', 'error');
+        this.isSubmitting = false;
+        this.toast.show(err?.error?.message || 'Action failed. Please try again.', 'error');
       }
     });
   }
@@ -272,7 +213,8 @@ export class ReportingListComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.applyFiltersAndSort();
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
   applySorting(column: string): void {
@@ -282,35 +224,30 @@ export class ReportingListComponent implements OnInit {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.applyFiltersAndSort();
+    this.fetchData();
   }
 
   onPageChange(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.pageNumber = page;
-      this.applyFiltersAndSort();
-    }
+    this.pageNumber = page;
+    this.fetchData();
   }
 
   changePageSize(size: number): void {
     this.pageSize = size;
     this.pageNumber = 1;
-    this.applyFiltersAndSort();
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.totalRecords / this.pageSize);
+    this.fetchData();
   }
 
   onFilterChange(): void {
-    this.applyFiltersAndSort();
+    this.pageNumber = 1;
+    this.fetchData();
   }
 
 
 
 
   getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalRecords);
+    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
   }
 
   getStartRecord(): number {
@@ -385,7 +322,6 @@ export class ReportingListComponent implements OnInit {
 
   resetFilter(column: string) {
     this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
     this.fetchData();
   }
 

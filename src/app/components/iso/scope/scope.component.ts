@@ -220,6 +220,7 @@ export class ScopeComponent implements OnInit {
     return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
   specVersionsMap: Map<number, any[]> = new Map();
+  showAllVersionsMap: Map<number, boolean> = new Map();
   onTestSpecificationSelected(item: any, index: number) {
     if (!item) {
       this.specifications.at(index).patchValue({ testMethodSpecificationID: '', testMethodSpecificationVersionID: null, testMethodSpecification: '' });
@@ -231,7 +232,8 @@ export class ScopeComponent implements OnInit {
     this.loadSpecVersionsForIndex(item.id, index);
   };
   loadSpecVersionsForIndex(specId: number, index: number) {
-    this.testMethodSpecificationService.getVersionsDropdown(specId).subscribe({
+    const includeAll = this.showAllVersionsMap.get(index) || false;
+    this.testMethodSpecificationService.getVersionsDropdown(specId, includeAll).subscribe({
       next: (data) => {
         this.specVersionsMap.set(index, data || []);
         if (data?.length === 1) {
@@ -240,6 +242,14 @@ export class ScopeComponent implements OnInit {
       },
       error: () => { this.specVersionsMap.set(index, []); }
     });
+  }
+  toggleShowAllVersions(index: number) {
+    const current = this.showAllVersionsMap.get(index) || false;
+    this.showAllVersionsMap.set(index, !current);
+    const specId = this.specifications.at(index).get('testMethodSpecificationID')?.value;
+    if (specId) {
+      this.loadSpecVersionsForIndex(specId, index);
+    }
   }
   getParameter = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.parameterService.getParameterDropdown(term, page, pageSize);

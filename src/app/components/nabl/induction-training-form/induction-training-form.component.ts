@@ -12,11 +12,13 @@ import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../services/nabl-header.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { QualityControlPlanService } from '../../../services/quality-control-plan.service';
 
 @Component({
     selector: 'app-induction-training-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './induction-training-form.component.html',
     styleUrl: './induction-training-form.component.css',
     providers: [DatePipe]
@@ -54,7 +56,9 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
         private toastService: ToastService,
         private datePipe: DatePipe
         , private unsavedChangesService: UnsavedChangesService,
-        private nablHeaderService: NablHeaderService) { }
+        private nablHeaderService: NablHeaderService,
+        private qcControlPlanservice: QualityControlPlanService,
+    ) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -76,18 +80,17 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
         //         this.formTitle = 'Edit Induction Training Record';
         //     }
         // });
-
         const state = history.state as { mode?: string };
-        if(state && state.mode === 'view') {
+        if (state && state.mode === 'view') {
             this.isViewMode = true;
             this.formTitle = 'View Induction Training Record';
             this.trainingForm.disable();
-        } else if(state && state.mode === 'edit') {
+        } else if (state && state.mode === 'edit') {
             this.isEditMode = true;
             this.formTitle = 'Edit Induction Training Record';
             this.isViewMode = false;
         }
-        else{
+        else {
             this.isEditMode = false;
             this.isViewMode = false;
         }
@@ -107,7 +110,8 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
             issueNo: ['01'],
             revNo: ['00'],
             date: [new Date().toISOString().split('T')[0], [Validators.required]],
-            employeeName: ['', [Validators.required]],
+            employeeName: [''],
+            employeeId: ['', Validators.required],
             qualification: ['', [Validators.required]],
             dateOfJoining: ['', [Validators.required]],
             position: ['', [Validators.required]],
@@ -184,7 +188,13 @@ export class InductionTrainingFormComponent implements CanComponentDeactivate, O
     formatDate(dateStr: string | Date): string {
         return this.datePipe.transform(dateStr, 'yyyy-MM-dd') || '';
     }
-
+    getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.qcControlPlanservice.getEmployeesDropdown(term, page, pageSize);
+    }
+    onEmployeeSelected(item: any) {
+        if (!item) { this.trainingForm.patchValue({ reviewedById: null }); return; }
+        this.trainingForm.patchValue({ employeeId: item.id, employeeName: item.name });
+    }
     toggleSection(section: string): void {
         this.openSections[section] = !this.openSections[section];
     }

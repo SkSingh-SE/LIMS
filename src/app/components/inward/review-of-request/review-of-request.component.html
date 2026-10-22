@@ -66,8 +66,9 @@
                       *ngFor="let action of item.actions"
                       role="button"
                       class="icon-link action-icon-link"
+                      [class.disabled]="isSubmittingAction"
                       [title]="action.name"
-                      (click)="onActionClick(action, item)"
+                      (click)="!isSubmittingAction && onActionClick(action, item)"
                     >
                       <i class="bi action-icon" [ngClass]="[getActionCfg(action.action).icon, getActionCfg(action.action).textClass]"></i>
                     </a>
@@ -198,7 +199,7 @@
     <button
       type="button"
       class="btn btn-save"
-      [disabled]="!actionRemark?.trim() || isSubmittingAction"
+      [disabled]="!actionRemark.trim() || isSubmittingAction"
       (click)="confirmRemarkAction()"
     >
       <i class="bi bi-send-check me-1"></i>Submit

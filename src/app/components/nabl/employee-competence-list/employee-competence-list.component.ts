@@ -28,28 +28,28 @@ export class EmployeeCompetenceListComponent implements OnInit {
 
     // Filter modal properties
     @ViewChild('filterModal') filterModal!: ElementRef;
-    filterColumn: string = '';
+    filterColumn: string = 'string';
     filterColumnTitle: string = '';
     filterType: string = 'Contains';
     filterValue: string = '';
     filterValue2: string = '';
-    filterColumnTypes: { [key: string]: string } = {
-        'documentNo': 'string',
-        'employeeName': 'string',
-        'designationName': 'string',
-        'evaluationDate': 'date',
-        'overallRating': 'number',
-        'evaluationDoneBy': 'string'
+    filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
+        documentNo: 'string',
+        employeeName: 'string',
+        designationName: 'string',
+        evaluationDate: 'date',
+        overallRating: 'number',
+        evaluationDoneBy: 'string'
     };
 
     columns = [
+        { key: 'id', label: 'SN', type: 'number', width: '60px', filter: false },
         { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
-        { key: 'id', label: 'ID', type: 'number', width: '60px', filter: false },
         { key: 'employeeName', label: 'Employee Name', type: 'string', filter: true },
-        { key: 'designationName', label: 'Designation', type: 'string' },
+        { key: 'designationName', label: 'Designation', type: 'string', filter: true },
         { key: 'evaluationDate', label: 'Evaluation Date', type: 'date', filter: true },
-        { key: 'overallRating', label: 'Overall Rating', type: 'number' },
-        { key: 'evaluationDoneBy', label: 'Evaluated By', type: 'string' }
+        { key: 'evaluationDoneBy', label: 'Evaluated By', type: 'string', filter: true },
+        { key: 'overallRating', label: 'Overall Rating', type: 'number' }
     ];
 
     payload: any = {
@@ -97,18 +97,52 @@ export class EmployeeCompetenceListComponent implements OnInit {
         return this.filters.some(filter => filter.column === columnKey);
     }
 
-    openFilterModal(columnKey: string, event: MouseEvent) {
-        this.filterColumn = columnKey;
-        this.filterColumnTitle = this.columns.find(col => col.key === columnKey)?.label || columnKey;
-        this.filterType = 'Contains';
+    openFilterModal(column: string, event: MouseEvent) {
+        this.filterColumn = column;
+
+        this.columns.forEach(col => {
+            if (col.key === column) {
+                this.filterColumnTitle = col.label;
+            }
+        });
+
         this.filterValue = '';
         this.filterValue2 = '';
 
-        const modal = this.filterModal.nativeElement as HTMLElement;
-        modal.style.display = 'block';
-        modal.style.left = `${event.clientX}px`;
-        modal.style.top = `${event.clientY}px`;
+        const columnType = this.filterColumnTypes[column];
+        switch (columnType) {
+            case 'string':
+                this.filterType = 'Contains';
+                break;
+            case 'number':
+                this.filterType = 'Equal';
+                break;
+            case 'date':
+                this.filterType = 'Between';
+                break;
+            default:
+                this.filterType = 'Contains';
+        }
+
+        if (this.filterModal) {
+            const modal = this.filterModal.nativeElement as HTMLElement;
+            modal.style.display = 'block';
+            modal.style.left = `${event.clientX}px`;
+            modal.style.top = `${event.clientY}px`;
+        }
     }
+    // openFilterModal(columnKey: string, event: MouseEvent) {
+    //     this.filterColumn = columnKey;
+    //     this.filterColumnTitle = this.columns.find(col => col.key === columnKey)?.label || columnKey;
+    //     this.filterType = 'Contains';
+    //     this.filterValue = '';
+    //     this.filterValue2 = '';
+
+    //     const modal = this.filterModal.nativeElement as HTMLElement;
+    //     modal.style.display = 'block';
+    //     modal.style.left = `${event.clientX}px`;
+    //     modal.style.top = `${event.clientY}px`;
+    // }
 
     closeFilterModal() {
         const modal = this.filterModal.nativeElement as HTMLElement;

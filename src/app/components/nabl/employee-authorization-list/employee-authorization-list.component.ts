@@ -16,7 +16,7 @@ export class EmployeeAuthorizationListComponent implements OnInit {
     columns: RegisterColumn[] = [
         { key: 'documentNo', type: 'string', label: 'Doc No', filter: true },
         { key: 'departmentName', label: 'Department', type: 'string', filter: true },
-        { key: 'personnelName', label: 'Personnel Name', type: 'string', filter: true },
+        { key: 'personnelName', label: 'Person Name', type: 'string', filter: true },
         { key: 'uid', label: 'UID', type: 'string', filter: true },
         { key: 'equipments', label: 'Equipment', type: 'string', filter: true },
         { key: 'testMethodAuth', label: 'Test Method', type: 'string', filter: true },

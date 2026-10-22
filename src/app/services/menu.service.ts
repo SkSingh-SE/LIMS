@@ -16,6 +16,10 @@ export class MenuService {
     return this.http.post<any>(this.apiUrl + "/list", filter);
   }
 
+  getMenuTree(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl + "/tree");
+  }
+
   getMenuById(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }

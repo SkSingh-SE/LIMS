@@ -53,7 +53,7 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
       ['clean']                                         // remove formatting button
     ]
   };
- today = new Date().toISOString().split('T')[0];
+  today = new Date().toISOString().split('T')[0];
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -111,7 +111,8 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
       reviewedBy: [null],
       reviewedDate: [''],
       approvedBy: [null],
-      approvedDate: [''], 
+      approvedDate: [''],
+
       preparedDate: [this.today],
       issuedBy: [''],
       reviewedApprovedBy: [''],
@@ -158,8 +159,8 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
     });
   }
 
-  getDesignations = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    return this.designationService.getDesignationDropdown(term, page, pageSize);
+  getDesignations = (searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> => {
+    return this.raService.getDesignationEmployees(searchTerm, pageNumber, pageSize, this.matrixId > 0 ? this.matrixId : null);
   };
 
   onDesignationSelected(item: any): void {
@@ -181,14 +182,16 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
     if (this.raForm.valid) {
       const formData = this.raForm.getRawValue();
       formData.prepareDate = this.today;
-      if(formData.approvedDate == "" || !formData.approvedDate) {
+
+      if (formData.approvedDate == "" || !formData.approvedDate) {
         formData.approvedDate = null;
       }
-      if(formData.reviewedDate == "" || !formData.reviewedDate) {
+      if (formData.reviewedDate == "" || !formData.reviewedDate) {
         formData.reviewedDate = null;
       }
       formData.acceptanceTimestamp = formData.employeeAccepted ? new Date().toISOString() : null;
-      
+
+
       if (this.isEditMode) {
         formData.id = this.matrixId;
         this.raService.update(formData).subscribe({
@@ -205,7 +208,9 @@ export class ResponsibilityAuthorityFormComponent implements CanComponentDeactiv
         this.raService.create(formData).subscribe({
           next: (response) => {
             this.saved = true;
-            this.toastService.show( 'ResponsibilityAuthority matrix created successfully', 'success');
+
+            this.toastService.show('ResponsibilityAuthority matrix created successfully', 'success');
+
             this.router.navigate(['/responsibility-authority']);
           },
           error: (error) => {

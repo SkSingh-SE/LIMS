@@ -120,14 +120,18 @@ export class UserPermissionComponent implements OnInit, OnChanges {
         data.forEach((group: any) => {
           (group.permissions || []).forEach((p: any) => {
             userHasPermissionIds.add(p.id);
-            if (p.isOverride) {
+            // Only show explicit user-level overrides in Assigned panel.
+            // Role-based permissions are managed via Menu Permission → Role.
+            if (p.isOverride && p.isGranted) {
               assignedIds.add(p.id);
             }
           });
         });
 
         for (const [groupName, perms] of Object.entries(this.masterPermissionsByGroup)) {
-          const userPerms = perms.filter(p => assignedIds.has(p.id)).map(p => ({ ...p, isOverride: true }));
+          const userPerms = perms
+            .filter(p => assignedIds.has(p.id))
+            .map(p => ({ ...p, isOverride: true }));
           if (userPerms.length > 0) {
             this.assignedPermissions[groupName] = userPerms;
           }
@@ -339,11 +343,11 @@ export class UserPermissionComponent implements OnInit, OnChanges {
       return;
     }
 
-    const payload: { permissionID: number }[] = [];
+    const payload: { permissionID: number; isGranted: boolean }[] = [];
 
     for (const groupName in this.assignedPermissions) {
       this.assignedPermissions[groupName].forEach(p => {
-        payload.push({ permissionID: p.id });
+        payload.push({ permissionID: p.id, isGranted: true });
       });
     }
 

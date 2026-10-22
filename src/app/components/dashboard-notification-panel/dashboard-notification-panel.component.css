@@ -15,7 +15,7 @@
   flex: 1;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(218, 38, 28, 0.15) transparent;
+  scrollbar-color: rgba(var(--bs-primary-rgb), 0.15) transparent;
   max-height: 480px; /* Fixed height for dense view */
 }
 
@@ -24,7 +24,7 @@
 }
 
 .notifications-list::-webkit-scrollbar-thumb {
-  background-color: rgba(218, 38, 28, 0.15);
+  background-color: rgba(var(--bs-primary-rgb), 0.15);
   border-radius: 10px;
 }
 
@@ -65,18 +65,18 @@
 }
 
 .notification-item.clickable:hover {
-  background: linear-gradient(90deg, rgba(218, 38, 28, 0.02) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(var(--bs-primary-rgb), 0.02) 0%, transparent 100%);
 }
 
 /* Priority Colors */
 .notification-priority-critical { 
-  border-left-color: #DA261C;
-  background: linear-gradient(90deg, rgba(218, 38, 28, 0.03) 0%, transparent 100%);
+  border-left-color: var(--primary-color);
+  background: linear-gradient(90deg, rgba(var(--bs-primary-rgb), 0.03) 0%, transparent 100%);
 }
 
 .notification-priority-critical::before {
   opacity: 1;
-  color: #DA261C;
+  color: var(--primary-color);
 }
 
 .notification-priority-warning { 
@@ -107,12 +107,12 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(218, 38, 28, 0.08) 0%, rgba(218, 38, 28, 0.04) 100%);
+  background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08) 0%, rgba(var(--bs-primary-rgb), 0.04) 100%);
 }
 
 .notification-icon i {
   font-size: 0.875rem;
-  color: #DA261C;
+  color: var(--primary-color);
 }
 
 .notification-content {
@@ -168,7 +168,7 @@
 .more-btn {
   background: none;
   border: none;
-  color: #DA261C;
+  color: var(--primary-color);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
@@ -179,7 +179,7 @@
 
 .view-all-btn:hover,
 .more-btn:hover {
-  background: rgba(218, 38, 28, 0.06);
+  background: rgba(var(--bs-primary-rgb), 0.06);
   transform: translateY(-1px);
 }
 

@@ -1,6 +1,6 @@
-import { Component, OnInit , HostListener } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray, AbstractControl } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { QuillModule } from 'ngx-quill';
 import { AuditChecklistService } from '../../../../services/audit-checklist.service';
@@ -10,6 +10,7 @@ import { CanComponentDeactivate } from '../../../../guards/unsaved-changes.guard
 import { UnsavedChangesService } from '../../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../../services/nabl-header.service';
+import { ToastService } from '../../../../services/toast.service';
 
 @Component({
     selector: 'app-audit-checklist-form',
@@ -19,7 +20,7 @@ import { NablHeaderService } from '../../../../services/nabl-header.service';
     styleUrl: './audit-checklist-form.component.css'
 })
 export class AuditChecklistFormComponent implements CanComponentDeactivate, OnInit {
-  saved = false;
+    saved = false;
     isSubmitting = false;
     checklistForm!: FormGroup;
     isEditMode = false;
@@ -28,7 +29,7 @@ export class AuditChecklistFormComponent implements CanComponentDeactivate, OnIn
     formTitle = 'Audit Checklist & Observation';
     formNumbers = NablFormsHelper.getFormNumbers();
     relatedAuditPlan: any = null;
-
+    availableIsoClauses: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         auditDetails: true,
@@ -43,34 +44,58 @@ export class AuditChecklistFormComponent implements CanComponentDeactivate, OnIn
             ['clean']
         ]
     };
-
+    today = new Date().toISOString().split('T')[0];
     constructor(
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
         private service: AuditChecklistService
-    , private unsavedChangesService: UnsavedChangesService,
+        , private unsavedChangesService: UnsavedChangesService,
+        private toastService: ToastService,
         private nablHeaderService: NablHeaderService) {
         this.initForm();
         this.nablHeaderService.getFormDefaults('AuditChecklist').subscribe({
             next: (defaults) => {
                 this.checklistForm.patchValue({ formatNo: defaults.formCode });
             },
-            error: () => {}
+            error: () => { }
         });
     }
+    scheduleItemId = 0;
+    auditPlanId = 0;
 
     ngOnInit() {
         this.route.paramMap.subscribe(params => {
             const id = params.get('id');
             const mode = this.route.snapshot.url[1]?.path;
+            this.route.queryParams.subscribe(params => {
+                this.scheduleItemId = Number(params['scheduleItemId']);
+                this.auditPlanId = Number(params['schedulePlanId']);
 
+                if (this.scheduleItemId > 0) {
+                    this.loadScheduleSession();
+                    this.checklistForm.patchValue({
+                        scheduleItemId: this.scheduleItemId,
+                        auditPlanId: this.auditPlanId,
+
+                    })
+                }
+            });
             if (id && id !== 'create') {
                 this.recordId = +id;
                 this.isEditMode = mode === 'edit';
                 this.isViewMode = mode === 'details';
                 this.formTitle = this.isViewMode ? 'View Audit Checklist' : 'Edit Audit Checklist';
                 this.loadRecord();
+            }
+            else if (id == null && mode === 'create') {
+                this.addItem();
+                this.service.getNextChecklistNo().subscribe({
+                    next: (data) => {
+                        this.checklistForm.patchValue({ checklistNo: data.checklistNo });
+                    },
+                    error: () => { }
+                })
             } else {
                 // Add initial empty row
                 this.addItem();
@@ -81,20 +106,30 @@ export class AuditChecklistFormComponent implements CanComponentDeactivate, OnIn
     private initForm() {
         this.checklistForm = this.fb.group({
             formatNo: ['F-51'],
-            docNo: [''],
+            docNo: ['F-51'],
             issueNo: ['03'],
-            issueDate: ['', Validators.required],
+            issueDate: [null],
+            date: [this.today, Validators.required],
             revNo: ['00'],
-            revDate: ['--', Validators.required],
-
-            areaDepartment: ['', Validators.required],
+            revDate: [null],
+            isoClause: ['', Validators.required],
+            checklistNo: ['CHK-2026-001', Validators.required],
+            auditPlanNo: ['', Validators.required],
+            departmentName: [],
+            departmentId: [],
             auditDate: ['', Validators.required],
             auditorName: ['', Validators.required],
+            auditorId: [],
+            scheduleItemId: ['', Validators.required],
+            auditPlanId: [],
             auditeeName: ['', Validators.required],
             items: this.fb.array([]),
             preparedBy: [''],
-            reviewedBy: [''],
-            approvedBy: ['']
+            reviewedBy: [null],
+            approvedBy: [null],
+            reviewedDate: [''],
+            approvedDate: [''],
+            preparedDate: [this.today],
         });
 
         // System-managed fields — always readonly
@@ -103,82 +138,319 @@ export class AuditChecklistFormComponent implements CanComponentDeactivate, OnIn
         this.checklistForm.get('issueNo')?.disable();
         this.checklistForm.get('revNo')?.disable();
         this.checklistForm.get('formatNo')?.disable();
+        this.checklistForm.get('date')?.disable();
     }
 
     get items(): FormArray {
         return this.checklistForm.get('items') as FormArray;
     }
 
-    addItem() {
+    addItem(): void {
         const itemGroup = this.fb.group({
-            clauseNo: ['', Validators.required],
-            requirement: ['', Validators.required],
-            observation: ['', Validators.required],
-            compliance: ['Yes', Validators.required]
+            id: [0],
+
+            isoClauseId: [null, Validators.required],
+            isoClauseName: [''],
+
+            auditQuestion: ['', Validators.required],
+            objectiveEvidence: ['', Validators.required],
+
+            findingType: ['', Validators.required],
+            remarks: [''],
+
+            ncId: [null],
+            ncNo: [''],
+            ncCurrentStep: [null],
+            ncStatus: ['']
         });
+
         this.items.push(itemGroup);
     }
+    onClauseSelected(index: number): void {
+        const row = this.items.at(index);
 
-    removeItem(index: number) {
-        this.items.removeAt(index);
+        const selectedId = Number(
+            row.get('isoClauseId')?.value
+        );
+
+        const selectedClause = this.availableIsoClauses.find(
+            x => Number(x.clauseId) === selectedId
+        );
+
+        row.patchValue({
+            isoClauseName: selectedClause?.clauseName ?? ''
+        });
     }
 
+    removeItem(index: number): void {
+        if (this.items.length > 1) {
+            this.items.removeAt(index);
+        }
+    }
+    private loadScheduleSession(): void {
+        this.service
+            .getScheduleSession(this.scheduleItemId)
+            .subscribe(data => {
+                if (!data) {
+                    return;
+                }
+
+                this.availableIsoClauses =
+                    data.isoClauses || [];
+
+                const isoClauseText =
+                    this.availableIsoClauses
+                        .map((x: any) => x.clauseName)
+                        .join(', ');
+
+                this.checklistForm.patchValue({
+                    auditPlanId: data.auditPlanId,
+                    scheduleItemId: data.scheduleItemId,
+                    auditPlanNo: data.auditPlanNo,
+
+                    departmentId: data.departmentId,
+                    departmentName: data.departmentName,
+
+                    auditorId: data.auditorId,
+                    auditorName: data.auditorName,
+
+                    auditeeId: data.auditeeId,
+                    auditeeName: data.auditeeName,
+                    isoClause: isoClauseText,
+
+                    auditDate:
+                        NablFormsHelper.formatDateForInput(
+                            data.scheduleDate
+                        )
+                });
+
+                this.items.clear();
+                this.addItem();
+            });
+    }
     private loadRecord() {
         this.service.getById(this.recordId).subscribe(data => {
-            if (data) {
-                // Clear items first
-                while (this.items.length) this.items.removeAt(0);
+            if (!data) {
+                return;
+            }
 
-                // Add items from data
-                data.items.forEach(() => this.addItem());
+            this.service
+                .getScheduleSession(data.scheduleItemId)
+                .subscribe(session => {
 
-                this.checklistForm.patchValue(data);
-                // Lock form if not in editable status
-                const status = (data as any).status;
-                if (status && status !== 'Draft' && status !== 'Rejected') {
-                    this.checklistForm.disable();
-                    this.isViewMode = true;
-                } else if (this.isViewMode) {
-                    this.checklistForm.disable();
-                }
-                // Re-disable system fields (in case form was enabled for Draft/Rejected)
-                this.checklistForm.get('documentNo')?.disable();
-                this.checklistForm.get('docNo')?.disable();
-                this.checklistForm.get('issueNo')?.disable();
-                this.checklistForm.get('revNo')?.disable();
-                this.checklistForm.get('formatNo')?.disable();
+                    this.availableIsoClauses =
+                        session?.isoClauses || [];
 
-                // Load related Audit Plan if linked
-                const record = data as any;
-                if (record.auditPlanId) {
-                    this.relatedAuditPlan = {
-                        id: record.auditPlanId,
-                        documentNo: record.auditPlan?.documentNo || 'N/A',
-                        status: record.auditPlan?.status || 'Draft'
-                    };
+                    data.items.forEach((item: any) => {
+                        item.isoClauseId =
+                            Number(item.isoClauseId);
+                    });
+
+                    while (this.items.length) {
+                        this.items.removeAt(0);
+                    }
+
+                    // FIX: each item ko actual row me patch karo
+                    data.items.forEach((item: any) => {
+                        this.addItem();
+
+                        const row =
+                            this.items.at(
+                                this.items.length - 1
+                            ) as FormGroup;
+
+                        row.patchValue({
+                            ...item,
+                            id: item.id ?? item.ID ?? 0
+                        });
+                    });
+
+                    // Parent fields separately patch
+                    const { items, ...parentData } = data;
+
+                    this.checklistForm.patchValue(parentData);
+
+                    this.checklistForm.patchValue({
+                        date: NablFormsHelper.formatDateForInput(
+                            data.date
+                        ),
+                        auditDate: NablFormsHelper.formatDateForInput(
+                            data.auditDate
+                        )
+                    });
+
+                    const status = (data as any).status;
+
+                    if (
+                        status &&
+                        status !== 'Draft' &&
+                        status !== 'Rejected'
+                    ) {
+                        this.checklistForm.disable();
+                        this.isViewMode = true;
+                    } else if (this.isViewMode) {
+                        this.checklistForm.disable();
+                    }
+
+                    this.checklistForm.get('documentNo')?.disable();
+                    this.checklistForm.get('docNo')?.disable();
+                    this.checklistForm.get('issueNo')?.disable();
+                    this.checklistForm.get('revNo')?.disable();
+                    this.checklistForm.get('formatNo')?.disable();
+
+                    const record = data as any;
+
+                    if (record.auditPlanId) {
+                        this.relatedAuditPlan = {
+                            id: record.auditPlanId,
+                            documentNo:
+                                record.auditPlan?.documentNo || 'N/A',
+                            status:
+                                record.auditPlan?.status || 'Draft'
+                        };
+                    }
+                });
+        });
+    }
+    raiseNcr(item: AbstractControl): void {
+        const checklistId =
+            this.checklistForm.get('id')?.value ||
+            this.recordId;
+
+        const checklistItemId =
+            item.get('id')?.value;
+
+        const scheduleItemId =
+            this.checklistForm.get('scheduleItemId')?.value;
+
+        this.router.navigate(
+            ['/non-conforming-work/create'],
+            {
+                queryParams: {
+                    source: 'InternalAudit',
+                    checklistId,
+                    checklistItemId,
+                    scheduleItemId
                 }
             }
-        });
+        );
+    }
+
+    continueNcr(item: AbstractControl): void {
+        const ncId = item.get('ncId')?.value;
+
+        if (!ncId) {
+            return;
+        }
+
+        this.router.navigate([
+            '/non-conforming-work/edit',
+            ncId
+        ]);
+    }
+    viewNcr(item: AbstractControl): void {
+        const ncId = item.get('ncId')?.value;
+
+        // 1. URL Tree create karein Bina path change kiye
+        const urlTree = this.router.createUrlTree([
+            '/non-conforming-work/details',
+            ncId
+        ]);
+
+        // 2. URL ko string me convert karein
+        const url = this.router.serializeUrl(urlTree);
+
+        // 3. New browser tab me open karein
+        window.open(url, '_blank');
     }
 
     toggleSection(section: string) {
         this.openSections[section] = !this.openSections[section];
     }
 
-    onSubmit() {
-        if (this.checklistForm.valid) {
-            this.isSubmitting = true;
-            if (this.isEditMode) {
-                this.service.update(this.recordId, this.checklistForm.getRawValue()).subscribe({
-                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
-                    error: () => { this.isSubmitting = false; }
-                });
-            } else {
-                this.service.create(this.checklistForm.getRawValue()).subscribe({
-                    next: () => { this.isSubmitting = false; this.saved = true; this.onCancel(); },
-                    error: () => { this.isSubmitting = false; }
-                });
-            }
+    isChecklistItemLocked(item: AbstractControl): boolean {
+        return Number(item.get('id')?.value) > 0;
+    }
+    onSubmit(): void {
+        if (this.checklistForm.invalid) {
+            this.checklistForm.markAllAsTouched();
+            return;
+        }
+
+        const formData = this.checklistForm.getRawValue();
+
+        formData.preparedDate = this.today;
+        formData.approvedDate =
+            formData.approvedBy ? this.today : null;
+        formData.reviewedDate =
+            formData.reviewedBy ? this.today : null;
+
+        if (this.isEditMode) {
+            this.service.update(this.recordId, formData).subscribe({
+                next: (response: any) => {
+
+                    this.saved = true;
+
+                    this.toastService.show(
+                        'audit checklist updated successfully',
+                        'success'
+                    );
+
+                    if (response.hasPendingNcr === true) {
+
+                        // Same edit page par fresh data load karo
+                        this.loadRecord();
+
+                        return;
+                    }
+
+                    this.router.navigate([
+                        '/audit-plan/edit',
+                        response.auditPlanId
+                    ]);
+                },
+
+                error: (error: any) => {
+                    this.toastService.show(
+                        error?.error?.message ||
+                        'Failed to update record',
+                        'error'
+                    );
+                }
+            });
+        } else {
+            this.service.create(formData).subscribe({
+                next: (response: any) => {
+                    this.saved = true;
+
+                    this.toastService.show(
+                        'audit checklist created successfully',
+                        'success'
+                    );
+
+                    if (response.hasPendingNcr === true) {
+                        this.router.navigate([
+                            '/audit-checklist/edit',
+                            response.checklistId
+                        ]);
+
+                        return;
+                    }
+
+                    this.router.navigate([
+                        '/audit-plan/edit',
+                        response.auditPlanId
+                    ]);
+                },
+
+                error: (error: any) => {
+                    this.toastService.show(
+                        error?.error?.message ||
+                        'Failed to create record',
+                        'error'
+                    );
+                }
+            });
         }
     }
 
@@ -186,16 +458,16 @@ export class AuditChecklistFormComponent implements CanComponentDeactivate, OnIn
         this.router.navigate(['/audit-checklist']);
     }
 
-  canDeactivate(): Observable<boolean> | boolean {
-    if (!this.checklistForm.dirty || this.saved) return true;
-    return this.unsavedChangesService.confirm();
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (this.checklistForm?.dirty && !this.saved) {
-      event.preventDefault();
-      event.returnValue = '';
+    canDeactivate(): Observable<boolean> | boolean {
+        if (!this.checklistForm.dirty || this.saved) return true;
+        return this.unsavedChangesService.confirm();
     }
-  }
+
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent) {
+        if (this.checklistForm?.dirty && !this.saved) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    }
 }

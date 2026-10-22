@@ -101,6 +101,9 @@ export class TestStatusBadgeComponent {
     'REPORT_DISPATCHED':              { bg: '#37474F', fg: '#FFFFFF', label: 'Dispatched' },
     'CASE_CLOSED':                    { bg: '#263238', fg: '#FFFFFF', label: 'Case Closed' },
 
+    // ==================== SampleStatus — Cancelled ====================
+    'SAMPLE_CANCELLED':               { bg: '#B0BEC5', fg: '#263238', label: 'Cancelled' },
+
     // ==================== TestResultHeader.Status ====================
     'Pending':                        { bg: '#EEEEEE', fg: '#616161', label: 'Pending' },
     'Started':                        { bg: '#B3E5FC', fg: '#01579B', label: 'Started' },

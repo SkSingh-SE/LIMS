@@ -95,27 +95,27 @@ export class TestResultComponent implements OnInit {
    * Maps API response to component display format
    */
   enrichDashboardItem(item: any) {
-    // Validate critical fields
-    if (!item.sampleId && !item.id) {
-      console.warn('[Dashboard] Missing sample ID for item:', item);
-    }
-    if (!item.sampleNo) {
-      console.warn('[Dashboard] Missing sample number for item:', item);
-    }
-    if (!item.tests) {
-      console.warn('[Dashboard] Missing tests for sample:', item.sampleNo || item.id);
-    }
-
     return {
       ...item,
-      // Ensure proper ID references for routing
       sampleId: item.sampleId || item.id,
       planId: item.planId || null,
-      // Ensure tests string is comma-separated test names
-      tests: this.formatTestsDisplay(item.tests),
-      // Check if sample has long-term tests that are active
+      // Convert comma-separated string to array of {testName} objects for badge rendering
+      tests: this.convertTestsToArray(item.tests),
+      // Use DB sample status for the badge — more accurate than computed status
+      sampleStatus: item.currentStageStatus || item.sampleStatus,
       hasLongTermTests: this.hasActiveLongTermTests(item)
     };
+  }
+
+  private convertTestsToArray(tests: any): { testName: string }[] {
+    if (!tests) return [];
+    if (typeof tests === 'string') {
+      return tests.split(',').map(t => t.trim()).filter(t => t.length > 0).map(t => ({ testName: t }));
+    }
+    if (Array.isArray(tests)) {
+      return tests.map((t: any) => ({ testName: t.testName || t.name || t.toString() }));
+    }
+    return [];
   }
 
   /**

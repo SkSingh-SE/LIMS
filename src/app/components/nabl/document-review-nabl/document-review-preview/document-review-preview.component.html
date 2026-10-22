@@ -18,20 +18,17 @@
 
   <div class="toolbar-right">
     <div class="orientation-toggle" title="Page orientation">
-      <button class="orient-btn" [class.active]="orientation === 'portrait'"
-              (click)="setOrientation('portrait')">
+      <button class="orient-btn" [class.active]="orientation === 'portrait'" (click)="setOrientation('portrait')">
         <i class="bi bi-file-earmark"></i>
         <span>Portrait</span>
       </button>
-      <button class="orient-btn" [class.active]="orientation === 'landscape'"
-              (click)="setOrientation('landscape')">
+      <button class="orient-btn" [class.active]="orientation === 'landscape'" (click)="setOrientation('landscape')">
         <i class="bi bi-file-earmark-text" style="transform:rotate(90deg);display:inline-block;"></i>
         <span>Landscape</span>
       </button>
     </div>
-    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()"
-            title="Auto-detect orientation from content"
-            *ngIf="orientationManual">
+    <button class="toolbar-btn btn-outline-dark" (click)="resetToAuto()" title="Auto-detect orientation from content"
+      *ngIf="orientationManual">
       <i class="bi bi-arrow-counterclockwise"></i>
       <span>Auto</span>
     </button>
@@ -49,62 +46,204 @@
 
   <app-print-frame [orientation]="orientation">
     <ng-container header>
-      <app-nabl-print-header
-        [formatNo]="headerInfo.formatNo"
-        [mainTitle]="'DOCUMENT REVIEW RECORDS'"
-        [docNo]="headerInfo.docNo"
-        [issueNo]="headerInfo.issueNo"
-        [issueDate]="headerInfo.issueDate"
-        [revNo]="headerInfo.revNo"
-      ></app-nabl-print-header>
+      <app-nabl-print-header [formatNo]="data.formCode" [mainTitle]="'DOCUMENT REVIEW RECORDS'"
+        [docNo]="'DMSPL / Level-04 / Format / ' + data.formCode" [issueNo]="data.issueNo" [issueDate]="data.date"
+        [revNo]="data.revNo"></app-nabl-print-header>
     </ng-container>
 
     <ng-container body>
+
+      <!-- II. REVIEW INFORMATION -->
       <div class="doc-section mb-3">
-        <div class="sec-title">REVIEW RECORDS</div>
-        <table class="table table-bordered inner-table text-center align-middle">
-          <thead>
-            <tr class="tbl-head">
-              <th style="width:80px">Sr. No.</th>
-              <th>Document</th>
-              <th style="width:200px">Last Review Date</th>
-              <th style="width:200px">Next Review Date</th>
-              <th>Review Done By</th>
-            </tr>
-          </thead>
+        <div class="sec-title">II. REVIEW INFORMATION</div>
+
+        <table class="table table-bordered inner-table">
           <tbody>
-            <tr *ngFor="let item of data">
-              <td>{{ item.srNo }}</td>
-              <td class="text-start">{{ item.documentName }}</td>
-              <td>{{ item.lastReviewDate | date: "dd/MM/yyyy" }}</td>
-              <td>{{ item.nextReviewDate | date: "dd/MM/yyyy" }}</td>
-              <td>{{ item.reviewDoneBy }}</td>
+            <tr>
+              <td class="lbl" style="width: 25%">Review No.</td>
+              <td style="width: 25%">
+                {{ data.reviewNo || '' }}
+              </td>
+
+              <td class="lbl" style="width: 25%">Review Type</td>
+              <td style="width: 25%">
+                {{ data.reviewType || '' }}
+              </td>
             </tr>
-            <!-- Empty rows to fill space -->
-            <tr *ngIf="data.length < 10">
-              <td colspan="5" [style.height.px]="30 * (10 - data.length)"></td>
+
+            <tr>
+              <td class="lbl">Reviewer Department</td>
+              <td colspan="3">
+                {{ data.departmentName || '' }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="doc-section mb-3">
-        <div class="sec-title">NOTES</div>
-        <div class="sec-body">
-          <p class="mb-1">1. Document Review Frequency – Once in a Year</p>
-          <p class="mb-1">2. Level – 01, Quality Policy &amp; Quality Objectives Document is to be reviewed by Top Management</p>
-          <p class="mb-1">3. Retention Period of Records – Three years</p>
-        </div>
-      </div>
-    </ng-container>
 
+      <!-- III. DOCUMENT INFORMATION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">III. DOCUMENT INFORMATION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">Document</td>
+              <td style="width: 25%">
+                {{ data.documentName || '' }}
+              </td>
+
+              <td class="lbl" style="width: 25%">Document Type</td>
+              <td style="width: 25%">
+                {{ data.documentType || '' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Department</td>
+              <td>
+                {{ data.departmentName || '' }}
+              </td>
+
+              <td class="lbl">Current Issue No.</td>
+              <td>
+                {{ data.currentIssue || '' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Current Rev. No.</td>
+              <td>
+                {{ data.currentRevision || '' }}
+              </td>
+
+              <td class="lbl">Effective Date</td>
+              <td>
+                {{ data.effectiveDate ? (data.effectiveDate | date:'dd.MM.yyyy') : '' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">Next Review Date</td>
+              <td>
+                {{ data.nextReviewDate ? (data.nextReviewDate | date:'dd.MM.yyyy') : '' }}
+              </td>
+
+              <td class="lbl">Document Owner</td>
+              <td>
+                {{ data.documentOwner || '' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+
+      <!-- IV. REVIEW DETAILS -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">IV. REVIEW DETAILS</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">
+                Review Findings / Remarks
+              </td>
+              <td colspan="3">
+                {{ data.reviewFindings || '' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Changes Required
+              </td>
+              <td colspan="3">
+                {{ data.changeRequired ? 'Yes' : 'No' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+
+      <!-- V. REVIEW EVALUATION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">V. REVIEW EVALUATION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">
+                Conclusion / Recommendation
+              </td>
+              <td colspan="3">
+                {{ data.noChangeConclusion || '' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+
+      <!-- VI. RELATED CHANGE REQUEST -->
+      <!-- <div class="doc-section mb-3">
+        <div class="sec-title">VI. RELATED CHANGE REQUEST</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">
+                Change Request No.
+              </td>
+              <td style="width: 25%">
+                {{ data.generatedDcrNo || '' }}
+              </td>
+
+              <td class="lbl" style="width: 25%">
+                Change Type
+              </td>
+              <td style="width: 25%">
+                {{ data.generatedDcrChangeType || '' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div> -->
+
+
+      <!-- VII. REVIEW CONCLUSION -->
+      <div class="doc-section mb-3">
+        <div class="sec-title">VI. REVIEW CONCLUSION</div>
+
+        <table class="table table-bordered inner-table">
+          <tbody>
+            <tr>
+              <td class="lbl" style="width: 25%">
+                Review Conclusion
+              </td>
+              <td colspan="3">
+                {{ data.reviewConclusion || '' }}
+              </td>
+            </tr>
+
+            <tr>
+              <td class="lbl">
+                Additional Remarks
+              </td>
+              <td colspan="3">
+                {{ data.additionalRemarks || '' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </ng-container>
     <ng-container footer>
-      <app-nabl-print-footer
-        [showSignatures]="true"
-        [preparedByName]="'General Manager'"
-        [issuedByName]="'Quality Manager'"
-        [reviewedApprovedByName]="'Managing Director'"
-      ></app-nabl-print-footer>
+      <app-nabl-print-footer [preparedByName]="data.preparedBy || ''" [issuedByName]="data.reviewedBy || ''"
+        [reviewedApprovedByName]="data.approvedBy || ''"></app-nabl-print-footer>
     </ng-container>
   </app-print-frame>
 

@@ -1,8 +1,10 @@
 import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, ViewChild, ElementRef, AfterViewInit, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { DashboardChartDto, DashboardChartDataPoint } from '../../models/dashboardModels';
 import { DashboardErrorHandlerService } from '../../services/dashboard-error-handler.service';
+import { ThemeService } from '../../services/theme.service';
 import {
   createBarChartConfig,
   createLineChartConfig,
@@ -48,8 +50,15 @@ export class DashboardChartComponent implements OnInit, OnDestroy, OnChanges {
   private debounceTimer?: number;
 
   constructor(
-    private errorHandler: DashboardErrorHandlerService
-  ) { }
+    private errorHandler: DashboardErrorHandlerService,
+    private themeService: ThemeService
+  ) {
+    toObservable(this.themeService.currentTheme).subscribe(() => {
+      if (this.chart) {
+        this.refreshChart();
+      }
+    });
+  }
 
   ngOnInit(): void {
     try {
@@ -584,26 +593,13 @@ export class DashboardChartComponent implements OnInit, OnDestroy, OnChanges {
     const labels = dataPoints.map(p => p.label);
     const values = dataPoints.map(p => p.value);
 
-    // Theme Red (DA261C)
-    const primaryRed = '#DA261C';
-    const softRed = 'rgba(218, 38, 28, 0.7)';
-
-    // RED-based palette for Pie/Doughnut
-    const redPalette = [
-      '#DA261C', // Primary Red
-      '#EF4444', // Lighter Red
-      '#F87171', // Even Lighter
-      '#FECACA', // Softest Red
-      '#991B1B', // Darker Red
-      '#7F1D1D', // Darkest Red
-      '#CBD5E1', // Slate 300 (Gray contrast)
-      '#94A3B8'  // Slate 400 (Gray contrast)
-    ];
+    const primaryColor = this.getThemePrimaryHex();
+    const palette = this.getThemePalette(primaryColor);
 
     const isPieOrDoughnut = chartData.chartType.toLowerCase() === 'pie' || chartData.chartType.toLowerCase() === 'doughnut';
     const backgroundColors = isPieOrDoughnut
-      ? dataPoints.map((_, i) => redPalette[i % redPalette.length])
-      : dataPoints.map(p => p.metadata?.['Color'] || primaryRed);
+      ? dataPoints.map((_, i) => palette[i % palette.length])
+      : dataPoints.map(p => p.metadata?.['Color'] || primaryColor);
 
     return {
       labels: labels,
@@ -611,8 +607,8 @@ export class DashboardChartComponent implements OnInit, OnDestroy, OnChanges {
         {
           label: chartData.title,
           data: values,
-          backgroundColor: chartData.chartType.toLowerCase() === 'line' ? softRed : backgroundColors,
-          borderColor: isPieOrDoughnut ? '#FFFFFF' : primaryRed,
+          backgroundColor: chartData.chartType.toLowerCase() === 'line' ? this.hexToRgba(primaryColor, 0.7) : backgroundColors,
+          borderColor: isPieOrDoughnut ? '#FFFFFF' : primaryColor,
           borderWidth: isPieOrDoughnut ? 2 : 2,
           fill: chartData.chartType.toLowerCase() === 'line',
           tension: 0.4
@@ -639,40 +635,79 @@ export class DashboardChartComponent implements OnInit, OnDestroy, OnChanges {
     return true;
   }
 
-  private getDefaultColors(count: number): string[] {
-    const colors = [
-      'rgba(54, 162, 235, 0.6)',   // Blue
-      'rgba(255, 99, 132, 0.6)',   // Red
-      'rgba(255, 205, 86, 0.6)',   // Yellow
-      'rgba(75, 192, 192, 0.6)',   // Green
-      'rgba(153, 102, 255, 0.6)',  // Purple
-      'rgba(255, 159, 64, 0.6)',   // Orange
-      'rgba(199, 199, 199, 0.6)',  // Grey
-      'rgba(83, 102, 255, 0.6)'    // Indigo
-    ];
+  private getThemePrimaryHex(): string {
+    try {
+      const style = getComputedStyle(document.documentElement);
+      let color = style.getPropertyValue('--primary-color').trim();
+      if (color && color.startsWith('#')) {
+        return color;
+      }
+      const rgb = style.getPropertyValue('--bs-primary-rgb').trim();
+      if (rgb) {
+        const [r, g, b] = rgb.split(',').map(n => parseInt(n.trim(), 10));
+        if (!Number.isNaN(r) && !Number.isNaN(g) && !Number.isNaN(b)) {
+          return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+        }
+      }
+    } catch (error) {
+      console.warn('Theme color lookup failed, using fallback', error);
+    }
+    return '#da261c';
+  }
 
+  private hexToRgba(hex: string, alpha: number): string {
+    const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!rgb) return hex;
+    return `rgba(${parseInt(rgb[1], 16)}, ${parseInt(rgb[2], 16)}, ${parseInt(rgb[3], 16)}, ${alpha})`;
+  }
+
+  private getThemePalette(baseHex: string): string[] {
+    const lighten = (hex: string, percent: number) => {
+      const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (!rgb) return hex;
+      const r = Math.max(0, Math.min(255, Math.round(parseInt(rgb[1], 16) + (255 - parseInt(rgb[1], 16)) * percent)));
+      const g = Math.max(0, Math.min(255, Math.round(parseInt(rgb[2], 16) + (255 - parseInt(rgb[2], 16)) * percent)));
+      const b = Math.max(0, Math.min(255, Math.round(parseInt(rgb[3], 16) + (255 - parseInt(rgb[3], 16)) * percent)));
+      return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+    };
+
+    const darken = (hex: string, percent: number) => {
+      const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (!rgb) return hex;
+      const r = Math.max(0, Math.round(parseInt(rgb[1], 16) * (1 - percent)));
+      const g = Math.max(0, Math.round(parseInt(rgb[2], 16) * (1 - percent)));
+      const b = Math.max(0, Math.round(parseInt(rgb[3], 16) * (1 - percent)));
+      return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+    };
+
+    return [
+      baseHex,
+      lighten(baseHex, 0.35),
+      lighten(baseHex, 0.55),
+      lighten(baseHex, 0.75),
+      darken(baseHex, 0.25),
+      darken(baseHex, 0.45),
+      '#CBD5E1',
+      '#94A3B8'
+    ];
+  }
+
+  private getDefaultColors(count: number): string[] {
+    const primary = this.getThemePrimaryHex();
+    const palette = this.getThemePalette(primary);
     const result = [];
     for (let i = 0; i < count; i++) {
-      result.push(colors[i % colors.length]);
+      result.push(this.hexToRgba(palette[i % palette.length], 0.6));
     }
     return result;
   }
 
   private getDefaultBorderColors(count: number): string[] {
-    const colors = [
-      'rgba(54, 162, 235, 1)',   // Blue
-      'rgba(255, 99, 132, 1)',   // Red
-      'rgba(255, 205, 86, 1)',   // Yellow
-      'rgba(75, 192, 192, 1)',   // Green
-      'rgba(153, 102, 255, 1)',  // Purple
-      'rgba(255, 159, 64, 1)',   // Orange
-      'rgba(199, 199, 199, 1)',  // Grey
-      'rgba(83, 102, 255, 1)'    // Indigo
-    ];
-
+    const primary = this.getThemePrimaryHex();
+    const palette = this.getThemePalette(primary);
     const result = [];
     for (let i = 0; i < count; i++) {
-      result.push(colors[i % colors.length]);
+      result.push(palette[i % palette.length]);
     }
     return result;
   }

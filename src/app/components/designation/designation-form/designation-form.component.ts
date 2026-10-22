@@ -38,12 +38,12 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
     this.designationForm = this.fb.group({
       id: [0],
       name: ['', [Validators.required, Validators.maxLength(100), noWhitespaceValidator()]],
-      description: ['', [Validators.maxLength(500)]],
+      description: ['', [Validators.maxLength(3000)]],
       roleID: [null],
-      qualification: [''],
+      qualification: ['', [Validators.maxLength(500)]],
       minExperience: [null],
-      personalityTraits: [''],
-      rolesAndResponsibilities: [''],
+      personalityTraits: ['', [Validators.maxLength(3000)]],
+      rolesAndResponsibilities: ['', [Validators.maxLength(3000)]],
     });
     this.route.paramMap.subscribe(params => {
       this.designationId = Number(params.get('id'));
@@ -95,7 +95,7 @@ export class DesignationFormComponent implements CanComponentDeactivate, OnInit,
   }
 
   openModal(): void {
-    this.bsModal = new Modal(this.modalElement.nativeElement);
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
     this.bsModal.show();
   }
 

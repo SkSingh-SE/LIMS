@@ -3,11 +3,6 @@
   border-top-right-radius: 10px;
 }
 
-.card-form-header {
-  background: linear-gradient(90deg, #FF2C1F 0%, #DA271C 100%) !important;
-  border-bottom: none;
-}
-
 .navbar-background {
   background-color: #DA261C !important;
 }

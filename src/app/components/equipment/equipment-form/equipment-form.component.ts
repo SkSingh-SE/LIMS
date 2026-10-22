@@ -9,10 +9,12 @@ import { DepartmentService } from '../../../services/department.service';
 import { OEMService } from '../../../services/oem.service';
 import { CalibrationAgencyService } from '../../../services/calibration-agency.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { MultiSelectDropdownComponent } from '../../../utility/components/multi-select-dropdown/multi-select-dropdown.component';
 import { Modal } from 'bootstrap';
 import { EquipmentTypeService } from '../../../services/equipment-type.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { EquipmentReferenceMaterialService } from '../../../services/equipment-reference-material.service';
+import { AnalysisTechniqueService } from '../../../services/analysis-technique.service';
 import { environment } from '../../../../environments/environment';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
@@ -22,7 +24,7 @@ import { FormFieldErrorComponent } from '../../../utility/components/form-field-
 
 @Component({
   selector: 'app-equipment-form',
-  imports: [FormsModule, CommonModule, ReactiveFormsModule, RouterLink, SearchableDropdownComponent, SearchableDropdownModalComponent, FormFieldErrorComponent],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule, RouterLink, SearchableDropdownComponent, SearchableDropdownModalComponent, MultiSelectDropdownComponent, FormFieldErrorComponent],
   templateUrl: './equipment-form.component.html',
   styleUrl: './equipment-form.component.css',
 })
@@ -36,6 +38,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   calibrationForm!: FormGroup;
   maintenanceForm!: FormGroup;
   sopAttachmentForm!: FormGroup;
+  reviewForm!: FormGroup;
   sopVideoForm!: FormGroup;
   equipmentId: number = 0;
   isViewMode: boolean = false;
@@ -63,6 +66,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     private equipmentTypeService: EquipmentTypeService,
     private equipmentService: EquipmentService,
     private refMaterialService: EquipmentReferenceMaterialService,
+    private analysisTechniqueService: AnalysisTechniqueService,
     private route: ActivatedRoute,
     private router: Router,
     private unsavedChangesService: UnsavedChangesService
@@ -83,12 +87,13 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       this.isViewMode = true;
     }
     this.initForm();
+    this.initReviewForm();
     this.initCalibrationForm();
     this.initMaintenanceForm();
     this.initSOPForms();
     this.initRefMaterialForm();
     this.setupAutoDueDateCalculation();
-    this.checkDueDates();
+    // this.checkDueDates();
     this.listenToDueDateChanges();
     if (this.equipmentId > 0) {
       this.loadEquipment(this.equipmentId);
@@ -115,8 +120,11 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       intermediateCheckRequired: [true],
       intermediateCheckInterval: [''],
       lastCalibrationDate: [null],
+      lastMaintenanceDate: [null],
       calibrationFrequencyDays: [null],
       maintenanceSchedule: [''],
+      techniqueIds: [[]],
+      analysisTechniques: this.fb.array([]),
       calibrations: this.fb.array([]),
       maintenances: this.fb.array([]),
       sops: this.fb.array([]),
@@ -126,13 +134,15 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     this.calibrationForm = this.fb.group({
       id: [0],
       equipmentID: [this.equipmentId],
-      calibrationDate: [''],
-      calibrationDueDate: [''],
-      certificate: [''],
+      calibrationDate: ['', Validators.required],
+      calibrationDueDate: ['', Validators.required],
+      certificate: ['', Validators.required],
       certificatePath: [''],
-      agency: [''],
-      calibrationAgencyID: [null],
-      file: [File],
+      agency: ['', Validators.required],
+      calibrationAgencyID: [null, Validators.required],
+      file: [null],
+      reviewReason: [null],
+      desrciption: [null],
       isReviewed: [false],
     });
   }
@@ -140,10 +150,11 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     this.maintenanceForm = this.fb.group({
       id: [0],
       equipmentID: [this.equipmentId],
-      maintenanceDate: [''],
-      certificate: [''],
+      maintenanceDate: ['', Validators.required],
+      certificate: ['', Validators.required],
       certificatePath: [''],
-      file: [File],
+      desrciption: [''],
+      file: [null],
     });
   }
   initSOPForms(): void {
@@ -167,6 +178,13 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       type: ['video'],
     });
   }
+  initReviewForm(): void {
+    this.reviewForm = this.fb.group({
+      calibrationId: [0],
+      reason: ['', Validators.required]
+    });
+  }
+
   get equipmentFormGroup(): FormGroup {
     return this.equipmentForm;
   }
@@ -206,9 +224,12 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           intermediateCheckRequired: data.intermediateCheckRequired,
           intermediateCheckInterval: data.intermediateCheckInterval,
           lastCalibrationDate: data.lastCalibrationDate ? data.lastCalibrationDate.split('T')[0] : '',
+          lastMaintenanceDate: data.lastMaintenanceDate ? data.lastMaintenanceDate.split('T')[0] : '',
           calibrationFrequencyDays: data.calibrationFrequencyDays,
           maintenanceSchedule: data.maintenanceSchedule || '',
         });
+        this.checkDueDates();
+        this.calibrationRecords.clear();
         if (data.calibrations && data.calibrations.length > 0) {
           data.calibrations.forEach((calibration: any) => {
             this.calibrationRecords.push(
@@ -223,10 +244,12 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
                 calibrationAgencyID: [calibration.calibrationAgencyID],
                 file: [null],
                 isReviewed: [calibration.isReviewed],
+                reviewReason: [calibration.reviewReason],
               })
             );
           });
         }
+        this.maintenanceRecords.clear();
 
         if (data.maintenances && data.maintenances.length > 0) {
 
@@ -269,6 +292,16 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
           });
           this.optimizeVideoPlayback();
         }
+        // Rebind analysis techniques (A4) — junction → multiselect + FormArray
+        const techItems = data.analysisTechniques ?? [];
+        this.equipmentForm.patchValue({
+          techniqueIds: techItems.map((x: any) => x.analysisTechniqueID),
+        });
+        const techArray = this.equipmentForm.get('analysisTechniques') as FormArray;
+        techArray.clear();
+        techItems.forEach((x: any) => {
+          techArray.push(this.fb.group({ analysisTechniqueID: [x.analysisTechniqueID] }));
+        });
         if (this.isViewMode) {
           this.equipmentForm.disable();
         }
@@ -279,31 +312,164 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     });
   }
 
-  setupAutoDueDateCalculation(): void {
-    this.equipmentForm.get('calibrationRequired')?.valueChanges.subscribe(required => {
-      if (required && !this.equipmentForm.get('nextCalibrationDueDate')?.value) {
-        const calDue = this.calculateDueDate(new Date().toDateString(), 'EveryDay');
-        this.equipmentForm.get('nextCalibrationDueDate')?.setValue(calDue);
-      } else if (!required) {
-        this.equipmentForm.get('nextCalibrationDueDate')?.setValue(null);
-      }
-    });
+  // setupAutoDueDateCalculation(): void {
+  //   this.equipmentForm.get('calibrationRequired')?.valueChanges.subscribe(required => {
+  //     if (required && !this.equipmentForm.get('nextCalibrationDueDate')?.value) {
+  //       const calDue = this.calculateDueDate(new Date().toDateString(), 'EveryDay');
+  //       this.equipmentForm.get('nextCalibrationDueDate')?.setValue(calDue);
+  //     } else if (!required) {
+  //       this.equipmentForm.get('nextCalibrationDueDate')?.setValue(null);
+  //     }
+  //   });
 
-    this.calibrationForm.get('calibrationDueDate')?.valueChanges.subscribe(date => {
-      if (date && this.calibrationForm.get('calibrationDate')?.value >= this.calibrationForm.get('calibrationDueDate')?.value) {
-        this.toastService.show('Calibration Due Date should be greater than Calibration Date', 'warning');
-        this.calibrationForm.get('calibrationDueDate')?.setValue('');
-      }
-      this.equipmentForm.get('nextCalibrationDueDate')?.setValue(date);
-    });
+  //   this.calibrationForm.get('calibrationDueDate')?.valueChanges.subscribe(date => {
+  //     if (date && this.calibrationForm.get('calibrationDate')?.value >= this.calibrationForm.get('calibrationDueDate')?.value) {
+  //       this.toastService.show('Calibration Due Date should be greater than Calibration Date', 'warning');
+  //       this.calibrationForm.get('calibrationDueDate')?.setValue('');
+  //     }
+  //     this.equipmentForm.get('nextCalibrationDueDate')?.setValue(date);
+  //   });
 
-    this.equipmentForm.get('maintenanceInterval')?.valueChanges.subscribe(interval => {
-      if (interval) {
-        const due = this.calculateDueDate(new Date().toDateString(), interval);
-        this.equipmentForm.get('nextMaintenanceDueDate')?.setValue(due);
-      }
-    });
+  //   this.equipmentForm.get('maintenanceInterval')?.valueChanges.subscribe(interval => {
+  //     if (interval) {
+  //       const due = this.calculateDueDate(new Date().toDateString(), interval);
+  //       this.equipmentForm.get('nextMaintenanceDueDate')?.setValue(due);
+  //     }
+  //   });
+  // }
+  updateNextCalibrationDueDate(): void {
+    const lastCalibrationDate =
+      this.equipmentForm.get('lastCalibrationDate')?.value;
+
+    const calibrationFrequencyDays =
+      this.equipmentForm.get('calibrationFrequencyDays')?.value;
+
+    const calibrationRequired =
+      this.equipmentForm.get('calibrationRequired')?.value;
+
+    if (
+      !calibrationRequired ||
+      !lastCalibrationDate ||
+      !calibrationFrequencyDays
+    ) {
+      this.equipmentForm
+        .get('nextCalibrationDueDate')
+        ?.setValue(null, { emitEvent: false });
+
+      this.checkDueDates();
+      return;
+    }
+
+    const dueDate = this.calculateDateByDays(
+      lastCalibrationDate,
+      Number(calibrationFrequencyDays)
+    );
+
+    this.equipmentForm
+      .get('nextCalibrationDueDate')
+      ?.setValue(dueDate, { emitEvent: false });
+
+    this.checkDueDates();
   }
+  updateNextMaintenanceDueDate(): void {
+    const lastMaintenanceDate =
+      this.equipmentForm.get('lastMaintenanceDate')?.value;
+
+    const maintenanceInterval =
+      this.equipmentForm.get('maintenanceInterval')?.value;
+
+    const maintenanceRequired =
+      this.equipmentForm.get('maintenanceRequired')?.value;
+
+    if (
+      !maintenanceRequired ||
+      !lastMaintenanceDate ||
+      !maintenanceInterval
+    ) {
+      this.equipmentForm
+        .get('nextMaintenanceDueDate')
+        ?.setValue(null, { emitEvent: false });
+
+      this.checkDueDates();
+      return;
+    }
+
+    const dueDate = this.calculateDueDate(
+      lastMaintenanceDate,
+      maintenanceInterval
+    );
+
+    this.equipmentForm
+      .get('nextMaintenanceDueDate')
+      ?.setValue(dueDate, { emitEvent: false });
+
+    this.checkDueDates();
+  }
+
+
+  calculateDateByDays(
+    startDate: string,
+    days: number
+  ): string {
+    if (!startDate || !days) {
+      return '';
+    }
+
+    const date = new Date(`${startDate}T00:00:00`);
+
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+
+    date.setDate(date.getDate() + Number(days));
+
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  setupAutoDueDateCalculation(): void {
+
+    this.equipmentForm
+      .get('calibrationRequired')
+      ?.valueChanges.subscribe(() => {
+        this.updateNextCalibrationDueDate();
+      });
+
+    this.equipmentForm
+      .get('lastCalibrationDate')
+      ?.valueChanges.subscribe(() => {
+        this.updateNextCalibrationDueDate();
+      });
+
+    this.equipmentForm
+      .get('calibrationFrequencyDays')
+      ?.valueChanges.subscribe(() => {
+        this.updateNextCalibrationDueDate();
+      });
+
+
+    this.equipmentForm
+      .get('maintenanceRequired')
+      ?.valueChanges.subscribe(() => {
+        this.updateNextMaintenanceDueDate();
+      });
+
+    this.equipmentForm
+      .get('lastMaintenanceDate')
+      ?.valueChanges.subscribe(() => {
+        this.updateNextMaintenanceDueDate();
+      });
+
+    this.equipmentForm
+      .get('maintenanceInterval')
+      ?.valueChanges.subscribe(() => {
+        this.updateNextMaintenanceDueDate();
+      });
+  }
+
 
   checkDueDates(): void {
     const today = this.getToday();
@@ -383,12 +549,21 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   getCalibrationAgency = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.agencyService.getCalibrationAgencyDropdown(term, page, pageSize);
   };
-  onCalibrationAgencySelected(item: any) {
+  onCalibrationAgencySelected(item: any): void {
+
     if (!item) {
-      this.equipmentForm.patchValue({ 'calibration.calibrationAgencyID': null });
+      this.calibrationForm.patchValue({
+        calibrationAgencyID: null,
+        agency: ''
+      });
+
       return;
     }
-    this.equipmentForm.patchValue({ 'calibration.calibrationAgencyID': item.id });
+
+    this.calibrationForm.patchValue({
+      calibrationAgencyID: item.id,
+      agency: item.name
+    });
   }
   getEquipmentType = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.equipmentTypeService.getEquipmentTypeDropdown(term, page, pageSize);
@@ -399,6 +574,18 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       return;
     }
     this.equipmentForm.patchValue({ equipmentTypeID: item.id });
+  }
+  getAnalysisTechnique = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.analysisTechniqueService.getAnalysisTechniqueDropdown(term, page, pageSize);
+  };
+  onTechniqueSelected(items: any[]) {
+    const ids = items.map(x => x.id ?? x);
+    this.equipmentForm.patchValue({ techniqueIds: ids });
+    const techArray = this.equipmentForm.get('analysisTechniques') as FormArray;
+    techArray.clear();
+    ids.forEach((id: number) => {
+      techArray.push(this.fb.group({ analysisTechniqueID: [id] }));
+    });
   }
   isFieldInvalid(path: string): boolean {
     return FormValidationHelper.isFieldInvalid(this.equipmentForm, path, this.submitted);
@@ -412,11 +599,14 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       return;
     }
     // Strip nested arrays — calibrations/maintenances/sops are managed via separate endpoints
-    const { calibrations, maintenances, sops, ...payload } = this.equipmentForm.value;
+    // Keep analysisTechniques — synced inline in the same save
+    const { calibrations, maintenances, sops, techniqueIds, ...payload } = this.equipmentForm.value;
+    payload.analysisTechniques = (this.equipmentForm.get('analysisTechniques') as FormArray).value;
     // Convert empty strings to proper types for backend
     if (!payload.nextCalibrationDueDate) payload.nextCalibrationDueDate = null;
     if (!payload.nextMaintenanceDueDate) payload.nextMaintenanceDueDate = null;
     if (!payload.lastCalibrationDate) payload.lastCalibrationDate = null;
+    if (!payload.lastMaintenanceDate) payload.lastMaintenanceDate = null;
     if (!payload.calibrationFrequencyDays && payload.calibrationFrequencyDays !== 0) payload.calibrationFrequencyDays = null;
     // Ensure numeric IDs are sent as numbers, not empty strings
     if (!payload.oemID) payload.oemID = 0;
@@ -509,8 +699,8 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       this.toastService.show('File size should be less than 50 MB.', 'warning');
       event.target.value = '';
       return;
-      }
-    if(file.type !== 'video/mp4') {
+    }
+    if (file.type !== 'video/mp4') {
       this.toastService.show('Invalid file type. Only MP4 videos are allowed.', 'warning');
       event.target.value = '';
       return;
@@ -525,7 +715,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
 
   openFileInNewTab(filePath: string): void {
     if (filePath) {
-       const baseUrl = environment.baseUrl;
+      const baseUrl = environment.baseUrl;
       const fullUrl = baseUrl + filePath;
       window.open(fullUrl, '_blank');
     } else {
@@ -559,48 +749,135 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
   }
 
   openCalibrationModal(): void {
-    this.calibrationForm.reset({ id: 0, equipmentID: this.equipmentId, calibrationDate: '', calibrationDueDate: '', certificate: '', certificatePath: '', agency: '', calibrationAgencyID: null });
+
+    this.calibrationForm.reset({
+      id: 0,
+      equipmentID: this.equipmentId,
+      calibrationDate: '',
+      calibrationDueDate: '',
+      certificate: '',
+      certificatePath: '',
+      agency: '',
+      calibrationAgencyID: null,
+      file: null,
+      isReviewed: false
+    });
+
+    // Clear native file input
+    const fileInput = document.getElementById(
+      'calibrationCertificate'
+    ) as HTMLInputElement;
+
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
     const modalElement = document.getElementById('calibrationModal');
+
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
-
   openMaintenanceModal(): void {
     this.maintenanceForm.reset({ id: 0, equipmentID: this.equipmentId, maintenanceDate: '', certificate: '', certificatePath: '', file: null });
+    const fileInput = document.getElementById(
+      'maintenanceCertificate'
+    ) as HTMLInputElement;
+
+    if (fileInput) {
+      fileInput.value = '';
+    }
     const modalElement = document.getElementById('maintenanceModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
   submitCalibrationForm(): void {
-    if (this.calibrationForm.valid) {
-      const formData = new FormData();
-      formData.append('id', this.calibrationForm.get('id')?.value);
-      formData.append('equipmentID', String(this.equipmentId));
-      formData.append('calibrationDate', this.calibrationForm.get('calibrationDate')?.value);
-      formData.append('calibrationDueDate', this.calibrationForm.get('calibrationDueDate')?.value);
-      formData.append('certificate', this.calibrationForm.get('certificate')?.value);
-      formData.append('certificatePath', this.calibrationForm.get('certificatePath')?.value);
-      formData.append('agency', this.calibrationForm.get('agency')?.value);
-      this.calibrationForm.get('calibrationAgencyID')?.value ? formData.append('calibrationAgencyID', this.calibrationForm.get('calibrationAgencyID')?.value) : null;
-      formData.append('file', this.calibrationForm.get('file')?.value);
-      formData.append('isReviewed', this.calibrationForm.get('isReviewed')?.value);
 
-      this.equipmentService.addEquipmentCalibration(formData).subscribe({
-        next: response => {
-          this.toastService.show(response.message, 'success');
-          this.closeModalById('calibrationModal');
-          this.loadEquipment(this.equipmentId);
-        },
-        error: () => {
-        },
-      });
-    } else {
-      this.calibrationForm.markAllAsTouched();
+    // Show validation messages for all required fields
+    this.calibrationForm.markAllAsTouched();
+
+    // Stop submission if form is invalid
+    if (this.calibrationForm.invalid) {
+      return;
     }
+
+    const formData = new FormData();
+
+    formData.append(
+      'id',
+      this.calibrationForm.get('id')?.value
+    );
+
+    formData.append(
+      'equipmentID',
+      String(this.equipmentId)
+    );
+
+    formData.append(
+      'calibrationDate',
+      this.calibrationForm.get('calibrationDate')?.value
+    );
+
+    formData.append(
+      'calibrationDueDate',
+      this.calibrationForm.get('calibrationDueDate')?.value
+    );
+
+    formData.append(
+      'certificate',
+      this.calibrationForm.get('certificate')?.value
+    );
+
+    formData.append(
+      'certificatePath',
+      this.calibrationForm.get('certificatePath')?.value
+    );
+
+    formData.append(
+      'agency',
+      this.calibrationForm.get('agency')?.value
+    );
+    formData.append(
+      'desrciption',
+      this.calibrationForm.get('desrciption')?.value
+    );
+
+    const calibrationAgencyID =
+      this.calibrationForm.get('calibrationAgencyID')?.value;
+
+    if (calibrationAgencyID) {
+      formData.append(
+        'calibrationAgencyID',
+        calibrationAgencyID
+      );
+    }
+
+    formData.append(
+      'file',
+      this.calibrationForm.get('file')?.value
+    );
+
+    this.equipmentService.addEquipmentCalibration(formData).subscribe({
+
+      next: response => {
+
+        this.toastService.show(
+          response.message,
+          'success'
+        );
+
+        this.closeModalById('calibrationModal');
+
+        this.loadEquipment(this.equipmentId);
+      },
+
+      error: () => {
+      }
+
+    });
   }
   submitMaintenanceForm(): void {
     if (this.maintenanceForm.valid) {
@@ -611,10 +888,12 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
       formData.append('certificate', this.maintenanceForm.get('certificate')?.value);
       formData.append('certificatePath', this.maintenanceForm.get('certificatePath')?.value);
       formData.append('file', this.maintenanceForm.get('file')?.value);
+      formData.append('desrciption', this.maintenanceForm.get('desrciption')?.value);
 
       this.equipmentService.addEquipmentMaintenance(formData).subscribe({
         next: response => {
           this.toastService.show(response.message, 'success');
+
           this.closeModalById('maintenanceModal');
           this.loadEquipment(this.equipmentId);
         },
@@ -674,17 +953,32 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     }
   }
 
+
+
   review(index: number): void {
-    if (!confirm('Are you sure you want to mark this calibration as reviewed?')) return;
-    const calibrationId = this.calibrationRecords.at(index).get('id')?.value;
-    if (!calibrationId) return;
-    this.equipmentService.reviewCalibration(calibrationId).subscribe({
-      next: response => {
-        this.toastService.show(response.message, 'success');
-        this.calibrationRecords.at(index).patchValue({ isReviewed: true });
-      },
-      error: () => {},
+
+    const calibrationId =
+      this.calibrationRecords.at(index).get('id')?.value;
+
+    if (!calibrationId) {
+      return;
+    }
+
+    this.reviewForm.reset({
+      calibrationId: calibrationId,
+      reason: ''
     });
+
+    const modalElement =
+      document.getElementById('reviewModal');
+
+    if (modalElement) {
+      const modal = new Modal(modalElement, {
+        focus: false
+      });
+
+      modal.show();
+    }
   }
 
   openAttachmentModal(): void {
@@ -693,7 +987,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     fileInputs.forEach(input => input.value = '');
     const modalElement = document.getElementById('attachmentModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
@@ -704,7 +998,7 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     fileInputs.forEach(input => input.value = '');
     const modalElement = document.getElementById('videoModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
@@ -809,11 +1103,73 @@ export class EquipmentFormComponent implements OnInit, CanComponentDeactivate {
     this.refMaterialForm.patchValue({ equipmentMasterID: this.equipmentId });
     const modalElement = document.getElementById('refMaterialModal');
     if (modalElement) {
-      const modal = new Modal(modalElement);
+      const modal = new Modal(modalElement, { focus: false });
       modal.show();
     }
   }
 
+  saveCalibrationReview(): void {
+
+    this.reviewForm.markAllAsTouched();
+
+    if (this.reviewForm.invalid) {
+      return;
+    }
+
+    const calibrationId =
+      this.reviewForm.get('calibrationId')?.value;
+
+    const reason =
+      this.reviewForm.get('reason')?.value?.trim();
+
+    if (!calibrationId || !reason) {
+      return;
+    }
+
+    this.equipmentService.reviewCalibration(
+      calibrationId,
+      reason
+    ).subscribe({
+
+      next: response => {
+
+        this.toastService.show(
+          response.message,
+          'success'
+        );
+
+        const record =
+          this.calibrationRecords.controls.find(
+            x => x.get('id')?.value === calibrationId
+          );
+
+        if (record) {
+          record.patchValue({
+            isReviewed: true,
+            reviewReason: reason
+          });
+        }
+
+        this.closeModalById('reviewModal');
+
+        this.reviewForm.reset({
+          calibrationId: 0,
+          reason: ''
+        });
+      },
+
+      error: error => {
+
+        this.toastService.show(
+          error?.error?.message ||
+          'Unable to review calibration.',
+          'error'
+        );
+
+      }
+
+    });
+  }
   submitRefMaterialForm(): void {
     if (this.refMaterialForm.valid) {
       const payload = this.refMaterialForm.value;

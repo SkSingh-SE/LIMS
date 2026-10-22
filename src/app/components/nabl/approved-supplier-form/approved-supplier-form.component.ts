@@ -11,11 +11,12 @@ import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../services/nabl-header.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 
 @Component({
     selector: 'app-approved-supplier-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './approved-supplier-form.component.html'
 })
 export class ApprovedSupplierFormComponent implements CanComponentDeactivate, OnInit {
@@ -26,7 +27,6 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
     isViewMode = false;
     formTitle = 'Add Approved Supplier';
     formNumbers: string[] = NablFormsHelper.getFormNumbers();
-    supplierList: any[] = [];
     openSections: { [key: string]: boolean } = {
         header: true,
         supplier: true,
@@ -64,7 +64,6 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
         });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
-        this.loadSupplierList();
         if (path === 'details') {
             this.isViewMode = true;
             this.formTitle = 'View Approved Supplier';
@@ -177,20 +176,45 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
     }
 
 
-    loadSupplierList(): void {
-        this.service.getAllSuppliers().subscribe({
-            next: (res) => {
-                this.supplierList = res;
-            },
-            error: () => {
-                this.supplierList = [];
-            }
-        })
+    loadSupplierList = (term: string, page: number, pageSize: number): Observable<any[]> => {
+
+        return this.service.getAllSuppliers(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
-    onSupplierChange(event: any): void {
-        const supplierId = Number(event.target.value);
-        const selectSupplier = this.supplierList.find(c => c.id === supplierId || c.Id === supplierId);
-        if (!selectSupplier) {
+    // onSupplierChange(event: any) {
+    //     const supplierId = Number(event.target.value);
+    //     const selectSupplier = this.supplierList.find(c => c.id === supplierId || c.Id === supplierId);
+    //     if (!selectSupplier) {
+    //         this.supplierForm.patchValue({
+    //             supplierRegisterId: null,
+    //             supplierName: '',
+    //             contactPerson: '',
+    //             mobileNo: '',
+    //             email: '',
+    //             registerNo: '',
+    //             gstNo: '',
+    //             address: '',
+    //             itemsApproved: ''
+    //         });
+    //         return;
+    //     }
+    //     const additional = selectSupplier.additionalValues || selectSupplier.AdditionalValues || {};
+    //     this.supplierForm.patchValue({
+    //         supplierRegisterId: selectSupplier.id || selectSupplier.Id,
+    //         supplierName: selectSupplier.name || selectSupplier.Name,
+    //         contactPerson: additional.ContactPerson || '',
+    //         mobileNo: additional.MobileNo || '',
+    //         email: additional.Email || '',
+    //         registerNo: additional.RegisterNo || '',
+    //         gstNo: additional.GSTNo || '',
+    //         address: additional.Address || '',
+    //         itemsApproved: additional.ProductsServicesOffered
+    //     });
+
+
+    // }
+
+    onSupplierChange(item: any): void {
+        if (!item) {
             this.supplierForm.patchValue({
                 supplierRegisterId: null,
                 supplierName: '',
@@ -202,24 +226,29 @@ export class ApprovedSupplierFormComponent implements CanComponentDeactivate, On
                 address: '',
                 itemsApproved: ''
             });
+
             return;
         }
-        const additional = selectSupplier.additionalValues || selectSupplier.AdditionalValues || {};
+
+        console.log('Selected Supplier:', item);
+        const additional =
+            item.additionalValues ||
+            item.AdditionalValues ||
+            {};
+
         this.supplierForm.patchValue({
-            supplierRegisterId: selectSupplier.id || selectSupplier.Id,
-            supplierName: selectSupplier.name || selectSupplier.Name,
+            supplierRegisterId: item.id || item.Id,
+            supplierName: item.name || item.Name,
+
             contactPerson: additional.ContactPerson || '',
             mobileNo: additional.MobileNo || '',
             email: additional.Email || '',
             registerNo: additional.RegisterNo || '',
             gstNo: additional.GSTNo || '',
             address: additional.Address || '',
-            itemsApproved: additional.ProductsServicesOffered
+            itemsApproved: additional.ProductsServicesOffered || ''
         });
-
-
     }
-
 
     onSubmit(): void {
         if (this.supplierForm.invalid) {

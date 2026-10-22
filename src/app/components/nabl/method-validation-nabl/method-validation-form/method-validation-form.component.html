@@ -58,7 +58,9 @@
                 <label class="form-label">Verified Test Method Code <span class="text-danger">*</span></label>
                 <select class="form-select" formControlName="testMethodCode" (change)="onChangeTestMethodCode($event)">
                   <option value="" disabled selected>Select Method</option>
-                  <option *ngFor="let method of testMethodList" [value]="method.name">{{ method.name }}</option>
+                  <option *ngFor="let method of testMethodList" [value]="method.name">
+                    {{ method.name }}
+                  </option>
                 </select>
               </div>
               <div class="col-md-3">
@@ -149,13 +151,13 @@
                 <label class="form-label fw-semibold text-dark small">Validate Date <span
                     class="text-danger">*</span></label>
                 <input type="date" class="form-control bg-light" formControlName="validationDate">
-                <div
-                  *ngIf="requestForm.get('validationDate')?.invalid && requestForm.get('validationDate')?.touched"
+                <div *ngIf="requestForm.get('validationDate')?.invalid && requestForm.get('validationDate')?.touched"
                   class="text-danger text-sm mt-1">
                   validate date is required. </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label fw-semibold text-dark small">Validate By <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold text-dark small">Validate By <span
+                    class="text-danger">*</span></label>
                 <input type="text" class="form-control" formControlName="validatedBy" placeholder="validate by" />
                 <div *ngIf="requestForm.get('validatedBy')?.invalid && requestForm.get('validatedBy')?.touched"
                   class="text-danger text-sm mt-1">
@@ -232,7 +234,7 @@
           <div class="section-header d-flex justify-content-between align-items-center">
             <span class="fw-bold ms-2">III. CRM/Reference Material</span>
 
-            <button type="button"  *ngIf="!isViewMode" class="btn btn-sm btn-danger" (click)="addCRMParameter()">
+            <button type="button" *ngIf="!isViewMode" class="btn btn-sm btn-danger" (click)="addCRMParameter()">
               Add CRM Sample
             </button>
           </div>
@@ -247,7 +249,7 @@
                   <th>Reference Value</th>
                   <th>Unit</th>
                   <th>Measurement Uncertainty</th>
-                  <th  *ngIf="!isViewMode">Action</th>
+                  <th *ngIf="!isViewMode">Action</th>
                 </tr>
               </thead>
 
@@ -300,8 +302,8 @@
                       measurement uncertainty is required.
                     </div>
                   </td>
-                  <td  *ngIf="!isViewMode">
-                    <button type="button"  class="btn btn-sm text-danger" (click)="removeCRMParameter(i)"
+                  <td *ngIf="!isViewMode">
+                    <button type="button" class="btn btn-sm text-danger" (click)="removeCRMParameter(i)"
                       [disabled]="crmMaterialParameters.length === 1">
                       <i class="bi bi-trash3"></i>
                     </button>

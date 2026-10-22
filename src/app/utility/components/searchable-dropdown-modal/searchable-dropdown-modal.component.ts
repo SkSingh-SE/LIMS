@@ -20,7 +20,7 @@ export class SearchableDropdownModalComponent {
   @Input() hideLabel: boolean = false;
   @Input() isMultiSelect: boolean = false;
   @Input() reloadKey: any;
-  @Input() size: 'sm' | 'normal' = 'normal';
+  @Input() smallInput: boolean = false;
   @Output() itemsSelected = new EventEmitter<any[]>();
   selectedItems: any[] = [];
   dropdownStyle: { [key: string]: string } = {};

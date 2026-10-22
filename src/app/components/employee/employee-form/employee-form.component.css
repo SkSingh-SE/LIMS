@@ -1,8 +1,5 @@
 /* ─── Theme Variables ─── */
-:host ::ng-deep {
-  --primary-color: #da261c;
-  --primary-hover: #b91c1c;
-}
+/* Local overrides removed to inherit dynamic themes */
 
 /* ─── Wizard Tabs ─── */
 .form-wizard-list .count {
@@ -25,7 +22,7 @@
 
 .nav-tabs .nav-link:hover {
   color: var(--primary-color, #da261c);
-  border-bottom-color: rgba(218, 38, 28, 0.3);
+  border-bottom-color: rgba(var(--bs-primary-rgb), 0.3);
   background: transparent;
 }
 
@@ -107,16 +104,16 @@ textarea.form-control {
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #da261c;
-  box-shadow: 0 0 0 0.12rem rgba(218, 38, 28, 0.12);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.12rem rgba(var(--bs-primary-rgb), 0.12);
 }
 
 .form-select {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23da261c' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-image: var(--form-select-arrow);
 }
 
 .form-select option:checked {
-  background: #da261c linear-gradient(0deg, #da261c 0%, #da261c 100%);
+  background: var(--primary-color) linear-gradient(0deg, var(--primary-color) 0%, var(--primary-color) 100%);
   color: #fff;
 }
 
@@ -222,14 +219,14 @@ textarea.form-control {
 
 :host ::ng-deep .btn-outline-primary,
 .btn-outline-primary {
-  color: #da261c !important;
-  border-color: #da261c !important;
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
 }
 
 :host ::ng-deep .btn-outline-primary:hover,
 .btn-outline-primary:hover {
-  background-color: #da261c !important;
-  border-color: #da261c !important;
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
   color: #fff !important;
 }
 

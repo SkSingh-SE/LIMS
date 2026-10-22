@@ -12,7 +12,9 @@
     "test:ci": "ng test --no-watch",
     "lint": "ng lint",
     "e2e": "npx playwright test",
-    "e2e:report": "npx playwright show-report playwright-report"
+    "e2e:report": "npx playwright show-report playwright-report",
+    "deploy:staging": "powershell -ExecutionPolicy Bypass -File ./deploy-staging.ps1",
+    "deploy:prod": "powershell -ExecutionPolicy Bypass -File ./deploy-production.ps1"
   },
   "private": true,
   "dependencies": {
@@ -32,6 +34,7 @@
     "bootstrap": "^5.3.5",
     "bootstrap-icons": "^1.11.3",
     "chart.js": "^4.5.1",
+    "exceljs": "^4.4.0",
     "jquery": "^3.7.1",
     "ng-select2-component": "^17.2.6",
     "ng2-charts": "^8.0.0",
@@ -47,6 +50,7 @@
     "@angular/compiler-cli": "^19.1.0",
     "@playwright/test": "^1.58.2",
     "@types/bootstrap": "^5.2.10",
+    "@types/exceljs": "^0.5.3",
     "@types/jasmine": "^6.0.0",
     "angular-eslint": "21.0.1",
     "eslint": "^9.39.1",

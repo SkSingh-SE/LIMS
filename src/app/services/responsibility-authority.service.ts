@@ -10,7 +10,7 @@ import { ResponsibilityAuthorityMatrix, ResponsibilityAuthorityMatrixResponse } 
 export class ResponsibilityAuthorityService {
     private apiUrl = environment.apiUrl + '/Nabl/ResponsibilityAuthority';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(filter: any): Observable<ResponsibilityAuthorityMatrixResponse> {
         return this.http.post<ResponsibilityAuthorityMatrixResponse>(this.apiUrl + '/list', filter);
@@ -34,5 +34,18 @@ export class ResponsibilityAuthorityService {
 
     delete(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/delete/${id}`);
+    }
+    getDesignationEmployees(searchTerm: string, pageNumber: number, pageSize: number, matrixId?: number | null): Observable<any[]> {
+
+        let url =
+            `${this.apiUrl}/designation-dropdown` +
+            `?searchTerm=${(searchTerm || '')}` +
+            `&pageNo=${pageNumber}` +
+            `&pageSize=${pageSize}`;
+        if (matrixId) {
+            url += `&recordId=${matrixId}`;
+        }
+        return this.http.get<any[]>(url);
+
     }
 }

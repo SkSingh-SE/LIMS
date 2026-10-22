@@ -193,6 +193,15 @@ export class FeedbackAnalysisFormComponent implements CanComponentDeactivate, On
                     verificationDate: NablFormsHelper.formatDateForInput(data.verificationDate) ?? null,
                     targetCompletionDate: NablFormsHelper.formatDateForInput(data.targetCompletionDate) ?? null
                 })
+
+                data.feedbackRatings.forEach((x: any) => {
+                    this.feedbackRatings.push(
+                        this.fb.group({
+                            parameterName: [x.parameterName],
+                            rating: [x.rating ?? 0]
+                        })
+                    );
+                });
                 // Lock form if not in editable status
                 const status = (data as any).status;
                 if (status && status !== 'Draft' && status !== 'Rejected') {
@@ -220,7 +229,7 @@ export class FeedbackAnalysisFormComponent implements CanComponentDeactivate, On
         });
     }
     getCustomers = (term: string, page: number, pageSize: number): Observable<any[]> => {
-        return this.service.getCustomerDropdown(term, page, pageSize)
+        return this.service.getCustomerDropdown(term, page, pageSize, this.recordId > 0 ? this.recordId : null)
     }
     onCustomerSelected(item: any) {
         if (!item) {

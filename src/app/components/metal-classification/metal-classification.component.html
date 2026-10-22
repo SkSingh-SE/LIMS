@@ -76,7 +76,13 @@
                                 <span *ngIf="customerType.hasMechanicalParams" class="badge bg-success">Yes</span>
                                 <span *ngIf="!customerType.hasMechanicalParams" class="badge bg-secondary">No</span>
                             </td>
-                            <td>{{ customerType.sortOrder }}</td>
+                            <td class="text-center">
+                                <span *ngIf="customerType.metalType === 'Hard'" class="badge bg-danger">Hard</span>
+                                <span *ngIf="customerType.metalType === 'Normal'" class="badge bg-secondary">Normal</span>
+                                <span *ngIf="customerType.metalType && customerType.metalType !== 'Hard' && customerType.metalType !== 'Normal'" class="badge bg-secondary">{{ customerType.metalType }}</span>
+                                <span *ngIf="!customerType.metalType" class="text-muted">—</span>
+                            </td>
+                            <!-- <td>{{ customerType.sortOrder }}</td> -->
                             <td>{{ customerType.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
                     </tbody>
                 </table>
@@ -161,10 +167,18 @@
                         <!-- Code Field -->
                         <div class="col-md-6 mb-1">
                             <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
-                            <input type="text" id="code" class="form-control" formControlName="code"
-                                placeholder="Enter Code" maxlength="50"
-                                [ngClass]="{'is-invalid': isFieldInvalid('code')}"
-                                [attr.disabled]="isViewMode ? true : null" />
+                            <div class="input-group">
+                                <input type="text" id="code" class="form-control" formControlName="code"
+                                    placeholder="Enter Code" maxlength="50"
+                                    (input)="isCodeManuallyEdited = true"
+                                    [ngClass]="{'is-invalid': isFieldInvalid('code')}"
+                                    [attr.disabled]="isViewMode ? true : null" />
+                                <button type="button" class="btn btn-outline-secondary"
+                                    (click)="autoGenerateCode()" title="Auto-generate Code from Name"
+                                    *ngIf="!isViewMode && !MetalClassificationForm.get('code')?.value?.trim()">
+                                    <i class="bi bi-magic me-1"></i>Auto
+                                </button>
+                            </div>
                             <app-field-error [control]="MetalClassificationForm.get('code')" label="Code" [submitted]="submitted"/>
                         </div>
                         <!-- Name Field -->
@@ -172,40 +186,41 @@
                             <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" class="form-control" formControlName="name"
                                 placeholder="Enter Name" maxlength="200"
+                                (input)="onNameInput()"
                                 [ngClass]="{'is-invalid': isFieldInvalid('name')}"
                                 [attr.disabled]="isViewMode ? true : null" />
                             <app-field-error [control]="MetalClassificationForm.get('name')" label="Name" [submitted]="submitted"/>
                         </div>
                     </div>
                     <div class="row">
-                        <!-- Parent Classification -->
-                        <div class="col-md-6 mb-1">
-                            <label class="form-label">Parent Classification</label>
-                            <div class="d-flex align-items-start gap-1">
-                                <div class="flex-grow-1">
-                                    <app-searchable-dropdown
-                                        [fetchDataFn]="getParentDropdown"
-                                        [selectedItem]="MetalClassificationForm.get('parentID')?.value"
-                                        (itemSelected)="MetalClassificationForm.get('parentID')?.setValue($event?.id)"
-                                        [placeholder]="'Select Parent Classification'"
-                                        [hideLabel]="true"
-                                        [isDisabled]="isViewMode">
-                                    </app-searchable-dropdown>
+                       
+                    </div>
+                    <div class="row">
+
+                         <!-- Metal Type -->
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Metal Type</label>
+                            <div class="d-flex gap-4 mt-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="metalTypeNormal"
+                                        formControlName="metalType" value="Normal"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <label class="form-check-label" for="metalTypeNormal">Normal</label>
                                 </div>
-                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
-                                    (click)="openLinkedMaster('/metal-classification')"
-                                    title="Open Metal Classification" *ngIf="!isViewMode">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="metalTypeHard"
+                                        formControlName="metalType" value="Hard"
+                                        [attr.disabled]="isViewMode ? true : null" />
+                                    <label class="form-check-label" for="metalTypeHard">Hard</label>
+                                </div>
                             </div>
                         </div>
-                        <!-- Sort Order -->
-                        <div class="col-md-6 mb-1">
+                        <!-- <div class="col-md-6 mb-1">
                             <label for="sortOrder" class="form-label">Sort Order</label>
                             <input type="number" id="sortOrder" class="form-control" formControlName="sortOrder"
                                 placeholder="Enter Sort Order"
                                 [attr.disabled]="isViewMode ? true : null" />
-                        </div>
+                        </div> -->
                     </div>
                     <div class="row">
                         <!-- Has Chemical Params -->
@@ -237,6 +252,7 @@
                             (itemsSelected)="onParameterSelected($event)">
                         </app-multi-select-dropdown>
                     </div>
+
                 </div>
 
                 <!-- Modal Footer -->

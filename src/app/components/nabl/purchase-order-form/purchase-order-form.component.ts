@@ -11,10 +11,11 @@ import { UnsavedChangesService } from '../../../services/unsaved-changes.service
 import { ToastService } from '../../../services/toast.service';
 import { NablSignatureSectionComponent } from '../nabl-signature-section/nabl-signature-section.component';
 import { NablHeaderService } from '../../../services/nabl-header.service';
+import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 @Component({
     selector: 'app-purchase-order-form',
 
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, QuillModule, NablSignatureSectionComponent, SearchableDropdownComponent],
     templateUrl: './purchase-order-form.component.html'
 })
 export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnInit {
@@ -65,7 +66,6 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
         });
         this.recordId = Number(this.route.snapshot.params['id']);
         const path = this.route.snapshot.url[this.route.snapshot.url.length - 2]?.path;
-        this.loadIndentNo();
         this.loadSupplierList();
         if (path === 'details') {
             this.isViewMode = true;
@@ -96,7 +96,7 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
             supplierName: ['', Validators.required],
             supplierAddress: ['', Validators.required],
             gstNo: [''],
-            referenceIndentNo: ['', Validators.required],
+            purchaseIndentId: ['', Validators.required],
             referenceIndentName: [''],
             orderType: ['Regular'],
             currency: ['INR'],
@@ -108,7 +108,7 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
             grandTotal: [0],
 
             tearmCondition: [''],
-            deliveryDate: ['',Validators.required],
+            deliveryDate: ['', Validators.required],
             paymentTerms: ['', Validators.required],
 
             preparedBy: [''],
@@ -119,7 +119,7 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
             reviewedDate: [''],
             poNo: ['', Validators.required],
             email: ['', Validators.required],
-            phoneNo: ['',Validators.required],
+            phoneNo: ['', Validators.required],
             requestedQuantity: ['', Validators.required],
             indentorName: [''],
             // authorizedBy: ['', Validators.required],
@@ -151,16 +151,10 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
             }
         })
     }
-    loadIndentNo(): void {
-        this.service.getLoadIndentNo().subscribe({
-            next: (res) => {
-                this.indentNoList = res;
-            },
-            error: () => {
-                this.indentNoList = [];
-            }
-        })
+    loadIndentNo = (term: string, page: number, pageSize: number): Observable<any[]> => {
+        return this.service.getLoadIndentNo(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
+
     addItem(): void {
         const itemForm = this.fb.group({
             description: [null, Validators.required],
@@ -239,19 +233,41 @@ export class PurchaseOrderFormComponent implements CanComponentDeactivate, OnIni
         });
 
     }
-    onIndentNoChange(event: any): void {
-        const id = Number(event.target.value);
-        const selectSupplier = this.indentNoList.find(c => c.id === id || c.Id === id);
-        if (!selectSupplier) {
+    // onIndentNoChange(item: any): void {
+    //     const id = Number(event.target.value);
+    //     const selectSupplier = this.indentNoList.find(c => c.id === id || c.Id === id);
+    //     if (!selectSupplier) {
+    //         this.poForm.patchValue({
+    //             requestedQuantity: null,
+    //             indentorName: '',
+    //             referenceIndentName: '',
+    //         });
+    //         return;
+    //     }
+    //     const additional = selectSupplier.additionalValues || selectSupplier.AdditionalValues || {};
+    //     this.poForm.patchValue({
+    //         requestedQuantity: additional.Qaulity || '',
+    //         indentorName: additional.IndetorName || '',
+    //         referenceIndentName: additional.ReferenceIndentorName || ''
+    //     });
+    // }
+
+    onIndentNoChange(item: any): void {
+
+        if (!item) {
             this.poForm.patchValue({
                 requestedQuantity: null,
                 indentorName: '',
                 referenceIndentName: '',
             });
-            return;
+
+            return
         }
-        const additional = selectSupplier.additionalValues || selectSupplier.AdditionalValues || {};
+
+
+        const additional = item.additionalValues || item.AdditionalValues || {};
         this.poForm.patchValue({
+            purchaseIndentId: item.ID || item.id,
             requestedQuantity: additional.Qaulity || '',
             indentorName: additional.IndetorName || '',
             referenceIndentName: additional.ReferenceIndentorName || ''

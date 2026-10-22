@@ -7,7 +7,7 @@
                 <a routerLink="/employee/equipment-authorization" class="btn btn-outline-light btn-sm">
                     <i class="bi bi-shield-check"></i> Equipment Auth Matrix (F-7B)
                 </a>
-                <a routerLink="/skill-matrix" class="btn btn-outline-light btn-sm">
+                <a routerLink="/role-wise-skills-master" class="btn btn-outline-light btn-sm">
                     <i class="bi bi-grid-3x3"></i> Skill Matrix (F-6)
                 </a>
                 <a routerLink="/employee/create" class="btn btn-outline-light btn-sm">
@@ -62,19 +62,15 @@
 
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-3"> <!-- Flex for spacing -->
-                                    <a [routerLink]="['/employee/details', employee.id]"
-                                    [state]="{ mode: 'view' }"
-                                     class="icon-link"
-                                        title="View">
+                                    <a [routerLink]="['/employee/details', employee.id]" [state]="{ mode: 'view' }"
+                                        class="icon-link" title="View">
                                         <img src="/icons/view.svg" alt="View" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/employee/edit', employee.id]"
-                                    [state]="{ mode: 'edit' }"
-                                    class="icon-link"
-                                        title="Edit">
+                                    <a [routerLink]="['/employee/edit', employee.id]" [state]="{ mode: 'edit' }"
+                                        class="icon-link" title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-                                    <a [routerLink]="['/employee/competence-report', employee.id]" class="icon-link"
+                                    <a (click)="openCompetenceReport(employee.id)" class="icon-link"
                                         title="Competence Report">
                                         <i class="bi bi-file-earmark-check fs-5 text-success"></i>
                                     </a>
@@ -82,8 +78,10 @@
                                         title="Training Record">
                                         <i class="bi bi-mortarboard fs-5 text-info"></i>
                                     </a>
-                                    <a (click)="deleteEmployee(employee.id)" class="icon-link"
-                                        title="Delete">
+                                    <a (click)="openSkillMatrix(employee.id)" class="icon-link" title="Skill Matrix">
+                                        <i class="bi bi-diagram-3 fs-5 text-primary"></i>
+                                    </a>
+                                    <a (click)="deleteEmployee(employee.id)" class="icon-link" title="Delete">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">
                                     </a>
                                 </div>
@@ -92,10 +90,9 @@
 
                             <td>{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
                             <td class="fw-semibold">
-                                <a [routerLink]="['/employee/details', employee.id]"
-                                   [state]="{ mode: 'view' }"
-                                   class="text-primary text-decoration-none cursor-pointer"
-                                   [title]="'View details for ' + employee.name">
+                                <a [routerLink]="['/employee/details', employee.id]" [state]="{ mode: 'view' }"
+                                    class="text-primary text-decoration-none cursor-pointer"
+                                    [title]="'View details for ' + employee.name">
                                     {{ employee.name }}
                                 </a>
                             </td>
@@ -105,28 +102,24 @@
                             <td>{{employee.gender}}</td>
                             <td>{{employee.departmentName || "-"}}</td>
                             <td>{{employee.designationName || "-"}}</td>
-                            <td>{{ employee.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>                        </tr>
+                            <td>{{ employee.modifiedOn | date:"dd MMM, yyyy hh:mm a" }}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            <div *ngIf="filteredEmployeeList.length == 0"
-                class="w-100 h-100 text-center border rounded-3 mb-2">
+            <div *ngIf="filteredEmployeeList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
                 <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
                     <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
                     <div class="fw-semibold">No records found</div>
 
                 </div>
             </div>
-           <!-- Pagination -->
-           <!-- Pagination -->
-           <app-pagination
-             [currentPage]="pageNumber"
-             [pageSize]="pageSize"
-             [totalItems]="totalItems"
-             [pageSizes]="pageSizes"
-             (pageChange)="onPageChange($event)"
-             (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
-           </app-pagination>
+            <!-- Pagination -->
+            <!-- Pagination -->
+            <app-pagination [currentPage]="pageNumber" [pageSize]="pageSize" [totalItems]="totalItems"
+                [pageSizes]="pageSizes" (pageChange)="onPageChange($event)"
+                (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+            </app-pagination>
         </div>
     </div>
 </div>

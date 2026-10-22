@@ -17,6 +17,9 @@ export interface TrainingPlan {
   modifiedBy?: string;
   modifiedOn?: Date | string;
   isActive?: boolean;
+ 
+  evaluationRequired?: boolean;
+ 
   preparedBy?: string;
   approvedBy?: string;
   preparedDate?: Date | string;
@@ -30,6 +33,9 @@ export interface TrainingPlan {
   planMonth?: string;
   agency?: 'Internal' | 'External';
   completionRemarks?: string;
+ 
+  questionSetName?: string;
+ 
 }
 
 export interface TrainingPlanResponse {

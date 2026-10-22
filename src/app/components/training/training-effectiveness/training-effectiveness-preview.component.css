@@ -1,47 +1,300 @@
-/* Training Effectiveness Preview Styles */
+/* ═══════════════════════════════════════════════════════════════
+   ACTION TOOLBAR
+═══════════════════════════════════════════════════════════════ */
+
+.preview-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  gap: 12px;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.toolbar-right {
+  justify-content: flex-end;
+}
+
+.toolbar-center {
+  flex: 2;
+  text-align: center;
+}
+
+.doc-title-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.3px;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.toolbar-btn.btn-outline-dark {
+  background: #fff;
+  border-color: #555;
+  color: #333;
+}
+
+.toolbar-btn.btn-outline-dark:hover {
+  background: #f5f5f5;
+  border-color: #333;
+}
+
+.toolbar-btn.btn-primary-red {
+  background: #DA261C;
+  border-color: #DA261C;
+  color: #fff;
+}
+
+.toolbar-btn.btn-primary-red:hover {
+  background: #c0201a;
+  border-color: #c0201a;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ORIENTATION TOGGLE
+═══════════════════════════════════════════════════════════════ */
+
+.orientation-toggle {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.orient-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: #f8f9fa;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-right: 1px solid #ccc;
+}
+
+.orient-btn:last-child {
+  border-right: none;
+}
+
+.orient-btn.active {
+  background: #DA261C;
+  color: #fff;
+}
+
+.orient-btn:not(.active):hover {
+  background: #e9ecef;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   COMMON DOCUMENT STYLES
+═══════════════════════════════════════════════════════════════ */
+
+.section-title {
+  background-color: #f8f9fa;
+  padding: 8px 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.label-cell {
+  background-color: #f8f9fa;
+  font-weight: 500;
+}
+
+.border-2 {
+  border-width: 2px !important;
+}
+
+.border-dark {
+  border-color: #000 !important;
+}
+
+.border-bottom-2 {
+  border-bottom: 2px solid #000 !important;
+}
+
+.ql-editor {
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   TRAINING EFFECTIVENESS / PRINT PREVIEW
+═══════════════════════════════════════════════════════════════ */
+
 .print-frame {
-  background-color: white;
+  background-color: #ffffff;
   padding: 20px;
   margin-bottom: 20px;
 }
 
-.table-bordered {
-  border: 1px solid #dee2e6;
+
+/* Main print sections */
+
+.print-section {
+  margin-bottom: 18px;
 }
 
-.table-bordered th,
-.table-bordered td {
+.print-section-title {
+  background-color: #e9ecef;
+  border: 1px solid #dee2e6;
+  padding: 8px 10px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+
+/* Print tables */
+
+.print-table {
+  width: 100%;
+  margin-bottom: 0 !important;
+  font-size: 12px;
+}
+
+.print-table td,
+.print-table th {
+  vertical-align: middle;
   border: 1px solid #dee2e6;
   padding: 0.5rem;
 }
 
+
+/*
+   Keep label-cell consistent with the existing
+   project styling.
+*/
+
+.print-table .label-cell {
+  font-weight: 600;
+  background-color: #f8f9fa;
+  width: 18%;
+}
+
+
+/* Small text */
+
 .text-sm {
   font-size: 0.9rem;
 }
+
+
+/* Badge */
 
 .badge {
   padding: 0.35rem 0.65rem;
   font-size: 0.85rem;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   QUESTION PRINT CARD
+═══════════════════════════════════════════════════════════════ */
+
+.question-print-card {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 12px;
+  page-break-inside: avoid;
+}
+
+.question-print-header {
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.question-print-text {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 7px 9px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.print-option {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 7px 9px;
+  font-size: 11px;
+  min-height: 34px;
+}
+
+.option-letter {
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.selected-option {
+  border-color: #198754;
+  background-color: #f1f9f5;
+  font-weight: 600;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PRINT SETTINGS
+═══════════════════════════════════════════════════════════════ */
+
 @media print {
+
+  .no-print {
+    display: none !important;
+  }
+
   .card {
-    border: none;
-    box-shadow: none;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   .card-body {
-    padding: 0;
+    padding: 0 !important;
   }
 
   /* Hide non-printable elements */
+
   .btn,
   .navbar,
   .footer {
     display: none !important;
   }
 
-  /* Page break settings */
+  /* Page settings */
+
   body {
     margin: 0;
     padding: 0;
@@ -49,5 +302,50 @@
 
   .print-frame {
     page-break-after: always;
+    padding: 10px;
+    margin: 0;
+  }
+
+  .print-section {
+    page-break-inside: avoid;
+  }
+
+  .question-print-card {
+    page-break-inside: avoid;
+  }
+
+  /* Section heading print color */
+
+  .print-section-title {
+    background-color: #e9ecef !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Label / selected content print colors */
+
+  .label-cell,
+  .question-print-text,
+  .selected-option {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Keep table rows together where possible */
+
+  .print-table tr {
+    page-break-inside: avoid;
+  }
+
+  /* Preserve table borders during printing */
+
+  .print-table {
+    border-collapse: collapse !important;
+    border: 1px solid #000 !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1px solid #000 !important;
   }
 }

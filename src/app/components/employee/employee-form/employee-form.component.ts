@@ -168,7 +168,7 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       dateOfJoin: ['', Validators.required],
       // roleID derived from Designation → Role (not a form field)
       password: ['', [Validators.required, Validators.minLength(8)]],
-      relevantExperienceYears: [null, [Validators.min(0)]], // Ensures only positive values
+      relevantExperienceYears: [null, [Validators.required, Validators.min(0)]], // Ensures only positive values
       qualificationSummary: [''],
       experience: [''],
       trainingRecordsJson: [''],
@@ -285,8 +285,16 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     return this.roleService.getRoleDropdown(term, page, pageSize);
   }
   onDesignationSelected(item: any) {
-    if (!item) { this.personalInfoForm.patchValue({ designationID: null }); this.designationRoleName = ''; return; }
+    if (!item) {
+      this.personalInfoForm.patchValue({ designationID: null });
+      this.personalInfoForm.get('designationID')?.markAsTouched();
+      this.personalInfoForm.get('designationID')?.markAsDirty();
+      this.designationRoleName = '';
+      return;
+    }
     this.personalInfoForm.patchValue({ designationID: item.id });
+    this.personalInfoForm.get('designationID')?.markAsTouched();
+    this.personalInfoForm.get('designationID')?.markAsDirty();
     // Fetch designation details to resolve the role from Designation -> Role
     this.designationService.getDesignationById(item.id).subscribe({
       next: (designation) => {
@@ -302,12 +310,26 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     });
   }
   onDepartmentSelected(item: any) {
-    if (!item) { this.personalInfoForm.patchValue({ departmentID: null }); return; }
+    if (!item) {
+      this.personalInfoForm.patchValue({ departmentID: null });
+      this.personalInfoForm.get('departmentID')?.markAsTouched();
+      this.personalInfoForm.get('departmentID')?.markAsDirty();
+      return;
+    }
     this.personalInfoForm.patchValue({ departmentID: item.id });
+    this.personalInfoForm.get('departmentID')?.markAsTouched();
+    this.personalInfoForm.get('departmentID')?.markAsDirty();
   }
   onEmployeeSelected(item: any) {
-    if (!item) { this.personalInfoForm.patchValue({ reportingManagerID: null }); return; }
+    if (!item) {
+      this.personalInfoForm.patchValue({ reportingManagerID: null });
+      this.personalInfoForm.get('reportingManagerID')?.markAsTouched();
+      this.personalInfoForm.get('reportingManagerID')?.markAsDirty();
+      return;
+    }
     this.personalInfoForm.patchValue({ reportingManagerID: item.id });
+    this.personalInfoForm.get('reportingManagerID')?.markAsTouched();
+    this.personalInfoForm.get('reportingManagerID')?.markAsDirty();
   }
   // Role is derived from Designation — no manual role selection
 
@@ -315,11 +337,56 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     return FormValidationHelper.isFieldInvalid(this.personalInfoForm, path, this.submitted);
   }
 
+  getInvalidFieldLabels(): string[] {
+    const fieldLabels: Record<string, string> = {
+      name: 'Full Name',
+      dateOfBirth: 'Date of Birth',
+      mobileNo: 'Mobile Number',
+      emergencyMobileNo: 'Emergency Mobile No',
+      emailId: 'Email',
+      gender: 'Gender',
+      maritalStatus: 'Marital Status',
+      residentialAddressLine1: 'Residential Address Line 1',
+      residentialPinCode: 'Residential PIN Code',
+      residentialAreaID: 'Residential Area',
+      permanentAddressLine1: 'Permanent Address Line 1',
+      permanentPinCode: 'Permanent PIN Code',
+      permanentAreaID: 'Permanent Area',
+      panNumber: 'PAN Number',
+      departmentID: 'Department',
+      reportingManagerID: 'Reporting Manager',
+      designationID: 'Designation',
+      dateOfJoin: 'Date of Joining',
+      password: 'Password',
+      relevantExperienceYears: 'Relevant Experience'
+    };
+    const invalid: string[] = [];
+    Object.keys(this.personalInfoForm.controls).forEach(key => {
+      const control = this.personalInfoForm.get(key);
+      if (control && control.invalid && !control.disabled) {
+        invalid.push(fieldLabels[key] || key);
+      }
+    });
+    return invalid;
+  }
+
   submitForm() {
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.personalInfoForm);
     if (!this.personalInfoForm.valid) {
-      this.toastService.show('Please fix the validation errors before submitting.', 'warning');
+      const invalidFields = this.getInvalidFieldLabels();
+      const msg = invalidFields.length > 0
+        ? `Please fix the following fields: ${invalidFields.join(', ')}`
+        : 'Please fix the validation errors before submitting.';
+      this.toastService.show(msg, 'warning');
+
+      setTimeout(() => {
+        const firstInvalidElement = document.querySelector('.is-invalid') as HTMLElement;
+        if (firstInvalidElement) {
+          firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstInvalidElement.focus();
+        }
+      }, 100);
       return;
     }
     if (this.employeeId) {

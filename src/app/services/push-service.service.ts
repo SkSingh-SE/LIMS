@@ -29,7 +29,7 @@ export class PushServiceService {
     const { publicKey } = await this.api.getVapidPublicKey().toPromise();
     const sub = await this.registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey?.result??publicKey)
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
     });
 
     // Build DTO to send to backend

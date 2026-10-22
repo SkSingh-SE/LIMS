@@ -68,7 +68,10 @@
                                         class="icon-link" title="Edit">
                                         <img src="/icons/edit.svg" alt="Edit" class="icon-svg">
                                     </a>
-
+                                    <a [routerLink]="['/equipment-history-card/preview', data.id]" class="icon-link"
+                                        title="Equipment History Print">
+                                        <i class="bi bi-list-task fs-5 text-info"></i>
+                                    </a>
 
                                     <a class="icon-link" title="Delete" (click)="deleteFn(data.id)">
                                         <img src="/icons/delete.svg" alt="Delete" class="icon-svg">

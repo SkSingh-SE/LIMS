@@ -93,38 +93,31 @@
           <thead>
             <tr class="tbl-head">
               <th style="width: 40px">SN</th>
-              <th>Material/Description</th>
-              <th>Material Code </th>
-              <th>Ordered Qty </th>
-              <th>Unit </th>
-              <th>Received Qty</th>
               <th>Material</th>
               <th>Code </th>
-              <th style="width: 120px">Ordered Qty </th>
+              <th style="width: 90px">Ordered Qty </th>
               <th>Unit Price </th>
-              <th style="width: 120px">Received Qty</th>
-
+              <th style="width: 90px">Received Qty</th>
               <th>Batch No </th>
               <th>Lot No </th>
               <th>Invoice No</th>
               <th>Expiry Date </th>
-              <th>COA Available </th>
-
+              <th style="width: 50px">COA</th>
             </tr>
           </thead>
           <tbody class="small">
             <tr *ngFor="let r of record()?.itemsParameters; let i = index">
-              <td class="text-center">{{ i + 1 }}</td>
-              <td class="text-center">{{ r.materialName }}</td>
-              <td class="text-center">{{ r.materialCode }}</td>
-              <td class="text-center">{{ r.orderedQty }}</td>
-              <td class="text-center">{{ r.unit }}</td>
-              <td class="text-center">{{ r.receviceQty }}</td>
-              <td class="text-center">{{ r.batchNo }}</td>
-              <td class="text-center">{{ r.lotNo }}</td>
-              <td class="text-center">{{ r.invoiceNo }}</td>
-              <td class="text-center">{{ r.expiryDate | date: 'dd-MM-yyyy' }}</td>
-              <td class="text-center">{{ r.coaAvailable }}</td>
+              <td>{{ i + 1 }}</td>
+              <td>{{ r.materialName }}</td>
+              <td>{{ r.materialCode }}</td>
+              <td>{{ r.orderedQty }}</td>
+              <td>{{ r.unit }}</td>
+              <td>{{ r.receviceQty }}</td>
+              <td>{{ r.batchNo }}</td>
+              <td>{{ r.lotNo }}</td>
+              <td>{{ r.invoiceNo }}</td>
+              <td>{{ r.expiryDate | date: 'dd-MM-yyyy' }}</td>
+              <td>{{ r.coaAvailable }}</td>
             </tr>
           </tbody>
         </table>

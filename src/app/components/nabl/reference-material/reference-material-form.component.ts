@@ -784,6 +784,7 @@ export class ReferenceMaterialFormComponent implements CanComponentDeactivate, O
         formData.preparedDate = this.today;
         formData.approvedDate = formData.approvedBy ? this.today : null;
         formData.reviewedDate = formData.reviewedBy ? this.today : null;
+        formData.certificationDate = formData.certificationDate ? formData.certificationDate : null;
         if (this.isEditMode) {
             this.service.update(this.recordId, formData).subscribe({
                 next: () => {

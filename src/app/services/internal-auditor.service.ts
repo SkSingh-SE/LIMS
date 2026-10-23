@@ -10,7 +10,7 @@ import { InternalAuditor } from '../models/internal-auditor';
 export class InternalAuditorService {
     private apiUrl = environment.apiUrl + '/Nabl/InternalAuditor';
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getAll(params: any = {}): Observable<any> {
         return this.http.post<any>(this.apiUrl + '/list', params || {});
@@ -31,5 +31,17 @@ export class InternalAuditorService {
 
     delete(id: number): Observable<boolean> {
         return this.http.delete<boolean>(`${this.apiUrl}/delete/${id}`);
+    }
+    getEmployeesDropdown(searchTerm: string = '', pageNo: number = 0, pageSize: number = 20, recordId?: number | null) {
+
+        let url =
+            `${this.apiUrl}/employees-dropdown` +
+            `?searchTerm=${(searchTerm || '')}` +
+            `&pageNo=${pageNo}` +
+            `&pageSize=${pageSize}`;
+        if (recordId) {
+            url += `&recordId=${recordId}`;
+        }
+        return this.http.get<any[]>(url);
     }
 }

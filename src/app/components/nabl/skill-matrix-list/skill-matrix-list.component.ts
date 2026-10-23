@@ -44,8 +44,8 @@ export class SkillMatrixListComponent implements OnInit {
     filterValue2: string = '';
     isFilterOpen = false;
 
-    matrices: SkillMatrix[] = [];
-    filteredList: SkillMatrix[] = [];
+    dataList: any[] = [];
+
 
     pageNumber = 1;
     pageSize = 10;
@@ -55,6 +55,15 @@ export class SkillMatrixListComponent implements OnInit {
     sortByColumn: string = 'id';
     sortOrder: string = 'desc';
     searchTerm: string = '';
+
+    payload = {
+        PageNumber: this.pageNumber,
+        PageSize: this.pageSize,
+        searchTerm: this.searchTerm,
+        sortByColumn: this.sortByColumn,
+        sortOrder: this.sortOrder,
+        filter: this.filters ?? null
+    };
 
     constructor(
         private skillMatrixService: SkillMatrixService,
@@ -67,59 +76,61 @@ export class SkillMatrixListComponent implements OnInit {
     }
 
     loadList() {
-        this.skillMatrixService.getAll().subscribe(
-            res => {
-                this.matrices = res.items || [];
-                this.totalItems = this.matrices.length;
-                this.applyFiltersAndSort();
+        this.skillMatrixService.getAll(this.payload).subscribe({
+            next: (res) => {
+                this.dataList = res.items || [];
+                this.pageSize = res.pageSize || 10;
+                this.pageNumber = res.pageNumber || 1;
+                this.totalItems = res.totalRecords || 0;
+                // this.applyFiltersAndSort();
             },
-            error => {
+            error: (error) => {
                 console.error('Error loading skill matrices:', error);
-                this.matrices = [];
+                this.dataList = [];
             }
-        );
-    }
-
-    applyFiltersAndSort() {
-        let filtered = [...this.matrices];
-
-        // Apply search
-        if (this.searchTerm) {
-            filtered = filtered.filter(m =>
-                m.title?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-                m.designationName?.toLowerCase().includes(this.searchTerm.toLowerCase())
-            );
-        }
-
-        // Apply filters
-        this.filters.forEach(filter => {
-            filtered = filtered.filter(m => this.applyColumnFilter(m, filter));
         });
-
-        // Apply sorting
-        filtered.sort((a, b) => {
-            const aVal = (a as any)[this.sortByColumn];
-            const bVal = (b as any)[this.sortByColumn];
-            const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-            return this.sortOrder === 'asc' ? comparison : -comparison;
-        });
-
-        this.filteredList = filtered;
     }
 
-    applyColumnFilter(matrix: SkillMatrix, filter: any): boolean {
-        const value = (matrix as any)[filter.column];
-        switch (filter.type) {
-            case 'Contains':
-                return value?.toString().toLowerCase().includes(filter.value.toLowerCase());
-            case 'Equal':
-                return value == filter.value;
-            case 'Between':
-                return value >= filter.value && value <= filter.value2;
-            default:
-                return true;
-        }
-    }
+    // applyFiltersAndSort() {
+    //     let filtered = [...this.dataList];
+
+    //     // Apply search
+    //     if (this.searchTerm) {
+    //         filtered = filtered.filter(m =>
+    //             m.title?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+    //             m.designationName?.toLowerCase().includes(this.searchTerm.toLowerCase())
+    //         );
+    //     }
+
+    //     // Apply filters
+    //     this.filters.forEach(filter => {
+    //         filtered = filtered.filter(m => this.applyColumnFilter(m, filter));
+    //     });
+
+    //     // Apply sorting
+    //     filtered.sort((a, b) => {
+    //         const aVal = (a as any)[this.sortByColumn];
+    //         const bVal = (b as any)[this.sortByColumn];
+    //         const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    //         return this.sortOrder === 'asc' ? comparison : -comparison;
+    //     });
+
+    //     this.filteredList = filtered;
+    // }
+
+    // applyColumnFilter(matrix: SkillMatrix, filter: any): boolean {
+    //     const value = (matrix as any)[filter.column];
+    //     switch (filter.type) {
+    //         case 'Contains':
+    //             return value?.toString().toLowerCase().includes(filter.value.toLowerCase());
+    //         case 'Equal':
+    //             return value == filter.value;
+    //         case 'Between':
+    //             return value >= filter.value && value <= filter.value2;
+    //         default:
+    //             return true;
+    //     }
+    // }
 
     applySorting(column: string) {
         if (this.sortByColumn === column) {
@@ -128,8 +139,11 @@ export class SkillMatrixListComponent implements OnInit {
             this.sortByColumn = column;
             this.sortOrder = 'asc';
         }
-        this.applyFiltersAndSort();
+        this.payload.sortByColumn = this.sortByColumn;
+        this.payload.sortOrder = this.sortOrder;
+        this.loadList();
     }
+
 
     openFilterModal(column: string, event: MouseEvent) {
         this.filterColumn = column;
@@ -137,10 +151,11 @@ export class SkillMatrixListComponent implements OnInit {
             if (col.key === column) {
                 this.filterColumnTitle = col.label;
             }
-        });
+        })
         this.filterValue = '';
         this.filterValue2 = '';
 
+        // Determine filter type dynamically
         const columnType = this.filterColumnTypes[column];
         switch (columnType) {
             case 'string':
@@ -191,13 +206,17 @@ export class SkillMatrixListComponent implements OnInit {
             this.filters.push(filterData);
         }
 
-        this.applyFiltersAndSort();
+        this.payload.filter = this.filters;
+        this.loadList();
         this.closeFilterModal();
     }
 
+
+
     resetFilter(column: string) {
         this.filters = this.filters.filter(filter => filter.column !== column);
-        this.applyFiltersAndSort();
+        this.payload.filter = this.filters;
+        this.loadList();
     }
 
     closeFilterModal() {
@@ -208,20 +227,29 @@ export class SkillMatrixListComponent implements OnInit {
 
     onPageChange(page: number) {
         this.pageNumber = page;
+        this.payload.PageNumber = this.pageNumber;
+        this.loadList();
     }
 
     changePageSize(event: Event) {
         this.pageSize = Number((event.target as HTMLSelectElement).value);
-        this.pageNumber = 1;
+        this.pageNumber = 1; // Reset to first page
+        this.payload.PageNumber = this.pageNumber;
+        this.payload.PageSize = this.pageSize;
+        this.loadList();
     }
 
     onSearch() {
-        this.pageNumber = 1;
-        this.applyFiltersAndSort();
+        if (this.searchTerm !== this.payload.searchTerm) {
+            this.pageNumber = 1;
+            this.payload.PageNumber = 1;
+            this.payload.searchTerm = this.searchTerm;
+            this.loadList();
+        }
     }
 
     get totalPages(): number[] {
-        return Array.from({ length: Math.ceil(this.filteredList.length / this.pageSize) }, (_, i) => i + 1);
+        return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
     }
     getStartRecord(): number {
         return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
@@ -232,13 +260,12 @@ export class SkillMatrixListComponent implements OnInit {
     }
 
 
-    get paginatedList(): SkillMatrix[] {
-        const start = (this.pageNumber - 1) * this.pageSize;
-        return this.filteredList.slice(start, start + this.pageSize);
-    }
-
     hasFilter(column: string): boolean {
         return this.filters?.some(f => f.column === column) ?? false;
+    }
+    getColumnType(columnKey: string): string | undefined {
+        const column = this.columns.find(col => col.key === columnKey);
+        return column ? column.type : undefined;
     }
 
     createNew() {

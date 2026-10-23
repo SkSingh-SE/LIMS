@@ -14,6 +14,7 @@ export interface FeedbackAnalysis {
     analysisDate: string | Date;
     verificationDate: string | Date;
     targetCompletionDate: string | Date;
+    feedbackDate: string | Date;
     revNo: string | number;
     revDate: string | Date;
 }

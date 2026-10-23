@@ -16,12 +16,12 @@ export class MyEvaluationsListComponent implements OnInit {
     @ViewChild('filterModal') filterModal!: ElementRef;
     columns = [
         { key: 'id', type: 'number', label: 'SN', filter: false },
-        { key: 'trainingPlanName', type: 'string', label: 'Training Plan', filter: true },
-        { key: 'trainingDate', type: 'date', label: 'Training Date', filter: true },
-        { key: 'questionSetName', type: 'string', label: 'Question Set', filter: true },
-        { key: 'participantName', type: 'string', label: 'Participant Name', filter: true },
-        { key: 'designation', type: 'string', label: 'Designation', filter: true },
-        { key: 'isEvaluationCompleted', type: 'string', label: 'Evaluation Completed Status', filter: true },
+        { key: 'trainingPlanName', type: 'string', label: 'Training Plan' },
+        { key: 'trainingDate', type: 'date', label: 'Training Date' },
+        { key: 'questionSetName', type: 'string', label: 'Question Set' },
+        { key: 'participantName', type: 'string', label: 'Participant Name' },
+        { key: 'designation', type: 'string', label: 'Designation' },
+        { key: 'isEvaluationCompleted', type: 'string', label: 'Evaluation Completed Status' },
 
     ];
     filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {

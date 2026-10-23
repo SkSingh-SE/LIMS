@@ -39,12 +39,16 @@
 
 /* Alignment */
 
- .preview-table td:nth-child(1),
- /* .preview-table td:nth-child(1),
+/* .preview-table td:nth-child(1),
+.preview-table td:nth-child(2),
+.preview-table td:nth-child(4),
 .preview-table td:nth-child(10),
+.preview-table td:nth-child(11) {
     text-align: center;
     white-space: nowrap;
- 
+} */
+
+
 /*=========================================================
     ACTION TOOLBAR
 =========================================================*/
@@ -216,10 +220,4 @@
         padding: 4px;
     }
 
- }
-
-.preview-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 11px;
 }

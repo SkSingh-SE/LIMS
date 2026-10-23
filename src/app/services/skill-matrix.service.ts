@@ -20,9 +20,12 @@ export class SkillMatrixService {
 
     // ============ Skill Matrix Methods ============
 
-    getAll(): Observable<SkillMatrixResponse> {
-        return this.http.post<SkillMatrixResponse>(this.apiUrl + '/list', {});
+    getAll(filter: any): Observable<any> {
+        return this.http.post<any>(this.apiUrl + "/list", filter);
     }
+    // getAll(): Observable<SkillMatrixResponse> {
+    //     return this.http.post<SkillMatrixResponse>(this.apiUrl + '/list', {});
+    // }
 
     getById(id: number): Observable<SkillMatrix | undefined> {
         return this.http.get<SkillMatrix>(`${this.apiUrl}/details/${id}`);

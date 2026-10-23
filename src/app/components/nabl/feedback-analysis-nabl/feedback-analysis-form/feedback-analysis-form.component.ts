@@ -191,6 +191,7 @@ export class FeedbackAnalysisFormComponent implements CanComponentDeactivate, On
                     date: NablFormsHelper.formatDateForInput(data.date),
                     analysisDate: NablFormsHelper.formatDateForInput(data.analysisDate) ?? null,
                     verificationDate: NablFormsHelper.formatDateForInput(data.verificationDate) ?? null,
+                    feedbackDate: NablFormsHelper.formatDateForInput(data.feedbackDate) ?? null,
                     targetCompletionDate: NablFormsHelper.formatDateForInput(data.targetCompletionDate) ?? null
                 })
 

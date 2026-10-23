@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { IntermediateCheckService } from '../../../services/intermediate-check.service';
 import { IntermediateCheckRecord } from '../../../models/intermediateCheckModel';
 import { NablRegisterTableComponent, RegisterColumn } from '../nabl-register-table/nabl-register-table.component';
-
+import { ToastService } from '../../../services/toast.service';
 @Component({
     selector: 'app-intermediate-check-list',
 
@@ -27,7 +27,8 @@ export class IntermediateCheckListComponent implements OnInit {
 
     constructor(
         private service: IntermediateCheckService,
-        private router: Router
+        private router: Router,
+        private toastService: ToastService
     ) { }
 
     ngOnInit(): void {
@@ -65,15 +66,22 @@ export class IntermediateCheckListComponent implements OnInit {
 
     onDelete(id: number): void {
         if (confirm('Are you sure you want to delete this record?')) {
-            this.service.delete(id).subscribe(() => {
-                this.loadRecords({
-                    PageNumber: 1,
-                    PageSize: 10,
-                    searchTerm: '',
-                    sortByColumn: 'id',
-                    sortOrder: 'desc',
-                    filter: []
-                });
+            this.service.delete(id).subscribe({
+                next: (res) => {
+                    this.toastService.show('Intermediate Check Record deleted successfully', 'success');
+                    this.loadRecords({
+                        PageNumber: 1,
+                        PageSize: 10,
+                        searchTerm: '',
+                        sortByColumn: 'id',
+                        sortOrder: 'desc',
+                        filter: []
+                    });
+                },
+                error: (err) => {
+                    console.error(err);
+                    this.toastService.show('Error deleting report', 'error');
+                }
             });
         }
     }

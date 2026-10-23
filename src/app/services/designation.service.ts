@@ -34,5 +34,18 @@ export class DesignationService {
   getDesignationDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/dropdown?searchTerm=${searchTerm}&pageNo=${pageNumber}&pageSize=${pageSize}`);
   }
+  getDesignationEmployees(searchTerm: string, pageNumber: number, pageSize: number, matrixId?: number | null): Observable<any> {
+
+    let url =
+      `${this.apiUrl}/designation-dropdown` +
+      `?searchTerm=${(searchTerm || '')}` +
+      `&pageNo=${pageNumber}` +
+      `&pageSize=${pageSize}`;
+    if (matrixId) {
+      url += `&recordId=${matrixId}`;
+    }
+    return this.http.get<any>(url);
+
+  }
 
 }

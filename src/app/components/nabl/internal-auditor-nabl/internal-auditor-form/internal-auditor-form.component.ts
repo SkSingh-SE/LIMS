@@ -232,7 +232,7 @@ export class InternalAuditorFormComponent implements CanComponentDeactivate, OnI
     }
 
     getEmployees = (term: string, page: number, pageSize: number): Observable<any[]> => {
-        return this.qcControlPlanservice.getEmployeesDropdown(term, page, pageSize);
+        return this.service.getEmployeesDropdown(term, page, pageSize, this.recordId > 0 ? this.recordId : null);
     }
     onEmployeeSelected(item: any) {
         if (!item) { this.auditorForm.patchValue({ employeeId: null }); return; }

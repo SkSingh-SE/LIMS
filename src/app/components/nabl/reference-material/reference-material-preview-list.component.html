@@ -47,8 +47,8 @@
 
         <ng-container body>
 
-            <table class="table table-bordered preview-table">
-                <colgroup>
+            <table class="table table-bordered table-responsive preview-table">
+                <!-- <colgroup>
 
                     <col style="width:10%">
                     <col style="width:9%">
@@ -59,8 +59,8 @@
                     <col style="width:8%">
                     <col style="width:11%">
 
-                </colgroup>
-                <thead>
+                </colgroup> -->
+                <thead class="table table-bordered table-responsive preview-table">
                     <tr>
 
 
@@ -83,16 +83,12 @@
                         <td>{{item.rmName}}</td>
                         <td class="text-center">
 
-                        <td>
-
                             {{ item.date | date:'dd.MM.yyyy' }}
                         </td>
                         <td>{{item.supplier}}</td>
                         <td>{{item.initialQuantity}}</td>
                         <td>{{item.certificateNo}}</td>
                         <td class="text-center">
-
-                        <td>
 
                             {{ item.validityDate | date:'dd.MM.yyyy' }}
                         </td>

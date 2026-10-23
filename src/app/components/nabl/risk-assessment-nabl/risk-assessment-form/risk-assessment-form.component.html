@@ -121,9 +121,9 @@
               <div class="col-md-4">
                 <app-searchable-dropdown [fetchDataFn]="getEmployees" [placeholder]="'Search Employee'"
                   [required]="true" [labelName]="'Identified By'" (itemSelected)="onEmployeeSelected($event)"
-                  [selectedItem]="riskForm.get('identifiedById')?.value">
+                  [selectedItem]="riskForm.get('identifiedById')?.value" [isDisabled]="isViewMode">
                 </app-searchable-dropdown>
-                <div *ngIf="riskForm.get('identifiedById')?.invalid && riskForm.get('identifiedById')?.touched"
+                <div *ngIf=" riskForm.get('identifiedById')?.invalid && riskForm.get('identifiedById')?.touched"
                   class="text-danger text-sm mt-1">
                   identified By is required
                 </div>
@@ -164,7 +164,7 @@
                 <quill-editor formControlName="opportunity" [modules]="quillModules"></quill-editor>
                 <div *ngIf="riskForm.get('opportunity')?.invalid && riskForm.get('opportunity')?.touched"
                   class="text-danger text-sm mt-1">
-                   risk / opportunity descrption is required
+                  risk / opportunity descrption is required
                 </div>
 
               </div>
@@ -352,13 +352,7 @@
                   Effectiveness Remarks
                 </label>
                 <quill-editor formControlName="effectivenessRemarks" [modules]="quillModules"></quill-editor>
-               
-              </div>
-              <div class="col-12 d-flex flex-column">
-                <label class="form-label fw-bold">
-                  Risk Remarks
-                </label>
-                <quill-editor formControlName="riskRemarks" [modules]="quillModules"></quill-editor>
+
               </div>
             </div>
           </div>

@@ -144,6 +144,67 @@ app-searchable-dropdown .input-group:has(.form-control-sm) .input-group-text {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   GLOBAL COMPACT TABLE SEARCH BAR STANDARDIZATION (28px)
+   Guarantees perfect vertical alignment and compact standard
+   ═══════════════════════════════════════════════════════════ */
+.custom-search,
+.input-group.custom-search {
+  max-width: 280px;
+  height: 28px !important;
+  min-height: 28px !important;
+}
+
+.custom-search .form-control,
+.custom-search input.form-control-sm {
+  height: 28px !important;
+  min-height: 28px !important;
+  font-size: 0.78rem !important;
+  padding: 0.2rem 0.5rem !important;
+  line-height: 1.35 !important;
+}
+
+.custom-search .input-group-text {
+  height: 28px !important;
+  min-height: 28px !important;
+  font-size: 0.78rem !important;
+  padding: 0 0.55rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.custom-search .input-group-text:hover {
+  background-color: #e2e8f0 !important;
+  color: var(--primary-color, #da261c) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SPECIMEN ORIENTATION NOTATION MICRO NOTE
+   Clean, compact, and polished subtle notification banner
+   ═══════════════════════════════════════════════════════════ */
+.notation-info-note {
+  font-size: 0.69rem !important;
+  background-color: rgba(37, 99, 235, 0.05) !important;
+  border-left: 2px solid #2563eb !important;
+  color: #334155 !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  padding: 0.2rem 0.5rem !important;
+  border-radius: 3px !important;
+}
+
+.notation-info-note i {
+  font-size: 0.75rem !important;
+  color: #2563eb !important;
+  margin-right: 4px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
    GLOBAL PHONE INPUT GROUP WITH COUNTRY CODE SELECTOR
    Ensures uniform height (28px) and consistent compact styling
    ═══════════════════════════════════════════════════════════ */
@@ -5116,8 +5177,34 @@ input[type="checkbox"]:checked {
 }
 
 .btn-nav-link:hover {
-  color: #b81d14;
+  color: var(--primary-hover, #b81d14);
   text-decoration: underline;
+}
+
+.btn-nav-icon {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.25));
+  background-color: var(--primary-50, rgba(218, 38, 28, 0.04));
+  color: var(--primary-color, #da261c);
+  font-size: 0.72rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-nav-icon:hover {
+  background-color: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(218, 38, 28, 0.2);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -7144,7 +7231,359 @@ fieldset.fieldset-collapsed {
   }
 }
 
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL LIMS FIELDSETS & ULTRA-COMPACT SECTION CONTAINERS
+   Standardized layout pattern: Section titles inside <legend>
+   Theme: Poppins | High Density | --primary-color: #da261c
+════════════════════════════════════════════════════════════════ */
+.lims-fieldset {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 0.45rem 0.75rem !important;
+  margin-bottom: 0.65rem !important;
+  background: #fbfcfd !important;
+}
 
+.lims-fieldset legend {
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  color: var(--primary-color, #da261c) !important;
+  padding: 0 0.5rem !important;
+  margin-bottom: 0.35rem !important;
+  width: auto !important;
+  float: none !important;
+}
 
+.lims-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.3rem !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.73rem !important;
+  font-weight: 500 !important;
+  padding: 0.2rem 0.6rem !important;
+  border-radius: 4px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.lims-chip.active,
+.lims-chip.selected {
+  background: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  border-color: var(--primary-color, #da261c) !important;
+}
+
+.lims-chip:hover:not(.active) {
+  border-color: var(--primary-color, #da261c) !important;
+  background: rgba(218, 38, 28, 0.04) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL LIMS FIELDSET & LEGEND STANDARD
+   Ultra-high density, clean border card with theme accent indicator
+════════════════════════════════════════════════════════════════ */
+.lims-fieldset,
+fieldset.lims-fieldset {
+  border: 1px solid #e2e8f0 !important;
+  border-left: 3.5px solid var(--primary-color, #da261c) !important;
+  background: #ffffff !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 0.75rem 0.65rem 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.2s ease !important;
+}
+
+.lims-fieldset:hover,
+fieldset.lims-fieldset:hover {
+  border-color: #cbd5e1 !important;
+  border-left-color: var(--primary-hover, #b91c1c) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+.lims-fieldset legend,
+fieldset.lims-fieldset legend {
+  float: none !important;
+  width: auto !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  color: var(--primary-color, #da261c) !important;
+  background: #ffffff !important;
+  padding: 0 6px !important;
+  margin-left: 6px !important;
+  margin-bottom: 0.25rem !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  letter-spacing: 0.3px !important;
+  text-transform: uppercase !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MASTER NAVIGATION SHORTCUTS — global standard
+   .btn-nav-link: Header row master shortcut link
+   .btn-nav-icon: Compact inline icon button for tables / compact spaces
+════════════════════════════════════════════════════════════════ */
+.btn-nav-link {
+  font-size: 0.70rem !important;
+  font-weight: 500 !important;
+  color: var(--primary-color, #da261c) !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 1px 5px !important;
+  border-radius: 3px !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.btn-nav-link i {
+  font-size: 0.68rem !important;
+  margin-right: 0 !important;
+}
+
+.btn-nav-link:hover {
+  color: var(--primary-hover, #b91c1c) !important;
+  background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.08) !important;
+  text-decoration: underline !important;
+}
+
+.btn-nav-icon {
+  width: 22px !important;
+  min-width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #64748b !important;
+  font-size: 0.70rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  text-decoration: none !important;
+  flex-shrink: 0 !important;
+}
+
+.btn-nav-icon:hover {
+  color: var(--primary-color, #da261c) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  background: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.06) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIMS CALLOUT BANNER (Informational / Precision Alerts)
+════════════════════════════════════════════════════════════════ */
+.lims-callout-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 5px 10px !important;
+  margin-bottom: 0.65rem !important;
+  background: linear-gradient(90deg, #f0f9ff 0%, #ffffff 100%) !important;
+  border: 1px solid #bae6fd !important;
+  border-left: 3.5px solid #0284c7 !important;
+  border-radius: 5px !important;
+  color: #0369a1 !important;
+  font-size: 0.73rem !important;
+  line-height: 1.4 !important;
+}
+
+.lims-callout-info i {
+  font-size: 0.90rem !important;
+  color: #0284c7 !important;
+  flex-shrink: 0 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIMS PRESET PILLS / ACTION CHIPS
+   Quick-add buttons in fieldset legends or section headers
+════════════════════════════════════════════════════════════════ */
+.btn-lims-preset {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.68rem !important;
+  font-weight: 500 !important;
+  padding: 1px 8px !important;
+  min-height: 22px !important;
+  height: 22px !important;
+  border-radius: 12px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.btn-lims-preset:hover {
+  background-color: #ffffff !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: var(--primary-color, #da261c) !important;
+  transform: translateY(-0.5px) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.btn-lims-preset.btn-preset-primary,
+.btn-lims-preset-primary {
+  background-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.08) !important;
+  border-color: rgba(var(--bs-primary-rgb, 218, 38, 28), 0.3) !important;
+  color: var(--primary-color, #da261c) !important;
+  font-weight: 600 !important;
+}
+
+.btn-lims-preset.btn-preset-primary:hover,
+.btn-lims-preset-primary:hover {
+  background-color: var(--primary-color, #da261c) !important;
+  border-color: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.3) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SEGMENTED MODE TOGGLE
+════════════════════════════════════════════════════════════════ */
+.lims-mode-toggle {
+  display: flex !important;
+  align-items: center !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 5px !important;
+  overflow: hidden !important;
+  background: #f1f5f9 !important;
+  padding: 2px !important;
+  gap: 2px !important;
+  min-height: 28px !important;
+  height: 28px !important;
+}
+
+.lims-mode-toggle button {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  background: transparent !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.73rem !important;
+  font-weight: 500 !important;
+  padding: 0 0.5rem !important;
+  height: 100% !important;
+  border-radius: 3px !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.lims-mode-toggle button.active {
+  background: var(--primary-color, #da261c) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.3) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   COMPACT MODAL TABLES (For FormArrays like shapeFormulas & stages)
+════════════════════════════════════════════════════════════════ */
+.table-lims-compact {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-size: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.table-lims-compact thead th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  font-size: 0.70rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.3px !important;
+  padding: 4px 6px !important;
+  border: 1px solid #e2e8f0 !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+}
+
+.table-lims-compact tbody td {
+  padding: 3px 5px !important;
+  border: 1px solid #e2e8f0 !important;
+  vertical-align: middle !important;
+  background: #ffffff;
+}
+
+.table-lims-compact tbody tr:hover td {
+  background-color: #fff9f9 !important;
+}
+
+.table-lims-compact .form-control-sm {
+  min-height: 26px !important;
+  height: 26px !important;
+  padding: 0.15rem 0.4rem !important;
+  font-size: 0.74rem !important;
+  border-color: #cbd5e1 !important;
+}
+
+.table-lims-compact .form-control-sm:focus {
+  border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb, 218, 38, 28), 0.15) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BADGES & STATUS PILLS
+════════════════════════════════════════════════════════════════ */
+.badge-factor-measured {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+.badge-factor-calculated {
+  background-color: #fdf2f8 !important;
+  color: #be185d !important;
+  border: 1px solid #fbcfe8 !important;
+}
+
+.badge-condition-treated {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+}
+
+.badge-condition-raw {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.badge-standard-notation {
+  background-color: var(--bs-danger-bg-subtle, #f8d7da) !important;
+  color: var(--bs-danger-text-emphasis, #58151c) !important;
+  border: 1px solid var(--bs-danger-border-subtle, #f1aeb5) !important;
+}
+
+.col-temp {
+  min-width: 110px !important;
+  white-space: nowrap !important;
+}
 
 

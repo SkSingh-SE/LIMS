@@ -1,275 +1,467 @@
-<div class="container-fluid mt-4 d-flex flex-column align-items-center">
-    <div class="card basic-data-table w-100">
-        <div
-            class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
-            <label class="text-center text-md fw-medium ms-3">Dimensional Factor List</label>
-            <a class="btn btn-outline-light me-3" (click)="openModal('create',0)">
-                <i class="bi bi-plus-lg"></i><span>Create Dimensional Factor</span>
-            </a>
-        </div>
-
-        <div class="card-body">
-            <!-- Search -->
-            <div class="d-flex justify-content-end mb-2">
-                <div class="w-25 input-group custom-search">
-                    <input type="text" class="form-control" placeholder="Search..." [(ngModel)]="searchTerm"
-                        (keydown.enter)="onSearch()">
-                    <div class="input-group-text pe-auto" (click)="onSearch()">
-                        <i class="bi bi-search"></i>
-                    </div>
-                </div>
-            </div>
-
-
-            <div *ngIf="DimensionalFactorList.length > 0 || filters.length > 0" class="table-responsive ">
-                <table class="table bordered-table  align-middle w-100">
-                    <thead class="table-light">
-                        <tr class="text-center align-middle">
-                            <th class="align-middle text-center col-actions">Actions</th>
-                            <th *ngFor="let column of columns; let i = index" [ngClass]="column.key === 'id' ? 'col-sn' : ''">
-                                <div class="d-flex align-items-center">
-                                    <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
-                                        <i class="bi bi-caret-up sorting-icon-up"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                        <i class="bi bi-caret-down sorting-icon-down"
-                                            [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
-                                            (click)="applySorting(column.key)"></i>
-                                    </span>
-                                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor ms-2 mt-1"
-                                        (click)="openFilterModal(column.key, $event)"><i
-                                            class="bi bi-funnel"></i></span>
-                                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor ms-1 mt-1"
-                                        (click)="resetFilter(column.key)"><i class="bi bi-x-lg text-danger"></i></span>
-                                </div>
-                            </th>
-                        </tr>
-
-
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let customerType of DimensionalFactorList; let i = index" class="text-sm">
-
-                            <td class="text-center col-actions">
-                                <div class="d-flex justify-content-center align-items-center gap-1.5">
-                                    <button type="button" (click)="openModal('view',customerType.id)" class="btn-lims-icon btn-lims-view" title="View">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button type="button" (click)="openModal('edit',customerType.id)" class="btn-lims-icon btn-lims-edit" title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button type="button" (click)="deleteFn(customerType.id)" class="btn-lims-icon btn-lims-delete" title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-
-
-                            <td class="text-center col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
-                            <td><a class="text-primary cell-record-link fw-medium cursor-pointer text-decoration-none" (click)="openModal('view', customerType.id)" [title]="'View details for ' + customerType.code">{{ customerType.code }}</a></td>
-                            <td>{{ customerType.name }}</td>
-                            <td>
-                                <span *ngFor="let form of customerType.applicableForms" class="badge bg-info text-dark me-1">
-                                    {{ form.productForm?.name || form.name }}
-                                </span>
-                            </td>
-                            <td>{{ customerType.parameterUnit?.name || '-' }}</td>
-                            <td>{{ customerType.defaultTestMethod?.name || customerType.defaultTestMethod?.standard || '-' }}</td>
-                            <td>{{ customerType.instrument || '-' }}</td>
-                            <td>{{ customerType.toleranceType }}</td>                        </tr>
-                    </tbody>
-                </table>
-
-
-            </div>
-            <div *ngIf="DimensionalFactorList.length == 0" class="w-100 h-100 text-center border rounded-3 mb-2">
-                <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4">
-                    <i class="bi bi-file-earmark-x fs-2 mb-2"></i>
-                    <div class="fw-semibold">No records found</div>
-
-                </div>
-            </div>
-            <!-- Pagination -->
-            <!-- Pagination -->
-            <app-pagination
-              [currentPage]="pageNumber"
-              [pageSize]="pageSize"
-              [totalItems]="totalItems"
-              [pageSizes]="pageSizes"
-              (pageChange)="onPageChange($event)"
-              (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
-            </app-pagination>
-
-
-        </div>
+<div class="container-fluid mt-3 d-flex flex-column align-items-center">
+  <div class="card basic-data-table w-100">
+    <div class="card-header card-form-header text-white text-center d-flex justify-content-between align-items-center">
+      <label class="text-center text-md fw-medium ms-3">
+        Dimensional Factor Master
+      </label>
+      <button type="button" class="btn btn-outline-light btn-sm me-3 d-flex align-items-center gap-1.5" (click)="openModal('create', 0)">
+        <i class="bi bi-plus-lg"></i>
+        <span>Create Dimensional Factor</span>
+      </button>
     </div>
+
+    <div class="card-body p-2">
+      <!-- Table Top Bar (Right-Aligned Search) -->
+      <div class="d-flex justify-content-end align-items-center mb-2">
+        <div class="input-group input-group-sm custom-search">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search dimensional factors..."
+            [(ngModel)]="searchTerm"
+            (keydown.enter)="onSearch()" />
+          <span class="input-group-text" (click)="onSearch()" title="Search">
+            <i class="bi bi-search"></i>
+          </span>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div *ngIf="DimensionalFactorList.length > 0 || filters.length > 0" class="table-responsive">
+        <table class="table bordered-table align-middle w-100 mb-2">
+          <thead class="table-light">
+            <tr class="text-center align-middle">
+              <th class="align-middle text-center col-actions">Actions</th>
+              <th *ngFor="let column of columns" [ngClass]="column.key === 'id' ? 'col-sn' : ''">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="dt-column-order">{{ column.label }}</span>
+                  <div class="d-flex align-items-center ms-1">
+                    <span class="d-flex flex-column me-1">
+                      <i
+                        class="bi bi-caret-up sorting-icon-up cursor-pointer"
+                        [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
+                        (click)="applySorting(column.key)"></i>
+                      <i
+                        class="bi bi-caret-down sorting-icon-down cursor-pointer"
+                        [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'desc'}"
+                        (click)="applySorting(column.key)"></i>
+                    </span>
+                    <span *ngIf="!hasFilter(column.key) && column.filter" class="cursor-pointer" (click)="openFilterModal(column.key, $event)">
+                      <i class="bi bi-funnel text-muted"></i>
+                    </span>
+                    <span *ngIf="hasFilter(column.key) && column.filter" class="cursor-pointer" (click)="resetFilter(column.key)">
+                      <i class="bi bi-x-lg text-danger"></i>
+                    </span>
+                  </div>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of DimensionalFactorList; let i = index" class="text-sm">
+              <td class="text-center col-actions">
+                <div class="d-flex justify-content-center align-items-center gap-1.5">
+                  <button type="button" (click)="openModal('view', item.id)" class="btn-lims-icon btn-lims-view" title="View Details">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button type="button" (click)="openModal('edit', item.id)" class="btn-lims-icon btn-lims-edit" title="Edit Factor">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button type="button" (click)="deleteFn(item.id)" class="btn-lims-icon btn-lims-delete" title="Delete Factor">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+              <td class="text-center col-sn">{{ (pageNumber - 1) * pageSize + i + 1 }}</td>
+              <td>
+                <a class="text-primary cell-record-link fw-semibold cursor-pointer text-decoration-none" (click)="openModal('view', item.id)">
+                  {{ item.code }}
+                </a>
+              </td>
+              <td class="fw-medium">{{ item.name }}</td>
+              <td>
+                <span
+                  class="badge"
+                  [ngClass]="item.factorType === 'Calculated' ? 'badge-factor-calculated' : 'badge-factor-measured'">
+                  {{ item.factorType || 'Measured' }}
+                </span>
+              </td>
+              <td>{{ item.parameterUnit?.name || item.unitName || '-' }}</td>
+              <td>
+                <span *ngIf="item.defaultEquipmentType?.name || item.defaultEquipmentTypeName" class="text-dark">
+                  {{ item.defaultEquipmentType?.name || item.defaultEquipmentTypeName }}
+                </span>
+                <span *ngIf="!item.defaultEquipmentType?.name && !item.defaultEquipmentTypeName" class="text-muted">-</span>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border">
+                  {{ item.toleranceType || 'Bilateral' }}
+                </span>
+              </td>
+              <td>
+                <div class="cell-audit" [title]="'Modified by ' + (item.modifiedByName || item.createdByName || '-') + ' on ' + ((item.modifiedOn || item.createdOn) | date:'dd MMM, yyyy hh:mm a')">
+                  <span class="cell-audit-name">{{ item.modifiedByName || item.createdByName || '-' }}</span>
+                  <span class="cell-audit-time">{{ (item.modifiedOn || item.createdOn) | date:'dd MMM, hh:mm a' }}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="DimensionalFactorList.length === 0" class="w-100 text-center border rounded-3 my-2 py-4">
+        <i class="bi bi-inbox fs-2 text-muted mb-2"></i>
+        <div class="fw-semibold text-secondary">No Dimensional Factors found</div>
+      </div>
+
+      <!-- Pagination -->
+      <app-pagination
+        [currentPage]="pageNumber"
+        [pageSize]="pageSize"
+        [totalItems]="totalItems"
+        [pageSizes]="pageSizes"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="changePageSize($any({ target: { value: $event } }))">
+      </app-pagination>
+    </div>
+  </div>
 </div>
 
-<!-- Filter Modal -->
+<!-- Filter Dropdown Modal -->
 <div #filterModal class="filter-modal">
-    <div class="card py-2 px-3 shadow position-relative">
-        <!-- Close Button in the Top-Right Corner -->
-        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2"
-            (click)="closeFilterModal()"></button>
-
-        <label class="fw-medium fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
-
-        <select class="form-select mb-2" [(ngModel)]="filterType">
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'string'" value="Contains">Contains
-            </option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] === 'date'" value="Between">Between</option>
-            <option value="Equal">Equal</option>
-            <option value="NotEqual">Not Equal</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="GreaterThan">Greater
-                Than</option>
-            <option *ngIf="filterColumn && filterColumnTypes[filterColumn] !== 'string'" value="LessThan">Less Than
-            </option>
-        </select>
-
-        <input *ngIf="filterColumnTypes[filterColumn!] === 'string'" type="text" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter value" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'number'" type="number" class="form-control mb-2"
-            [(ngModel)]="filterValue" placeholder="Enter number" (keydown.enter)="applyFilter()" />
-        <input *ngIf="filterColumnTypes[filterColumn] === 'date' && filterType !== 'Between'" type="date"
-            class="form-control mb-2" [(ngModel)]="filterValue" />
-        <div *ngIf="filterType === 'Between'" class="d-flex flex-column gap-2">
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue" placeholder="Start date" />
-            <input type="date" class="form-control mb-2" [(ngModel)]="filterValue2" placeholder="End date" />
-        </div>
-
-        <button class="btn btn-primary btn-sm mb-2" (click)="applyFilter()">Apply</button>
-    </div>
+  <div class="card py-2 px-3 shadow position-relative">
+    <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-2" (click)="closeFilterModal()"></button>
+    <label class="fw-semibold fs-6 mb-2">Filter: {{ filterColumnTitle | titlecase }}</label>
+    <select class="form-select form-select-sm mb-2" [(ngModel)]="filterType">
+      <option value="Contains">Contains</option>
+      <option value="Equal">Equal</option>
+      <option value="NotEqual">Not Equal</option>
+    </select>
+    <input
+      type="text"
+      class="form-control form-control-sm mb-2"
+      [(ngModel)]="filterValue"
+      placeholder="Enter search value..."
+      (keydown.enter)="applyFilter()" />
+    <button type="button" class="btn btn-primary btn-sm" (click)="applyFilter()">Apply Filter</button>
+  </div>
 </div>
 
-<!-- Modal for Add/Edit/Update Dimensional Factor -->
-<div id="customerTypeModal" class="modal fade modal-fade" #modalRef tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
-    aria-labelledby="customerTypeModalLabel" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header card-form-header text-white">
-                <label class="modal-title fw-medium" id="customerTypeModalLabel">
-                    {{formTitle}}
-                </label>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close"
-                    (click)="closeModal()"></button>
+<!-- Modal Dialog for Add / Edit / View -->
+<div
+  id="customerTypeModal"
+  class="modal fade modal-fade"
+  #modalRef
+  tabindex="-1"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  aria-labelledby="customerTypeModalLabel"
+  aria-modal="true"
+  role="dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header card-form-header text-white">
+        <label class="modal-title fw-semibold" id="customerTypeModalLabel">
+          {{ formTitle }}
+        </label>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+
+      <form [formGroup]="DimensionalFactorForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body p-3">
+          <!-- NABL Precision Standard: Decimal places and rounding precision are auto-inherited from the bound Parameter Master in Material Specification. -->
+
+          <!-- Section 1: Basic Information -->
+          <fieldset class="lims-fieldset mb-2.5">
+            <legend class="w-auto fw-semibold text-danger">
+              Basic Identification & Mode
+            </legend>
+
+            <div class="row g-2 align-items-end">
+              <!-- Code Field -->
+              <div class="col-md-4">
+                <label for="code" class="form-label mb-1">Factor Code <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  id="code"
+                  class="form-control form-control-sm"
+                  formControlName="code"
+                  placeholder="e.g. W0, T0, D0, S0"
+                  maxlength="50"
+                  [ngClass]="{'is-invalid': isFieldInvalid('code')}" />
+                <app-field-error [control]="DimensionalFactorForm.get('code')" label="Code" [submitted]="submitted"></app-field-error>
+              </div>
+
+              <!-- Name Field -->
+              <div class="col-md-5">
+                <label for="name" class="form-label mb-1">Factor Name <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  id="name"
+                  class="form-control form-control-sm"
+                  formControlName="name"
+                  placeholder="e.g. Width, Thickness, Diameter, Original Area"
+                  maxlength="200"
+                  [ngClass]="{'is-invalid': isFieldInvalid('name')}" />
+                <app-field-error [control]="DimensionalFactorForm.get('name')" label="Name" [submitted]="submitted"></app-field-error>
+              </div>
+
+              <!-- Factor Type Toggle (Measured vs Calculated) -->
+              <div class="col-md-3">
+                <label class="form-label mb-1 d-block">Factor Type</label>
+                <div class="lims-mode-toggle w-100 justify-content-center">
+                  <button
+                    type="button"
+                    [class.active]="DimensionalFactorForm.get('factorType')?.value === 'Measured'"
+                    (click)="setFactorType('Measured')"
+                    [disabled]="isViewMode">
+                    Measured
+                  </button>
+                  <button
+                    type="button"
+                    [class.active]="DimensionalFactorForm.get('factorType')?.value === 'Calculated'"
+                    (click)="setFactorType('Calculated')"
+                    [disabled]="isViewMode">
+                    Calculated
+                  </button>
+                </div>
+              </div>
             </div>
-            <form [formGroup]="DimensionalFactorForm" (ngSubmit)="onSubmit()">
-                <div class="modal-body">
-                    <div class="row">
-                        <!-- Code Field -->
-                        <div class="col-md-6 mb-1">
-                            <label for="code" class="form-label">Code <span class="text-danger">*</span></label>
-                            <input type="text" id="code" class="form-control" formControlName="code"
-                                placeholder="Enter Code" maxlength="50"
-                                [ngClass]="{'is-invalid': isFieldInvalid('code')}"
-                                [attr.disabled]="isViewMode ? true : null" />
-                            <app-field-error [control]="DimensionalFactorForm.get('code')" label="Code" [submitted]="submitted"/>
-                        </div>
-                        <!-- Name Field -->
-                        <div class="col-md-6 mb-1">
-                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                            <input type="text" id="name" class="form-control" formControlName="name"
-                                placeholder="Enter Name" maxlength="200"
-                                [ngClass]="{'is-invalid': isFieldInvalid('name')}"
-                                [attr.disabled]="isViewMode ? true : null" />
-                            <app-field-error [control]="DimensionalFactorForm.get('name')" label="Name" [submitted]="submitted"/>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <!-- Unit Dropdown -->
-                        <div class="col-md-6 mb-1">
-                            <div class="d-flex align-items-start gap-1">
-                                <div class="flex-grow-1">
-                                    <app-searchable-dropdown
-                                        [fetchDataFn]="getUnitDropdown"
-                                        [selectedItem]="selectedUnitDropdownItem"
-                                        (itemSelected)="onUnitSelected($event)"
-                                        [placeholder]="'Select Unit'"
-                                        [labelName]="'Unit'"
-                                        [isDisabled]="isViewMode">
-                                    </app-searchable-dropdown>
-                                </div>
-                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
-                                    (click)="openLinkedMaster('/parameter-unit')"
-                                    title="Open Parameter Unit" *ngIf="!isViewMode">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <!-- Instrument -->
-                        <div class="col-md-6 mb-1">
-                            <label for="instrument" class="form-label">Instrument</label>
-                            <input type="text" id="instrument" class="form-control" formControlName="instrument"
-                                placeholder="Enter Instrument"
-                                [attr.disabled]="isViewMode ? true : null" />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <!-- Tolerance Type -->
-                        <div class="col-md-6 mb-1">
-                            <label for="toleranceType" class="form-label">Tolerance Type</label>
-                            <ng-select
-                                [items]="toleranceTypes"
-                                bindLabel="name"
-                                bindValue="value"
-                                formControlName="toleranceType"
-                                placeholder="Select Tolerance Type"
-                                [clearable]="false"
-                                [searchable]="false"
-                                [readonly]="isViewMode">
-                            </ng-select>
-                        </div>
-                        <!-- Test Method Dropdown -->
-                        <div class="col-md-6 mb-1">
-                            <div class="d-flex align-items-start gap-1">
-                                <div class="flex-grow-1">
-                                    <app-searchable-dropdown
-                                        [fetchDataFn]="getTestMethodDropdown"
-                                        [selectedItem]="DimensionalFactorForm.get('defaultTestMethodID')?.value"
-                                        (itemSelected)="DimensionalFactorForm.get('defaultTestMethodID')?.setValue($event?.id || null)"
-                                        [placeholder]="'Select Test Method Specification'"
-                                        [labelName]="'Test Method Specification'"
-                                        [isDisabled]="isViewMode">
-                                    </app-searchable-dropdown>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <!-- Applicable Forms Multi-Select -->
-                        <div class="col-md-12 mb-1">
-                            <div class="d-flex align-items-start gap-1">
-                                <div class="flex-grow-1">
-                                    <app-multi-select-dropdown
-                                        [placeholder]="'Select Forms...'"
-                                        [labelName]="'Applicable Forms'"
-                                        [fetchDataFn]="getProductFormDropdown"
-                                        [selectedValues]="DimensionalFactorForm.get('applicableFormIds')?.value"
-                                        (itemsSelected)="onFormSelected($event)"
-                                        [isDisabled]="isViewMode">
-                                    </app-multi-select-dropdown>
-                                </div>
-                                <button type="button" class="btn btn-outline-primary btn-sm mt-1"
-                                    (click)="openLinkedMaster('/product-form')"
-                                    title="Open Product Form" *ngIf="!isViewMode">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+          </fieldset>
 
-                </div>
+          <!-- Section 2: Mode Specific Configuration -->
 
-                <!-- Modal Footer -->
-                <div *ngIf="!isViewMode" class="modal-footer">
-                    <button type="button" class="btn btn-cancel" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-save"
-                        [disabled]="submitted && !DimensionalFactorForm.valid">
-                        {{ isEditMode ? 'Update' : 'Save' }}
-                    </button>
+          <!-- 2A: Measured Mode Configuration -->
+          <fieldset *ngIf="DimensionalFactorForm.get('factorType')?.value === 'Measured'" class="lims-fieldset mb-2.5">
+            <legend class="w-auto fw-semibold text-danger">
+              Measurement & Tolerance Configuration
+            </legend>
+
+            <div class="row g-2">
+              <!-- Unit Dropdown -->
+              <div class="col-md-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label mb-0">Measurement Unit</label>
+                  <a class="btn-nav-link cursor-pointer" (click)="openLinkedMaster('/parameter-unit')">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Units
+                  </a>
                 </div>
-            </form>
+                <app-searchable-dropdown
+                  [fetchDataFn]="getUnitDropdown"
+                  [selectedItem]="selectedUnitDropdownItem"
+                  (itemSelected)="onUnitSelected($event)"
+                  [placeholder]="'Select Unit (e.g. mm)'"
+                  [hideLabel]="true"
+                  [smallInput]="true"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+
+              <!-- Default Equipment Type Dropdown -->
+              <div class="col-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label mb-0">Default Equipment Type</label>
+                  <a class="btn-nav-link cursor-pointer" (click)="openLinkedMaster('/equipment-type')">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Equipment Types
+                  </a>
+                </div>
+                <app-searchable-dropdown
+                  [fetchDataFn]="getEquipmentTypeDropdown"
+                  [selectedItem]="selectedEquipmentTypeItem"
+                  (itemSelected)="onEquipmentTypeSelected($event)"
+                  [placeholder]="'Select Equipment Type (e.g. Vernier, Micrometer)'"
+                  [hideLabel]="true"
+                  [smallInput]="true"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+
+              <!-- Tolerance Type -->
+              <div class="col-md-3">
+                <div class="mb-1">
+                  <label for="toleranceType" class="form-label mb-0">Tolerance Type</label>
+                </div>
+                <app-custom-select
+                  id="toleranceType"
+                  [options]="toleranceTypes"
+                  valueField="value"
+                  labelField="name"
+                  size="sm"
+                  placeholder="Select Tolerance"
+                  formControlName="toleranceType"
+                  [disabled]="isViewMode">
+                </app-custom-select>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- 2B: Calculated Mode Configuration (Shape Formulas) -->
+          <fieldset *ngIf="DimensionalFactorForm.get('factorType')?.value === 'Calculated'" class="lims-fieldset mb-2.5">
+            <legend class="w-auto fw-semibold text-danger d-flex align-items-center justify-content-between w-100">
+              <span>Shape Cross-Sectional Formula Expressions</span>
+              <div *ngIf="!isViewMode" class="d-flex align-items-center gap-1">
+                <button
+                  type="button"
+                  class="btn-lims-preset"
+                  (click)="addShapeFormula({ shape: 'Rectangular', formula: 'W0 * T0', vars: 'W0, T0' })"
+                  title="Add Rectangular Preset">
+                  + Rectangular
+                </button>
+                <button
+                  type="button"
+                  class="btn-lims-preset"
+                  (click)="addShapeFormula({ shape: 'Round', formula: 'PI / 4 * (D0 ^ 2)', vars: 'D0' })"
+                  title="Add Round Preset">
+                  + Round
+                </button>
+                <button
+                  type="button"
+                  class="btn-lims-preset"
+                  (click)="addShapeFormula({ shape: 'Tubular', formula: 'PI * (D0 - T0) * T0', vars: 'D0, T0' })"
+                  title="Add Tubular Preset">
+                  + Tubular
+                </button>
+                <button
+                  type="button"
+                  class="btn-lims-preset btn-preset-primary"
+                  (click)="addShapeFormula()">
+                  + Add Shape
+                </button>
+              </div>
+            </legend>
+
+            <!-- Unit Row for Calculated Output -->
+            <div class="row g-2 mb-2 align-items-center">
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label mb-0">Calculated Output Unit</label>
+                  <a class="btn-nav-link cursor-pointer" (click)="openLinkedMaster('/parameter-unit')">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Manage Units
+                  </a>
+                </div>
+                <app-searchable-dropdown
+                  [fetchDataFn]="getUnitDropdown"
+                  [selectedItem]="selectedUnitDropdownItem"
+                  (itemSelected)="onUnitSelected($event)"
+                  [placeholder]="'Select Result Unit (e.g. mm²)'"
+                  [hideLabel]="true"
+                  [smallInput]="true"
+                  [isDisabled]="isViewMode">
+                </app-searchable-dropdown>
+              </div>
+              <div class="col-md-6">
+                <div class="text-muted small mt-3">
+                  Formula expression resolves automatically on the workbench based on specimen shape.
+                </div>
+              </div>
+            </div>
+
+            <!-- Shape Formulas Table -->
+            <div class="table-responsive">
+              <table class="table-lims-compact align-middle mb-1">
+                <thead>
+                  <tr class="text-center align-middle">
+                    <th class="col-sn">#</th>
+                    <th class="text-start">Specimen Shape <span class="text-danger">*</span></th>
+                    <th class="text-start">Formula Expression <span class="text-danger">*</span></th>
+                    <th class="text-start">Variables</th>
+                    <th *ngIf="!isViewMode" class="col-actions">Action</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="shapeFormulas">
+                  <tr *ngFor="let group of shapeFormulas.controls; let idx = index" [formGroupName]="idx">
+                    <td class="text-center col-sn fw-semibold text-secondary">{{ idx + 1 }}</td>
+                    <td>
+                      <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="specimenShape"
+                        placeholder="e.g. Rectangular, Round, Tubular"
+                        [attr.disabled]="isViewMode ? true : null" />
+                    </td>
+                    <td>
+                      <div class="input-group input-group-sm">
+                        <input
+                          type="text"
+                          class="form-control form-control-sm font-monospace"
+                          formControlName="formulaExpression"
+                          placeholder="e.g. W0 * T0, PI / 4 * (D0 ^ 2)"
+                          (input)="onFormulaExpressionInput(idx)"
+                          [ngClass]="{'is-invalid': !getFormulaStatus(idx).isValid && (group.get('formulaExpression')?.touched || submitted)}"
+                          [attr.disabled]="isViewMode ? true : null" />
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary"
+                          (click)="openFormulaBuilder(idx)"
+                          [disabled]="isViewMode"
+                          title="Open Interactive Formula Builder">
+                          <i class="bi bi-calculator"></i>
+                        </button>
+                      </div>
+
+                      <!-- Live Formula Validation & Dry-Run Test Simulator -->
+                      <div *ngIf="getFormulaStatus(idx) as status" class="mt-0.5">
+                        <div *ngIf="!status.isValid && (group.get('formulaExpression')?.value || submitted)" class="formula-hint-error d-flex align-items-center gap-1">
+                          <i class="bi bi-exclamation-triangle-fill"></i>
+                          <span>{{ status.error }}</span>
+                        </div>
+                        <div *ngIf="status.isValid && status.simulatedResult !== undefined" class="formula-hint-valid d-flex align-items-center gap-1">
+                          <i class="bi bi-check-circle-fill"></i>
+                          <span>Valid expression (Dry-run: {{ status.simulatedResult }})</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="variables"
+                        placeholder="e.g. W0, T0"
+                        [attr.disabled]="isViewMode ? true : null" />
+                    </td>
+                    <td *ngIf="!isViewMode" class="text-center col-actions">
+                      <button
+                        type="button"
+                        class="btn-lims-icon btn-lims-delete"
+                        (click)="removeShapeFormula(idx)"
+                        title="Remove Shape Formula">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="shapeFormulas.length === 0">
+                    <td [attr.colspan]="isViewMode ? 4 : 5" class="text-center text-muted py-2">
+                      No shape formulas added. Click "+ Add Shape" or a preset button above to add one.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
         </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer d-flex justify-content-end gap-2 p-2">
+          <button type="button" class="btn-lims btn-lims-cancel" (click)="closeModal()">
+            <i class="bi bi-x-circle me-1"></i>Cancel
+          </button>
+          <button *ngIf="!isViewMode" type="submit" class="btn-lims btn-lims-save">
+            <i class="bi bi-check-circle me-1"></i>
+            {{ isEditMode ? 'Update' : 'Save' }}
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
+
+<!-- Interactive Formula Builder Modal -->
+<app-formula-builder
+  [(visible)]="showFormulaBuilder"
+  [parameterType]="'Dimensional'"
+  [currentFormula]="currentFormulaForBuilder"
+  [currentFormulaDisplay]="currentFormulaDisplayForBuilder"
+  (formulaSaved)="onFormulaBuilderSaved($event)"
+  (formulaCleared)="onFormulaBuilderCleared()">
+</app-formula-builder>

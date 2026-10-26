@@ -193,6 +193,7 @@ export const routes: Routes = [
             { path: 'tpi-inspection/create', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-form/tpi-inspection-form.component').then(m => m.TpiInspectionFormComponent) , canDeactivate: [unsavedChangesGuard]},
             { path: 'tpi-inspection/details/:id', loadComponent: () => import('./components/tpi/tpi-inspection/tpi-inspection-form/tpi-inspection-form.component').then(m => m.TpiInspectionFormComponent) },
             { path: 'dimesional-factor', component: DimensionalFactorComponent },
+            { path: 'dimensional-factor', component: DimensionalFactorComponent },
             { path: 'heat-treatment', component: HeatTreatmentComponent },
             { path: 'heat-treatment-category', component: HeatTreatmentCategoryComponent },
             { path: 'cooling-medium', component: CoolingMediumComponent },

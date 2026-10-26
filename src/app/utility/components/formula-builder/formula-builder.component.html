@@ -27,8 +27,8 @@
           <div class="col-md-4">
             <div class="card h-100 shadow-sm border-0">
               <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
-                <h6 class="mb-2 text-muted fw-bold">Available Parameters</h6>
-                <input type="text" class="form-control form-control-sm" placeholder="Search parameters..."
+                <h6 class="mb-2 text-muted fw-bold">{{ parameterType === 'Dimensional' ? 'Available Factors & Tokens' : 'Available Parameters' }}</h6>
+                <input type="text" class="form-control form-control-sm" [placeholder]="parameterType === 'Dimensional' ? 'Search factors...' : 'Search parameters...'"
                   [(ngModel)]="searchTerm" (input)="filterParams()">
               </div>
               <div class="card-body p-2" style="max-height: 350px; overflow-y: auto;">
@@ -41,7 +41,7 @@
                     <i class="bi bi-plus-circle-fill text-primary"></i>
                   </button>
                   <div *ngIf="filteredParameters.length === 0" class="text-center text-muted small p-3">
-                    No parameters found.
+                    No {{ parameterType === 'Dimensional' ? 'factors' : 'parameters' }} found.
                   </div>
                 </div>
               </div>
@@ -166,15 +166,15 @@
                 <div class="mb-3">
                   <label class="form-label fw-bold"><i class="bi bi-pencil-square me-1"></i><span>Type Formula</span></label>
                   <textarea class="form-control" rows="2" [(ngModel)]="smartFormulaInput" (input)="parseSmartInput()"
-                    placeholder="Type formula using parameter names, e.g. (Carbon * 1000) / Manganese"></textarea>
+                    [placeholder]="parameterType === 'Dimensional' ? 'Type formula using factor names or codes, e.g. W0 * T0 or PI / 4 * (D0 ^ 2)' : 'Type formula using parameter names, e.g. (Carbon * 1000) / Manganese'"></textarea>
                   <small class="text-muted d-block mt-1">
-                    <i class="bi bi-lightbulb me-1"></i><span>Use exact parameter names or functions.</span>
+                    <i class="bi bi-lightbulb me-1"></i><span>{{ parameterType === 'Dimensional' ? 'Use factor codes (W0, T0, D0, PI) or names, basic math operators, and ^ for power.' : 'Use exact parameter names or functions.' }}</span>
                   </small>
                 </div>
 
                 <div class="mb-3">
                   <label class="form-label fw-bold text-muted small">
-                    <i class="bi bi-tags me-1"></i><span>Available Parameters (click to insert)</span>
+                    <i class="bi bi-tags me-1"></i><span>{{ parameterType === 'Dimensional' ? 'Available Factors & Tokens' : 'Available Parameters' }} (click to insert)</span>
                   </label>
                   <div class="d-flex flex-wrap gap-1" style="max-height: 150px; overflow-y: auto;">
                     <button *ngFor="let p of availableParameters" type="button"

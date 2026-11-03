@@ -305,43 +305,181 @@
   padding: 13px 14px;
 }
 
-/* ─── 8. Details & Content Rows ─── */
-.detail {
+/* ─── 8. KPI Calculations, Specimen Dimensions & Traceability (Global Pattern) ─── */
+.kpi-metric-grid {
   display: grid;
-  grid-template-columns: 27px 1fr;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid #edf0f4;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 6px;
 }
-.detail:last-child {
-  border-bottom: 0;
-}
-.ico {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
+
+.kpi-metric-tile {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
-  background: #fff0f0;
-  color: var(--red);
-  font-weight: 800;
-  font-size: 12px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.detail label {
-  display: block;
+
+.kpi-metric-tile:hover {
+  border-color: var(--primary-color, #da261c);
+  box-shadow: 0 2px 5px rgba(218, 38, 28, 0.08);
+}
+
+.kpi-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kpi-symbol {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--primary-color, #da261c);
+  font-family: monospace;
+}
+
+.kpi-name {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.2;
+}
+
+.kpi-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 1px 0;
+}
+
+.kpi-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-unit {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.kpi-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1px;
+}
+
+.kpi-req {
+  font-size: 0.64rem;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.kpi-status-badge {
+  font-size: 0.60rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+.kpi-pass {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.kpi-fail {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.kpi-pending {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.formula-list-container {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 6px;
+  margin-top: 6px;
+}
+
+/* ─── Specimen Dimension Tiles ─── */
+.dim-tile {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 4px 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dim-label {
+  font-size: 0.64rem;
+  color: #64748b;
   text-transform: uppercase;
-  color: #8592a5;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .45px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
-.detail strong {
+
+.dim-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Execution Traceability Grid ─── */
+.trace-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.trace-cell {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.trace-lbl {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   display: block;
-  font-size: 11.5px;
-  margin-top: 2px;
-  line-height: 1.45;
-  color: var(--ink);
 }
+
+.trace-val {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f172a;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
 .link {
   color: var(--blue);
   font-weight: 650;

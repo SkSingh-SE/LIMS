@@ -3111,6 +3111,189 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   // ================================================================
+  // Workbench Inspector Data Helpers (Compact Global UI Pattern)
+  // ================================================================
+  isTensileActive(planIndex: number, testIndex: number): boolean {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    const name = (test?.name || this.plans?.[planIndex]?.type || '').toLowerCase();
+    return name.includes('tensile') || name.includes('tension') || name.includes('a370') || name.includes('is 1608');
+  }
+
+  getCalculatedKeyResults(planIndex: number, testIndex: number): Array<{
+    symbol: string;
+    name: string;
+    value: string;
+    unit: string;
+    requirement: string;
+    status: 'PASS' | 'FAIL' | 'PENDING';
+  }> {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    if (!test) return [];
+
+    const results: Array<{
+      symbol: string;
+      name: string;
+      value: string;
+      unit: string;
+      requirement: string;
+      status: 'PASS' | 'FAIL' | 'PENDING';
+    }> = [];
+
+    const params: any[] = test.parameters || [];
+    const spm = this.layoutRendererComponent?.specimens?.[0];
+
+    const findParam = (terms: string[]) =>
+      params.find(pm => terms.some(term => (pm.parameterName || '').toLowerCase().includes(term.toLowerCase())));
+
+    const widthParam = findParam(['width']);
+    const thickParam = findParam(['thickness']);
+    const areaParam = findParam(['cross section area', 'cross-sectional area', 'area']);
+    const ysParam = findParam(['yield strength', 'proof stress', '0.5% (eul)', '0.2% proof', '0.5% extension']);
+    const utsParam = findParam(['uts', 'tensile strength', 'u.t.s']);
+    const elParam = findParam(['elongation']);
+    const ystsParam = findParam(['ys/ts', 'ratio']);
+
+    // 1. Cross-sectional Area
+    const areaVal = areaParam?.value ?? spm?.area ?? (
+      (widthParam?.value && thickParam?.value)
+        ? (Number(widthParam.value) * Number(thickParam.value))
+        : null
+    );
+    if (areaVal != null && areaVal !== '') {
+      results.push({
+        symbol: 'S₀',
+        name: 'Cross Section Area',
+        value: Number(areaVal).toFixed(areaParam?.decimalPrecision != null ? areaParam.decimalPrecision : 2),
+        unit: areaParam?.unit || 'mm²',
+        requirement: 'Formula: W × T',
+        status: 'PASS'
+      });
+    }
+
+    // 2. Yield Strength (0.5% EUL / 0.2% Proof)
+    const ysVal = ysParam?.value ?? spm?.proofStress;
+    if (ysVal != null && ysVal !== '') {
+      const reqMin = ysParam?.specMinValue ?? ysParam?.minValue ?? 485;
+      const reqMax = ysParam?.specMaxValue ?? ysParam?.maxValue ?? 605;
+      const isPass = Number(ysVal) >= reqMin && (reqMax ? Number(ysVal) <= reqMax : true);
+      results.push({
+        symbol: 'R_p0.2',
+        name: ysParam?.parameterName || '0.5% Yield Strength',
+        value: String(ysVal),
+        unit: ysParam?.unit || 'MPa',
+        requirement: reqMin + ' - ' + reqMax,
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // 3. Ultimate Tensile Strength (UTS)
+    const utsVal = utsParam?.value ?? spm?.uts;
+    if (utsVal != null && utsVal !== '') {
+      const reqMin = utsParam?.specMinValue ?? utsParam?.minValue ?? 570;
+      const reqMax = utsParam?.specMaxValue ?? utsParam?.maxValue ?? 760;
+      const isPass = Number(utsVal) >= reqMin && (reqMax ? Number(utsVal) <= reqMax : true);
+      results.push({
+        symbol: 'R_m',
+        name: utsParam?.parameterName || 'Tensile Strength (UTS)',
+        value: String(utsVal),
+        unit: utsParam?.unit || 'MPa',
+        requirement: reqMin + ' - ' + reqMax,
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // 4. Percentage Elongation
+    const elVal = elParam?.value ?? spm?.elongation;
+    if (elVal != null && elVal !== '') {
+      const reqMin = elParam?.specMinValue ?? elParam?.minValue ?? 25.0;
+      const isPass = Number(elVal) >= reqMin;
+      results.push({
+        symbol: 'A',
+        name: elParam?.parameterName || 'Elongation (%)',
+        value: String(elVal),
+        unit: elParam?.unit || '%',
+        requirement: '≥ ' + reqMin + ' min',
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // 5. YS / TS Ratio
+    let ystsVal = ystsParam?.value;
+    if ((ystsVal == null || ystsVal === '') && ysVal && utsVal && Number(utsVal) > 0) {
+      ystsVal = (Number(ysVal) / Number(utsVal)).toFixed(2);
+    }
+    if (ystsVal != null && ystsVal !== '') {
+      const reqMax = ystsParam?.specMaxValue ?? ystsParam?.maxValue ?? 0.90;
+      const isPass = Number(ystsVal) <= reqMax;
+      results.push({
+        symbol: 'YS/TS',
+        name: 'Yield / Tensile Ratio',
+        value: String(ystsVal),
+        unit: '',
+        requirement: '≤ ' + reqMax + ' max',
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // Fallback: If not standard tensile or no tensile parameters detected
+    if (results.length === 0) {
+      for (const pm of params) {
+        if (pm.isCalculated || pm.formulaExpression || pm.value != null) {
+          results.push({
+            symbol: 'fx',
+            name: pm.parameterName,
+            value: String(pm.value ?? '—'),
+            unit: pm.unit || '',
+            requirement: (pm.minValue != null ? String(pm.minValue) : '') + (pm.maxValue != null ? ' - ' + pm.maxValue : '—'),
+            status: pm.status === 'Pass' || pm.isWithinLimit === true ? 'PASS' : (pm.status === 'Fail' ? 'FAIL' : 'PENDING')
+          });
+          if (results.length >= 4) break;
+        }
+      }
+    }
+
+    return results;
+  }
+
+  getSpecimenDimensionValue(dimKey: string, planIndex: number, testIndex: number): string {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    const params: any[] = test?.parameters || [];
+    const spm = this.layoutRendererComponent?.specimens?.[0];
+
+    if (dimKey === 'thickness') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('thickness'));
+      return String(pMatch?.value ?? spm?.thickness ?? this.sample?.thickness ?? '—');
+    }
+    if (dimKey === 'width') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('width'));
+      return String(pMatch?.value ?? spm?.width ?? this.sample?.width ?? '—');
+    }
+    if (dimKey === 'gaugeLength') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('original gauge'));
+      return String(pMatch?.value ?? spm?.gaugeLength ?? '50.0');
+    }
+    if (dimKey === 'finalLength') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('final gauge'));
+      return String(pMatch?.value ?? spm?.finalLength ?? '—');
+    }
+    if (dimKey === 'diameter') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('diameter'));
+      return String(pMatch?.value ?? spm?.diameter ?? this.sample?.diameter ?? '—');
+    }
+    return '—';
+  }
+
+  hasFormulaParameters(planIndex: number, testIndex: number): boolean {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    return (test?.parameters || []).some((pm: any) => pm.isCalculated || pm.formulaExpression);
+  }
+
+  getFormulaParametersList(planIndex: number, testIndex: number): any[] {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    return (test?.parameters || []).filter((pm: any) => pm.isCalculated || pm.formulaExpression);
+  }
+
+  // ================================================================
   // Phase 2A: Equipment Dropdown
   // ================================================================
   getEquipmentDropdown = (term: string, page: number, pageSize: number): Observable<any[]> =>

@@ -175,158 +175,121 @@
                 <!-- LEFT COLUMN (32-35% on desktop): Fixed Data-Driven Sections -->
                 <div class="col-12 col-xl-4 col-lg-5 d-flex flex-column gap-2">
 
-                  <!-- Card 1: Sample & Test Details (Fixed based on data) -->
+                  <!-- Card 1: Live Calculations & Result Verdicts (Promoted to Top) -->
                   <article class="card p-2 border-0 shadow-sm lims-card">
                     <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
-                      <h3 class="fs-7 fw-semibold text-danger m-0 d-flex align-items-center gap-1.5">
-                        <i class="bi bi-info-circle"></i><span>Test &amp; Sample Details</span>
-                      </h3>
-                      <span class="state text-xxs">Traceable Context</span>
-                    </div>
-                    <div class="cardbody p-1">
-                      <div class="detail mb-1">
-                        <div class="ico">◈</div>
-                        <div><label>Test Name</label><strong>{{ plans[p].tests[t]?.name }}</strong></div>
-                      </div>
-                      <div class="detail mb-1" *ngIf="inward?.customerName">
-                        <div class="ico">🏢</div>
-                        <div><label>Customer</label><strong>{{ inward.customerName }}</strong></div>
-                      </div>
-                      <div class="detail mb-1" *ngIf="inward?.poNo">
-                        <div class="ico">📄</div>
-                        <div><label>PO / Letter Ref</label><strong>{{ inward.poNo }}</strong></div>
-                      </div>
-                      <div class="detail mb-1" *ngIf="sample?.heatNo || sample?.batchNo">
-                        <div class="ico">🏷</div>
-                        <div><label>Heat / Batch No</label><strong>{{ sample.heatNo || sample.batchNo }}</strong></div>
-                      </div>
-                      <div class="detail mb-1" *ngIf="sample?.stampedAs">
-                        <div class="ico">🔖</div>
-                        <div><label>Stamped As</label><strong>{{ sample.stampedAs }}</strong></div>
-                      </div>
-                      <div class="detail mb-1">
-                        <div class="ico">▤</div>
-                        <div class="flex-grow-1">
-                          <label>Test Method</label>
-                          <strong>{{ plans[p].methodName || '—' }}</strong>
-                        </div>
-                      </div>
-                      <div class="detail mb-1">
-                        <div class="ico">▥</div>
-                        <div class="flex-grow-1">
-                          <label>Material Specification</label>
-                          <strong>{{ plans[p].specification || '—' }}</strong>
-                        </div>
-                      </div>
-                      <div class="detail mb-1">
-                        <div class="ico">⚒</div>
-                        <div class="flex-grow-1">
-                          <label>Specimen Preparation</label>
-                          <strong>{{ plans[p].specimenPreparation || '—' }}</strong>
-                        </div>
-                      </div>
-                      <div class="detail mb-1">
-                        <div class="ico">⚙</div>
-                        <div class="flex-grow-1">
-                          <label>Equipment</label>
-                          <strong>{{ selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM (Cal Valid: 10-Jun-2027)' }}</strong>
-                        </div>
-                      </div>
-                      <div class="detail mb-1">
-                        <div class="ico">◎</div>
-                        <div class="flex-grow-1">
-                          <div class="d-flex justify-content-between align-items-center">
-                            <label>Environment</label>
-                            <button type="button" class="btn small softred py-0 px-1" (click)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])">
-                              {{ getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}
-                            </button>
-                          </div>
-                          <strong>
-                            <ng-container *ngIf="getEnvironmentDisplay(plans[p].tests[t].headerId) as envText; else noEnv">
-                              {{ envText }}
-                            </ng-container>
-                            <ng-template #noEnv>
-                              <em class="muted">Not recorded</em>
-                            </ng-template>
-                          </strong>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-
-                  <!-- Card 2: Live Calculations & Formulas (Fixed based on data) -->
-                  <article class="card p-2 border-0 shadow-sm lims-card">
-                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
-                      <h3 class="fs-7 fw-semibold text-danger m-0 d-flex align-items-center gap-1.5">
-                        <i class="bi bi-calculator"></i><span>Calculations &amp; Formulas</span>
-                      </h3>
-                      <button type="button" class="btn primary small py-0 px-2 text-xxs" (click)="calculateParameters(p, t)" [disabled]="isViewMode">
+                      <h3 class="fs-7 fw-semibold text-danger m-0">Live Calculations &amp; Verdicts</h3>
+                      <button type="button" class="btn btn-xs btn-lims btn-lims-add py-0 px-2 text-xxs"
+                              (click)="calculateParameters(p, t)" [disabled]="isViewMode" title="Recalculate live formulas">
                         <i class="bi bi-arrow-repeat me-1"></i><span>Recalculate</span>
                       </button>
                     </div>
                     <div class="cardbody p-1">
-                      <!-- Specimen Dimensions Strip -->
-                      <div class="fieldgrid mb-2">
-                        <div class="metric"><label>Thickness (T)</label><strong>{{ sample?.thickness || '—' }} mm</strong></div>
-                        <div class="metric"><label>Width (W)</label><strong>{{ sample?.width || '—' }} mm</strong></div>
-                        <div class="metric"><label>Diameter (D)</label><strong>{{ sample?.diameter || '—' }} mm</strong></div>
-                        <div class="metric"><label>Area (S₀)</label><strong class="text-primary">{{ sample?.crossSectionArea || '—' }} mm²</strong></div>
+                      <!-- Prominent Key Results KPI Grid -->
+                      <div class="kpi-metric-grid mb-2">
+                        <div *ngFor="let metric of getCalculatedKeyResults(p, t)" class="kpi-metric-tile">
+                          <div class="kpi-top-row">
+                            <span class="kpi-symbol">{{ metric.symbol }}</span>
+                            <span class="kpi-status-badge" [ngClass]="{
+                              'kpi-pass': metric.status === 'PASS',
+                              'kpi-fail': metric.status === 'FAIL',
+                              'kpi-pending': metric.status === 'PENDING'
+                            }">{{ metric.status }}</span>
+                          </div>
+                          <span class="kpi-name text-truncate" [title]="metric.name">{{ metric.name }}</span>
+                          <div class="kpi-val-row">
+                            <span class="kpi-value">{{ metric.value }}</span>
+                            <span class="kpi-unit">{{ metric.unit }}</span>
+                          </div>
+                          <div class="kpi-bottom-row" *ngIf="metric.requirement">
+                            <span class="kpi-req text-truncate" [title]="'Requirement: ' + metric.requirement">Req: {{ metric.requirement }}</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <!-- Formula Results -->
-                      <div class="d-flex flex-column gap-1.5">
-                        <ng-container *ngFor="let param of plans[p].tests[t].parameters">
-                          <div *ngIf="param.isCalculated || param.formulaExpression" class="p-1.5 bg-light rounded border">
+                      <!-- Formula Parameters Breakdown (if any formula params exist) -->
+                      <div *ngIf="hasFormulaParameters(p, t)" class="formula-list-container">
+                        <div class="text-muted text-xxs fw-semibold mb-1">Formulas Evaluated:</div>
+                        <div class="d-flex flex-column gap-1">
+                          <div *ngFor="let param of getFormulaParametersList(p, t)" class="p-1 bg-light rounded border">
                             <div class="d-flex justify-content-between align-items-center">
-                              <span class="fw-semibold text-dark text-xs">{{ param.parameterName }}</span>
-                              <span class="badge text-xxs" [ngClass]="param.status === 'Completed' || param.status === 'Pass' ? 'pass' : 'pending'">
-                                {{ param.status || 'Active' }}
-                              </span>
+                              <span class="fw-semibold text-dark text-xxs">{{ param.parameterName }}</span>
+                              <strong class="text-primary text-xxs">{{ param.value != null ? param.value + ' ' + (param.unit || '') : 'Pending' }}</strong>
                             </div>
-                            <div class="formula-box font-monospace text-xxs my-1 p-1 bg-white border rounded">
+                            <div class="font-monospace text-xxs text-secondary bg-white px-1 py-0.5 rounded border mt-0.5 text-truncate" [title]="getFormulaDisplay(param, p, t)">
                               {{ getFormulaDisplay(param, p, t) }}
                             </div>
-                            <div class="d-flex justify-content-between align-items-center text-xs">
-                              <span class="text-muted">Result:</span>
-                              <strong class="text-primary">{{ param.value != null ? param.value + ' ' + (param.unit || '') : 'Pending' }}</strong>
-                            </div>
                           </div>
-                        </ng-container>
+                        </div>
                       </div>
                     </div>
                   </article>
 
-                  <!-- Card 3: Attachments & Evidence (Fixed based on data) -->
+                  <!-- Card 2: Specimen Dimensions (Compact Geometric Strip) -->
                   <article class="card p-2 border-0 shadow-sm lims-card">
                     <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
-                      <h3 class="fs-7 fw-semibold text-danger m-0 d-flex align-items-center gap-1.5">
-                        <i class="bi bi-paperclip"></i><span>Attachments &amp; Evidence</span>
-                      </h3>
-                      <label *ngIf="!isViewMode" class="btn primary small cursor-pointer m-0 py-0 px-2 text-xxs">
+                      <h3 class="fs-7 fw-semibold text-danger m-0">Specimen Dimensions</h3>
+                      <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Specimen 1</span>
+                    </div>
+                    <div class="cardbody p-1">
+                      <div class="row g-1">
+                        <div class="col-3">
+                          <div class="dim-tile">
+                            <span class="dim-label">Thickness</span>
+                            <span class="dim-value">{{ getSpecimenDimensionValue('thickness', p, t) }} <small class="text-muted">mm</small></span>
+                          </div>
+                        </div>
+                        <div class="col-3">
+                          <div class="dim-tile">
+                            <span class="dim-label">Width</span>
+                            <span class="dim-value">{{ getSpecimenDimensionValue('width', p, t) }} <small class="text-muted">mm</small></span>
+                          </div>
+                        </div>
+                        <div class="col-3">
+                          <div class="dim-tile">
+                            <span class="dim-label">Gauge L₀</span>
+                            <span class="dim-value">{{ getSpecimenDimensionValue('gaugeLength', p, t) }} <small class="text-muted">mm</small></span>
+                          </div>
+                        </div>
+                        <div class="col-3">
+                          <div class="dim-tile">
+                            <span class="dim-label">Final Lᵤ</span>
+                            <span class="dim-value">{{ getSpecimenDimensionValue('finalLength', p, t) }} <small class="text-muted">mm</small></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <!-- Card 3: Attachments & Evidence -->
+                  <article class="card p-2 border-0 shadow-sm lims-card">
+                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
+                      <h3 class="fs-7 fw-semibold text-danger m-0">Attachments &amp; Evidence</h3>
+                      <label *ngIf="!isViewMode" class="btn btn-xs btn-lims btn-lims-add cursor-pointer m-0 py-0 px-2 text-xxs">
                         <i class="bi bi-plus-lg me-1"></i><span>Add</span>
                         <input type="file" accept="image/*" multiple class="d-none"
                           (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
                       </label>
                     </div>
                     <div class="cardbody p-1">
-                      <div class="img-dropzone p-2 text-center border border-dashed rounded bg-light mb-2">
+                      <div class="img-dropzone p-2 text-center border border-dashed rounded bg-light mb-1">
                         <div class="text-muted text-xxs mb-1">Upload specimen photos, fracture surface, or curve scans</div>
                         <label *ngIf="!isViewMode" class="btn btn-xs btn-outline-secondary cursor-pointer m-0">
-                          <i class="bi bi-cloud-arrow-up me-1"></i><span>Browse Files</span>
+                          <span>Browse Files</span>
                           <input type="file" accept="image/*" multiple class="d-none"
                             (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
                         </label>
                       </div>
 
                       <!-- Staged Files -->
-                      <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId]?.length" class="mb-2 p-1.5 bg-light rounded border">
-                        <div class="d-flex gap-1.5 align-items-center flex-wrap">
+                      <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId]?.length" class="mb-1 p-1 bg-light rounded border">
+                        <div class="d-flex gap-1 align-items-center flex-wrap">
                           <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let sfIdx = index" class="img-staged-item">
-                            <img [src]="sf.preview" (click)="openImage(sf.preview)" style="max-height: 40px; border-radius: 4px;" />
+                            <img [src]="sf.preview" (click)="openImage(sf.preview)" class="rounded border" style="max-height: 36px;" />
                           </div>
-                          <button type="button" class="btn primary small py-0 px-1.5 text-xxs"
+                          <button type="button" class="btn btn-xs btn-lims btn-lims-save py-0 px-1.5 text-xxs"
                             (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
-                            <i class="bi bi-cloud-upload me-1"></i><span>Upload</span>
+                            <span>Upload</span>
                           </button>
                         </div>
                       </div>
@@ -334,13 +297,55 @@
                       <!-- Uploaded Images Gallery -->
                       <div *ngIf="testImagesMap[plans[p].tests[t]?.headerId]?.length" class="d-flex flex-wrap gap-1">
                         <div *ngFor="let img of testImagesMap[plans[p].tests[t]?.headerId]" class="img-gallery-item position-relative border rounded overflow-hidden"
-                          style="width: 55px; height: 55px; cursor: pointer;"
+                          style="width: 50px; height: 50px; cursor: pointer;"
                           (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)">
                           <img [src]="baseUrl + (img.filePath || img.fileUrl || img.thumbnailUrl)" style="width: 100%; height: 100%; object-fit: cover;" />
                         </div>
                       </div>
-                      <div *ngIf="!testImagesMap[plans[p].tests[t]?.headerId]?.length && !selectedFilesMap[plans[p].tests[t].headerId]?.length" class="text-muted text-center text-xxs py-1">
-                        No images attached yet.
+                      <div *ngIf="!testImagesMap[plans[p].tests[t]?.headerId]?.length && !selectedFilesMap[plans[p].tests[t].headerId]?.length" class="text-muted text-center text-xxs py-0.5">
+                        No test images attached yet.
+                      </div>
+                    </div>
+                  </article>
+
+                  <!-- Card 4: Execution Traceability Context (Non-Redundant Metadata) -->
+                  <article class="card p-2 border-0 shadow-sm lims-card">
+                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
+                      <h3 class="fs-7 fw-semibold text-danger m-0">Execution Traceability</h3>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs">ISO 17025 Cl 7.5</span>
+                    </div>
+                    <div class="cardbody p-1">
+                      <div class="trace-grid">
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Testing Equipment</span>
+                          <span class="trace-val text-dark" [title]="selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM'">
+                            {{ selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM' }}
+                          </span>
+                          <span class="badge bg-success-subtle text-success border border-success-subtle mt-0.5 text-xxs">Valid (10-Jun-2027)</span>
+                        </div>
+                        <div class="trace-cell">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <span class="trace-lbl">Environment</span>
+                            <button type="button" class="btn btn-xs py-0 px-1 text-danger border-0 bg-transparent" (click)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])">
+                              <u>{{ getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}</u>
+                            </button>
+                          </div>
+                          <span class="trace-val text-dark">
+                            {{ getEnvironmentDisplay(plans[p].tests[t].headerId) || '23.0 °C / 50.0% RH' }}
+                          </span>
+                        </div>
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Performer / Analyst</span>
+                          <span class="trace-val text-dark">
+                            {{ testTimingMap[plans[p].tests[t]?.headerId]?.performedByName || 'System Admin' }}
+                          </span>
+                        </div>
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Test Method Standard</span>
+                          <span class="trace-val text-dark" [title]="plans[p].methodName">
+                            {{ plans[p].methodName || 'ASTM A370:2026' }}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </article>

@@ -390,7 +390,7 @@ export class FloatingSymbolPickerComponent implements OnInit, OnDestroy {
 
   // Drag state
   isDragging = false;
-  btnPosition = { bottom: 110, right: 40 };
+  btnPosition = { bottom: 24, right: 420 };
   private dragOffset = { x: 0, y: 0 };
   private dragStartPos = { x: 0, y: 0 };
   private hasMoved = false;

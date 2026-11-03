@@ -52,16 +52,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   isViewMode: boolean = false;
   payloadLoaded: boolean = false;
 
-  // 6-Tab Workflow Navigation as per ISO 17025 Redesign (Parameters merged into Execution)
-  activeTab: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history' = 'info';
+  // 2-Tab Consolidated Workflow Navigation (ISO 17025)
+  // Tab 1: 'execution' (1. Test & Execution Workspace)
+  // Tab 2: 'nabl_audit' (2. NABL QA & Audit)
+  activeTab: 'execution' | 'nabl_audit' = 'execution';
 
-  testTabs: { id: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'; label: string; icon: string }[] = [
-    { id: 'info', label: 'Test Information', icon: 'bi-file-text' },
-    { id: 'execution', label: 'Test Execution', icon: 'bi-play-circle' },
-    { id: 'calculations', label: 'Calculations', icon: 'bi-calculator' },
-    { id: 'nabl', label: 'NABL & QA', icon: 'bi-shield-check' },
-    { id: 'attachments', label: 'Attachments', icon: 'bi-paperclip' },
-    { id: 'history', label: 'History', icon: 'bi-clock-history' },
+  testTabs: { id: 'execution' | 'nabl_audit'; label: string; icon: string }[] = [
+    { id: 'execution', label: '1. Test & Execution Workspace', icon: 'bi-clipboard-data' },
+    { id: 'nabl_audit', label: '2. NABL QA & Audit', icon: 'bi-shield-check' }
   ];
 
   testPurposeOptions: string[] = [
@@ -481,8 +479,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const analysisTypeId = plan.analysisTypeId || null;
     const leafNode = plan.leafNode || plan.tests?.[0]?.name || null;
     const headerId = plan.headerId || plan.tests?.[0]?.headerId || `plan_${planIndex}`;
+    const methodId = plan.methodId || plan.tests?.[0]?.testMethodId || null;
+    const methodName = plan.methodName || plan.tests?.[0]?.testMethodName || null;
 
-    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}`;
+    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}_${methodId}_${methodName}`;
     if (this.layoutCache[cacheKey]) {
       this.currentTestLayout = this.layoutCache[cacheKey];
       this.selectedLayoutTemplateId = this.currentTestLayout?.id || null;
@@ -511,7 +511,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }
 
     this.loadingLayout = true;
-    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leafNode).subscribe({
+    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leafNode, methodId, methodName).subscribe({
       next: (template: any) => {
         this.loadingLayout = false;
         if (template && template.layoutConfigJson) {
@@ -2522,17 +2522,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // ================================================================
   // 6-Tab Workflow Navigation & Quick Actions
   // ================================================================
-  switchTab(tab: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'): void {
-    this.activeTab = tab;
+  switchTab(tab: string): void {
+    if (tab === 'nabl' || tab === 'history' || tab === 'nabl_audit') {
+      this.activeTab = 'nabl_audit';
+    } else {
+      this.activeTab = 'execution';
+    }
   }
 
   goToNextTab(): void {
-    const tabOrder: ('info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history')[] = [
-      'info', 'execution', 'calculations', 'nabl', 'attachments', 'history'
-    ];
-    const currentIndex = tabOrder.indexOf(this.activeTab);
-    if (currentIndex < tabOrder.length - 1) {
-      this.activeTab = tabOrder[currentIndex + 1];
+    if (this.activeTab === 'execution') {
+      this.activeTab = 'nabl_audit';
     }
   }
 

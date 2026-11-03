@@ -1481,50 +1481,48 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
 
+  // Traceability deduplication fix v2
   private addAdditionalDetailsForSample(
     sampleNo: string,
     additionalDetails: any[] = []
   ): void {
     const formArray = this.sampleAdditionalDetails as FormArray;
-    const existingLabels = formArray.controls.map(r => r.get('label')?.value);
+    const existingLabels = new Set<string>(
+      formArray.controls.map(r => (r.get('label')?.value || '').trim()).filter(Boolean)
+    );
 
+    // 1. For all existing rows, append this sample's value (or empty string if not present)
     formArray.controls.forEach(row => {
       const valuesArray = row.get('values') as FormArray;
-      const label = row.get('label')?.value;
-      const match = additionalDetails.find(x => x.label === label);
-      if (match) {
-        // push the matching value for this sample into the row's values array
-        valuesArray.push(this.fb.control(match?.value ?? ''));
-      }
+      const label = (row.get('label')?.value || '').trim();
+      const match = additionalDetails.find(x => (x.label || '').trim().toLowerCase() === label.toLowerCase());
+      valuesArray.push(this.fb.control(match?.value ?? ''));
     });
 
-    additionalDetails
-      .filter(ad => !existingLabels.includes(ad.label))
-      .forEach(ad => {
-        // create unique controls for each existing sample column (except the new one we will append below)
-        const valuesArray = this.fb.array(
-          Array.from({ length: Math.max(0, this.sampleNumbers.length - 1) }, () => this.fb.control(''))
-        );
+    // 2. For newly introduced labels from this sample, add new row(s) with previous columns filled with empty string
+    const processedNewLabels = new Set<string>();
+    additionalDetails.forEach(ad => {
+      const label = (ad.label || '').trim();
+      if (!label || existingLabels.has(label) || processedNewLabels.has(label.toLowerCase())) return;
+      processedNewLabels.add(label.toLowerCase());
+      existingLabels.add(label);
 
-        // push the current sample's value as the last column
-        valuesArray.push(this.fb.control(ad.value ?? ''));
+      // Previous samples count is this.sampleNumbers.length - 1
+      const valuesArray = this.fb.array(
+        Array.from({ length: Math.max(0, this.sampleNumbers.length - 1) }, () => this.fb.control(''))
+      );
+      // Current sample value
+      valuesArray.push(this.fb.control(ad.value ?? ''));
 
-        formArray.push(
-          this.fb.group({
-            id: [ad.id || 0],
-            label: [ad.label],
-            enabled: [true],
-            values: valuesArray
-          })
-        );
-      });
-
-    if (!additionalDetails.length && formArray.length > 0) {
-      formArray.controls.forEach(row => {
-        // append a new empty control for the newly added sample
-        (row.get('values') as FormArray).push(this.fb.control(''));
-      });
-    }
+      formArray.push(
+        this.fb.group({
+          id: [ad.id || 0],
+          label: [label],
+          enabled: [true],
+          values: valuesArray
+        })
+      );
+    });
 
     if (!this.bufferedAdditionalDetails[sampleNo]) {
       this.bufferedAdditionalDetails[sampleNo] = additionalDetails;
@@ -2126,13 +2124,19 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
 
     // Sample additional details – ONLY send if samples exist
     let addIndex = 0;
+    const seenKeys = new Set<string>();
     if (Array.isArray(value.sampleAdditionalDetails) && this.sampleNumbers.length > 0) {
       value.sampleAdditionalDetails.forEach((row: any) => {
-        const label = row.label || '';
+        const label = (row.label || '').trim();
+        if (!label) return; // Skip empty labels
         const valuesArray = Array.isArray(row.values) ? row.values : [];
-        for (let sampleIdx = 0; sampleIdx < Math.max(valuesArray.length, this.sampleNumbers.length); sampleIdx++) {
-          const val = valuesArray[sampleIdx] ?? '';
+        for (let sampleIdx = 0; sampleIdx < this.sampleNumbers.length; sampleIdx++) {
           const sampleNo = this.sampleNumbers[sampleIdx] || '';
+          const key = `${sampleNo}|${label.toLowerCase()}`;
+          if (seenKeys.has(key)) continue; // Prevent sending duplicate (SampleNo, Label) pairs
+          seenKeys.add(key);
+
+          const val = valuesArray[sampleIdx] ?? '';
           formData.append(`SampleAdditionalDetails[${addIndex}].SampleNo`, sampleNo);
           formData.append(`SampleAdditionalDetails[${addIndex}].Label`, label);
           formData.append(`SampleAdditionalDetails[${addIndex}].Value`, val ?? '');

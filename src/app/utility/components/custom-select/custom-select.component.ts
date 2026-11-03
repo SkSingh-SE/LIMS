@@ -146,13 +146,31 @@ export class CustomSelectComponent implements OnInit, OnChanges, ControlValueAcc
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['options'] || changes['valueField'] || changes['labelField'] || changes['iconField'] || changes['badgeField']) {
+    const optsChange = changes['options'];
+    const fieldsChanged = changes['valueField'] || changes['labelField'] || changes['iconField'] || changes['badgeField'];
+    if (fieldsChanged || (optsChange && !this.areOptionsEqual(optsChange.previousValue, optsChange.currentValue))) {
       this.normalizeOptions();
       this.syncSelectedOption();
     }
     if (changes['value']) {
       this.syncSelectedOption();
     }
+  }
+
+  private areOptionsEqual(a: any[] | undefined, b: any[] | undefined): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      const itemA = a[i];
+      const itemB = b[i];
+      if (itemA === itemB) continue;
+      if (!itemA || !itemB) return false;
+      const valA = typeof itemA === 'object' ? (itemA[this.valueField] ?? itemA.value ?? itemA.id ?? itemA.key ?? itemA.label) : itemA;
+      const valB = typeof itemB === 'object' ? (itemB[this.valueField] ?? itemB.value ?? itemB.id ?? itemB.key ?? itemB.label) : itemB;
+      if (valA !== valB) return false;
+    }
+    return true;
   }
 
   get isSearchEnabled(): boolean {
@@ -237,8 +255,10 @@ export class CustomSelectComponent implements OnInit, OnChanges, ControlValueAcc
       });
     }
 
-    // Reset highlighted index to first matching option or current selection
-    if (this.selectedOption) {
+    // Preserve valid highlight index, else sync with current selection or first option
+    if (this.highlightedIndex >= 0 && this.highlightedIndex < this.filteredOptions.length) {
+      // Keep existing highlight index
+    } else if (this.selectedOption) {
       const idx = this.filteredOptions.findIndex(o => this.isValueEqual(o.value, this.selectedOption?.value));
       this.highlightedIndex = idx >= 0 ? idx : (this.filteredOptions.length > 0 ? 0 : -1);
     } else {
@@ -328,6 +348,13 @@ export class CustomSelectComponent implements OnInit, OnChanges, ControlValueAcc
     this.cdr.detectChanges();
   }
 
+  onOptionMouseDown(event: MouseEvent, opt: CustomSelectOption): void {
+    if (opt.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.selectOption(opt);
+  }
+
   selectOption(opt: CustomSelectOption, event?: MouseEvent): void {
     if (opt.disabled) return;
     if (event) {
@@ -398,24 +425,12 @@ export class CustomSelectComponent implements OnInit, OnChanges, ControlValueAcc
    * Scroll highlighted option into view inside scrollable options list
    */
   private scrollToHighlighted(): void {
-    setTimeout(() => {
-      if (!this.listEl?.nativeElement) return;
-      const items = this.listEl.nativeElement.querySelectorAll<HTMLElement>('.custom-select-option');
-      const item = items[this.highlightedIndex];
-      if (item) {
-        const list = this.listEl.nativeElement;
-        const itemTop = item.offsetTop;
-        const itemBottom = itemTop + item.offsetHeight;
-        const listTop = list.scrollTop;
-        const listBottom = listTop + list.clientHeight;
-
-        if (itemTop < listTop) {
-          list.scrollTop = itemTop;
-        } else if (itemBottom > listBottom) {
-          list.scrollTop = itemBottom - list.clientHeight;
-        }
-      }
-    }, 0);
+    if (!this.listEl?.nativeElement) return;
+    const items = this.listEl.nativeElement.querySelectorAll<HTMLElement>('.custom-select-option');
+    const item = items[this.highlightedIndex];
+    if (item) {
+      item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
   }
 
   /**
@@ -504,8 +519,9 @@ export class CustomSelectComponent implements OnInit, OnChanges, ControlValueAcc
       case 'Enter':
         event.preventDefault();
         event.stopPropagation();
-        if (this.highlightedIndex >= 0 && this.highlightedIndex < this.filteredOptions.length) {
-          this.selectOption(this.filteredOptions[this.highlightedIndex]);
+        const targetIdx = this.highlightedIndex >= 0 ? this.highlightedIndex : (this.filteredOptions.length > 0 ? 0 : -1);
+        if (targetIdx >= 0 && targetIdx < this.filteredOptions.length) {
+          this.selectOption(this.filteredOptions[targetIdx]);
         }
         break;
 

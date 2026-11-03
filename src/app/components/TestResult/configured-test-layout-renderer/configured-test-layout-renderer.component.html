@@ -1526,6 +1526,84 @@
             </div>
           </ng-container>
 
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 16: OPINION & INTERPRETATION (opinion)              -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'opinion'">
+            <div class="opinion-interp-section">
+              <div class="d-flex align-items-center justify-content-between mb-1 pb-1 border-bottom">
+                <span class="badge" [ngClass]="s.config?.isOptional !== false ? 'bg-secondary-subtle text-secondary' : 'bg-danger-subtle text-danger'">
+                  <i class="bi" [ngClass]="s.config?.isOptional !== false ? 'bi-shield-check me-1' : 'bi-exclamation-circle me-1'"></i>
+                  {{ s.config?.isOptional !== false ? 'Optional Section (ISO 17025 Cl. 7.8.7)' : 'Mandatory Section (Required on Report)' }}
+                </span>
+                <span class="text-xxs text-muted">{{ opinionData.items.length }} Evaluation Items</span>
+              </div>
+
+              <div class="table-responsive mb-2">
+                <table class="table table-sm table-bordered align-middle result-table mb-1">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="w-col-35">#</th>
+                      <th class="text-start">Evaluation Parameter / Topic</th>
+                      <th class="text-start w-col-240">Formula / Derivation</th>
+                      <th class="w-col-70">Unit</th>
+                      <th class="w-col-130">Requirement</th>
+                      <th class="text-start w-col-220">Technician Entry / Observation</th>
+                      <th class="w-col-80 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of opinionData.items; let oIdx = index">
+                      <td class="text-center text-muted small fw-semibold">{{ oIdx + 1 }}</td>
+                      <td class="fw-semibold text-start text-dark">
+                        {{ item.label }}
+                      </td>
+                      <td class="text-start">
+                        <span *ngIf="item.formulaDisplay" class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace text-xxs">
+                          &fnof;x {{ item.formulaDisplay }}
+                        </span>
+                        <span *ngIf="!item.formulaDisplay" class="text-muted text-xxs fst-italic">—</span>
+                      </td>
+                      <td class="text-center text-muted font-monospace small">{{ item.unit || '—' }}</td>
+                      <td class="text-center small">{{ item.requirement || 'Conforms' }}</td>
+                      <td>
+                        <input type="text" class="form-control form-control-xs"
+                               [(ngModel)]="item.value" [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="syncCollectionsToTest()"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="Enter observation / status..." />
+                      </td>
+                      <td class="text-center">
+                        <select class="form-select form-select-xs fw-bold"
+                                [(ngModel)]="item.status" [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="syncCollectionsToTest()"
+                                [disabled]="isViewMode || isLocked"
+                                [ngClass]="item.status === 'Pass' ? 'text-success' : (item.status === 'Fail' ? 'text-danger' : 'text-warning')">
+                          <option value="Pass">PASS</option>
+                          <option value="Fail">FAIL</option>
+                          <option value="NA">N/A</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Overall Technical Opinion & Interpretation Synthesis -->
+              <div class="opinion-statement-box p-2 rounded border bg-light-subtle">
+                <label class="form-label text-xxs fw-bold text-dark d-flex align-items-center mb-1">
+                  <i class="bi bi-chat-square-quote-fill text-danger me-1"></i>
+                  <span>Overall Technical Opinion &amp; Interpretation Statement (QuestPDF Certificate Output):</span>
+                </label>
+                <textarea class="form-control form-control-sm text-xs" rows="2"
+                          [(ngModel)]="opinionData.overallStatement" [ngModelOptions]="{ standalone: true }"
+                          (ngModelChange)="syncCollectionsToTest()"
+                          [readOnly]="isViewMode || isLocked"
+                          placeholder="Based on the above test results, the material complies with specified standard requirements..."></textarea>
+              </div>
+            </div>
+          </ng-container>
+
         </div>
       </div>
 

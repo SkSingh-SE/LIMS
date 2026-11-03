@@ -7,6 +7,11 @@ import { ToastService } from '../../../services/toast.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { ParameterService } from '../../../services/parameter.service';
+import { DimensionalFactorService } from '../../../services/dimensional-factor.service';
+import { HeatTreatmentService } from '../../../services/heat-treatment.service';
+import { ProductConditionService } from '../../../services/product-condition.service';
+import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
+import { EquipmentService } from '../../../services/equipment.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { CustomSelectComponent } from '../../../utility/components/custom-select/custom-select.component';
 import { TestLayoutService, TestLayoutTemplateDto } from '../../../services/test-layout.service';
@@ -90,9 +95,31 @@ export interface TestDatasetPool {
 
 export interface SectionConfig {
   sectionKey?: string;
+  // Environmental Conditions & Specimen Geometry
+  temperature?: string;
+  humidity?: string;
+  specimenType?: string;
+  surfaceCondition?: string;
+  speedOfTesting?: string;
+  testingSpeed?: string;
+  gaugeLength?: string;
+  conditionPreset?: string;
+
+  // Equipment & Traceability
+  equipmentName?: string;
+  equipmentId?: string;
+  calibrationCertificate?: string;
+  calibrationDate?: string;
+  calibrationDue?: string;
+  extensometerType?: string;
+  indenterType?: string;
+  testLoad?: string;
+  dwellTime?: string;
+  traceabilityPreset?: string;
   width?: string;
   visibility?: string;
   enabled?: boolean;
+  renderMode?: 'fixed' | 'runtime';
   runtimeAdjust?: boolean;
   showUnit?: boolean;
   showLabels?: boolean;
@@ -135,6 +162,16 @@ export interface SectionConfig {
   specimenRows?: string[];
   specimenNames?: string;
   specimenColHeader?: string;
+  specimenShape?: 'rectangular' | 'round' | 'tubular';
+  selectedOrientationId?: number | string;
+  selectedOrientationNotation?: string;
+  showOrientationColumn?: boolean;
+  showOrientationCol?: boolean;
+  showDimensions?: boolean;
+  showAreaCalculation?: boolean;
+  showAreaCol?: boolean;
+  showConformanceVerdict?: boolean;
+  specimenExecutionMode?: 'fixed' | 'runtime';
 
   // Reading
   readingSource?: string;
@@ -145,6 +182,17 @@ export interface SectionConfig {
   readingLabel?: string;
   targetParameter?: string;
   unit?: string;
+  targetParamId?: number | string;
+  targetParamName?: string;
+  targetUnit?: string;
+  targetRequirement?: string;
+  targetMin?: number | string;
+  targetMax?: number | string;
+  readingExecutionMode?: 'fixed' | 'runtime';
+  spotCount?: number;
+  outlierSpreadLimit?: number;
+  showSpreadRow?: boolean;
+  showOverallAverageRow?: boolean;
 
   // Location
   locationSource?: string;
@@ -211,8 +259,10 @@ export interface SectionConfig {
   rows?: string;
   allowRuntimeRows?: boolean;
   showHeader?: boolean;
+  cellMatrix?: CustomTableCell[][];
+  activeCellCoords?: { rowIdx: number; colIdx: number } | null;
 
-  // Photo
+  // Photo & Attachment Plate
   caption?: string;
   showMagnification?: boolean;
   showDateTime?: boolean;
@@ -220,6 +270,34 @@ export interface SectionConfig {
   showSpecimenId?: boolean;
   showLocation?: boolean;
   showEtchant?: boolean;
+  showFieldNo?: boolean;
+  showCaptureDate?: boolean;
+  showAnalystBadge?: boolean;
+  gridColumns?: string;
+  aspectRatio?: string;
+  cardStyle?: string;
+  plateHeight?: string;
+  allowRuntimeUpload?: boolean;
+  allowZoomModal?: boolean;
+  requirePhotoToVerify?: boolean;
+  allowedFormats?: string;
+  maxFileSizeMb?: number;
+  reportPlacement?: string;
+  watermarkReport?: boolean;
+  highResPrint?: boolean;
+  photoSlots?: PhotoSlotItem[];
+  activePhotoTab?: 'slots' | 'layout' | 'nabl';
+  showPreText?: boolean;
+  preText?: string;
+  showPostText?: boolean;
+  postText?: string;
+
+  // Opinion & Interpretation (ISO 17025 Cl. 7.8.7)
+  isOptional?: boolean;
+  sectionStatus?: 'Optional' | 'Required';
+  derivedOnly?: boolean;
+  showOverallStatement?: boolean;
+  overallStatement?: string;
 
   // Formula
   formulaSource?: string;
@@ -267,16 +345,68 @@ export interface SectionConfig {
   // Custom Columns & Rows Structure
   customColumns?: Array<{ label: string; type: string; unit?: string; default?: string }>;
   customRows?: string[];
+
+  // Demo Data Properties
+  testMethod?: string;
+  demoConditionValues?: { [field: string]: string };
+  demoTraceValues?: { [field: string]: string };
+  demoText?: string;
+  hasDemoData?: boolean;
 }
 
 export type DataBindingMode = 'runtime' | 'static' | 'manual';
+export type DataOriginType = 'entry' | 'db' | 'calc' | 'fixed';
+export type DbMasterSourceType = 'parameter' | 'dimensional_factor' | 'heat_treatment' | 'product_condition' | 'specimen_orientation';
+
+export interface CustomTableCell {
+  id: string;
+  rowIdx: number;
+  colIdx: number;
+  rowKey: string;
+  colKey: string;
+  value: string | number;
+  displayLabel?: string;
+  dataType: 'text' | 'number' | 'date' | 'select' | 'formula';
+  bindingMode: DataBindingMode;
+  staticValue?: string;
+  formulaExpression?: string;
+  selectOptions?: string[];
+  selectOptionsRaw?: string;
+  unit?: string;
+  precision?: number;
+  colspan?: number;
+  rowspan?: number;
+  align?: 'left' | 'center' | 'right';
+  isLocked?: boolean;
+  demoValue?: string;
+}
 
 export interface LayoutColumnItem {
   id?: string;
   key: string;
   label: string;
   bindingMode: DataBindingMode;
+  origin?: DataOriginType;
+  dbMasterSource?: DbMasterSourceType;
+  dbMasterId?: number | string;
   staticValue?: string;
+  paramKey?: string;
+  unit?: string;
+  requirement?: string;
+  minLimit?: number | string;
+  maxLimit?: number | string;
+  targetLimit?: number | string;
+  decimalPrecision?: number;
+  isCalculated?: boolean;
+  formula?: string;
+  formulaDisplay?: string;
+  aggregateFunction?: string;
+  aggregateSourceKeys?: string[];
+  flagLimitExcess?: boolean;
+  readingsPerCell?: number;
+  subAggs?: string[];
+  headerGroup?: string;
+  clause?: string;
   width?: string;
   visible: boolean;
   align?: 'left' | 'center' | 'right';
@@ -288,14 +418,48 @@ export interface LayoutRowItem {
   key: string;
   label: string;
   bindingMode: DataBindingMode;
+  nature?: 'data' | 'summary';
+  rowOrigin?: 'manual' | 'pattern' | 'db';
+  dbMasterSource?: DbMasterSourceType;
+  dbMasterId?: number | string;
+  patternConfig?: { prefix: string; count: number; start: number; step: number };
+  summaryFn?: 'avg' | 'sum' | 'min' | 'max' | 'range' | 'std_dev' | 'count' | 'formula';
+  summaryScope?: 'all' | 'custom';
+  customRowKeys?: string[];
   staticValue?: string;
   requirement?: string;
   unit?: string;
   visible: boolean;
   isCalculated?: boolean;
   formula?: string;
+  formulaDisplay?: string;
   values?: { [colKey: string]: string };
+  demoValue?: string;
+  isLocked?: boolean;
+  isInternal?: boolean;
   removable?: boolean;
+}
+
+export interface PhotoSlotItem {
+  id: string;
+  title: string;
+  caption?: string;
+  bindingSource: DataBindingMode;
+  magnification?: string;
+  etchant?: string;
+  etchantMode?: 'manual' | 'param';
+  etchantSource?: string;
+  etchantId?: number | string;
+  paramKey?: string;
+  paramName?: string;
+  scaleBar?: string;
+  location?: string;
+  specimenId?: string;
+  mandatory?: boolean;
+  reportable?: boolean;
+  mockUrl?: string;
+  fieldNo?: string;
+  aspectRatio?: string;
 }
 
 export interface ExecutionSection {
@@ -446,6 +610,47 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       { value: 'FAIL', label: 'Fail / Non-Conforming' },
       { value: 'NA', label: 'Not Applicable' },
     ],
+    photoGridColumns: [
+      { value: '2 Columns (Pair)', label: '2 Columns (Side-by-side Pair — Standard)' },
+      { value: '1 Column (Full Width)', label: '1 Column (Full Width Single Plate)' },
+      { value: '3 Columns (Trio)', label: '3 Columns (Trio Grid)' },
+      { value: '4 Columns (Quad)', label: '4 Columns (Quad Gallery)' },
+      { value: 'Comparison Mode (Before / After)', label: 'Comparison Mode (Before vs After Split View)' },
+    ],
+    photoAspectRatio: [
+      { value: '4:3', label: '4:3 (Standard Optical Micrograph)' },
+      { value: '16:9', label: '16:9 (Widescreen / Macro View)' },
+      { value: '1:1', label: '1:1 (Square Field View)' },
+      { value: '3:2', label: '3:2 (Classic 35mm Format)' },
+      { value: 'Auto', label: 'Auto (Original File Proportion)' },
+    ],
+    photoCardStyle: [
+      { value: 'Technical Datasheet', label: 'Technical Datasheet (Metadata Header & Reticle Viewport)' },
+      { value: 'Standard Bordered', label: 'Standard Bordered Card' },
+      { value: 'Minimal Plate', label: 'Minimal Clean Plate' },
+    ],
+    photoPlateHeight: [
+      { value: 'Standard (185px)', label: 'Standard (185px)' },
+      { value: 'Compact (140px)', label: 'Compact (140px)' },
+      { value: 'Large (240px)', label: 'Large (240px)' },
+      { value: 'Hero (300px)', label: 'Hero (300px)' },
+    ],
+    photoReportPlacement: [
+      { value: 'Inline with section', label: 'Inline with section (Flows with test results)' },
+      { value: 'Dedicated Annexure Page', label: 'Dedicated Annexure Page (Full-page Photo Plate)' },
+      { value: 'Report Appendix', label: 'Report Appendix (End of Certificate)' },
+    ],
+    photoMaxFileSize: [
+      { value: 5, label: '5 MB (Standard)' },
+      { value: 2, label: '2 MB (Compact)' },
+      { value: 10, label: '10 MB (High Definition)' },
+      { value: 25, label: '25 MB (Raw / Uncompressed)' },
+    ],
+    photoBindingSource: [
+      { value: 'runtime', label: '⚡ Runtime (Analyst Upload)' },
+      { value: 'static', label: '📌 Static (Pre-configured Diagram / Spec Standard)' },
+      { value: 'manual', label: '✏ Manual (External URL or File Reference)' },
+    ],
   };
 
   /** Dynamic options for dataset parameters */
@@ -540,23 +745,83 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     leafName: string;
     fullDisplayName: string;
     isChemical: boolean;
-  } = {
-    groupId: null,
-    groupName: 'All Tests (Global)',
-    subGroupId: null,
-    subGroupName: '',
-    analysisTypeId: null,
-    leafName: 'Global Runtime Standard',
-    fullDisplayName: 'Global Standard Runtime Format',
-    isChemical: false
-  };
+  } | null = null;
 
   private testMethodSpecService = inject(TestMethodSpecificationService);
   private parameterService = inject(ParameterService);
+  private dimensionalFactorService = inject(DimensionalFactorService);
+  private heatTreatmentService = inject(HeatTreatmentService);
+  private productConditionService = inject(ProductConditionService);
+  private specimenOrientationService = inject(SpecimenOrientationService);
+  private equipmentService = inject(EquipmentService);
 
   fetchMasterParameterDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.parameterService.getParameterDropdown(term, page, pageSize);
   };
+
+  fetchDimensionalFactorDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.dimensionalFactorService.getDimensionalFactorDropdown(term, page, pageSize);
+  };
+
+  fetchHeatTreatmentDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);
+  };
+
+  fetchProductConditionDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
+  };
+
+  fetchSpecimenOrientationDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+  };
+
+  fetchEquipmentDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    return this.equipmentService.getEquipmentDropdown(term, page, pageSize);
+  };
+
+  databaseSourceOptions: Array<{ value: string; label: string }> = [
+    { value: 'parameter', label: 'Parameter / Chemical Reagent' },
+    { value: 'equipment', label: 'Equipment / Microscope Master' },
+    { value: 'product_condition', label: 'Product Condition Master' },
+    { value: 'heat_treatment', label: 'Heat Treatment Master' },
+    { value: 'specimen_orientation', label: 'Specimen Orientation Master' },
+    { value: 'dimensional_factor', label: 'Dimensional Factor Master' }
+  ];
+
+  getFetchFnForSource = (source: string = 'parameter') => {
+    switch (source) {
+      case 'equipment':
+        return this.fetchEquipmentDropdown;
+      case 'product_condition':
+        return this.fetchProductConditionDropdown;
+      case 'heat_treatment':
+        return this.fetchHeatTreatmentDropdown;
+      case 'specimen_orientation':
+        return this.fetchSpecimenOrientationDropdown;
+      case 'dimensional_factor':
+        return this.fetchDimensionalFactorDropdown;
+      case 'parameter':
+      default:
+        return this.fetchMasterParameterDropdown;
+    }
+  };
+
+  onSlotEtchantSelected(item: any, slot: PhotoSlotItem): void {
+    if (!item) return;
+    const name = item.name || item.parameterName || item.label || '';
+    const id = item.id || item.parameterId || '';
+    slot.etchantId = id;
+    slot.etchant = name;
+    slot.paramKey = item.key || item.code || '';
+    slot.paramName = name;
+  }
+
+  clearSlotEtchant(slot: PhotoSlotItem): void {
+    slot.etchantId = undefined;
+    slot.etchant = '';
+    slot.paramKey = undefined;
+    slot.paramName = undefined;
+  }
 
   // Dual-Key Test Mapping (Key 1: Laboratory Test, Key 2: Test Method Specification)
   selectedTestMethodId: number | null = null;
@@ -620,7 +885,262 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   isMapped: boolean = false;
   demoMode: boolean = false;
   zoomLevel: number = 1;
-  activeConfigTab: 'basic' | 'data_binding' | 'field_structure' | 'entry_rules' = 'basic';
+  activeConfigTab: 'structure' | 'datasource_rules' | 'display' = 'structure';
+  locationConfigTarget: 'rows' | 'columns' = 'columns';
+  selectedLocationColIdx: number = 1;
+  selectedLocationRowIdx: number = 0;
+
+  setActiveConfigTab(tab: 'structure' | 'datasource_rules' | 'display'): void {
+    this.activeConfigTab = tab;
+  }
+
+  selectLocationCol(idx: number): void {
+    this.selectedLocationColIdx = idx;
+  }
+
+  selectLocationRow(idx: number): void {
+    this.selectedLocationRowIdx = idx;
+  }
+
+  getSelectedLocationCol(sec: ExecutionSection): LayoutColumnItem | null {
+    const cols = this.getTableColumns(sec);
+    if (!cols || cols.length === 0) return null;
+    if (this.selectedLocationColIdx >= cols.length) {
+      this.selectedLocationColIdx = 0;
+    }
+    return cols[this.selectedLocationColIdx] || null;
+  }
+
+  isAverageCol(col: LayoutColumnItem | null): boolean {
+    return col?.key === 'avg';
+  }
+
+  isLocationParamCol(col: LayoutColumnItem | null): boolean {
+    return !!col && col.key.startsWith('param_');
+  }
+
+  setSectionRenderMode(sec: ExecutionSection, mode: 'fixed' | 'runtime'): void {
+    sec.config.renderMode = mode;
+    sec.config.allowRuntimeAdd = (mode === 'runtime');
+    sec.config.runtimeAdjust = (mode === 'runtime');
+  }
+
+  isSectionFixed(sec: ExecutionSection): boolean {
+    return sec.config.renderMode === 'fixed' || (sec.config.allowRuntimeAdd === false && sec.config.runtimeAdjust === false);
+  }
+
+  getSelectedLocationRow(sec: ExecutionSection): LayoutRowItem | null {
+    const rows = this.ensureTableRows(sec);
+    if (!rows || rows.length === 0) return null;
+    if (this.selectedLocationRowIdx >= rows.length) {
+      this.selectedLocationRowIdx = 0;
+    }
+    return rows[this.selectedLocationRowIdx] || null;
+  }
+
+  bindMasterParamToColumn(col: LayoutColumnItem, item: any): void {
+    this.bindMasterSourceToColumn(col, 'parameter', item);
+  }
+
+  bindMasterSourceToColumn(col: LayoutColumnItem, masterType: string, item: any): void {
+    if (!col || !item) return;
+    col.dbMasterSource = masterType as any;
+    col.dbMasterId = item.id || item.value || '';
+    const name = item.name || item.parameterName || item.label || '';
+    const unit = item.unit || item.parameterUnit?.name || '';
+
+    if (masterType === 'parameter') {
+      col.paramKey = name;
+      let cleanName = name;
+      if (unit) {
+        cleanName = name.replace(new RegExp(`\\s*\\(?${unit}\\)?\\s*`, 'gi'), '').trim();
+        col.label = `${cleanName} (${unit})`;
+      } else {
+        col.label = cleanName;
+      }
+      col.unit = unit;
+      if (item.requirement || item.standardValue) {
+        col.requirement = item.requirement || item.standardValue;
+      }
+      if (item.decimalPrecision !== undefined) {
+        col.decimalPrecision = item.decimalPrecision;
+      }
+      if (item.formula) {
+        col.formula = item.formula;
+        col.formulaDisplay = item.formulaDisplay || item.formula;
+        col.isCalculated = true;
+      }
+    } else if (masterType === 'dimensional_factor') {
+      col.label = item.name || item.label || item.factorName || name;
+      col.paramKey = item.symbol || item.code || 'dim';
+      col.unit = item.unit || 'mm';
+    } else if (masterType === 'specimen_orientation') {
+      col.label = item.name || item.label || 'Orientation';
+      col.paramKey = item.code || item.notation || 'orient';
+      col.staticValue = item.code || item.notation || 'L-T';
+    } else if (masterType === 'heat_treatment') {
+      col.label = item.name || item.label || 'Heat Treatment';
+      col.paramKey = 'heat_treatment';
+      col.unit = item.temperatureRange || '°C';
+    } else if (masterType === 'product_condition') {
+      col.label = item.name || item.label || 'Product Condition';
+      col.paramKey = 'product_condition';
+    }
+    this.toastService.show(`Bound column to "${name}"`, 'success');
+  }
+
+  bindMasterSourceToRow(row: LayoutRowItem, masterType: string, item: any): void {
+    if (!row || !item) return;
+    row.dbMasterSource = masterType as any;
+    row.dbMasterId = item.id || item.value || '';
+    const name = item.name || item.parameterName || item.label || '';
+    row.label = name;
+    if (masterType === 'parameter') {
+      if (item.unit) row.unit = item.unit;
+      if (item.requirement || item.standardValue) row.requirement = item.requirement || item.standardValue;
+      if (item.formula) {
+        row.formula = item.formula;
+        row.formulaDisplay = item.formulaDisplay || item.formula;
+        row.isCalculated = true;
+      }
+    } else if (masterType === 'specimen_orientation') {
+      row.staticValue = item.code || item.notation || 'L-T';
+    }
+    this.toastService.show(`Bound row to "${name}"`, 'success');
+  }
+
+  patternRowConfig = {
+    prefix: 'Depth ',
+    count: 10,
+    start: 0.1,
+    step: 0.1
+  };
+
+  generatePatternRows(sec: ExecutionSection): void {
+    const p = this.patternRowConfig;
+    const count = Math.max(1, Math.min(50, p.count || 5));
+    const start = p.start !== undefined ? +p.start : 0.1;
+    const step = p.step !== undefined ? +p.step : 0.1;
+    const prefix = p.prefix || 'Depth ';
+
+    const newRows: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const val = +(start + i * step).toFixed(3);
+      newRows.push(`${prefix}${val}`);
+    }
+    sec.config.locationRows = newRows;
+    const tableRows = this.ensureTableRows(sec);
+    const summaryRows = tableRows.filter(r => r.nature === 'summary');
+    const generatedDataRows: LayoutRowItem[] = newRows.map((lbl, idx) => ({
+      key: `loc_pat_${idx + 1}`,
+      label: lbl,
+      nature: 'data',
+      rowOrigin: 'pattern',
+      bindingMode: 'runtime',
+      visible: true
+    }));
+    sec.config.tableRows = [...generatedDataRows, ...summaryRows];
+    this.toastService.show(`Generated ${count} traverse rows`, 'success');
+  }
+
+  addCustomObservationColumn(sec: ExecutionSection): void {
+    const cols = this.getTableColumns(sec);
+    const nextNum = cols.filter(c => c.key.startsWith('col_custom_')).length + 1;
+    const newCol: LayoutColumnItem = {
+      key: `col_custom_${Date.now()}_${nextNum}`,
+      label: `Custom Obs ${nextNum}`,
+      bindingMode: 'manual',
+      origin: 'entry',
+      visible: true,
+      align: 'center',
+      removable: true
+    };
+    cols.push(newCol);
+    this.selectedLocationColIdx = cols.length - 1;
+    this.toastService.show('Added custom observation column', 'info');
+  }
+
+  addLocationObservationColumn(sec: ExecutionSection): void {
+    const cols = this.getTableColumns(sec);
+    const obsCols = cols.filter(c => c.key.startsWith('param_') || c.key.startsWith('col_custom_'));
+    const nextNum = obsCols.length + 1;
+    const newCol: LayoutColumnItem = {
+      key: `param_${Date.now()}_${nextNum}`,
+      label: `Observation ${nextNum}`,
+      unit: '',
+      bindingMode: 'manual',
+      origin: 'entry',
+      visible: true,
+      align: 'center',
+      removable: true
+    };
+    const avgIdx = cols.findIndex(c => c.key === 'avg');
+    if (avgIdx > -1) {
+      cols.splice(avgIdx, 0, newCol);
+      this.selectedLocationColIdx = avgIdx;
+    } else {
+      cols.push(newCol);
+      this.selectedLocationColIdx = cols.length - 1;
+    }
+    this.toastService.show(`Added Observation column ${nextNum}`, 'info');
+  }
+
+  addSummaryRow(sec: ExecutionSection, summaryFn: 'avg' | 'sum' | 'min' | 'max' | 'range' | 'std_dev'): void {
+    const labels: Record<string, string> = {
+      avg: 'Σ OVERALL AVERAGE',
+      sum: 'Σ TOTAL SUM',
+      min: 'MINIMUM OBSERVED',
+      max: 'MAXIMUM OBSERVED',
+      range: 'Δ HARDNESS SPREAD',
+      std_dev: 'σ STANDARD DEVIATION'
+    };
+    const label = labels[summaryFn] || 'SUMMARY';
+    const newRow: LayoutRowItem = {
+      key: `summary_${summaryFn}_${Date.now()}`,
+      label: label,
+      nature: 'summary',
+      summaryFn: summaryFn,
+      summaryScope: 'all',
+      bindingMode: 'manual',
+      visible: true,
+      isCalculated: true,
+      removable: true
+    };
+    const rows = this.ensureTableRows(sec);
+    rows.push(newRow);
+    this.selectedLocationRowIdx = rows.length - 1;
+    this.locationConfigTarget = 'rows';
+    this.toastService.show(`Added summary row: ${label}`, 'success');
+  }
+
+  insertFormulaToken(col: LayoutColumnItem, token: string): void {
+    if (!col) return;
+    col.formula = (col.formula || '') + token;
+  }
+
+  toggleAvgSourceColumn(col: LayoutColumnItem, sourceColKey: string): void {
+    if (!col.aggregateSourceKeys) {
+      col.aggregateSourceKeys = [];
+    }
+    const idx = col.aggregateSourceKeys.indexOf(sourceColKey);
+    if (idx > -1) {
+      col.aggregateSourceKeys.splice(idx, 1);
+    } else {
+      col.aggregateSourceKeys.push(sourceColKey);
+    }
+  }
+
+  isAvgSourceColumnChecked(col: LayoutColumnItem, sourceColKey: string): boolean {
+    if (!col.aggregateSourceKeys || col.aggregateSourceKeys.length === 0) {
+      return sourceColKey.startsWith('param_');
+    }
+    return col.aggregateSourceKeys.includes(sourceColKey);
+  }
+
+  getLocationObservationColumns(sec: ExecutionSection): LayoutColumnItem[] {
+    const cols = this.getTableColumns(sec);
+    return cols.filter(c => c.key.startsWith('param_'));
+  }
 
   // Data Source Pool Management & Custom Additions
   readonly STORAGE_KEY_CUSTOM_CONDITIONS = 'lims_designer_custom_conditions';
@@ -643,6 +1163,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   // Layout Structure Archetypes (Structural Recipes to map to Actual Laboratory Tests)
   readonly layoutArchetypeList = [
+    { key: 'all_sections', label: 'All 16 Sections Master Showcase (Universal Layout)', icon: '★' },
     { key: 'generic', label: 'Default Generic Runtime Structure (Conditions + Runtime Parameters + Statement)', icon: '▦' },
     { key: 'blank', label: 'Blank Canvas (Empty Layout - Build from Scratch)', icon: '◻' },
     { key: 'tensile', label: 'Tensile Structure (Specimen Matrix + Stress-Strain Curve)', icon: '▦' },
@@ -703,7 +1224,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     formula: 'Formula / Derived',
     narrative: 'Narrative / Statement',
     checklist: 'Checklist',
-    traceability: 'Traceability / Technical Record'
+    traceability: 'Traceability / Technical Record',
+    opinion: 'Opinion & Interpretation'
   };
 
   readonly componentIcons: Record<string, string> = {
@@ -721,7 +1243,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     formula: 'ƒx',
     narrative: '¶',
     checklist: '☑',
-    traceability: '🧾'
+    traceability: '🧾',
+    opinion: '⚖'
   };
 
   // Master Test Database (All Report Format Presets)
@@ -733,15 +1256,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       sub: 'Generic Test Execution Standard',
       dbTestId: 0,
       isChemical: false,
-      params: [
-        { name: 'Yield Strength', unit: 'MPa', requirement: '≥ 250', isCalculated: true, formulaDisplay: 'YS = Yield Load / S0' },
-        { name: 'Ultimate Tensile Strength', unit: 'MPa', requirement: '≥ 410', isCalculated: true, formulaDisplay: 'UTS = Peak Load / S0' },
-        { name: 'Elongation', unit: '%', requirement: '≥ 20', isCalculated: true, formulaDisplay: 'EL% = ((Lu - L0) / L0) * 100' },
-        { name: 'Reduction of Area', unit: '%', requirement: '≥ 40', isCalculated: true, formulaDisplay: 'RA% = ((S0 - Su) / S0) * 100' },
-        { name: 'Hardness (HV / HRC)', unit: 'HRC', requirement: '28 - 34', isCalculated: false },
-        { name: 'Runtime Parameter (Auto-bound)', unit: '—', requirement: 'Runtime Limit' }
-      ],
-      demo: ['450', '620', '25.5', '55.0', '32.0', '—']
+      params: [],
+      demo: []
     },
     blank: {
       key: 'blank',
@@ -752,6 +1268,22 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       isChemical: false,
       params: [],
       demo: []
+    },
+    all_sections: {
+      key: 'all_sections',
+      label: 'All 16 Sections Master Showcase',
+      leaf: 'Master / Universal / All-16-Archetypes',
+      sub: 'Complete 16-Section Standard Studio Showcase',
+      dbTestId: 999,
+      isChemical: false,
+      params: [
+        { name: 'Yield Strength', unit: 'MPa', requirement: '≥ 250', isCalculated: true, formula: 'YS = YieldLoad / Area_S0', formulaDisplay: 'YS = Yield Load / S0' },
+        { name: 'Ultimate Tensile Strength', unit: 'MPa', requirement: '≥ 410', isCalculated: true, formula: 'UTS = PeakLoad / Area_S0', formulaDisplay: 'UTS = Peak Load / S0' },
+        { name: 'Elongation', unit: '%', requirement: '≥ 20', isCalculated: true, formula: 'EL = ((Lu - L0) / L0) * 100', formulaDisplay: 'EL% = ((Lu - L0) / L0) * 100' },
+        { name: 'Rockwell Hardness', unit: 'HRC', requirement: '28 – 34 HRC' },
+        { name: 'Carbon Equivalent', unit: '%', requirement: '≤ 0.45', isCalculated: true, formula: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15', formulaDisplay: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15' }
+      ],
+      demo: ['425', '555', '26.0', '31.5', '0.38']
     },
     tensile: {
       key: 'tensile',
@@ -1247,19 +1779,29 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     }
   }
 
+  get hasSelectedTest(): boolean {
+    return !!(
+      (this.selectedUnifiedTestId && this.selectedUnifiedTestId !== '' && this.selectedUnifiedTestId !== 0) ||
+      (this.selectedLabTestId && this.selectedLabTestId > 0 && this.resolvedHierarchy?.groupName)
+    );
+  }
+
   get actualLabTestList(): any[] {
     return this.actualLabTests;
   }
 
   get currentLabTest(): any {
-    return this.actualLabTests.find(t => t.id === this.selectedLabTestId) || this.actualLabTests[0] || null;
+    if (!this.selectedLabTestId) return null;
+    return this.actualLabTests.find(t => t.id === this.selectedLabTestId) || null;
   }
 
   get currentLabTestName(): string {
+    if (!this.hasSelectedTest) return 'No Test Selected';
     return this.resolvedHierarchy?.fullDisplayName || this.resolvedHierarchy?.groupName || this.currentLabTest?.name || this.currentTest.label;
   }
 
   get dataSourceLabel(): string {
+    if (!this.hasSelectedTest) return 'Manual Configuration (No Test Selected)';
     const target = this.resolvedHierarchy?.fullDisplayName || this.currentLabTestName;
     return `Live parameters mapped from ${target}`;
   }
@@ -1334,10 +1876,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.countMode = 'Fixed count';
         config.count = 3;
         config.prefix = 'S';
-        config.orientation = 'Parameters × Specimens';
+        config.orientation = 'Specimens × Parameters';
+        config.specimenShape = 'rectangular';
+        config.selectedOrientationNotation = 'L-T (Transverse)';
+        config.showOrientationColumn = true;
+        config.showDimensions = true;
+        config.showAreaCalculation = true;
         config.showAverage = true;
         config.showMinMax = false;
         config.showRequirement = true;
+        config.showConformanceVerdict = true;
+        config.specimenExecutionMode = 'runtime';
         config.editable = true;
         config.showIdentity = true;
         config.ident = this.specimenIdentFields.slice(0, 3);
@@ -1346,11 +1895,19 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       case 'reading':
         config.readingSource = 'Runtime readings';
         config.readingCount = 'Fixed count';
-        config.count = 3;
-        config.aggregation = 'Average';
+        config.count = 5;
+        config.spotCount = 5;
+        config.targetParamName = 'Rockwell Hardness';
+        config.targetUnit = 'HRC';
+        config.targetRequirement = '28 – 34 HRC';
+        config.readingLabel = 'Rockwell Hardness Spot Readings';
+        config.aggregation = 'Average / Mean';
         config.showIndividual = true;
         config.showStatistics = true;
-        config.readingLabel = 'R1 / R2 / R3';
+        config.showOverallAverageRow = true;
+        config.showSpreadRow = true;
+        config.outlierSpreadLimit = 3.0;
+        config.readingExecutionMode = 'runtime';
         break;
 
       case 'location':
@@ -1431,7 +1988,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
       case 'photo':
         config.source = 'Execution Attachments';
-        config.columns = { unit: true }; // dummy placeholder if needed
+        config.columns = { unit: true };
         config.caption = 'Runtime attachment caption';
         config.showMagnification = true;
         config.showDateTime = false;
@@ -1439,7 +1996,58 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.showSpecimenId = true;
         config.showLocation = true;
         config.showEtchant = true;
+        config.showFieldNo = true;
+        config.showCaptureDate = false;
+        config.showAnalystBadge = false;
+        config.gridColumns = '2 Columns (Pair)';
+        config.aspectRatio = '4:3';
+        config.cardStyle = 'Technical Datasheet';
+        config.plateHeight = 'Standard (185px)';
+        config.allowRuntimeUpload = true;
+        config.allowZoomModal = true;
+        config.requirePhotoToVerify = false;
+        config.allowedFormats = 'JPG, PNG, WEBP, PDF';
+        config.maxFileSizeMb = 5;
+        config.reportPlacement = 'Inline with section';
+        config.watermarkReport = false;
         config.pageBreak = 'Auto';
+        config.count = 2;
+        config.showPreText = true;
+        config.preText = 'Microscopic examination carried out on transverse metallographic cross-section in unetched and etched conditions.';
+        config.showPostText = true;
+        config.postText = 'Microstructure reveals uniformly distributed fine pearlite and ferrite grains. No continuous grain-boundary carbide network or decarburization observed.';
+        config.photoSlots = [
+          {
+            id: 'slot_1',
+            title: 'Micrograph Plate 1 (100X)',
+            caption: 'Microstructure / Inclusion Assessment as per ASTM E45',
+            bindingSource: 'runtime',
+            magnification: '100X',
+            etchant: '2% Nital',
+            etchantMode: 'manual',
+            etchantSource: 'parameter',
+            scaleBar: '50 µm',
+            location: 'Surface Zone',
+            specimenId: 'Specimen #1',
+            mandatory: true,
+            reportable: true
+          },
+          {
+            id: 'slot_2',
+            title: 'Micrograph Plate 2 (500X)',
+            caption: 'Matrix structure, grain boundaries & carbides morphology',
+            bindingSource: 'runtime',
+            magnification: '500X',
+            etchant: '2% Nital',
+            etchantMode: 'manual',
+            etchantSource: 'parameter',
+            scaleBar: '20 µm',
+            location: 'Core / Mid-thickness',
+            specimenId: 'Specimen #1',
+            mandatory: false,
+            reportable: true
+          }
+        ];
         break;
 
       case 'formula':
@@ -1477,6 +2085,58 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.layout = 'Two-column cards';
         config.source = 'Execution Record';
         config.allowRuntimeEdit = true;
+        break;
+
+      case 'opinion':
+        config.source = 'Derived Parameters & Expert Evaluation';
+        config.isOptional = true;
+        config.sectionStatus = 'Optional';
+        config.derivedOnly = true;
+        config.showOverallStatement = true;
+        config.overallStatement = 'Based on the above test results, the material complies with specified standard requirements. The tensile and yield behavior exhibits ductile fracture characteristics.';
+        config.tableColumns = [
+          { key: 'param', label: 'Parameter / Evaluation Topic', bindingMode: 'runtime', visible: true, width: '40%' },
+          { key: 'observed', label: 'Observed Value', bindingMode: 'runtime', visible: true, width: '30%' },
+          { key: 'requirement', label: 'Requirement Min / Max', bindingMode: 'runtime', visible: true, width: '30%' }
+        ];
+        config.tableRows = [
+          {
+            key: 'row_uts_fracture',
+            label: 'Ultimate Tensile Strength (N/mm²) & Fracture Mode',
+            unit: 'N/mm²',
+            requirement: '535.0 Min. (Conforms)',
+            staticValue: '555.00 / 553.45 (Ductile B.O.W)',
+            isCalculated: true,
+            formula: 'UTS = Fmax / So',
+            formulaDisplay: 'UTS = Maximum Load (Fmax) / Original Cross-Section Area (So)',
+            bindingMode: 'runtime',
+            visible: true
+          },
+          {
+            key: 'row_yield_ratio',
+            label: 'Yield-to-Tensile Ratio (Re/Rm)',
+            unit: 'Ratio',
+            requirement: '≤ 0.85 (Conforms)',
+            staticValue: '0.78',
+            isCalculated: true,
+            formula: 'Ratio = Re / Rm',
+            formulaDisplay: 'Ratio = Yield Strength (Re) / Tensile Strength (Rm)',
+            bindingMode: 'runtime',
+            visible: true
+          },
+          {
+            key: 'row_carbon_equiv',
+            label: 'Carbon Equivalent (CEV)',
+            unit: '%',
+            requirement: '0.45 % Max (Conforms)',
+            staticValue: '0.38 %',
+            isCalculated: true,
+            formula: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15',
+            formulaDisplay: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15',
+            bindingMode: 'runtime',
+            visible: true
+          }
+        ];
         break;
     }
 
@@ -1798,7 +2458,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   // -------------------------------------------------------------------------
 
   onUnifiedTestSelected(item: any): void {
-    if (!item) return;
+    if (!item) {
+      this.selectedUnifiedTestId = null;
+      this.selectedUnifiedTestItem = null;
+      this.selectedLabTestId = 0;
+      this.selectedSubGroupId = null;
+      this.selectedAnalysisTypeId = null;
+      this.resolvedHierarchy = null;
+      this.leafNode = '';
+      this.paperSub = '';
+      return;
+    }
 
     const addVals = item.additionalValues || {};
     const masterTestId = addVals.masterTestId ? Number(addVals.masterTestId) : (item.nodeType === 'TestGroup' ? Number(item.id) : this.selectedLabTestId);
@@ -2217,10 +2887,597 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     }
   }
 
-  // Toggle Demo Data
+  // Toggle / Set Demo Data
   toggleDemoData(): void {
-    this.demoMode = !this.demoMode;
-    this.toastService.show(this.demoMode ? 'Demo data enabled' : 'Demo data disabled', 'info');
+    const sec = this.selectedSection;
+    if (sec) {
+      this.populateDemoDataForSection(sec);
+      this.demoMode = true;
+      this.toastService.show(`Demo data generated for: "${sec.title}"`, 'success');
+    } else {
+      this.populateDemoDataForAllSections();
+      this.demoMode = true;
+      this.toastService.show(`Demo data generated for all ${this.sections.length} sections`, 'success');
+    }
+    this.markLayoutDirty();
+  }
+
+  populateDemoDataForAllSections(): void {
+    this.sections.forEach(s => this.populateDemoDataForSection(s));
+    this.demoMode = true;
+  }
+
+  parseRequirementTarget(req: string): number | null {
+    if (!req) return null;
+    const clean = req.trim();
+    const rangeMatch = clean.match(/([\d.]+)\s*(?:[-–]|to)\s*([\d.]+)/i);
+    if (rangeMatch) {
+      const min = parseFloat(rangeMatch[1]);
+      const max = parseFloat(rangeMatch[2]);
+      if (!isNaN(min) && !isNaN(max)) {
+        return Math.round(((min + max) / 2) * 10) / 10;
+      }
+    }
+    const gteMatch = clean.match(/(?:[≥>=]|min\.?)\s*([\d.]+)|([\d.]+)\s*min/i);
+    if (gteMatch) {
+      const val = parseFloat(gteMatch[1] || gteMatch[2]);
+      if (!isNaN(val)) {
+        return val >= 100 ? Math.round(val * 1.12) : Math.round((val + 4.5) * 10) / 10;
+      }
+    }
+    const lteMatch = clean.match(/(?:[≤<=]|max\.?)\s*([\d.]+)|([\d.]+)\s*max/i);
+    if (lteMatch) {
+      const val = parseFloat(lteMatch[1] || lteMatch[2]);
+      if (!isNaN(val)) {
+        return val >= 100 ? Math.round(val * 0.90) : Math.round((val - 1.5) * 10) / 10;
+      }
+    }
+    const singleNum = clean.match(/[\d.]+/);
+    if (singleNum) {
+      const n = parseFloat(singleNum[0]);
+      if (!isNaN(n)) return n;
+    }
+    return null;
+  }
+
+  generateRealisticDemoValue(label: string, unit: string, req: string, rowIdx: number, colIdx: number, secType: string): string {
+    const l = (label || '').toLowerCase();
+    const u = (unit || '').toLowerCase();
+    const r = (req || '').trim();
+    const reqTarget = this.parseRequirementTarget(r);
+
+    if (l.includes('tensile strength') || l.includes('uts') || l.includes('rm') || l.includes('ultimate')) {
+      if (reqTarget) return String(Math.round(reqTarget));
+      return String(620 + (rowIdx * 8) + (colIdx * 3));
+    }
+    if (l.includes('yield') || l.includes('proof stress') || l.includes('reh') || l.includes('rp0.2') || l.includes('rp 0.2')) {
+      if (reqTarget) return String(Math.round(reqTarget));
+      return String(445 + (rowIdx * 6) + (colIdx * 2));
+    }
+    if (l.includes('elongation') || l.includes('% a') || l === 'a' || (u.includes('%') && l.includes('el'))) {
+      if (reqTarget) return reqTarget.toFixed(1);
+      return (24.5 + ((rowIdx * 1.2) % 4)).toFixed(1);
+    }
+    if (l.includes('reduction of area') || l.includes('roa') || l === 'z') {
+      if (reqTarget) return reqTarget.toFixed(1);
+      return (58.5 - ((rowIdx * 0.8) % 5)).toFixed(1);
+    }
+    if (l.includes('brinell') || l.includes('hbw') || u.includes('hbw')) {
+      if (reqTarget) return String(Math.round(reqTarget));
+      return String(142 + (rowIdx % 5) * 3);
+    }
+    if (l.includes('rockwell') || l.includes('hrc') || u.includes('hrc') || l.includes('hrb')) {
+      if (reqTarget) return reqTarget.toFixed(1);
+      return (32.5 + ((rowIdx * 0.5) % 3)).toFixed(1);
+    }
+    if (l.includes('vickers') || l.includes('hv') || u.includes('hv')) {
+      if (reqTarget) return String(Math.round(reqTarget));
+      return String(218 + (rowIdx * 4) + (colIdx * 3));
+    }
+    if (l.includes('impact') || l.includes('charpy') || l.includes('joule') || u.includes('j')) {
+      if (reqTarget) return reqTarget.toFixed(1);
+      return (42.5 + ((rowIdx * 2) % 6)).toFixed(1);
+    }
+    if (l.includes('expansion') || l.includes('mils')) {
+      return (1.25 + (rowIdx * 0.05)).toFixed(2);
+    }
+    if (l.includes('shear') || l.includes('fracture')) {
+      return '100 %';
+    }
+    if (l.includes('width') || l.includes('w0') || l === 'w') return (12.50 + rowIdx * 0.02).toFixed(2);
+    if (l.includes('thickness') || l.includes('t0') || l === 't') return (3.20 - rowIdx * 0.01).toFixed(2);
+    if (l.includes('diameter') || l.includes('d0') || l === 'd') return (10.00 + rowIdx * 0.05).toFixed(2);
+    if (l.includes('gauge length') || l.includes('l0') || l === 'gl') return '50.00';
+    if (l.includes('final length') || l.includes('lu')) return '63.20';
+    if (l.includes('final diameter') || l.includes('du')) return '6.80';
+    if (l.includes('area') || l.includes('s0')) return (78.54 - rowIdx * 0.2).toFixed(2);
+    if (l.includes('yield load') || l.includes('feh')) return (35.20 + rowIdx * 0.4).toFixed(2);
+    if (l.includes('peak load') || l.includes('fm') || l.includes('tensile load')) return (48.80 + rowIdx * 0.5).toFixed(2);
+    if (l.includes('force') || l.includes('load')) return u.includes('kgf') ? '750' : '85.4';
+    if (l.includes('temp') || u.includes('°c')) return (23.2 + (rowIdx * 0.3)).toFixed(1);
+    if (l.includes('humid') || u.includes('% rh')) return '52';
+    if (l.includes('speed') || l.includes('rate')) return '5.0';
+
+    if (l.includes('carbon') || l === 'c') return '0.18';
+    if (l.includes('manganese') || l === 'mn') return '0.85';
+    if (l.includes('silicon') || l === 'si') return '0.28';
+    if (l.includes('sulphur') || l.includes('sulfur') || l === 's') return '0.018';
+    if (l.includes('phosphorus') || l === 'p') return '0.015';
+    if (l.includes('chromium') || l === 'cr') return '18.25';
+    if (l.includes('nickel') || l === 'ni') return '8.50';
+    if (l.includes('molybdenum') || l === 'mo') return '0.35';
+
+    if (reqTarget !== null) {
+      return String(reqTarget);
+    }
+    if (secType === 'traverse') {
+      return String(Math.max(320, Math.round(650 - (rowIdx * 35))));
+    }
+    if (secType === 'reading' || secType === 'location') {
+      return String(215 + (rowIdx * 8) + (colIdx * 4));
+    }
+    if (secType === 'condition') {
+      return (23.0 + rowIdx * 0.2).toFixed(1);
+    }
+    if (secType === 'classification') {
+      return '0.5';
+    }
+
+    return String(100 + (rowIdx * 12) + (colIdx * 5));
+  }
+
+  populateDemoDataForSection(sec: ExecutionSection): void {
+    if (!sec) return;
+    this.demoMode = true;
+
+    switch (sec.type) {
+      case 'parameter':
+      case 'rule':
+      case 'opinion': {
+        const rows = this.ensureTableRows(sec);
+        const cols = this.ensureTableColumns(sec);
+        rows.forEach((r, rIdx) => {
+          const val = this.generateRealisticDemoValue(r.label, r.unit || '', r.requirement || '', rIdx, 0, sec.type);
+          r.demoValue = val;
+          r.values = r.values || {};
+          cols.forEach(c => {
+            if (c.key === 'result' || c.key === 'observed' || c.key === 'val' || c.key === 'entry') {
+              r.values![c.key] = val;
+            } else if (c.key === 'status') {
+              r.values![c.key] = 'PASS';
+            } else if (c.key === 'remarks') {
+              r.values![c.key] = 'Conforms';
+            } else if (c.key === 'uncertainty') {
+              r.values![c.key] = '± 2.5%';
+            } else if (c.key === 'dl') {
+              r.values![c.key] = '0.01';
+            } else if (c.key === 'scope') {
+              r.values![c.key] = 'NABL Scope';
+            } else if (c.key === 'method') {
+              r.values![c.key] = sec.config.testMethod || this.currentTest?.leaf || 'Standard Method';
+            }
+          });
+        });
+        break;
+      }
+
+      case 'specimen': {
+        const rows = this.ensureTableRows(sec);
+        const cols = this.ensureTableColumns(sec);
+        const dataCols = cols.filter(c => c.key !== 'param' && c.key !== 'label' && c.key !== 'unit' && c.key !== 'requirement' && c.key !== 'avg' && c.key !== 'status');
+        rows.forEach((r, rIdx) => {
+          const baseStr = this.generateRealisticDemoValue(r.label, r.unit || '', r.requirement || '', rIdx, 0, sec.type);
+          const baseVal = parseFloat(baseStr);
+          r.values = r.values || {};
+          const isNum = !isNaN(baseVal);
+          const collectedNums: number[] = [];
+
+          dataCols.forEach((c, cIdx) => {
+            if (isNum) {
+              const variance = (cIdx % 2 === 0 ? 1 : -1) * (baseVal * (0.008 + (cIdx * 0.004)));
+              const finalVal = baseVal >= 100 ? Math.round(baseVal + variance).toString() : (baseVal + variance).toFixed(baseVal < 10 ? 2 : 1);
+              r.values![c.key] = finalVal;
+              collectedNums.push(parseFloat(finalVal));
+            } else {
+              r.values![c.key] = 'Cup & Cone';
+            }
+          });
+
+          if (collectedNums.length > 0) {
+            const avg = collectedNums.reduce((a, b) => a + b, 0) / collectedNums.length;
+            r.values!['avg'] = avg >= 100 ? avg.toFixed(1) : avg.toFixed(2);
+            r.demoValue = r.values!['avg'];
+          } else {
+            r.demoValue = r.values![dataCols[0]?.key] || 'Conforms';
+          }
+          if (r.requirement) {
+            r.values!['requirement'] = r.requirement;
+          }
+          if (r.unit) {
+            r.values!['unit'] = r.unit;
+          }
+        });
+        break;
+      }
+
+      case 'reading': {
+        const rows = this.ensureTableRows(sec);
+        const cols = this.ensureTableColumns(sec);
+        const unit = sec.config.unit || 'HBW';
+        const isBrinell = unit.includes('HBW') || (sec.title || '').includes('Brinell');
+        const isVickers = unit.includes('HV') || (sec.title || '').includes('Vickers');
+        const isRockwell = unit.includes('HR') || (sec.title || '').includes('Rockwell');
+
+        rows.forEach((r, rIdx) => {
+          r.values = r.values || {};
+          let baseHardness = isBrinell ? 142 : (isRockwell ? 32 : (isVickers ? 220 : 150));
+          if (r.requirement) {
+            const parsed = this.parseRequirementTarget(r.requirement);
+            if (parsed) baseHardness = parsed;
+          }
+          const readingSpots = [baseHardness, baseHardness + (rIdx % 2 === 0 ? 3 : -2), baseHardness + (rIdx % 3 === 0 ? 1 : -1)];
+          const avg = (readingSpots.reduce((a, b) => a + b, 0) / readingSpots.length).toFixed(1);
+          r.demoValue = avg;
+
+          cols.forEach(c => {
+            if (c.key.includes('ball') || c.key.includes('indenter')) r.values![c.key] = '5.0 mm';
+            else if (c.key.includes('load') || c.key.includes('force')) r.values![c.key] = isBrinell ? '750 kgf' : (isVickers ? '10 kgf' : '150 kgf');
+            else if (c.key.includes('observed') || c.key.includes('reading')) r.values![c.key] = String(readingSpots[0]);
+            else if (c.key === 'avg' || c.key.includes('average')) r.values![c.key] = avg;
+            else if (c.key === 'requirement') r.values![c.key] = r.requirement || (isBrinell ? '120 - 160 HBW' : '200 - 250 HV');
+            else if (c.key.startsWith('spot_') || c.key.startsWith('reading_')) {
+              const spotIdx = parseInt(c.key.replace(/\D/g, ''), 10) - 1;
+              r.values![c.key] = String(readingSpots[Math.max(0, spotIdx % readingSpots.length)]);
+            }
+          });
+        });
+        break;
+      }
+
+      case 'location': {
+        const rows = this.ensureTableRows(sec);
+        const cols = this.ensureTableColumns(sec);
+        rows.forEach((r, rIdx) => {
+          r.values = r.values || {};
+          cols.forEach((c, cIdx) => {
+            if (cIdx === 0) return;
+            const colLabel = (c.label || '').toLowerCase();
+            let val = 215;
+            if (colLabel.includes('haz')) {
+              val = 238 + (rIdx * 2) + (cIdx % 3);
+            } else if (colLabel.includes('weld')) {
+              val = 224 + (rIdx * 3);
+            } else if (colLabel.includes('parent')) {
+              val = 205 + (rIdx * 2);
+            } else if (c.key === 'avg') {
+              val = 222 + (rIdx * 2);
+            } else {
+              val = 210 + (rIdx * 5) + (cIdx * 3);
+            }
+            r.values![c.key] = String(val);
+          });
+          r.demoValue = r.values![cols[cols.length - 1]?.key] || '225';
+        });
+        break;
+      }
+
+      case 'traverse': {
+        const rows = this.ensureTableRows(sec);
+        const cols = this.ensureTableColumns(sec);
+        const cutoff = parseInt(String(sec.config.cutoffHardness || '550'), 10);
+        rows.forEach((r, rIdx) => {
+          r.values = r.values || {};
+          const depthVal = Math.max(320, Math.round(650 - (rIdx * 38)));
+          cols.forEach((c, cIdx) => {
+            if (cIdx === 0) return;
+            if (c.key === 'hardness' || c.key === 'observed') {
+              r.values![c.key] = String(depthVal);
+            } else if (c.key === 'cutoff' || c.key === 'limit') {
+              r.values![c.key] = `${cutoff} HV`;
+            }
+          });
+          r.demoValue = String(depthVal);
+        });
+        break;
+      }
+
+      case 'custom': {
+        const matrix = this.ensureCustomCellMatrix(sec);
+        matrix.forEach((rowCells, rIdx) => {
+          rowCells.forEach((cell, cIdx) => {
+            if (cIdx === 0) return;
+            if (cell.isLocked || cell.bindingMode === 'static') return;
+            if (cell.dataType === 'select') {
+              cell.value = (cell.selectOptions && cell.selectOptions.length > 0) ? cell.selectOptions[0] : 'Satisfactory';
+            } else if (cell.dataType === 'number') {
+              cell.value = 100 + (rIdx * 15) + (cIdx * 5);
+            } else if (cell.dataType === 'formula') {
+              cell.value = this.evaluateCustomCellFormula(sec, cell.formulaExpression, rIdx, true);
+            } else {
+              cell.value = 'Conforms';
+            }
+          });
+        });
+        break;
+      }
+
+      case 'condition': {
+        sec.config.demoConditionValues = sec.config.demoConditionValues || {};
+        const fields = this.getConditionFields(sec);
+        fields.forEach(f => {
+          const l = f.toLowerCase();
+          if (l.includes('temp')) sec.config.demoConditionValues![f] = '23.2 °C';
+          else if (l.includes('humid')) sec.config.demoConditionValues![f] = '52 %';
+          else if (l.includes('speed') || l.includes('rate')) sec.config.demoConditionValues![f] = '5 mm/min';
+          else if (l.includes('grip')) sec.config.demoConditionValues![f] = 'Wedge Serrated Grips';
+          else if (l.includes('extensometer')) sec.config.demoConditionValues![f] = '50mm Gauge Length';
+          else sec.config.demoConditionValues![f] = 'Standard Ambient';
+        });
+        const rows = this.ensureTableRows(sec);
+        const cols = this.ensureTableColumns(sec);
+        rows.forEach((r, rIdx) => {
+          r.values = r.values || {};
+          cols.forEach(c => {
+            if (c.key === 'setpoint') r.values![c.key] = r.staticValue || '23.0 °C';
+            else if (c.key === 'tolerance') r.values![c.key] = r.requirement || '± 2.0 °C';
+            else if (c.key === 'sensor') r.values![c.key] = 'TH-LOG-01';
+          });
+        });
+        break;
+      }
+
+      case 'traceability': {
+        sec.config.demoTraceValues = {
+          'Equipment': 'Universal Testing Machine 600kN (UTM-01)',
+          'Equipment ID': 'EQ-UTM-001',
+          'Calibration Certificate': 'CAL/2026/0421',
+          'Calibration Date': '2026-04-15',
+          'Valid Till': '2027-04-14',
+          'Standard': 'ISO 7500-1 Class 0.5',
+          'Analyst': 'Er. Rajesh Sharma (TECH-08)'
+        };
+        const rows = this.ensureTableRows(sec);
+        const cols = this.ensureTableColumns(sec);
+        rows.forEach((r, rIdx) => {
+          r.values = r.values || {};
+          cols.forEach(c => {
+            if (c.key === 'tag') r.values![c.key] = `EQ-00${rIdx + 1}`;
+            else if (c.key === 'calDate') r.values![c.key] = '2026-04-15';
+            else if (c.key === 'dueDate') r.values![c.key] = '2027-04-14';
+            else if (c.key === 'cert') r.values![c.key] = 'CAL/2026/0421';
+          });
+        });
+        break;
+      }
+
+      case 'photo': {
+        const slots = this.ensurePhotoSlots(sec);
+        slots.forEach(slot => {
+          slot.mockUrl = 'macro_weld_cross_section_01.jpg';
+          slot.magnification = slot.magnification || '100X';
+          slot.etchant = slot.etchant || '2% Nital';
+          slot.caption = slot.caption || 'Macrograph showing complete root penetration, sound HAZ and defect-free parent metal.';
+        });
+        break;
+      }
+
+      case 'narrative': {
+        sec.config.demoText = 'Testing executed in strict accordance with the standard method. The specimen demonstrated typical ductile fracture behavior with sound metallurgical integrity. Results conform to all specified requirements.';
+        break;
+      }
+
+      case 'checklist': {
+        const rows = this.ensureTableRows(sec);
+        rows.forEach(r => {
+          r.values = r.values || {};
+          r.values['resp'] = 'Conforming';
+          r.demoValue = 'Conforming';
+        });
+        break;
+      }
+
+      case 'classification': {
+        const rows = this.ensureTableRows(sec);
+        rows.forEach(r => {
+          r.values = r.values || {};
+          r.values['thin'] = '0.5';
+          r.values['heavy'] = '0.5';
+          r.values['decision'] = 'CONFORMS';
+          r.demoValue = '0.5 / 0.5';
+        });
+        break;
+      }
+    }
+    sec.config.hasDemoData = true;
+  }
+
+  populatePreviewEntriesWithDemoData(): void {
+    this.previewEntries = {};
+    this.previewStatus = {};
+    this.previewStats = {};
+
+    this.sections.forEach(s => {
+      // Ensure section demo data is populated
+      this.populateDemoDataForSection(s);
+
+      switch (s.type) {
+        case 'parameter': {
+          const rows = this.ensureTableRows(s);
+          rows.forEach((r, rIdx) => {
+            const key = 'param_' + rIdx;
+            const val = r.values?.['result'] || r.demoValue || this.generateRealisticDemoValue(r.label, r.unit || '', r.requirement || '', rIdx, 0, s.type);
+            this.previewEntries[key] = val;
+            if (r.requirement) {
+              this.previewStatus[key] = this.evaluateRequirement(r.requirement, val) ?? true;
+            } else {
+              this.previewStatus[key] = true;
+            }
+          });
+          break;
+        }
+
+        case 'specimen': {
+          const rows = this.ensureTableRows(s);
+          const cols = this.ensureTableColumns(s);
+          rows.forEach((r, rIdx) => {
+            cols.slice(1).forEach((c, cIdx) => {
+              const key = 'spec_' + s.id + '_' + rIdx + '_' + cIdx;
+              const val = r.values?.[c.key] || (c.key === 'avg' ? (r.demoValue || '615') : (c.key === 'requirement' ? (r.requirement || '≥ 550') : (c.key === 'unit' ? (r.unit || 'MPa') : this.generateRealisticDemoValue(r.label, r.unit || '', r.requirement || '', rIdx, cIdx, s.type))));
+              this.previewEntries[key] = val;
+            });
+          });
+          break;
+        }
+
+        case 'reading': {
+          if (s.config.layout !== 'Table') {
+            const counts = this.getReadingCount(s);
+            counts.forEach(i => {
+              this.previewEntries['read_' + s.id + '_' + i] = String(142 + (i % 2 === 0 ? 3 : -1));
+            });
+          } else {
+            const rows = this.ensureTableRows(s);
+            const cols = this.ensureTableColumns(s);
+            rows.forEach((r, rIdx) => {
+              cols.slice(1).forEach((c, cIdx) => {
+                const key = 'read_' + s.id + '_' + rIdx + '_' + cIdx;
+                this.previewEntries[key] = r.values?.[c.key] || String(142 + rIdx * 3);
+              });
+            });
+          }
+          break;
+        }
+
+        case 'location': {
+          const rows = this.ensureTableRows(s);
+          const cols = this.ensureTableColumns(s);
+          rows.forEach((r, rIdx) => {
+            cols.slice(1).forEach((c, cIdx) => {
+              const key = 'loc_' + s.id + '_' + rIdx + '_' + cIdx;
+              this.previewEntries[key] = r.values?.[c.key] || String(215 + rIdx * 8 + cIdx * 4);
+            });
+          });
+          break;
+        }
+
+        case 'condition': {
+          const fields = this.getConditionFields(s);
+          fields.forEach(f => {
+            const val = s.config.demoConditionValues?.[f] || this.getConditionValue(f, s);
+            this.previewEntries['cond_' + s.id + '_' + f] = val;
+            this.previewEntries['cond_' + f] = val;
+          });
+          if (s.config.tableRows && s.config.tableRows.length > 0) {
+            const rows = this.ensureTableRows(s);
+            const cols = this.ensureTableColumns(s);
+            rows.forEach((r, rIdx) => {
+              cols.slice(1).forEach((c, cIdx) => {
+                const key = 'cond_' + s.id + '_' + rIdx + '_' + cIdx;
+                this.previewEntries[key] = r.values?.[c.key] || (c.key === 'setpoint' ? (r.requirement || '23.0 °C') : (c.key === 'tolerance' ? '± 2.0 °C' : (r.staticValue || 'TH-LOG-01')));
+              });
+            });
+          }
+          break;
+        }
+
+        case 'traceability': {
+          const fields = this.getTraceabilityFields(s);
+          fields.forEach(f => {
+            const val = s.config.demoTraceValues?.[f] || this.getTraceabilityValue(s, f);
+            this.previewEntries['trace_' + s.id + '_' + f] = val;
+            this.previewEntries['trace_' + f] = val;
+          });
+          if (s.config.tableRows && s.config.tableRows.length > 0) {
+            const rows = this.ensureTableRows(s);
+            const cols = this.ensureTableColumns(s);
+            rows.forEach((r, rIdx) => {
+              cols.slice(1).forEach((c, cIdx) => {
+                const key = 'trace_' + s.id + '_' + rIdx + '_' + cIdx;
+                this.previewEntries[key] = r.values?.[c.key] || (c.key === 'tag' ? `EQ-00${rIdx + 1}` : (c.key === 'calDate' ? '2026-04-15' : (c.key === 'dueDate' ? (r.unit || '2027-04-14') : (r.staticValue || 'Active'))));
+              });
+            });
+          }
+          break;
+        }
+
+        case 'traverse': {
+          const rows = this.ensureTableRows(s);
+          const cols = this.ensureTableColumns(s);
+          rows.forEach((r, rIdx) => {
+            cols.slice(1).forEach((c, cIdx) => {
+              const key = 'trav_' + s.id + '_' + rIdx + '_' + cIdx;
+              this.previewEntries[key] = r.values?.[c.key] || String(Math.max(320, 650 - rIdx * 35));
+            });
+          });
+          break;
+        }
+
+        case 'rule': {
+          const rows = this.ensureTableRows(s);
+          rows.forEach((r, rIdx) => {
+            const key = 'rule_' + s.id + '_' + rIdx;
+            const val = r.demoValue || this.generateRealisticDemoValue(r.label, r.unit || '', r.requirement || '', rIdx, 0, s.type);
+            this.previewEntries[key] = val;
+            this.previewStatus[key] = this.evaluateRequirement(r.requirement || '', val) ?? true;
+          });
+          break;
+        }
+
+        case 'custom': {
+          const matrix = this.ensureCustomCellMatrix(s);
+          matrix.forEach((rowCells, rIdx) => {
+            rowCells.slice(1).forEach((cell, cIdx) => {
+              const key = 'custom_' + s.id + '_' + rIdx + '_' + (cIdx + 1);
+              this.previewEntries[key] = String(cell.value || (cell.dataType === 'number' ? (100 + rIdx * 10 + cIdx * 5) : (cell.dataType === 'select' ? (cell.selectOptions?.[0] || 'Conforming') : 'Satisfactory')));
+            });
+          });
+          break;
+        }
+
+        case 'photo': {
+          const slots = this.ensurePhotoSlots(s);
+          slots.forEach(slot => {
+            this.previewEntries['photo_' + s.id + '_' + slot.id] = slot.mockUrl || 'macro_weld_cross_section_01.jpg';
+            this.previewEntries['photo_cap_' + s.id + '_' + slot.id] = slot.caption || 'Macrograph cross-section showing sound penetration and uniform fusion.';
+          });
+          break;
+        }
+
+        case 'narrative': {
+          this.previewEntries['narrative_' + s.id] = s.config.demoText || 'Testing executed in strict accordance with the standard method. The specimen demonstrated typical ductile fracture behavior with sound metallurgical integrity. Results conform to all specified requirements.';
+          break;
+        }
+
+        case 'checklist': {
+          const rows = this.ensureTableRows(s);
+          rows.forEach((r, rIdx) => {
+            this.previewEntries['chk_' + s.id + '_' + rIdx] = 'Conforming';
+          });
+          break;
+        }
+
+        case 'classification': {
+          const rows = this.ensureTableRows(s);
+          const cols = this.ensureTableColumns(s);
+          rows.forEach((r, rIdx) => {
+            cols.slice(1).forEach((c, cIdx) => {
+              const key = 'class_' + s.id + '_' + rIdx + '_' + cIdx;
+              this.previewEntries[key] = c.key === 'thin' ? '0.5' : (c.key === 'heavy' ? '0.5' : 'CONFORMS');
+            });
+          });
+          break;
+        }
+
+        case 'opinion': {
+          const rows = this.ensureTableRows(s);
+          rows.forEach((r, rIdx) => {
+            this.previewEntries['opinion_' + s.id + '_' + rIdx] = 'Conforms to Specification';
+          });
+          this.previewEntries['opinion_statement_' + s.id] = 'The sample complies with all specified chemical and mechanical property requirements.';
+          break;
+        }
+      }
+    });
   }
 
   // Reset to default
@@ -2382,7 +3639,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         if (res && res.id) {
           this.currentLayoutId = res.id;
           this.layoutCode = res.layoutCode || `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId || 'GLOBAL'}`;
-          this.layoutName = res.layoutName || (res.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy.fullDisplayName} Layout`);
+          this.layoutName = res.layoutName || (res.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Layout`);
           this.layoutRev = res.revision || '1.0';
           this.currentVersion = res.version || 1;
           this.layoutStatus = res.status || 'Published';
@@ -2542,7 +3799,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.currentLayoutId = null;
     this.loadedSource = 'preset';
     this.layoutCode = `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId || 1}`;
-    this.layoutName = `${this.resolvedHierarchy.fullDisplayName} Universal Layout`;
+    this.layoutName = `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Universal Layout`;
     this.layoutRev = '1.0';
     this.currentVersion = 1;
     this.layoutStatus = 'Published';
@@ -2594,7 +3851,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       }
       this.toastService.show('Global Default enabled: generic runtime layout loaded (fallback for all tests)', 'info');
     } else {
-      const archKey = this.resolvedHierarchy?.groupName ? this.getArchetypeKeyForUnifiedItem(this.selectedUnifiedTestItem, this.resolvedHierarchy.groupName) : 'generic';
+      const archKey = this.resolvedHierarchy?.groupName ? this.getArchetypeKeyForUnifiedItem(this.selectedUnifiedTestItem, this.resolvedHierarchy?.groupName || '') : 'generic';
       this.selectedArchetypeKey = archKey;
       this.selectedTestKey = archKey;
       this.layoutCode = `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${this.selectedLabTestId || 1}`;
@@ -2696,7 +3953,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   // Save Layout to Database (Supports both in-place update and Save as New Revision)
   saveLayout(forceNewRevision: boolean = false): void {
-    const testId = this.isGlobalDefault ? null : (this.selectedLabTestId || this.resolvedHierarchy.groupId);
+    const testId = this.isGlobalDefault ? null : (this.selectedLabTestId || this.resolvedHierarchy?.groupId);
     if (!this.isGlobalDefault && !testId) {
       this.toastService.show('Select a Laboratory Test first (or enable Global Default Layout)', 'warning');
       return;
@@ -2746,7 +4003,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
     const archetypeSummary = Array.from(new Set(this.sections.map(s => s.type))).join(', ');
     const generatedCode = this.layoutCode || (this.isGlobalDefault ? `TL-GLOBAL-${Date.now()}` : `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${testId}`);
-    const defaultName = this.layoutName || (this.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy.fullDisplayName} Layout`);
+    const defaultName = this.layoutName || (this.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Layout`);
 
     let revToSave = this.layoutRev || '1.0';
     let versionToSave = this.currentVersion || 1;
@@ -2771,8 +4028,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       laboratoryTestID: testId,
       mappedTestIDs: allMappedIds,
       mappedLeafNodes: mappedLeafNodes,
-      laboratoryTestSubGroupID: this.isGlobalDefault ? null : (this.selectedSubGroupId || this.resolvedHierarchy.subGroupId),
-      laboratoryTestAnalysisTypeID: this.isGlobalDefault ? null : (this.selectedAnalysisTypeId || this.resolvedHierarchy.analysisTypeId),
+      laboratoryTestSubGroupID: this.isGlobalDefault ? null : (this.selectedSubGroupId || this.resolvedHierarchy?.subGroupId || null),
+      laboratoryTestAnalysisTypeID: this.isGlobalDefault ? null : (this.selectedAnalysisTypeId || this.resolvedHierarchy?.analysisTypeId || null),
       testMethodSpecificationID: this.selectedTestMethodId,
       testMethodName: this.selectedTestMethodName,
       leafNode: this.isGlobalDefault ? 'Global / All Tests' : this.leafNode,
@@ -2909,11 +4166,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           this.initFallbackActualLabTests();
         }
 
-        // Set default selected lab test (Tensile Test or first test)
-        if (!this.selectedLabTestId && this.actualLabTests.length > 0) {
-          this.selectedLabTestId = this.actualLabTests[0].id;
-        }
-
         // Match each preset by its dbTestId
         Object.values(this.testDatabase).forEach(test => {
           if (test.dbTestId) {
@@ -2924,20 +4176,18 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           }
         });
 
-        // Load subgroups for active lab test
+        // Load subgroups for active lab test if selected
         if (this.selectedLabTestId) {
           this.loadSubGroupsForTest(this.selectedLabTestId);
+          this.syncLiveParametersForTest(this.selectedArchetypeKey);
         }
-
-        this.syncLiveParametersForTest(this.selectedArchetypeKey);
       },
       error: (e) => {
         console.error('Failed to load DB tests', e);
         this.initFallbackActualLabTests();
-        if (!this.selectedLabTestId && this.actualLabTests.length > 0) {
-          this.selectedLabTestId = this.actualLabTests[0].id;
+        if (this.selectedLabTestId) {
+          this.syncLiveParametersForTest(this.selectedArchetypeKey);
         }
-        this.syncLiveParametersForTest(this.selectedArchetypeKey);
       }
     });
   }
@@ -3060,9 +4310,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   // Execution Preview Modal
   openPreviewModal(): void {
-    this.previewEntries = {};
-    this.previewStatus = {};
-    this.previewStats = {};
+    this.populatePreviewEntriesWithDemoData();
     this.previewModalOpen = true;
   }
 
@@ -3139,30 +4387,197 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   // Field helpers for templates
   getConditionFields(sec: ExecutionSection): string[] {
-    const list = [...(sec.config.fields || [])];
+    if (!sec || !sec.config) return [];
+    const list: string[] = [];
+
+    // 1. Explicit fields array
+    if (Array.isArray(sec.config.fields) && sec.config.fields.length > 0) {
+      sec.config.fields.forEach(f => {
+        if (f && !list.includes(f)) list.push(f);
+      });
+    }
+
+    // 2. Extra fields
     if (sec.config.extraFields) {
       sec.config.extraFields.split(',').forEach(f => {
         const trimmed = f.trim();
         if (trimmed && !list.includes(trimmed)) list.push(trimmed);
       });
     }
-    return list.filter(f => this.isConditionSelected(f));
+
+    // 3. Inspect known property keys stored directly on sec.config
+    const conditionKeyMap: { [k: string]: string } = {
+      temperature: 'Ambient Temperature',
+      humidity: 'Relative Humidity',
+      specimenType: 'Specimen Geometry / Type',
+      surfaceCondition: 'Surface Preparation Condition',
+      testingSpeed: 'Test Speed / Strain Rate',
+      speedOfTesting: 'Test Speed / Strain Rate',
+      medium: 'Testing Medium / Environment',
+      gripType: 'Grips & Fixtures',
+      extensometer: 'Extensometer Gauge Length'
+    };
+    Object.keys(conditionKeyMap).forEach(k => {
+      if ((sec.config as Record<string, any>)[k] && !list.includes(conditionKeyMap[k]) && !list.includes(k)) {
+        list.push(conditionKeyMap[k]);
+      }
+    });
+
+    // 4. If list is still empty and tableRows exist, derive labels from tableRows
+    if (list.length === 0 && sec.config.tableRows && sec.config.tableRows.length > 0) {
+      sec.config.tableRows.forEach(r => {
+        if (r.label && !list.includes(r.label)) list.push(r.label);
+      });
+    }
+
+    // 5. Fallback standard condition fields
+    if (list.length === 0) {
+      list.push('Ambient Temperature', 'Relative Humidity', 'Test Speed / Strain Rate', 'Specimen Geometry / Type');
+    }
+
+    return list;
   }
 
   getConditionLabel(identifier: string): string {
-    const c = this.currentDataset.conditions.find(item => item.field === identifier || item.label === identifier);
+    const c = this.currentDataset?.conditions?.find(item => item.field === identifier || item.label === identifier);
     return c ? c.label : identifier;
   }
 
-  getConditionValue(identifier: string): string {
-    const c = this.currentDataset.conditions.find(item => item.field === identifier || item.label === identifier);
+  getConditionValue(identifier: string, sec?: ExecutionSection): string {
+    if (sec && sec.config?.demoConditionValues && sec.config.demoConditionValues[identifier]) {
+      return sec.config.demoConditionValues[identifier];
+    }
+    const l = (identifier || '').toLowerCase();
+    if (sec && sec.config) {
+      if (l.includes('temp') && sec.config.temperature) return sec.config.temperature;
+      if (l.includes('humid') && sec.config.humidity) return sec.config.humidity;
+      if (l.includes('specimen') && sec.config.specimenType) return sec.config.specimenType;
+      if (l.includes('surface') && sec.config.surfaceCondition) return sec.config.surfaceCondition;
+      if (l.includes('speed') && (sec.config.speedOfTesting || sec.config.testingSpeed)) {
+        return sec.config.speedOfTesting || sec.config.testingSpeed || '5 mm/min';
+      }
+      if (sec.config.tableRows) {
+        const matchingRow = sec.config.tableRows.find(r => r.label === identifier || r.key === identifier);
+        if (matchingRow) {
+          return matchingRow.staticValue || matchingRow.requirement || (matchingRow.values ? matchingRow.values['setpoint'] || matchingRow.values['val'] : '') || 'Conforming';
+        }
+      }
+    }
+    const c = this.currentDataset?.conditions?.find(item => item.field === identifier || item.label === identifier);
     if (c && c.demoValue) {
       return c.demoValue + (c.unit && !c.demoValue.includes(c.unit) ? ' ' + c.unit : '');
     }
-    if (identifier.includes('Temp')) return '23.0 °C';
-    if (identifier.includes('Humidity')) return '52 %';
-    if (identifier.includes('Speed')) return '5 mm/min';
-    return 'Specified';
+    if (l.includes('temp')) return '23.0 ± 2.0 °C';
+    if (l.includes('humid')) return '52 % RH';
+    if (l.includes('speed') || l.includes('rate')) return '5 mm/min';
+    if (l.includes('specimen') || l.includes('shape')) return 'Transverse Rectangular Pipe Strip';
+    if (l.includes('surface')) return 'Flat, ground test surface free from scale';
+    if (l.includes('grip')) return 'Wedge Serrated Grips';
+    if (l.includes('extensometer')) return '50mm Gauge Length';
+    return 'Ambient Air (Standard)';
+  }
+
+  getTraceabilityFields(sec: ExecutionSection): string[] {
+    if (!sec || !sec.config) return [];
+    const list: string[] = [];
+
+    // 1. Explicit fields array
+    if (Array.isArray(sec.config.fields) && sec.config.fields.length > 0) {
+      sec.config.fields.forEach(f => {
+        if (f && !list.includes(f)) list.push(f);
+      });
+    }
+
+    // 2. Inspect known property keys stored directly on sec.config
+    const keysMap: { [k: string]: string } = {
+      equipmentName: 'Equipment Name / Model',
+      equipmentId: 'Asset Tag / ID',
+      calibrationCertificate: 'Calibration Certificate No.',
+      calibrationDate: 'Calibration Date',
+      calibrationDue: 'Calibration Due Date',
+      extensometerType: 'Extensometer / Sensor',
+      speedOfTesting: 'Test Speed / Strain Rate',
+      indenterType: 'Indenter Type & Size',
+      testLoad: 'Test Force / Load',
+      dwellTime: 'Dwell Time'
+    };
+    Object.keys(keysMap).forEach(k => {
+      if ((sec.config as Record<string, any>)[k] && !list.includes(keysMap[k]) && !list.includes(k)) {
+        list.push(keysMap[k]);
+      }
+    });
+
+    // 3. If list is still empty and tableRows exist, derive labels from tableRows
+    if (list.length === 0 && sec.config.tableRows && sec.config.tableRows.length > 0) {
+      sec.config.tableRows.forEach(r => {
+        if (r.label && !list.includes(r.label)) list.push(r.label);
+      });
+    }
+
+    // 4. Fallback standard traceability fields
+    if (list.length === 0) {
+      list.push('Equipment Name / Model', 'Asset Tag / ID', 'Calibration Certificate No.', 'Calibration Due Date');
+    }
+
+    return list;
+  }
+
+  getTraceabilityValue(sec: ExecutionSection, field: string): string {
+    const l = (field || '').toLowerCase();
+    if (sec.config?.demoTraceValues && sec.config.demoTraceValues[field]) {
+      return sec.config.demoTraceValues[field];
+    }
+    if (sec.config) {
+      if ((l.includes('cert') || l.includes('certificate')) && sec.config.calibrationCertificate) {
+        return sec.config.calibrationCertificate;
+      }
+      if ((l.includes('due') || l.includes('valid')) && sec.config.calibrationDue) {
+        return sec.config.calibrationDue;
+      }
+      if (l.includes('date') && sec.config.calibrationDate) {
+        return sec.config.calibrationDate;
+      }
+      if ((l.includes('extensometer') || l.includes('sensor')) && sec.config.extensometerType) {
+        return sec.config.extensometerType;
+      }
+      if ((l.includes('speed') || l.includes('rate')) && sec.config.speedOfTesting) {
+        return sec.config.speedOfTesting;
+      }
+      if (l.includes('indenter') && sec.config.indenterType) {
+        return sec.config.indenterType;
+      }
+      if ((l.includes('load') || l.includes('force')) && sec.config.testLoad) {
+        return sec.config.testLoad;
+      }
+      if (l.includes('dwell') && sec.config.dwellTime) {
+        return sec.config.dwellTime;
+      }
+      if ((l.includes('tag') || l.includes('id')) && sec.config.equipmentId) {
+        return sec.config.equipmentId;
+      }
+      if ((l.includes('equip') || l.includes('machine')) && sec.config.equipmentName) {
+        return sec.config.equipmentName;
+      }
+      if (sec.config.tableRows) {
+        const matchingRow = sec.config.tableRows.find(r => r.label === field || r.key === field);
+        if (matchingRow) {
+          return matchingRow.staticValue || matchingRow.requirement || (matchingRow.values ? matchingRow.values['cert'] || matchingRow.values['tag'] : '') || 'Valid Calibration';
+        }
+      }
+    }
+    if (l.includes('cert')) return 'CAL/2026/0421';
+    if (l.includes('due')) return '10-Jun-2027';
+    if (l.includes('date')) return '2026-04-15';
+    if (l.includes('extensometer')) return 'Electronic Axial Extensometer (50mm GL)';
+    if (l.includes('speed')) return '5 mm/min (Yield) / 25 mm/min';
+    if (l.includes('indenter')) return 'Tungsten Carbide Ball 5 mm Diameter';
+    if (l.includes('load')) return '750 kgf (7.355 kN)';
+    if (l.includes('dwell')) return '12 - 15 seconds';
+    if (l.includes('tag') || l.includes('id')) return 'EQ-UTM-001';
+    if (l.includes('equip')) return 'Universal Testing Machine 600kN (UTM-01)';
+    if (l.includes('analyst')) return 'Er. Rajesh Sharma (TECH-08)';
+    if (l.includes('standard')) return 'ISO 7500-1 Class 0.5';
+    return 'Valid & Calibrated';
   }
 
   isConditionFieldChecked(sec: ExecutionSection, c: DatasetCondition): boolean {
@@ -3459,19 +4874,23 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       calculations: []
     };
 
-    // Map test params dynamically from active test definition
-    pool.parameters = (test.params || []).map((p, idx) => ({
-      id: p.id || (idx + 1),
-      name: p.name,
-      symbol: p.name.split(' ')[0],
-      unit: p.unit,
-      requirement: p.requirement,
-      demoValue: test.demo && test.demo[idx] ? test.demo[idx] : '100',
-      type: p.unit === 'Rating' || p.unit === 'Phase' ? 'rating' : (isNaN(Number(p.requirement?.replace(/[^\d.]/g, ''))) ? 'text' : 'numeric'),
-      isCalculated: !!p.isCalculated,
-      formula: p.formula,
-      formulaDisplay: p.formulaDisplay
-    }));
+    // Map test params dynamically from active test definition (only when a laboratory test is selected)
+    if (this.hasSelectedTest) {
+      pool.parameters = (test.params || []).map((p, idx) => ({
+        id: p.id || (idx + 1),
+        name: p.name,
+        symbol: p.name.split(' ')[0],
+        unit: p.unit,
+        requirement: p.requirement,
+        demoValue: test.demo && test.demo[idx] ? test.demo[idx] : '100',
+        type: p.unit === 'Rating' || p.unit === 'Phase' ? 'rating' : (isNaN(Number(p.requirement?.replace(/[^\d.]/g, ''))) ? 'text' : 'numeric'),
+        isCalculated: !!p.isCalculated,
+        formula: p.formula,
+        formulaDisplay: p.formulaDisplay
+      }));
+    } else {
+      pool.parameters = [];
+    }
 
     // Rich domain datasets tailored per test
     switch (testKey) {
@@ -3848,8 +5267,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   onParameterModeChange(sec: ExecutionSection): void {
-    if (sec.config.parameterMode === 'Configured parameter subset' && (!sec.config.subset || sec.config.subset.length === 0)) {
-      sec.config.subset = (this.currentDataset?.parameters || []).map(p => p.name);
+    if (this.hasSelectedTest) {
+      if (sec.config.parameterMode === 'Configured parameter subset' && (!sec.config.subset || sec.config.subset.length === 0)) {
+        sec.config.subset = (this.currentDataset?.parameters || []).map(p => p.name);
+      }
+    } else {
+      sec.config.subset = (sec.config.tableRows || []).map(r => r.label);
     }
     this.syncRowsWithParameterSubset(sec);
   }
@@ -3909,6 +5332,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   getSelectedParametersCount(sec: ExecutionSection): number {
+    if (!this.hasSelectedTest) {
+      return (sec.config.tableRows || []).length;
+    }
     if (sec.config.parameterMode === 'Configured parameter subset' && sec.config.subset) {
       return sec.config.subset.length;
     }
@@ -3942,8 +5368,32 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   selectedMasterParamToAdd: string = '';
+  selectedMasterParamId: number | null = null;
+  selectedMasterParamItem: any = null;
+  masterParamReloadKey: number = Date.now();
+
+  onMasterParamSelected(item: any, sec?: ExecutionSection): void {
+    if (!item) {
+      this.selectedMasterParamId = null;
+      this.selectedMasterParamItem = null;
+      return;
+    }
+    this.selectedMasterParamId = item.id;
+    this.selectedMasterParamItem = item;
+  }
+
+  toggleSlotEtchantMode(slot: PhotoSlotItem): void {
+    slot.etchantMode = slot.etchantMode === 'param' ? 'manual' : 'param';
+  }
+
+  private _cachedAvailableParamsKey: string | null = null;
+  private _cachedAvailableParamsList: Array<{ value: string; label: string; unit?: string; requirement?: string; isCalculated?: boolean }> | null = null;
 
   get availableParametersOptions(): Array<{ value: string; label: string; unit?: string; requirement?: string; isCalculated?: boolean }> {
+    const currentKey = `${this.selectedTestKey}_${(this.currentDataset?.parameters || []).length}`;
+    if (this._cachedAvailableParamsList && this._cachedAvailableParamsKey === currentKey) {
+      return this._cachedAvailableParamsList;
+    }
     const list: Array<{ value: string; label: string; unit?: string; requirement?: string; isCalculated?: boolean }> = [];
     const seen = new Set<string>();
 
@@ -3975,54 +5425,93 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       });
     });
 
+    this._cachedAvailableParamsKey = currentKey;
+    this._cachedAvailableParamsList = list;
     return list;
   }
 
   addParameterFromMaster(sec: ExecutionSection, paramName?: string): void {
-    const nameToAdd = paramName || this.selectedMasterParamToAdd;
-    if (!nameToAdd) {
-      this.toastService.show('Please select a parameter from the list', 'warning');
+    let nameToAdd = paramName || this.selectedMasterParamToAdd;
+    let unit = '';
+    let requirement = 'Runtime';
+    let isCalculated = false;
+    let formula = '';
+    let formulaDisplay = '';
+
+    if (this.selectedMasterParamItem) {
+      const item = this.selectedMasterParamItem;
+      const addVals = item.additionalValues || {};
+      const rawName = item.name || item.displayText || '';
+      nameToAdd = addVals.PureName || (rawName.includes(' - ') ? rawName.split(' - ')[0] : rawName).trim();
+      unit = addVals.Unit || item.unit || '';
+      requirement = addVals.Requirement || item.requirement || 'Runtime';
+      isCalculated = !!addVals.IsCalculated || !!item.isCalculated;
+      formula = addVals.Formula || item.formula || '';
+      formulaDisplay = addVals.FormulaDisplay || item.formulaDisplay || '';
+    } else if (nameToAdd) {
+      const matched = (this.currentDataset?.parameters || []).find(p => p.name === nameToAdd) ||
+        this.availableParametersOptions.find(p => p.value === nameToAdd);
+      if (matched) {
+        unit = matched.unit || '';
+        requirement = matched.requirement || 'Runtime';
+        isCalculated = !!matched.isCalculated;
+      }
+    } else {
+      this.toastService.show('Please search and select a parameter from the database', 'warning');
       return;
     }
-    const rows = this.ensureTableRows(sec);
-    const matched = (this.currentDataset?.parameters || []).find(p => p.name === nameToAdd) ||
-      this.availableParametersOptions.find(p => p.value === nameToAdd);
 
-    // If the only row is the dummy placeholder, replace it with this real parameter
-    if (rows.length === 1 && rows[0].label === 'Runtime Parameter (Auto-bound)') {
-      rows[0].label = nameToAdd;
-      rows[0].unit = matched?.unit || '';
-      rows[0].requirement = matched?.requirement || '';
-      rows[0].isCalculated = matched?.isCalculated || false;
+    const rows = this.ensureTableRows(sec);
+    const existing = rows.find(r => r.label.toLowerCase() === nameToAdd!.toLowerCase());
+    if (existing) {
+      this.toastService.show(`Parameter "${nameToAdd}" is already in table`, 'info');
+      this.selectedMasterParamItem = null;
+      this.selectedMasterParamId = null;
+      this.selectedMasterParamToAdd = '';
+      this.masterParamReloadKey = Date.now();
+      return;
+    }
+
+    // If the only row is a dummy placeholder, replace it with this real parameter
+    if (rows.length === 1 && (rows[0].label === 'Runtime Parameter (Auto-bound)' || rows[0].label === 'Observation 1')) {
+      rows[0].label = nameToAdd!;
+      rows[0].unit = unit;
+      rows[0].requirement = requirement;
+      rows[0].isCalculated = isCalculated;
+      rows[0].formula = formula;
+      rows[0].formulaDisplay = formulaDisplay;
       sec.config.tableRows = [...rows];
       if (sec.config.subset) {
-        sec.config.subset = [nameToAdd];
+        sec.config.subset = [nameToAdd!];
       }
+      this.selectedMasterParamItem = null;
+      this.selectedMasterParamId = null;
       this.selectedMasterParamToAdd = '';
+      this.masterParamReloadKey = Date.now();
       this.toastService.show(`Parameter "${nameToAdd}" configured as primary row`, 'success');
-      return;
-    }
-
-    if (rows.some(r => r.label === nameToAdd)) {
-      this.toastService.show(`Parameter "${nameToAdd}" is already in table`, 'info');
       return;
     }
 
     rows.push({
       key: `param_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      label: nameToAdd,
+      label: nameToAdd!,
       bindingMode: sec.config.dataBindingMode || 'runtime',
-      unit: matched?.unit || '',
-      requirement: matched?.requirement || '',
-      isCalculated: matched?.isCalculated || false,
+      unit: unit,
+      requirement: requirement,
+      isCalculated: isCalculated,
+      formula: formula,
+      formulaDisplay: formulaDisplay,
       visible: true,
       removable: true
     });
     sec.config.tableRows = [...rows];
-    if (sec.config.subset && !sec.config.subset.includes(nameToAdd)) {
-      sec.config.subset.push(nameToAdd);
+    if (sec.config.subset && !sec.config.subset.includes(nameToAdd!)) {
+      sec.config.subset.push(nameToAdd!);
     }
+    this.selectedMasterParamItem = null;
+    this.selectedMasterParamId = null;
     this.selectedMasterParamToAdd = '';
+    this.masterParamReloadKey = Date.now();
     this.toastService.show(`Added parameter: "${nameToAdd}"`, 'success');
   }
 
@@ -4690,11 +6179,47 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', visible: true, width: '12%' });
     } else if (sec.type === 'specimen') {
       if (sec.config.orientation === 'Specimens × Parameters') {
-        cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen / Sample', bindingMode: 'static', visible: true, width: '28%' });
-        const params = this.getSpecimenParamsForSection(sec);
-        params.forEach((p, idx) => {
-          cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true, removable: true });
-        });
+        cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen ID', bindingMode: 'static', visible: true, width: '18%' });
+
+        if (sec.config.showOrientationColumn !== false) {
+          cols.push({
+            key: 'orientation',
+            label: 'Orientation (ASTM E399)',
+            bindingMode: 'static',
+            visible: true,
+            width: '15%'
+          });
+        }
+
+        if (sec.config.showDimensions !== false) {
+          if (sec.config.specimenShape === 'round') {
+            cols.push({ key: 'd0', label: 'Diameter D0 (mm)', bindingMode: 'manual', visible: true, width: '12%' });
+          } else if (sec.config.specimenShape === 'tubular') {
+            cols.push({ key: 'd0', label: 'OD D0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+            cols.push({ key: 't0', label: 'WT T0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+          } else {
+            cols.push({ key: 'w0', label: 'Width W0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+            cols.push({ key: 't0', label: 'Thick T0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+          }
+        }
+
+        if (sec.config.showAreaCalculation !== false) {
+          cols.push({
+            key: 's0',
+            label: 'Initial Area S0 (mm²)',
+            isCalculated: true,
+            formulaDisplay: sec.config.specimenShape === 'round' ? '(π/4) × D0²' : (sec.config.specimenShape === 'tubular' ? 'π × T0 × (D0 - T0)' : 'W0 × T0'),
+            bindingMode: 'runtime',
+            visible: true,
+            width: '14%'
+          });
+        }
+
+        cols.push({ key: 'fm', label: 'Peak Load Fm (kN)', bindingMode: 'manual', visible: true, width: '12%' });
+        cols.push({ key: 'rm', label: 'Tensile Rm (MPa)', isCalculated: true, formulaDisplay: 'Fm × 1000 / S0', bindingMode: 'runtime', visible: true, width: '13%' });
+        cols.push({ key: 'reh', label: 'Yield ReH (MPa)', bindingMode: 'manual', visible: true, width: '12%' });
+        cols.push({ key: 'a', label: 'Elongation A (%)', bindingMode: 'manual', visible: true, width: '11%' });
+
         if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
         if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
       } else {
@@ -4709,30 +6234,58 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         if (sec.config.showStatus !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
       }
     } else if (sec.type === 'reading') {
+      const targetUnit = sec.config.targetUnit || 'HRC';
+      const targetReq = sec.config.targetRequirement || '28 – 34 HRC';
+
       cols.push({
-        key: 'target',
-        label: sec.config.readingLabel || (this.getReadingTargetForSection(sec).name + ' Target Parameter'),
+        key: 'specimen',
+        label: sec.config.readingLabel || 'Specimen / Test Point',
+        bindingMode: 'static',
+        visible: true,
+        width: '22%'
+      });
+
+      const spotN = sec.config.spotCount || 5;
+      for (let sIdx = 1; sIdx <= spotN; sIdx++) {
+        cols.push({
+          key: `spot_${sIdx}`,
+          label: `Spot #${sIdx}`,
+          bindingMode: 'manual',
+          visible: true,
+          removable: true,
+          width: `${Math.floor(38 / spotN)}%`
+        });
+      }
+
+      cols.push({
+        key: 'agg',
+        label: `Average (${targetUnit})`,
         bindingMode: 'runtime',
         visible: true,
-        width: '30%'
+        width: '14%'
       });
-      cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '10%' });
-      const rNums = this.getSpecimenCount(sec);
-      rNums.forEach(num => {
-        cols.push({ key: `reading_${num}`, label: `R${num}`, bindingMode: 'manual', visible: true, removable: true });
-      });
-      cols.push({ key: 'agg', label: sec.config.aggregation || 'Average / Mean', bindingMode: 'runtime', visible: true });
+
       if (sec.config.showMinMax) {
         cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', visible: true });
         cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', visible: true });
       }
-      cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
-      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
+
+      cols.push({ key: 'requirement', label: 'Requirement', requirement: targetReq, bindingMode: 'static', visible: true, width: '14%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '10%' });
     } else if (sec.type === 'location') {
       cols.push({ key: 'loc', label: sec.config.locationColHeader || 'Location / Sampling Zone', bindingMode: 'static', visible: true, width: '28%' });
-      const testParams = this.currentTest.params?.length ? this.currentTest.params.slice(0, 3) : [{ name: 'Hardness', unit: 'HV' }, { name: 'Ferrite', unit: '%' }];
-      testParams.forEach((p, idx) => {
-        cols.push({ key: `param_${idx}`, label: `${p.name} (${p.unit})`, bindingMode: defaultMode, visible: true, removable: true });
+      const testParams = this.currentTest.params?.length ? this.currentTest.params.slice(0, 3) : [{ name: 'Hardness (HRC)', unit: 'HRC', req: '28 – 34' }, { name: 'Equivalent Tensile (MPa)', unit: 'MPa', req: '850 – 950' }];
+      testParams.forEach((p: any, idx) => {
+        cols.push({
+          key: `param_${idx}`,
+          label: `${p.name}${p.unit && !p.name.includes(p.unit) ? ' (' + p.unit + ')' : ''}`,
+          paramKey: p.name,
+          unit: p.unit || '',
+          requirement: p.requirement || p.req || '',
+          bindingMode: defaultMode,
+          visible: true,
+          removable: true
+        });
       });
       if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Zone Average', bindingMode: 'runtime', visible: true });
       if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
@@ -4786,6 +6339,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       cols.push({ key: 'calDate', label: 'Cal Date', bindingMode: 'static', visible: true, width: '13%' });
       cols.push({ key: 'dueDate', label: 'Due Date', bindingMode: 'static', visible: true, width: '13%' });
       cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '12%' });
+    } else if (sec.type === 'opinion') {
+      cols.push({ key: 'param', label: 'Parameter / Evaluation Topic', bindingMode: 'runtime', visible: true, width: '40%' });
+      cols.push({ key: 'observed', label: 'Observed Value', bindingMode: 'runtime', visible: true, width: '30%' });
+      cols.push({ key: 'requirement', label: 'Requirement Min / Max', bindingMode: 'runtime', visible: true, width: '30%' });
     } else {
       cols.push({ key: 'col_1', label: 'Parameter / Feature', bindingMode: 'runtime', visible: true });
       cols.push({ key: 'col_2', label: 'Observed Result', bindingMode: defaultMode, visible: true });
@@ -4796,27 +6353,30 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   ensureTableRows(sec: ExecutionSection): LayoutRowItem[] {
-    if (!sec || !sec.config) return [];
-    if (Array.isArray(sec.config.tableRows) && sec.config.tableRows.length > 0) {
+    if (Array.isArray(sec.config.tableRows)) {
       return sec.config.tableRows;
     }
     const defaultMode: DataBindingMode = sec.config.dataBindingMode || 'runtime';
     const rows: LayoutRowItem[] = [];
 
     if (sec.type === 'parameter') {
-      const params = this.currentDataset?.parameters?.length ? this.currentDataset.parameters : this.currentTest.params;
-      params.forEach((p, idx) => {
-        rows.push({
-          key: `param_${idx}`,
-          label: p.name,
-          bindingMode: defaultMode,
-          requirement: p.requirement || '',
-          unit: p.unit || '',
-          isCalculated: p.isCalculated,
-          visible: true,
-          removable: true
+      if (this.hasSelectedTest) {
+        const params = this.currentDataset?.parameters?.length ? this.currentDataset.parameters : this.currentTest.params;
+        (params || []).forEach((p, idx) => {
+          rows.push({
+            key: `param_${idx}`,
+            label: p.name,
+            bindingMode: defaultMode,
+            requirement: p.requirement || '',
+            unit: p.unit || '',
+            isCalculated: p.isCalculated,
+            formula: p.formula,
+            formulaDisplay: p.formulaDisplay,
+            visible: true,
+            removable: true
+          });
         });
-      });
+      }
     } else if (sec.type === 'specimen') {
       if (sec.config.orientation === 'Specimens × Parameters') {
         const specList = this.getSpecimenList(sec);
@@ -4825,10 +6385,31 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             key: `spec_${idx}`,
             label: spec,
             bindingMode: defaultMode,
+            nature: 'data',
             visible: true,
             removable: true
           });
         });
+        if (sec.config.showAverage !== false) {
+          rows.push({
+            key: 'summary_avg',
+            label: 'Σ AVERAGE RESULT',
+            nature: 'summary',
+            summaryFn: 'avg',
+            bindingMode: 'runtime',
+            visible: true
+          });
+        }
+        if (sec.config.showConformanceVerdict !== false) {
+          rows.push({
+            key: 'summary_verdict',
+            label: 'SPECIFICATION CONFORMANCE',
+            nature: 'summary',
+            requirement: 'ASTM A370 / IS 1608 : 550.0 MPa Min.',
+            bindingMode: 'runtime',
+            visible: true
+          });
+        }
       } else {
         const params = this.getSpecimenParamsForSection(sec);
         params.forEach((p, idx) => {
@@ -4855,26 +6436,44 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         });
       });
     } else if (sec.type === 'reading') {
-      const target = this.getReadingTargetForSection(sec);
-      rows.push({
-        key: 'target_0',
-        label: `${target.name} (${target.unit})`,
-        bindingMode: defaultMode,
-        unit: target.unit,
-        requirement: target.requirement || '≥ 30 HRC',
-        visible: true,
-        removable: true
-      });
-      if (this.currentTest.params?.length > 1) {
-        const p2 = this.currentTest.params[1];
+      const targetUnit = sec.config.targetUnit || 'HRC';
+      const targetReq = sec.config.targetRequirement || '28 – 34 HRC';
+
+      const specList = sec.config.specimenRows?.length ? sec.config.specimenRows : ['Specimen #1', 'Specimen #2'];
+      specList.forEach((spec, idx) => {
         rows.push({
-          key: 'target_1',
-          label: `${p2.name} (${p2.unit})`,
+          key: `spec_${idx}`,
+          label: spec,
           bindingMode: defaultMode,
-          unit: p2.unit,
-          requirement: p2.requirement || '≥ 250 MPa',
+          unit: targetUnit,
+          requirement: targetReq,
+          nature: 'data',
           visible: true,
           removable: true
+        });
+      });
+
+      if (sec.config.showOverallAverageRow !== false) {
+        rows.push({
+          key: 'summary_batch_avg',
+          label: 'Σ BATCH OVERALL AVERAGE HARDNESS',
+          nature: 'summary',
+          unit: targetUnit,
+          summaryFn: 'avg',
+          bindingMode: 'runtime',
+          visible: true
+        });
+      }
+      if (sec.config.showSpreadRow !== false) {
+        rows.push({
+          key: 'summary_spread',
+          label: 'Δ HARDNESS SPREAD (Max – Min)',
+          nature: 'summary',
+          unit: targetUnit,
+          requirement: `≤ ${sec.config.outlierSpreadLimit || 3.0} ${targetUnit}`,
+          summaryFn: 'range',
+          bindingMode: 'runtime',
+          visible: true
         });
       }
     } else if (sec.type === 'traverse') {
@@ -4981,6 +6580,56 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           removable: true
         });
       });
+    } else if (sec.type === 'opinion') {
+      [
+        {
+          key: 'row_uts_fracture',
+          label: 'Ultimate Tensile Strength (N/mm²) & Fracture Mode',
+          unit: 'N/mm²',
+          requirement: '535.0 Min. (Conforms)',
+          staticValue: '555.00 / 553.45 (Ductile B.O.W)',
+          isCalculated: true,
+          formula: 'UTS = Fmax / So',
+          formulaDisplay: 'UTS = Maximum Load (Fmax) / Original Cross-Section Area (So)',
+          bindingMode: 'runtime' as DataBindingMode
+        },
+        {
+          key: 'row_yield_ratio',
+          label: 'Yield-to-Tensile Ratio (Re/Rm)',
+          unit: 'Ratio',
+          requirement: '≤ 0.85 (Conforms)',
+          staticValue: '0.78',
+          isCalculated: true,
+          formula: 'Ratio = Re / Rm',
+          formulaDisplay: 'Ratio = Yield Strength (Re) / Tensile Strength (Rm)',
+          bindingMode: 'runtime' as DataBindingMode
+        },
+        {
+          key: 'row_carbon_equiv',
+          label: 'Carbon Equivalent (CEV)',
+          unit: '%',
+          requirement: '0.45 % Max (Conforms)',
+          staticValue: '0.38 %',
+          isCalculated: true,
+          formula: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15',
+          formulaDisplay: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15',
+          bindingMode: 'runtime' as DataBindingMode
+        }
+      ].forEach(r => {
+        rows.push({
+          key: r.key,
+          label: r.label,
+          unit: r.unit,
+          requirement: r.requirement,
+          staticValue: r.staticValue,
+          isCalculated: r.isCalculated,
+          formula: r.formula,
+          formulaDisplay: r.formulaDisplay,
+          bindingMode: r.bindingMode,
+          visible: true,
+          removable: true
+        });
+      });
     } else {
       rows.push({
         key: 'row_1',
@@ -5030,12 +6679,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   removeTableRow(sec: ExecutionSection, index: number): void {
     const rows = this.ensureTableRows(sec);
-    if (rows.length <= 1) {
-      this.toastService.show('At least one row is required in table', 'warning');
-      return;
-    }
+    if (!rows || rows.length === 0 || index < 0 || index >= rows.length) return;
     const removed = rows.splice(index, 1);
     sec.config.tableRows = [...rows];
+    if (sec.config.subset && removed[0]?.label) {
+      sec.config.subset = sec.config.subset.filter(s => s !== removed[0].label);
+    }
     this.toastService.show(`Removed row: "${removed[0]?.label || 'Row'}"`, 'info');
   }
 
@@ -5100,6 +6749,124 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     cols.push(newCol);
     sec.config.tableColumns = [...cols];
     this.toastService.show(`Added column: "${label}"`, 'success');
+  }
+
+  addLocationParameterColumn(sec: ExecutionSection, paramName?: string): void {
+    const cols = this.ensureTableColumns(sec);
+    let nameToAdd = paramName || 'New Parameter';
+    let unit = '';
+    let requirement = '';
+
+    if (this.selectedMasterParamItem) {
+      const item = this.selectedMasterParamItem;
+      const addVals = item.additionalValues || {};
+      const rawName = item.name || item.displayText || '';
+      nameToAdd = addVals.PureName || (rawName.includes(' - ') ? rawName.split(' - ')[0] : rawName).trim();
+      unit = addVals.Unit || item.unit || '';
+      requirement = addVals.Requirement || item.requirement || '';
+    } else {
+      const available = this.currentTest.params?.find(p => p.name === paramName);
+      if (available) {
+        unit = available.unit || '';
+        requirement = available.requirement || '';
+      }
+    }
+
+    const colKey = `param_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const label = `${nameToAdd}${unit && !nameToAdd.includes(unit) ? ' (' + unit + ')' : ''}`;
+
+    const newCol: LayoutColumnItem = {
+      key: colKey,
+      label: label,
+      paramKey: nameToAdd,
+      unit: unit,
+      requirement: requirement,
+      bindingMode: sec.config.dataBindingMode || 'runtime',
+      visible: true,
+      removable: true
+    };
+
+    cols.push(newCol);
+    sec.config.tableColumns = [...cols];
+    this.toastService.show(`Added location parameter column: "${nameToAdd}"`, 'success');
+  }
+
+  setSpecimenShape(sec: ExecutionSection, shape: 'rectangular' | 'round' | 'tubular'): void {
+    sec.config.specimenShape = shape;
+    delete sec.config.tableColumns;
+    this.ensureTableColumns(sec);
+    this.toastService.show(`Specimen shape set to ${shape.toUpperCase()}`, 'info');
+  }
+
+  onSpecimenOrientationSelected(event: any, sec: ExecutionSection): void {
+    if (!event) return;
+    sec.config.selectedOrientationId = event.id;
+    const notation = event.name || event.displayText || 'L-T';
+    sec.config.selectedOrientationNotation = notation;
+    const cols = this.ensureTableColumns(sec);
+    const orientCol = cols.find(c => c.key === 'orientation');
+    if (orientCol) {
+      orientCol.label = `Orientation (${notation})`;
+    }
+    this.toastService.show(`Orientation bound to ${notation}`, 'success');
+  }
+
+  toggleSpecimenExecutionMode(sec: ExecutionSection): void {
+    sec.config.specimenExecutionMode = sec.config.specimenExecutionMode === 'fixed' ? 'runtime' : 'fixed';
+    this.toastService.show(`Specimen execution mode: ${sec.config.specimenExecutionMode.toUpperCase()}`, 'info');
+  }
+
+  onReadingTargetParamSelected(event: any, sec: ExecutionSection): void {
+    if (!event) return;
+    sec.config.targetParamId = event.id;
+    const rawName = event.name || event.displayText || 'Hardness';
+    const cleanName = (rawName.includes(' - ') ? rawName.split(' - ')[0] : rawName).trim();
+    sec.config.targetParamName = cleanName;
+    sec.config.targetParameter = cleanName;
+    sec.config.readingLabel = `${cleanName} Spot Readings`;
+
+    if (event.additionalValues) {
+      if (event.additionalValues.Unit) sec.config.targetUnit = event.additionalValues.Unit;
+      if (event.additionalValues.Requirement) sec.config.targetRequirement = event.additionalValues.Requirement;
+    }
+    if (!sec.config.targetUnit) {
+      if (cleanName.toLowerCase().includes('rockwell') || cleanName.toLowerCase().includes('hrc')) sec.config.targetUnit = 'HRC';
+      else if (cleanName.toLowerCase().includes('vickers') || cleanName.toLowerCase().includes('hv')) sec.config.targetUnit = 'HV';
+      else if (cleanName.toLowerCase().includes('brinell') || cleanName.toLowerCase().includes('hbw')) sec.config.targetUnit = 'HBW';
+      else if (cleanName.toLowerCase().includes('charpy') || cleanName.toLowerCase().includes('impact')) sec.config.targetUnit = 'J';
+      else sec.config.targetUnit = 'Units';
+    }
+    delete sec.config.tableColumns;
+    delete sec.config.tableRows;
+    this.ensureTableColumns(sec);
+    this.ensureTableRows(sec);
+    this.toastService.show(`Reading target parameter: "${cleanName}" (${sec.config.targetUnit})`, 'success');
+  }
+
+  setReadingSpotCount(sec: ExecutionSection, count: number): void {
+    const clamped = Math.max(1, Math.min(10, count));
+    sec.config.spotCount = clamped;
+    sec.config.count = clamped;
+    delete sec.config.tableColumns;
+    this.ensureTableColumns(sec);
+  }
+
+  applyReadingPreset(sec: ExecutionSection, preset: '3spots' | '5spots' | '10spots'): void {
+    if (preset === '3spots') {
+      this.setReadingSpotCount(sec, 3);
+      this.toastService.show('Applied 3 Spots (ASTM E18 / ISO 6508)', 'info');
+    } else if (preset === '5spots') {
+      this.setReadingSpotCount(sec, 5);
+      this.toastService.show('Applied 5 Spots (Standard Grid)', 'info');
+    } else if (preset === '10spots') {
+      this.setReadingSpotCount(sec, 10);
+      this.toastService.show('Applied 10 Spots (Comprehensive Survey)', 'info');
+    }
+  }
+
+  toggleReadingExecutionMode(sec: ExecutionSection): void {
+    sec.config.readingExecutionMode = sec.config.readingExecutionMode === 'fixed' ? 'runtime' : 'fixed';
+    this.toastService.show(`Reading execution mode: ${sec.config.readingExecutionMode.toUpperCase()}`, 'info');
   }
 
   isParameterColVisible(sec: ExecutionSection, colKey: string): boolean {
@@ -5462,8 +7229,339 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.toastService.show('Loaded Equipment Calibration Traceability Records', 'success');
   }
 
+  ensurePhotoSlots(sec: ExecutionSection): PhotoSlotItem[] {
+    if (!sec.config) {
+      sec.config = this.createSectionObject('photo').config;
+    }
+    if (!sec.config.photoSlots || !Array.isArray(sec.config.photoSlots)) {
+      const count = Math.max(1, Math.min(8, sec.config.count || 2));
+      const slots: PhotoSlotItem[] = [];
+      for (let i = 1; i <= count; i++) {
+        slots.push({
+          id: `slot_${Date.now()}_${i}`,
+          title: `Attachment Plate ${i}${i === 1 ? ' (100X)' : i === 2 ? ' (500X)' : ''}`,
+          caption: sec.config.caption || 'Runtime attachment caption',
+          bindingSource: 'runtime',
+          magnification: i === 1 ? '100X' : i === 2 ? '500X' : '1000X',
+          etchant: sec.config.showEtchant ? '2% Nital' : '',
+          etchantMode: 'manual',
+          etchantSource: 'parameter',
+          scaleBar: i === 1 ? '50 µm' : '20 µm',
+          location: i === 1 ? 'Surface' : 'Core',
+          specimenId: `Specimen #${i}`,
+          mandatory: i === 1,
+          reportable: true
+        });
+      }
+      sec.config.photoSlots = slots;
+    }
+    sec.config.count = sec.config.photoSlots.length;
+    return sec.config.photoSlots;
+  }
+
+  addPhotoSlot(sec: ExecutionSection): void {
+    const slots = this.ensurePhotoSlots(sec);
+    const newIdx = slots.length + 1;
+    slots.push({
+      id: `slot_${Date.now()}_${newIdx}`,
+      title: `Attachment Plate ${newIdx}`,
+      caption: sec.config.caption || 'Runtime attachment caption',
+      bindingSource: 'runtime',
+      magnification: '100X',
+      etchant: '2% Nital',
+      etchantMode: 'manual',
+      etchantSource: 'parameter',
+      scaleBar: '50 µm',
+      location: 'Surface',
+      specimenId: `Specimen #${newIdx}`,
+      mandatory: false,
+      reportable: true
+    });
+    sec.config.count = slots.length;
+    this.toastService.show(`Photo Plate #${newIdx} added`, 'success');
+  }
+
+  removePhotoSlot(sec: ExecutionSection, index: number): void {
+    const slots = this.ensurePhotoSlots(sec);
+    if (index >= 0 && index < slots.length) {
+      slots.splice(index, 1);
+      sec.config.count = slots.length;
+      this.toastService.show('Photo plate removed', 'info');
+    }
+  }
+
+  duplicatePhotoSlot(sec: ExecutionSection, index: number): void {
+    const slots = this.ensurePhotoSlots(sec);
+    if (index >= 0 && index < slots.length) {
+      const orig = slots[index];
+      const copy: PhotoSlotItem = {
+        ...orig,
+        id: `slot_${Date.now()}_copy`,
+        title: `${orig.title} (Copy)`
+      };
+      slots.splice(index + 1, 0, copy);
+      sec.config.count = slots.length;
+      this.toastService.show('Photo plate duplicated', 'success');
+    }
+  }
+
+  movePhotoSlot(sec: ExecutionSection, index: number, direction: -1 | 1): void {
+    const slots = this.ensurePhotoSlots(sec);
+    const newIdx = index + direction;
+    if (newIdx >= 0 && newIdx < slots.length) {
+      const temp = slots[index];
+      slots[index] = slots[newIdx];
+      slots[newIdx] = temp;
+    }
+  }
+
+  applyPhotoPreset(sec: ExecutionSection, presetKey: 'metallography' | 'weld_macro' | 'fracture' | 'corrosion' | 'setup'): void {
+    if (!sec.config) sec.config = {};
+    sec.config.showMagnification = true;
+    sec.config.showEtchant = true;
+    sec.config.showScale = true;
+    sec.config.showLocation = true;
+    sec.config.showSpecimenId = true;
+    sec.config.allowRuntimeUpload = true;
+    sec.config.allowZoomModal = true;
+    sec.config.cardStyle = 'Technical Datasheet';
+
+    switch (presetKey) {
+      case 'metallography':
+        sec.config.gridColumns = '2 Columns (Pair)';
+        sec.config.aspectRatio = '4:3';
+        sec.config.photoSlots = [
+          {
+            id: 'slot_meta_1',
+            title: '1. Unetched Inclusions Field (100X)',
+            caption: 'ASTM E45 Method A Non-Metallic Inclusion Rating',
+            bindingSource: 'runtime',
+            magnification: '100X',
+            etchant: 'Unetched / Polished',
+            scaleBar: '100 µm',
+            location: 'Longitudinal Center',
+            specimenId: 'Specimen #1',
+            mandatory: true,
+            reportable: true
+          },
+          {
+            id: 'slot_meta_2',
+            title: '2. Etched Microstructure (500X)',
+            caption: 'Tempered martensite with fine carbide precipitates',
+            bindingSource: 'runtime',
+            magnification: '500X',
+            etchant: '2% Nital',
+            scaleBar: '20 µm',
+            location: 'Mid-Radius',
+            specimenId: 'Specimen #1',
+            mandatory: true,
+            reportable: true
+          }
+        ];
+        this.toastService.show('Loaded Metallography Micrograph Pair Preset (100X & 500X)', 'success');
+        break;
+
+      case 'weld_macro':
+        sec.config.gridColumns = '3 Columns (Trio)';
+        sec.config.aspectRatio = '16:9';
+        sec.config.photoSlots = [
+          {
+            id: 'slot_weld_1',
+            title: '1. Weld Macro-Etch Cross Section',
+            caption: 'Penetration depth, fusion line, and run sequence check',
+            bindingSource: 'runtime',
+            magnification: 'Macro (5X)',
+            etchant: '10% Ammonium Persulfate',
+            scaleBar: '5 mm',
+            location: 'Joint Cross Section',
+            specimenId: 'Coupon A',
+            mandatory: true,
+            reportable: true
+          },
+          {
+            id: 'slot_weld_2',
+            title: '2. Heat Affected Zone (HAZ) @ 200X',
+            caption: 'Coarse grain HAZ grain growth & acicular ferrite morphology',
+            bindingSource: 'runtime',
+            magnification: '200X',
+            etchant: '2% Nital',
+            scaleBar: '50 µm',
+            location: 'HAZ Fusion Boundary',
+            specimenId: 'Coupon A',
+            mandatory: true,
+            reportable: true
+          },
+          {
+            id: 'slot_weld_3',
+            title: '3. Weld Metal Microstructure @ 500X',
+            caption: 'Acicular ferrite with intergranular boundary allotriomorphs',
+            bindingSource: 'runtime',
+            magnification: '500X',
+            etchant: '2% Nital',
+            scaleBar: '20 µm',
+            location: 'Weld Centerline',
+            specimenId: 'Coupon A',
+            mandatory: false,
+            reportable: true
+          }
+        ];
+        this.toastService.show('Loaded Weld Macro & Micro Trio Preset', 'success');
+        break;
+
+      case 'fracture':
+        sec.config.gridColumns = 'Comparison Mode (Before / After)';
+        sec.config.aspectRatio = '4:3';
+        sec.config.photoSlots = [
+          {
+            id: 'slot_frac_1',
+            title: 'Specimen Before Test (Gauge Length)',
+            caption: 'Original gauge length marking & surface condition',
+            bindingSource: 'runtime',
+            magnification: '1X Macro',
+            etchant: 'None',
+            scaleBar: '50 mm',
+            location: 'Gauge Length',
+            specimenId: 'Tensile #1',
+            mandatory: false,
+            reportable: true
+          },
+          {
+            id: 'slot_frac_2',
+            title: 'Fractured Specimen / Cup-Cone Mode',
+            caption: 'Ductile cup-and-cone shear fracture appearance with necking',
+            bindingSource: 'runtime',
+            magnification: '2X Macro',
+            etchant: 'None',
+            scaleBar: '10 mm',
+            location: 'Fracture Zone',
+            specimenId: 'Tensile #1',
+            mandatory: true,
+            reportable: true
+          }
+        ];
+        this.toastService.show('Loaded Pre/Post Fracture Split Comparison Preset', 'success');
+        break;
+
+      case 'corrosion':
+        sec.config.gridColumns = '3 Columns (Trio)';
+        sec.config.aspectRatio = '1:1';
+        sec.config.photoSlots = [
+          {
+            id: 'slot_corr_1',
+            title: '1. Pre-Exposure (0 Hours)',
+            caption: 'Clean passivated / coated surface prior to chamber placement',
+            bindingSource: 'runtime',
+            magnification: 'Visual',
+            etchant: 'None',
+            scaleBar: 'Panel 150×100mm',
+            location: 'Front Face',
+            specimenId: 'Panel A',
+            mandatory: true,
+            reportable: true
+          },
+          {
+            id: 'slot_corr_2',
+            title: '2. Intermediate Inspection (48 Hours)',
+            caption: 'First white rust appearance, blister evaluation as per ASTM D714',
+            bindingSource: 'runtime',
+            magnification: 'Visual',
+            etchant: 'None',
+            scaleBar: 'Panel 150×100mm',
+            location: 'Front Face',
+            specimenId: 'Panel A',
+            mandatory: false,
+            reportable: true
+          },
+          {
+            id: 'slot_corr_3',
+            title: '3. Final Post-Exposure (96 Hours)',
+            caption: 'Red rust area coverage rating (%) as per ASTM B117 / ISO 9227',
+            bindingSource: 'runtime',
+            magnification: 'Visual',
+            etchant: 'None',
+            scaleBar: 'Panel 150×100mm',
+            location: 'Front Face',
+            specimenId: 'Panel A',
+            mandatory: true,
+            reportable: true
+          }
+        ];
+        this.toastService.show('Loaded Salt Spray / Corrosion Exposure Series Preset', 'success');
+        break;
+
+      case 'setup':
+        sec.config.gridColumns = '2 Columns (Pair)';
+        sec.config.aspectRatio = '16:9';
+        sec.config.photoSlots = [
+          {
+            id: 'slot_setup_1',
+            title: '1. Test Setup & Specimen Clamping',
+            caption: 'Specimen gripped in hydraulic wedge jaws with alignment verification',
+            bindingSource: 'runtime',
+            magnification: 'Visual',
+            etchant: 'None',
+            scaleBar: 'Full Setup',
+            location: 'UTM Frame',
+            specimenId: 'Setup #1',
+            mandatory: false,
+            reportable: true
+          },
+          {
+            id: 'slot_setup_2',
+            title: '2. Extensometer Clamping & Gauge Pin',
+            caption: 'Class 0.5 axial extensometer clamped at 50mm gauge length',
+            bindingSource: 'runtime',
+            magnification: 'Visual',
+            etchant: 'None',
+            scaleBar: 'GL: 50mm',
+            location: 'Specimen Gauge',
+            specimenId: 'Setup #1',
+            mandatory: true,
+            reportable: true
+          }
+        ];
+        this.toastService.show('Loaded Test Setup & Extensometer Preset', 'success');
+        break;
+    }
+    sec.config.count = (sec.config.photoSlots || []).length;
+  }
+
+  getPhotoGridClass(sec: ExecutionSection): string {
+    const cols = sec.config?.gridColumns || '2 Columns (Pair)';
+    if (cols.includes('1 Column')) return 'photos-grid photos-grid-1col';
+    if (cols.includes('3 Columns')) return 'photos-grid photos-grid-3col';
+    if (cols.includes('4 Columns')) return 'photos-grid photos-grid-4col';
+    if (cols.includes('Comparison')) return 'photos-grid photos-grid-compare';
+    return 'photos-grid photos-grid-2col';
+  }
+
+  getPhotoAspectStyle(sec: ExecutionSection, slot?: PhotoSlotItem): string {
+    const ratio = slot?.aspectRatio || sec.config?.aspectRatio || '4:3';
+    switch (ratio) {
+      case '16:9': return '16 / 9';
+      case '1:1': return '1 / 1';
+      case '3:2': return '3 / 2';
+      case '4:3': return '4 / 3';
+      default: return '4 / 3';
+    }
+  }
+
+  getPhotoHeightStyle(sec: ExecutionSection): string {
+    const h = sec.config?.plateHeight || 'Standard (185px)';
+    if (h.includes('Compact')) return '140px';
+    if (h.includes('Large')) return '240px';
+    if (h.includes('Hero')) return '300px';
+    return '185px';
+  }
+
 
   getCellDisplayValue(sec: ExecutionSection, row: LayoutRowItem, col: LayoutColumnItem, colIdx: number, rowIdx: number): string {
+    if (this.demoMode && row.values && row.values[col.key] !== undefined && row.values[col.key] !== '') {
+      return String(row.values[col.key]);
+    }
+    if (this.demoMode && row.demoValue && (col.key === 'result' || col.key === 'observed' || col.key === 'val' || col.key === 'entry' || col.key === 'avg')) {
+      return String(row.demoValue);
+    }
     if (col.key === 'unit') return row.unit || (this.demoMode ? 'MPa' : '—');
     if (col.key === 'requirement') return row.requirement || (this.demoMode ? '≥ 420' : 'Runtime');
     if (col.key === 'status') return this.demoMode ? 'PASS' : 'Runtime';
@@ -5487,6 +7585,44 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (col.key === 'tag') return this.demoMode ? `EQ-00${rowIdx + 1}` : '—';
     if (col.key === 'y2') return this.demoMode ? (30 + rowIdx * 1.5).toFixed(1) : '—';
     if (col.key === 'avg') return this.demoMode ? (430 + rowIdx * 10).toString() : '—';
+
+    // Specimen Matrix Specialized Keys
+    if (col.key === 'orientation') {
+      return sec.config.selectedOrientationNotation || (this.demoMode ? 'L-T (Trans)' : '—');
+    }
+    if (col.key === 'w0' || col.key === 'dim_w0') {
+      return this.demoMode ? (12.50 + rowIdx * 0.02).toFixed(2) : '—';
+    }
+    if (col.key === 't0' || col.key === 'dim_t0') {
+      return this.demoMode ? (3.20 - rowIdx * 0.01).toFixed(2) : '—';
+    }
+    if (col.key === 'd0' || col.key === 'dim_d0') {
+      return this.demoMode ? (10.00 + rowIdx * 0.05).toFixed(2) : '—';
+    }
+    if (col.key === 's0' || col.key === 'dim_s0') {
+      return this.demoMode ? (40.00 - rowIdx * 0.19).toFixed(2) : '—';
+    }
+    if (col.key === 'fm' || col.key === 'param_fm') {
+      return this.demoMode ? (24.40 + rowIdx * 0.10).toFixed(2) : '—';
+    }
+    if (col.key === 'rm' || col.key === 'param_rm') {
+      return this.demoMode ? (610 + rowIdx * 2).toString() : '—';
+    }
+    if (col.key === 'reh' || col.key === 'param_reh') {
+      return this.demoMode ? (445 + rowIdx * 3).toString() : '—';
+    }
+    if (col.key === 'a' || col.key === 'param_a') {
+      return this.demoMode ? (24.5 - rowIdx * 0.5).toFixed(1) : '—';
+    }
+
+    // Reading Matrix Specialized Spot Keys
+    if (col.key.startsWith('spot_') || col.key.startsWith('reading_')) {
+      const sNum = parseInt(col.key.replace(/\D/g, ''), 10) || 1;
+      return this.demoMode ? (30.5 + (rowIdx * 0.7) + (sNum * 0.2)).toFixed(1) : '—';
+    }
+    if (col.key === 'agg') {
+      return this.demoMode ? (31.13 + rowIdx * 0.45).toFixed(2) : '—';
+    }
 
     const mode = row.bindingMode || col.bindingMode || sec.config.dataBindingMode || 'runtime';
     if (mode === 'static') {
@@ -5517,7 +7653,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       'custom',
       'classification',
       'checklist',
-      'traceability'
+      'traceability',
+      'opinion'
     ].includes(s.type);
   }
 
@@ -5660,6 +7797,284 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       s.config.columns.mergedHeader = '';
     }
     this.toastService.show('Header merge removed. Reverted to standard flat columns.', 'info');
+  }
+
+  // =========================================================================
+  // CUSTOM TABLE INDIVIDUAL CELL MODIFICATION SYSTEM (CustomTableCell Engine)
+  // =========================================================================
+
+  ensureCustomCellMatrix(sec: ExecutionSection): CustomTableCell[][] {
+    const rows = this.ensureTableRows(sec);
+    const cols = this.ensureTableColumns(sec);
+    const rCount = rows.length;
+    const cCount = cols.length;
+
+    if (!sec.config.cellMatrix) {
+      sec.config.cellMatrix = [];
+    }
+
+    const matrix: CustomTableCell[][] = sec.config.cellMatrix;
+
+    // Adjust row dimensions
+    while (matrix.length < rCount) {
+      matrix.push([]);
+    }
+    if (matrix.length > rCount) {
+      matrix.splice(rCount, matrix.length - rCount);
+    }
+
+    // Adjust column dimensions for each row
+    for (let r = 0; r < rCount; r++) {
+      const rowItem = rows[r];
+      while (matrix[r].length < cCount) {
+        const c = matrix[r].length;
+        const colItem = cols[c];
+        const defaultMode = (c === 0 ? 'static' : (colItem.bindingMode || 'manual')) as DataBindingMode;
+        const defaultVal = c === 0 ? (rowItem.label || `Row ${r + 1}`) : (rowItem.staticValue || '');
+        matrix[r].push({
+          id: `cell_${r}_${c}`,
+          rowIdx: r,
+          colIdx: c,
+          rowKey: rowItem.key || `row_${r}`,
+          colKey: colItem.key || `col_${c}`,
+          value: defaultVal,
+          dataType: 'text',
+          bindingMode: defaultMode,
+          align: c === 0 ? 'left' : 'center',
+          isLocked: false
+        });
+      }
+      if (matrix[r].length > cCount) {
+        matrix[r].splice(cCount, matrix[r].length - cCount);
+      }
+      // Keep row/col keys synced
+      for (let c = 0; c < cCount; c++) {
+        matrix[r][c].rowIdx = r;
+        matrix[r][c].colIdx = c;
+        matrix[r][c].rowKey = rowItem.key;
+        matrix[r][c].colKey = cols[c].key;
+      }
+    }
+
+    return matrix;
+  }
+
+  selectCustomCell(sec: ExecutionSection, rIdx: number, cIdx: number, event?: MouseEvent): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.selectedSectionId = sec.id;
+    const matrix = this.ensureCustomCellMatrix(sec);
+    if (!matrix[rIdx] || !matrix[rIdx][cIdx]) return;
+
+    sec.config.activeCellCoords = { rowIdx: rIdx, colIdx: cIdx };
+    const cell = matrix[rIdx][cIdx];
+    if (cell.selectOptions && !cell.selectOptionsRaw) {
+      cell.selectOptionsRaw = cell.selectOptions.join(', ');
+    }
+    this.markLayoutDirty();
+  }
+
+  getActiveCustomCell(sec: ExecutionSection): CustomTableCell | null {
+    if (!sec?.config?.activeCellCoords || !sec?.config?.cellMatrix) return null;
+    const { rowIdx, colIdx } = sec.config.activeCellCoords;
+    if (sec.config.cellMatrix[rowIdx] && sec.config.cellMatrix[rowIdx][colIdx]) {
+      return sec.config.cellMatrix[rowIdx][colIdx];
+    }
+    return null;
+  }
+
+  clearActiveCustomCellSelection(sec: ExecutionSection): void {
+    if (sec?.config) {
+      sec.config.activeCellCoords = null;
+    }
+  }
+
+  updateCustomCellDataType(sec: ExecutionSection, type: 'text' | 'number' | 'date' | 'select' | 'formula'): void {
+    const cell = this.getActiveCustomCell(sec);
+    if (!cell) return;
+    cell.dataType = type;
+    if (type === 'select') {
+      if (!cell.selectOptions || cell.selectOptions.length === 0) {
+        cell.selectOptions = ['Acceptable', 'Marginal', 'Defect / Reject'];
+        cell.selectOptionsRaw = cell.selectOptions.join(', ');
+      }
+      if (!cell.value && cell.selectOptions[0]) {
+        cell.value = cell.selectOptions[0];
+      }
+    } else if (type === 'formula') {
+      if (!cell.formulaExpression) {
+        const r = cell.rowIdx;
+        cell.formulaExpression = `=[r${r},c1] * 1.0`;
+      }
+    } else if (type === 'number') {
+      if (!cell.precision) cell.precision = 2;
+    }
+    this.markLayoutDirty();
+    this.toastService.show(`Cell [R${cell.rowIdx + 1}:C${cell.colIdx + 1}] data type set to ${type.toUpperCase()}`, 'info');
+  }
+
+  updateCustomCellBindingMode(sec: ExecutionSection, mode: 'runtime' | 'static' | 'manual'): void {
+    const cell = this.getActiveCustomCell(sec);
+    if (!cell) return;
+    cell.bindingMode = mode;
+    this.markLayoutDirty();
+    this.toastService.show(`Cell [R${cell.rowIdx + 1}:C${cell.colIdx + 1}] origin set to ${mode.toUpperCase()}`, 'info');
+  }
+
+  updateCustomCellAlign(sec: ExecutionSection, align: 'left' | 'center' | 'right'): void {
+    const cell = this.getActiveCustomCell(sec);
+    if (!cell) return;
+    cell.align = align;
+    this.markLayoutDirty();
+  }
+
+  updateCustomCellSelectOptions(sec: ExecutionSection, raw: string): void {
+    const cell = this.getActiveCustomCell(sec);
+    if (!cell) return;
+    cell.selectOptionsRaw = raw;
+    cell.selectOptions = raw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    if (cell.selectOptions.length > 0 && !cell.selectOptions.includes(String(cell.value))) {
+      cell.value = cell.selectOptions[0];
+    }
+    this.markLayoutDirty();
+  }
+
+  evaluateCustomCellFormula(sec: ExecutionSection, formula?: string, rIdx?: number, isSimulation?: boolean): string | number {
+    if (!formula) return '—';
+    try {
+      let expr = formula.trim();
+      if (expr.startsWith('=')) {
+        expr = expr.substring(1).trim();
+      }
+
+      const matrix = this.ensureCustomCellMatrix(sec);
+
+      // Replace coordinate tokens e.g. [r0,c1] or [r,c1]
+      const resolved = expr.replace(/\[r(\d*),c(\d+)\]/gi, (match, rStr, cStr) => {
+        let r = rStr === '' && rIdx !== undefined ? rIdx : parseInt(rStr, 10);
+        const c = parseInt(cStr, 10);
+        if (isNaN(r) && rIdx !== undefined) r = rIdx;
+
+        let cellVal: any = 0;
+        if (isSimulation) {
+          const simKey = `custom_${sec.id}_${r}_${c}`;
+          if (this.previewEntries[simKey] !== undefined) {
+            cellVal = this.previewEntries[simKey];
+          } else if (matrix[r] && matrix[r][c]) {
+            cellVal = matrix[r][c].value;
+          }
+        } else if (matrix[r] && matrix[r][c]) {
+          cellVal = matrix[r][c].value;
+        }
+
+        const num = parseFloat(String(cellVal).replace(/[^0-9.-]/g, ''));
+        return isNaN(num) ? '0' : String(num);
+      });
+
+      if (/^[0-9.+\-*/()\s]+$/.test(resolved)) {
+        // eslint-disable-next-line no-eval
+        const result = Function(`"use strict"; return (${resolved});`)();
+        if (typeof result === 'number' && !isNaN(result)) {
+          return Math.round(result * 1000) / 1000;
+        }
+        return result;
+      }
+      return resolved;
+    } catch {
+      return '#ERR!';
+    }
+  }
+
+  markLayoutDirty(): void {
+    // Reactive layout change tracking hook
+  }
+
+  applyCustomTablePreset(sec: ExecutionSection, preset: 'blank' | 'corrosion' | 'mass_loss' | 'blank_grid'): void {
+    if (preset === 'corrosion') {
+      sec.config.tableColumns = [
+        { key: 'col_interval', label: 'Exposure Interval', bindingMode: 'static', visible: true },
+        { key: 'col_appearance', label: 'Visual Surface Rating', bindingMode: 'manual', visible: true },
+        { key: 'col_pit_depth', label: 'Max Pit Depth (mm)', bindingMode: 'manual', visible: true, unit: 'mm' },
+        { key: 'col_status', label: 'Pass / Fail Verdict', bindingMode: 'manual', visible: true }
+      ];
+      sec.config.tableRows = [
+        { key: 'r_24h', label: '24 Hours Exposure', bindingMode: 'static', visible: true },
+        { key: 'r_48h', label: '48 Hours Exposure', bindingMode: 'static', visible: true },
+        { key: 'r_96h', label: '96 Hours Exposure', bindingMode: 'static', visible: true },
+        { key: 'r_168h', label: '168 Hours (7 Days)', bindingMode: 'static', visible: true }
+      ];
+      delete sec.config.cellMatrix;
+      const matrix = this.ensureCustomCellMatrix(sec);
+      for (let r = 0; r < 4; r++) {
+        const opts1 = ['No Rust or Blisters', 'Isolated Micro-Pits (<0.1mm)', 'Moderate Red Rust', 'Severe Flaking'];
+        matrix[r][1].dataType = 'select';
+        matrix[r][1].selectOptions = opts1;
+        matrix[r][1].selectOptionsRaw = opts1.join(', ');
+        matrix[r][1].value = opts1[0];
+
+        matrix[r][2].dataType = 'number';
+        matrix[r][2].unit = 'mm';
+        matrix[r][2].precision = 2;
+        matrix[r][2].value = (0.02 * (r + 1)).toFixed(2);
+
+        const opts3 = ['PASS (Conforms to ASTM B117)', 'FAIL (Excessive Rust)'];
+        matrix[r][3].dataType = 'select';
+        matrix[r][3].selectOptions = opts3;
+        matrix[r][3].selectOptionsRaw = opts3.join(', ');
+        matrix[r][3].value = opts3[0];
+      }
+      this.toastService.show('Applied Salt Spray Corrosion Preset (ASTM B117)', 'success');
+    } else if (preset === 'mass_loss') {
+      sec.config.tableColumns = [
+        { key: 'col_spec', label: 'Specimen ID', bindingMode: 'static', visible: true },
+        { key: 'col_initial', label: 'Initial Weight (g)', bindingMode: 'manual', visible: true, unit: 'g' },
+        { key: 'col_final', label: 'Final Weight (g)', bindingMode: 'manual', visible: true, unit: 'g' },
+        { key: 'col_loss', label: 'Mass Loss Δm (g)', bindingMode: 'runtime', visible: true, unit: 'g' },
+        { key: 'col_rate', label: 'Corrosion Rate (mpy)', bindingMode: 'runtime', visible: true, unit: 'mpy' }
+      ];
+      sec.config.tableRows = [
+        { key: 'r_sp1', label: 'Coupon #1', bindingMode: 'static', visible: true },
+        { key: 'r_sp2', label: 'Coupon #2', bindingMode: 'static', visible: true },
+        { key: 'r_sp3', label: 'Coupon #3', bindingMode: 'static', visible: true }
+      ];
+      delete sec.config.cellMatrix;
+      const matrix = this.ensureCustomCellMatrix(sec);
+      for (let r = 0; r < 3; r++) {
+        matrix[r][1].dataType = 'number';
+        matrix[r][1].unit = 'g';
+        matrix[r][1].value = (45.234 + r * 0.1).toFixed(3);
+
+        matrix[r][2].dataType = 'number';
+        matrix[r][2].unit = 'g';
+        matrix[r][2].value = (45.210 + r * 0.1).toFixed(3);
+
+        matrix[r][3].dataType = 'formula';
+        matrix[r][3].formulaExpression = `=[r${r},c1] - [r${r},c2]`;
+        matrix[r][3].unit = 'g';
+
+        matrix[r][4].dataType = 'formula';
+        matrix[r][4].formulaExpression = `=[r${r},c3] * 534.0`;
+        matrix[r][4].unit = 'mpy';
+      }
+      this.toastService.show('Applied Mass Loss Corrosion Rate Preset (ASTM G31)', 'success');
+    } else {
+      sec.config.tableColumns = [
+        { key: 'col_feature', label: 'Feature / Test Point', bindingMode: 'static', visible: true },
+        { key: 'col_nominal', label: 'Specified Target', bindingMode: 'manual', visible: true },
+        { key: 'col_obs', label: 'Observed Reading', bindingMode: 'manual', visible: true },
+        { key: 'col_eval', label: 'Evaluation Status', bindingMode: 'manual', visible: true }
+      ];
+      sec.config.tableRows = [
+        { key: 'row_1', label: 'Point A (Surface)', bindingMode: 'static', visible: true },
+        { key: 'row_2', label: 'Point B (Mid-wall)', bindingMode: 'static', visible: true },
+        { key: 'row_3', label: 'Point C (Core)', bindingMode: 'static', visible: true }
+      ];
+      delete sec.config.cellMatrix;
+      this.ensureCustomCellMatrix(sec);
+      this.toastService.show('Reset Custom Table to Clean 3×4 Dynamic Grid', 'info');
+    }
+    this.markLayoutDirty();
   }
 
   openPayloadPreview() {

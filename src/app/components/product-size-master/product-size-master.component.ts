@@ -30,9 +30,9 @@ export class ProductSizeMasterComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'displayName', type: 'string', label: 'Display Name', filter: true },
     { key: 'sizeType', type: 'string', label: 'Size Type', filter: true },
-    { key: 'minValue', type: 'number', label: 'Min', filter: true },
-    { key: 'maxValue', type: 'number', label: 'Max', filter: true },
-    { key: 'unitName', type: 'string', label: 'Unit', filter: false },
+    { key: 'minValue', type: 'number', label: 'Min', filter: false },
+    { key: 'maxValue', type: 'number', label: 'Max', filter: false },
+    { key: 'unitName', type: 'string', label: 'Unit', filter: true },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
@@ -42,6 +42,7 @@ export class ProductSizeMasterComponent implements OnInit {
     maxValue: 'number',
     modifiedOn: 'date',
     modifiedByName: 'string',
+    unitName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];

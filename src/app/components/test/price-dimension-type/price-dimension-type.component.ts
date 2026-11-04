@@ -25,7 +25,7 @@ export class PriceDimensionTypeComponent implements OnInit {
     { key: 'valueSource', type: 'string', label: 'Value Source', filter: true },
     { key: 'sampleField', type: 'string', label: 'Sample Field', filter: true },
     { key: 'description', type: 'string', label: 'Description', filter: true },
-    { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: true },
+    { key: 'sortOrder', type: 'number', label: 'Sort Order', filter: false },
   ];
 
   valueSources = [

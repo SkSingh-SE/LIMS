@@ -45,14 +45,7 @@
           <!-- Test Method Standard -->
           <div class="col-md-3">
             <label class="form-label">Test Method Standard <span class="text-danger">*</span></label>
-            <input
-              type="text"
-              class="form-control form-control-sm"
-              formControlName="testMethodStandard"
-              placeholder="Enter Standard Method"
-              maxlength="100"
-              (blur)="buildDisplayTitle()"
-              [ngClass]="{ 'is-invalid': testSpecificationForm.get('testMethodStandard')?.invalid && testSpecificationForm.get('testMethodStandard')?.touched }"
+            <input type="text" class="form-control form-control-sm" formControlName="testMethodStandard" [readOnly]="isViewMode" placeholder="Enter Standard Method" maxlength="100" (blur)="buildDisplayTitle()" [ngClass]="{ 'is-invalid': testSpecificationForm.get('testMethodStandard')?.invalid && testSpecificationForm.get('testMethodStandard')?.touched }"
             />
             <span
               *ngIf="testSpecificationForm.get('testMethodStandard')?.invalid && testSpecificationForm.get('testMethodStandard')?.touched"
@@ -65,25 +58,13 @@
           <!-- Part / Sec -->
           <div class="col-md-3">
             <label class="form-label">Part / Sec</label>
-            <input
-              type="text"
-              class="form-control form-control-sm"
-              formControlName="part"
-              placeholder="Enter Part / Sec"
-              maxlength="100"
-              (blur)="buildDisplayTitle()"
-            />
+            <input type="text" class="form-control form-control-sm" formControlName="part" placeholder="Enter Part / Sec" maxlength="100" (blur)="buildDisplayTitle()"[readOnly]="isViewMode"/>
           </div>
 
           <!-- Display Title (auto-generated, editable) -->
           <div class="col-md-3">
             <label class="form-label">Display Title</label>
-            <input
-              type="text"
-              class="form-control form-control-sm"
-              formControlName="displayTitle"
-              placeholder="Auto-generated"
-            />
+            <input type="text" class="form-control form-control-sm" formControlName="displayTitle" placeholder="Auto-generated" [readOnly]="isViewMode"/>
           </div>
 
           <!-- Standard Title -->
@@ -94,7 +75,7 @@
               class="form-control form-control-sm"
               formControlName="name"
               placeholder="Enter Standard Title"
-              maxlength="250"
+              maxlength="250" [readOnly]="isViewMode"
               [ngClass]="{ 'is-invalid': testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched }"
             />
             <span *ngIf="testSpecificationForm.get('name')?.invalid && testSpecificationForm.get('name')?.touched" class="text-danger text-sm">
@@ -109,9 +90,9 @@
                 class="form-check-input mt-1"
                 type="checkbox"
                 role="switch"
-                id="switch3"
+                id="switch3" 
                 formControlName="isDisabled"
-                (click)="onDisable()"
+                (click)="onDisable()"  [style.pointer-events]="isViewMode ? 'none' : 'auto'"
               />
               <label class="form-check-label form-label line-height-1 ms-2 mb-0" for="switch3">Disable</label>
             </div>
@@ -230,7 +211,7 @@
                       formControlName="version"
                       (blur)="buildDisplayTitle()"
                       [ngClass]="{ 'is-invalid': group.get('version')?.invalid && group.get('version')?.touched }"
-                    />
+                    [readOnly]="isViewMode" />
                     <span *ngIf="group.get('version')?.invalid && group.get('version')?.touched" class="text-danger text-sm">
                       Version is required.
                     </span>
@@ -240,7 +221,7 @@
 
               <div class="col-md-3">
                 <label class="form-label">Year</label>
-                <select class="form-select form-select-sm" formControlName="year" [attr.disabled]="isVersionReadOnly(i) ? true : null" (blur)="buildDisplayTitle()">
+                <select class="form-select form-select-sm" formControlName="year" [attr.disabled]="isVersionReadOnly(i) ? true : null" (blur)="buildDisplayTitle()" [disabled]="isViewMode"[style.pointer-events]="isViewMode ? 'none' : 'auto'">
                   <option [ngValue]="null">Select Year</option>
                   <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
                 </select>
@@ -297,7 +278,7 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Review Date</label>
-                <input type="date" class="form-control form-control-sm" formControlName="reviewDate" [attr.disabled]="isVersionReadOnly(i) ? true : null" />
+                <input type="date" class="form-control form-control-sm" formControlName="reviewDate" [attr.disabled]="isVersionReadOnly(i) ? true : null" [readOnly]="isViewMode" />
               </div>
               <div class="col-md-3" *ngIf="group.get('supersededDate')?.value">
                 <label class="form-label">Superseded Date</label>
@@ -310,7 +291,7 @@
                   formControlName="changeReason"
                   rows="1"
                   placeholder="Reason for this version"
-                  [attr.disabled]="isVersionReadOnly(i) ? true : null"
+                  [attr.disabled]="isVersionReadOnly(i) ? true : null" [readOnly]="isViewMode"
                 ></textarea>
               </div>
             </div>
@@ -364,7 +345,7 @@
                           </span>
                         </td>
                         <td>
-                          <select class="form-select form-select-sm" formControlName="parameterUnitEquivalentID">
+                          <select class="form-select form-select-sm" formControlName="parameterUnitEquivalentID" [disabled]="isViewMode"[style.pointer-events]="isViewMode ? 'none' : 'auto'" >
                             <option *ngIf="!getRowEquivalentUnits(p).length" [ngValue]="null" disabled>Select parameter first</option>
                             <option *ngFor="let unit of getRowEquivalentUnits(p)" [ngValue]="unit.equivalentId">{{ unit.name }}</option>
                           </select>
@@ -375,7 +356,7 @@
                             formControlName="comment"
                             rows="1"
                             placeholder="e.g. for %El → GL = 5.65√A"
-                            maxlength="1000"
+                            maxlength="1000" [readonly]="isViewMode"
                           ></textarea>
                         </td>
                         <td *ngIf="!isViewMode" class="text-center">

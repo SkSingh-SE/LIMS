@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, signal , HostListener } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal, HostListener } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmployeeService } from '../../../services/employee.service';
 import { NumberOnlyDirective } from '../../../utility/directives/number-only.directive';
@@ -508,9 +508,9 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       const group = this.fb.group({
         id: [q.id || 0],
         employeeId: [q.employeeID || 0],
-        qualification: [q.qualification || ''],
-        schoolOrUniversity: [q.schoolOrUniversity || ''],
-        passingYear: [q.passingYear || '']
+        qualification: [q.qualification || '', Validators.required],
+        schoolOrUniversity: [q.schoolOrUniversity || '', Validators.required],
+        passingYear: [q.passingYear || '', Validators.required]
       });
 
       if (this.isViewMode) {
@@ -525,8 +525,8 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     const group = this.fb.group({
       id: [data?.id || 0],
       employeeId: [data?.employeeID || this.employeeId || 0],
-      qualification: [data?.qualification || '', Validators.required],
-      schoolOrUniversity: [data?.schoolOrUniversity || '', Validators.required],
+      qualification: [data?.qualification || null, Validators.required],
+      schoolOrUniversity: [data?.schoolOrUniversity || null, Validators.required],
       passingYear: [data?.passingYear || null, Validators.required],
     });
     if (this.isViewMode) {
@@ -593,11 +593,11 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
   addAdditionalDocument() {
     const group = this.fb.group({
       DocumentType: ['', Validators.required],
-      file: [null, Validators.required],
+      file: [null],
       FileName: [''],
       ID: [0],
       UploadReferenceID: [0],
-      FilePath: [''],
+      FilePath: ['', Validators.required],
       IsAdditional: [true]
     });
     this.additionalDocuments.push(group);
@@ -654,24 +654,34 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
   }
 
 
-
   onAdditionalFileChange(event: any, index: number) {
+    // .files[0] lagana zaroori hai taaki control ko sahi single file object mile
     const file = event.target.files[0];
+
     if (file) {
       const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
-        this.toastService.show(`File size  should be less than ${5} MB.`, 'warning');
+        this.toastService.show(`File size should be less than ${5} MB.`, 'warning');
         event.target.value = '';
         return;
       }
 
       const group = this.additionalDocuments.at(index) as FormGroup;
       group.patchValue({
-        file,
-        FileName: file.name
+        file: file,
+        FileName: file.name,
+        FilePath: file.name
       });
+
+      group.get('FilePath')?.updateValueAndValidity();
+      group.updateValueAndValidity();
+      this.additionalDocuments.updateValueAndValidity();
+      group.get('FilePath')?.markAsDirty();
+      this.additionalDocuments.markAsDirty();
+
     }
   }
+
   removeAdditionalFile(index: number): void {
     const group = this.additionalDocuments.at(index) as FormGroup;
     group.patchValue({
@@ -679,6 +689,10 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
       FileName: '',
       FilePath: ''
     });
+
+    group.get('FilePath')?.updateValueAndValidity();
+    group.updateValueAndValidity();
+    this.additionalDocuments.updateValueAndValidity();
   }
 
   openFileInNewTab(filePath: string): void {
@@ -709,12 +723,12 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
     const additionalDocs = data.filter(doc => doc.isAdditional);
     additionalDocs.forEach(doc => {
       const group = this.fb.group({
-        DocumentType: [doc.documentType],
+        DocumentType: [doc.documentType, Validators.required],
         file: [null],
         FileName: [doc.fileName],
         ID: [doc.id],
         UploadReferenceID: [doc.uploadReferenceID],
-        FilePath: [doc.filePath],
+        FilePath: [doc.filePath, Validators.required],
         IsAdditional: [true]
       });
       this.additionalDocuments.push(group);
@@ -791,6 +805,21 @@ export class EmployeeFormComponent implements CanComponentDeactivate {
   canDeactivate(): Observable<boolean> | boolean {
     if (!(this.personalInfoForm?.dirty || this.qualificationForm?.dirty || this.documentsForm?.dirty) || this.saved) return true;
     return this.unsavedChangesService.confirm();
+  }
+  // Is function ko apni TS file mein kahin bhi add kar dein
+  hasEmptyRow(): boolean {
+    if (!this.additionalDocuments || this.additionalDocuments.length === 0) {
+      return false; // Agar koi row nahi hai, toh button enabled rahega
+    }
+
+    // Yeh check karega ki kya koi aisi row hai jisme DocumentType ya FilePath khali hai
+    return this.additionalDocuments.controls.some(control => {
+      const docType = control.get('DocumentType')?.value;
+      const filePath = control.get('FilePath')?.value;
+
+      // Agar koi bhi row khali milti hai, toh yeh true bhejega (button disable ho jayega)
+      return !docType || docType.trim() === '' || !filePath || filePath.trim() === '';
+    });
   }
 
   @HostListener('window:beforeunload', ['$event'])

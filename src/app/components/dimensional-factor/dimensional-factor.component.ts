@@ -28,21 +28,21 @@ export class DimensionalFactorComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'code', type: 'string', label: 'Code', filter: true },
-    { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'applicableForms', type: 'string', label: 'Applicable Forms', filter: true },
-    { key: 'unit', type: 'string', label: 'Unit', filter: true },
-    { key: 'testMethod', type: 'string', label: 'Test Method', filter: true },
-    { key: 'instrument', type: 'string', label: 'Instrument', filter: true },
-    { key: 'toleranceType', type: 'string', label: 'Tolerance Type', filter: true },
+    { key: 'id', type: 'number', label: 'SN', filter: false, sortable: true },
+    { key: 'code', type: 'string', label: 'Code', filter: true , sortable: true},
+    { key: 'name', type: 'string', label: 'Name', filter: true, sortable: true },
+    { key: 'applicableForms', type: 'string', label: 'Applicable Forms', filter: false, sortable: false },
+    { key: 'parameterUnit', type: 'string', label: 'Unit', filter: false, sortable: true },
+    { key: 'defaultTestMethod', type: 'string', label: 'Test Method', filter: false, sortable: true },
+    { key: 'instrument', type: 'string', label: 'Instrument', filter: true, sortable: true },
+    { key: 'toleranceType', type: 'string', label: 'Tolerance Type', filter: true, sortable: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     code: 'string',
     name: 'string',
     applicableForms: 'string',
-    unit: 'string',
-    testMethod: 'string',
+    parameterUnit: 'string',
+    defaultTestMethod: 'string',
     instrument: 'string',
     toleranceType: 'string',
   };

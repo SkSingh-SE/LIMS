@@ -86,7 +86,7 @@ export class TestMethodSpecificationListComponent implements OnInit {
     { key: 'testMethodStandard', type: 'string', label: 'Standard', filter: true },
     { key: 'defaultVersion', type: 'string', label: 'Default Version', filter: true },
     { key: 'defaultVersionYear', type: 'string', label: 'Year', filter: true },
-    { key: 'isDisabled', type: 'bool', label: 'Disabled', filter: true },
+    { key: 'isDisabled', type: 'bool', label: 'Disabled', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {

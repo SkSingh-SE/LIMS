@@ -284,7 +284,7 @@
                         (itemSelected)="onGradeSelected(activeVersionIndex, $event)"
                         placeholder="Search Grade (Fe415, Fe500...)"
                         [smallInput]="true"
-                        [hideLabel]="true">
+                        [hideLabel]="true" [isDisabled]="isViewMode">
                       </app-searchable-dropdown>
                     </div>
                     <button type="button" class="btn-lims btn-lims-add py-1 px-3" (click)="onGradeAdded(activeVersionIndex)">
@@ -335,7 +335,7 @@
                               <!-- Delivery Condition (PC1) -->
                               <div class="mb-2" *ngIf="grade.availablePC1.length">
                                 <label class="form-label">Delivery Condition (PC 1)</label>
-                                <select class="form-select form-select-sm" [(ngModel)]="cond.productConditionID1" [ngModelOptions]="{standalone: true}">
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.productConditionID1" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode">
                                   <option [ngValue]="null">-- Select Delivery Condition --</option>
                                   <option *ngFor="let opt of grade.availablePC1" [ngValue]="opt.id">{{ opt.name }}</option>
                                 </select>
@@ -344,7 +344,7 @@
                               <!-- Surface Finish (PC2) -->
                               <div class="mb-2" *ngIf="grade.availablePC2.length">
                                 <label class="form-label">Surface Finish (PC 2)</label>
-                                <select class="form-select form-select-sm" [(ngModel)]="cond.productConditionID2" [ngModelOptions]="{standalone: true}">
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.productConditionID2" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode">
                                   <option [ngValue]="null">-- Select Surface Finish --</option>
                                   <option *ngFor="let opt of grade.availablePC2" [ngValue]="opt.id">{{ opt.name }}</option>
                                 </select>
@@ -353,7 +353,7 @@
                               <!-- Heat Treatment -->
                               <div class="mb-2" *ngIf="grade.availableHeatTreatments.length">
                                 <label class="form-label">Heat Treatment</label>
-                                <select class="form-select form-select-sm" [(ngModel)]="cond.heatTreatmentID" [ngModelOptions]="{standalone: true}">
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.heatTreatmentID" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode">
                                   <option [ngValue]="null">-- Select Heat Treatment --</option>
                                   <option *ngFor="let opt of grade.availableHeatTreatments" [ngValue]="opt.id">{{ opt.name }}</option>
                                 </select>
@@ -362,7 +362,7 @@
                               <!-- Product Size (if grade has size-based lines) -->
                               <div class="mb-2" *ngIf="grade.availableProductSizes.length">
                                 <label class="form-label">Product Size</label>
-                                <select class="form-select form-select-sm" [(ngModel)]="cond.productSizeMasterID" [ngModelOptions]="{standalone: true}">
+                                <select class="form-select form-select-sm" [(ngModel)]="cond.productSizeMasterID" [ngModelOptions]="{standalone: true}" [disabled]="isViewMode">
                                   <option [ngValue]="null">-- Select Product Size --</option>
                                   <option *ngFor="let opt of grade.availableProductSizes" [ngValue]="opt.id">{{ opt.name }}</option>
                                 </select>
@@ -371,7 +371,7 @@
                               <div class="d-flex justify-content-between align-items-center mt-2">
                                 <div class="d-flex align-items-center gap-1">
                                   <label class="form-label mb-0 me-1">Priority:</label>
-                                  <input type="number" class="form-control form-control-sm w-auto" style="width: 70px !important;" [(ngModel)]="cond.priority" [ngModelOptions]="{standalone: true}" min="1" />
+                                  <input type="number" class="form-control form-control-sm w-auto" style="width: 70px !important;" [(ngModel)]="cond.priority" [ngModelOptions]="{standalone: true}" min="1"  [readonly]="isViewMode"/>
                                 </div>
                               </div>
                             </div>
@@ -382,7 +382,7 @@
                             <button type="button" class="btn btn-outline-theme btn-sm w-100" (click)="addCondition(activeVersionIndex, activeGradeTabMap[activeVersionIndex])" *ngIf="!isViewMode">
                               <i class="bi bi-plus-circle me-1"></i><span>Add Condition</span>
                             </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="clearConditionSelection(activeVersionIndex, activeGradeTabMap[activeVersionIndex])" *ngIf="grade.activeConditionIdx !== null">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" (click)="clearConditionSelection(activeVersionIndex, activeGradeTabMap[activeVersionIndex])" *ngIf="grade.activeConditionIdx !== null" [disabled]="isViewMode">
                               Clear Filter
                             </button>
                           </div>

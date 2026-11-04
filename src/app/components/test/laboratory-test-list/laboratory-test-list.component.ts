@@ -19,7 +19,7 @@ export class LaboratoryTestListComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'name', type: 'string', label: 'Test Name', filter: true },
     { key: 'departmentName', type: 'string', label: 'Lab Department', filter: true },
-    { key: 'isChemicalTest', type: 'bool', label: 'Test Type', filter: true },
+    { key: 'isChemicalTest', type: 'bool', label: 'Test Type', filter: false },
     { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {

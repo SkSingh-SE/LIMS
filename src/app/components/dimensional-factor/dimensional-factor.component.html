@@ -27,9 +27,9 @@
                         <tr class="text-center align-middle">
                             <th class="align-middle text-center col-actions">Actions</th>
                             <th *ngFor="let column of columns; let i = index" [ngClass]="column.key === 'id' ? 'col-sn' : ''">
-                                <div class="d-flex align-items-center">
+                                <div  class="d-flex align-items-center">
                                     <span class="dt-column-order">{{ column.label }}</span>
-                                    <span class="d-flex flex-column ms-2 mt-2">
+                                    <span *ngIf="!hasFilter(column.key) && column.sortable" class="d-flex flex-column ms-2 mt-2">
                                         <i class="bi bi-caret-up sorting-icon-up"
                                             [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"
                                             (click)="applySorting(column.key)"></i>

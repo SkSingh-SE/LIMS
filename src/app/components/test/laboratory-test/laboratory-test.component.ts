@@ -549,7 +549,7 @@ export class LaboratoryTestComponent implements OnInit {
       parameterSymbol: [symbol],
       parameterUnit: [unit],
       isMandatory: [p?.isMandatory || false],
-      isReportable: [p?.isReportable || true],
+      isReportable: [p?.isReportable || false],
       sequence: [p?.sequence || 0]
     });
   }

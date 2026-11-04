@@ -2,12 +2,8 @@
 <div class="form-wizard m-1">
   <div class="mx-3">
     <ul class="nav nav-tabs form-wizard-list list2 border-bottom-0">
-      <li
-        *ngFor="let header of formHeaders"
-        class="nav-item cursor-pointer"
-        [class.activated]="currentStep() > header.key"
-        (click)="setActiveForm(header.key)"
-      >
+      <li *ngFor="let header of formHeaders" class="nav-item cursor-pointer"
+        [class.activated]="currentStep() > header.key" (click)="setActiveForm(header.key)">
         <span class="nav-link" [class.active]="activeFormKey === header.key">{{ header.label }}</span>
       </li>
     </ul>
@@ -19,7 +15,8 @@
       <fieldset *ngIf="activeFormKey === 1" class="wizard-fieldset show tab-pane border-0">
         <form [formGroup]="personalInfoForm" (ngSubmit)="submitForm()">
           <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-            <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+            <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+              title="Back to List">
               <i class="bi bi-arrow-left"></i>
             </button>
             <label class="fw-medium flex-grow-1 text-center mb-0">
@@ -38,7 +35,7 @@
                   <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
                   <input type="text" id="name" class="form-control" formControlName="name" placeholder="Enter Name"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('name') }" />
-                  <app-field-error [control]="personalInfoForm.get('name')" label="Full Name" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('name')" label="Full Name" [submitted]="submitted" />
                 </div>
 
                 <!-- Date of Birth -->
@@ -46,7 +43,8 @@
                   <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
                   <input type="date" class="form-control" formControlName="dateOfBirth"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('dateOfBirth') }" />
-                  <app-field-error [control]="personalInfoForm.get('dateOfBirth')" label="Date of Birth" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('dateOfBirth')" label="Date of Birth"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Blood Group -->
@@ -62,14 +60,16 @@
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
                   <app-phone-input formControlName="mobileNo" [submitted]="submitted"></app-phone-input>
-                  <app-field-error [control]="personalInfoForm.get('mobileNo')" label="Mobile Number" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('mobileNo')" label="Mobile Number"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Emergency Mobile Number -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Emergency Mobile No <span class="text-danger">*</span></label>
                   <app-phone-input formControlName="emergencyMobileNo" [submitted]="submitted"></app-phone-input>
-                  <app-field-error [control]="personalInfoForm.get('emergencyMobileNo')" label="Emergency Mobile No" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('emergencyMobileNo')" label="Emergency Mobile No"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Email -->
@@ -82,7 +82,7 @@
                       <i class="bi bi-envelope"></i>
                     </span>
                   </div>
-                  <app-field-error [control]="personalInfoForm.get('emailId')" label="Email" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('emailId')" label="Email" [submitted]="submitted" />
                 </div>
 
                 <!-- Gender -->
@@ -95,7 +95,7 @@
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
-                  <app-field-error [control]="personalInfoForm.get('gender')" label="Gender" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('gender')" label="Gender" [submitted]="submitted" />
                 </div>
 
                 <!-- Marital Status -->
@@ -104,15 +104,19 @@
                   <select class="form-select" formControlName="maritalStatus"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('maritalStatus') }">
                     <option value="">Select Marital Status</option>
-                    <option *ngFor="let maritalStatus of maritalStatuses" [value]="maritalStatus">{{ maritalStatus }}</option>
+                    <option *ngFor="let maritalStatus of maritalStatuses" [value]="maritalStatus">{{ maritalStatus }}
+                    </option>
                   </select>
-                  <app-field-error [control]="personalInfoForm.get('maritalStatus')" label="Marital Status" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('maritalStatus')" label="Marital Status"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Spouse Name (Conditional) -->
-                <div class="col-auto col-md-4 col-lg-3" *ngIf="personalInfoForm.get('maritalStatus')?.value === 'Married'">
+                <div class="col-auto col-md-4 col-lg-3"
+                  *ngIf="personalInfoForm.get('maritalStatus')?.value === 'Married'">
                   <label class="form-label">Spouse Name</label>
-                  <input type="text" class="form-control" formControlName="spouseName" placeholder="Enter Spouse Name" />
+                  <input type="text" class="form-control" formControlName="spouseName"
+                    placeholder="Enter Spouse Name" />
                 </div>
               </div>
             </fieldset>
@@ -123,14 +127,16 @@
               <div class="row gy-1">
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
-                  <textarea class="form-control" formControlName="residentialAddressLine1" placeholder="Enter Address" rows="3"
-                    [ngClass]="{ 'is-invalid': isFieldInvalid('residentialAddressLine1') }"></textarea>
-                  <app-field-error [control]="personalInfoForm.get('residentialAddressLine1')" label="Address Line 1" [submitted]="submitted"/>
+                  <textarea class="form-control" formControlName="residentialAddressLine1" placeholder="Enter Address"
+                    rows="3" [ngClass]="{ 'is-invalid': isFieldInvalid('residentialAddressLine1') }"></textarea>
+                  <app-field-error [control]="personalInfoForm.get('residentialAddressLine1')" label="Address Line 1"
+                    [submitted]="submitted" />
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Address Line 2</label>
-                  <textarea class="form-control" formControlName="residentialAddressLine2" placeholder="Enter Address" rows="3"></textarea>
+                  <textarea class="form-control" formControlName="residentialAddressLine2" placeholder="Enter Address"
+                    rows="3"></textarea>
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
@@ -139,10 +145,12 @@
                     placeholder="Enter PIN Code" maxlength="6" appNumberOnly
                     (input)="fetchAreaData('residentialPinCode', true)"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('residentialPinCode') }" />
-                  <app-field-error [control]="personalInfoForm.get('residentialPinCode')" label="PIN Code" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('residentialPinCode')" label="PIN Code"
+                    [submitted]="submitted" />
                 </div>
 
-                <div class="col-auto col-md-4 col-lg-3" *ngIf="personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5">
+                <div class="col-auto col-md-4 col-lg-3"
+                  *ngIf="personalInfoForm.get('residentialPinCode')?.value?.toString().length > 5">
                   <label class="form-label">Area <span class="text-danger">*</span></label>
                   <select class="form-select" formControlName="residentialAreaID"
                     (change)="fetchLocationData('residentialAreaID', 'residentialCity', 'residentialState', 'residentialCountry', true)"
@@ -150,22 +158,26 @@
                     <option value="">Select Area</option>
                     <option *ngFor="let area of residentialAreas" [value]="area.areaId">{{ area.areaName }}</option>
                   </select>
-                  <app-field-error [control]="personalInfoForm.get('residentialAreaID')" label="Area" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('residentialAreaID')" label="Area"
+                    [submitted]="submitted" />
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">City <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" formControlName="residentialCity" placeholder="City" readonly />
+                  <input type="text" class="form-control" formControlName="residentialCity" placeholder="City"
+                    readonly />
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">State <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" formControlName="residentialState" placeholder="State" readonly />
+                  <input type="text" class="form-control" formControlName="residentialState" placeholder="State"
+                    readonly />
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Country <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" formControlName="residentialCountry" placeholder="Country" readonly />
+                  <input type="text" class="form-control" formControlName="residentialCountry" placeholder="Country"
+                    readonly />
                 </div>
               </div>
             </fieldset>
@@ -183,14 +195,16 @@
               <div class="row gy-1">
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
-                  <textarea class="form-control" formControlName="permanentAddressLine1" placeholder="Enter Address" rows="3"
-                    [ngClass]="{ 'is-invalid': isFieldInvalid('permanentAddressLine1') }"></textarea>
-                  <app-field-error [control]="personalInfoForm.get('permanentAddressLine1')" label="Address Line 1" [submitted]="submitted"/>
+                  <textarea class="form-control" formControlName="permanentAddressLine1" placeholder="Enter Address"
+                    rows="3" [ngClass]="{ 'is-invalid': isFieldInvalid('permanentAddressLine1') }"></textarea>
+                  <app-field-error [control]="personalInfoForm.get('permanentAddressLine1')" label="Address Line 1"
+                    [submitted]="submitted" />
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Address Line 2</label>
-                  <textarea class="form-control" formControlName="permanentAddressLine2" placeholder="Enter Address" rows="3"></textarea>
+                  <textarea class="form-control" formControlName="permanentAddressLine2" placeholder="Enter Address"
+                    rows="3"></textarea>
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
@@ -199,10 +213,12 @@
                     placeholder="Enter PIN Code" appNumberOnly maxlength="6"
                     (input)="fetchAreaData('permanentPinCode', false)"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('permanentPinCode') }" />
-                  <app-field-error [control]="personalInfoForm.get('permanentPinCode')" label="PIN Code" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('permanentPinCode')" label="PIN Code"
+                    [submitted]="submitted" />
                 </div>
 
-                <div class="col-auto col-md-4 col-lg-3" *ngIf="personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5">
+                <div class="col-auto col-md-4 col-lg-3"
+                  *ngIf="personalInfoForm.get('permanentPinCode')?.value?.toString().length > 5">
                   <label class="form-label">Area</label>
                   <select class="form-select" formControlName="permanentAreaID"
                     (change)="fetchLocationData('permanentAreaID', 'permanentCity', 'permanentState', 'permanentCountry', false)">
@@ -218,12 +234,14 @@
 
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">State</label>
-                  <input type="text" class="form-control" formControlName="permanentState" placeholder="State" readonly />
+                  <input type="text" class="form-control" formControlName="permanentState" placeholder="State"
+                    readonly />
                 </div>
 
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Country</label>
-                  <input type="text" class="form-control" formControlName="permanentCountry" placeholder="Country" readonly />
+                  <input type="text" class="form-control" formControlName="permanentCountry" placeholder="Country"
+                    readonly />
                 </div>
               </div>
             </fieldset>
@@ -234,11 +252,13 @@
               <div class="row gy-1">
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Father Name</label>
-                  <input type="text" class="form-control" formControlName="fatherName" placeholder="Enter Father Name" />
+                  <input type="text" class="form-control" formControlName="fatherName"
+                    placeholder="Enter Father Name" />
                 </div>
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Mother Name</label>
-                  <input type="text" class="form-control" formControlName="motherName" placeholder="Enter Mother Name" />
+                  <input type="text" class="form-control" formControlName="motherName"
+                    placeholder="Enter Mother Name" />
                 </div>
               </div>
             </fieldset>
@@ -249,14 +269,12 @@
               <div class="row gy-1">
                 <!-- Designation -->
                 <div class="col-auto col-md-4 col-lg-3">
-                  <app-searchable-dropdown
-                    [placeholder]="'Search Designation'" [labelName]="'Designation'"
-                    [smallInput]="true"
-                    [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
-                    [isDisabled]="isViewMode" [required]="true"
-                    [isInvalid]="isFieldInvalid('designationID')"
+                  <app-searchable-dropdown [placeholder]="'Search Designation'" [labelName]="'Designation'"
+                    [smallInput]="true" [fetchDataFn]="getDesignations" (itemSelected)="onDesignationSelected($event)"
+                    [isDisabled]="isViewMode" [required]="true" [isInvalid]="isFieldInvalid('designationID')"
                     [selectedItem]="personalInfoForm.get('designationID')?.value"></app-searchable-dropdown>
-                  <app-field-error [control]="personalInfoForm.get('designationID')" label="Designation" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('designationID')" label="Designation"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Date of Joining -->
@@ -264,39 +282,39 @@
                   <label class="form-label">Date of Joining <span class="text-danger">*</span></label>
                   <input type="date" class="form-control" formControlName="dateOfJoin"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('dateOfJoin') }" />
-                  <app-field-error [control]="personalInfoForm.get('dateOfJoin')" label="Date of Joining" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('dateOfJoin')" label="Date of Joining"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Department -->
                 <div class="col-auto col-md-4 col-lg-3">
-                  <app-searchable-dropdown
-                    [placeholder]="'Search department'" [labelName]="'Department'"
+                  <app-searchable-dropdown [placeholder]="'Search department'" [labelName]="'Department'"
                     [fetchDataFn]="getDepartments" (itemSelected)="onDepartmentSelected($event)"
-                    [isDisabled]="isViewMode" [required]="true"
-                    [smallInput]="true"
+                    [isDisabled]="isViewMode" [required]="true" [smallInput]="true"
                     [isInvalid]="isFieldInvalid('departmentID')"
                     [selectedItem]="personalInfoForm.get('departmentID')?.value"></app-searchable-dropdown>
-                  <app-field-error [control]="personalInfoForm.get('departmentID')" label="Department" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('departmentID')" label="Department"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Reporting Manager -->
                 <div class="col-auto col-md-4 col-lg-3">
-                  <app-searchable-dropdown
-                    [placeholder]="'Search employee'" [labelName]="'Reporting Manager'"
-                    [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event)"
-                    [isDisabled]="isViewMode" [required]="true"
-                    [smallInput]="true"
-                    [isInvalid]="isFieldInvalid('reportingManagerID')"
+                  <app-searchable-dropdown [placeholder]="'Search employee'" [labelName]="'Reporting Manager'"
+                    [fetchDataFn]="getEmployees" (itemSelected)="onEmployeeSelected($event)" [isDisabled]="isViewMode"
+                    [required]="true" [smallInput]="true" [isInvalid]="isFieldInvalid('reportingManagerID')"
                     [selectedItem]="personalInfoForm.get('reportingManagerID')?.value"></app-searchable-dropdown>
-                  <app-field-error [control]="personalInfoForm.get('reportingManagerID')" label="Reporting Manager" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('reportingManagerID')" label="Reporting Manager"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Relevant Experience -->
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Relevant Experience <span class="text-danger">*</span></label>
-                  <input type="number" class="form-control" placeholder="Enter Years" formControlName="relevantExperienceYears"
+                  <input type="number" class="form-control" placeholder="Enter Years"
+                    formControlName="relevantExperienceYears"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('relevantExperienceYears') }" />
-                  <app-field-error [control]="personalInfoForm.get('relevantExperienceYears')" label="Relevant Experience" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('relevantExperienceYears')"
+                    label="Relevant Experience" [submitted]="submitted" />
                 </div>
 
                 <!-- Qualification Summary -->
@@ -330,14 +348,14 @@
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">Password <span class="text-danger">*</span></label>
                   <div class="input-group">
-                    <input [type]="showPassword() ? 'text' : 'password'" class="form-control"
-                      formControlName="password" placeholder="Enter Password"
-                      [ngClass]="{ 'is-invalid': isFieldInvalid('password') }" />
+                    <input [type]="showPassword() ? 'text' : 'password'" class="form-control" formControlName="password"
+                      placeholder="Enter Password" [ngClass]="{ 'is-invalid': isFieldInvalid('password') }" />
                     <button type="button" class="btn btn-add" (click)="showPassword.set(!showPassword())" tabindex="-1">
                       <i [class]="showPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     </button>
                   </div>
-                  <app-field-error [control]="personalInfoForm.get('password')" label="Password" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('password')" label="Password"
+                    [submitted]="submitted" />
                 </div>
               </div>
             </fieldset>
@@ -350,10 +368,10 @@
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">PAN Number <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" formControlName="panNumber" placeholder="Enter PAN Number"
-                    maxlength="16"
-                    [ngClass]="{ 'is-invalid': isFieldInvalid('panNumber') }"
+                    maxlength="16" [ngClass]="{ 'is-invalid': isFieldInvalid('panNumber') }"
                     [value]="personalInfoForm.get('panNumber')?.value | uppercase" />
-                  <app-field-error [control]="personalInfoForm.get('panNumber')" label="PAN Number" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('panNumber')" label="PAN Number"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Bank Name -->
@@ -368,7 +386,8 @@
                   <input type="text" class="form-control" placeholder="Enter Account Number"
                     formControlName="accountNumber" appNumberOnly maxlength="20"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('accountNumber') }" />
-                  <app-field-error [control]="personalInfoForm.get('accountNumber')" label="Account Number" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('accountNumber')" label="Account Number"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Account Holder Name -->
@@ -382,10 +401,10 @@
                 <div class="col-auto col-md-4 col-lg-3">
                   <label class="form-label">IFSC Code</label>
                   <input type="text" class="form-control" placeholder="Enter IFSC Code" formControlName="ifscCode"
-                    maxlength="11"
-                    [value]="personalInfoForm.get('ifscCode')?.value | uppercase"
+                    maxlength="11" [value]="personalInfoForm.get('ifscCode')?.value | uppercase"
                     [ngClass]="{ 'is-invalid': isFieldInvalid('ifscCode') }" />
-                  <app-field-error [control]="personalInfoForm.get('ifscCode')" label="IFSC Code" [submitted]="submitted"/>
+                  <app-field-error [control]="personalInfoForm.get('ifscCode')" label="IFSC Code"
+                    [submitted]="submitted" />
                 </div>
 
                 <!-- Branch Name -->
@@ -403,7 +422,8 @@
       <!-- ═══════════════════ Tab 2: Qualification ═══════════════════ -->
       <fieldset *ngIf="activeFormKey === 2" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+            title="Back to List">
             <i class="bi bi-arrow-left"></i>
           </button>
           <label class="fw-medium flex-grow-1 text-center mb-0">Qualification</label>
@@ -442,19 +462,21 @@
                   </tr>
 
                   <!-- Data Rows -->
-                  <tr *ngFor="let group of qualificationArray.controls; let i = index" [formGroupName]="i" class="align-content-center">
+                  <tr *ngFor="let group of qualificationArray.controls; let i = index" [formGroupName]="i"
+                    class="align-content-center">
                     <td class="align-middle px-2">{{ i + 1 | number : "2.0" }}</td>
                     <td class="px-2">
                       <input class="form-control" formControlName="qualification" placeholder="Enter Qualification"
                         [ngClass]="{ 'is-invalid': group.get('qualification')?.touched && group.get('qualification')?.invalid }" />
                       <span *ngIf="group.get('qualification')?.touched && group.get('qualification')?.invalid"
-                        class="text-danger text-sm">Required.</span>
+                        class="text-danger text-sm">Qualification is required.</span>
                     </td>
                     <td class="px-2">
-                      <input class="form-control" formControlName="schoolOrUniversity" placeholder="Enter School/University"
+                      <input class="form-control" formControlName="schoolOrUniversity"
+                        placeholder="Enter School/University"
                         [ngClass]="{ 'is-invalid': group.get('schoolOrUniversity')?.touched && group.get('schoolOrUniversity')?.invalid }" />
                       <span *ngIf="group.get('schoolOrUniversity')?.touched && group.get('schoolOrUniversity')?.invalid"
-                        class="text-danger text-sm">Required.</span>
+                        class="text-danger text-sm">School/University is required.</span>
                     </td>
                     <td class="px-2">
                       <select class="form-control" formControlName="passingYear"
@@ -463,7 +485,7 @@
                         <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
                       </select>
                       <span *ngIf="group.get('passingYear')?.touched && group.get('passingYear')?.invalid"
-                        class="text-danger text-sm">Valid year required.</span>
+                        class="text-danger text-sm">Passing year required.</span>
                     </td>
                     <td *ngIf="!isViewMode" class="text-center align-middle">
                       <button type="button" class="btn btn-link text-danger p-0" (click)="removeQualification(i)">
@@ -482,7 +504,8 @@
       <!-- ═══════════════════ Tab 3: Documents ═══════════════════ -->
       <fieldset *ngIf="activeFormKey === 3" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+            title="Back to List">
             <i class="bi bi-arrow-left"></i>
           </button>
           <label class="fw-medium flex-grow-1 text-center mb-0">Documents</label>
@@ -500,18 +523,20 @@
                     <div class="col-auto col-md-4 col-lg-3">
                       <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="form-label mb-0">{{ keyLabels[key] }}</label>
-                        <button *ngIf="key === 'confidentialityAgreement' && employeeId"
-                          type="button" class="btn btn-link py-0 text-primary text-decoration-none small"
+                        <button *ngIf="key === 'confidentialityAgreement' && employeeId" type="button"
+                          class="btn btn-link py-0 text-primary text-decoration-none small"
                           [routerLink]="['/employee/impartiality-agreement', employeeId]">
                           <i class="bi bi-printer me-1"></i><span>Print F-1</span>
                         </button>
                       </div>
-                      <ng-container *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FilePath; else uploadField">
+                      <ng-container
+                        *ngIf="documentsForm.get('predefined')?.get(key)?.value?.FilePath; else uploadField">
                         <div class="d-flex align-items-center justify-content-between bg-light border p-1 rounded">
                           <span class="text-truncate me-2" type="button"
                             (click)="openFileInNewTab(documentsForm.get('predefined')?.get(key)?.value?.FilePath)"
                             title="{{ documentsForm.get('predefined')?.get(key)?.value?.FileName }}">
-                            <i class="bi bi-file-earmark-fill"></i><span>{{ documentsForm.get("predefined")?.get(key)?.value?.FileName }}</span>
+                            <i class="bi bi-file-earmark-fill"></i><span>{{
+                              documentsForm.get("predefined")?.get(key)?.value?.FileName }}</span>
                           </span>
                           <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-link text-danger p-0"
                             (click)="removePredefinedFile(key)">
@@ -520,9 +545,8 @@
                         </div>
                       </ng-container>
                       <ng-template #uploadField>
-                        <input class="form-control form-control-sm input-file" type="file"
-                          [accept]="getAcceptType(key)" [disabled]="isViewMode" id="formFile_{{ key }}"
-                          (change)="onFileChange($event, key)" />
+                        <input class="form-control form-control-sm input-file" type="file" [accept]="getAcceptType(key)"
+                          [disabled]="isViewMode" id="formFile_{{ key }}" (change)="onFileChange($event, key)" />
                       </ng-template>
                     </div>
                   </ng-container>
@@ -534,7 +558,8 @@
             <fieldset class="border rounded p-3 mb-3 position-relative">
               <legend class="w-auto px-2 fw-semibold theme-color">
                 Additional Documents
-                <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm ms-2" (click)="addAdditionalDocument()">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-add btn-sm ms-2"
+                  (click)="addAdditionalDocument()">
                   <i class="bi bi-plus-circle-dotted me-1"></i><span>Add Row</span>
                 </button>
               </legend>
@@ -564,11 +589,15 @@
                       <td class="text-center align-middle px-2">{{ i + 1 | number : "2.0" }}</td>
                       <td class="px-2">
                         <input class="form-control" formControlName="DocumentType" placeholder="Enter Document Name"
-                          style="max-width: 220px" />
+                          style="max-width: 650px" />
+                        <span *ngIf="doc.get('DocumentType')?.touched && doc.get('DocumentType')?.invalid"
+                          class="text-danger text-sm">Document Type is required.</span>
                       </td>
                       <td class="px-2">
+                        <!-- Agar FilePath mein value hai toh uploaded block dikhao -->
                         <ng-container *ngIf="doc.value?.FilePath; else fileInputField">
-                          <div class="d-flex align-items-center gap-2 flex-wrap border bg-light px-1 rounded" style="max-width: 250px">
+                          <div class="d-flex align-items-center gap-2 flex-wrap border bg-light px-1 rounded"
+                            style="max-width: 850px">
                             <span class="text-truncate text-muted flex-grow-1 ms-1" type="button"
                               title="{{ doc.value.FileName }}" (click)="openFileInNewTab(doc.value?.FilePath)">
                               <i class="bi bi-file-earmark-fill"></i><span>{{ doc.value.FileName }}</span>
@@ -579,13 +608,24 @@
                             </button>
                           </div>
                         </ng-container>
+
+                        <!-- Agar file select nahi hai toh input field dikhao -->
                         <ng-template #fileInputField>
-                          <input type="file" class="form-control form-control-sm input-file" style="max-width: 250px"
+                          <input type="file" class="form-control form-control-sm input-file" style="max-width: 850px"
+                            [class.is-invalid]="doc.get('FilePath')?.touched && doc.get('FilePath')?.invalid"
                             (change)="onAdditionalFileChange($event, i)" />
                         </ng-template>
+
+                        <!-- Validation message input box ke bahar (hamesha work karega) -->
+                        <div *ngIf="doc.get('FilePath')?.touched && doc.get('FilePath')?.invalid"
+                          class="text-danger text-sm mt-1">
+                          File is required.
+                        </div>
                       </td>
+
                       <td *ngIf="!isViewMode" class="text-center align-middle">
-                        <button type="button" class="btn btn-link text-danger p-0" (click)="removeAdditionalDocument(i)">
+                        <button type="button" class="btn btn-link text-danger p-0"
+                          (click)="removeAdditionalDocument(i)">
                           <i class="bi bi-trash-fill fs-5"></i>
                         </button>
                       </td>
@@ -602,7 +642,8 @@
       <!-- ═══════════════════ Tab 4: Authorization ═══════════════════ -->
       <fieldset *ngIf="activeFormKey === 4" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+            title="Back to List">
             <i class="bi bi-arrow-left"></i>
           </button>
           <label class="fw-medium flex-grow-1 text-center mb-0">Authorization Records (NABL F-5)</label>
@@ -672,7 +713,8 @@
       <!-- ═══════════════════ Tab 5: Job Training ═══════════════════ -->
       <fieldset *ngIf="activeFormKey === 5" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+            title="Back to List">
             <i class="bi bi-arrow-left"></i>
           </button>
           <label class="fw-medium flex-grow-1 text-center mb-0">Job Training &amp; Evaluation</label>
@@ -686,35 +728,40 @@
       <!-- ═══════════════════ Tab 6: Performance Record ═══════════════════ -->
       <fieldset *ngIf="activeFormKey === 6" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+            title="Back to List">
             <i class="bi bi-arrow-left"></i>
           </button>
           <label class="fw-medium flex-grow-1 text-center mb-0">Performance Record</label>
           <div style="width: 32px;"></div>
         </div>
         <div class="card-body">
-          <app-employee-performance-record [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-performance-record>
+          <app-employee-performance-record [employeeId]="employeeId"
+            [isViewMode]="isViewMode"></app-employee-performance-record>
         </div>
       </fieldset>
 
       <!-- ═══════════════════ Tab 7: User Management ═══════════════════ -->
       <fieldset *ngIf="activeFormKey === 7" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+            title="Back to List">
             <i class="bi bi-arrow-left"></i>
           </button>
           <label class="fw-medium flex-grow-1 text-center mb-0">User Management</label>
           <div style="width: 32px;"></div>
         </div>
         <div class="card-body">
-          <app-employee-user-management [employeeId]="employeeId" [isViewMode]="isViewMode"></app-employee-user-management>
+          <app-employee-user-management [employeeId]="employeeId"
+            [isViewMode]="isViewMode"></app-employee-user-management>
         </div>
       </fieldset>
 
       <!-- ═══════════════════ Tab 8: User Permissions ═══════════════════ -->
       <fieldset *ngIf="activeFormKey === 8" class="wizard-fieldset show tab-pane border-0">
         <div class="card-header card-form-header text-white d-flex align-items-center justify-content-between px-3">
-          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee" title="Back to List">
+          <button type="button" class="btn btn-sm btn-outline-light border-0" routerLink="/employee"
+            title="Back to List">
             <i class="bi bi-arrow-left"></i>
           </button>
           <label class="fw-medium flex-grow-1 text-center mb-0">User Permissions</label>
@@ -722,11 +769,12 @@
         </div>
         <div class="card-body">
           <div *ngIf="isAdminUser; else noPermission">
-            <app-user-permission></app-user-permission>
+            <app-user-permission [isViewMode]="isViewMode"></app-user-permission>
           </div>
           <ng-template #noPermission>
             <div class="alert alert-warning text-center mt-5" role="alert">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i><span>You do not have permission to access this page. Contact Admin.</span>
+              <i class="bi bi-exclamation-triangle-fill me-2"></i><span>You do not have permission to access this page.
+                Contact Admin.</span>
             </div>
           </ng-template>
         </div>
@@ -755,7 +803,8 @@
     </button>
 
     <!-- Tab 3: Documents Save -->
-    <button *ngIf="activeFormKey === 3" type="button" class="btn btn-save btn-sm" (click)="saveDocuments()">
+    <button *ngIf="activeFormKey === 3" type="button" class="btn btn-save btn-sm" (click)="saveDocuments()"
+      [disabled]="hasEmptyRow()">
       <i class="bi bi-check-circle"></i><span>Save Documents</span>
     </button>
   </div>

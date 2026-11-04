@@ -56,8 +56,11 @@ export class UserPermissionComponent implements OnInit, OnChanges {
     if (this.targetUserId) {
       this.selectedUser = this.targetUserId;
       this.fetchUserPermissions(this.targetUserId);
+
     }
+    this.isViewMode = this.isViewMode || false;
   }
+
 
   ngOnChanges(changes: any) {
     if (changes.targetUserId && changes.targetUserId.currentValue) {

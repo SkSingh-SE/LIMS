@@ -570,7 +570,7 @@
             <div class="col-12">
               <div class="d-flex justify-content-between mb-1">
                 <label class="form-label mb-0">Alias Names</label>
-                <button type="button" class="btn btn-sm btn-add" (click)="addAlias()">
+                <button *ngIf="!isViewMode" type="button" class="btn btn-sm btn-add" (click)="addAlias()">
                   <i class="bi bi-plus-circle me-1"></i><span>Add Alias</span>
                 </button>
               </div>
@@ -578,9 +578,9 @@
                 <div *ngFor="let aliasCtrl of aliasNames.controls; let i = index"
                      [formGroupName]="i" class="d-flex align-items-center">
                   <input class="form-control me-2" formControlName="name"
-                         placeholder="Enter alias name" (keydown.enter)="addAlias()" />
+                         placeholder="Enter alias name" (keydown.enter)="addAlias()" [readonly]="isViewMode"/>
                   <button type="button" class="btn btn-remove btn-sm"
-                          *ngIf="aliasNames.length > 1" (click)="removeAlias(i)">
+                          *ngIf="aliasNames.length > 1 && !isViewMode" (click)="removeAlias(i)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>

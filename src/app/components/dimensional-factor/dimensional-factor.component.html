@@ -36,7 +36,7 @@
                 <div class="d-flex align-items-center justify-content-between">
                   <span class="dt-column-order">{{ column.label }}</span>
                   <div class="d-flex align-items-center ms-1">
-                    <span class="d-flex flex-column me-1">
+                    <span *ngIf="!hasFilter(column.key) && column.sortable" class="d-flex flex-column me-1">
                       <i
                         class="bi bi-caret-up sorting-icon-up cursor-pointer"
                         [ngClass]="{'text-danger': sortByColumn === column.key && sortOrder === 'asc'}"

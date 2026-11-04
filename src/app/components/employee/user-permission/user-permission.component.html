@@ -1,8 +1,11 @@
 <div [ngClass]="containerClass" class="animation-fade-in">
   <div class="row g-4">
     <!-- All Permissions (Available) -->
+    <div class="text-center mt-5" *ngIf="isViewMode">
+      Users cannot modify permissions or configurations while in View Mode
+    </div>
     <div class="col-12 col-lg-5">
-      <div class="card shadow border-0 h-100 rounded-4">
+      <div class="card shadow border-0 h-100 rounded-4" *ngIf="!isViewMode">
         <div class="card-header bg-gradient-primary text-white py-3 rounded-top-4">
           <h6 class="mb-0 d-flex align-items-center fw-bold">
             <i class="bi bi-list-check me-2 fs-5"></i><span>Available Permissions</span>
@@ -11,49 +14,49 @@
         <div class="card-body bg-light-subtle">
           <div class="input-group mb-3 shadow-sm rounded-3">
             <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" class="form-control border-start-0 ps-0" 
-                   placeholder="Search permissions..." 
-                   [(ngModel)]="permissionSearch" 
-                   (ngModelChange)="onPermissionSearch($event)">
+            <input type="text" class="form-control border-start-0 ps-0" placeholder="Search permissions..."
+              [(ngModel)]="permissionSearch" (ngModelChange)="onPermissionSearch($event)">
           </div>
-          
+
           <div class="permission-list custom-scrollbar">
             <!-- Loop Groups -->
             <div *ngFor="let group of filteredAvailableGroups" class="mb-3">
               <div class="group-header d-flex justify-content-between align-items-center p-2 rounded-3 mb-1"
-                   [class.bg-white]="!isGroupExpanded(group.name)"
-                   [class.bg-primary-subtle]="isGroupExpanded(group.name)"
-                   [class.shadow-sm]="!isGroupExpanded(group.name)">
-                
-                <div class="d-flex align-items-center gap-2 flex-grow-1 cursor-pointer" (click)="toggleGroupExpansion(group.name)">
-                  <i class="bi" [class.bi-chevron-down]="isGroupExpanded(group.name)" [class.bi-chevron-right]="!isGroupExpanded(group.name)"></i>
+                [class.bg-white]="!isGroupExpanded(group.name)" [class.bg-primary-subtle]="isGroupExpanded(group.name)"
+                [class.shadow-sm]="!isGroupExpanded(group.name)">
+
+                <div class="d-flex align-items-center gap-2 flex-grow-1 cursor-pointer"
+                  (click)="toggleGroupExpansion(group.name)">
+                  <i class="bi" [class.bi-chevron-down]="isGroupExpanded(group.name)"
+                    [class.bi-chevron-right]="!isGroupExpanded(group.name)"></i>
                   <span class="fw-bold text-dark">{{ group.name }}</span>
                   <span class="badge bg-secondary rounded-pill ms-2">{{ group.permissions.length }}</span>
                 </div>
 
                 <div class="d-flex align-items-center">
                   <!-- Select All Checkbox -->
-                   <div class="form-check m-0">
-                     <input class="form-check-input cursor-pointer" type="checkbox" 
-                            [checked]="isAvailableGroupAllSelected(group.name)"
-                            (change)="toggleAvailableGroup(group.name)"
-                            title="Select All in Group">
-                   </div>
+                  <div class="form-check m-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox"
+                      [checked]="isAvailableGroupAllSelected(group.name)" (change)="toggleAvailableGroup(group.name)"
+                      title="Select All in Group">
+                  </div>
                 </div>
               </div>
 
               <!-- Permissions in Group -->
-              <div *ngIf="isGroupExpanded(group.name)" class="ms-3 ps-2 border-start border-2 border-primary-subtle animation-slide-down">
-                <div *ngFor="let p of group.permissions" 
-                     class="permission-item d-flex align-items-center justify-content-between p-2 mb-1 rounded-2 bg-white border hover-shadow transition-all"
-                     [class.border-primary]="isAvailableSelected(p.id)"
-                     (click)="!isViewMode && toggleAvailablePermission(p.id)">
+              <div *ngIf="isGroupExpanded(group.name)"
+                class="ms-3 ps-2 border-start border-2 border-primary-subtle animation-slide-down">
+                <div *ngFor="let p of group.permissions"
+                  class="permission-item d-flex align-items-center justify-content-between p-2 mb-1 rounded-2 bg-white border hover-shadow transition-all"
+                  [class.border-primary]="isAvailableSelected(p.id)"
+                  (click)="!isViewMode && toggleAvailablePermission(p.id)">
                   <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-shield-lock text-muted small"></i>
                     <span class="text-secondary fw-medium">{{ p.displayName }}</span>
                   </div>
                   <div class="form-check m-0 pointer-events-none"> <!-- click handled by parent -->
-                    <input class="form-check-input" type="checkbox" [checked]="isAvailableSelected(p.id)" [disabled]="isViewMode">
+                    <input class="form-check-input" type="checkbox" [checked]="isAvailableSelected(p.id)"
+                      [disabled]="isViewMode">
                   </div>
                 </div>
               </div>
@@ -69,79 +72,70 @@
     </div>
 
     <!-- Assign/Remove Buttons (center column) -->
-    <div class="col-12 col-lg-2 d-flex flex-column align-items-center justify-content-center gap-3 py-4">
-      <button type="button"
-        class="btn btn-primary shadow-lg rounded-circle action-btn transition-transform"
-        [disabled]="availableSelection.size === 0 || isViewMode"
-        (click)="moveToAssigned()"
+    <div class="col-12 col-lg-2 d-flex flex-column align-items-center justify-content-center gap-3 py-4"
+      *ngIf="!isViewMode">
+      <button type="button" class="btn btn-primary shadow-lg rounded-circle action-btn transition-transform"
+        [disabled]="availableSelection.size === 0 || isViewMode" (click)="moveToAssigned()"
         title="Assign selected permissions">
         <i class="bi bi-chevron-right d-none d-lg-block fs-4"></i>
         <i class="bi bi-chevron-down d-lg-none fs-4"></i>
       </button>
 
-      <button type="button"
-        class="btn btn-remove shadow-sm rounded-circle action-btn transition-transform"
-        [disabled]="assignedSelection.size === 0 || isViewMode"
-        (click)="moveToAvailable()"
+      <button type="button" class="btn btn-remove shadow-sm rounded-circle action-btn transition-transform"
+        [disabled]="assignedSelection.size === 0 || isViewMode" (click)="moveToAvailable()"
         title="Remove selected permissions">
         <i class="bi bi-chevron-left d-none d-lg-block fs-4"></i>
         <i class="bi bi-chevron-up d-lg-none fs-4"></i>
       </button>
-      
+
       <div class="d-flex flex-column align-items-center mt-3">
-         <span class="badge bg-light text-dark border shadow-sm mb-1">{{ availableSelection.size }} Selected</span>
-         <i class="bi bi-arrow-left-right text-muted"></i>
-         <span class="badge bg-light text-dark border shadow-sm mt-1">{{ assignedSelection.size }} Selected</span>
+        <span class="badge bg-light text-dark border shadow-sm mb-1">{{ availableSelection.size }} Selected</span>
+        <i class="bi bi-arrow-left-right text-muted"></i>
+        <span class="badge bg-light text-dark border shadow-sm mt-1">{{ assignedSelection.size }} Selected</span>
       </div>
     </div>
 
     <!-- User Assigned Permissions (Right) -->
-    <div class="col-12 col-lg-5">
+    <div class="col-12 col-lg-5" *ngIf="!isViewMode">
       <div class="card shadow border-0 h-100 rounded-4">
         <div class="card-header bg-success text-white py-3 rounded-top-4">
-           <h6 class="mb-0 d-flex align-items-center fw-bold">
+          <h6 class="mb-0 d-flex align-items-center fw-bold">
             <i class="bi bi-person-check-fill me-2 fs-5"></i><span>User Special Permissions</span>
           </h6>
         </div>
         <div class="card-body bg-light-subtle">
           <div class="mb-3" *ngIf="allowUserSelection">
-            <app-searchable-dropdown
-              [placeholder]="'Search User...'"
-              [labelName]="''"
-              [hideLabel]="true"
-              [fetchDataFn]="getUsers"
-              (itemSelected)="onUserSelected($event)"
-              [selectedItem]="selectedUser"
-              class="w-100 shadow-sm"
-            ></app-searchable-dropdown>
+            <app-searchable-dropdown [placeholder]="'Search User...'" [labelName]="''" [hideLabel]="true"
+              [fetchDataFn]="getUsers" (itemSelected)="onUserSelected($event)" [selectedItem]="selectedUser"
+              class="w-100 shadow-sm"></app-searchable-dropdown>
           </div>
 
           <div class="permission-list custom-scrollbar">
             <div *ngFor="let group of filteredAssignedGroups" class="mb-3">
-              <div class="group-header d-flex justify-content-between align-items-center p-2 rounded-3 mb-1 bg-success-subtle shadow-sm">
-                 <span class="fw-bold text-success-emphasis">{{ group.name }}</span>
-                 <div class="form-check m-0">
-                   <input class="form-check-input cursor-pointer" type="checkbox" 
-                           [checked]="isAssignedGroupAllSelected(group.name)"
-                           (change)="toggleAssignedGroup(group.name)"
-                           title="Select All in Group">
-                 </div>
+              <div
+                class="group-header d-flex justify-content-between align-items-center p-2 rounded-3 mb-1 bg-success-subtle shadow-sm">
+                <span class="fw-bold text-success-emphasis">{{ group.name }}</span>
+                <div class="form-check m-0">
+                  <input class="form-check-input cursor-pointer" type="checkbox"
+                    [checked]="isAssignedGroupAllSelected(group.name)" (change)="toggleAssignedGroup(group.name)"
+                    title="Select All in Group">
+                </div>
               </div>
 
               <div class="ms-3 ps-2 border-start border-2 border-success-subtle">
-                <div *ngFor="let p of group.permissions" 
-                     class="permission-item d-flex align-items-center justify-content-between p-2 mb-1 rounded-2 bg-white border hover-shadow transition-all"
-                     [class.border-danger]="isAssignedSelected(p.id)"
-                     (click)="!isViewMode && p.isOverride && toggleAssignedPermission(p.id)">
+                <div *ngFor="let p of group.permissions"
+                  class="permission-item d-flex align-items-center justify-content-between p-2 mb-1 rounded-2 bg-white border hover-shadow transition-all"
+                  [class.border-danger]="isAssignedSelected(p.id)"
+                  (click)="!isViewMode && p.isOverride && toggleAssignedPermission(p.id)">
                   <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-shield-check text-success small"></i>
                     <span class="text-dark fw-bold">{{ p.displayName }}</span>
-                    <span *ngIf="!p.isOverride" class="badge bg-secondary-subtle text-secondary py-1" style="font-size: 0.65rem;">ROLE IMPLICIT</span>
+                    <span *ngIf="!p.isOverride" class="badge bg-secondary-subtle text-secondary py-1"
+                      style="font-size: 0.65rem;">ROLE IMPLICIT</span>
                   </div>
                   <div class="form-check m-0 pointer-events-none">
-                     <input class="form-check-input" type="checkbox" 
-                            [checked]="isAssignedSelected(p.id)"
-                            [disabled]="!p.isOverride || isViewMode"> 
+                    <input class="form-check-input" type="checkbox" [checked]="isAssignedSelected(p.id)"
+                      [disabled]="!p.isOverride || isViewMode">
                   </div>
                 </div>
               </div>
@@ -151,7 +145,7 @@
               <i class="bi bi-person-exclamation display-4 opacity-50"></i>
               <p class="mt-2">Select a user to manage permissions.</p>
             </div>
-            
+
             <div *ngIf="selectedUser && filteredAssignedGroups.length === 0" class="text-center text-muted py-5">
               <i class="bi bi-shield-check display-4 opacity-50"></i>
               <p class="mt-2">No special permissions assigned.</p>
@@ -163,7 +157,9 @@
   </div>
 
   <!-- Bottom Actions -->
-  <div class="fixed-bottom bg-white border-top shadow-lg py-3 px-4 d-flex justify-content-between align-items-center z-3" *ngIf="!isViewMode">
+  <div
+    class="fixed-bottom bg-white border-top shadow-lg py-3 px-4 d-flex justify-content-between align-items-center z-3"
+    *ngIf="!isViewMode">
     <div class="text-muted small">
       <i class="bi bi-info-circle me-1"></i><span>Changes are not saved until you click 'Save Permissions'.</span>
     </div>
@@ -171,7 +167,7 @@
       <button type="button" (click)="clearUserSelection()" class="btn btn-light border shadow-sm px-4 fw-medium">
         <i class="bi bi-arrow-counterclockwise me-2"></i><span>Reset</span>
       </button>
-      <button type="button" routerLink="/employee" class="btn btn-cancel shadow-sm px-4 fw-medium text-white">
+      <button type="button" routerLink="/employee" class="btn btn-cancel shadow-sm px-4 fw-medium">
         <i class="bi bi-x-lg me-2"></i><span>Cancel</span>
       </button>
       <button type="button" class="btn btn-save shadow-sm px-5 fw-bold" (click)="savePermissions()">
@@ -179,7 +175,7 @@
       </button>
     </div>
   </div>
-  
+
   <!-- Add padding to bottom to prevent fixed bar overlap -->
   <div style="height: 100px;"></div>
 </div>

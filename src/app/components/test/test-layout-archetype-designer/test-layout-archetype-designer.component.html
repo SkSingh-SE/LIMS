@@ -107,7 +107,9 @@
         </div>
       </div>
 
-      <!-- Mandatory Context Section: Actual Laboratory Test -->
+            <!-- Scrollable Left Panel Body (Allows Vertical & Horizontal Scroll) -->
+      <div class="studio-panel-scrollable">
+        <!-- Mandatory Context Section: Actual Laboratory Test -->
       <div class="panel-section">
         <div class="d-flex align-items-center justify-content-between mb-1.5">
           <h6 class="panel-section-title mb-0">Mandatory Context</h6>
@@ -136,7 +138,7 @@
               <i class="bi bi-box-arrow-up-right me-1.5"></i><span>Manage</span>
             </a>
           </div>
-          <app-searchable-dropdown [fetchDataFn]="fetchUnifiedLabTestFn" [selectedItem]="selectedUnifiedTestId"
+          <app-searchable-dropdown [fetchDataFn]="fetchUnifiedLabTestFn" [selectedItem]="selectedUnifiedTestItem || selectedUnifiedTestId"
             (itemSelected)="onUnifiedTestSelected($event)" [placeholder]="'Search test, subgroup, matrix...'"
             [labelName]="'Target Laboratory Test'" [hideLabel]="true" [smallInput]="true">
           </app-searchable-dropdown>
@@ -156,7 +158,7 @@
               </a>
             </div>
           </div>
-          <app-searchable-dropdown [fetchDataFn]="fetchTestMethodSpecFn" [selectedItem]="selectedTestMethodId"
+          <app-searchable-dropdown [fetchDataFn]="fetchTestMethodSpecFn" [selectedItem]="selectedTestMethodItem || selectedTestMethodId"
             (itemSelected)="onTestMethodSpecSelected($event)" [placeholder]="'Select Test Method (e.g. ASTM A370)...'"
             [labelName]="'Test Method Specification'" [hideLabel]="true" [smallInput]="true">
           </app-searchable-dropdown>
@@ -190,16 +192,16 @@
           </div>
           <div class="hierarchy-row">
             <span class="hierarchy-label">Group Test:</span>
-            <span class="hierarchy-val text-dark fw-semibold">{{ resolvedHierarchy.groupName || '—' }}</span>
+            <span class="hierarchy-val text-dark fw-semibold ms-1">{{ resolvedHierarchy.groupName || '—' }}</span>
           </div>
           <div class="hierarchy-row" *ngIf="resolvedHierarchy.subGroupName">
             <span class="hierarchy-label">Sub-Group:</span>
-            <span class="hierarchy-val text-secondary">{{ resolvedHierarchy.subGroupName }}</span>
+            <span class="hierarchy-val text-secondary ms-1">{{ resolvedHierarchy.subGroupName }}</span>
           </div>
           <div class="hierarchy-row"
             *ngIf="resolvedHierarchy.analysisTypeId || (resolvedHierarchy.leafName && resolvedHierarchy.leafName !== resolvedHierarchy.subGroupName)">
             <span class="hierarchy-label">Technique / Leaf:</span>
-            <span class="hierarchy-val text-danger fw-medium">{{ resolvedHierarchy.leafName }}</span>
+            <span class="hierarchy-val text-danger fw-medium ms-1">{{ resolvedHierarchy.leafName }}</span>
           </div>
         </div>
 
@@ -368,6 +370,7 @@
           </button>
         </div>
       </div>
+          </div>
     </aside>
 
     <!-- Resizer Divider Splitter Handle -->
@@ -2187,7 +2190,7 @@
         <div class="config-card mb-1.5">
           <div class="config-card-title d-flex align-items-center justify-content-between">
             <span class="d-flex align-items-center gap-1.5"><i class="bi bi-sliders text-danger"></i><span>Identity & Layout</span></span>
-            <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">{{ componentNames[s.type] }}</span>
+            <span class="badge bg-danger-subtle text-danger text-xxs">{{ componentNames[s.type] }}</span>
           </div>
           <div class="p-1.5">
             <div class="mb-1.5">
@@ -2252,7 +2255,7 @@
               <span class="badge bg-primary-subtle text-primary font-monospace text-xxs">
                 {{ currentDataset.parameters.length }} Avail
               </span>
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+              <span class="badge bg-danger-subtle text-danger text-xxs">
                 {{ getSelectedParametersCount(s) }} Active
               </span>
             </div>
@@ -2265,7 +2268,7 @@
                 <i class="bi bi-funnel text-danger"></i>
                 <span>Parameter Selection</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Dataset Mapping</span>
+              <span class="text-xxs text-muted fw-semibold">Dataset Mapping</span>
             </div>
 
             <div class="mb-1.5">
@@ -2296,7 +2299,7 @@
               </div>
 
               <!-- Parameter List -->
-              <div class="dataset-checks-list" style="max-height: 170px; overflow-y: auto;">
+              <div class="dataset-checks-list dataset-checks-scrollable">
                 <label *ngFor="let p of getFilteredParameters(s); trackBy: trackByField"
                   class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom"
                   [class.is-selected]="isParameterInSubset(s, p.name)">
@@ -2328,7 +2331,7 @@
                 <i class="bi bi-sliders2-vertical text-danger"></i>
                 <span>Data Binding & Structure</span>
               </span>
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+              <span class="badge bg-danger-subtle text-danger text-xxs">
                 {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
               </span>
             </div>
@@ -2609,7 +2612,7 @@
           <div class="config-card-title d-flex align-items-center justify-content-between mb-1.5">
             <span><i class="bi bi-sliders2-vertical me-1.5 text-danger"></i><span>Data Binding & Structure</span></span>
             <div class="d-flex align-items-center gap-1.5">
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+              <span class="badge bg-danger-subtle text-danger text-xxs">
                 {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
               </span>
             </div>
@@ -2869,7 +2872,7 @@
               <span>Specimen Matrix Settings & Manager</span>
             </span>
             <div class="d-flex align-items-center gap-1.5">
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+              <span class="badge bg-danger-subtle text-danger text-xxs">
                 {{ getSpecimenList(s).length }} Specimens
               </span>
               <button type="button" class="btn-xs-action text-danger fw-semibold" (click)="toggleOrientation(s)"
@@ -2885,7 +2888,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-sliders text-danger"></i><span>Matrix Geometry & Master Sources</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Structure</span>
+              <span class="text-xxs text-muted fw-semibold">Structure</span>
             </div>
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
@@ -2909,7 +2912,7 @@
                   <label class="form-label compact-label mb-0 fw-semibold text-dark">
                     First Column Header Label
                   </label>
-                  <span class="text-xxs text-muted font-monospace">Table Th</span>
+                  <span class="text-xxs text-muted fw-semibold">Table Th</span>
                 </div>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text bg-light text-danger"><i class="bi bi-fonts"></i></span>
@@ -2926,7 +2929,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-list-ol text-danger"></i><span>Rows & Presets Manager</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Auto-Fill & Reorder</span>
+              <span class="text-xxs text-muted fw-semibold">Auto-Fill & Reorder</span>
             </div>
             <div class="config-subcard-body">
               <!-- Quick Specimen Presets -->
@@ -3028,7 +3031,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-check2-square text-danger"></i><span>Display Flags & Runtime Permissions</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Flags</span>
+              <span class="text-xxs text-muted fw-semibold">Flags</span>
             </div>
             <div class="config-subcard-body">
               <div class="config-checks-grid mb-1.5">
@@ -3076,7 +3079,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-layout-split text-danger"></i><span>Display Layout & Attributes</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Layout</span>
+              <span class="text-xxs text-muted fw-semibold">Layout</span>
             </div>
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
@@ -3101,7 +3104,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-lightning text-danger"></i><span>Environmental Presets</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Quick Load</span>
+              <span class="text-xxs text-muted fw-semibold">Quick Load</span>
             </div>
             <div class="config-subcard-body">
               <div class="d-flex flex-wrap gap-1.5 mb-1.5">
@@ -3127,7 +3130,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-check2-circle text-danger"></i><span>Active Condition Parameters</span>
               </span>
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+              <span class="badge bg-danger-subtle text-danger text-xxs">
                 {{ activeConditionsCount }}/{{ currentDataset.conditions.length }}
               </span>
             </div>
@@ -3138,9 +3141,9 @@
                   <div class="d-flex align-items-center">
                     <input class="form-check-input my-0 me-1.5" type="checkbox"
                       [checked]="isConditionSelected(c.field)" (change)="toggleConditionSelection(c)">
-                    <span class="dataset-check-label fw-medium">{{ c.label }}</span>
+                    <span class="dataset-check-label">{{ c.label }}</span>
                   </div>
-                  <span class="badge bg-light text-secondary font-monospace">{{ c.demoValue }} {{ c.unit }}</span>
+                  <span class="badge bg-light text-secondary">{{ (c.demoValue && c.unit && c.demoValue.includes(c.unit)) ? c.demoValue : (c.demoValue + (c.unit ? " " + c.unit : "")) }}</span>
                 </label>
               </div>
             </div>
@@ -3152,7 +3155,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-shield-check text-danger"></i><span>Runtime Permissions</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Access</span>
+              <span class="text-xxs text-muted fw-semibold">Access</span>
             </div>
             <div class="config-subcard-body">
               <div class="config-checks-grid">
@@ -3191,7 +3194,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-bullseye text-danger"></i><span>Target Parameter & Labeling</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Target</span>
+              <span class="text-xxs text-muted fw-semibold">Target</span>
             </div>
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
@@ -3215,7 +3218,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-lightning text-danger"></i><span>Quick Spot Presets</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Auto-Configure</span>
+              <span class="text-xxs text-muted fw-semibold">Auto-Configure</span>
             </div>
             <div class="config-subcard-body">
               <div class="d-flex flex-wrap gap-1.5 mb-1.5">
@@ -3258,7 +3261,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-check2-square text-danger"></i><span>Display Flags</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Flags</span>
+              <span class="text-xxs text-muted fw-semibold">Flags</span>
             </div>
             <div class="config-subcard-body">
               <div class="config-checks-grid">
@@ -3282,7 +3285,7 @@
               <i class="bi bi-geo-alt text-danger"></i>
               <span>Location / Zone Row Manager</span>
             </span>
-            <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+            <span class="badge bg-danger-subtle text-danger text-xxs">
               {{ getLocationList(s).length }} Rows
             </span>
           </div>
@@ -3293,7 +3296,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-fonts text-danger"></i><span>First Column Header</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Header</span>
+              <span class="text-xxs text-muted fw-semibold">Header</span>
             </div>
             <div class="config-subcard-body">
               <div class="input-group input-group-sm">
@@ -3310,7 +3313,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-list-ol text-danger"></i><span>Zone Rows & Presets</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Auto-Fill</span>
+              <span class="text-xxs text-muted fw-semibold">Auto-Fill</span>
             </div>
             <div class="config-subcard-body">
               <div class="d-flex flex-wrap gap-1.5 mb-1.5">
@@ -3393,7 +3396,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-shield-check text-danger"></i><span>Runtime Permissions</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Access</span>
+              <span class="text-xxs text-muted fw-semibold">Access</span>
             </div>
             <div class="config-subcard-body">
               <label class="form-check compact-check">
@@ -3419,7 +3422,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-database text-danger"></i><span>Axis Sources & Master Data</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Axes</span>
+              <span class="text-xxs text-muted fw-semibold">Axes</span>
             </div>
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
@@ -3457,7 +3460,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-magic text-danger"></i><span>Stepped Points Generator</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Auto Step</span>
+              <span class="text-xxs text-muted fw-semibold">Auto Step</span>
             </div>
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
@@ -3502,7 +3505,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-check2-square text-danger"></i><span>Display Format</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Flags</span>
+              <span class="text-xxs text-muted fw-semibold">Flags</span>
             </div>
             <div class="config-subcard-body">
               <div class="config-checks-grid">
@@ -3818,7 +3821,7 @@
               <i class="bi bi-layout-text-window text-danger"></i>
               <span>Custom Table Settings & Cell Inspector</span>
             </span>
-            <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+            <span class="badge bg-danger-subtle text-danger text-xxs">
               {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
             </span>
           </div>
@@ -3956,7 +3959,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-check2-square text-danger"></i><span>Display Flags & Permissions</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Flags</span>
+              <span class="text-xxs text-muted fw-semibold">Flags</span>
             </div>
             <div class="config-subcard-body">
               <div class="config-checks-grid">
@@ -4082,7 +4085,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-bullseye text-danger"></i><span>Target Output Parameter</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Target</span>
+              <span class="text-xxs text-muted fw-semibold">Target</span>
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
@@ -4217,7 +4220,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-shield-check text-danger"></i><span>Submission Rules</span>
               </span>
-              <span class="text-xxs text-muted font-monospace">Flags</span>
+              <span class="text-xxs text-muted fw-semibold">Flags</span>
             </div>
             <div class="config-subcard-body">
               <label class="form-check compact-check">
@@ -4400,7 +4403,7 @@
         <div class="config-card mb-1.5">
           <div class="config-card-title d-flex align-items-center justify-content-between">
             <span class="d-flex align-items-center gap-1.5"><i class="bi bi-link-45deg text-danger"></i><span>Data Binding Pool</span></span>
-            <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">{{ componentNames[s.type] }}</span>
+            <span class="badge bg-danger-subtle text-danger text-xxs">{{ componentNames[s.type] }}</span>
           </div>
           <div class="p-1.5">
             <div class="binding-status-pill mb-1.5">

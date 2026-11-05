@@ -130,9 +130,24 @@ export class SearchableDropdownComponent {
       return;
     }
 
-    // Check if item is already in dropdownData (match by ID or by additionalValues master/subgroup ID)
-    const matched = this.dropdownData.find(x => x && !x.isHeader && x.selectable !== false && 
-      (+x.id === +rawId || String(x.id) === String(rawId) || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
+    // If currently selected item already matches rawId and already has a valid non-empty label, preserve it!
+    if (this.hasValidSelection && this.selectedItem) {
+      const currentId = typeof this.selectedItem === 'object' ? this.selectedItem.id : this.selectedItem;
+      if (currentId != null && (+currentId === +rawId || String(currentId) === String(rawId)) && this.selectedLabel) {
+        this.cdr.markForCheck();
+        return;
+      }
+    }
+
+    // Check if item is already in dropdownData (match by EXACT ID FIRST)
+    let matched = this.dropdownData.find(x => x && !x.isHeader && x.selectable !== false && 
+      (+x.id === +rawId || String(x.id) === String(rawId)));
+
+    // Fallback to additional values only if no exact ID match
+    if (!matched) {
+      matched = this.dropdownData.find(x => x && !x.isHeader && x.selectable !== false && 
+        (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId)));
+    }
     if (matched) {
       this.selectedLabel = matched.additionalValues?.['fullDisplayName'] || matched.name;
       this.hasValidSelection = true;
@@ -141,8 +156,12 @@ export class SearchableDropdownComponent {
       // Only ID passed — search by ID string (backend supports numeric ID lookup)
       this.fetchDataFn(String(rawId), 0, 20).subscribe({
         next: (data: any[]) => {
-          const found = (data || []).find(x => x && !x.isHeader && x.selectable !== false && 
-            (+x.id === +rawId || String(x.id) === String(rawId) || (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId))));
+          let found = (data || []).find(x => x && !x.isHeader && x.selectable !== false && 
+            (+x.id === +rawId || String(x.id) === String(rawId)));
+          if (!found) {
+            found = (data || []).find(x => x && !x.isHeader && x.selectable !== false && 
+              (x.additionalValues && (+x.additionalValues['masterTestId'] === +rawId || +x.additionalValues['subGroupId'] === +rawId || +x.additionalValues['testMethodSpecificationId'] === +rawId || +x.additionalValues['versionId'] === +rawId)));
+          }
           if (found) {
             this.dropdownData = [found, ...this.dropdownData.filter(x => x && x.id !== found.id)];
             this.selectedLabel = found.additionalValues?.['fullDisplayName'] || found.name;
@@ -155,8 +174,8 @@ export class SearchableDropdownComponent {
         },
       });
     }
-  }
 
+  }
   handleInput(event: any): void {
     this.searchTerm = event.target.value;
     this.selectedLabel = this.searchTerm;

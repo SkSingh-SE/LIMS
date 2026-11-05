@@ -826,6 +826,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   // Dual-Key Test Mapping (Key 1: Laboratory Test, Key 2: Test Method Specification)
   selectedTestMethodId: number | null = null;
   selectedTestMethodName: string = '';
+  selectedTestMethodItem: any = null;
 
   // JSON Export & Inspection Modal
   showExportJsonModal: boolean = false;
@@ -843,18 +844,40 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (!item) {
       this.selectedTestMethodId = null;
       this.selectedTestMethodName = '';
-    } else {
-      this.selectedTestMethodId = Number(item.id || item.ID);
-      this.selectedTestMethodName = item.name || item.TestStandard || item.testStandard || '';
+      this.selectedTestMethodItem = null;
+      this.toastService.show('Test Method unlinked (Layout applies to all methods)', 'info');
+      return;
     }
-    // Refresh 3-tier cascade resolution with Test Method included
-    this.loadDatabaseLayoutForHierarchy(
-      this.selectedLabTestId,
-      this.selectedSubGroupId,
-      this.selectedAnalysisTypeId,
-      this.leafNode,
-      this.selectedArchetypeKey
-    );
+
+    const addVals = item.additionalValues || {};
+    const specId = addVals.testMethodSpecificationId ? Number(addVals.testMethodSpecificationId) : null;
+    const versionId = item.nodeType === 'Version' ? Number(item.id) : (addVals.versionId ? Number(addVals.versionId) : null);
+
+    this.selectedTestMethodId = specId || versionId || Number(item.id || item.ID);
+    this.selectedTestMethodName = addVals.fullDisplayName || item.name || addVals.displayTitle || item.TestStandard || '';
+    this.selectedTestMethodItem = {
+      id: item.id,
+      name: this.selectedTestMethodName,
+      nodeType: item.nodeType,
+      additionalValues: {
+        ...addVals,
+        testMethodSpecificationId: specId,
+        fullDisplayName: this.selectedTestMethodName
+      }
+    };
+
+    this.toastService.show(`Target Test Method set to: ${this.selectedTestMethodName}`, 'success');
+
+    // Reload layout for this hierarchy + new test method combination
+    if (this.selectedLabTestId || this.selectedUnifiedTestId) {
+      this.loadDatabaseLayoutForHierarchy(
+        Number(this.selectedLabTestId || this.selectedUnifiedTestId) || null,
+        this.selectedSubGroupId,
+        this.selectedAnalysisTypeId,
+        this.leafNode,
+        this.selectedArchetypeKey
+      );
+    }
   }
 
   openExportJsonModal(): void {
@@ -3647,11 +3670,16 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           this.isGlobalDefault = res.isGlobalDefault ?? false;
           this.applyToLeaf = res.applyToLeaf ?? true;
           this.loadedSource = 'db';
-          if (res.testMethodSpecificationID) {
-            this.selectedTestMethodId = res.testMethodSpecificationID;
-          }
-          if (res.testMethodName) {
-            this.selectedTestMethodName = res.testMethodName;
+          if (!this.selectedTestMethodId) {
+            if (res.testMethodSpecificationID) {
+              this.selectedTestMethodId = res.testMethodSpecificationID;
+            }
+            if (res.testMethodName) {
+              this.selectedTestMethodName = res.testMethodName;
+            }
+            this.selectedTestMethodItem = this.selectedTestMethodId
+              ? { id: this.selectedTestMethodId, name: this.selectedTestMethodName || String(this.selectedTestMethodId) }
+              : (this.selectedTestMethodName ? { id: 0, name: this.selectedTestMethodName } : null);
           }
 
           let parsedMappedLeafKeys: string[] = [];
@@ -3726,6 +3754,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           } else {
             this.selectedTestMethodName = '';
           }
+          this.selectedTestMethodItem = this.selectedTestMethodId
+            ? { id: this.selectedTestMethodId, name: this.selectedTestMethodName || String(this.selectedTestMethodId) }
+            : (this.selectedTestMethodName ? { id: 0, name: this.selectedTestMethodName } : null);
 
           if (res.laboratoryTestID) {
             this.selectedLabTestId = res.laboratoryTestID;

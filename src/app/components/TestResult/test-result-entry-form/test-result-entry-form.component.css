@@ -1824,3 +1824,476 @@ input[type="number"] {
     display: none !important;
   }
 }
+
+
+/* ================================================================
+   SPECIFICATION CONDITION FILTER ENGINE & CALIBRATION STYLING
+   ================================================================ */
+.spec-condition-card {
+  border: 1px solid var(--neutral-200, #e2e8f0);
+  border-radius: var(--radius-md, 6px);
+  background: #ffffff;
+}
+
+.spec-context-banner {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.73rem;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spec-condition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px 8px;
+}
+
+.spec-cond-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spec-cond-label {
+  font-size: 0.70rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spec-cond-select {
+  height: 26px;
+  min-height: 26px;
+  font-size: 0.74rem;
+  padding: 2px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #1e293b;
+  width: 100%;
+}
+
+.spec-cond-select:focus {
+  border-color: var(--primary-color, #da261c);
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.1);
+  outline: none;
+}
+
+.spec-match-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background-color: rgba(22, 163, 74, 0.1);
+  color: #15803d;
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+
+/* ================================================================
+   COMPACT MODE TOP HEADER & TOOLBAR REDESIGN
+   ================================================================ */
+.compact-casebar {
+  position: sticky;
+  top: 60px;
+  z-index: 30;
+  padding: 4px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+}
+
+.casebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.casebar-back-btn {
+  background: #ffffff;
+  color: var(--neutral-700, #334155);
+  border: 1px solid var(--neutral-300, #cbd5e1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.casebar-back-btn:hover {
+  background: var(--neutral-50, #f8fafc);
+  border-color: var(--neutral-400, #94a3b8);
+}
+
+.casebar-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--neutral-900, #0f172a);
+  letter-spacing: -0.2px;
+}
+
+.casebar-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.74rem;
+  color: var(--neutral-600, #475569);
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.casebar-meta strong {
+  color: var(--neutral-900, #0f172a);
+  font-weight: 600;
+}
+
+.casebar-meta-sep {
+  color: var(--neutral-300, #cbd5e1);
+}
+
+.casebar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  z-index: 5;
+}
+
+/* Compact Workflow Tabs (Integrated into Header) */
+.tab-compact {
+  padding: 3px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--neutral-300, #cbd5e1);
+  background: #ffffff;
+  color: var(--neutral-600, #475569);
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.tab-compact:hover {
+  background: var(--neutral-50, #f8fafc);
+  color: var(--neutral-900, #0f172a);
+}
+
+.tab-compact.active {
+  background: var(--primary-color, #da261c);
+  border-color: var(--primary-color, #da261c);
+  color: #ffffff;
+}
+
+/* ─── Compact Test Strip Toolbar (Action & Layout Bar) ─── */
+.compact-teststrip {
+  position: sticky;
+  top: 96px;
+  z-index: 28;
+  padding: 3px 14px;
+  background: var(--neutral-50, #f8fafc);
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.teststrip-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.testpill-compact {
+  border: 1px solid var(--neutral-300, #cbd5e1);
+  background: #ffffff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.74rem;
+  color: var(--neutral-800, #1e293b);
+  transition: all 0.12s;
+}
+
+.testpill-compact:hover {
+  border-color: var(--neutral-400, #94a3b8);
+  background: #ffffff;
+}
+
+.testpill-compact.active {
+  border-color: var(--primary-color, #da261c);
+  background: #fef2f2;
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+}
+
+.teststrip-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Compact Layout Dropdown Container */
+.compact-layout-dropdown {
+  min-width: 220px;
+  max-width: 280px;
+}
+
+/* Compact Specimen Stepper */
+.spm-stepper-compact {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--neutral-300, #cbd5e1);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 24px;
+}
+
+.spm-btn {
+  background: transparent;
+  border: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--neutral-700, #334155);
+  cursor: pointer;
+}
+
+.spm-btn:hover:not(:disabled) {
+  background: var(--neutral-100, #f1f5f9);
+}
+
+.spm-btn:disabled {
+  color: var(--neutral-300, #cbd5e1);
+  cursor: not-allowed;
+}
+
+.spm-input {
+  width: 28px;
+  height: 22px;
+  border: none;
+  border-left: 1px solid var(--neutral-200, #e2e8f0);
+  border-right: 1px solid var(--neutral-200, #e2e8f0);
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.74rem;
+  color: var(--primary-color, #da261c);
+  padding: 0;
+}
+
+.spm-input:focus {
+  outline: none;
+}
+
+.spm-plan-badge {
+  font-size: 0.68rem;
+  color: var(--neutral-500, #64748b);
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+
+/* Specification Condition Layout Utilities */
+.spec-cond-item-full {
+  grid-column: span 2;
+}
+
+/* Image Attachment Thumbnails */
+.img-staged-thumb {
+  max-height: 36px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+}
+
+.img-gallery-thumb {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+
+.img-gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+/* ================================================================
+   CASE DETAILS & QUALITY DOSSIER (TAB 2) STYLING
+   ================================================================ */
+.dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 992px) {
+  .dossier-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dossier-card {
+  background: #ffffff;
+  border: 1px solid var(--neutral-200, #e2e8f0);
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.dossier-cardhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.dossier-cardhead h3 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary-color, #da261c);
+  margin: 0;
+}
+
+.case-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 12px;
+}
+
+@media (max-width: 600px) {
+  .case-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.case-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.case-meta-item-full {
+  grid-column: span 2;
+}
+
+@media (max-width: 600px) {
+  .case-meta-item-full {
+    grid-column: span 1;
+  }
+}
+
+.case-meta-label {
+  font-size: 0.67rem;
+  font-weight: 600;
+  color: var(--neutral-500, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.case-meta-val {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--neutral-800, #1e293b);
+  word-break: break-word;
+}
+
+.geom-metric-strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  background: var(--neutral-50, #f8fafc);
+  border: 1px solid var(--neutral-200, #e2e8f0);
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+@media (max-width: 768px) {
+  .geom-metric-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.geom-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.geom-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--neutral-500, #64748b);
+}
+
+.geom-val {
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: var(--neutral-900, #0f172a);
+}
+
+.case-tests-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.case-tests-table th {
+  background: var(--neutral-100, #f1f5f9);
+  color: var(--neutral-700, #334155);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--neutral-300, #cbd5e1);
+  text-align: left;
+}
+
+.case-tests-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0);
+  color: var(--neutral-800, #1e293b);
+  vertical-align: middle;
+}
+
+.case-tests-table tr:hover td {
+  background: var(--neutral-50, #f8fafc);
+}

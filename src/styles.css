@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+/* Fonts loaded via preconnect in index.html */
 @import "quill/dist/quill.snow.css";
 
 /* You can add global styles to this file, and also import other style files */
@@ -27,6 +27,7 @@ nav.fixed-top {
   --select2-selection-border-radius: 5px;
   --select2-selection-choice-line-height: 23px;
   accent-color: var(--primary-color);
+  --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-xs: 0.72rem;
   --font-sm: 0.78rem;
   --font-md: 0.875rem;
@@ -87,7 +88,7 @@ nav.fixed-top {
 
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-size: 0.8125rem;
   line-height: 1.5;
   color: #1F2937;
@@ -98,7 +99,7 @@ body {
    Guarantees 100% horizontal baseline alignment for inputs
 ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• */
 .form-label {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.76rem !important;
   font-weight: 500 !important;
   color: #374151 !important;
@@ -124,7 +125,7 @@ body {
    Theme: Poppins | High Density | 0.72rem - 0.75rem
 ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• */
 .form-field-hint {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 400 !important;
   color: #64748b !important;
@@ -143,7 +144,7 @@ body {
 .field-due-badge {
   display: inline-flex !important;
   align-items: center !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 500 !important;
   color: #334155 !important;
@@ -1498,6 +1499,7 @@ a.btn i.bi,
 .form-select {
   background-image: var(--form-select-arrow) !important;
   accent-color: var(--primary-color);
+  --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .form-select option:checked {
@@ -2746,7 +2748,7 @@ fieldset.border legend i {
   font-weight: 500;
   color: var(--neutral-700);
   margin-bottom: 0.28rem;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Compact label (use alongside form-control-sm) Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -2755,7 +2757,7 @@ fieldset.border legend i {
   font-weight: 600;
   color: var(--neutral-700);
   margin-bottom: 0.15rem;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Metal Box & Title Label Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -2764,7 +2766,7 @@ fieldset.border legend i {
   font-weight: 600;
   color: var(--neutral-700);
   margin-bottom: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 .metal-box {
@@ -2778,7 +2780,7 @@ fieldset.border legend i {
 .form-control,
 .form-select {
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   border-radius: var(--radius-sm) !important;
   border-color: var(--neutral-300);
   color: var(--neutral-900);
@@ -2789,7 +2791,7 @@ fieldset.border legend i {
 .form-control-sm,
 .form-select-sm {
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   border-radius: var(--radius-sm) !important;
   border-color: var(--neutral-300);
   color: var(--neutral-900);
@@ -2984,7 +2986,7 @@ textarea:focus-visible,
   padding: 0.75rem 1.25rem !important;
   margin-bottom: 1rem !important;
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .alert-dismissible {
@@ -3224,7 +3226,7 @@ textarea:focus-visible,
   border-radius: var(--radius-sm) !important;
   min-height: 36px !important;
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   background-color: #fff !important;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -3633,7 +3635,7 @@ textarea:focus-visible,
 .lims-suggestion-chip {
   display: inline-flex;
   align-items: center;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-size: var(--font-xs, 0.72rem);
   font-weight: 500;
   padding: 1px 8px;
@@ -3890,6 +3892,7 @@ textarea:focus-visible,
   cursor: pointer;
   padding: 0;
   accent-color: var(--primary-color);
+  --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Modern browser fallback */
 }
 
@@ -4021,7 +4024,7 @@ input[type="file"].form-control::-webkit-file-upload-button {
   border-radius: 0 !important;
   font-size: 0.78rem !important;
   font-weight: 500 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   cursor: pointer !important;
   transition: all 0.15s ease-in-out !important;
 }
@@ -4063,7 +4066,7 @@ input[type="file"].form-control::file-selector-button {
   border-radius: 0 !important;
   font-size: 0.78rem !important;
   font-weight: 500 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   cursor: pointer !important;
   transition: all 0.15s ease-in-out !important;
 }
@@ -4584,7 +4587,7 @@ input[type="file"].form-control:hover::file-selector-button {
   border-radius: 8px;
   padding: 6px 12px;
   transition: all 0.2s ease;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 .stat-badge-pill:hover {
@@ -4748,7 +4751,7 @@ fieldset.border {
 
 /* Base LIMS Action Button */
 .btn-lims {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.76rem !important;
   font-weight: 500 !important;
   padding: 4px 14px !important;
@@ -5528,7 +5531,7 @@ input[type="checkbox"]:checked {
   border-radius: 6px;
   padding: 3px 10px;
   font-size: 0.75rem;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   color: #334155;
   transition: all 0.15s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -5608,7 +5611,7 @@ input[type="checkbox"]:checked {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-size: 0.76rem;
   font-weight: 600;
   padding: 4px 10px;
@@ -7659,7 +7662,7 @@ fieldset.fieldset-card {
 legend.form-section-legend,
 fieldset>legend.w-auto,
 fieldset>legend {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.82rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.2px;
@@ -8158,7 +8161,7 @@ fieldset.fieldset-collapsed {
 }
 
 .lims-fieldset legend {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.78rem !important;
   font-weight: 600 !important;
   color: var(--primary-color, #da261c) !important;
@@ -8172,7 +8175,7 @@ fieldset.fieldset-collapsed {
   display: inline-flex !important;
   align-items: center !important;
   gap: 0.3rem !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 500 !important;
   padding: 0.2rem 0.6rem !important;
@@ -8330,7 +8333,7 @@ fieldset.lims-fieldset legend {
   display: inline-flex !important;
   align-items: center !important;
   gap: 3px !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.68rem !important;
   font-weight: 500 !important;
   padding: 1px 8px !important;
@@ -8394,7 +8397,7 @@ fieldset.lims-fieldset legend {
   justify-content: center !important;
   border: none !important;
   background: transparent !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 500 !important;
   padding: 0 0.5rem !important;
@@ -8581,7 +8584,7 @@ fieldset.lims-fieldset legend {
   border-radius: 3px !important;
   background: transparent !important;
   color: #475569 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.74rem !important;
   font-weight: 500 !important;
   padding: 0 6px !important;
@@ -8629,7 +8632,7 @@ fieldset.lims-fieldset legend {
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-weight: 500;
 }
 
@@ -8762,7 +8765,7 @@ button i.bi:only-child,
   font-weight: 600 !important;
   color: var(--neutral-700, #374151) !important;
   margin-bottom: 0.15rem !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .compact-input {
@@ -8770,7 +8773,7 @@ button i.bi:only-child,
   min-height: 28px !important;
   font-size: 0.75rem !important;
   padding: 0.2rem 0.5rem !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 /* ── Segmented Control ── */
@@ -8823,7 +8826,7 @@ button i.bi:only-child,
   height: 100vh !important;
   max-height: 100vh !important;
   background-color: var(--surface-elevated, #f8fafc) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   overflow: hidden !important;
 }
 
@@ -8881,7 +8884,7 @@ button i.bi:only-child,
   width: 280px !important;
   max-width: 320px !important;
   transition: all 0.15s ease-in-out !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .studio-format-name-input:hover {
@@ -8964,7 +8967,7 @@ button i.bi:only-child,
   display: flex !important;
   align-items: center !important;
   gap: 0.375rem !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .panel-width-bar {
@@ -8982,7 +8985,7 @@ button i.bi:only-child,
   font-size: 0.68rem !important;
   font-weight: 500 !important;
   color: var(--neutral-500, #64748b) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .btn-preset {
@@ -9028,7 +9031,7 @@ button i.bi:only-child,
   display: flex !important;
   align-items: center !important;
   gap: 0.375rem !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 /* ── 3. High-Density Component Palette (15 Elements) ── */
@@ -9054,7 +9057,7 @@ button i.bi:only-child,
   color: var(--neutral-700, #334155) !important;
   font-size: 0.72rem !important;
   font-weight: 500 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   cursor: pointer !important;
   transition: all 0.15s ease-in-out !important;
   text-align: left !important;
@@ -9144,7 +9147,7 @@ button i.bi:only-child,
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .outline-item-badge {
@@ -9203,7 +9206,7 @@ button i.bi:only-child,
   text-align: center !important;
   color: var(--neutral-500, #64748b) !important;
   font-size: 0.73rem !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   border: 1px dashed var(--neutral-300, #cbd5e1) !important;
   border-radius: var(--radius-sm, 4px) !important;
   background-color: var(--neutral-50, #f8fafc) !important;
@@ -9296,14 +9299,14 @@ button i.bi:only-child,
   margin: 0 !important;
   letter-spacing: 0.4px !important;
   text-transform: uppercase !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .paper-sub-title {
   font-size: 0.7rem !important;
   color: var(--neutral-600, #475569) !important;
   margin-top: 3px !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .paper-meta-box {
@@ -9312,7 +9315,7 @@ button i.bi:only-child,
   color: var(--neutral-600, #475569) !important;
   text-align: right !important;
   min-width: 140px !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .paper-meta-box > div {
@@ -9361,7 +9364,7 @@ button i.bi:only-child,
   font-size: 0.76rem !important;
   font-weight: 600 !important;
   color: var(--neutral-800, #1e293b) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .sec-type-badge {
@@ -9410,13 +9413,13 @@ button i.bi:only-child,
 
 .exec-sec-body {
   padding: 8px 10px !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.75rem !important;
   color: var(--neutral-800, #1e293b) !important;
 }
 
 .rule-footer-note {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.72rem !important;
   line-height: 1.4 !important;
   color: var(--neutral-700, #334155) !important;
@@ -9435,18 +9438,18 @@ button i.bi:only-child,
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .rule-note-label {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-weight: 600 !important;
   font-size: 0.72rem !important;
   color: var(--neutral-800, #1e293b) !important;
 }
 
 .rule-note-value {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-weight: 400 !important;
   font-size: 0.72rem !important;
   color: var(--neutral-600, #475569) !important;
@@ -9462,7 +9465,7 @@ button i.bi:only-child,
   padding: 8px 5px !important;
   overflow-y: auto !important;
   flex: 1 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .config-header-identity {
@@ -9477,7 +9480,7 @@ button i.bi:only-child,
   font-size: 0.78rem !important;
   font-weight: 600 !important;
   color: var(--neutral-800, #1e293b) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .config-card {
@@ -9696,579 +9699,8 @@ button i.bi:only-child,
 
 /* Compact Checkbox Grid */
 .config-checks-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
-  gap: 4px 8px !important;
-  padding: 4px 0 !important;
-}
-
-/* ── 9. Resizers & Dividers ── */
-.panel-resizer {
-  width: 5px !important;
-  cursor: col-resize !important;
-  position: relative !important;
-  background-color: transparent !important;
-  transition: background-color 0.15s ease !important;
-  z-index: 10 !important;
-  flex-shrink: 0 !important;
-}
-
-.panel-resizer:hover,
-.panel-resizer.is-active {
-  background-color: var(--primary-color, #da261c) !important;
-}
-
-.resizer-handle-grip {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-  height: 100% !important;
-  color: var(--neutral-400, #94a3b8) !important;
-  font-size: 0.7rem !important;
-}
-
-.resizer-expand-tab {
-  width: 20px !important;
-  height: 48px !important;
-  position: absolute !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  background-color: #ffffff !important;
-  border: 1px solid var(--neutral-300, #cbd5e1) !important;
-  color: var(--neutral-600, #475569) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  border-radius: 0 4px 4px 0 !important;
-  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.08) !important;
-}
-
-.resizer-expand-tab:hover {
-  background-color: var(--primary-color, #da261c) !important;
-  border-color: var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
-}
-
-/* ── 10. Table Elements in Sections ── */
-.table-exec {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  font-size: 0.74rem !important;
-  font-family: 'Poppins', sans-serif !important;
-  margin-bottom: 0 !important;
-}
-
-.table-exec th {
-  background-color: var(--neutral-50, #f8fafc) !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  padding: 4px 6px !important;
-  font-weight: 600 !important;
-  font-size: 0.7rem !important;
-  color: var(--neutral-700, #334155) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.3px !important;
-  vertical-align: middle !important;
-}
-
-.table-exec td {
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  padding: 3px 6px !important;
-  vertical-align: middle !important;
-  color: var(--neutral-800, #1e293b) !important;
-  font-size: 0.74rem !important;
-}
-
-.th-inline-input,
-.table-cell-inline-input {
-  height: 22px !important;
-  min-height: 22px !important;
-  padding: 1px 3px !important;
-  font-size: 0.69rem !important;
-  border: 1px solid transparent !important;
-  background: transparent !important;
-  border-radius: 3px !important;
-  width: 100% !important;
-  font-family: 'Poppins', sans-serif !important;
-}
-
-.table-exec th .bi {
-  font-size: 0.62rem !important;
-  flex-shrink: 0 !important;
-  opacity: 0.7 !important;
-}
-
-.th-inline-input:hover,
-.table-cell-inline-input:hover {
-  border-color: var(--neutral-300, #cbd5e1) !important;
-  background-color: #ffffff !important;
-}
-
-.th-inline-input:focus,
-.table-cell-inline-input:focus {
-  border-color: var(--primary-color, #da261c) !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 1px rgba(218, 38, 28, 0.2) !important;
-  outline: none !important;
-}
-
-/* ── 11. Configured Test Layout Renderer & Shared Workbench ── */
-.configured-layout-container {
-  width: 100% !important;
-  min-height: 100% !important;
-  background-color: #ffffff !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-}
-
-.layout-meta-banner {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  flex-wrap: wrap !important;
-  gap: 0.5rem !important;
-  padding: 0.4rem 0.75rem !important;
-  background-color: #ffffff !important;
-  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
-  margin-bottom: 0 !important;
-}
-
-.layout-badge-icon {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.375rem !important;
-  font-size: 0.85rem !important;
-}
-
-.layout-title {
-  font-size: 0.85rem !important;
-  font-weight: 600 !important;
-  color: var(--neutral-800, #1e293b) !important;
-  font-family: 'Poppins', sans-serif !important;
-}
-
-.layout-subtitle {
-  font-size: 0.7rem !important;
-  color: var(--neutral-500, #64748b) !important;
-  font-family: 'Poppins', sans-serif !important;
-}
-
-.workbench-action-toolbar {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  flex-wrap: wrap !important;
-  gap: 0.375rem !important;
-  padding: 0.3rem 0.75rem !important;
-  background-color: #ffffff !important;
-  border-top: 1px solid var(--neutral-200, #e2e8f0) !important;
-  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
-}
-
-.workbench-action-toolbar .text-xxs {
-  font-size: 0.65rem !important;
-  color: var(--neutral-500, #64748b) !important;
-}
-
-.lims-workbench-card {
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  border-radius: var(--radius-md, 6px) !important;
-  background-color: #ffffff !important;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04)) !important;
-  margin-bottom: 0.625rem !important;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
   display: flex !important;
   flex-direction: column !important;
-}
-
-.lims-workbench-card.is-selected {
-  border-color: var(--primary-color, #da261c) !important;
-  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.12) !important;
-}
-
-.lims-workbench-card-header {
-  padding: 0.4rem 0.65rem !important;
-  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
-  background-color: var(--neutral-50, #f8fafc) !important;
-  border-radius: var(--radius-md, 6px) var(--radius-md, 6px) 0 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.5rem !important;
-}
-
-/* ── 12. Specimen & Reading Matrix Classes ── */
-.specimen-section {
-  width: 100% !important;
-}
-
-.specimen-section .table-responsive {
-  overflow-x: auto !important;
-}
-
-.lims-matrix-table {
-  width: 100% !important;
-  border-collapse: collapse !important;
-  background: #ffffff !important;
-  font-size: 0.74rem !important;
-  font-family: 'Poppins', sans-serif !important;
-}
-
-.lims-matrix-table thead {
-  background: var(--neutral-50, #f8fafc) !important;
-  border-bottom: 2px solid var(--neutral-200, #e2e8f0) !important;
-}
-
-.lims-matrix-table thead th {
-  padding: 3px 6px !important;
-  font-weight: 600 !important;
-  font-size: 0.7rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.3px !important;
-  color: var(--neutral-600, #475569) !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  white-space: nowrap !important;
-  vertical-align: middle !important;
-}
-
-.lims-matrix-table tbody td {
-  padding: 3px 6px !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  font-size: 0.74rem !important;
-  color: var(--neutral-800, #1e293b) !important;
-  vertical-align: middle !important;
-}
-
-.spm-col-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.25rem !important;
-  flex-direction: column !important;
-  min-height: 36px !important;
-}
-
-.avg-col-header {
-  writing-mode: vertical-rl !important;
-  text-orientation: mixed !important;
-  height: 55px !important;
-  padding: 3px 2px !important;
-  white-space: nowrap !important;
-}
-
-.avg-col-cell {
-  font-weight: 600 !important;
-  color: var(--primary-color, #da261c) !important;
-}
-
-.num-tabular {
-  font-variant-numeric: tabular-nums !important;
-  text-align: center !important;
-}
-
-.spm-input-control {
-  height: 24px !important;
-  min-height: 24px !important;
-  padding: 1px 5px !important;
-  font-size: 0.74rem !important;
-  font-family: 'Poppins', sans-serif !important;
-  text-align: center !important;
-  border-radius: 3px !important;
-  border: 1px solid var(--neutral-300, #cbd5e1) !important;
-  color: var(--neutral-800, #1e293b) !important;
-}
-
-.spm-input-control:focus {
-  border-color: var(--primary-color, #da261c) !important;
-  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb, 218, 38, 28), 0.12) !important;
-  outline: none !important;
-}
-
-.condition-input-box {
-  padding: 0.4rem 0.65rem !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  background-color: #ffffff !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  margin-bottom: 0.4rem !important;
-}
-
-.condition-input-box label {
-  font-size: 0.7rem !important;
-  font-weight: 600 !important;
-  color: var(--neutral-600, #475569) !important;
-  margin-bottom: 0.2rem !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.25rem !important;
-}
-
-.specimen-row {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.375rem !important;
-  padding: 0.3rem 0.5rem !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  background-color: #ffffff !important;
-  margin-bottom: 0.3rem !important;
-}
-
-.btn-add-specimen {
-  width: 100% !important;
-  height: 32px !important;
-  min-height: 32px !important;
-  background-color: var(--primary-50, rgba(218, 38, 28, 0.06)) !important;
-  border: 1px dashed var(--primary-color, #da261c) !important;
-  color: var(--primary-color, #da261c) !important;
-  font-size: 0.78rem !important;
-  font-weight: 600 !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.375rem !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease-in-out !important;
-}
-
-.btn-add-specimen:hover {
-  background-color: var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
-}
-
-.formula-display {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 0.375rem !important;
-  padding: 0.35rem 0.65rem !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  background-color: var(--neutral-50, #f8fafc) !important;
-  color: var(--neutral-800, #1e293b) !important;
-  font-size: 0.74rem !important;
-}
-
-.btn-transpose {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 0.375rem !important;
-  padding: 0 8px !important;
-  height: 28px !important;
-  min-height: 28px !important;
-  font-size: 0.74rem !important;
-  font-weight: 500 !important;
-  color: var(--neutral-600, #475569) !important;
-  background-color: #ffffff !important;
-  border: 1px solid var(--neutral-300, #cbd5e1) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease-in-out !important;
-}
-
-.btn-transpose:hover {
-  background-color: var(--neutral-100, #f1f5f9) !important;
-  color: var(--neutral-900, #0f172a) !important;
-}
-
-.btn-action-unified {
-  height: 28px !important;
-  min-height: 28px !important;
-  padding: 0 10px !important;
-  font-size: 0.74rem !important;
-  font-weight: 500 !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 5px !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease-in-out !important;
-}
-
-.btn-action-unified.secondary {
-  background-color: #ffffff !important;
-  border: 1px solid var(--neutral-300, #cbd5e1) !important;
-  color: var(--neutral-700, #334155) !important;
-}
-
-.btn-action-unified.secondary:hover {
-  background-color: var(--neutral-100, #f1f5f9) !important;
-  border-color: var(--neutral-400, #94a3b8) !important;
-}
-
-.btn-action-unified.primary {
-  background-color: var(--primary-color, #da261c) !important;
-  border: 1px solid var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
-}
-
-.btn-action-unified.primary:hover {
-  background-color: var(--primary-hover, #b91c1c) !important;
-  border-color: var(--primary-hover, #b91c1c) !important;
-}
-
-/* ── 13. Studio Canvas Toolbar & Zoom Controls ── */
-.canvas-header-bar {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  padding: 0 0.75rem !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
-  background-color: #ffffff !important;
-  flex-shrink: 0 !important;
-  gap: 0.5rem !important;
-  z-index: 4 !important;
-}
-
-.layout-structure-picker {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.35rem !important;
-  flex-wrap: nowrap !important;
-}
-
-.layout-structure-picker app-custom-select {
-  width: 210px !important;
-}
-
-.btn-load-structure {
-  height: 28px !important;
-  min-height: 28px !important;
-  padding: 0 8px !important;
-  font-size: 0.72rem !important;
-  font-weight: 500 !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  background-color: var(--primary-50, rgba(218, 38, 28, 0.06)) !important;
-  border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.3)) !important;
-  color: var(--primary-color, #da261c) !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
-
-.btn-load-structure:hover:not(:disabled) {
-  background-color: var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
-}
-
-.btn-load-structure:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-}
-
-.badge-mapped {
-  font-size: 0.7rem !important;
-  font-weight: 500 !important;
-  background-color: var(--neutral-100, #f1f5f9) !important;
-  color: var(--neutral-700, #334155) !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  padding: 3px 8px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-}
-
-.badge-structure {
-  font-size: 0.68rem !important;
-  font-weight: 500 !important;
-  background-color: var(--neutral-50, #f8fafc) !important;
-  color: var(--neutral-500, #64748b) !important;
-  border: 1px dashed var(--neutral-300, #cbd5e1) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  padding: 2px 6px !important;
-}
-
-.zoom-controls {
-  display: flex !important;
-  align-items: center !important;
-  gap: 2px !important;
-  background-color: var(--neutral-100, #f1f5f9) !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  padding: 2px !important;
-}
-
-.btn-zoom {
-  width: 22px !important;
-  height: 22px !important;
-  min-width: 22px !important;
-  min-height: 22px !important;
-  padding: 0 !important;
-  font-size: 0.85rem !important;
-  line-height: 1 !important;
-  font-weight: 600 !important;
-  border: none !important;
-  background: #ffffff !important;
-  color: var(--neutral-700, #334155) !important;
-  border-radius: 3px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-  transition: all 0.15s ease !important;
-}
-
-.btn-zoom:hover {
-  background-color: var(--neutral-200, #e2e8f0) !important;
-  color: var(--neutral-900, #0f172a) !important;
-}
-
-.zoom-text {
-  font-size: 0.7rem !important;
-  font-weight: 600 !important;
-  font-family: monospace !important;
-  color: var(--neutral-700, #334155) !important;
-  padding: 0 6px !important;
-  min-width: 42px !important;
-  text-align: center !important;
-}
-
-/* ── 14. Inspector Components & Controls ── */
-.btn-panel-action {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
-  padding: 0 !important;
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  background-color: #ffffff !important;
-  color: var(--neutral-600, #475569) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  font-size: 0.75rem !important;
-  transition: all 0.15s ease !important;
-}
-
-.btn-panel-action:hover {
-  background-color: var(--neutral-100, #f1f5f9) !important;
-  color: var(--neutral-900, #0f172a) !important;
-  border-color: var(--neutral-300, #cbd5e1) !important;
-}
-
-.config-dot {
-  width: 6px !important;
-  height: 6px !important;
-  border-radius: 50% !important;
-  background-color: var(--primary-color, #da261c) !important;
-  flex-shrink: 0 !important;
-}
-
-.config-type-tag {
-  font-size: 0.68rem !important;
-  font-weight: 500 !important;
-}
-
-.config-checks-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
   gap: 4px !important;
   background-color: var(--neutral-50, #f8fafc) !important;
   border: 1px solid var(--neutral-200, #e2e8f0) !important;
@@ -10293,13 +9725,14 @@ button i.bi:only-child,
 }
 
 .compact-check .form-check-label {
-  font-size: 0.7rem !important;
+  font-size: 0.72rem !important;
   font-weight: 500 !important;
   color: var(--neutral-700, #334155) !important;
   cursor: pointer !important;
   margin: 0 !important;
-  line-height: 1.2 !important;
-  white-space: nowrap !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 /* ── 15. Inspector Binding & Table Hub ── */
@@ -10878,4 +10311,204 @@ td:hover .btn-cell-row-del {
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
+}
+
+
+/* ── Resolved Hierarchy Box (Studio) ── */
+.resolved-hierarchy-box {
+  padding: 0.5rem 0.65rem !important;
+  background-color: var(--neutral-50, #f8fafc) !important;
+  border: 1px solid var(--neutral-200, #e2e8f0) !important;
+  border-radius: var(--radius-md, 6px) !important;
+}
+
+.hierarchy-box-title {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  color: var(--neutral-700, #334155) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.hierarchy-row {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.35rem !important;
+  font-size: 0.74rem !important;
+  line-height: 1.4 !important;
+  margin-top: 0.2rem !important;
+}
+
+.hierarchy-label {
+  color: var(--neutral-500, #64748b) !important;
+  font-weight: 500 !important;
+  flex-shrink: 0 !important;
+}
+
+.hierarchy-val {
+  font-weight: 600 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.table-exec th.location-row-th,
+.table-exec td.location-row-cell {
+  min-width: 220px !important;
+  width: 40% !important;
+}
+
+
+/* ── Studio Panels Scrolling & High Density Polish ── */
+.studio-panel-scrollable {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.config-body {
+  padding: 8px 6px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+.dataset-checks-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.dataset-check-row {
+  cursor: pointer !important;
+  padding: 4px 6px !important;
+  border-radius: var(--radius-sm, 4px) !important;
+  border-bottom: 1px solid var(--neutral-100, #f1f5f9) !important;
+  transition: background-color 0.15s ease !important;
+  font-size: 0.74rem !important;
+}
+
+.dataset-check-row:hover {
+  background-color: var(--neutral-50, #f8fafc) !important;
+}
+
+.dataset-check-row .form-check-input {
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: 0 !important;
+  margin-right: 6px !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+.dataset-check-label {
+  font-size: 0.74rem !important;
+  font-weight: 500 !important;
+  color: var(--neutral-800, #1e293b) !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.01em !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+}
+
+.dataset-checks-scrollable {
+  max-height: 170px !important;
+  overflow-y: auto !important;
+}
+
+
+/* ================================================================
+   MATERIAL SPECIFICATION CONDITION FILTER ENGINE (RESULT ENTRY)
+   Enterprise Ultra-High Density Standards
+   ================================================================ */
+.spec-condition-card {
+  border: 1px solid var(--neutral-200, #e2e8f0) !important;
+  border-radius: var(--radius-md, 6px) !important;
+  background-color: #ffffff !important;
+  overflow: hidden !important;
+}
+
+.spec-condition-header {
+  padding: 5px 8px !important;
+  background-color: var(--neutral-50, #f8fafc) !important;
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.spec-condition-body {
+  padding: 6px 8px !important;
+}
+
+.spec-condition-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 5px 8px !important;
+}
+
+.spec-cond-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.spec-cond-label {
+  font-size: 0.70rem !important;
+  font-weight: 600 !important;
+  color: var(--neutral-600, #475569) !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.spec-cond-select {
+  height: 26px !important;
+  min-height: 26px !important;
+  font-size: 0.74rem !important;
+  padding: 2px 6px !important;
+  border: 1px solid var(--neutral-300, #cbd5e1) !important;
+  border-radius: var(--radius-sm, 4px) !important;
+  background-color: #ffffff !important;
+  color: var(--neutral-800, #1e293b) !important;
+  width: 100% !important;
+}
+
+.spec-cond-select:focus {
+  border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.1) !important;
+  outline: none !important;
+}
+
+.spec-context-banner {
+  background-color: var(--neutral-50, #f8fafc) !important;
+  border: 1px solid var(--neutral-200, #e2e8f0) !important;
+  border-radius: var(--radius-sm, 4px) !important;
+  padding: 4px 6px !important;
+  margin-bottom: 6px !important;
+  font-size: 0.72rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.spec-match-chip {
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  padding: 1px 6px !important;
+  border-radius: 10px !important;
+  background-color: var(--success-surface, rgba(22, 163, 74, 0.1)) !important;
+  color: var(--success-main, #15803d) !important;
+  border: 1px solid var(--success-border, rgba(22, 163, 74, 0.25)) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
 }

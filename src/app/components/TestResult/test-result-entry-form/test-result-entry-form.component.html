@@ -1,141 +1,119 @@
 <div class="test-result-container p-0 m-0 w-100">
 
   <!-- ================================================================ -->
-  <!-- 1. CLEAN CASE BAR — White Header with Chips                      -->
+  <!-- 1. COMPACT CONSOLIDATED HEADER (Case, Sample, Meta & Tabs)       -->
   <!-- ================================================================ -->
-  <div class="casebar" *ngIf="!isInline">
-    <button class="back" type="button" (click)="cancel()" title="Back to List">← Back</button>
-    <div class="case-title">Test Result Entry</div>
-    <span class="chip font-monospace" *ngIf="inward?.caseNo">{{ inward.caseNo }}</span>
-    <span class="chip font-monospace" *ngIf="sample?.sampleNo">{{ sample.sampleNo }}</span>
-    <span class="chip status" *ngIf="sample?.sampleStatus">{{ sample.sampleStatus }}</span>
-    <div class="grow"></div>
-    <span class="chip" *ngIf="inward?.customerName" [title]="inward.customerName">{{ inward.customerName }}</span>
-    <span class="chip" title="Planned specimen quantity">
-      <i class="bi bi-stack me-1 text-danger"></i>{{ getActivePlannedQuantity() }} {{ getActivePlannedQuantity() === 1 ?
-      'Specimen' : 'Specimens' }}
-    </span>
+  <div class="compact-casebar" *ngIf="!isInline">
+    <!-- Left: Back, Title, Case/Sample Chips, Status -->
+    <div class="casebar-left">
+      <button class="casebar-back-btn" type="button" (click)="cancel()" title="Back to List">← Back</button>
+      <span class="casebar-title">Test Result Entry</span>
+      <span class="badge bg-light text-dark border font-monospace" *ngIf="inward?.caseNo">{{ inward.caseNo }}</span>
+      <span class="badge bg-light text-dark border font-monospace" *ngIf="sample?.sampleNo">{{ sample.sampleNo }}</span>
+      <span class="badge font-monospace" *ngIf="sample?.sampleStatus" [ngClass]="getSampleStatusBadgeClass(sample.sampleStatus)">
+        {{ sample.sampleStatus }}
+      </span>
+    </div>
+
+    <!-- Center: Horizontal Metadata Strip -->
+    <div class="casebar-meta">
+      <span>Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
+      <span class="casebar-meta-sep">|</span>
+      <span *ngIf="inward?.poNo">PO: <strong>{{ inward.poNo }}</strong><span class="casebar-meta-sep ms-2 me-0">|</span></span>
+      <span>Material: <strong>{{ sample?.material || sample?.productMasterName || 'Structural Steel' }}</strong></span>
+      <span class="casebar-meta-sep">|</span>
+      <span>Class: <strong>{{ sample?.metalClassification || 'Not specified' }}</strong></span>
+      <span class="casebar-meta-sep">|</span>
+      <span>Size: <strong>{{ sample?.productSizeFormatted || '—' }}</strong></span>
+      <span class="casebar-meta-sep" *ngIf="sample?.batchNo || sample?.heatNo">|</span>
+      <span *ngIf="sample?.batchNo || sample?.heatNo">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
+      <span class="casebar-meta-sep">|</span>
+      <span>Received: <strong>{{ inward?.receivedOn || '—' }}</strong></span>
+    </div>
+
+    <!-- Right: Integrated Workflow Tabs -->
+    <div class="casebar-right" *ngIf="plans.length > 0">
+      <button type="button" class="tab-compact" [class.active]="activeTab === 'execution'" (click)="switchTab('execution')">
+        <span>1. Execution ({{ getActiveTestGroup()?.get('parameters')?.value?.length || plans[activePlanIndex]?.tests?.[0]?.parameters?.length || 0 }})</span>
+      </button>
+      <button type="button" class="tab-compact" [class.active]="activeTab === 'nabl_audit'" (click)="switchTab('nabl_audit')">
+        <span>2. Case Dossier &amp; NABL QA</span>
+      </button>
+    </div>
   </div>
 
   <!-- ================================================================ -->
-  <!-- 2. MATERIAL METADATA BAR                                         -->
+  <!-- 2. COMPACT TEST STRIP & CONTROLS TOOLBAR                         -->
   <!-- ================================================================ -->
-  <div class="materialbar flex-wrap gap-3">
-    <span>Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
-    <span *ngIf="inward?.poNo">PO / Ref: <strong>{{ inward.poNo }}</strong></span>
-    <span>Material: <strong>{{ sample?.material || sample?.productMasterName || 'Structural Steel' }}</strong></span>
-    <span>Class: <strong>{{ sample?.metalClassification || 'Not specified' }}</strong></span>
-    <span>Size: <strong>{{ sample?.productSizeFormatted || 'Not specified' }}</strong></span>
-    <span *ngIf="sample?.batchNo || sample?.heatNo">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
-    <span *ngIf="sample?.heatTreatment">Heat Treatment: <strong>{{ sample.heatTreatment }}</strong></span>
-    <span>Received: <strong>{{ inward?.receivedOn || '—' }}</strong></span>
-  </div>
-
-  <!-- ================================================================ -->
-  <!-- 3. SELECTED TESTS STRIP & EXECUTION PROFILE                      -->
-  <!-- ================================================================ -->
-  <div class="teststrip">
-    <span class="testlabel">Selected tests</span>
-    <button *ngFor="let plan of plans; let p = index" type="button" class="testpill"
-      [class.active]="activePlanIndex === p" (click)="selectPlanTab(p)">
-      <span>{{ plan.tests?.[0]?.name || plan.type }}</span>
-      <small>{{ plan.tests?.[0]?.status || 'In Progress' }}</small>
-    </button>
-
-    <div class="spacer"></div>
-
-    <!-- Execution Layout Selector (Temp Feature for Testing & Rendering) -->
-    <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1 me-2">
-      <span class="text-xxs fw-semibold text-secondary">
-        <i class="bi bi-layout-wtf text-danger me-1"></i>Layout:
-      </span>
-      <select class="form-select form-select-xs bg-white text-dark fw-semibold layout-template-select"
-        [ngModel]="selectedLayoutTemplateId" (ngModelChange)="onLayoutTemplateSelect($event)">
-        <option [ngValue]="null">Auto: {{ currentTestLayout ? currentTestLayout.layoutName : 'By Test Hierarchy' }}
-        </option>
-        <optgroup label="Recommended Layouts" *ngIf="getAvailableLayoutTemplatesForActiveTest().length > 0">
-          <option *ngFor="let tpl of getAvailableLayoutTemplatesForActiveTest()" [ngValue]="tpl.id">
-            {{ tpl.layoutName }} ({{ tpl.isGlobalDefault ? 'Global' : (tpl.laboratoryTestName || tpl.layoutCode) }})
-          </option>
-        </optgroup>
-        <optgroup label="Other Available Layouts" *ngIf="getOtherLayoutTemplatesForActiveTest().length > 0">
-          <option *ngFor="let tpl of getOtherLayoutTemplatesForActiveTest()" [ngValue]="tpl.id">
-            {{ tpl.layoutName }} ({{ tpl.laboratoryTestName || tpl.layoutCode }})
-          </option>
-        </optgroup>
-        <option [ngValue]="-1">Standard Layout (No Template)</option>
-      </select>
-    </div>
-
-    <!-- Specimen Stepper -->
-    <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1">
-      <span class="text-xxs fw-semibold text-secondary">
-        <i class="bi bi-stack me-1 text-danger"></i>Spm:
-      </span>
-      <button type="button" class="spm-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
-        [disabled]="isViewMode || getActiveSpecimenCount() <= 1" title="Decrease specimen count">
-        <i class="bi bi-dash"></i>
+  <div class="compact-teststrip" *ngIf="plans.length > 0">
+    <!-- Left: Selected Tests Pills -->
+    <div class="teststrip-left">
+      <span class="text-secondary fw-semibold text-xxs">Selected Tests:</span>
+      <button *ngFor="let plan of plans; let p = index" type="button" class="testpill-compact"
+        [class.active]="activePlanIndex === p" (click)="selectPlanTab(p)">
+        <span>{{ plan.tests?.[0]?.name || plan.type }}</span>
+        <small class="text-muted ms-1">({{ plan.tests?.[0]?.status || 'In Progress' }})</small>
       </button>
-      <input type="number" class="form-control form-control-sm text-center fw-bold text-danger specimen-count-input"
-        [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="isViewMode"
-        (change)="onWorkbenchSpecimenInputChange($event)" />
-      <button type="button" class="spm-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
-        [disabled]="isViewMode || getActiveSpecimenCount() >= 20" title="Increase specimen count">
-        <i class="bi bi-plus"></i>
-      </button>
-      <span class="badge bg-white text-muted border text-xxs" title="Planned quantity">
-        Plan: {{ getActivePlannedQuantity() }}
-      </span>
     </div>
 
-    <!-- Execution Progress Metrics -->
-    <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1"
-      *ngIf="getExecutionMetrics() as metrics">
-      <span class="badge text-xxs font-monospace"
-        [ngClass]="metrics.entered === metrics.total && metrics.total > 0 ? 'bg-success text-white' : 'bg-primary-subtle text-primary border border-primary-subtle'">
-        {{ metrics.entered }}/{{ metrics.total }}
-      </span>
-      <span class="badge bg-danger text-white text-xxs font-monospace" *ngIf="metrics.fail > 0">
-        <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ metrics.fail }} Fail
-      </span>
-    </div>
+    <!-- Right: Layout Selector, Specimen Stepper, Metrics, Studio Link -->
+    <div class="teststrip-right">
+      <!-- Layout Searchable Dropdown -->
+      <div class="d-flex align-items-center gap-1">
+        <span class="text-xxs fw-semibold text-secondary">Layout:</span>
+        <div class="compact-layout-dropdown">
+          <app-searchable-dropdown
+            [placeholder]="'Select Layout...'"
+            [labelName]="'Layout'"
+            [fetchDataFn]="fetchLayoutTemplates"
+            [selectedItem]="selectedLayoutItem"
+            (itemSelected)="onLayoutItemSelected($event)"
+            [hideLabel]="true"
+            [smallInput]="true">
+          </app-searchable-dropdown>
+        </div>
+      </div>
 
-    <!-- Studio Button -->
-    <a *ngIf="currentTestLayout" class="btn small softred ms-1 text-nowrap text-decoration-none"
-      [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }">
-      <i class="bi bi-grid-3x3-gap me-1"></i><span>Studio</span>
-    </a>
+      <!-- Specimen Stepper -->
+      <div class="d-flex align-items-center gap-1">
+        <span class="text-xxs fw-semibold text-secondary">Spm:</span>
+        <div class="spm-stepper-compact">
+          <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
+            [disabled]="isViewMode || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
+          <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="isViewMode"
+            (change)="onWorkbenchSpecimenInputChange($event)" />
+          <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
+            [disabled]="isViewMode || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
+        </div>
+        <span class="spm-plan-badge">Plan: {{ getActivePlannedQuantity() }}</span>
+      </div>
+
+      <!-- Progress Metrics Badge -->
+      <div *ngIf="getExecutionMetrics() as metrics" class="d-flex align-items-center gap-1">
+        <span class="badge font-monospace text-xxs"
+          [ngClass]="metrics.entered === metrics.total && metrics.total > 0 ? 'bg-success text-white' : 'bg-secondary text-white'">
+          {{ metrics.entered }}/{{ metrics.total }}
+        </span>
+        <span class="badge bg-danger text-white font-monospace text-xxs" *ngIf="metrics.fail > 0">{{ metrics.fail }} Fail</span>
+      </div>
+
+      <!-- Studio Button -->
+      <a *ngIf="currentTestLayout" class="btn btn-xs btn-outline-danger py-0 px-2 font-semibold text-xxs text-decoration-none"
+        [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }">
+        <span>Studio</span>
+      </a>
+    </div>
   </div>
 
   <!-- Empty State Alert if no plans -->
-  <div class="alert alert-warning d-flex align-items-center gap-2 my-1 shadow-sm p-2"
+  <div class="alert alert-warning d-flex align-items-center gap-2 m-2 p-2 shadow-sm"
     *ngIf="payloadLoaded && (!plans || plans.length === 0)">
-    <i class="bi bi-exclamation-triangle-fill fs-6 text-warning"></i>
     <div class="small">
       <strong>No test plans found for this sample.</strong>
       <span class="text-muted"> Create a sample plan first — no test records are available.</span>
     </div>
   </div>
 
-  <!-- ================================================================ -->
-  <!-- 4. WORKFLOW STEP TABS                                            -->
-  <!-- ================================================================ -->
-  <div class="tabs" role="tablist" *ngIf="plans.length > 0">
-    <button type="button" class="tab" [class.active]="activeTab === 'execution'" (click)="switchTab('execution')"
-      data-step="1">
-      <i class="bi bi-clipboard-data me-1.5 text-danger"></i>
-      <span>1. Test &amp; Execution Workspace</span>
-      <span class="count">{{ getActiveTestGroup()?.get('parameters')?.value?.length ||
-        plans[activePlanIndex]?.tests?.[0]?.parameters?.length || 0 }}</span>
-    </button>
-    <button type="button" class="tab" [class.active]="activeTab === 'nabl_audit'" (click)="switchTab('nabl_audit')"
-      data-step="2">
-      <i class="bi bi-shield-check me-1.5 text-success"></i>
-      <span>2. NABL QA &amp; Audit</span>
-    </button>
-  </div>
-
-  <!-- ================================================================ -->
   <!-- 5. MAIN FORM CONTAINER                                           -->
   <!-- ================================================================ -->
   <div [formGroup]="resultForm" *ngIf="resultForm" class="p-2 pb-5">
@@ -151,7 +129,6 @@
               <div class="pagehead mb-2">
                 <div>
                   <h2 class="d-flex align-items-center gap-2">
-                    <i class="bi bi-clipboard-data text-danger"></i>
                     <span>Test &amp; Execution Workspace</span>
                   </h2>
                   <div class="sub">Record specimen observations, live derived calculations, and test evidence under ISO/IEC 17025.</div>
@@ -161,11 +138,11 @@
                     plans[p].tests[t]?.status || 'In Progress' }}</span>
                   <button *ngIf="canStartTest(plans[p].tests[t]?.status)" type="button" class="btn primary small"
                     (click)="startTest(p, t)" [disabled]="isViewMode">
-                    <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
+                    <span>Start Test</span>
                   </button>
                   <button *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)" type="button" class="btn btn-lims btn-lims-print small"
                     (click)="openRawDataSheetModal(p, t)" title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
-                    <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
+                    <span>Raw Data Sheet</span>
                   </button>
                 </div>
               </div>
@@ -175,13 +152,122 @@
                 <!-- LEFT COLUMN (32-35% on desktop): Fixed Data-Driven Sections -->
                 <div class="col-12 col-xl-4 col-lg-5 d-flex flex-column gap-2">
 
-                  <!-- Card 1: Live Calculations & Result Verdicts (Promoted to Top) -->
+                  <!-- CARD 1: MATERIAL SPECIFICATION & CONDITION ENGINE -->
+                  <article class="card p-2 border-0 shadow-sm lims-card spec-condition-card">
+                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="fs-7 fw-semibold text-danger m-0">Specification Conditions</h3>
+                      </div>
+                      <div class="d-flex align-items-center gap-1">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs"
+                          *ngIf="matchedConditionLinesCount[plans[p].tests[t]?.headerId]">
+                          {{ matchedConditionLinesCount[plans[p].tests[t]?.headerId] }} Matched
+                        </span>
+                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 text-xxs"
+                          (click)="resetConditionFilters(p, t)" [disabled]="isViewMode" title="Reset all specification conditions">
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                    <div class="cardbody p-1">
+                      <!-- Active Spec Grade Banner -->
+                      <div class="spec-context-banner mb-2">
+                        <div class="d-flex align-items-center gap-1.5 text-truncate">
+                          <span class="text-secondary text-xxs">Grade:</span>
+                          <strong class="text-dark">{{ plans[p].tests[t]?.specification || plans[p].specification || 'Standard Spec Grade' }}</strong>
+                        </div>
+                        <span class="badge bg-secondary-subtle text-secondary text-xxs font-monospace">Line Filter</span>
+                      </div>
+
+                      <!-- 2-Column High-Density Grid for Condition Selectors -->
+                      <div class="spec-condition-grid">
+                        <!-- 1. Dimensional Factor (Size Band) -->
+                        <div class="spec-cond-item">
+                          <label class="spec-cond-label">Dimensional Factor</label>
+                          <app-searchable-dropdown
+                            [placeholder]="'All Sizes / Default'"
+                            [labelName]="'Dimensional Factor'"
+                            [fetchDataFn]="fetchDimensionalFactors"
+                            [selectedItem]="getDimensionalFactorItem(plans[p].tests[t]?.headerId)"
+                            (itemSelected)="onDimensionalFactorSelected(p, t, $event)"
+                            [hideLabel]="true"
+                            [smallInput]="true"
+                            [isDisabled]="isViewMode">
+                          </app-searchable-dropdown>
+                        </div>
+
+                        <!-- 2. Heat Treatment -->
+                        <div class="spec-cond-item">
+                          <label class="spec-cond-label">Heat Treatment</label>
+                          <app-searchable-dropdown
+                            [placeholder]="'All Heat Treatments'"
+                            [labelName]="'Heat Treatment'"
+                            [fetchDataFn]="fetchHeatTreatments"
+                            [selectedItem]="getHeatTreatmentItem(plans[p].tests[t]?.headerId)"
+                            (itemSelected)="onHeatTreatmentSelected(p, t, $event)"
+                            [hideLabel]="true"
+                            [smallInput]="true"
+                            [isDisabled]="isViewMode">
+                          </app-searchable-dropdown>
+                        </div>
+
+                        <!-- 3. Product Condition 1 -->
+                        <div class="spec-cond-item">
+                          <label class="spec-cond-label">Condition 1</label>
+                          <app-searchable-dropdown
+                            [placeholder]="'All Conditions'"
+                            [labelName]="'Condition 1'"
+                            [fetchDataFn]="fetchProductConditions1"
+                            [selectedItem]="getProductCondition1Item(plans[p].tests[t]?.headerId)"
+                            (itemSelected)="onProductCondition1Selected(p, t, $event)"
+                            [hideLabel]="true"
+                            [smallInput]="true"
+                            [isDisabled]="isViewMode">
+                          </app-searchable-dropdown>
+                        </div>
+
+                        <!-- 4. Product Condition 2 -->
+                        <div class="spec-cond-item">
+                          <label class="spec-cond-label">Condition 2</label>
+                          <app-searchable-dropdown
+                            [placeholder]="'All Conditions'"
+                            [labelName]="'Condition 2'"
+                            [fetchDataFn]="fetchProductConditions2"
+                            [selectedItem]="getProductCondition2Item(plans[p].tests[t]?.headerId)"
+                            (itemSelected)="onProductCondition2Selected(p, t, $event)"
+                            [hideLabel]="true"
+                            [smallInput]="true"
+                            [isDisabled]="isViewMode">
+                          </app-searchable-dropdown>
+                        </div>
+
+                        <!-- 5. Specimen Orientation (Spans full width) -->
+                        <div class="spec-cond-item spec-cond-item-full">
+                          <label class="spec-cond-label">Specimen Orientation</label>
+                          <app-searchable-dropdown
+                            [placeholder]="'All Orientations (L / T / Z)'"
+                            [labelName]="'Specimen Orientation'"
+                            [fetchDataFn]="fetchSpecimenOrientations"
+                            [selectedItem]="getSpecimenOrientationItem(plans[p].tests[t]?.headerId)"
+                            (itemSelected)="onSpecimenOrientationSelected(p, t, $event)"
+                            [hideLabel]="true"
+                            [smallInput]="true"
+                            [isDisabled]="isViewMode">
+                          </app-searchable-dropdown>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <!-- CARD 2: LIVE CALCULATIONS & RESULT VERDICTS -->
                   <article class="card p-2 border-0 shadow-sm lims-card">
                     <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
-                      <h3 class="fs-7 fw-semibold text-danger m-0">Live Calculations &amp; Verdicts</h3>
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="fs-7 fw-semibold text-danger m-0">Live Calculations &amp; Verdicts</h3>
+                      </div>
                       <button type="button" class="btn btn-xs btn-lims btn-lims-add py-0 px-2 text-xxs"
                               (click)="calculateParameters(p, t)" [disabled]="isViewMode" title="Recalculate live formulas">
-                        <i class="bi bi-arrow-repeat me-1"></i><span>Recalculate</span>
+                        <span>Recalculate</span>
                       </button>
                     </div>
                     <div class="cardbody p-1">
@@ -225,46 +311,62 @@
                     </div>
                   </article>
 
-                  <!-- Card 2: Specimen Dimensions (Compact Geometric Strip) -->
+                  <!-- CARD 3: EXECUTION TRACEABILITY & ENVIRONMENTAL COMPLIANCE -->
                   <article class="card p-2 border-0 shadow-sm lims-card">
                     <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
-                      <h3 class="fs-7 fw-semibold text-danger m-0">Specimen Dimensions</h3>
-                      <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Specimen 1</span>
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="fs-7 fw-semibold text-danger m-0">Execution Traceability</h3>
+                      </div>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs">ISO 17025 Cl 7.5</span>
                     </div>
                     <div class="cardbody p-1">
-                      <div class="row g-1">
-                        <div class="col-3">
-                          <div class="dim-tile">
-                            <span class="dim-label">Thickness</span>
-                            <span class="dim-value">{{ getSpecimenDimensionValue('thickness', p, t) }} <small class="text-muted">mm</small></span>
-                          </div>
+                      <div class="trace-grid">
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Testing Equipment</span>
+                          <span class="trace-val text-dark text-truncate" [title]="selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM'">
+                            {{ selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM' }}
+                          </span>
+                          <span class="badge mt-0.5 text-xxs"
+                            [ngClass]="isEquipmentCalibrated(selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]) ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+                            {{ getEquipmentCalibrationText(selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]) }}
+                          </span>
                         </div>
-                        <div class="col-3">
-                          <div class="dim-tile">
-                            <span class="dim-label">Width</span>
-                            <span class="dim-value">{{ getSpecimenDimensionValue('width', p, t) }} <small class="text-muted">mm</small></span>
+                        <div class="trace-cell">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <span class="trace-lbl">Lab Environment</span>
+                            <button type="button" class="btn btn-xs py-0 px-1 text-danger border-0 bg-transparent" (click)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])">
+                              <u>{{ getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}</u>
+                            </button>
                           </div>
+                          <span class="trace-val text-dark">
+                            {{ getEnvironmentDisplay(plans[p].tests[t].headerId) || '23.0 °C / 50.0% RH' }}
+                          </span>
+                          <span class="text-muted text-xxs d-block" *ngIf="environmentMap[plans[p].tests[t]?.headerId]?.labRoomName">
+                            Room: {{ environmentMap[plans[p].tests[t]?.headerId]?.labRoomName }}
+                          </span>
                         </div>
-                        <div class="col-3">
-                          <div class="dim-tile">
-                            <span class="dim-label">Gauge L₀</span>
-                            <span class="dim-value">{{ getSpecimenDimensionValue('gaugeLength', p, t) }} <small class="text-muted">mm</small></span>
-                          </div>
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Performer / Analyst</span>
+                          <span class="trace-val text-dark">
+                            {{ testTimingMap[plans[p].tests[t]?.headerId]?.performedByName || 'System Admin' }}
+                          </span>
                         </div>
-                        <div class="col-3">
-                          <div class="dim-tile">
-                            <span class="dim-label">Final Lᵤ</span>
-                            <span class="dim-value">{{ getSpecimenDimensionValue('finalLength', p, t) }} <small class="text-muted">mm</small></span>
-                          </div>
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Test Method Standard</span>
+                          <span class="trace-val text-dark text-truncate" [title]="plans[p].methodName">
+                            {{ plans[p].methodName || 'ASTM A370:2026' }}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </article>
 
-                  <!-- Card 3: Attachments & Evidence -->
+                  <!-- CARD 4: ATTACHMENTS & EVIDENCE -->
                   <article class="card p-2 border-0 shadow-sm lims-card">
                     <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
-                      <h3 class="fs-7 fw-semibold text-danger m-0">Attachments &amp; Evidence</h3>
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="fs-7 fw-semibold text-danger m-0">Attachments &amp; Evidence</h3>
+                      </div>
                       <label *ngIf="!isViewMode" class="btn btn-xs btn-lims btn-lims-add cursor-pointer m-0 py-0 px-2 text-xxs">
                         <i class="bi bi-plus-lg me-1"></i><span>Add</span>
                         <input type="file" accept="image/*" multiple class="d-none"
@@ -285,7 +387,7 @@
                       <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId]?.length" class="mb-1 p-1 bg-light rounded border">
                         <div class="d-flex gap-1 align-items-center flex-wrap">
                           <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let sfIdx = index" class="img-staged-item">
-                            <img [src]="sf.preview" (click)="openImage(sf.preview)" class="rounded border" style="max-height: 36px;" />
+                            <img [src]="sf.preview" (click)="openImage(sf.preview)" class="img-staged-thumb" />
                           </div>
                           <button type="button" class="btn btn-xs btn-lims btn-lims-save py-0 px-1.5 text-xxs"
                             (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
@@ -296,56 +398,13 @@
 
                       <!-- Uploaded Images Gallery -->
                       <div *ngIf="testImagesMap[plans[p].tests[t]?.headerId]?.length" class="d-flex flex-wrap gap-1">
-                        <div *ngFor="let img of testImagesMap[plans[p].tests[t]?.headerId]" class="img-gallery-item position-relative border rounded overflow-hidden"
-                          style="width: 50px; height: 50px; cursor: pointer;"
+                        <div *ngFor="let img of testImagesMap[plans[p].tests[t]?.headerId]" class="img-gallery-thumb position-relative border rounded overflow-hidden"
                           (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)">
-                          <img [src]="baseUrl + (img.filePath || img.fileUrl || img.thumbnailUrl)" style="width: 100%; height: 100%; object-fit: cover;" />
+                          <img [src]="baseUrl + (img.filePath || img.fileUrl || img.thumbnailUrl)" class="img-gallery-img" />
                         </div>
                       </div>
                       <div *ngIf="!testImagesMap[plans[p].tests[t]?.headerId]?.length && !selectedFilesMap[plans[p].tests[t].headerId]?.length" class="text-muted text-center text-xxs py-0.5">
                         No test images attached yet.
-                      </div>
-                    </div>
-                  </article>
-
-                  <!-- Card 4: Execution Traceability Context (Non-Redundant Metadata) -->
-                  <article class="card p-2 border-0 shadow-sm lims-card">
-                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
-                      <h3 class="fs-7 fw-semibold text-danger m-0">Execution Traceability</h3>
-                      <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs">ISO 17025 Cl 7.5</span>
-                    </div>
-                    <div class="cardbody p-1">
-                      <div class="trace-grid">
-                        <div class="trace-cell">
-                          <span class="trace-lbl">Testing Equipment</span>
-                          <span class="trace-val text-dark" [title]="selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM'">
-                            {{ selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM' }}
-                          </span>
-                          <span class="badge bg-success-subtle text-success border border-success-subtle mt-0.5 text-xxs">Valid (10-Jun-2027)</span>
-                        </div>
-                        <div class="trace-cell">
-                          <div class="d-flex justify-content-between align-items-center">
-                            <span class="trace-lbl">Environment</span>
-                            <button type="button" class="btn btn-xs py-0 px-1 text-danger border-0 bg-transparent" (click)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])">
-                              <u>{{ getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}</u>
-                            </button>
-                          </div>
-                          <span class="trace-val text-dark">
-                            {{ getEnvironmentDisplay(plans[p].tests[t].headerId) || '23.0 °C / 50.0% RH' }}
-                          </span>
-                        </div>
-                        <div class="trace-cell">
-                          <span class="trace-lbl">Performer / Analyst</span>
-                          <span class="trace-val text-dark">
-                            {{ testTimingMap[plans[p].tests[t]?.headerId]?.performedByName || 'System Admin' }}
-                          </span>
-                        </div>
-                        <div class="trace-cell">
-                          <span class="trace-lbl">Test Method Standard</span>
-                          <span class="trace-val text-dark" [title]="plans[p].methodName">
-                            {{ plans[p].methodName || 'ASTM A370:2026' }}
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </article>
@@ -390,18 +449,225 @@
             <!-- TAB 2: NABL QA & AUDIT (Static Structural Design)         -->
             <!-- ========================================================== -->
             <div class="tab-pane-content" *ngIf="activeTab === 'nabl_audit'">
+
+              <!-- 1. Dossier Pagehead -->
               <div class="pagehead mb-2">
                 <div>
                   <h2 class="d-flex align-items-center gap-2">
-                    <i class="bi bi-shield-check text-success"></i>
-                    <span>ISO/IEC 17025 &amp; NABL Accreditation QA</span>
+                    <span>Case Details &amp; Quality Dossier</span>
                   </h2>
-                  <div class="sub">Accreditation scope verification, Measurement Uncertainty (MOU), Decision Rule conformity, and complete audit history trail.</div>
+                  <div class="sub">Comprehensive case registration, sample characterization, planned tests execution matrix, and ISO/IEC 17025 accreditation compliance.</div>
                 </div>
-                <span class="state">NABL 133 Compliance View</span>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-light text-dark border font-monospace" *ngIf="inward?.caseNo">Case: {{ inward.caseNo }}</span>
+                  <span class="badge bg-light text-dark border font-monospace" *ngIf="sample?.sampleNo">Sample: {{ sample.sampleNo }}</span>
+                  <span class="badge font-monospace" *ngIf="sample?.sampleStatus" [ngClass]="getSampleStatusBadgeClass(sample.sampleStatus)">
+                    {{ sample.sampleStatus }}
+                  </span>
+                  <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 text-xxs" (click)="switchTab('execution')">
+                    ← Back to Workspace
+                  </button>
+                </div>
               </div>
 
-              <!-- Summary Grid (4 Metrics) -->
+              <!-- 2. Dual Case Registration & Sample Material Cards -->
+              <div class="dossier-grid mb-2">
+                <!-- CARD A: CASE & CUSTOMER REGISTRATION -->
+                <article class="dossier-card">
+                  <div class="dossier-cardhead">
+                    <h3>Case &amp; Customer Registration</h3>
+                    <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 17025 Cl 7.1</span>
+                  </div>
+                  <div class="case-meta-grid">
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Case Number</span>
+                      <span class="case-meta-val font-monospace fw-bold text-dark">{{ inward?.caseNo || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Customer Name</span>
+                      <span class="case-meta-val fw-bold text-dark text-truncate" [title]="inward?.customerName">{{ inward?.customerName || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Purchase Order / Ref</span>
+                      <span class="case-meta-val font-monospace">{{ inward?.poNo || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Receipt &amp; Inward Date</span>
+                      <span class="case-meta-val">{{ inward?.receivedOn || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Statement of Conformity</span>
+                      <span class="case-meta-val">{{ inward?.statementOfConformity || 'Standard Pass/Fail requested' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Agreed Decision Rule</span>
+                      <span class="case-meta-val">{{ inward?.decisionRule || 'Simple Acceptance Binary Rule (w=0)' }}</span>
+                    </div>
+                    <div class="case-meta-item case-meta-item-full">
+                      <span class="case-meta-label">Sample Receipt Condition &amp; Notes</span>
+                      <span class="case-meta-val text-muted fst-italic">{{ inward?.sampleReceiptNote || 'Received intact in good condition with identification mark.' }}</span>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- CARD B: SAMPLE MATERIAL & TECHNICAL CHARACTERIZATION -->
+                <article class="dossier-card">
+                  <div class="dossier-cardhead">
+                    <h3>Sample Material &amp; Specification</h3>
+                    <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Sample Traceability</span>
+                  </div>
+                  <div class="case-meta-grid">
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Sample Registration ID</span>
+                      <span class="case-meta-val font-monospace fw-bold text-danger">{{ sample?.sampleNo || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Material / Grade</span>
+                      <span class="case-meta-val fw-bold text-dark text-truncate" [title]="sample?.productMasterName || sample?.material">
+                        {{ sample?.productMasterName || sample?.material || 'Structural Steel' }}
+                      </span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Metal Classification</span>
+                      <span class="case-meta-val">{{ sample?.metalClassification || 'Not specified' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Product Form / Section</span>
+                      <span class="case-meta-val">{{ sample?.productSizeFormatted || sample?.productSizeDescription || sample?.productForm || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Heat / Cast Number</span>
+                      <span class="case-meta-val font-monospace fw-bold">{{ sample?.heatNo || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Batch / Lot Number</span>
+                      <span class="case-meta-val font-monospace">{{ sample?.batchNo || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Stamped As / Marking</span>
+                      <span class="case-meta-val font-monospace">{{ sample?.stampedAs || sample?.details || '—' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Thermal Condition / Heat Treatment</span>
+                      <span class="case-meta-val">{{ sample?.heatTreatment || 'As Received / Standard' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Specimen Orientation</span>
+                      <span class="case-meta-val">{{ sample?.specimenOrientation || 'Longitudinal (L)' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Sampling Protocol</span>
+                      <span class="case-meta-val text-truncate" [title]="sample?.sampling">{{ sample?.sampling || 'Customer Supplied (As Received)' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Specimen Preparation</span>
+                      <span class="case-meta-val">{{ sample?.specimenPreparation || 'Direct Testing (No Prep)' }}</span>
+                    </div>
+                    <div class="case-meta-item">
+                      <span class="case-meta-label">Report Format Profile</span>
+                      <span class="case-meta-val text-truncate" [title]="sample?.reportFormatName">{{ sample?.reportFormatName || 'Standard Laboratory Report' }}</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+
+              <!-- 3. As-Received Physical Dimensions & Geometric Profile Strip -->
+              <article class="dossier-card mb-2">
+                <div class="dossier-cardhead">
+                  <h3>As-Received Physical Dimensions &amp; Geometric Profile</h3>
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Dimensional Verification</span>
+                </div>
+                <div class="geom-metric-strip">
+                  <div class="geom-cell">
+                    <span class="geom-label">Diameter (d)</span>
+                    <span class="geom-val">{{ sample?.diameter ? sample.diameter + ' mm' : '—' }}</span>
+                  </div>
+                  <div class="geom-cell">
+                    <span class="geom-label">Thickness (t)</span>
+                    <span class="geom-val">{{ sample?.thickness ? sample.thickness + ' mm' : '—' }}</span>
+                  </div>
+                  <div class="geom-cell">
+                    <span class="geom-label">Width (w)</span>
+                    <span class="geom-val">{{ sample?.width ? sample.width + ' mm' : '—' }}</span>
+                  </div>
+                  <div class="geom-cell">
+                    <span class="geom-label">Length (L)</span>
+                    <span class="geom-val">{{ sample?.length ? sample.length + ' mm' : '—' }}</span>
+                  </div>
+                  <div class="geom-cell">
+                    <span class="geom-label">Cross-Section Area (S₀)</span>
+                    <span class="geom-val">{{ sample?.crossSectionArea ? sample.crossSectionArea + ' mm²' : '—' }}</span>
+                  </div>
+                  <div class="geom-cell">
+                    <span class="geom-label">Gauge Length (L₀)</span>
+                    <span class="geom-val">{{ sample?.gaugeLength ? sample.gaugeLength + ' mm' : '—' }}</span>
+                  </div>
+                </div>
+              </article>
+
+              <!-- 4. Planned Tests & Laboratory Execution Matrix for this Case / Sample -->
+              <article class="dossier-card mb-2">
+                <div class="dossier-cardhead">
+                  <div class="d-flex align-items-center gap-2">
+                    <h3>Planned Tests &amp; Laboratory Execution Matrix</h3>
+                    <span class="badge bg-light text-dark border font-monospace text-xxs">{{ getAllCaseTestsList().length }} Tests</span>
+                  </div>
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Case Scope</span>
+                </div>
+                <div class="table-responsive">
+                  <table class="case-tests-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 36px;">#</th>
+                        <th>Laboratory Test / Discipline</th>
+                        <th>Test Method Standard</th>
+                        <th>Specification Grade</th>
+                        <th style="width: 70px; text-align: center;">Qty</th>
+                        <th style="width: 80px; text-align: center;">Params</th>
+                        <th style="width: 110px;">Status</th>
+                        <th style="width: 95px; text-align: center;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let ct of getAllCaseTestsList(); let r = index" [class.table-active]="activePlanIndex === ct.planIndex">
+                        <td class="font-monospace text-muted">{{ r + 1 }}</td>
+                        <td>
+                          <strong>{{ ct.testName }}</strong>
+                        </td>
+                        <td>
+                          <span class="text-secondary">{{ ct.methodName }}</span>
+                        </td>
+                        <td>
+                          <span class="text-dark">{{ ct.specification }}</span>
+                        </td>
+                        <td class="text-center">
+                          <span class="font-monospace fw-bold">{{ ct.quantity }}</span>
+                        </td>
+                        <td class="text-center">
+                          <span class="badge bg-light text-secondary border font-monospace text-xxs">{{ ct.parametersCount }}</span>
+                        </td>
+                        <td>
+                          <span class="badge font-monospace text-xxs" [ngClass]="getSampleStatusBadgeClass(ct.status)">
+                            {{ ct.status }}
+                          </span>
+                        </td>
+                        <td class="text-center">
+                          <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 text-xxs"
+                            (click)="selectTestFromCaseDossier(ct.planIndex, ct.testIndex)"
+                            title="Open this test in Execution Workspace">
+                            Open Test →
+                          </button>
+                        </td>
+                      </tr>
+                      <tr *ngIf="!getAllCaseTestsList().length">
+                        <td colspan="8" class="text-center py-2 text-muted">No planned tests found for this case.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <!-- 5. NABL Accreditation & Scope Verification Summary -->
               <div class="summarygrid mb-2">
                 <div class="metric">
                   <label>Total Parameters</label>
@@ -424,7 +690,7 @@
               </div>
 
               <!-- Scope Notice -->
-              <div class="notice sec-mb-12 mb-2">
+              <div class="notice mb-2">
                 <span>{{ hasAnyInScope(plans[p].tests[t].headerId) ? '✓' : '⚠' }}</span>
                 <div>
                   <strong *ngIf="hasAnyInScope(plans[p].tests[t].headerId)">Accredited Scope Verified</strong>
@@ -441,8 +707,8 @@
                 <a class="link ms-auto align-self-start" (click)="navigateToScope()">Open ISO Scope →</a>
               </div>
 
-              <!-- Consolidated NABL ISO/IEC 17025 Conformity Assessment & Result Verdict Panel -->
-              <div class="mb-3">
+              <!-- 6. Consolidated NABL ISO/IEC 17025 Conformity Assessment & Result Verdict Panel -->
+              <div class="mb-2">
                 <app-test-verdict-panel [plan]="plans[p]" [test]="plans[p].tests[t]"
                   [parametersFormArray]="getActiveParametersFormArray()"
                   [nablScopeData]="nablScopeMap[plans[p].tests[t]?.headerId] || []"
@@ -451,60 +717,57 @@
                 </app-test-verdict-panel>
               </div>
 
-              <!-- Parameter-wise Scope & Measurement Uncertainty Table -->
-              <article class="card mb-3 shadow-sm border-0 lims-card">
-                <div class="cardhead">
+              <!-- 7. Parameter-wise Scope & Measurement Uncertainty Table -->
+              <article class="dossier-card mb-2">
+                <div class="dossier-cardhead">
                   <h3>Parameter-wise Scope &amp; Measurement Uncertainty</h3>
-                  <span class="sub">Scope evaluation and uncertainty metadata</span>
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Scope &amp; MU Matrix</span>
                 </div>
-                <div class="tablewrap">
-                  <table class="data">
+                <div class="table-responsive">
+                  <table class="case-tests-table">
                     <thead>
                       <tr>
-                        <th>#</th>
+                        <th style="width: 36px;">#</th>
                         <th>Parameter</th>
-                        <th>Unit</th>
-                        <th>NABL Scope Status</th>
+                        <th style="width: 70px;">Unit</th>
+                        <th style="width: 120px;">NABL Scope Status</th>
                         <th>Measurement Uncertainty (U)</th>
-                        <th>Coverage Factor (k)</th>
+                        <th style="width: 140px;">Coverage Factor (k)</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr *ngFor="let param of plans[p].tests[t].parameters; let r = index">
-                        <td>{{ r + 1 }}</td>
+                        <td class="font-monospace text-muted">{{ r + 1 }}</td>
                         <td><strong>{{ param.parameterName }}</strong></td>
                         <td>{{ param.unit || '—' }}</td>
                         <td>
-                          <span class="badge"
-                            [ngClass]="getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope' ? 'pass' : 'scope'">
+                          <span class="badge font-monospace text-xxs"
+                            [ngClass]="getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope' ? 'bg-success text-white' : 'bg-secondary text-white'">
                             {{ getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope' ? 'In Scope' : 'Out of Scope' }}
                           </span>
                         </td>
                         <td>
-                          <span class="muted font-monospace">
+                          <span class="text-secondary font-monospace">
                             {{ param.expandedUncertainty ? '± ' + param.expandedUncertainty + ' ' + param.unit : 'As per MU Matrix' }}
                           </span>
                         </td>
                         <td>
-                          <span class="muted font-monospace">k = 2.0 (95.45% CL)</span>
+                          <span class="text-secondary font-monospace">k = 2.0 (95.45% CL)</span>
                         </td>
                       </tr>
                       <tr *ngIf="!plans[p].tests[t].parameters?.length">
-                        <td colspan="6" class="text-center py-3 muted">No parameters configured.</td>
+                        <td colspan="6" class="text-center py-2 text-muted">No parameters configured.</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </article>
 
-              <!-- Complete Chronological Audit Trail & Execution Timeline -->
-              <article class="card shadow-sm border-0 lims-card">
-                <div class="cardhead">
-                  <h3 class="d-flex align-items-center gap-1.5">
-                    <i class="bi bi-clock-history text-danger"></i>
-                    <span>Execution Timeline &amp; Audit Trail</span>
-                  </h3>
-                  <span class="state">ISO/IEC 17025 · Clause 7.5</span>
+              <!-- 8. Complete Chronological Audit Trail & Execution Timeline -->
+              <article class="dossier-card mb-2">
+                <div class="dossier-cardhead">
+                  <h3>Execution Timeline &amp; Audit Trail</h3>
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 17025 Cl 7.5</span>
                 </div>
                 <div class="cardbody p-2">
                   <div class="timeline">
@@ -584,7 +847,7 @@
                   <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
                 </button>
                 <button type="button" class="btn primary" (click)="goToNextTab()" *ngIf="activeTab === 'execution'">
-                  <span>Next: NABL QA &amp; Audit →</span>
+                  <span>Next: Case Details &amp; NABL QA →</span>
                 </button>
                 <button type="button" class="btn secondary" (click)="switchTab('execution')" *ngIf="activeTab === 'nabl_audit'">
                   <span>← Back to Workspace</span>

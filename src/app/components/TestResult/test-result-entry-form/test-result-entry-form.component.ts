@@ -6,8 +6,12 @@ import { ParameterService } from '../../../services/parameter.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { DimensionalFactorService } from '../../../services/dimensional-factor.service';
+import { HeatTreatmentService } from '../../../services/heat-treatment.service';
+import { ProductConditionService } from '../../../services/product-condition.service';
+import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { TestLayoutService } from '../../../services/test-layout.service';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
@@ -242,6 +246,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   selectedMethodParam: any = null;
   loadingMethodParams = false;
 
+  // Material Specification Condition Filter Engine
+  dimensionalFactorsList: any[] = [];
+  heatTreatmentsList: any[] = [];
+  productConditions1List: any[] = [];
+  productConditions2List: any[] = [];
+  specimenOrientationsList: any[] = [];
+  loadingConditions = false;
+  selectedConditionsMap: Record<number, {
+    dimensionalFactorID: number | null;
+    heatTreatmentID: number | null;
+    productConditionID1: number | null;
+    productConditionID2: number | null;
+    specimenOrientationID: number | null;
+  }> = {};
+  cachedGradeSpecLines: Record<number, any[]> = {};
+  matchedConditionLinesCount: Record<number, number> = {};
+
   constructor(
     private fb: FormBuilder,
     private testResultService: TestResultService,
@@ -249,6 +270,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     private equipmentService: EquipmentService,
     private testMethodService: TestMethodSpecificationService,
     private materialSpecService: MaterialSpecificationService,
+    private dimensionalFactorService: DimensionalFactorService,
+    private heatTreatmentService: HeatTreatmentService,
+    private productConditionService: ProductConditionService,
+    private specimenOrientationService: SpecimenOrientationService,
     private testLayoutService: TestLayoutService,
     private toastService: ToastService,
     private route: ActivatedRoute,
@@ -1141,6 +1166,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           }
           // Fetch environment data
           this.fetchEnvironmentData(test.headerId);
+          if (test.executionExtraJson) {
+            try {
+              const extra = typeof test.executionExtraJson === 'string' ? JSON.parse(test.executionExtraJson) : test.executionExtraJson;
+              if (extra?.selectedConditions) {
+                this.selectedConditionsMap[test.headerId] = extra.selectedConditions;
+              }
+            } catch (e) {}
+          }
         }
       });
     });
@@ -3323,7 +3356,25 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }
     // Avoid duplicates
     if (!this.selectedEquipmentMap[headerId].find((e: any) => e.id === selectedItem.id)) {
-      this.selectedEquipmentMap[headerId].push({ id: selectedItem.id, name: selectedItem.name });
+      this.selectedEquipmentMap[headerId].push({
+        id: selectedItem.id,
+        name: selectedItem.name,
+        calibrationRequired: selectedItem.calibrationRequired,
+        nextCalibrationDueDate: selectedItem.nextCalibrationDueDate
+      });
+      // Query full equipment details to check calibration validity
+      this.equipmentService.getEquipmentById(selectedItem.id).subscribe({
+        next: (eqDetails: any) => {
+          const item = this.selectedEquipmentMap[headerId]?.find((e: any) => e.id === selectedItem.id);
+          if (item && eqDetails) {
+            item.calibrationRequired = eqDetails.calibrationRequired;
+            item.nextCalibrationDueDate = eqDetails.nextCalibrationDueDate;
+            item.labRoomName = eqDetails.labRoom?.roomName || '';
+            this.cdr.markForCheck();
+          }
+        },
+        error: () => {}
+      });
     }
   }
 
@@ -4542,5 +4593,377 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     window.print();
   }
 
-}
 
+
+  // ================================================================
+  // Material Specification Condition Filter Engine
+  // ================================================================
+  loadConditionDropdowns(): void {
+    this.loadingConditions = true;
+    this.dimensionalFactorService.getDimensionalFactorDropdown('', 1, 100).subscribe({
+      next: (res: any) => { this.dimensionalFactorsList = res?.items || res?.data || res || []; },
+      error: () => {}
+    });
+    this.heatTreatmentService.getHeatTreatmentDropdown('', 1, 100).subscribe({
+      next: (res: any) => { this.heatTreatmentsList = res?.items || res?.data || res || []; },
+      error: () => {}
+    });
+    this.productConditionService.getProductConditionDropdown('', 1, 100).subscribe({
+      next: (res: any) => {
+        const items = res?.items || res?.data || res || [];
+        this.productConditions1List = items;
+        this.productConditions2List = items;
+      },
+      error: () => {}
+    });
+    this.specimenOrientationService.getSpecimenOrientationDropdown('', 1, 100).subscribe({
+      next: (res: any) => { this.specimenOrientationsList = res?.items || res?.data || res || []; },
+      error: () => {}
+    });
+  }
+
+  getConditionFilter(headerId: number) {
+    if (!this.selectedConditionsMap[headerId]) {
+      this.selectedConditionsMap[headerId] = {
+        dimensionalFactorID: null,
+        heatTreatmentID: null,
+        productConditionID1: null,
+        productConditionID2: null,
+        specimenOrientationID: null
+      };
+    }
+    return this.selectedConditionsMap[headerId];
+  }
+
+  isEquipmentCalibrated(equipment: any): boolean {
+    if (!equipment) return true;
+    if (equipment.calibrationRequired === false) return true;
+    const dueDate = equipment.nextCalibrationDueDate || equipment.nextCalibrationDate;
+    if (!dueDate) return true;
+    const due = new Date(dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return due >= today;
+  }
+
+  getEquipmentCalibrationText(equipment: any): string {
+    if (!equipment) return 'Verified';
+    if (equipment.calibrationRequired === false) return 'Not Required';
+    const dueDate = equipment.nextCalibrationDueDate || equipment.nextCalibrationDate;
+    if (!dueDate) return 'Valid (On File)';
+    const d = new Date(dueDate);
+    const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return this.isEquipmentCalibrated(equipment) ? `Valid (${dateStr})` : `EXPIRED (${dateStr})`;
+  }
+
+  onSpecificationConditionChanged(planIndex: number, testIndex: number): void {
+    const plan = this.plans[planIndex];
+    const test = plan?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+
+    const headerId = test.headerId;
+    const gradeId = Number(test.specification1 || test.specification2 || plan.specification1 || 0);
+    const filter = this.getConditionFilter(headerId);
+
+    const applyLines = (lines: any[]) => {
+      if (!lines || lines.length === 0) return;
+      const targetLabTestId = test.laboratoryTestId || test.labTestId;
+      
+      const matched = lines.filter((line: any) => {
+        if (targetLabTestId && line.laboratoryTestID && line.laboratoryTestID !== targetLabTestId) {
+          return false;
+        }
+        if (filter.dimensionalFactorID && line.dimensionalFactorID && line.dimensionalFactorID !== Number(filter.dimensionalFactorID)) {
+          return false;
+        }
+        if (filter.heatTreatmentID && line.heatTreatmentID && line.heatTreatmentID !== Number(filter.heatTreatmentID)) {
+          return false;
+        }
+        if (filter.productConditionID1 && line.productConditionID1 && line.productConditionID1 !== Number(filter.productConditionID1)) {
+          return false;
+        }
+        if (filter.productConditionID2 && line.productConditionID2 && line.productConditionID2 !== Number(filter.productConditionID2)) {
+          return false;
+        }
+        if (filter.specimenOrientationID && line.specimenOrientationID && line.specimenOrientationID !== Number(filter.specimenOrientationID)) {
+          return false;
+        }
+        return true;
+      });
+
+      this.matchedConditionLinesCount[headerId] = matched.length;
+
+      const paramsFA = this.getParameters(planIndex, testIndex);
+      if (paramsFA && paramsFA.length > 0) {
+        matched.forEach((mLine: any) => {
+          for (let i = 0; i < paramsFA.length; i++) {
+            const group = paramsFA.at(i);
+            const pId = group.get('parameterID')?.value;
+            const pName = (group.get('parameterName')?.value || '').toLowerCase();
+            const mName = (mLine.parameterName || '').toLowerCase();
+
+            if ((pId && mLine.parameterID && pId === mLine.parameterID) || (pName && mName && pName === mName)) {
+              if (mLine.minValue !== undefined) group.get('minValue')?.setValue(mLine.minValue);
+              if (mLine.maxValue !== undefined) group.get('maxValue')?.setValue(mLine.maxValue);
+              if (mLine.unitName && !group.get('unit')?.value) group.get('unit')?.setValue(mLine.unitName);
+              if (mLine.equation) group.get('formulaExpression')?.setValue(mLine.equation);
+              if (mLine.acceptanceCriteria) group.get('acceptanceCriteria')?.setValue(mLine.acceptanceCriteria);
+              break;
+            }
+          }
+        });
+      }
+
+      this.autoEvaluateAllFormulas();
+      this.cdr.markForCheck();
+      this.toastService.show(`Conditions applied: ${matched.length} specification rule(s) active.`, 'info');
+    };
+
+    if (gradeId > 0) {
+      if (this.cachedGradeSpecLines[gradeId]) {
+        applyLines(this.cachedGradeSpecLines[gradeId]);
+      } else {
+        this.materialSpecService.getMechanicalLimitsByGrade(gradeId).subscribe({
+          next: (lines: any[]) => {
+            this.cachedGradeSpecLines[gradeId] = lines || [];
+            applyLines(this.cachedGradeSpecLines[gradeId]);
+          },
+          error: () => {
+            this.toastService.show('Failed to fetch grade specification conditions', 'warning');
+          }
+        });
+      }
+    }
+  }
+
+  resetConditionFilters(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    this.selectedConditionsMap[test.headerId] = {
+      dimensionalFactorID: null,
+      heatTreatmentID: null,
+      productConditionID1: null,
+      productConditionID2: null,
+      specimenOrientationID: null
+    };
+    const f = this.selectedConditionsMap[test.headerId] as any;
+    f.dimensionalFactorItem = null;
+    f.heatTreatmentItem = null;
+    f.productCondition1Item = null;
+    f.productCondition2Item = null;
+    f.specimenOrientationItem = null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+
+
+  // ================================================================
+  // Searchable Dropdowns for Condition Engine & Layout Selection
+  // ================================================================
+  fetchDimensionalFactors = (term: string, page: number, pageSize: number) => {
+    return this.dimensionalFactorService.getDimensionalFactorDropdown(term, page, pageSize);
+  };
+
+  fetchHeatTreatments = (term: string, page: number, pageSize: number) => {
+    return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);
+  };
+
+  fetchProductConditions1 = (term: string, page: number, pageSize: number) => {
+    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
+  };
+
+  fetchProductConditions2 = (term: string, page: number, pageSize: number) => {
+    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
+  };
+
+  fetchSpecimenOrientations = (term: string, page: number, pageSize: number) => {
+    return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+  };
+
+  fetchLayoutTemplates = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    const termLower = (term || '').toLowerCase().trim();
+    const items: any[] = [];
+    const autoLabel = `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}`;
+    if (!termLower || autoLabel.toLowerCase().includes(termLower)) {
+      items.push({ id: null, name: autoLabel });
+    }
+    const list = this.availableLayoutTemplates || [];
+    for (const t of list) {
+      const name = `${t.layoutName} (${t.layoutCode || 'Layout'})`;
+      if (!termLower || name.toLowerCase().includes(termLower)) {
+        items.push({ id: t.id, name });
+      }
+    }
+    if (!termLower || 'standard layout (no template)'.includes(termLower)) {
+      items.push({ id: -1, name: 'Standard Layout (No Template)' });
+    }
+    return of(items.slice(page * pageSize, (page + 1) * pageSize));
+  };
+
+  get selectedLayoutItem(): any {
+    if (this.selectedLayoutTemplateId === -1) {
+      return { id: -1, name: 'Standard Layout (No Template)' };
+    }
+    if (this.selectedLayoutTemplateId === null || this.selectedLayoutTemplateId === undefined) {
+      return { id: null, name: `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}` };
+    }
+    const found = this.availableLayoutTemplates?.find(t => t.id === this.selectedLayoutTemplateId);
+    return found ? { id: found.id, name: `${found.layoutName} (${found.layoutCode || 'Layout'})` } : null;
+  }
+
+  onLayoutItemSelected(item: any): void {
+    const id = item && item.id !== undefined ? item.id : null;
+    this.onLayoutTemplateSelect(id, true);
+  }
+
+  getDimensionalFactorItem(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).dimensionalFactorItem !== undefined) return (f as any).dimensionalFactorItem;
+    if (f.dimensionalFactorID && this.dimensionalFactorsList?.length) {
+      const m = this.dimensionalFactorsList.find(x => (x.id || x.dimensionalFactorID) === f.dimensionalFactorID);
+      if (m) {
+        (f as any).dimensionalFactorItem = { id: m.id || m.dimensionalFactorID, name: m.name || m.factorName || m.dimensionalFactorName };
+        return (f as any).dimensionalFactorItem;
+      }
+    }
+    return null;
+  }
+
+  getHeatTreatmentItem(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).heatTreatmentItem !== undefined) return (f as any).heatTreatmentItem;
+    if (f.heatTreatmentID && this.heatTreatmentsList?.length) {
+      const m = this.heatTreatmentsList.find(x => (x.id || x.heatTreatmentID) === f.heatTreatmentID);
+      if (m) {
+        (f as any).heatTreatmentItem = { id: m.id || m.heatTreatmentID, name: m.name || m.heatTreatmentName };
+        return (f as any).heatTreatmentItem;
+      }
+    }
+    return null;
+  }
+
+  getProductCondition1Item(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).productCondition1Item !== undefined) return (f as any).productCondition1Item;
+    if (f.productConditionID1 && this.productConditions1List?.length) {
+      const m = this.productConditions1List.find(x => (x.id || x.productConditionID) === f.productConditionID1);
+      if (m) {
+        (f as any).productCondition1Item = { id: m.id || m.productConditionID, name: m.name || m.conditionName };
+        return (f as any).productCondition1Item;
+      }
+    }
+    return null;
+  }
+
+  getProductCondition2Item(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).productCondition2Item !== undefined) return (f as any).productCondition2Item;
+    if (f.productConditionID2 && this.productConditions2List?.length) {
+      const m = this.productConditions2List.find(x => (x.id || x.productConditionID) === f.productConditionID2);
+      if (m) {
+        (f as any).productCondition2Item = { id: m.id || m.productConditionID, name: m.name || m.conditionName };
+        return (f as any).productCondition2Item;
+      }
+    }
+    return null;
+  }
+
+  getSpecimenOrientationItem(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).specimenOrientationItem !== undefined) return (f as any).specimenOrientationItem;
+    if (f.specimenOrientationID && this.specimenOrientationsList?.length) {
+      const m = this.specimenOrientationsList.find(x => (x.id || x.specimenOrientationID) === f.specimenOrientationID);
+      if (m) {
+        (f as any).specimenOrientationItem = { id: m.id || m.specimenOrientationID, name: m.name || m.orientationName };
+        return (f as any).specimenOrientationItem;
+      }
+    }
+    return null;
+  }
+
+  onDimensionalFactorSelected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.dimensionalFactorID = item ? item.id : null;
+    (filter as any).dimensionalFactorItem = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onHeatTreatmentSelected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.heatTreatmentID = item ? item.id : null;
+    (filter as any).heatTreatmentItem = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onProductCondition1Selected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.productConditionID1 = item ? item.id : null;
+    (filter as any).productCondition1Item = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onProductCondition2Selected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.productConditionID2 = item ? item.id : null;
+    (filter as any).productCondition2Item = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onSpecimenOrientationSelected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.specimenOrientationID = item ? item.id : null;
+    (filter as any).specimenOrientationItem = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  
+  // ================================================================
+  // Case Details & Quality Dossier Helper Methods (Tab 2)
+  // ================================================================
+  getAllCaseTestsList(): any[] {
+    const list: any[] = [];
+    if (!this.plans?.length) return list;
+    this.plans.forEach((plan: any, pIdx: number) => {
+      (plan.tests || []).forEach((test: any, tIdx: number) => {
+        list.push({
+          planIndex: pIdx,
+          testIndex: tIdx,
+          testName: test.name || plan.type,
+          methodName: plan.methodName || test.methodName || 'Standard Method',
+          specification: test.specification || plan.specification || 'Standard Spec',
+          quantity: test.plannedQuantity || 1,
+          status: test.status || 'In Progress',
+          headerId: test.headerId,
+          parametersCount: test.parameters?.length || 0,
+          isOverallPass: test.isOverallPass
+        });
+      });
+    });
+    return list;
+  }
+
+  selectTestFromCaseDossier(planIndex: number, testIndex: number): void {
+    this.selectPlanTab(planIndex);
+    this.switchTab('execution');
+  }
+
+  getSampleStatusBadgeClass(status: string | null | undefined): string {
+    if (!status) return 'badge-neutral';
+    const s = status.toLowerCase();
+    if (s.includes('completed') || s.includes('approved') || s.includes('pass')) return 'badge-success';
+    if (s.includes('progress') || s.includes('started')) return 'badge-warning';
+    if (s.includes('rejected') || s.includes('fail')) return 'badge-danger';
+    return 'badge-info';
+  }
+
+}

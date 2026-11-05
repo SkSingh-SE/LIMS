@@ -41,6 +41,14 @@
           },
           "configurations": {
             "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": false
+              },
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -51,7 +59,7 @@
                 {
                   "type": "initial",
                   "maximumWarning": "5MB",
-                  "maximumError": "7MB"
+                  "maximumError": "8MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -73,7 +81,14 @@
               ]
             },
             "dev": {
-              "optimization": true,
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": false
+              },
               "outputHashing": "all",
               "fileReplacements": [
                 {
@@ -83,7 +98,14 @@
               ]
             },
             "uat": {
-              "optimization": true,
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": false
+              },
               "outputHashing": "all",
               "fileReplacements": [
                 {
@@ -99,6 +121,14 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": false
+              },
               "buildTarget": "LIMS:build:production"
             },
             "development": {

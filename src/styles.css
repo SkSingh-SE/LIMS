@@ -4535,7 +4535,7 @@ input[type="file"].form-control:hover::file-selector-button {
   background: var(--primary-100);
   border-color: var(--primary-color);
   color: var(--primary-color);
-  content: 'Ã¢Å“â€œ';
+  content: '\2713';
 }
 
 /* Active / current step */

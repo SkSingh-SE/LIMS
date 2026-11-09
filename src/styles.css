@@ -62,6 +62,7 @@ nav.fixed-top {
   --surface-bg: #ffffff;
   --surface-elevated: #f8fafc;
   --surface-inverse: #1e293b;
+  --modal-backdrop-bg: rgba(15, 23, 42, 0.5);
 
   /* Semantic Spacing */
   --spacing-xs: 0.25rem;

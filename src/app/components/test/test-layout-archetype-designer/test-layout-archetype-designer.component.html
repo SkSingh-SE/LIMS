@@ -83,28 +83,23 @@
     <aside class="studio-panel studio-panel-left" [class.is-collapsed]="leftPanelCollapsed">
       <div class="panel-header">
         <span class="panel-header-title">
-          <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Layout Components</span>
+          <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Components</span>
         </span>
-        <span class="badge bg-light text-dark border ms-auto me-1.5">{{ sections.length }}</span>
-        <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)" aria-label="Collapse panel (Ctrl+[)">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-      </div>
-
-      <!-- Quick Width Adjuster Presets Bar -->
-      <div class="panel-width-bar">
-        <span class="width-indicator" title="Current panel width">
-          <i class="bi bi-arrows-expand-vertical me-1.5 rotate-90"></i><span>{{ leftPanelWidth }}px</span>
-        </span>
-        <div class="btn-group btn-group-xs ms-auto">
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 220" (click)="setLeftPreset(220)"
-            title="Compact width (220px)">S</button>
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 270" (click)="setLeftPreset(270)"
-            title="Default width (270px)">M</button>
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 340" (click)="setLeftPreset(340)"
-            title="Wide width (340px)">L</button>
-          <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to screen default width" aria-label="Reset to screen default width"><i
-              class="bi bi-arrow-counterclockwise"></i></button>
+        <span class="badge bg-light text-dark border me-1.5">{{ sections.length }}</span>
+        <div class="d-flex align-items-center gap-1.5 ms-auto flex-shrink-0">
+          <div class="btn-group btn-group-xs" title="Panel width presets: S (220px), M (270px), L (340px)">
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 220" (click)="setLeftPreset(220)"
+              title="Compact width (220px)">S</button>
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 270" (click)="setLeftPreset(270)"
+              title="Default width (270px)">M</button>
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 340" (click)="setLeftPreset(340)"
+              title="Wide width (340px)">L</button>
+            <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to default width" aria-label="Reset to default width"><i
+                class="bi bi-arrow-counterclockwise"></i></button>
+          </div>
+          <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)" aria-label="Collapse panel (Ctrl+[)">
+            <i class="bi bi-chevron-left"></i>
+          </button>
         </div>
       </div>
 
@@ -429,9 +424,6 @@
     <div class="panel-resizer panel-resizer-left" [class.is-active]="isResizingLeft"
       [class.is-collapsed]="leftPanelCollapsed" (mousedown)="startResizeLeft($event)" (dblclick)="resetLeftWidth()"
       title="Drag to resize Layout Components (Double-click to reset, Ctrl+[ to toggle)">
-      <div class="resizer-handle-grip" *ngIf="!leftPanelCollapsed">
-        <i class="bi bi-grip-vertical"></i>
-      </div>
       <!-- Expand button when collapsed -->
       <button type="button" class="resizer-expand-tab" *ngIf="leftPanelCollapsed" (click)="toggleLeftPanel()"
         title="Expand Layout Components (Ctrl+[)" aria-label="Expand Layout Components (Ctrl+[)">
@@ -518,7 +510,7 @@
               tabindex="0"
               role="group"
               [attr.aria-label]="s.title || ('Section ' + (i + 1))"
-              [attr.aria-selected]="selectedSectionId === s.id"
+              [attr.aria-current]="selectedSectionId === s.id ? 'true' : null"
               (click)="selectSection(s.id)"
               (keydown)="onSectionKeyDown($event, s.id)"
               [ngClass]="{
@@ -2272,9 +2264,6 @@
     <div class="panel-resizer panel-resizer-right" [class.is-active]="isResizingRight"
       [class.is-collapsed]="rightPanelCollapsed" (mousedown)="startResizeRight($event)" (dblclick)="resetRightWidth()"
       title="Drag to resize Section Inspector (Double-click to reset, Ctrl+] to toggle)">
-      <div class="resizer-handle-grip" *ngIf="!rightPanelCollapsed">
-        <i class="bi bi-grip-vertical"></i>
-      </div>
       <!-- Expand button when collapsed -->
       <button type="button" class="resizer-expand-tab" *ngIf="rightPanelCollapsed" (click)="toggleRightPanel()"
         title="Expand Section Inspector (Ctrl+])" aria-label="Expand Section Inspector (Ctrl+])">
@@ -2291,7 +2280,7 @@
           <strong class="config-title" [title]="selectedSection ? selectedSection.title : 'Section Configuration'">{{
             selectedSection ? selectedSection.title : 'Section Configuration' }}</strong>
           <span class="badge bg-danger font-monospace text-xxs ms-1.5 flex-shrink-0"
-            *ngIf="selectedSection">
+            *ngIf="selectedSection && rightPanelWidth >= 360">
             {{ componentNames[selectedSection.type] }}
           </span>
           <small class="config-type-tag text-muted ms-1.5" *ngIf="!selectedSection">None selected</small>

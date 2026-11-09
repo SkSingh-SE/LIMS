@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
+import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { ToastService } from '../../../services/toast.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
@@ -14,461 +15,31 @@ import { SpecimenOrientationService } from '../../../services/specimen-orientati
 import { EquipmentService } from '../../../services/equipment.service';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { CustomSelectComponent } from '../../../utility/components/custom-select/custom-select.component';
+import { ConfirmDialogComponent } from '../../../utility/components/confirm-dialog/confirm-dialog.component';
 import { TestLayoutService, TestLayoutTemplateDto } from '../../../services/test-layout.service';
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 
-export interface HeaderMergeConfig {
-  title?: string;
-  startCol?: string;
-  colspan?: number;
-  showSubLabels?: boolean;
-  isMerged?: boolean;
-}
-
-export interface SectionColumnsConfig {
-  unit?: boolean;
-  requirement?: boolean;
-  result?: boolean;
-  status?: boolean;
-  method?: boolean;
-  remarks?: boolean;
-  uncertainty?: boolean;
-  dl?: boolean;
-  scope?: boolean;
-  mergedHeader?: string;
-  mergedStartCol?: string;
-  mergedColspan?: number;
-  showSubLabels?: boolean;
-  isMerged?: boolean;
-}
-
-export interface DatasetParameter {
-  id?: number;
-  name: string;
-  symbol: string;
-  unit: string;
-  requirement: string;
-  demoValue: string;
-  type: 'numeric' | 'text' | 'rating';
-  isCalculated?: boolean;
-  formula?: string;
-  formulaDisplay?: string;
-}
-
-export interface DatasetCondition {
-  field: string;
-  label: string;
-  unit?: string;
-  demoValue: string;
-  selected?: boolean;
-  isCustom?: boolean;
-}
-
-export interface DatasetDimension {
-  field: string;
-  label: string;
-  unit: string;
-  demoValue: string;
-  selected?: boolean;
-  isCustom?: boolean;
-}
-
-export interface DatasetCalculation {
-  id?: number;
-  field: string;
-  label: string;
-  formula: string;
-  unit?: string;
-  targetParam?: string;
-  isCalculated?: boolean;
-  isFromDb?: boolean;
-}
-
-export interface TestDatasetPool {
-  testKey: string;
-  testName: string;
-  parameters: DatasetParameter[];
-  conditions: DatasetCondition[];
-  dimensions: DatasetDimension[];
-  calculations: DatasetCalculation[];
-}
-
-export interface SectionConfig {
-  sectionKey?: string;
-  // Environmental Conditions & Specimen Geometry
-  temperature?: string;
-  humidity?: string;
-  specimenType?: string;
-  surfaceCondition?: string;
-  speedOfTesting?: string;
-  testingSpeed?: string;
-  gaugeLength?: string;
-  conditionPreset?: string;
-
-  // Equipment & Traceability
-  equipmentName?: string;
-  equipmentId?: string;
-  calibrationCertificate?: string;
-  calibrationDate?: string;
-  calibrationDue?: string;
-  extensometerType?: string;
-  indenterType?: string;
-  testLoad?: string;
-  dwellTime?: string;
-  traceabilityPreset?: string;
-  width?: string;
-  visibility?: string;
-  enabled?: boolean;
-  renderMode?: 'fixed' | 'runtime';
-  runtimeAdjust?: boolean;
-  showUnit?: boolean;
-  showLabels?: boolean;
-  highlightStatus?: boolean;
-  keepHeader?: boolean;
-  reportable?: boolean;
-  printCertificate?: boolean;
-  showRaw?: boolean;
-  reportProjection?: string;
-  pageBreak?: string;
-  density?: string;
-  alignment?: string;
-  reportLabel?: string;
-
-  // Parameter
-  dataSource?: string;
-  parameterMode?: string;
-  resultMode?: string;
-  requirement?: string;
-  status?: string;
-  decimals?: string;
-  subset?: string[];
-  columns?: SectionColumnsConfig;
-  headerMerge?: HeaderMergeConfig;
-
-  // Specimen
-  specimenSource?: string;
-  countMode?: string;
-  count?: number;
-  prefix?: string;
-  orientation?: string;
-  showAverage?: boolean;
-  showMinMax?: boolean;
-  showRequirement?: boolean;
-  editable?: boolean;
-  showIdentity?: boolean;
-  ident?: string[];
-  specimenColumns?: string[];
-  dimensionSubset?: string[];
-  specimenRows?: string[];
-  specimenNames?: string;
-  specimenColHeader?: string;
-  specimenShape?: 'rectangular' | 'round' | 'tubular';
-  selectedOrientationId?: number | string;
-  selectedOrientationNotation?: string;
-  showOrientationColumn?: boolean;
-  showOrientationCol?: boolean;
-  showDimensions?: boolean;
-  showAreaCalculation?: boolean;
-  showAreaCol?: boolean;
-  showConformanceVerdict?: boolean;
-  specimenExecutionMode?: 'fixed' | 'runtime';
-
-  // Reading
-  readingSource?: string;
-  readingCount?: string;
-  aggregation?: string;
-  showIndividual?: boolean;
-  showStatistics?: boolean;
-  readingLabel?: string;
-  targetParameter?: string;
-  unit?: string;
-  targetParamId?: number | string;
-  targetParamName?: string;
-  targetUnit?: string;
-  targetRequirement?: string;
-  targetMin?: number | string;
-  targetMax?: number | string;
-  readingExecutionMode?: 'fixed' | 'runtime';
-  spotCount?: number;
-  outlierSpreadLimit?: number;
-  showSpreadRow?: boolean;
-  showOverallAverageRow?: boolean;
-
-  // Location
-  locationSource?: string;
-  locationMode?: string;
-  locationNames?: string;
-  locationRows?: string[];
-  locationColHeader?: string;
-  allowRuntimeAdd?: boolean;
-
-  // Condition & Traceability
-  fields?: string[];
-  extraFields?: string;
-  layout?: string;
-  source?: string;
-  allowRuntimeEdit?: boolean;
-  showMissing?: string;
-
-  // Rule
-  parameter?: string;
-  operator?: string;
-  valueSource?: string;
-  evaluation?: string;
-  failAction?: string;
-  decisionRule?: string;
-  conformity?: boolean;
-  showRule?: boolean;
-
-  // Traverse
-  xField?: string;
-  yField?: string;
-  xUnit?: string;
-  yUnit?: string;
-  stepMode?: string;
-  stepValue?: string;
-  cutoffMode?: string;
-  cutoffHardness?: number | string;
-  cutoff?: string;
-  showTable?: boolean;
-  showCurve?: boolean;
-  showStatus?: boolean;
-
-  // Chart
-  chartType?: string;
-  xSource?: string;
-  ySource?: string;
-  xLabel?: string;
-  yLabel?: string;
-  showPoints?: boolean;
-  showLegend?: boolean;
-  showGrid?: boolean;
-  showLimit?: boolean;
-  xMin?: string;
-  xMax?: string;
-  yMin?: string;
-  yMax?: string;
-
-  // Classification
-  ratingSystem?: string;
-  observedSource?: string;
-  decision?: string;
-  showCriteria?: boolean;
-
-  // Custom
-  rows?: string;
-  allowRuntimeRows?: boolean;
-  showHeader?: boolean;
-  cellMatrix?: CustomTableCell[][];
-  activeCellCoords?: { rowIdx: number; colIdx: number } | null;
-
-  // Photo & Attachment Plate
-  caption?: string;
-  showMagnification?: boolean;
-  showDateTime?: boolean;
-  showScale?: boolean;
-  showSpecimenId?: boolean;
-  showLocation?: boolean;
-  showEtchant?: boolean;
-  showFieldNo?: boolean;
-  showCaptureDate?: boolean;
-  showAnalystBadge?: boolean;
-  gridColumns?: string;
-  aspectRatio?: string;
-  cardStyle?: string;
-  plateHeight?: string;
-  allowRuntimeUpload?: boolean;
-  allowZoomModal?: boolean;
-  requirePhotoToVerify?: boolean;
-  allowedFormats?: string;
-  maxFileSizeMb?: number;
-  reportPlacement?: string;
-  watermarkReport?: boolean;
-  highResPrint?: boolean;
-  photoSlots?: PhotoSlotItem[];
-  activePhotoTab?: 'slots' | 'layout' | 'nabl';
-  showPreText?: boolean;
-  preText?: string;
-  showPostText?: boolean;
-  postText?: string;
-
-  // Opinion & Interpretation (ISO 17025 Cl. 7.8.7)
-  isOptional?: boolean;
-  sectionStatus?: 'Optional' | 'Required';
-  derivedOnly?: boolean;
-  showOverallStatement?: boolean;
-  overallStatement?: string;
-
-  // Formula
-  formulaSource?: string;
-  inputs?: string;
-  resultLabel?: string;
-  precision?: string;
-  showFormula?: boolean;
-  showInputs?: boolean;
-  rounding?: string;
-  showMU?: boolean;
-  targetOutput?: string;
-  inputFields?: string[];
-  formulaExpression?: string;
-
-  // Narrative
-  inputType?: string;
-  label?: string;
-  maxLength?: string;
-  required?: boolean;
-  category?: string;
-
-  // Checklist
-  items?: string;
-  responseType?: string;
-  requireAll?: boolean;
-
-  // Report tab extras
-  showMUReport?: boolean;
-  showConformity?: boolean;
-  showScopeMark?: boolean;
-  showEquipment?: boolean;
-
-  // Corner Technical Annotations
-  topLeft?: string;
-  topRight?: string;
-  bottomLeft?: string;
-  bottomRight?: string;
-
-  // Universal Data Binding & Row/Column Configuration
-  dataBindingMode?: DataBindingMode;
-  tableColumns?: LayoutColumnItem[];
-  tableRows?: LayoutRowItem[];
-  activeBindingTab?: 'rows' | 'columns' | 'merge';
-
-  // Custom Columns & Rows Structure
-  customColumns?: Array<{ label: string; type: string; unit?: string; default?: string }>;
-  customRows?: string[];
-
-  // Demo Data Properties
-  testMethod?: string;
-  demoConditionValues?: { [field: string]: string };
-  demoTraceValues?: { [field: string]: string };
-  demoText?: string;
-  hasDemoData?: boolean;
-}
-
-export type DataBindingMode = 'runtime' | 'static' | 'manual';
-export type DataOriginType = 'entry' | 'db' | 'calc' | 'fixed';
-export type DbMasterSourceType = 'parameter' | 'dimensional_factor' | 'heat_treatment' | 'product_condition' | 'specimen_orientation';
-
-export interface CustomTableCell {
-  id: string;
-  rowIdx: number;
-  colIdx: number;
-  rowKey: string;
-  colKey: string;
-  value: string | number;
-  displayLabel?: string;
-  dataType: 'text' | 'number' | 'date' | 'select' | 'formula';
-  bindingMode: DataBindingMode;
-  staticValue?: string;
-  formulaExpression?: string;
-  selectOptions?: string[];
-  selectOptionsRaw?: string;
-  unit?: string;
-  precision?: number;
-  colspan?: number;
-  rowspan?: number;
-  align?: 'left' | 'center' | 'right';
-  isLocked?: boolean;
-  demoValue?: string;
-}
-
-export interface LayoutColumnItem {
-  id?: string;
-  key: string;
-  label: string;
-  bindingMode: DataBindingMode;
-  origin?: DataOriginType;
-  dbMasterSource?: DbMasterSourceType;
-  dbMasterId?: number | string;
-  staticValue?: string;
-  paramKey?: string;
-  unit?: string;
-  requirement?: string;
-  minLimit?: number | string;
-  maxLimit?: number | string;
-  targetLimit?: number | string;
-  decimalPrecision?: number;
-  isCalculated?: boolean;
-  formula?: string;
-  formulaDisplay?: string;
-  aggregateFunction?: string;
-  aggregateSourceKeys?: string[];
-  flagLimitExcess?: boolean;
-  readingsPerCell?: number;
-  subAggs?: string[];
-  headerGroup?: string;
-  clause?: string;
-  width?: string;
-  visible: boolean;
-  align?: 'left' | 'center' | 'right';
-  removable?: boolean;
-}
-
-export interface LayoutRowItem {
-  id?: string;
-  key: string;
-  label: string;
-  bindingMode: DataBindingMode;
-  nature?: 'data' | 'summary';
-  rowOrigin?: 'manual' | 'pattern' | 'db';
-  dbMasterSource?: DbMasterSourceType;
-  dbMasterId?: number | string;
-  patternConfig?: { prefix: string; count: number; start: number; step: number };
-  summaryFn?: 'avg' | 'sum' | 'min' | 'max' | 'range' | 'std_dev' | 'count' | 'formula';
-  summaryScope?: 'all' | 'custom';
-  customRowKeys?: string[];
-  staticValue?: string;
-  requirement?: string;
-  unit?: string;
-  visible: boolean;
-  isCalculated?: boolean;
-  formula?: string;
-  formulaDisplay?: string;
-  values?: { [colKey: string]: string };
-  demoValue?: string;
-  isLocked?: boolean;
-  isInternal?: boolean;
-  removable?: boolean;
-}
-
-export interface PhotoSlotItem {
-  id: string;
-  title: string;
-  caption?: string;
-  bindingSource: DataBindingMode;
-  magnification?: string;
-  etchant?: string;
-  etchantMode?: 'manual' | 'param';
-  etchantSource?: string;
-  etchantId?: number | string;
-  paramKey?: string;
-  paramName?: string;
-  scaleBar?: string;
-  location?: string;
-  specimenId?: string;
-  mandatory?: boolean;
-  reportable?: boolean;
-  mockUrl?: string;
-  fieldNo?: string;
-  aspectRatio?: string;
-}
-
-export interface ExecutionSection {
-  id: number;
-  type: string;
-  title: string;
-  config: SectionConfig;
-  rt?: number; // runtime specimen/reading count override for preview
-}
+import {
+  HeaderMergeConfig,
+  SectionColumnsConfig,
+  DatasetParameter,
+  DatasetCondition,
+  DatasetDimension,
+  DatasetCalculation,
+  TestDatasetPool,
+  SectionConfig,
+  DataBindingMode,
+  DataOriginType,
+  DbMasterSourceType,
+  CustomTableCell,
+  LayoutColumnItem,
+  LayoutRowItem,
+  PhotoSlotItem,
+  ExecutionSection,
+  LayoutConfigPayload,
+  LayoutMappedLeafNode
+} from '../../../models/test-layout-config.model';
+import { normalizeLayoutConfig, serializeLayoutConfig } from '../../../utility/helper/test-layout-config.helper';
 
 export interface TestParam {
   id?: number;
@@ -496,11 +67,11 @@ export interface TestDef {
 @Component({
   selector: 'app-test-layout-archetype-designer',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, SearchableDropdownComponent, CustomSelectComponent, ConfirmDialogComponent],
   templateUrl: './test-layout-archetype-designer.component.html',
   styleUrls: ['./test-layout-archetype-designer.component.css']
 })
-export class TestLayoutArchetypeDesignerComponent implements OnInit {
+export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponentDeactivate {
   private toastService = inject(ToastService);
   private labService = inject(LaboratoryTestService);
   private testLayoutService = inject(TestLayoutService);
@@ -719,6 +290,34 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   isDefaultLayout: boolean = true;
   currentVersion: number = 1;
 
+  // Set on the first Save click so required-field errors show even if the field was never touched
+  saveAttempted = false;
+
+  // Dirty tracking for CanDeactivate & beforeunload
+  private _lastSavedSnapshot = '';
+  get lastSavedSnapshot(): string {
+    return this._lastSavedSnapshot;
+  }
+  set lastSavedSnapshot(value: string) {
+    this._lastSavedSnapshot = value;
+    this.dirtyIndicatorCache = { at: 0, value: false }; // refresh the toolbar indicator right after save/load
+  }
+
+  // Serializing the whole layout is expensive; the toolbar indicator re-checks at most once per second.
+  // Guards and beforeunload always use the exact hasUnsavedChanges().
+  private dirtyIndicatorCache = { at: 0, value: false };
+  get showUnsavedIndicator(): boolean {
+    const now = Date.now();
+    if (now - this.dirtyIndicatorCache.at > 1000) {
+      this.dirtyIndicatorCache = { at: now, value: this.hasUnsavedChanges() };
+    }
+    return this.dirtyIndicatorCache.value;
+  }
+
+  // Duplicate default layout warning
+  hasDuplicateDefaultWarning: boolean = false;
+  duplicateDefaultLayoutCode: string = '';
+
   // Actual Laboratory Test (Unified Searchable Selection from Database)
   selectedUnifiedTestId: number | string | null = null;
   selectedUnifiedTestItem: any = null;
@@ -846,6 +445,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       this.selectedTestMethodName = '';
       this.selectedTestMethodItem = null;
       this.toastService.show('Test Method unlinked (Layout applies to all methods)', 'info');
+      this.checkDuplicateDefaultLayout();
       return;
     }
 
@@ -854,7 +454,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const versionId = item.nodeType === 'Version' ? Number(item.id) : (addVals.versionId ? Number(addVals.versionId) : null);
 
     this.selectedTestMethodId = specId || versionId || Number(item.id || item.ID);
-    this.selectedTestMethodName = addVals.fullDisplayName || item.name || addVals.displayTitle || item.TestStandard || '';
+    const rawMethodName = addVals.fullDisplayName || item.name || addVals.displayTitle || item.TestStandard || '';
+    this.selectedTestMethodName = (rawMethodName || '').replace(/[\s★*]+$/g, '').trim();
     this.selectedTestMethodItem = {
       id: item.id,
       name: this.selectedTestMethodName,
@@ -867,6 +468,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     };
 
     this.toastService.show(`Target Test Method set to: ${this.selectedTestMethodName}`, 'success');
+    this.checkDuplicateDefaultLayout();
 
     // Reload layout for this hierarchy + new test method combination
     if (this.selectedLabTestId || this.selectedUnifiedTestId) {
@@ -946,6 +548,43 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     sec.config.renderMode = mode;
     sec.config.allowRuntimeAdd = (mode === 'runtime');
     sec.config.runtimeAdjust = (mode === 'runtime');
+  }
+
+  // ── Specimen: default orientation from SpecimenOrientation master ──
+  getSpecimenOrientationItem(sec: ExecutionSection): { id: number | string; name: string } | null {
+    const id = sec.config.selectedOrientationId;
+    if (id === undefined || id === null || id === '') return null;
+    return { id, name: sec.config.selectedOrientationNotation || String(id) };
+  }
+
+  // ── Reading: target parameter picked from the selected test's parameters ──
+  setReadingTargetParam(sec: ExecutionSection, paramName: string): void {
+    const p = (this.currentDataset?.parameters || []).find(x => x.name === paramName);
+    if (!p) {
+      sec.config.targetParamName = '';
+      sec.config.targetParamId = undefined;
+      sec.config.targetUnit = '';
+      sec.config.targetRequirement = '';
+      return;
+    }
+    sec.config.targetParamName = p.name;
+    sec.config.targetParamId = p.id;
+    sec.config.targetUnit = p.unit || '';
+    sec.config.targetRequirement = p.requirement || '';
+    if (!sec.config.readingLabel) sec.config.readingLabel = p.name;
+  }
+
+  // ── Photo: upload size must stay within FileUploadValidator's 10 MB limit ──
+  clampPhotoSize(sec: ExecutionSection): void {
+    const v = Number(sec.config.maxFileSizeMb);
+    if (!v || v < 1) sec.config.maxFileSizeMb = 1;
+    else if (v > 10) sec.config.maxFileSizeMb = 10;
+  }
+
+  /** Required / Optional on the result screen. Keeps the legacy isOptional flag in sync. */
+  setSectionStatus(sec: ExecutionSection, status: 'Required' | 'Optional'): void {
+    sec.config.sectionStatus = status;
+    sec.config.isOptional = status === 'Optional';
   }
 
   isSectionFixed(sec: ExecutionSection): boolean {
@@ -1248,26 +887,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     narrative: 'Narrative / Statement',
     checklist: 'Checklist',
     traceability: 'Traceability / Technical Record',
-    opinion: 'Opinion & Interpretation'
-  };
-
-  readonly componentIcons: Record<string, string> = {
-    parameter: '▦',
-    specimen: '▤',
-    reading: '◫',
-    location: '⌖',
-    condition: '◌',
-    rule: '✓',
-    traverse: '↗',
-    chart: '⌁',
-    classification: '▥',
-    custom: '⊞',
-    photo: '▧',
-    formula: 'ƒx',
-    narrative: '¶',
-    checklist: '☑',
-    traceability: '🧾',
-    opinion: '⚖'
+    opinion: 'Opinion & Interpretation',
+    sign: 'Sign-off & Review'
   };
 
   // Master Test Database (All Report Format Presets)
@@ -1578,6 +1199,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (params['mode'] === 'view') {
         this.isViewMode = true;
       }
+      this.lastSavedSnapshot = this.computeCurrentSnapshotJson();
     });
   }
 
@@ -1901,7 +1523,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.prefix = 'S';
         config.orientation = 'Specimens × Parameters';
         config.specimenShape = 'rectangular';
-        config.selectedOrientationNotation = 'L-T (Transverse)';
+        config.gaugeLength = '';
+        // Default orientation is chosen from the SpecimenOrientation master (no hardcoded demo value)
         config.showOrientationColumn = true;
         config.showDimensions = true;
         config.showAreaCalculation = true;
@@ -1920,16 +1543,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.readingCount = 'Fixed count';
         config.count = 5;
         config.spotCount = 5;
-        config.targetParamName = 'Rockwell Hardness';
-        config.targetUnit = 'HRC';
-        config.targetRequirement = '28 – 34 HRC';
-        config.readingLabel = 'Rockwell Hardness Spot Readings';
+        // Target parameter is picked from the test's parameters in the properties panel (no demo defaults)
+        config.targetParamName = '';
+        config.targetUnit = '';
+        config.targetRequirement = '';
+        config.readingLabel = 'Readings';
         config.aggregation = 'Average / Mean';
         config.showIndividual = true;
         config.showStatistics = true;
         config.showOverallAverageRow = true;
         config.showSpreadRow = true;
-        config.outlierSpreadLimit = 3.0;
+        // No spread limit by default; set per method in the properties panel
         config.readingExecutionMode = 'runtime';
         break;
 
@@ -2012,7 +1636,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       case 'photo':
         config.source = 'Execution Attachments';
         config.columns = { unit: true };
-        config.caption = 'Runtime attachment caption';
+        config.caption = '';
         config.showMagnification = true;
         config.showDateTime = false;
         config.showScale = true;
@@ -2034,40 +1658,26 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.reportPlacement = 'Inline with section';
         config.watermarkReport = false;
         config.pageBreak = 'Auto';
-        config.count = 2;
-        config.showPreText = true;
-        config.preText = 'Microscopic examination carried out on transverse metallographic cross-section in unetched and etched conditions.';
-        config.showPostText = true;
-        config.postText = 'Microstructure reveals uniformly distributed fine pearlite and ferrite grains. No continuous grain-boundary carbide network or decarburization observed.';
+        config.count = 1;
+        // No demo text or demo plates: pre/post text and slots are set per layout (or via a photo preset)
+        config.showPreText = false;
+        config.preText = '';
+        config.showPostText = false;
+        config.postText = '';
         config.photoSlots = [
           {
-            id: 'slot_1',
-            title: 'Micrograph Plate 1 (100X)',
-            caption: 'Microstructure / Inclusion Assessment as per ASTM E45',
+            id: `slot_${id}_1`,
+            title: 'Photo 1',
+            caption: '',
             bindingSource: 'runtime',
-            magnification: '100X',
-            etchant: '2% Nital',
+            magnification: '',
+            etchant: '',
             etchantMode: 'manual',
             etchantSource: 'parameter',
-            scaleBar: '50 µm',
-            location: 'Surface Zone',
-            specimenId: 'Specimen #1',
+            scaleBar: '',
+            location: '',
+            specimenId: '',
             mandatory: true,
-            reportable: true
-          },
-          {
-            id: 'slot_2',
-            title: 'Micrograph Plate 2 (500X)',
-            caption: 'Matrix structure, grain boundaries & carbides morphology',
-            bindingSource: 'runtime',
-            magnification: '500X',
-            etchant: '2% Nital',
-            etchantMode: 'manual',
-            etchantSource: 'parameter',
-            scaleBar: '20 µm',
-            location: 'Core / Mid-thickness',
-            specimenId: 'Specimen #1',
-            mandatory: false,
             reportable: true
           }
         ];
@@ -2116,50 +1726,22 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.sectionStatus = 'Optional';
         config.derivedOnly = true;
         config.showOverallStatement = true;
-        config.overallStatement = 'Based on the above test results, the material complies with specified standard requirements. The tensile and yield behavior exhibits ductile fracture characteristics.';
+        config.overallStatement = '';
         config.tableColumns = [
-          { key: 'param', label: 'Parameter / Evaluation Topic', bindingMode: 'runtime', visible: true, width: '40%' },
-          { key: 'observed', label: 'Observed Value', bindingMode: 'runtime', visible: true, width: '30%' },
-          { key: 'requirement', label: 'Requirement Min / Max', bindingMode: 'runtime', visible: true, width: '30%' }
+          { key: 'param', label: 'Evaluation Parameter / Topic', bindingMode: 'runtime', visible: true, width: '40%' },
+          { key: 'observed', label: 'Observed Value', bindingMode: 'runtime', visible: true, width: '25%' },
+          { key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true, width: '20%' },
+          { key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '15%' }
         ];
-        config.tableRows = [
-          {
-            key: 'row_uts_fracture',
-            label: 'Ultimate Tensile Strength (N/mm²) & Fracture Mode',
-            unit: 'N/mm²',
-            requirement: '535.0 Min. (Conforms)',
-            staticValue: '555.00 / 553.45 (Ductile B.O.W)',
-            isCalculated: true,
-            formula: 'UTS = Fmax / So',
-            formulaDisplay: 'UTS = Maximum Load (Fmax) / Original Cross-Section Area (So)',
-            bindingMode: 'runtime',
-            visible: true
-          },
-          {
-            key: 'row_yield_ratio',
-            label: 'Yield-to-Tensile Ratio (Re/Rm)',
-            unit: 'Ratio',
-            requirement: '≤ 0.85 (Conforms)',
-            staticValue: '0.78',
-            isCalculated: true,
-            formula: 'Ratio = Re / Rm',
-            formulaDisplay: 'Ratio = Yield Strength (Re) / Tensile Strength (Rm)',
-            bindingMode: 'runtime',
-            visible: true
-          },
-          {
-            key: 'row_carbon_equiv',
-            label: 'Carbon Equivalent (CEV)',
-            unit: '%',
-            requirement: '0.45 % Max (Conforms)',
-            staticValue: '0.38 %',
-            isCalculated: true,
-            formula: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15',
-            formulaDisplay: 'CEV = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15',
-            bindingMode: 'runtime',
-            visible: true
-          }
-        ];
+        config.tableRows = [];
+        break;
+
+      case 'sign':
+        config.reportLabel = customTitle || 'Sign-off & Review';
+        config.reportable = true;
+        config.printCertificate = true;
+        config.fields = ['Tested & Recorded By', 'Technical Reviewer / Verifier'];
+        config.layout = 'Two-column cards';
         break;
     }
 
@@ -2708,12 +2290,19 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const archLabel = this.getArchetypeLabel(presetKey);
 
     if (this.sections && this.sections.length > 0) {
-      const confirmed = window.confirm(`Loading preset "${archLabel}" will replace current canvas layout sections with the preset structure. Do you want to proceed?`);
-      if (!confirmed) {
-        return;
-      }
+      this.askConfirm({
+        title: 'Load preset',
+        message: `Loading "${archLabel}" replaces all sections on the canvas. Continue?`,
+        confirmLabel: 'Load Preset',
+        variant: 'primary',
+        onConfirm: () => this.applyPresetStructure(presetKey, archLabel)
+      });
+      return;
     }
+    this.applyPresetStructure(presetKey, archLabel);
+  }
 
+  private applyPresetStructure(presetKey: string, archLabel: string): void {
     this.selectedArchetypeKey = presetKey;
     this.selectedTestKey = presetKey;
 
@@ -2903,11 +2492,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   clearAllSections(): void {
     if (this.sections.length === 0) return;
-    if (confirm('Are you sure you want to clear all sections from this layout?')) {
-      this.sections = [];
-      this.selectedSectionId = null;
-      this.toastService.show('All sections cleared', 'info');
-    }
+    this.askConfirm({
+      title: 'Clear all sections',
+      message: 'All sections will be removed from this layout. Continue?',
+      confirmLabel: 'Clear Sections',
+      variant: 'danger',
+      onConfirm: () => {
+        this.sections = [];
+        this.selectedSectionId = null;
+        this.toastService.show('All sections cleared', 'info');
+      }
+    });
   }
 
   // Toggle / Set Demo Data
@@ -3496,7 +3091,14 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           rows.forEach((r, rIdx) => {
             this.previewEntries['opinion_' + s.id + '_' + rIdx] = 'Conforms to Specification';
           });
-          this.previewEntries['opinion_statement_' + s.id] = 'The sample complies with all specified chemical and mechanical property requirements.';
+          this.previewEntries['opinion_statement_' + s.id] = s.config.overallStatement || '';
+          this.previewEntries['opinion_stmt_' + s.id] = s.config.overallStatement || '';
+          break;
+        }
+
+        case 'sign': {
+          this.previewEntries['sign_analyst_' + s.id] = 'Tested & Recorded';
+          this.previewEntries['sign_reviewer_' + s.id] = 'Pending Verification';
           break;
         }
       }
@@ -3653,23 +3255,41 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   // Load Database Layout for Hierarchy
   loadDatabaseLayoutForHierarchy(testId: number | null, subGroupId: number | null, analysisTypeId: number | null, leaf: string, matchedKey: string): void {
     if (!testId && !this.isGlobalDefault) {
-      this.handleNoDatabaseLayoutFound(testId || 1, matchedKey);
+      this.handleNoDatabaseLayoutFound(testId, matchedKey);
       return;
     }
 
-    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leaf, this.selectedTestMethodId, this.selectedTestMethodName).subscribe({
+    // Studio edits drafts too (includeDrafts = true); Result Entry only ever resolves Published layouts
+    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leaf, this.selectedTestMethodId, this.selectedTestMethodName, true).subscribe({
       next: (res) => {
         if (res && res.id) {
-          this.currentLayoutId = res.id;
-          this.layoutCode = res.layoutCode || `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId || 'GLOBAL'}`;
-          this.layoutName = res.layoutName || (res.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Layout`);
-          this.layoutRev = res.revision || '1.0';
-          this.currentVersion = res.version || 1;
-          this.layoutStatus = res.status || 'Published';
-          this.isDefaultLayout = res.isDefault ?? true;
-          this.isGlobalDefault = res.isGlobalDefault ?? false;
-          this.applyToLeaf = res.applyToLeaf ?? true;
-          this.loadedSource = 'db';
+          // A test with no layout of its own falls back to the Global layout. Use it only as a starting
+          // template: never keep its id, otherwise "Save" would overwrite the Global layout for every test.
+          const isGlobalFallback = !!testId && !this.isGlobalDefault && !!res.isGlobalDefault;
+          if (isGlobalFallback) {
+            this.currentLayoutId = null;
+            this.layoutCode = `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId}`;
+            this.layoutName = `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Layout`;
+            this.layoutRev = '1.0';
+            this.currentVersion = 1;
+            this.layoutStatus = 'Draft';
+            this.isDefaultLayout = true;
+            this.isGlobalDefault = false;
+            this.applyToLeaf = true;
+            this.loadedSource = 'preset';
+            this.toastService.show('No layout for this test yet. Starting a new Draft from the Global layout.', 'info');
+          } else {
+            this.currentLayoutId = res.id;
+            this.layoutCode = res.layoutCode || `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId || 'GLOBAL'}`;
+            this.layoutName = res.layoutName || (res.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Layout`);
+            this.layoutRev = res.revision || '1.0';
+            this.currentVersion = res.version || 1;
+            this.layoutStatus = res.status || 'Published';
+            this.isDefaultLayout = res.isDefault ?? true;
+            this.isGlobalDefault = res.isGlobalDefault ?? false;
+            this.applyToLeaf = res.applyToLeaf ?? true;
+            this.loadedSource = 'db';
+          }
           if (!this.selectedTestMethodId) {
             if (res.testMethodSpecificationID) {
               this.selectedTestMethodId = res.testMethodSpecificationID;
@@ -3684,7 +3304,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
           let parsedMappedLeafKeys: string[] = [];
           try {
-            const config = JSON.parse(res.layoutConfigJson);
+            const config = normalizeLayoutConfig(res.layoutConfigJson);
             if (config.mappedLeafKeys && Array.isArray(config.mappedLeafKeys)) {
               parsedMappedLeafKeys = config.mappedLeafKeys;
             }
@@ -3703,7 +3323,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             console.error('Error parsing layout config JSON from DB', e);
           }
 
-          if (parsedMappedLeafKeys.length > 0) {
+          if (isGlobalFallback) {
+            // The Global layout's mappings do not belong to the new test layout
+            this.additionalMappedLeafKeys = [];
+          } else if (parsedMappedLeafKeys.length > 0) {
             this.additionalMappedLeafKeys = parsedMappedLeafKeys;
           } else if (res.mappedLeafNodes && Array.isArray(res.mappedLeafNodes)) {
             this.additionalMappedLeafKeys = res.mappedLeafNodes.map((m: any) => m.uniqueKey).filter(Boolean);
@@ -3713,16 +3336,20 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           this.syncAdditionalMappedTestIds();
 
           this.ensureSectionKeys();
-          this.isMapped = true;
+          this.isMapped = !isGlobalFallback;
           this.selectedSectionId = this.sections.length > 0 ? this.sections[0].id : null;
-          this.toastService.show(`Loaded layout "${res.layoutName}" from database`, 'info');
+          if (!isGlobalFallback) {
+            this.toastService.show(`Loaded layout "${res.layoutName}" from database`, 'info');
+          }
+          this.lastSavedSnapshot = this.computeCurrentSnapshotJson();
+          this.checkDuplicateDefaultLayout();
         } else {
-          this.handleNoDatabaseLayoutFound(testId || 1, matchedKey);
+          this.handleNoDatabaseLayoutFound(testId, matchedKey);
         }
       },
       error: (err) => {
         console.warn('No database layout found or error fetching', err);
-        this.handleNoDatabaseLayoutFound(testId || 1, matchedKey);
+        this.handleNoDatabaseLayoutFound(testId, matchedKey);
       }
     });
   }
@@ -3785,7 +3412,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
           let parsedMappedLeafKeys: string[] = [];
           try {
-            const config = JSON.parse(res.layoutConfigJson);
+            const config = normalizeLayoutConfig(res.layoutConfigJson);
             if (config.mappedLeafKeys && Array.isArray(config.mappedLeafKeys)) {
               parsedMappedLeafKeys = config.mappedLeafKeys;
             }
@@ -3817,6 +3444,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           this.isMapped = true;
           this.selectedSectionId = this.sections.length > 0 ? this.sections[0].id : null;
           this.toastService.show(`Loaded layout "${res.layoutName}"`, 'success');
+          this.lastSavedSnapshot = this.computeCurrentSnapshotJson();
+          this.checkDuplicateDefaultLayout();
         }
       },
       error: (err) => {
@@ -3826,19 +3455,21 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     });
   }
 
-  handleNoDatabaseLayoutFound(testId: number, matchedKey: string): void {
+  handleNoDatabaseLayoutFound(testId: number | null, matchedKey: string): void {
     this.currentLayoutId = null;
     this.loadedSource = 'preset';
-    this.layoutCode = `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId || 1}`;
-    this.layoutName = `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Universal Layout`;
+    this.layoutCode = testId ? `TL-${(matchedKey || 'GEN').toUpperCase()}-${testId}` : `TL-${(matchedKey || 'GEN').toUpperCase()}-NEW`;
+    this.layoutName = `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Test Layout`;
     this.layoutRev = '1.0';
     this.currentVersion = 1;
-    this.layoutStatus = 'Published';
+    this.layoutStatus = 'Draft';
     this.isDefaultLayout = true;
     this.isMapped = false;
     this.additionalMappedTestIds = [];
     this.loadSavedLayoutForTest();
     this.ensureSectionKeys();
+    this.lastSavedSnapshot = this.computeCurrentSnapshotJson();
+    this.checkDuplicateDefaultLayout();
   }
 
   // Stable Section Key Management (Auto-generated & Non-editable)
@@ -3867,6 +3498,114 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   // Global Default Layout Toggle
+  // Confirm dialog (replaces native window.confirm)
+  confirmDialog: {
+    visible: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    cancelLabel?: string;
+    variant: 'danger' | 'primary' | 'warning';
+    onConfirm: (() => void) | null;
+    onCancel?: (() => void) | null;
+  } = {
+    visible: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    cancelLabel: 'Cancel',
+    variant: 'primary',
+    onConfirm: null,
+    onCancel: null
+  };
+
+  askConfirm(opts: {
+    title: string;
+    message: string;
+    confirmLabel: string;
+    cancelLabel?: string;
+    variant?: 'danger' | 'primary' | 'warning';
+    onConfirm: () => void;
+    onCancel?: () => void;
+  }): void {
+    this.confirmDialog = {
+      visible: true,
+      cancelLabel: opts.cancelLabel || 'Cancel',
+      variant: opts.variant || 'primary',
+      onCancel: opts.onCancel || null,
+      ...opts
+    };
+  }
+
+  onConfirmDialogConfirmed(): void {
+    const action = this.confirmDialog.onConfirm;
+    this.confirmDialog = { ...this.confirmDialog, visible: false, onConfirm: null, onCancel: null };
+    action?.();
+  }
+
+  onConfirmDialogCancelled(): void {
+    const cancelAction = this.confirmDialog.onCancel;
+    this.confirmDialog = { ...this.confirmDialog, visible: false, onConfirm: null, onCancel: null };
+    cancelAction?.();
+  }
+
+  computeCurrentSnapshotJson(): string {
+    try {
+      return serializeLayoutConfig({
+        archetypeKey: this.selectedArchetypeKey,
+        testKey: this.selectedTestKey,
+        layoutName: this.layoutName,
+        revision: this.layoutRev,
+        sections: this.sections || [],
+        testMethodSpecificationID: this.selectedTestMethodId,
+        testMethodName: this.selectedTestMethodName,
+        mappedLeafKeys: this.additionalMappedLeafKeys || []
+      });
+    } catch {
+      return '';
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    if (this.isViewMode) return false;
+    if (!this.lastSavedSnapshot) return false;
+    return this.computeCurrentSnapshotJson() !== this.lastSavedSnapshot;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      $event.preventDefault();
+      $event.returnValue = true;
+    }
+  }
+
+  canDeactivate(): Promise<boolean> | boolean {
+    if (!this.hasUnsavedChanges()) return true;
+    return new Promise<boolean>((resolve) => {
+      this.askConfirm({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes in the layout designer. Discard changes and leave this page?',
+        confirmLabel: 'Discard & Leave',
+        cancelLabel: 'Stay on Page',
+        variant: 'warning',
+        onConfirm: () => resolve(true),
+        onCancel: () => resolve(false)
+      });
+    });
+  }
+
+  /** Bootstrap badge class for the layout lifecycle status (project badge convention). */
+  getLayoutStatusBadgeClass(): string {
+    switch (this.layoutStatus) {
+      // Project badge convention (CLAUDE.md): Bootstrap bg-* classes
+      case 'Published': return 'bg-success';
+      case 'Draft': return 'bg-warning text-dark';
+      case 'Superseded': return 'bg-secondary';
+      default: return 'bg-secondary';
+    }
+  }
+
   onGlobalDefaultToggle(): void {
     if (this.isGlobalDefault) {
       this.isDefaultLayout = true;
@@ -3880,14 +3619,55 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (this.sections.length > 0) {
         this.selectedSectionId = this.sections[0].id;
       }
-      this.toastService.show('Global Default enabled: generic runtime layout loaded (fallback for all tests)', 'info');
+      this.toastService.show('Global layout on: used for every test that has no layout of its own', 'info');
     } else {
       const archKey = this.resolvedHierarchy?.groupName ? this.getArchetypeKeyForUnifiedItem(this.selectedUnifiedTestItem, this.resolvedHierarchy?.groupName || '') : 'generic';
       this.selectedArchetypeKey = archKey;
       this.selectedTestKey = archKey;
-      this.layoutCode = `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${this.selectedLabTestId || 1}`;
-      this.toastService.show('Global Default disabled: mapped to specific laboratory test', 'info');
+      this.layoutCode = this.selectedLabTestId
+        ? `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${this.selectedLabTestId}`
+        : `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-NEW`;
+      this.toastService.show('Global layout off: this layout applies to the selected test', 'info');
     }
+    this.checkDuplicateDefaultLayout();
+  }
+
+  /** Checks if another active layout is already set as default for this laboratory test and method. */
+  checkDuplicateDefaultLayout(): void {
+    if (this.isGlobalDefault || !this.selectedLabTestId || !this.isDefaultLayout) {
+      this.hasDuplicateDefaultWarning = false;
+      this.duplicateDefaultLayoutCode = '';
+      return;
+    }
+
+    this.testLayoutService.getAllLayouts({
+      PageNumber: 1,
+      PageSize: 50,
+      searchTerm: '',
+      sortByColumn: 'ID',
+      sortOrder: 'desc'
+    }).subscribe({
+      next: (res: any) => {
+        const items: any[] = res?.items || [];
+        const dup = items.find((x: any) =>
+          x.isDefault &&
+          !x.isGlobalDefault &&
+          x.laboratoryTestID === this.selectedLabTestId &&
+          x.id !== this.currentLayoutId &&
+          (!this.selectedTestMethodId || !x.testMethodSpecificationID || x.testMethodSpecificationID === this.selectedTestMethodId)
+        );
+        if (dup) {
+          this.hasDuplicateDefaultWarning = true;
+          this.duplicateDefaultLayoutCode = dup.layoutCode || `ID #${dup.id}`;
+        } else {
+          this.hasDuplicateDefaultWarning = false;
+          this.duplicateDefaultLayoutCode = '';
+        }
+      },
+      error: () => {
+        this.hasDuplicateDefaultWarning = false;
+      }
+    });
   }
 
   // Multi-Test Mapping Modal
@@ -3984,6 +3764,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   // Save Layout to Database (Supports both in-place update and Save as New Revision)
   saveLayout(forceNewRevision: boolean = false): void {
+    // Shows is-invalid + error text on the Layout Name / Code fields
+    this.saveAttempted = true;
     const testId = this.isGlobalDefault ? null : (this.selectedLabTestId || this.resolvedHierarchy?.groupId);
     if (!this.isGlobalDefault && !testId) {
       this.toastService.show('Select a Laboratory Test first (or enable Global Default Layout)', 'warning');
@@ -3994,9 +3776,23 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       return;
     }
 
+    const cleanName = (this.layoutName || '').trim();
+    if (!cleanName) {
+      this.toastService.show('Layout Name is required', 'warning');
+      return;
+    }
+
+    const cleanCode = (this.layoutCode || '').trim();
+    if (!cleanCode) {
+      this.toastService.show('Layout Code is required', 'warning');
+      return;
+    }
+
     this.ensureSectionKeys();
 
-    const mappedLeafNodes: any[] = [];
+    const cleanMethodName = (this.selectedTestMethodName || '').replace(/[\s★*]+$/g, '').trim();
+
+    const mappedLeafNodes: LayoutMappedLeafNode[] = [];
     const allMappedIds: number[] = [];
     if (testId) allMappedIds.push(testId);
 
@@ -4010,31 +3806,18 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           laboratoryTestID: item.masterTestId || item.id,
           laboratoryTestSubGroupID: item.subGroupId || null,
           laboratoryTestAnalysisTypeID: item.analysisTypeId || null,
+          // Layout is designed for one test method; every mapped leaf resolves for that method (Tier 1)
+          testMethodSpecificationID: this.selectedTestMethodId || null,
+          testMethodName: cleanMethodName || null,
           leafNode: item.leafNode || item.name,
           uniqueKey: item.uniqueKey
         });
       }
     }
 
-    const configPayload = {
-      archetypeKey: this.selectedArchetypeKey,
-      testKey: this.selectedTestKey,
-      layoutName: this.layoutName,
-      revision: this.layoutRev,
-      sections: this.sections,
-      testMethodSpecificationID: this.selectedTestMethodId,
-      testMethodName: this.selectedTestMethodName,
-      customConditions: this.customConditionsMap[this.selectedTestKey] || [],
-      customDimensions: this.customDimensionsMap[this.selectedTestKey] || [],
-      deselectedConditions: this.deselectedConditionsMap[this.selectedTestKey] || [],
-      deselectedDimensions: this.deselectedDimensionsMap[this.selectedTestKey] || [],
-      mappedLeafKeys: this.additionalMappedLeafKeys,
-      mappedLeafNodes: mappedLeafNodes
-    };
-
     const archetypeSummary = Array.from(new Set(this.sections.map(s => s.type))).join(', ');
-    const generatedCode = this.layoutCode || (this.isGlobalDefault ? `TL-GLOBAL-${Date.now()}` : `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${testId}`);
-    const defaultName = this.layoutName || (this.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Layout`);
+    const generatedCode = cleanCode || (this.isGlobalDefault ? `TL-GLOBAL-${Date.now()}` : `TL-${(this.selectedArchetypeKey || 'GEN').toUpperCase()}-${testId}`);
+    const defaultName = cleanName || (this.isGlobalDefault ? 'Global Default Test Execution Layout' : `${this.resolvedHierarchy?.fullDisplayName || 'Laboratory'} Layout`);
 
     let revToSave = this.layoutRev || '1.0';
     let versionToSave = this.currentVersion || 1;
@@ -4045,7 +3828,26 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       revToSave = !isNaN(revNum) ? (revNum + 0.1).toFixed(1) : `${revToSave}.1`;
       this.layoutRev = revToSave;
       this.currentVersion = versionToSave;
+      // A new revision continues the lineage; a superseded source must not create a superseded copy
+      if (this.layoutStatus === 'Superseded') this.layoutStatus = 'Published';
     }
+
+    // Built after revision handling so the stored JSON carries the revision actually saved
+    const configPayload: LayoutConfigPayload = {
+      archetypeKey: this.selectedArchetypeKey,
+      testKey: this.selectedTestKey,
+      layoutName: defaultName,
+      revision: revToSave,
+      sections: this.sections,
+      testMethodSpecificationID: this.selectedTestMethodId,
+      testMethodName: cleanMethodName || null,
+      customConditions: this.customConditionsMap[this.selectedTestKey] || [],
+      customDimensions: this.customDimensionsMap[this.selectedTestKey] || [],
+      deselectedConditions: this.deselectedConditionsMap[this.selectedTestKey] || [],
+      deselectedDimensions: this.deselectedDimensionsMap[this.selectedTestKey] || [],
+      mappedLeafKeys: this.additionalMappedLeafKeys,
+      mappedLeafNodes: mappedLeafNodes
+    };
 
     const dto: TestLayoutTemplateDto = {
       id: forceNewRevision ? 0 : (this.currentLayoutId || 0),
@@ -4062,12 +3864,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       laboratoryTestSubGroupID: this.isGlobalDefault ? null : (this.selectedSubGroupId || this.resolvedHierarchy?.subGroupId || null),
       laboratoryTestAnalysisTypeID: this.isGlobalDefault ? null : (this.selectedAnalysisTypeId || this.resolvedHierarchy?.analysisTypeId || null),
       testMethodSpecificationID: this.selectedTestMethodId,
-      testMethodName: this.selectedTestMethodName,
+      testMethodName: cleanMethodName || undefined,
       leafNode: this.isGlobalDefault ? 'Global / All Tests' : this.leafNode,
       applyToLeaf: this.applyToLeaf,
       sectionCount: this.sections.length,
       archetypeSummary,
-      layoutConfigJson: JSON.stringify(configPayload),
+      layoutConfigJson: serializeLayoutConfig(configPayload),
       outputPayloadSchemaJson: this.getJsonPayloadPreview()
     };
 
@@ -4076,28 +3878,36 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         next: () => {
           this.isMapped = true;
           this.loadedSource = 'db';
-          this.backupToLocalStorage();
+          this.lastSavedSnapshot = this.computeCurrentSnapshotJson();
+          try { localStorage.removeItem('lims_layout_recovery_draft'); } catch {}
           this.toastService.show(`Layout updated in database (Rev ${dto.revision || '1.0'})`, 'success');
+          this.checkDuplicateDefaultLayout();
         },
         error: (err) => {
           console.error('Update layout failed', err);
-          this.backupToLocalStorage();
-          this.toastService.show('Failed to update in database (saved locally as draft)', 'warning');
+          this.saveEmergencyRecoveryDraft();
+          const serverMsg = err?.error?.message || err?.error || err?.message || 'Database error occurred';
+          this.toastService.show(`Failed to update layout in database: ${serverMsg}`, 'error');
         }
       });
     } else {
       this.testLayoutService.createLayout(dto).subscribe({
         next: (res) => {
           this.currentLayoutId = res.id;
+          // Keep the code so the next "Save as new revision" stays in the same lineage
+          this.layoutCode = dto.layoutCode;
           this.isMapped = true;
           this.loadedSource = 'db';
-          this.backupToLocalStorage();
+          this.lastSavedSnapshot = this.computeCurrentSnapshotJson();
+          try { localStorage.removeItem('lims_layout_recovery_draft'); } catch {}
           this.toastService.show(`Layout saved to database (Rev ${dto.revision || '1.0'})`, 'success');
+          this.checkDuplicateDefaultLayout();
         },
         error: (err) => {
           console.error('Create layout failed', err);
-          this.backupToLocalStorage();
-          this.toastService.show('Failed to save in database (saved locally as draft)', 'warning');
+          this.saveEmergencyRecoveryDraft();
+          const serverMsg = err?.error?.message || err?.error || err?.message || 'Database error occurred';
+          this.toastService.show(`Failed to save layout to database: ${serverMsg}`, 'error');
         }
       });
     }
@@ -4105,8 +3915,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   deleteCurrentLayout(): void {
     if (!this.currentLayoutId) return;
-    if (!confirm(`Are you sure you want to delete layout "${this.layoutName}" from the database?`)) return;
+    this.askConfirm({
+      title: 'Delete layout',
+      message: `Delete layout "${this.layoutName}"? Tests mapped to it will use the next matching layout.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: () => this.performDeleteCurrentLayout()
+    });
+  }
 
+  private performDeleteCurrentLayout(): void {
+    if (!this.currentLayoutId) return;
     this.testLayoutService.deleteLayout(this.currentLayoutId).subscribe({
       next: () => {
         this.toastService.show('Layout deleted from database', 'success');
@@ -4114,6 +3933,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         this.isMapped = false;
         this.sections = this.getDefaultSectionsForTest(this.selectedArchetypeKey);
         if (this.sections.length > 0) this.selectedSectionId = this.sections[0].id;
+        this.lastSavedSnapshot = this.computeCurrentSnapshotJson();
+        this.checkDuplicateDefaultLayout();
       },
       error: (err) => {
         console.error('Failed to delete layout', err);
@@ -4122,54 +3943,58 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     });
   }
 
-  backupToLocalStorage(): void {
+  saveEmergencyRecoveryDraft(): void {
     try {
-      const saved = JSON.parse(localStorage.getItem('lims_universal_layouts') || '{}');
-      const payload = {
+      const draft = {
         testKey: this.selectedTestKey,
+        testId: this.selectedLabTestId,
+        layoutCode: this.layoutCode,
         name: this.layoutName,
         rev: this.layoutRev,
         savedAt: new Date().toISOString(),
         sections: this.sections
       };
-      saved[this.selectedTestKey] = payload;
-      if (this.applyToLeaf && this.currentTest.leaf) {
-        saved[`leaf:${this.currentTest.leaf}`] = payload;
-      }
-      localStorage.setItem('lims_universal_layouts', JSON.stringify(saved));
+      localStorage.setItem('lims_layout_recovery_draft', JSON.stringify(draft));
     } catch (e) {
-      console.warn('Local storage backup failed', e);
+      console.warn('Emergency draft backup failed', e);
     }
+  }
+
+  checkRecoveryDraft(): void {
+    try {
+      const raw = localStorage.getItem('lims_layout_recovery_draft');
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft && draft.testKey === this.selectedTestKey && Array.isArray(draft.sections) && draft.sections.length > 0) {
+        const timeStr = draft.savedAt ? new Date(draft.savedAt).toLocaleTimeString() : 'earlier';
+        this.askConfirm({
+          title: 'Unsaved Draft Recovered',
+          message: `An unsaved draft for this test from ${timeStr} was found on this device. Would you like to restore it?`,
+          confirmLabel: 'Restore Draft',
+          cancelLabel: 'Discard Draft',
+          variant: 'primary',
+          onConfirm: () => {
+            this.sections = draft.sections;
+            if (draft.name) this.layoutName = draft.name;
+            if (draft.rev) this.layoutRev = draft.rev;
+            this.toastService.show('Recovered unsaved draft restored', 'info');
+          },
+          onCancel: () => {
+            try { localStorage.removeItem('lims_layout_recovery_draft'); } catch {}
+          }
+        });
+      }
+    } catch {}
   }
 
   // Load Saved Layout (Local fallback)
   loadSavedLayoutForTest(): void {
-    try {
-      const saved = JSON.parse(localStorage.getItem('lims_universal_layouts') || '{}');
-      const testLayout = saved[this.selectedTestKey] || (this.currentTest.leaf ? saved[`leaf:${this.currentTest.leaf}`] : null);
-      if (testLayout && Array.isArray(testLayout.sections) && testLayout.sections.length > 0) {
-        this.sections = JSON.parse(JSON.stringify(testLayout.sections));
-        if (testLayout.name) this.layoutName = testLayout.name;
-        if (testLayout.rev) this.layoutRev = testLayout.rev;
-        this.isMapped = true;
-        if (this.sections.length > 0) {
-          this.selectedSectionId = this.sections[0].id;
-        }
-      } else {
-        this.sections = this.getDefaultSectionsForTest(this.selectedTestKey);
-        this.isMapped = false;
-        if (this.sections.length > 0) {
-          this.selectedSectionId = this.sections[0].id;
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      this.sections = this.getDefaultSectionsForTest(this.selectedTestKey);
-      this.isMapped = false;
-      if (this.sections.length > 0) {
-        this.selectedSectionId = this.sections[0].id;
-      }
+    this.sections = this.getDefaultSectionsForTest(this.selectedArchetypeKey || this.selectedTestKey);
+    this.isMapped = false;
+    if (this.sections.length > 0) {
+      this.selectedSectionId = this.sections[0].id;
     }
+    this.checkRecoveryDraft();
   }
 
   // Load Database Tests (2-level & 3-level hierarchy integration)
@@ -4185,27 +4010,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.labService.getAllLaboratoryTests(filter).subscribe({
       next: (res) => {
         const dbTests: any[] = res?.items || [];
-        if (dbTests.length > 0) {
-          this.actualLabTests = dbTests.map((t: any) => ({
-            id: t.id,
-            name: t.name,
-            isChemicalTest: !!t.isChemicalTest,
-            code: t.code,
-            department: t.department || (t.isChemicalTest ? 'Chemical' : 'General')
-          }));
-        } else {
-          this.initFallbackActualLabTests();
-        }
-
-        // Match each preset by its dbTestId
-        Object.values(this.testDatabase).forEach(test => {
-          if (test.dbTestId) {
-            const match = this.actualLabTests.find(t => t.id === test.dbTestId);
-            if (match) {
-              test.isChemical = !!match.isChemicalTest;
-            }
-          }
-        });
+        this.actualLabTests = dbTests.map((t: any) => ({
+          id: t.id,
+          name: t.name,
+          isChemicalTest: !!t.isChemicalTest,
+          code: t.code,
+          department: t.department || (t.isChemicalTest ? 'Chemical' : 'General')
+        }));
 
         // Load subgroups for active lab test if selected
         if (this.selectedLabTestId) {
@@ -4215,48 +4026,29 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       },
       error: (e) => {
         console.error('Failed to load DB tests', e);
-        this.initFallbackActualLabTests();
-        if (this.selectedLabTestId) {
-          this.syncLiveParametersForTest(this.selectedArchetypeKey);
-        }
+        this.toastService.show('Failed to load laboratory tests from server', 'error');
       }
     });
-  }
-
-  initFallbackActualLabTests(): void {
-    this.actualLabTests = [
-      { id: 1, name: 'Tensile Test', isChemicalTest: false, code: 'TENSILE', department: 'General' },
-      { id: 7, name: 'Hardness Test (Rockwell / Brinell)', isChemicalTest: false, code: 'HARDNESS', department: 'General' },
-      { id: 8, name: 'Charpy Impact Test', isChemicalTest: false, code: 'CHARPY', department: 'General' },
-      { id: 9, name: 'Izod Impact Test', isChemicalTest: false, code: 'IZOD', department: 'General' },
-      { id: 10, name: 'Micro Vickers Hardness', isChemicalTest: false, code: 'MICRO_VICKERS', department: 'General' },
-      { id: 11, name: 'Hardness Multi-Location (Weld Survey)', isChemicalTest: false, code: 'HARDNESS_SURVEY', department: 'General' },
-      { id: 12, name: 'Effective Case Depth', isChemicalTest: false, code: 'CASE_DEPTH', department: 'Heat Treatment' },
-      { id: 2, name: 'Spectro', isChemicalTest: true, code: 'SPECTRO', department: 'Chemical' },
-      { id: 5, name: 'Spectro OES Chemical Analysis', isChemicalTest: true, code: 'OES', department: 'Chemical' },
-      { id: 13, name: 'Metallography Microstructural Analysis', isChemicalTest: false, code: 'METALLOGRAPHY', department: 'Metallography' },
-      { id: 14, name: 'Grain Size Analysis', isChemicalTest: false, code: 'GRAIN_SIZE', department: 'Metallography' },
-      { id: 15, name: 'Ferrite Content Phase Analysis', isChemicalTest: false, code: 'FERRITE', department: 'Metallography' },
-      { id: 16, name: 'Macroscopic Examination (Weld)', isChemicalTest: false, code: 'MACRO_WELD', department: 'Metallography' },
-      { id: 17, name: 'Salt Spray Corrosion Test (SST)', isChemicalTest: false, code: 'SST', department: 'Corrosion' }
-    ];
   }
 
   // Sync Live Parameters from DB (supports 3-level Chemical & 2-level General)
   syncLiveParametersForTest(testKey: string): void {
     const test = this.testDatabase[testKey];
-    if (!test || !test.dbTestId) return;
+    const targetTestId = this.selectedLabTestId || (test?.dbTestId);
+    if (!targetTestId) return;
 
-    if (test.isChemical) {
+    const isChem = test ? !!test.isChemical : (this.resolvedHierarchy ? !!this.resolvedHierarchy.isChemical : false);
+
+    if (isChem) {
       // 3-Level hierarchy: LaboratoryTest -> SubGroup (Metal Base) -> AnalysisType (Matrix/Technique) -> Parameters
-      this.labService.getSubGroupsByLabTest(test.dbTestId).subscribe({
+      this.labService.getSubGroupsByLabTest(targetTestId).subscribe({
         next: (subGroups: any[]) => {
           if (subGroups && subGroups.length > 0) {
             const firstSg = subGroups[0];
-            test.subGroupId = firstSg.id;
+            if (test) test.subGroupId = firstSg.id;
             if (firstSg.analysisTypes && firstSg.analysisTypes.length > 0) {
               const firstAt = firstSg.analysisTypes[0];
-              test.analysisTypeId = firstAt.id;
+              if (test) test.analysisTypeId = firstAt.id;
               this.labService.getAnalysisTypeDetails(firstAt.id).subscribe({
                 next: (atDetails: any) => {
                   const pList = atDetails?.parameters || [];
@@ -4297,15 +4089,15 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       });
     } else {
       // 2-Level hierarchy: LaboratoryTest -> SubGroup -> Parameters & Standards
-      this.labService.getSubGroupsByLabTest(test.dbTestId).subscribe({
+      this.labService.getSubGroupsByLabTest(targetTestId).subscribe({
         next: (subGroups: any[]) => {
           if (subGroups && subGroups.length > 0) {
             const firstSg = subGroups[0];
-            test.subGroupId = firstSg.id;
+            if (test) test.subGroupId = firstSg.id;
             this.labService.getSubGroupDetails(firstSg.id).subscribe({
               next: (sgDetails: any) => {
                 if (sgDetails?.parameters && sgDetails.parameters.length > 0) {
-                  test.params = sgDetails.parameters.map((p: any) => ({
+                  const mappedParams = sgDetails.parameters.map((p: any) => ({
                     id: p.parameter?.id || p.parameterId,
                     name: p.parameter?.name || p.parameterName || 'Parameter',
                     unit: p.parameter?.parameterUnit?.name || p.parameterUnit || '—',
@@ -4314,7 +4106,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
                     formula: p.parameter?.formula || '',
                     formulaDisplay: p.parameter?.formulaDisplay || ''
                   }));
-                  test.demo = test.params.map(() => '100');
+                  if (test) {
+                    test.params = mappedParams;
+                    test.demo = test.params.map(() => '100');
+                  }
                 }
               },
               error: (err) => console.error('Failed to load SubGroup details', err)
@@ -4410,9 +4205,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       return;
     }
     if (fails > 0) {
-      this.toastService.show(`Result Submitted with ${fails} FAIL observation(s) [Simulated]`, 'warning');
+      this.toastService.show(`Preview only (nothing saved): ${fails} value(s) FAIL`, 'warning');
     } else {
-      this.toastService.show('Result Submitted Successfully — All Observations PASS [Simulated]', 'success');
+      this.toastService.show('Preview only (nothing saved): all values PASS', 'success');
     }
   }
 
@@ -4865,6 +4660,54 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       bindingMode: defaultMode
     }));
     this.toastService.show(`Applied preset: ${preset.toUpperCase()}`, 'info');
+  }
+
+  onLocationModeChange(sec: ExecutionSection): void {
+    if (sec.config.locationMode === 'Numbered zones') {
+      this.syncLocationNumberedRows(sec);
+    } else {
+      this.syncLocationNamedRows(sec);
+    }
+    this.markLayoutDirty();
+  }
+
+  onLocationNamesChange(sec: ExecutionSection): void {
+    this.syncLocationNamedRows(sec);
+    this.markLayoutDirty();
+  }
+
+  onLocationCountPrefixChange(sec: ExecutionSection): void {
+    this.syncLocationNumberedRows(sec);
+    this.markLayoutDirty();
+  }
+
+  private syncLocationNamedRows(sec: ExecutionSection): void {
+    const raw = sec.config.locationNames || '';
+    const names = raw.split(',').map(s => s.trim()).filter(Boolean);
+    const resolved = names.length ? names : ['Location 1'];
+    sec.config.locationRows = resolved;
+    sec.config.count = resolved.length;
+    this.syncLocationTableRows(sec, resolved);
+  }
+
+  private syncLocationNumberedRows(sec: ExecutionSection): void {
+    const count = Math.max(1, Math.min(50, Number(sec.config.count) || 3));
+    const prefix = (sec.config.prefix || 'Zone').trim();
+    const rows = Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}`);
+    sec.config.locationRows = rows;
+    sec.config.locationNames = rows.join(', ');
+    this.syncLocationTableRows(sec, rows);
+  }
+
+  private syncLocationTableRows(sec: ExecutionSection, rowLabels: string[]): void {
+    const defaultMode = sec.config.dataBindingMode || 'runtime';
+    sec.config.tableRows = rowLabels.map((name, i) => ({
+      key: `loc_${i}`,
+      label: name,
+      visible: true,
+      removable: true,
+      bindingMode: defaultMode
+    }));
   }
 
   getLocationTableColCount(sec: ExecutionSection): number {
@@ -6265,8 +6108,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         if (sec.config.showStatus !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
       }
     } else if (sec.type === 'reading') {
-      const targetUnit = sec.config.targetUnit || 'HRC';
-      const targetReq = sec.config.targetRequirement || '28 – 34 HRC';
+      const targetUnit = sec.config.targetUnit || '';
+      const targetReq = sec.config.targetRequirement || 'From specification';
 
       cols.push({
         key: 'specimen',
@@ -6467,8 +6310,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         });
       });
     } else if (sec.type === 'reading') {
-      const targetUnit = sec.config.targetUnit || 'HRC';
-      const targetReq = sec.config.targetRequirement || '28 – 34 HRC';
+      const targetUnit = sec.config.targetUnit || '';
+      const targetReq = sec.config.targetRequirement || 'From specification';
 
       const specList = sec.config.specimenRows?.length ? sec.config.specimenRows : ['Specimen #1', 'Specimen #2'];
       specList.forEach((spec, idx) => {
@@ -7265,24 +7108,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       sec.config = this.createSectionObject('photo').config;
     }
     if (!sec.config.photoSlots || !Array.isArray(sec.config.photoSlots)) {
-      const count = Math.max(1, Math.min(8, sec.config.count || 2));
+      const count = Math.max(1, Math.min(8, sec.config.count || 1));
       const slots: PhotoSlotItem[] = [];
       for (let i = 1; i <= count; i++) {
-        slots.push({
-          id: `slot_${Date.now()}_${i}`,
-          title: `Attachment Plate ${i}${i === 1 ? ' (100X)' : i === 2 ? ' (500X)' : ''}`,
-          caption: sec.config.caption || 'Runtime attachment caption',
-          bindingSource: 'runtime',
-          magnification: i === 1 ? '100X' : i === 2 ? '500X' : '1000X',
-          etchant: sec.config.showEtchant ? '2% Nital' : '',
-          etchantMode: 'manual',
-          etchantSource: 'parameter',
-          scaleBar: i === 1 ? '50 µm' : '20 µm',
-          location: i === 1 ? 'Surface' : 'Core',
-          specimenId: `Specimen #${i}`,
-          mandatory: i === 1,
-          reportable: true
-        });
+        slots.push(this.newPhotoSlot(sec, i, i === 1));
       }
       sec.config.photoSlots = slots;
     }
@@ -7290,26 +7119,31 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     return sec.config.photoSlots;
   }
 
+  /** Empty photo slot: the lab fills magnification / etchant / scale per method (no demo values). */
+  private newPhotoSlot(sec: ExecutionSection, index: number, mandatory: boolean): PhotoSlotItem {
+    return {
+      id: `slot_${Date.now()}_${index}`,
+      title: `Photo ${index}`,
+      caption: sec.config.caption || '',
+      bindingSource: 'runtime',
+      magnification: '',
+      etchant: '',
+      etchantMode: 'manual',
+      etchantSource: 'parameter',
+      scaleBar: '',
+      location: '',
+      specimenId: '',
+      mandatory,
+      reportable: true
+    };
+  }
+
   addPhotoSlot(sec: ExecutionSection): void {
     const slots = this.ensurePhotoSlots(sec);
     const newIdx = slots.length + 1;
-    slots.push({
-      id: `slot_${Date.now()}_${newIdx}`,
-      title: `Attachment Plate ${newIdx}`,
-      caption: sec.config.caption || 'Runtime attachment caption',
-      bindingSource: 'runtime',
-      magnification: '100X',
-      etchant: '2% Nital',
-      etchantMode: 'manual',
-      etchantSource: 'parameter',
-      scaleBar: '50 µm',
-      location: 'Surface',
-      specimenId: `Specimen #${newIdx}`,
-      mandatory: false,
-      reportable: true
-    });
+    slots.push(this.newPhotoSlot(sec, newIdx, false));
     sec.config.count = slots.length;
-    this.toastService.show(`Photo Plate #${newIdx} added`, 'success');
+    this.toastService.show(`Photo ${newIdx} added`, 'success');
   }
 
   removePhotoSlot(sec: ExecutionSection, index: number): void {

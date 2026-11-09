@@ -9527,6 +9527,12 @@ button i.bi:only-child,
   box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.12) !important;
 }
 
+.exec-section-card:focus-visible {
+  outline: none !important;
+  border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 0 0 3px rgba(218, 38, 28, 0.25) !important;
+}
+
 .exec-sec-header {
   padding: 5px 10px !important;
   border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;

@@ -86,7 +86,7 @@
           <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Layout Components</span>
         </span>
         <span class="badge bg-light text-dark border ms-auto me-1.5">{{ sections.length }}</span>
-        <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
+        <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)" aria-label="Collapse panel (Ctrl+[)">
           <i class="bi bi-chevron-left"></i>
         </button>
       </div>
@@ -103,7 +103,7 @@
             title="Default width (270px)">M</button>
           <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 340" (click)="setLeftPreset(340)"
             title="Wide width (340px)">L</button>
-          <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to screen default width"><i
+          <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to screen default width" aria-label="Reset to screen default width"><i
               class="bi bi-arrow-counterclockwise"></i></button>
         </div>
       </div>
@@ -132,14 +132,14 @@
         <!-- Single Unified Searchable Dropdown (Resolves Group, SubGroup & Leaf Node) -->
         <div class="mb-1.5" *ngIf="!isGlobalDefault">
           <div class="d-flex justify-content-between align-items-center mb-1.5">
-            <label class="form-label compact-label mb-0">
+            <label for="actualLabTestSelect" class="form-label compact-label mb-0">
               <i class="bi bi-search me-1.5 text-danger"></i><span>Actual Laboratory Test *</span>
             </label>
             <a routerLink="/test/laboratory-test" class="btn-nav-link" target="_blank" title="Manage Laboratory Tests">
               <i class="bi bi-box-arrow-up-right me-1.5"></i><span>Manage</span>
             </a>
           </div>
-          <app-searchable-dropdown [fetchDataFn]="fetchUnifiedLabTestFn" [selectedItem]="selectedUnifiedTestItem || selectedUnifiedTestId"
+          <app-searchable-dropdown id="actualLabTestSelect" [fetchDataFn]="fetchUnifiedLabTestFn" [selectedItem]="selectedUnifiedTestItem || selectedUnifiedTestId"
             (itemSelected)="onUnifiedTestSelected($event)" [placeholder]="'Search test, subgroup, matrix...'"
             [labelName]="'Target Laboratory Test'" [hideLabel]="true" [smallInput]="true">
           </app-searchable-dropdown>
@@ -148,7 +148,7 @@
         <!-- Secondary Key: Test Method Specification (Optional - Tier 1 Cascade Match) -->
         <div class="mb-1.5" *ngIf="!isGlobalDefault">
           <div class="d-flex justify-content-between align-items-center mb-1.5">
-            <label class="form-label compact-label mb-0">
+            <label for="testMethodSpecSelect" class="form-label compact-label mb-0">
               <i class="bi bi-journal-check me-1.5 text-primary"></i><span>Test Method / Spec</span>
             </label>
             <div class="d-flex align-items-center gap-1.5">
@@ -159,7 +159,7 @@
               </a>
             </div>
           </div>
-          <app-searchable-dropdown [fetchDataFn]="fetchTestMethodSpecFn" [selectedItem]="selectedTestMethodItem || selectedTestMethodId"
+          <app-searchable-dropdown id="testMethodSpecSelect" [fetchDataFn]="fetchTestMethodSpecFn" [selectedItem]="selectedTestMethodItem || selectedTestMethodId"
             (itemSelected)="onTestMethodSpecSelected($event)" [placeholder]="'Select Test Method (e.g. ASTM A370)...'"
             [labelName]="'Test Method Specification'" [hideLabel]="true" [smallInput]="true">
           </app-searchable-dropdown>
@@ -227,12 +227,12 @@
         </div>
 
         <div class="mb-1.5">
-          <label class="form-label compact-label">Leaf Node Path</label>
-          <input type="text" class="form-control form-control-sm compact-input" [value]="leafNode" readonly>
+          <label for="inpLeafNodePath" class="form-label compact-label">Leaf Node Path</label>
+          <input id="inpLeafNodePath" type="text" class="form-control form-control-sm compact-input" [value]="leafNode" readonly>
         </div>
         <div class="mb-1.5">
-          <label class="form-label compact-label">Data Source</label>
-          <input type="text" class="form-control form-control-sm compact-input" [value]="dataSourceLabel" readonly>
+          <label for="inpDataSourceLabel" class="form-label compact-label">Data Source</label>
+          <input id="inpDataSourceLabel" type="text" class="form-control form-control-sm compact-input" [value]="dataSourceLabel" readonly>
         </div>
       </div>
 
@@ -337,15 +337,15 @@
             </div>
             <div class="outline-item-actions" (click)="$event.stopPropagation()">
               <button type="button" class="btn-icon-mini" (click)="moveSection(-1, s.id)" [disabled]="i === 0"
-                title="Move up">
+                title="Move up" aria-label="Move up">
                 <i class="bi bi-chevron-up"></i>
               </button>
               <button type="button" class="btn-icon-mini" (click)="moveSection(1, s.id)"
-                [disabled]="i === sections.length - 1" title="Move down">
+                [disabled]="i === sections.length - 1" title="Move down" aria-label="Move down">
                 <i class="bi bi-chevron-down"></i>
               </button>
               <button type="button" class="btn-icon-mini text-danger" (click)="deleteSection(s.id)"
-                title="Remove section">
+                title="Remove section" aria-label="Remove section">
                 <i class="bi bi-trash3"></i>
               </button>
             </div>
@@ -386,8 +386,8 @@
           </div>
         </div>
         <div class="mb-1.5">
-          <label class="form-label compact-label">Revision</label>
-          <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="layoutRev"
+          <label for="inpLayoutRev" class="form-label compact-label">Revision</label>
+          <input id="inpLayoutRev" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="layoutRev"
             [disabled]="isViewMode">
         </div>
         <div class="mb-1.5">
@@ -434,7 +434,7 @@
       </div>
       <!-- Expand button when collapsed -->
       <button type="button" class="resizer-expand-tab" *ngIf="leftPanelCollapsed" (click)="toggleLeftPanel()"
-        title="Expand Layout Components (Ctrl+[)">
+        title="Expand Layout Components (Ctrl+[)" aria-label="Expand Layout Components (Ctrl+[)">
         <i class="bi bi-chevron-right"></i>
       </button>
     </div>
@@ -514,7 +514,12 @@
 
           <!-- Dynamic Execution Section Stack -->
           <div class="sections-stack">
-            <div *ngFor="let s of sections; let i = index" class="exec-section-card" (click)="selectSection(s.id)"
+            <div *ngFor="let s of sections; let i = index" class="exec-section-card"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="s.title || ('Section ' + (i + 1))"
+              (click)="selectSection(s.id)"
+              (keydown)="onSectionKeyDown($event, s.id)"
               [ngClass]="{
                    'is-selected': selectedSectionId === s.id,
                    'is-half': s.config.width === 'Half Width',
@@ -548,19 +553,19 @@
                 <div class="sec-actions-toolbar ms-auto d-flex align-items-center gap-1.5"
                   (click)="$event.stopPropagation()">
                   <button type="button" class="btn-icon-sec" (click)="moveSection(-1, s.id)" [disabled]="i === 0"
-                    title="Move Up (↑)">
+                    title="Move Up (↑)" aria-label="Move Up (↑)">
                     <i class="bi bi-arrow-up"></i>
                   </button>
                   <button type="button" class="btn-icon-sec" (click)="moveSection(1, s.id)"
-                    [disabled]="i === sections.length - 1" title="Move Down (↓)">
+                    [disabled]="i === sections.length - 1" title="Move Down (↓)" aria-label="Move Down (↓)">
                     <i class="bi bi-arrow-down"></i>
                   </button>
                   <button type="button" class="btn-icon-sec" (click)="duplicateSection(s.id)"
-                    title="Duplicate Section (⧉)">
+                    title="Duplicate Section (⧉)" aria-label="Duplicate Section (⧉)">
                     <i class="bi bi-copy"></i>
                   </button>
                   <button type="button" class="btn-icon-sec text-danger" (click)="deleteSection(s.id)"
-                    title="Delete Section (✕)">
+                    title="Delete Section (✕)" aria-label="Delete Section (✕)">
                     <i class="bi bi-x-lg"></i>
                   </button>
                 </div>
@@ -2239,19 +2244,19 @@
         </div>
         <div class="d-flex align-items-center gap-1.5 ms-auto flex-shrink-0">
           <button type="button" class="btn-lims-icon" (click)="moveSection(-1)" [disabled]="!selectedSectionId"
-            title="Move Section Up (↑)">
+            title="Move Section Up (↑)" aria-label="Move Section Up (↑)">
             <i class="bi bi-arrow-up"></i>
           </button>
           <button type="button" class="btn-lims-icon" (click)="moveSection(1)" [disabled]="!selectedSectionId"
-            title="Move Section Down (↓)">
+            title="Move Section Down (↓)" aria-label="Move Section Down (↓)">
             <i class="bi bi-arrow-down"></i>
           </button>
           <button type="button" class="btn-lims-icon" (click)="duplicateSection()" [disabled]="!selectedSectionId"
-            title="Duplicate Section (⧉)">
+            title="Duplicate Section (⧉)" aria-label="Duplicate Section (⧉)">
             <i class="bi bi-copy"></i>
           </button>
           <button type="button" class="btn-lims-icon text-danger" (click)="deleteSection()"
-            [disabled]="!selectedSectionId" title="Delete Section (✕)">
+            [disabled]="!selectedSectionId" title="Delete Section (✕)" aria-label="Delete Section (✕)">
             <i class="bi bi-trash"></i>
           </button>
           <button type="button" class="btn-lims btn-lims-secondary btn-sm py-0.5 px-1.5 ms-1.5"
@@ -2271,7 +2276,7 @@
       </div>
       <!-- Expand button when collapsed -->
       <button type="button" class="resizer-expand-tab" *ngIf="rightPanelCollapsed" (click)="toggleRightPanel()"
-        title="Expand Section Inspector (Ctrl+])">
+        title="Expand Section Inspector (Ctrl+])" aria-label="Expand Section Inspector (Ctrl+])">
         <i class="bi bi-chevron-left"></i>
       </button>
     </div>
@@ -2299,10 +2304,10 @@
               title="Standard width (380px)">M</button>
             <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 460" (click)="setRightPreset(460)"
               title="Wide width (460px)">L</button>
-            <button type="button" class="btn-preset" (click)="resetRightWidth()" title="Reset width"><i
+            <button type="button" class="btn-preset" (click)="resetRightWidth()" title="Reset width" aria-label="Reset width"><i
                 class="bi bi-arrow-counterclockwise"></i></button>
           </div>
-          <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])">
+          <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])" aria-label="Collapse panel (Ctrl+])">
             <i class="bi bi-chevron-right"></i>
           </button>
         </div>
@@ -2319,34 +2324,34 @@
           </legend>
           <div class="p-1.5">
             <div class="mb-1.5">
-              <label class="form-label compact-label">Section Title</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
+              <label for="inpSectionTitle" class="form-label compact-label">Section Title</label>
+              <input id="inpSectionTitle" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
                 (ngModelChange)="onSectionTitleChange(s)" [disabled]="isViewMode" placeholder="Enter section title...">
             </div>
             <div class="mb-1.5">
               <div class="d-flex justify-content-between align-items-center mb-0.5">
-                <label class="form-label compact-label mb-0">Stable Section Key</label>
+                <label for="inpSectionKey" class="form-label compact-label mb-0">Stable Section Key</label>
                 <span class="badge bg-light text-dark border font-monospace text-xxs">
                   <i class="bi bi-lock-fill me-1.5"></i>AUTO
                 </span>
               </div>
               <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light text-muted font-monospace"><i class="bi bi-key-fill"></i></span>
-                <input type="text" class="form-control form-control-sm compact-input font-monospace text-danger bg-light"
+                <input id="inpSectionKey" type="text" class="form-control form-control-sm compact-input font-monospace text-danger bg-light"
                   [value]="s.config.sectionKey" readonly
                   title="Stable key used by reports. Generated automatically and cannot be edited.">
               </div>
             </div>
             <div class="row g-1.5 mb-1.5">
               <div class="col-6">
-                <label class="form-label compact-label">Width</label>
-                <app-custom-select [options]="selectOptions.width" [(ngModel)]="s.config.width" size="sm"
+                <label for="selSectionWidth" class="form-label compact-label">Width</label>
+                <app-custom-select id="selSectionWidth" [options]="selectOptions.width" [(ngModel)]="s.config.width" size="sm"
                   [searchable]="false" placeholder="Width">
                 </app-custom-select>
               </div>
               <div class="col-6">
-                <label class="form-label compact-label">Visibility</label>
-                <app-custom-select [options]="selectOptions.visibility" [(ngModel)]="s.config.visibility" size="sm"
+                <label for="selSectionVisibility" class="form-label compact-label">Visibility</label>
+                <app-custom-select id="selSectionVisibility" [options]="selectOptions.visibility" [(ngModel)]="s.config.visibility" size="sm"
                   [searchable]="false" placeholder="Visibility">
                 </app-custom-select>
               </div>
@@ -2403,8 +2408,8 @@
             </div>
 
             <div class="mb-1.5">
-              <label class="form-label compact-label">Parameter Mode</label>
-              <app-custom-select [options]="selectOptions.parameterMode" [(ngModel)]="s.config.parameterMode" size="sm"
+              <label for="selSectionParamMode" class="form-label compact-label">Parameter Mode</label>
+              <app-custom-select id="selSectionParamMode" [options]="selectOptions.parameterMode" [(ngModel)]="s.config.parameterMode" size="sm"
                 [searchable]="false" placeholder="Parameter Mode">
               </app-custom-select>
             </div>
@@ -2469,11 +2474,11 @@
             <!-- Section Default Binding Mode -->
             <div class="mb-1.5">
               <div class="d-flex justify-content-between align-items-center mb-1.5">
-                <label class="form-label compact-label mb-0">Default Binding Source</label>
+                <label for="btnDefaultBindingSource" class="form-label compact-label mb-0">Default Binding Source</label>
                 <span class="text-xxs text-muted">Data Origin</span>
               </div>
               <div class="binding-mode-btn-group">
-                <button type="button" class="binding-source-btn"
+                <button id="btnDefaultBindingSource" type="button" class="binding-source-btn"
                   [class.active-runtime]="s.config.dataBindingMode === 'runtime' || !s.config.dataBindingMode"
                   (click)="setSectionDefaultBinding(s, 'runtime', true)"
                   title="Value comes from the test result at run time">
@@ -2540,7 +2545,7 @@
                   <div class="d-flex align-items-center gap-1.5 flex-grow-1 min-w-0">
                     <span class="row-index-badge">{{ rIdx + 1 }}</span>
                     <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
-                      [title]="r.visible !== false ? 'Hide row' : 'Show row'">
+                      [title]="r.visible !== false ? 'Hide row' : 'Show row'" [attr.aria-label]="r.visible !== false ? 'Hide row' : 'Show row'">
                       <i class="bi"
                         [ngClass]="r.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
                     </button>
@@ -2567,15 +2572,15 @@
                       placeholder="Fixed val" title="Fixed Static Value">
 
                     <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
-                      [disabled]="rIdx === 0" title="Move Up">
+                      [disabled]="rIdx === 0" title="Move Up" aria-label="Move Up">
                       <i class="bi bi-chevron-up"></i>
                     </button>
                     <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
-                      [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
+                      [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down" aria-label="Move Down">
                       <i class="bi bi-chevron-down"></i>
                     </button>
                     <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
-                      [disabled]="getTableRows(s).length <= 1" title="Delete Row">
+                      [disabled]="getTableRows(s).length <= 1" title="Delete Row" aria-label="Delete Row">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
@@ -2623,7 +2628,7 @@
                   <div class="d-flex align-items-center gap-1.5 flex-grow-1 min-w-0">
                     <span class="row-index-badge">{{ cIdx + 1 }}</span>
                     <button type="button" class="btn-vis-toggle" (click)="toggleTableColumnVisibility(s, cIdx)"
-                      [title]="c.visible !== false ? 'Hide column' : 'Show column'">
+                      [title]="c.visible !== false ? 'Hide column' : 'Show column'" [attr.aria-label]="c.visible !== false ? 'Hide column' : 'Show column'">
                       <i class="bi"
                         [ngClass]="c.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
                     </button>
@@ -2641,15 +2646,15 @@
                     </div>
 
                     <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'up')"
-                      [disabled]="cIdx === 0" title="Move Left/Up">
+                      [disabled]="cIdx === 0" title="Move Left/Up" aria-label="Move Left/Up">
                       <i class="bi bi-chevron-up"></i>
                     </button>
                     <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'down')"
-                      [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down">
+                      [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down" aria-label="Move Right/Down">
                       <i class="bi bi-chevron-down"></i>
                     </button>
                     <button type="button" class="btn-item-del" (click)="removeTableColumn(s, cIdx)"
-                      [disabled]="getTableColumns(s).length <= 1" title="Delete Column">
+                      [disabled]="getTableColumns(s).length <= 1" title="Delete Column" aria-label="Delete Column">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
@@ -2665,26 +2670,26 @@
             <!-- HEADER MERGE TAB CONTENT -->
             <div *ngIf="s.config.activeBindingTab === 'merge'" class="pt-1">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Group Header Title <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm compact-input"
+                <label for="inpGroupHeaderTitle" class="form-label compact-label">Group Header Title <span class="text-danger">*</span></label>
+                <input id="inpGroupHeaderTitle" type="text" class="form-control form-control-sm compact-input"
                   [(ngModel)]="ensureHeaderMergeState(s).title"
                   placeholder="e.g. Grouped Observations, Mechanical Properties">
               </div>
 
               <div class="row g-1.5 mb-1.5">
                 <div class="col-7">
-                  <label class="form-label compact-label">Start Column</label>
-                  <app-custom-select [options]="getVisibleColumnsForSection(s)"
+                  <label for="selHeaderMergeStartCol" class="form-label compact-label">Start Column</label>
+                  <app-custom-select id="selHeaderMergeStartCol" [options]="getVisibleColumnsForSection(s)"
                     [(ngModel)]="ensureHeaderMergeState(s).startCol" valueField="key" labelField="label" size="sm"
                     [searchable]="true" placeholder="Select Start Column">
                   </app-custom-select>
                 </div>
                 <div class="col-5">
                   <div class="d-flex justify-content-between align-items-center mb-0.5">
-                    <label class="form-label compact-label mb-0">Colspan</label>
+                    <label for="inpHeaderMergeColspan" class="form-label compact-label mb-0">Colspan</label>
                     <span class="text-xxs text-muted">max {{ getVisibleColumnsForSection(s).length }}</span>
                   </div>
-                  <input type="number" class="form-control form-control-sm compact-input text-center fw-semibold"
+                  <input id="inpHeaderMergeColspan" type="number" class="form-control form-control-sm compact-input text-center fw-semibold"
                     [(ngModel)]="ensureHeaderMergeState(s).colspan" min="2"
                     [max]="getVisibleColumnsForSection(s).length" placeholder="2">
                 </div>
@@ -2811,14 +2816,14 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Matrix Orientation</label>
-                  <app-custom-select [options]="selectOptions.orientation" [(ngModel)]="s.config.orientation" size="sm"
+                  <label for="selMatrixOrientation" class="form-label compact-label">Matrix Orientation</label>
+                  <app-custom-select id="selMatrixOrientation" [options]="selectOptions.orientation" [(ngModel)]="s.config.orientation" size="sm"
                     [searchable]="false" placeholder="Orientation">
                   </app-custom-select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Specimen Source</label>
-                  <app-custom-select [options]="selectOptions.specimenSource" [(ngModel)]="s.config.specimenSource"
+                  <label for="selSpecimenSource" class="form-label compact-label">Specimen Source</label>
+                  <app-custom-select id="selSpecimenSource" [options]="selectOptions.specimenSource" [(ngModel)]="s.config.specimenSource"
                     size="sm" [searchable]="false" placeholder="Specimen Source">
                   </app-custom-select>
                 </div>
@@ -2827,14 +2832,14 @@
               <!-- First Column Header Label -->
               <div class="mb-1.5" *ngIf="s.config.orientation === 'Specimens × Parameters'">
                 <div class="d-flex justify-content-between align-items-center mb-0.5">
-                  <label class="form-label compact-label mb-0 fw-semibold text-dark">
+                  <label for="inpMatrixColHeader" class="form-label compact-label mb-0 fw-semibold text-dark">
                     First Column Header Label
                   </label>
                   <span class="text-xxs text-muted fw-semibold">Table Th</span>
                 </div>
                 <div class="input-group input-group-sm">
                   <span class="input-group-text bg-light text-danger"><i class="bi bi-fonts"></i></span>
-                  <input type="text" class="form-control form-control-sm compact-input"
+                  <input id="inpMatrixColHeader" type="text" class="form-control form-control-sm compact-input"
                     [(ngModel)]="s.config.specimenColHeader" placeholder="e.g. Specimen ID, Sample ID, Coupon">
                 </div>
               </div>
@@ -2891,15 +2896,15 @@
                     (ngModelChange)="updateSpecimenRow(s, spIdx, $event)" placeholder="Specimen label...">
                   <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
                     <button type="button" class="btn-item-arrow" (click)="moveSpecimenRow(s, spIdx, 'up')"
-                      [disabled]="spIdx === 0" title="Move Up">
+                      [disabled]="spIdx === 0" title="Move Up" aria-label="Move Up">
                       <i class="bi bi-chevron-up"></i>
                     </button>
                     <button type="button" class="btn-item-arrow" (click)="moveSpecimenRow(s, spIdx, 'down')"
-                      [disabled]="spIdx === getSpecimenList(s).length - 1" title="Move Down">
+                      [disabled]="spIdx === getSpecimenList(s).length - 1" title="Move Down" aria-label="Move Down">
                       <i class="bi bi-chevron-down"></i>
                     </button>
                     <button type="button" class="btn-item-del" (click)="removeSpecimenRow(s, spIdx)"
-                      [disabled]="getSpecimenList(s).length <= 1" title="Delete Specimen">
+                      [disabled]="getSpecimenList(s).length <= 1" title="Delete Specimen" aria-label="Delete Specimen">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
@@ -3002,8 +3007,8 @@
                 </div>
               </div>
               <div class="mb-1.5">
-                <label class="form-label compact-label">Default orientation</label>
-                <app-searchable-dropdown [smallInput]="true" [hideLabel]="true" [placeholder]="'Select orientation (optional)'"
+                <label for="selDefaultOrientation" class="form-label compact-label">Default orientation</label>
+                <app-searchable-dropdown id="selDefaultOrientation" [smallInput]="true" [hideLabel]="true" [placeholder]="'Select orientation (optional)'"
                   [fetchDataFn]="fetchSpecimenOrientationDropdown" [selectedItem]="getSpecimenOrientationItem(s)"
                   (itemSelected)="onSpecimenOrientationSelected($event, s)" [isDisabled]="isViewMode">
                 </app-searchable-dropdown>
@@ -3054,14 +3059,14 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Layout Mode</label>
-                  <app-custom-select [options]="selectOptions.layout" [(ngModel)]="s.config.layout" size="sm"
+                  <label for="selReadingLayoutMode" class="form-label compact-label">Layout Mode</label>
+                  <app-custom-select id="selReadingLayoutMode" [options]="selectOptions.layout" [(ngModel)]="s.config.layout" size="sm"
                     [searchable]="false" placeholder="Layout Mode">
                   </app-custom-select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Extra Context (CSV)</label>
-                  <input type="text" class="form-control form-control-sm compact-input"
+                  <label for="inpReadingExtraFields" class="form-label compact-label">Extra Context (CSV)</label>
+                  <input id="inpReadingExtraFields" type="text" class="form-control form-control-sm compact-input"
                     [(ngModel)]="s.config.extraFields" placeholder="Chamber ID, Medium">
                 </div>
               </div>
@@ -3165,13 +3170,13 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Reading Count (Spots)</label>
-                  <input type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
+                  <label for="inpReadingSpotCount" class="form-label compact-label">Reading Count (Spots)</label>
+                  <input id="inpReadingSpotCount" type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
                     min="1" max="20">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Spot Label Prefix</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.readingLabel"
+                  <label for="inpReadingSpotPrefix" class="form-label compact-label">Spot Label Prefix</label>
+                  <input id="inpReadingSpotPrefix" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.readingLabel"
                     placeholder="e.g. Reading, Spot, Notch">
                 </div>
               </div>
@@ -3212,8 +3217,8 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-12">
-                  <label class="form-label compact-label">Statistical Aggregation</label>
-                  <app-custom-select [options]="selectOptions.aggregation" [(ngModel)]="s.config.aggregation" size="sm"
+                  <label for="selReadingAggregation" class="form-label compact-label">Statistical Aggregation</label>
+                  <app-custom-select id="selReadingAggregation" [options]="selectOptions.aggregation" [(ngModel)]="s.config.aggregation" size="sm"
                     [searchable]="false" placeholder="Aggregation">
                   </app-custom-select>
                 </div>
@@ -3319,16 +3324,16 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Location Mode</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.locationMode"
+                  <label for="selLocationMode" class="form-label compact-label">Location Mode</label>
+                  <select id="selLocationMode" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.locationMode"
                     (ngModelChange)="onLocationModeChange(s)">
                     <option value="Named locations">Named locations</option>
                     <option value="Numbered zones">Numbered zones</option>
                   </select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Matrix Axis</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.orientation">
+                  <label for="selLocationMatrixAxis" class="form-label compact-label">Matrix Axis</label>
+                  <select id="selLocationMatrixAxis" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.orientation">
                     <option value="Locations × Parameters">Locations × Parameters</option>
                     <option value="Parameters × Locations">Parameters × Locations</option>
                   </select>
@@ -3336,28 +3341,28 @@
               </div>
 
               <div class="mb-1.5" *ngIf="s.config.locationMode === 'Named locations' || !s.config.locationMode">
-                <label class="form-label compact-label">Location Names (comma-separated)</label>
-                <textarea class="form-control form-control-sm compact-input" rows="2"
+                <label for="txtLocationNames" class="form-label compact-label">Location Names (comma-separated)</label>
+                <textarea id="txtLocationNames" class="form-control form-control-sm compact-input" rows="2"
                   [(ngModel)]="s.config.locationNames" (ngModelChange)="onLocationNamesChange(s)"
                   placeholder="e.g. Weld Metal, HAZ, Base Metal"></textarea>
               </div>
 
               <div class="row g-1.5 mb-1.5" *ngIf="s.config.locationMode === 'Numbered zones'">
                 <div class="col-6">
-                  <label class="form-label compact-label">Zone Count</label>
-                  <input type="number" min="1" max="50" class="form-control form-control-sm compact-input"
+                  <label for="inpLocationZoneCount" class="form-label compact-label">Zone Count</label>
+                  <input id="inpLocationZoneCount" type="number" min="1" max="50" class="form-control form-control-sm compact-input"
                     [(ngModel)]="s.config.count" (ngModelChange)="onLocationCountPrefixChange(s)">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Prefix</label>
-                  <input type="text" class="form-control form-control-sm compact-input"
+                  <label for="inpLocationZonePrefix" class="form-label compact-label">Prefix</label>
+                  <input id="inpLocationZonePrefix" type="text" class="form-control form-control-sm compact-input"
                     [(ngModel)]="s.config.prefix" (ngModelChange)="onLocationCountPrefixChange(s)" placeholder="Zone">
                 </div>
               </div>
 
               <div>
-                <label class="form-label compact-label">First Column Header</label>
-                <input type="text" class="form-control form-control-sm compact-input"
+                <label for="inpLocationColHeader" class="form-label compact-label">First Column Header</label>
+                <input id="inpLocationColHeader" type="text" class="form-control form-control-sm compact-input"
                   [(ngModel)]="s.config.locationColHeader" placeholder="e.g. Zone / Location, Micro-Position">
               </div>
             </div>
@@ -3401,15 +3406,15 @@
                     (ngModelChange)="updateLocationRow(s, rIdx, $event)" placeholder="Row label...">
                   <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
                     <button type="button" class="btn-item-arrow" (click)="moveLocationRow(s, rIdx, 'up')"
-                      [disabled]="rIdx === 0" title="Move Up">
+                      [disabled]="rIdx === 0" title="Move Up" aria-label="Move Up">
                       <i class="bi bi-chevron-up"></i>
                     </button>
                     <button type="button" class="btn-item-arrow" (click)="moveLocationRow(s, rIdx, 'down')"
-                      [disabled]="rIdx === getLocationList(s).length - 1" title="Move Down">
+                      [disabled]="rIdx === getLocationList(s).length - 1" title="Move Down" aria-label="Move Down">
                       <i class="bi bi-chevron-down"></i>
                     </button>
                     <button type="button" class="btn-item-del" (click)="removeLocationRow(s, rIdx)"
-                      [disabled]="getLocationList(s).length <= 1" title="Delete Row">
+                      [disabled]="getLocationList(s).length <= 1" title="Delete Row" aria-label="Delete Row">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
@@ -3472,58 +3477,58 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-8">
-                  <label class="form-label compact-label">Distance / X-Axis</label>
-                  <app-custom-select [options]="traverseXSelectOptions" [(ngModel)]="s.config.xField"
+                  <label for="selTraverseXField" class="form-label compact-label">Distance / X-Axis</label>
+                  <app-custom-select id="selTraverseXField" [options]="traverseXSelectOptions" [(ngModel)]="s.config.xField"
                     (ngModelChange)="onTraverseAxisChange(s)" size="sm" [searchable]="true" placeholder="Select X-Axis">
                   </app-custom-select>
                 </div>
                 <div class="col-4">
-                  <label class="form-label compact-label">X Unit</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xUnit"
+                  <label for="inpTraverseXUnit" class="form-label compact-label">X Unit</label>
+                  <input id="inpTraverseXUnit" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xUnit"
                     placeholder="mm">
                 </div>
               </div>
 
               <div class="row g-1.5 mb-1.5">
                 <div class="col-8">
-                  <label class="form-label compact-label">Hardness / Y-Axis</label>
-                  <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
+                  <label for="selTraverseYField" class="form-label compact-label">Hardness / Y-Axis</label>
+                  <app-custom-select id="selTraverseYField" [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
                     (ngModelChange)="onTraverseAxisChange(s)" size="sm" [searchable]="true" placeholder="Select Y-Axis">
                   </app-custom-select>
                 </div>
                 <div class="col-4">
-                  <label class="form-label compact-label">Y Unit</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yUnit"
+                  <label for="inpTraverseYUnit" class="form-label compact-label">Y Unit</label>
+                  <input id="inpTraverseYUnit" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yUnit"
                     placeholder="HV">
                 </div>
               </div>
 
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Step Mode</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.stepMode">
+                  <label for="selTraverseStepMode" class="form-label compact-label">Step Mode</label>
+                  <select id="selTraverseStepMode" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.stepMode">
                     <option value="Fixed step">Fixed step</option>
                     <option value="Runtime readings">Runtime readings</option>
                   </select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Step Pitch</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.stepValue"
+                  <label for="inpTraverseStepPitch" class="form-label compact-label">Step Pitch</label>
+                  <input id="inpTraverseStepPitch" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.stepValue"
                     placeholder="0.05 mm">
                 </div>
               </div>
 
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Cut-off Mode</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.cutoffMode">
+                  <label for="selTraverseCutoffMode" class="form-label compact-label">Cut-off Mode</label>
+                  <select id="selTraverseCutoffMode" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.cutoffMode">
                     <option value="Runtime requirement">From requirement</option>
                     <option value="Fixed value">Fixed value</option>
                   </select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Cut-off Hardness Limit</label>
-                  <input type="text" class="form-control form-control-sm compact-input"
+                  <label for="inpTraverseCutoffHardness" class="form-label compact-label">Cut-off Hardness Limit</label>
+                  <input id="inpTraverseCutoffHardness" type="text" class="form-control form-control-sm compact-input"
                     [(ngModel)]="s.config.cutoffHardness" placeholder="e.g. 550 HV">
                 </div>
               </div>
@@ -3541,16 +3546,16 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-4">
-                  <label class="form-label compact-label">Start (mm)</label>
-                  <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepStart">
+                  <label for="inpTraverseAutoStart" class="form-label compact-label">Start (mm)</label>
+                  <input id="inpTraverseAutoStart" type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepStart">
                 </div>
                 <div class="col-4">
-                  <label class="form-label compact-label">Pitch (mm)</label>
-                  <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepIncrement">
+                  <label for="inpTraverseAutoPitch" class="form-label compact-label">Pitch (mm)</label>
+                  <input id="inpTraverseAutoPitch" type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepIncrement">
                 </div>
                 <div class="col-4">
-                  <label class="form-label compact-label">Points</label>
-                  <input type="number" min="1" max="50" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepPoints">
+                  <label for="inpTraverseAutoPoints" class="form-label compact-label">Points</label>
+                  <input id="inpTraverseAutoPoints" type="number" min="1" max="50" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepPoints">
                 </div>
               </div>
               <button type="button" class="btn-lims btn-lims-save btn-sm w-100 py-1"
@@ -3608,44 +3613,44 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Chart Type</label>
-                <app-custom-select [options]="selectOptions.chartType" [(ngModel)]="s.config.chartType" size="sm"
+                <label for="selChartType" class="form-label compact-label">Chart Type</label>
+                <app-custom-select id="selChartType" [options]="selectOptions.chartType" [(ngModel)]="s.config.chartType" size="sm"
                   [searchable]="false" placeholder="Chart Type">
                 </app-custom-select>
               </div>
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">X-Axis Data Source</label>
-                  <app-custom-select [options]="chartXSelectOptions" [(ngModel)]="s.config.xField"
+                  <label for="selChartXField" class="form-label compact-label">X-Axis Data Source</label>
+                  <app-custom-select id="selChartXField" [options]="chartXSelectOptions" [(ngModel)]="s.config.xField"
                     (ngModelChange)="onChartAxisChange(s, 'x')" size="sm" [searchable]="true" placeholder="Select X-Axis">
                   </app-custom-select>
                 </div>
                 <div class="col-3">
-                  <label class="form-label compact-label">X Unit</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xUnit"
+                  <label for="inpChartXUnit" class="form-label compact-label">X Unit</label>
+                  <input id="inpChartXUnit" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xUnit"
                     placeholder="e.g. mm, %">
                 </div>
                 <div class="col-3">
-                  <label class="form-label compact-label">X Source</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xSource"
+                  <label for="inpChartXSource" class="form-label compact-label">X Source</label>
+                  <input id="inpChartXSource" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xSource"
                     placeholder="Strain">
                 </div>
               </div>
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Y-Axis Data Source</label>
-                  <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
+                  <label for="selChartYField" class="form-label compact-label">Y-Axis Data Source</label>
+                  <app-custom-select id="selChartYField" [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
                     (ngModelChange)="onChartAxisChange(s, 'y')" size="sm" [searchable]="true" placeholder="Select Y-Axis">
                   </app-custom-select>
                 </div>
                 <div class="col-3">
-                  <label class="form-label compact-label">Y Unit</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yUnit"
+                  <label for="inpChartYUnit" class="form-label compact-label">Y Unit</label>
+                  <input id="inpChartYUnit" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yUnit"
                     placeholder="e.g. MPa">
                 </div>
                 <div class="col-3">
-                  <label class="form-label compact-label">Y Source</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.ySource"
+                  <label for="inpChartYSource" class="form-label compact-label">Y Source</label>
+                  <input id="inpChartYSource" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.ySource"
                     placeholder="Stress">
                 </div>
               </div>
@@ -3663,13 +3668,13 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">X-Axis Label</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xLabel"
+                  <label for="inpChartXLabel" class="form-label compact-label">X-Axis Label</label>
+                  <input id="inpChartXLabel" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xLabel"
                     placeholder="e.g. Strain (%)">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Y-Axis Label</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yLabel"
+                  <label for="inpChartYLabel" class="form-label compact-label">Y-Axis Label</label>
+                  <input id="inpChartYLabel" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yLabel"
                     placeholder="e.g. Stress (MPa)">
                 </div>
               </div>
@@ -3687,25 +3692,25 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">X-Axis Min (Auto if blank)</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xMin"
+                  <label for="inpChartXMin" class="form-label compact-label">X-Axis Min (Auto if blank)</label>
+                  <input id="inpChartXMin" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xMin"
                     placeholder="Auto">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">X-Axis Max (Auto if blank)</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xMax"
+                  <label for="inpChartXMax" class="form-label compact-label">X-Axis Max (Auto if blank)</label>
+                  <input id="inpChartXMax" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xMax"
                     placeholder="Auto">
                 </div>
               </div>
               <div class="row g-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Y-Axis Min (Auto if blank)</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yMin"
+                  <label for="inpChartYMin" class="form-label compact-label">Y-Axis Min (Auto if blank)</label>
+                  <input id="inpChartYMin" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yMin"
                     placeholder="Auto">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Y-Axis Max (Auto if blank)</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yMax"
+                  <label for="inpChartYMax" class="form-label compact-label">Y-Axis Max (Auto if blank)</label>
+                  <input id="inpChartYMax" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yMax"
                     placeholder="Auto">
                 </div>
               </div>
@@ -3764,21 +3769,21 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Target Parameter from Dataset</label>
-                <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.parameter" size="sm"
+                <label for="selRuleParameter" class="form-label compact-label">Target Parameter from Dataset</label>
+                <app-custom-select id="selRuleParameter" [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.parameter" size="sm"
                   [searchable]="true" placeholder="Select Target Parameter">
                 </app-custom-select>
               </div>
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Comparison Operator</label>
-                  <app-custom-select [options]="selectOptions.operator" [(ngModel)]="s.config.operator" size="sm"
+                  <label for="selRuleOperator" class="form-label compact-label">Comparison Operator</label>
+                  <app-custom-select id="selRuleOperator" [options]="selectOptions.operator" [(ngModel)]="s.config.operator" size="sm"
                     [searchable]="false" placeholder="Operator">
                   </app-custom-select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Value Source / Limit</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.valueSource"
+                  <label for="inpRuleValueSource" class="form-label compact-label">Value Source / Limit</label>
+                  <input id="inpRuleValueSource" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.valueSource"
                     placeholder="e.g. Specification limit">
                 </div>
               </div>
@@ -3811,8 +3816,8 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Evaluation Timing</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.evaluation">
+                  <label for="selRuleEvaluation" class="form-label compact-label">Evaluation Timing</label>
+                  <select id="selRuleEvaluation" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.evaluation">
                     <option value="Runtime PASS / FAIL">Runtime PASS / FAIL</option>
                     <option value="Immediate on entry">Immediate on entry</option>
                     <option value="On completion">On completion / submit</option>
@@ -3820,8 +3825,8 @@
                   </select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Failed Rule Action</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.failAction">
+                  <label for="selRuleFailAction" class="form-label compact-label">Failed Rule Action</label>
+                  <select id="selRuleFailAction" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.failAction">
                     <option value="Mark parameter FAIL">Mark parameter FAIL</option>
                     <option value="Block completion">Block completion</option>
                     <option value="Warning only">Warning / Flag only</option>
@@ -3867,13 +3872,13 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Standard Reference</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.ratingSystem"
+                  <label for="inpRatingSystem" class="form-label compact-label">Standard Reference</label>
+                  <input id="inpRatingSystem" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.ratingSystem"
                     placeholder="e.g. ASTM E112, ASTM E45">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Rating Method</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.decision"
+                  <label for="inpRatingMethod" class="form-label compact-label">Rating Method</label>
+                  <input id="inpRatingMethod" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.decision"
                     placeholder="Comparison, Planimetric">
                 </div>
               </div>
@@ -3890,8 +3895,8 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Rated Items (comma separated)</label>
-                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
+                <label for="inpRatingItems" class="form-label compact-label">Rated Items (comma separated)</label>
+                <input id="inpRatingItems" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
                   placeholder="e.g. Grain Size No., Microstructure">
               </div>
               <div class="d-flex flex-wrap gap-1.5">
@@ -3956,8 +3961,8 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">First Column Header Label</label>
-                <input type="text" class="form-control form-control-sm compact-input"
+                <label for="inpCustomTableColHeader" class="form-label compact-label">First Column Header Label</label>
+                <input id="inpCustomTableColHeader" type="text" class="form-control form-control-sm compact-input"
                   [(ngModel)]="s.config.locationColHeader" placeholder="e.g. Description, Item, Parameter">
               </div>
             </div>
@@ -3976,8 +3981,8 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Row Names (comma separated)</label>
-                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
+                <label for="inpCustomTableRowNames" class="form-label compact-label">Row Names (comma separated)</label>
+                <input id="inpCustomTableRowNames" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
                   placeholder="Row 1, Row 2, Row 3">
               </div>
             </div>
@@ -3997,8 +4002,8 @@
               <!-- Cell Selector Header -->
               <div class="row g-1.5 mb-2 p-1.5 bg-light rounded border">
                 <div class="col-6">
-                  <label class="form-label compact-label">Select Row</label>
-                  <select class="form-select form-select-sm compact-input"
+                  <label for="selCustomCellRow" class="form-label compact-label">Select Row</label>
+                  <select id="selCustomCellRow" class="form-select form-select-sm compact-input"
                     [ngModel]="s.config.activeCellCoords ? s.config.activeCellCoords.rowIdx : 0"
                     (ngModelChange)="selectCustomCell(s, +$event, s.config.activeCellCoords ? s.config.activeCellCoords.colIdx : 0)">
                     <option *ngFor="let r of getVisibleTableRows(s); let rIdx = index" [value]="rIdx">
@@ -4007,8 +4012,8 @@
                   </select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Select Column</label>
-                  <select class="form-select form-select-sm compact-input"
+                  <label for="selCustomCellCol" class="form-label compact-label">Select Column</label>
+                  <select id="selCustomCellCol" class="form-select form-select-sm compact-input"
                     [ngModel]="s.config.activeCellCoords ? s.config.activeCellCoords.colIdx : 0"
                     (ngModelChange)="selectCustomCell(s, s.config.activeCellCoords ? s.config.activeCellCoords.rowIdx : 0, +$event)">
                     <option *ngFor="let c of getVisibleTableColumns(s); let cIdx = index" [value]="cIdx">
@@ -4034,8 +4039,8 @@
 
                 <div class="row g-1.5 mb-1.5">
                   <div class="col-6">
-                    <label class="form-label compact-label">Data Type</label>
-                    <select class="form-select form-select-sm compact-input"
+                    <label for="selCustomCellDataType" class="form-label compact-label">Data Type</label>
+                    <select id="selCustomCellDataType" class="form-select form-select-sm compact-input"
                       [ngModel]="getActiveCustomCell(s)!.dataType"
                       (ngModelChange)="updateCustomCellDataType(s, $event)">
                       <option value="text">Text (General)</option>
@@ -4046,8 +4051,8 @@
                     </select>
                   </div>
                   <div class="col-6">
-                    <label class="form-label compact-label">Binding Origin</label>
-                    <select class="form-select form-select-sm compact-input"
+                    <label for="selCustomCellBindingMode" class="form-label compact-label">Binding Origin</label>
+                    <select id="selCustomCellBindingMode" class="form-select form-select-sm compact-input"
                       [ngModel]="getActiveCustomCell(s)!.bindingMode"
                       (ngModelChange)="updateCustomCellBindingMode(s, $event)">
                       <option value="runtime">Runtime</option>
@@ -4059,14 +4064,14 @@
 
                 <div class="row g-1.5 mb-1.5">
                   <div class="col-8">
-                    <label class="form-label compact-label">Default / Static Value</label>
-                    <input type="text" class="form-control form-control-sm compact-input"
+                    <label for="inpCustomCellValue" class="form-label compact-label">Default / Static Value</label>
+                    <input id="inpCustomCellValue" type="text" class="form-control form-control-sm compact-input"
                       [(ngModel)]="getActiveCustomCell(s)!.value" (ngModelChange)="markLayoutDirty()"
                       placeholder="Cell value">
                   </div>
                   <div class="col-4">
-                    <label class="form-label compact-label">Unit</label>
-                    <input type="text" class="form-control form-control-sm compact-input"
+                    <label for="inpCustomCellUnit" class="form-label compact-label">Unit</label>
+                    <input id="inpCustomCellUnit" type="text" class="form-control form-control-sm compact-input"
                       [(ngModel)]="getActiveCustomCell(s)!.unit" (ngModelChange)="markLayoutDirty()"
                       placeholder="e.g. mm">
                   </div>
@@ -4074,24 +4079,24 @@
 
                 <!-- Precision when number type -->
                 <div class="mb-1.5" *ngIf="getActiveCustomCell(s)!.dataType === 'number'">
-                  <label class="form-label compact-label">Decimal Precision</label>
-                  <input type="number" min="0" max="6" class="form-control form-control-sm compact-input"
+                  <label for="inpCustomCellPrecision" class="form-label compact-label">Decimal Precision</label>
+                  <input id="inpCustomCellPrecision" type="number" min="0" max="6" class="form-control form-control-sm compact-input"
                     [(ngModel)]="getActiveCustomCell(s)!.precision" (ngModelChange)="markLayoutDirty()"
                     placeholder="2">
                 </div>
 
                 <!-- Formula expression when formula type -->
                 <div class="mb-1.5" *ngIf="getActiveCustomCell(s)!.dataType === 'formula'">
-                  <label class="form-label compact-label">Formula Expression (ƒx)</label>
-                  <input type="text" class="form-control form-control-sm compact-input font-monospace"
+                  <label for="inpCustomCellFormula" class="form-label compact-label">Formula Expression (ƒx)</label>
+                  <input id="inpCustomCellFormula" type="text" class="form-control form-control-sm compact-input font-monospace"
                     [(ngModel)]="getActiveCustomCell(s)!.formulaExpression" (ngModelChange)="markLayoutDirty()"
                     placeholder="=[r0,c1] * 1.05">
                 </div>
 
                 <!-- Select options when dropdown type -->
                 <div class="mb-1.5" *ngIf="getActiveCustomCell(s)!.dataType === 'select'">
-                  <label class="form-label compact-label">Dropdown Options (CSV)</label>
-                  <input type="text" class="form-control form-control-sm compact-input"
+                  <label for="inpCustomCellDropdownOptions" class="form-label compact-label">Dropdown Options (CSV)</label>
+                  <input id="inpCustomCellDropdownOptions" type="text" class="form-control form-control-sm compact-input"
                     [ngModel]="getActiveCustomCell(s)!.selectOptionsRaw"
                     (ngModelChange)="updateCustomCellSelectOptions(s, $event)"
                     placeholder="Acceptable, Marginal, Reject">
@@ -4099,8 +4104,8 @@
 
                 <div class="row g-1.5 mb-1.5">
                   <div class="col-4">
-                    <label class="form-label compact-label">Text Align</label>
-                    <select class="form-select form-select-sm compact-input"
+                    <label for="selCustomCellAlign" class="form-label compact-label">Text Align</label>
+                    <select id="selCustomCellAlign" class="form-select form-select-sm compact-input"
                       [ngModel]="getActiveCustomCell(s)!.align || 'center'"
                       (ngModelChange)="updateCustomCellAlign(s, $event)">
                       <option value="left">Left</option>
@@ -4109,13 +4114,13 @@
                     </select>
                   </div>
                   <div class="col-4">
-                    <label class="form-label compact-label">Colspan</label>
-                    <input type="number" min="1" max="10" class="form-control form-control-sm compact-input"
+                    <label for="inpCustomCellColspan" class="form-label compact-label">Colspan</label>
+                    <input id="inpCustomCellColspan" type="number" min="1" max="10" class="form-control form-control-sm compact-input"
                       [(ngModel)]="getActiveCustomCell(s)!.colspan" (ngModelChange)="markLayoutDirty()">
                   </div>
                   <div class="col-4">
-                    <label class="form-label compact-label">Rowspan</label>
-                    <input type="number" min="1" max="10" class="form-control form-control-sm compact-input"
+                    <label for="inpCustomCellRowspan" class="form-label compact-label">Rowspan</label>
+                    <input id="inpCustomCellRowspan" type="number" min="1" max="10" class="form-control form-control-sm compact-input"
                       [(ngModel)]="getActiveCustomCell(s)!.rowspan" (ngModelChange)="markLayoutDirty()">
                   </div>
                 </div>
@@ -4170,13 +4175,13 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Photo slots</label>
-                  <input type="text" class="form-control form-control-sm compact-input bg-light" readonly
+                  <label for="inpPhotoSlotsCount" class="form-label compact-label">Photo slots</label>
+                  <input id="inpPhotoSlotsCount" type="text" class="form-control form-control-sm compact-input bg-light" readonly
                     [value]="ensurePhotoSlots(s).length" title="Add or remove slots in Photo Slots below">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Default Caption</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.caption"
+                  <label for="inpPhotoDefaultCaption" class="form-label compact-label">Default Caption</label>
+                  <input id="inpPhotoDefaultCaption" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.caption"
                     placeholder="e.g. Magnification: 100X">
                 </div>
               </div>
@@ -4240,9 +4245,9 @@
                   <span class="text-muted text-xxs">#{{ i + 1 }}</span>
                   <input type="text" class="form-control form-control-sm compact-input flex-grow-1" maxlength="100"
                     [(ngModel)]="slot.title" placeholder="Photo title" [disabled]="isViewMode">
-                  <button type="button" class="btn-nav-icon" (click)="movePhotoSlot(s, i, -1)" [disabled]="isViewMode || i === 0" title="Move up"><i class="bi bi-arrow-up"></i></button>
-                  <button type="button" class="btn-nav-icon" (click)="movePhotoSlot(s, i, 1)" [disabled]="isViewMode || i === ensurePhotoSlots(s).length - 1" title="Move down"><i class="bi bi-arrow-down"></i></button>
-                  <button type="button" class="btn-nav-icon text-danger" (click)="removePhotoSlot(s, i)" [disabled]="isViewMode" title="Remove"><i class="bi bi-trash"></i></button>
+                  <button type="button" class="btn-nav-icon" (click)="movePhotoSlot(s, i, -1)" [disabled]="isViewMode || i === 0" title="Move up" aria-label="Move up"><i class="bi bi-arrow-up"></i></button>
+                  <button type="button" class="btn-nav-icon" (click)="movePhotoSlot(s, i, 1)" [disabled]="isViewMode || i === ensurePhotoSlots(s).length - 1" title="Move down" aria-label="Move down"><i class="bi bi-arrow-down"></i></button>
+                  <button type="button" class="btn-nav-icon text-danger" (click)="removePhotoSlot(s, i)" [disabled]="isViewMode" title="Remove" aria-label="Remove"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="row g-1">
                   <div class="col-4">
@@ -4361,15 +4366,15 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Target Output Parameter *</label>
-                <app-custom-select [options]="formulaTargetSelectOptions" [(ngModel)]="s.config.targetOutput"
+                <label for="selFormulaTargetOutput" class="form-label compact-label">Target Output Parameter *</label>
+                <app-custom-select id="selFormulaTargetOutput" [options]="formulaTargetSelectOptions" [(ngModel)]="s.config.targetOutput"
                   (ngModelChange)="onFormulaTargetChange(s)" size="sm" [searchable]="true"
                   placeholder="Select Target Output">
                 </app-custom-select>
               </div>
               <div class="mb-1.5">
-                <label class="form-label compact-label">Result Label</label>
-                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.resultLabel"
+                <label for="inpFormulaResultLabel" class="form-label compact-label">Result Label</label>
+                <input id="inpFormulaResultLabel" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.resultLabel"
                   placeholder="e.g. Tensile Strength">
               </div>
             </div>
@@ -4385,8 +4390,8 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Formula Expression</label>
-                <input type="text" class="form-control form-control-sm compact-input font-monospace"
+                <label for="inpFormulaExpression" class="form-label compact-label">Formula Expression</label>
+                <input id="inpFormulaExpression" type="text" class="form-control form-control-sm compact-input font-monospace"
                   [(ngModel)]="s.config.formulaExpression" placeholder="e.g. UTS = PeakLoad / Area">
               </div>
             </div>
@@ -4403,8 +4408,8 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Decimal Precision</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.precision">
+                  <label for="selFormulaPrecision" class="form-label compact-label">Decimal Precision</label>
+                  <select id="selFormulaPrecision" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.precision">
                     <option value="Auto">Auto</option>
                     <option value="0">0 (Integer)</option>
                     <option value="1">1 Decimal</option>
@@ -4414,8 +4419,8 @@
                   </select>
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Rounding Rule</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.rounding">
+                  <label for="selFormulaRounding" class="form-label compact-label">Rounding Rule</label>
+                  <select id="selFormulaRounding" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.rounding">
                     <option value="Round half up">Round half up</option>
                     <option value="Round to even">Round to even (Bankers)</option>
                     <option value="Round down">Round down (Truncate)</option>
@@ -4465,13 +4470,13 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Box Label</label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.label"
+                  <label for="inpNarrativeBoxLabel" class="form-label compact-label">Box Label</label>
+                  <input id="inpNarrativeBoxLabel" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.label"
                     placeholder="e.g. Remarks, Conclusion">
                 </div>
                 <div class="col-6">
-                  <label class="form-label compact-label">Input Type</label>
-                  <app-custom-select [options]="selectOptions.inputType" [(ngModel)]="s.config.inputType" size="sm"
+                  <label for="selNarrativeInputType" class="form-label compact-label">Input Type</label>
+                  <app-custom-select id="selNarrativeInputType" [options]="selectOptions.inputType" [(ngModel)]="s.config.inputType" size="sm"
                     [searchable]="false" placeholder="Input Type">
                   </app-custom-select>
                 </div>
@@ -4540,8 +4545,8 @@
             <div class="config-subcard-body">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Response Type</label>
-                  <app-custom-select [options]="selectOptions.responseType" [(ngModel)]="s.config.responseType" size="sm"
+                  <label for="selChecklistResponseType" class="form-label compact-label">Response Type</label>
+                  <app-custom-select id="selChecklistResponseType" [options]="selectOptions.responseType" [(ngModel)]="s.config.responseType" size="sm"
                     [searchable]="false" placeholder="Response Type">
                   </app-custom-select>
                 </div>
@@ -4554,8 +4559,8 @@
               </div>
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label">Failed Check Action</label>
-                  <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.failAction">
+                  <label for="selChecklistFailAction" class="form-label compact-label">Failed Check Action</label>
+                  <select id="selChecklistFailAction" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.failAction">
                     <option value="Block completion">Block completion</option>
                     <option value="Warning only">Warning / Flag only</option>
                     <option value="Require remark">Require deviation remark</option>
@@ -4581,8 +4586,8 @@
             </div>
             <div class="config-subcard-body">
               <div class="mb-1.5">
-                <label class="form-label compact-label">Checklist Items (comma separated)</label>
-                <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.items"
+                <label for="inpChecklistItems" class="form-label compact-label">Checklist Items (comma separated)</label>
+                <input id="inpChecklistItems" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.items"
                   placeholder="Visual check, Calibration verified, Dimensions confirmed">
               </div>
               <div class="d-flex flex-wrap gap-1.5">
@@ -4656,8 +4661,8 @@
               <span class="text-xxs text-muted font-monospace">Layout</span>
             </div>
             <div class="config-subcard-body">
-              <label class="form-label compact-label">Card &amp; Grid Layout</label>
-              <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.layout">
+              <label for="selConditionsLayout" class="form-label compact-label">Card &amp; Grid Layout</label>
+              <select id="selConditionsLayout" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.layout">
                 <option value="Two-column cards">Two-column cards</option>
                 <option value="Compact grid">Compact grid</option>
                 <option value="Table">Table view</option>
@@ -4763,11 +4768,11 @@
           <!-- Section Default Binding Mode -->
           <div class="mb-1.5">
             <div class="d-flex justify-content-between align-items-center mb-1.5">
-              <label class="form-label compact-label mb-0">Default Binding Source</label>
+              <label for="btnDefaultBindingSourceGrid" class="form-label compact-label mb-0">Default Binding Source</label>
               <span class="text-xxs text-muted">Controls data origin</span>
             </div>
             <div class="binding-mode-btn-group">
-              <button type="button" class="binding-source-btn"
+              <button id="btnDefaultBindingSourceGrid" type="button" class="binding-source-btn"
                 [class.active-runtime]="s.config.dataBindingMode === 'runtime' || !s.config.dataBindingMode"
                 (click)="setSectionDefaultBinding(s, 'runtime', true)"
                 title="Value comes from the test result at run time">
@@ -4823,7 +4828,7 @@
                 <div class="d-flex align-items-center gap-1.5 flex-grow-1 min-w-0">
                   <span class="row-index-badge">{{ rIdx + 1 }}</span>
                   <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
-                    [title]="r.visible !== false ? 'Hide row' : 'Show row'">
+                    [title]="r.visible !== false ? 'Hide row' : 'Show row'" [attr.aria-label]="r.visible !== false ? 'Hide row' : 'Show row'">
                     <i class="bi"
                       [ngClass]="r.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
                   </button>
@@ -4849,17 +4854,17 @@
 
                   <!-- Move Up / Down -->
                   <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
-                    [disabled]="rIdx === 0" title="Move Up">
+                    [disabled]="rIdx === 0" title="Move Up" aria-label="Move Up">
                     <i class="bi bi-chevron-up"></i>
                   </button>
                   <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
-                    [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
+                    [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down" aria-label="Move Down">
                     <i class="bi bi-chevron-down"></i>
                   </button>
 
                   <!-- Delete -->
                   <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
-                    [disabled]="getTableRows(s).length <= 1" title="Delete Row">
+                    [disabled]="getTableRows(s).length <= 1" title="Delete Row" aria-label="Delete Row">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -4886,7 +4891,7 @@
                 <div class="d-flex align-items-center gap-1.5 flex-grow-1 min-w-0">
                   <span class="row-index-badge">{{ cIdx + 1 }}</span>
                   <button type="button" class="btn-vis-toggle" (click)="toggleTableColumnVisibility(s, cIdx)"
-                    [title]="c.visible !== false ? 'Hide column' : 'Show column'">
+                    [title]="c.visible !== false ? 'Hide column' : 'Show column'" [attr.aria-label]="c.visible !== false ? 'Hide column' : 'Show column'">
                     <i class="bi"
                       [ngClass]="c.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
                   </button>
@@ -4906,17 +4911,17 @@
 
                   <!-- Move Up / Down -->
                   <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'up')"
-                    [disabled]="cIdx === 0" title="Move Left/Up">
+                    [disabled]="cIdx === 0" title="Move Left/Up" aria-label="Move Left/Up">
                     <i class="bi bi-chevron-up"></i>
                   </button>
                   <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'down')"
-                    [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down">
+                    [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down" aria-label="Move Right/Down">
                     <i class="bi bi-chevron-down"></i>
                   </button>
 
                   <!-- Delete -->
                   <button type="button" class="btn-item-del" (click)="removeTableColumn(s, cIdx)"
-                    [disabled]="getTableColumns(s).length <= 1" title="Delete Column">
+                    [disabled]="getTableColumns(s).length <= 1" title="Delete Column" aria-label="Delete Column">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -4933,8 +4938,8 @@
           <div *ngIf="s.config.activeBindingTab === 'merge' && isTableSection(s)" class="pt-1">
             <!-- Group Header Title Field -->
             <div class="mb-1.5">
-              <label class="form-label compact-label">Group Header Title <span class="text-danger">*</span></label>
-              <input type="text" class="form-control form-control-sm compact-input"
+              <label for="inpGridGroupHeaderTitle" class="form-label compact-label">Group Header Title <span class="text-danger">*</span></label>
+              <input id="inpGridGroupHeaderTitle" type="text" class="form-control form-control-sm compact-input"
                 [(ngModel)]="ensureHeaderMergeState(s).title"
                 placeholder="e.g. Grouped Observations, Mechanical Properties">
             </div>
@@ -4942,18 +4947,18 @@
             <!-- Start Column & Colspan Row -->
             <div class="row g-1.5 mb-1.5">
               <div class="col-7">
-                <label class="form-label compact-label">Start Column</label>
-                <app-custom-select [options]="getVisibleColumnsForSection(s)"
+                <label for="selGridHeaderMergeStartCol" class="form-label compact-label">Start Column</label>
+                <app-custom-select id="selGridHeaderMergeStartCol" [options]="getVisibleColumnsForSection(s)"
                   [(ngModel)]="ensureHeaderMergeState(s).startCol" valueField="key" labelField="label" size="sm"
                   [searchable]="true" placeholder="Select Start Column">
                 </app-custom-select>
               </div>
               <div class="col-5">
                 <div class="d-flex justify-content-between align-items-center mb-0.5">
-                  <label class="form-label compact-label mb-0">Colspan</label>
+                  <label for="inpGridHeaderMergeColspan" class="form-label compact-label mb-0">Colspan</label>
                   <span class="text-xxs text-muted">max {{ getVisibleColumnsForSection(s).length }}</span>
                 </div>
-                <input type="number" class="form-control form-control-sm compact-input text-center fw-semibold"
+                <input id="inpGridHeaderMergeColspan" type="number" class="form-control form-control-sm compact-input text-center fw-semibold"
                   [(ngModel)]="ensureHeaderMergeState(s).colspan" min="2" [max]="getVisibleColumnsForSection(s).length"
                   placeholder="2">
               </div>
@@ -5046,15 +5051,15 @@
               </div>
               <div class="row g-1.5 mb-1.5" *ngIf="s.type === 'specimen' || s.type === 'reading'">
                 <div class="col-12">
-                  <label class="form-label compact-label" for="selExecMode">
+                  <label class="form-label compact-label" [attr.for]="s.type === 'specimen' ? 'selExecModeSpecimen' : 'selExecModeReading'">
                     {{ s.type === 'specimen' ? 'Specimen count' : 'Reading count' }}
                   </label>
-                  <select id="selExecMode" class="form-select form-select-sm compact-input" *ngIf="s.type === 'specimen'"
+                  <select id="selExecModeSpecimen" class="form-select form-select-sm compact-input" *ngIf="s.type === 'specimen'"
                     [(ngModel)]="s.config.specimenExecutionMode" [disabled]="isViewMode">
                     <option value="runtime">Technician can change</option>
                     <option value="fixed">Fixed</option>
                   </select>
-                  <select id="selExecMode" class="form-select form-select-sm compact-input" *ngIf="s.type === 'reading'"
+                  <select id="selExecModeReading" class="form-select form-select-sm compact-input" *ngIf="s.type === 'reading'"
                     [(ngModel)]="s.config.readingExecutionMode" [disabled]="isViewMode">
                     <option value="runtime">Technician can change</option>
                     <option value="fixed">Fixed</option>
@@ -5130,10 +5135,10 @@
                   <span class="form-check-label">Show raw (unrounded) values</span>
                 </label>
               </div>
-              <label class="form-label compact-label mb-1">NABL / ISO 17025</label>
+              <label for="chkShowMUReport" class="form-label compact-label mb-1">NABL / ISO 17025</label>
               <div class="config-checks-grid">
                 <label class="form-check compact-check">
-                  <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMUReport" [disabled]="isViewMode">
+                  <input id="chkShowMUReport" class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMUReport" [disabled]="isViewMode">
                   <span class="form-check-label">Measurement uncertainty</span>
                 </label>
                 <label class="form-check compact-check">
@@ -5210,39 +5215,39 @@
             <div class="corner-annotation-matrix p-1.5 bg-light border rounded mb-1.5">
               <div class="row g-1.5 mb-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1.5"
+                  <label for="inpCornerTopLeft" class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1.5"
                     title="Top-Left Note">
                     <i class="bi bi-arrow-up-left text-danger"></i><span>Top-Left</span>
                   </label>
-                  <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.topLeft"
+                  <input id="inpCornerTopLeft" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.topLeft"
                     placeholder="e.g. Method note...">
                 </div>
                 <div class="col-6">
-                  <label
+                  <label for="inpCornerTopRight"
                     class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center justify-content-end gap-1.5"
                     title="Top-Right Callout">
                     <span>Top-Right</span><i class="bi bi-arrow-up-right text-danger"></i>
                   </label>
-                  <input type="text" class="form-control form-control-sm compact-input text-end"
+                  <input id="inpCornerTopRight" type="text" class="form-control form-control-sm compact-input text-end"
                     [(ngModel)]="s.config.topRight" placeholder="e.g. ASTM ref...">
                 </div>
               </div>
               <div class="row g-1.5">
                 <div class="col-6">
-                  <label class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1.5"
+                  <label for="inpCornerBottomLeft" class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1.5"
                     title="Bottom-Left Note">
                     <i class="bi bi-arrow-down-left text-danger"></i><span>Bottom-Left</span>
                   </label>
-                  <input type="text" class="form-control form-control-sm compact-input"
+                  <input id="inpCornerBottomLeft" type="text" class="form-control form-control-sm compact-input"
                     [(ngModel)]="s.config.bottomLeft" placeholder="e.g. Analyst note...">
                 </div>
                 <div class="col-6">
-                  <label
+                  <label for="inpCornerBottomRight"
                     class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center justify-content-end gap-1.5"
                     title="Bottom-Right Callout">
                     <span>Bottom-Right</span><i class="bi bi-arrow-down-right text-danger"></i>
                   </label>
-                  <input type="text" class="form-control form-control-sm compact-input text-end"
+                  <input id="inpCornerBottomRight" type="text" class="form-control form-control-sm compact-input text-end"
                     [(ngModel)]="s.config.bottomRight" placeholder="e.g. Verification note...">
                 </div>
               </div>
@@ -5465,8 +5470,8 @@
               <ng-container *ngIf="s.type === 'condition'">
                 <div class="row g-1.5" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let f of getConditionFields(s)" class="col-md-3">
-                    <label class="form-label compact-label">{{ getConditionLabel(f) }}</label>
-                    <input type="text" class="form-control form-control-sm compact-input font-monospace"
+                    <label [attr.for]="'preview_cond_' + s.id + '_' + f" class="form-label compact-label">{{ getConditionLabel(f) }}</label>
+                    <input [id]="'preview_cond_' + s.id + '_' + f" type="text" class="form-control form-control-sm compact-input font-monospace"
                       [placeholder]="getConditionValue(f) || ('Enter ' + f)" [(ngModel)]="previewEntries['cond_' + f]">
                   </div>
                 </div>
@@ -5505,8 +5510,8 @@
 
               <!-- Narrative live entry -->
               <ng-container *ngIf="s.type === 'narrative'">
-                <label class="form-label compact-label">{{ s.config.label || 'Remarks / Statement' }}</label>
-                <textarea class="form-control form-control-sm" rows="3"
+                <label [attr.for]="'preview_narrative_' + s.id" class="form-label compact-label">{{ s.config.label || 'Remarks / Statement' }}</label>
+                <textarea [id]="'preview_narrative_' + s.id" class="form-control form-control-sm" rows="3"
                   [placeholder]="'Type ' + (s.config.inputType || 'remarks') + ' here...'"
                   [(ngModel)]="previewEntries['narrative_' + s.id]"></textarea>
               </ng-container>
@@ -5557,8 +5562,8 @@
                 <div class="row g-1.5" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let i of getReadingCount(s)"
                     [ngClass]="{'col-md-3': s.config.layout === 'Compact cards', 'col-md-6': s.config.layout === 'Two-column cards', 'col-12': !s.config.layout}">
-                    <label class="form-label compact-label">Reading {{ i }} ({{ s.config.unit || 'HV' }})</label>
-                    <input type="number" class="form-control form-control-sm compact-input text-center font-monospace"
+                    <label [attr.for]="'preview_read_' + s.id + '_' + i" class="form-label compact-label">Reading {{ i }} ({{ s.config.unit || 'HV' }})</label>
+                    <input [id]="'preview_read_' + s.id + '_' + i" type="number" class="form-control form-control-sm compact-input text-center font-monospace"
                       [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
                   </div>
                 </div>
@@ -5897,8 +5902,8 @@
               <ng-container *ngIf="s.type === 'traceability'">
                 <div class="row g-1.5" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let f of s.config.fields" class="col-md-3">
-                    <label class="form-label compact-label">{{ f }}</label>
-                    <input type="text" class="form-control form-control-sm compact-input font-monospace"
+                    <label [attr.for]="'preview_trace_field_' + s.id + '_' + f" class="form-label compact-label">{{ f }}</label>
+                    <input [id]="'preview_trace_field_' + s.id + '_' + f" type="text" class="form-control form-control-sm compact-input font-monospace"
                       [placeholder]="f.includes('Analyst') ? 'Enter Analyst ID' : f.includes('Date') ? 'YYYY-MM-DD' : f.includes('Equipment') ? 'Equipment ID' : ('Enter ' + f)"
                       [(ngModel)]="previewEntries['trace_' + s.id + '_' + f]">
                   </div>
@@ -5963,8 +5968,8 @@
                   </table>
                 </div>
                 <div class="p-2 rounded border bg-light-subtle" *ngIf="s.config.showOverallStatement !== false">
-                  <label class="form-label compact-label mb-1">Overall Opinion &amp; Interpretation Statement</label>
-                  <textarea class="form-control form-control-sm compact-input" rows="2"
+                  <label [attr.for]="'preview_opinion_stmt_' + s.id" class="form-label compact-label mb-1">Overall Opinion &amp; Interpretation Statement</label>
+                  <textarea [id]="'preview_opinion_stmt_' + s.id" class="form-control form-control-sm compact-input" rows="2"
                     [placeholder]="s.config.overallStatement || 'Enter technical opinion statement...'"
                     [(ngModel)]="previewEntries['opinion_stmt_' + s.id]"></textarea>
                 </div>
@@ -6005,7 +6010,7 @@
     <div class="modal-dialog-custom modal-lg">
       <div class="modal-header-bar">
         <strong class="workbench-title">Report Data Structure (JSON)</strong>
-        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closePayloadPreview()">✕</button>
+        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closePayloadPreview()" title="Close" aria-label="Close">✕</button>
       </div>
       <div class="p-1.5">
         <div class="config-note mb-1.5">
@@ -6028,7 +6033,7 @@
           <i class="bi bi-link-45deg fs-5 text-primary"></i>
           <strong class="workbench-title">Map Format to Multiple Laboratory Tests</strong>
         </div>
-        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closeMultiTestModal()">✕</button>
+        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closeMultiTestModal()" title="Close" aria-label="Close">✕</button>
       </div>
       <div class="p-1.5">
         <div class="config-note mb-1.5">
@@ -6101,7 +6106,7 @@
           <i class="bi bi-filetype-json fs-5 text-primary"></i>
           <strong class="workbench-title">Export Layout JSON Specification</strong>
         </div>
-        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closeExportJsonModal()">✕</button>
+        <button type="button" class="btn-icon-mini ms-auto text-dark" (click)="closeExportJsonModal()" title="Close" aria-label="Close">✕</button>
       </div>
       <div class="p-1.5">
         <div class="config-note mb-1.5">

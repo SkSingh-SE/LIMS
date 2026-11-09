@@ -8933,7 +8933,7 @@ button i.bi:only-child,
 .modal-backdrop-custom {
   position: fixed !important;
   inset: 0 !important;
-  background-color: rgba(15, 23, 42, 0.5) !important;
+  background-color: var(--modal-backdrop-bg, rgba(15, 23, 42, 0.5)) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -9098,7 +9098,7 @@ button i.bi:only-child,
 .btn-preset.active {
   background-color: var(--primary-color, #da261c) !important;
   border-color: var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
+  color: var(--surface-bg, #ffffff) !important;
 }
 
 .panel-section {
@@ -9306,7 +9306,7 @@ button i.bi:only-child,
   flex-direction: column !important;
   overflow: hidden !important;
   position: relative !important;
-  background-color: #f1f5f9 !important;
+  background-color: var(--neutral-100, #f1f5f9) !important;
 }
 
 .canvas-header-bar {
@@ -9420,9 +9420,7 @@ button i.bi:only-child,
   overflow-x: auto !important;
   flex: 1 !important;
   width: 100% !important;
-  background-color: #f1f5f9 !important;
-  background-image: radial-gradient(var(--neutral-300, #cbd5e1) 1px, transparent 1px) !important;
-  background-size: 16px 16px !important;
+  background-color: var(--neutral-100, #f1f5f9) !important;
   padding: 20px 16px !important;
   box-sizing: border-box !important;
 }
@@ -9663,27 +9661,6 @@ button i.bi:only-child,
   font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
-.config-card {
-  border: 1px solid var(--neutral-200, #e2e8f0) !important;
-  border-radius: var(--radius-md, 6px) !important;
-  background-color: #ffffff !important;
-  margin-bottom: 8px !important;
-  overflow: hidden !important;
-}
-
-.config-card-title {
-  font-size: 0.76rem !important;
-  font-weight: 600 !important;
-  color: var(--neutral-800, #1e293b) !important;
-  padding: 5px 8px !important;
-  background-color: var(--neutral-50, #f8fafc) !important;
-  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
-  margin: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-}
-
 .config-subcard {
   padding: 6px 8px !important;
   border-bottom: 1px solid var(--neutral-100, #f1f5f9) !important;
@@ -9741,7 +9718,7 @@ button i.bi:only-child,
 .btn-preset-chip.active {
   background-color: var(--primary-color, #da261c) !important;
   border-color: var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
+  color: var(--surface-bg, #ffffff) !important;
 }
 
 /* Location and Specimen Rows Editor */
@@ -9783,8 +9760,7 @@ button i.bi:only-child,
 }
 
 .btn-item-arrow,
-.btn-item-del,
-.btn-icon-subtle {
+.btn-item-del {
   width: 20px !important;
   height: 20px !important;
   min-width: 20px !important;
@@ -9802,15 +9778,13 @@ button i.bi:only-child,
   flex-shrink: 0 !important;
 }
 
-.btn-item-arrow:hover,
-.btn-icon-subtle:hover {
+.btn-item-arrow:hover {
   border-color: var(--neutral-400, #94a3b8) !important;
   background-color: var(--neutral-100, #f1f5f9) !important;
   color: var(--neutral-800, #1e293b) !important;
 }
 
-.btn-item-arrow:disabled,
-.btn-icon-subtle:disabled {
+.btn-item-arrow:disabled {
   opacity: 0.35 !important;
   cursor: not-allowed !important;
   border-color: var(--neutral-200, #e2e8f0) !important;
@@ -9818,7 +9792,7 @@ button i.bi:only-child,
 
 .btn-item-del:hover {
   border-color: var(--danger-main, #dc2626) !important;
-  background-color: #fef2f2 !important;
+  background-color: var(--danger-surface, #fef2f2) !important;
   color: var(--danger-main, #dc2626) !important;
 }
 
@@ -9837,21 +9811,11 @@ button i.bi:only-child,
   font-size: 0.65rem !important;
   font-weight: 600 !important;
   border-radius: 3px !important;
-  background-color: #ecfdf5 !important;
-  color: #047857 !important;
-  border: 1px solid #a7f3d0 !important;
+  background-color: var(--success-surface, #ecfdf5) !important;
+  color: var(--success-main, #047857) !important;
+  border: 1px solid var(--success-border, #a7f3d0) !important;
   font-family: monospace !important;
   line-height: 1.2 !important;
-}
-
-/* Runtime Card */
-.config-runtime-add-card,
-.config-runtime-card {
-  padding: 6px 8px !important;
-  border-radius: 4px !important;
-  background-color: var(--neutral-50, #f8fafc) !important;
-  border: 1px dashed var(--neutral-300, #cbd5e1) !important;
-  margin-bottom: 6px !important;
 }
 
 /* Cell Inspector Box (For Custom Freeform Table) */
@@ -9968,21 +9932,21 @@ button i.bi:only-child,
 
 .binding-source-btn.active-runtime {
   background: var(--primary-color, #da261c) !important;
-  color: #ffffff !important;
+  color: var(--surface-bg, #ffffff) !important;
   font-weight: 600 !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 .binding-source-btn.active-static {
   background: var(--neutral-800, #1e293b) !important;
-  color: #ffffff !important;
+  color: var(--surface-bg, #ffffff) !important;
   font-weight: 600 !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 .binding-source-btn.active-manual {
   background: var(--info-main, #0284c7) !important;
-  color: #ffffff !important;
+  color: var(--surface-bg, #ffffff) !important;
   font-weight: 600 !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
@@ -10548,7 +10512,6 @@ td:hover .btn-cell-row-del {
   white-space: nowrap !important;
 }
 
-.table-exec th.location-row-th,
 .table-exec td.location-row-cell {
   min-width: 220px !important;
   width: 40% !important;
@@ -10628,19 +10591,6 @@ td:hover .btn-cell-row-del {
   overflow: hidden !important;
 }
 
-.spec-condition-header {
-  padding: 5px 8px !important;
-  background-color: var(--neutral-50, #f8fafc) !important;
-  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-}
-
-.spec-condition-body {
-  padding: 6px 8px !important;
-}
-
 .spec-condition-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
@@ -10666,24 +10616,6 @@ td:hover .btn-cell-row-del {
   text-overflow: ellipsis !important;
 }
 
-.spec-cond-select {
-  height: 26px !important;
-  min-height: 26px !important;
-  font-size: 0.74rem !important;
-  padding: 2px 6px !important;
-  border: 1px solid var(--neutral-300, #cbd5e1) !important;
-  border-radius: var(--radius-sm, 4px) !important;
-  background-color: #ffffff !important;
-  color: var(--neutral-800, #1e293b) !important;
-  width: 100% !important;
-}
-
-.spec-cond-select:focus {
-  border-color: var(--primary-color, #da261c) !important;
-  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.1) !important;
-  outline: none !important;
-}
-
 .spec-context-banner {
   background-color: var(--neutral-50, #f8fafc) !important;
   border: 1px solid var(--neutral-200, #e2e8f0) !important;
@@ -10694,19 +10626,6 @@ td:hover .btn-cell-row-del {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-}
-
-.spec-match-chip {
-  font-size: 0.68rem !important;
-  font-weight: 600 !important;
-  padding: 1px 6px !important;
-  border-radius: 10px !important;
-  background-color: var(--success-surface, rgba(22, 163, 74, 0.1)) !important;
-  color: var(--success-main, #15803d) !important;
-  border: 1px solid var(--success-border, rgba(22, 163, 74, 0.25)) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 3px !important;
 }
 
 /* ── Layout Studio: chart preview (SVG) — theme tokens instead of hardcoded colors ── */

@@ -12,7 +12,7 @@
     </div>
     <div class="studio-top-actions">
       <!-- Layout identity & status -->
-      <span class="badge badge-neutral badge-sm font-monospace" *ngIf="currentLayoutId"
+      <span class="badge bg-light text-dark border font-monospace" *ngIf="currentLayoutId"
         title="Saved layout {{ layoutCode }}, revision {{ layoutRev }}">
         {{ layoutCode }} · Rev {{ layoutRev }}
       </span>
@@ -23,10 +23,10 @@
         title="Used for every test that has no layout of its own">
         Global
       </span>
-      <span class="badge badge-neutral badge-sm" *ngIf="loadedSource === 'preset'" title="Loaded from preset: {{ dataSourceLabel }}">
+      <span class="badge bg-light text-dark border" *ngIf="loadedSource === 'preset'" title="Loaded from preset: {{ dataSourceLabel }}">
         Preset
       </span>
-      <span class="badge badge-warning badge-sm" *ngIf="!currentLayoutId" title="Not saved yet">
+      <span class="badge bg-warning text-dark" *ngIf="!currentLayoutId" title="Not saved yet">
         Not saved
       </span>
 
@@ -85,8 +85,8 @@
         <span class="panel-header-title">
           <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Layout Components</span>
         </span>
-        <span class="badge badge-neutral badge-sm ms-auto me-1.5">{{ sections.length }}</span>
-        <button type="button" class="btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
+        <span class="badge bg-light text-dark border ms-auto me-1.5">{{ sections.length }}</span>
+        <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
           <i class="bi bi-chevron-left"></i>
         </button>
       </div>
@@ -114,9 +114,9 @@
       <div class="panel-section">
         <div class="d-flex align-items-center justify-content-between mb-1.5">
           <h6 class="panel-section-title mb-0">Mandatory Context</h6>
-          <span class="badge badge-danger badge-sm font-monospace small" *ngIf="!isGlobalDefault">TARGET
+          <span class="badge bg-danger font-monospace small" *ngIf="!isGlobalDefault">TARGET
             TEST</span>
-          <span class="badge badge-theme badge-sm font-monospace small" *ngIf="isGlobalDefault">GLOBAL
+          <span class="badge bg-primary font-monospace small" *ngIf="isGlobalDefault">GLOBAL
             FALLBACK</span>
         </div>
 
@@ -152,7 +152,7 @@
               <i class="bi bi-journal-check me-1.5 text-primary"></i><span>Test Method / Spec</span>
             </label>
             <div class="d-flex align-items-center gap-1.5">
-              <span class="badge badge-neutral badge-sm font-monospace text-xxs">TIER 1 MATCH</span>
+              <span class="badge bg-light text-dark border font-monospace text-xxs">TIER 1 MATCH</span>
               <a routerLink="/test-method-specification" class="btn-nav-link" target="_blank"
                 title="Manage Test Method Specifications">
                 <i class="bi bi-box-arrow-up-right me-1.5"></i><span>Manage</span>
@@ -174,7 +174,7 @@
             class="btn-lims btn-lims-edit w-100 d-flex align-items-center justify-content-between py-1 px-1.5"
             (click)="openMultiTestModal()" [disabled]="isViewMode" title="Link this single format to multiple tests">
             <span><i class="bi bi-link-45deg me-1.5"></i><span>Map Additional Tests</span></span>
-            <span class="badge badge-theme badge-sm font-monospace">{{ additionalMappedLeafKeys.length }} mapped</span>
+            <span class="badge bg-primary font-monospace">{{ additionalMappedLeafKeys.length }} mapped</span>
           </button>
           <div class="text-muted text-xxs mt-0.5" *ngIf="additionalMappedLeafKeys.length > 0">
             Also mapped to {{ additionalMappedLeafKeys.length }} additional laboratory test(s).
@@ -193,7 +193,7 @@
             <span class="hierarchy-box-title">
               <i class="bi bi-diagram-3 me-1.5 text-danger"></i><span>Mapping Summary</span>
             </span>
-            <span class="badge text-xxs" [ngClass]="isGlobalDefault ? 'badge-theme' : 'badge-neutral'">
+            <span class="badge text-xxs" [ngClass]="isGlobalDefault ? 'bg-primary' : 'bg-light text-dark border'">
               {{ isGlobalDefault ? 'Global (All Tests)' : (resolvedHierarchy?.isChemical ? 'Chemical 3-Level' : 'General 2-Level') }}
             </span>
           </div>
@@ -324,7 +324,7 @@
       <div class="panel-section">
         <div class="d-flex align-items-center justify-content-between mb-1.5">
           <h6 class="panel-section-title mb-0">Layout Outline</h6>
-          <span class="badge badge-neutral badge-sm font-monospace text-xxs">{{ sections.length }}
+          <span class="badge bg-light text-dark border font-monospace text-xxs">{{ sections.length }}
             sections</span>
         </div>
         <div class="outline-list" *ngIf="sections.length > 0">
@@ -413,7 +413,7 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top" *ngIf="currentLayoutId">
-          <span class="badge badge-success badge-sm text-xxs font-monospace">
+          <span class="badge bg-success text-xxs font-monospace">
             <i class="bi bi-cloud-check me-1.5"></i><span>{{ layoutCode || 'Configured Format' }}</span>
           </span>
           <button type="button" class="btn-lims btn-lims-remove btn-xs py-0 px-1.5" *ngIf="!isViewMode"
@@ -451,7 +451,7 @@
 
         <!-- Layout Structure Archetype Selector (Indirect Load) -->
         <div class="layout-structure-picker">
-          <span class="badge badge-neutral badge-sm font-monospace text-xxs text-nowrap">
+          <span class="badge bg-light text-dark border font-monospace text-xxs text-nowrap">
             <i class="bi bi-diagram-3 me-1"></i><span>Structure</span>
           </span>
           <app-custom-select [options]="layoutArchetypeList" [(ngModel)]="selectedPresetToLoad" valueField="key"
@@ -529,10 +529,10 @@
                 <span class="sec-type-badge"
                   *ngIf="(componentNames[s.type] || '').trim().toUpperCase() !== (s.title || '').trim().toUpperCase()">{{
                   componentNames[s.type] }}</span>
-                <span *ngIf="s.config.width === 'Half Width'" class="badge badge-neutral badge-sm ms-1.5">Half Width</span>
+                <span *ngIf="s.config.width === 'Half Width'" class="badge bg-light text-dark border ms-1.5">Half Width</span>
                 <span *ngIf="s.config.visibility && s.config.visibility !== 'Always'"
-                  class="badge badge-warning badge-sm ms-1.5">{{ s.config.visibility }}</span>
-                <span *ngIf="s.config.enabled === false" class="badge badge-neutral badge-sm ms-1.5">Disabled</span>
+                  class="badge bg-warning text-dark ms-1.5">{{ s.config.visibility }}</span>
+                <span *ngIf="s.config.enabled === false" class="badge bg-light text-dark border ms-1.5">Disabled</span>
 
                 <!-- Reportable Pill Toggle -->
                 <span class="badge ms-1.5 cursor-pointer"
@@ -572,10 +572,10 @@
                 <div
                   class="corner-annotations-bar d-flex justify-content-between align-items-center mb-1.5 text-muted text-xxs font-monospace"
                   *ngIf="s.config.topLeft || s.config.topRight">
-                  <span class="badge badge-neutral badge-sm border" *ngIf="s.config.topLeft">{{ s.config.topLeft
+                  <span class="badge bg-light text-dark border" *ngIf="s.config.topLeft">{{ s.config.topLeft
                     }}</span>
                   <span *ngIf="!s.config.topLeft"></span>
-                  <span class="badge badge-neutral badge-sm border" *ngIf="s.config.topRight">{{ s.config.topRight
+                  <span class="badge bg-light text-dark border" *ngIf="s.config.topRight">{{ s.config.topRight
                     }}</span>
                 </div>
                 <!-- 1. Parameter Table -->
@@ -695,14 +695,14 @@
                               <ng-container *ngIf="c.key !== 'unit' && c.key !== 'requirement' && c.key !== 'status' && c.key !== 'method' && c.key !== 'remarks' && c.key !== 'uncertainty' && c.key !== 'dl' && c.key !== 'scope'">
                                 <!-- Static Value Mode -->
                                 <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                  class="badge badge-warning font-monospace px-1.5"
+                                  class="badge bg-warning text-dark font-monospace px-1.5"
                                   [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                   {{ r.staticValue || c.staticValue || (demoMode ? 'Static 420' : 'Static') }}
                                 </span>
 
                                 <!-- Manual Entry Mode -->
                                 <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                  class="badge badge-success font-monospace px-1.5">
+                                  class="badge bg-success font-monospace px-1.5">
                                   {{ demoMode ? 'Manual Entry' : '—' }}
                                 </span>
 
@@ -725,7 +725,7 @@
                                 <i class="bi bi-plus-circle me-1.5"></i><span>Add Parameter Row</span>
                               </button>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -850,14 +850,14 @@
                             <td class="text-center font-monospace">
                               <!-- Static Mode -->
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static 420' : 'Static') }}
                               </span>
                               <!-- Manual Mode -->
                               <span
                                 *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <!-- Runtime Mode -->
@@ -890,7 +890,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -980,12 +980,12 @@
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1017,7 +1017,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -1107,12 +1107,12 @@
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1137,7 +1137,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -1233,12 +1233,12 @@
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1259,7 +1259,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -1349,12 +1349,12 @@
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1380,7 +1380,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -1484,12 +1484,12 @@
                               <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                                 <td class="text-center font-monospace">
                                   <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                    class="badge badge-warning font-monospace px-1.5"
+                                    class="badge bg-warning text-dark font-monospace px-1.5"
                                     [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                     {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                                   </span>
                                   <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                    class="badge badge-success font-monospace px-1.5">
+                                    class="badge bg-success font-monospace px-1.5">
                                     {{ demoMode ? 'Manual Entry' : '—' }}
                                   </span>
                                   <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1510,7 +1510,7 @@
                                     </button>
                                   </div>
                                   <div class="d-flex align-items-center gap-1.5">
-                                    <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                    <span class="badge bg-light text-dark border font-monospace text-xxs">
                                       {{ getVisibleTableRows(s).length }} points × {{ getVisibleTableColumns(s).length }} cols
                                     </span>
                                     <span class="badge font-monospace text-xxs border"
@@ -1669,12 +1669,12 @@
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1695,7 +1695,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -1786,12 +1786,12 @@
                               (click)="selectCustomCell(s, rIdx, cIdx + 1, $event)"
                               [title]="'Click to configure cell [R' + (rIdx + 1) + ':C' + (cIdx + 2) + ']'">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1812,7 +1812,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -1886,9 +1886,9 @@
                 <ng-container *ngIf="s.type === 'narrative'">
                   <div class="narrative-box">
                     <div class="narrative-meta">
-                      <span class="badge badge-neutral badge-sm me-1.5">{{ s.config.category || 'Remarks' }}</span>
+                      <span class="badge bg-light text-dark border me-1.5">{{ s.config.category || 'Remarks' }}</span>
                       <span class="text-muted">Type: {{ s.config.inputType }}</span>
-                      <span *ngIf="s.config.required" class="badge badge-danger badge-sm ms-1.5">Required</span>
+                      <span *ngIf="s.config.required" class="badge bg-danger ms-1.5">Required</span>
                     </div>
                     <div class="narrative-text">
                       {{ demoMode ? 'The test was carried out strictly as per standard test method. The specimen
@@ -1965,12 +1965,12 @@
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -1996,7 +1996,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -2091,12 +2091,12 @@
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
                               <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge badge-warning font-monospace px-1.5"
+                                class="badge bg-warning text-dark font-monospace px-1.5"
                                 [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
                                 {{ r.staticValue || c.staticValue || (demoMode ? 'Static' : 'Static') }}
                               </span>
                               <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge badge-success font-monospace px-1.5">
+                                class="badge bg-success font-monospace px-1.5">
                                 {{ demoMode ? 'Manual Entry' : '—' }}
                               </span>
                               <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
@@ -2122,7 +2122,7 @@
                                 </button>
                               </div>
                               <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                                <span class="badge bg-light text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
                                 <span class="badge font-monospace text-xxs border"
@@ -2192,7 +2192,7 @@
                         <span class="text-xxs text-muted d-block mb-1">Tested &amp; Recorded By:</span>
                         <div class="d-flex align-items-center justify-content-between">
                           <span class="fw-semibold small text-dark">Laboratory Analyst / Technician</span>
-                          <span class="badge badge-success badge-sm text-xxs">Analyst Signature</span>
+                          <span class="badge bg-success text-xxs">Analyst Signature</span>
                         </div>
                       </div>
                     </div>
@@ -2201,7 +2201,7 @@
                         <span class="text-xxs text-muted d-block mb-1">Technical Reviewer / Verifier:</span>
                         <div class="d-flex align-items-center justify-content-between">
                           <span class="fw-semibold small text-dark">Authorized Signatory</span>
-                          <span class="badge badge-warning badge-sm text-xxs">Reviewer Signature</span>
+                          <span class="badge bg-warning text-dark text-xxs">Reviewer Signature</span>
                         </div>
                       </div>
                     </div>
@@ -2212,10 +2212,10 @@
                 <div
                   class="corner-annotations-bar d-flex justify-content-between align-items-center mt-1.5 text-muted text-xxs font-monospace"
                   *ngIf="s.config.bottomLeft || s.config.bottomRight">
-                  <span class="badge badge-neutral badge-sm border" *ngIf="s.config.bottomLeft">{{ s.config.bottomLeft
+                  <span class="badge bg-light text-dark border" *ngIf="s.config.bottomLeft">{{ s.config.bottomLeft
                     }}</span>
                   <span *ngIf="!s.config.bottomLeft"></span>
-                  <span class="badge badge-neutral badge-sm border" *ngIf="s.config.bottomRight">{{
+                  <span class="badge bg-light text-dark border" *ngIf="s.config.bottomRight">{{
                     s.config.bottomRight }}</span>
                 </div>
               </div>
@@ -2284,7 +2284,7 @@
           <span class="config-dot"></span>
           <strong class="config-title" [title]="selectedSection ? selectedSection.title : 'Section Configuration'">{{
             selectedSection ? selectedSection.title : 'Section Configuration' }}</strong>
-          <span class="badge badge-danger badge-sm font-monospace text-xxs ms-1.5 flex-shrink-0"
+          <span class="badge bg-danger font-monospace text-xxs ms-1.5 flex-shrink-0"
             *ngIf="selectedSection">
             {{ componentNames[selectedSection.type] }}
           </span>
@@ -2302,7 +2302,7 @@
             <button type="button" class="btn-preset" (click)="resetRightWidth()" title="Reset width"><i
                 class="bi bi-arrow-counterclockwise"></i></button>
           </div>
-          <button type="button" class="btn-panel-action" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])">
+          <button type="button" class="btn btn-sm btn-panel-action" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])">
             <i class="bi bi-chevron-right"></i>
           </button>
         </div>
@@ -2315,7 +2315,7 @@
         <fieldset class="lims-prop-fieldset">
           <legend class="lims-prop-legend d-flex align-items-center justify-content-between">
             <span class="d-flex align-items-center gap-1.5"><i class="bi bi-sliders"></i><span>General</span></span>
-            <span class="badge badge-neutral badge-sm text-xxs">{{ componentNames[s.type] }}</span>
+            <span class="badge bg-light text-dark border text-xxs">{{ componentNames[s.type] }}</span>
           </legend>
           <div class="p-1.5">
             <div class="mb-1.5">
@@ -2326,7 +2326,7 @@
             <div class="mb-1.5">
               <div class="d-flex justify-content-between align-items-center mb-0.5">
                 <label class="form-label compact-label mb-0">Stable Section Key</label>
-                <span class="badge badge-neutral badge-sm font-monospace text-xxs">
+                <span class="badge bg-light text-dark border font-monospace text-xxs">
                   <i class="bi bi-lock-fill me-1.5"></i>AUTO
                 </span>
               </div>
@@ -2383,10 +2383,10 @@
               <span class="text-truncate">Parameter Configuration</span>
             </span>
             <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
-              <span class="badge badge-theme badge-sm font-monospace text-xxs">
+              <span class="badge bg-primary font-monospace text-xxs">
                 {{ currentDataset.parameters.length }} Avail
               </span>
-              <span class="badge badge-danger badge-sm text-xxs">
+              <span class="badge bg-danger text-xxs">
                 {{ getSelectedParametersCount(s) }} Active
               </span>
             </div>
@@ -2437,13 +2437,13 @@
                     <input class="form-check-input my-0 me-1.5 flex-shrink-0" type="checkbox"
                       [checked]="isParameterInSubset(s, p.name)" (change)="toggleParameterInSubset(s, p.name)">
                     <span class="dataset-check-label fw-medium text-truncate" [title]="p.name">{{ p.name }}</span>
-                    <span class="badge badge-info badge-sm ms-1.5 font-monospace text-xxs flex-shrink-0"
+                    <span class="badge bg-info text-dark ms-1.5 font-monospace text-xxs flex-shrink-0"
                       *ngIf="p.isCalculated" [title]="p.formulaDisplay || formatFormula(p.formula)">
                       <i class="bi bi-calculator me-1.5"></i>ƒx
                     </span>
                   </div>
                   <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-1.5">
-                    <span class="badge badge-neutral badge-sm font-monospace" *ngIf="p.unit">{{ p.unit }}</span>
+                    <span class="badge bg-light text-dark border font-monospace" *ngIf="p.unit">{{ p.unit }}</span>
                     <span class="text-muted text-xxs font-monospace" *ngIf="p.requirement">{{ p.requirement }}</span>
                   </div>
                 </label>
@@ -2461,7 +2461,7 @@
                 <i class="bi bi-sliders2-vertical text-danger"></i>
                 <span>Columns & Rows</span>
               </span>
-              <span class="badge badge-danger badge-sm text-xxs">
+              <span class="badge bg-danger text-xxs">
                 {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
               </span>
             </div>
@@ -2546,9 +2546,9 @@
                     </button>
                     <input type="text" class="form-control form-control-sm row-label-input flex-grow-1" [ngModel]="r.label"
                       (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Row label...">
-                    <span class="badge badge-info badge-sm font-monospace text-xxs flex-shrink-0"
+                    <span class="badge bg-info text-dark font-monospace text-xxs flex-shrink-0"
                       *ngIf="r.isCalculated" title="Calculated formula parameter">ƒx</span>
-                    <span class="badge badge-neutral badge-sm font-monospace text-xxs flex-shrink-0"
+                    <span class="badge bg-light text-dark border font-monospace text-xxs flex-shrink-0"
                       *ngIf="r.unit">{{ r.unit }}</span>
                   </div>
 
@@ -2588,7 +2588,7 @@
                   <span class="text-xxs fw-semibold text-secondary">
                     <i class="bi bi-database me-1.5 text-danger"></i>Add Parameter from Database
                   </span>
-                  <span class="badge badge-neutral badge-sm text-muted font-monospace">
+                  <span class="badge bg-light text-dark border text-muted font-monospace">
                     {{ availableParametersOptions.length }} available
                   </span>
                 </div>
@@ -2696,7 +2696,7 @@
                     <i class="bi bi-eye text-theme"></i>
                     <span>Covered Columns ({{ getMergedColumnsList(s).length }} cols):</span>
                   </span>
-                  <span class="badge badge-neutral badge-sm font-monospace text-xxs">Span {{
+                  <span class="badge bg-light text-dark border font-monospace text-xxs">Span {{
                     ensureHeaderMergeState(s).colspan || 2 }}</span>
                 </div>
                 <div class="d-flex flex-wrap gap-1.5">
@@ -2790,7 +2790,7 @@
               <span>Specimens</span>
             </span>
             <div class="d-flex align-items-center gap-1.5">
-              <span class="badge badge-danger badge-sm text-xxs">
+              <span class="badge bg-danger text-xxs">
                 {{ getSpecimenList(s).length }} Specimens
               </span>
               <button type="button" class="btn-xs-action text-danger fw-semibold" (click)="toggleOrientation(s)"
@@ -2937,7 +2937,7 @@
                       <i class="bi bi-magic"></i>ƒx
                     </span>
                   </div>
-                  <span class="badge badge-neutral badge-sm font-monospace">{{ p.unit }}</span>
+                  <span class="badge bg-light text-dark border font-monospace">{{ p.unit }}</span>
                 </label>
               </div>
             </div>
@@ -3100,7 +3100,7 @@
               <span class="config-subcard-title">
                 <i class="bi bi-check2-circle text-danger"></i><span>Active Condition Parameters</span>
               </span>
-              <span class="badge badge-danger badge-sm text-xxs">
+              <span class="badge bg-danger text-xxs">
                 {{ activeConditionsCount }}/{{ currentDataset.conditions.length }}
               </span>
             </div>
@@ -3113,7 +3113,7 @@
                       [checked]="isConditionSelected(c.field)" (change)="toggleConditionSelection(c)">
                     <span class="dataset-check-label">{{ c.label }}</span>
                   </div>
-                  <span class="badge badge-neutral badge-sm">{{ (c.demoValue && c.unit && c.demoValue.includes(c.unit)) ? c.demoValue : (c.demoValue + (c.unit ? " " + c.unit : "")) }}</span>
+                  <span class="badge bg-light text-dark border">{{ (c.demoValue && c.unit && c.demoValue.includes(c.unit)) ? c.demoValue : (c.demoValue + (c.unit ? " " + c.unit : "")) }}</span>
                 </label>
               </div>
             </div>
@@ -3150,7 +3150,7 @@
                 title="Add Spot Column">+ Spot</button>
               <button type="button" class="btn-xs-action text-secondary" (click)="adjustReadingSpots(s, -1)"
                 title="Remove Last Spot Column" [disabled]="getVisibleTableColumns(s).length <= 2">- Spot</button>
-              <span class="badge badge-danger badge-sm font-monospace ms-1.5">{{ getVisibleTableColumns(s).length }} Cols</span>
+              <span class="badge bg-danger font-monospace ms-1.5">{{ getVisibleTableColumns(s).length }} Cols</span>
             </div>
           </legend>
 
@@ -3303,7 +3303,7 @@
               <i class="bi bi-geo-alt text-danger"></i>
               <span>Locations / Zones</span>
             </span>
-            <span class="badge badge-danger badge-sm text-xxs">
+            <span class="badge bg-danger text-xxs">
               {{ getLocationList(s).length }} Rows
             </span>
           </legend>
@@ -3941,7 +3941,7 @@
               <i class="bi bi-layout-text-window text-danger"></i>
               <span>Custom Table</span>
             </span>
-            <span class="badge badge-danger badge-sm text-xxs">
+            <span class="badge bg-danger text-xxs">
               {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
             </span>
           </legend>
@@ -4674,7 +4674,7 @@
               <i class="bi bi-chat-square-quote text-danger"></i>
               <span>Opinion &amp; Interpretation</span>
             </span>
-            <span class="badge badge-danger badge-sm text-xxs">ISO 17025 Cl. 7.8.7</span>
+            <span class="badge bg-danger text-xxs">ISO 17025 Cl. 7.8.7</span>
           </legend>
 
           <div class="config-subcard">
@@ -4754,7 +4754,7 @@
           <legend class="lims-prop-legend d-flex align-items-center justify-content-between mb-1.5">
             <span><i class="bi bi-sliders2-vertical me-1.5 text-danger"></i><span>Columns & Rows</span></span>
             <div class="d-flex align-items-center gap-1.5">
-              <span class="badge badge-danger badge-sm text-xxs">
+              <span class="badge bg-danger text-xxs">
                 {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
               </span>
             </div>
@@ -4966,7 +4966,7 @@
                   <i class="bi bi-eye text-theme"></i>
                   <span>Covered Columns ({{ getMergedColumnsList(s).length }} cols):</span>
                 </span>
-                <span class="badge badge-neutral badge-sm font-monospace text-xxs">Span {{
+                <span class="badge bg-light text-dark border font-monospace text-xxs">Span {{
                   ensureHeaderMergeState(s).colspan || 2 }}</span>
               </div>
               <div class="d-flex flex-wrap gap-1.5">
@@ -5157,7 +5157,7 @@
         <fieldset class="lims-prop-fieldset">
           <legend class="lims-prop-legend d-flex align-items-center justify-content-between">
             <span class="d-flex align-items-center gap-1.5"><i class="bi bi-link-45deg text-danger"></i><span>Data Source Summary</span></span>
-            <span class="badge badge-danger badge-sm text-xxs">{{ componentNames[s.type] }}</span>
+            <span class="badge bg-danger text-xxs">{{ componentNames[s.type] }}</span>
           </legend>
           <div class="p-1.5">
             <div class="binding-status-pill mb-1.5">
@@ -5340,7 +5340,7 @@
                   Preview with sample values. Each value is checked against its requirement as you type.
                 </div>
               </div>
-              <span class="badge badge-neutral badge-sm">Preview</span>
+              <span class="badge bg-light text-dark border">Preview</span>
             </div>
           </div>
 
@@ -5348,7 +5348,7 @@
           <div *ngFor="let s of sections; let i = index" class="card mb-1.5 border shadow-sm bg-white">
             <div class="card-header bg-light py-1.5 px-1.5 d-flex align-items-center justify-content-between">
               <span class="fw-bold text-dark">{{ i + 1 }}. {{ s.title }}</span>
-              <span class="badge badge-neutral badge-sm">{{ componentNames[s.type] }}</span>
+              <span class="badge bg-light text-dark border">{{ componentNames[s.type] }}</span>
             </div>
 
             <div class="card-body p-1.5">
@@ -5373,7 +5373,7 @@
                       <td>
                         <!-- Static Mode: Fixed Value -->
                         <span *ngIf="r.bindingMode === 'static' || s.config.dataBindingMode === 'static'"
-                          class="badge badge-warning font-monospace px-1.5 py-1">
+                          class="badge bg-warning text-dark font-monospace px-1.5 py-1">
                           <i class="bi bi-pin-angle me-1.5 text-warning-emphasis"></i>{{ r.staticValue || 'Static Fixed'
                           }}
                         </span>
@@ -5423,7 +5423,7 @@
                           <td class="text-center font-monospace">
                             <!-- 1. STATIC BINDING: Fixed value rendered verbatim -->
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5"
+                              class="badge bg-warning text-dark font-monospace px-1.5"
                               [title]="'Fixed value: ' + (r.staticValue || c.staticValue || 'Fixed')">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || '420' }}
                             </span>
@@ -5485,7 +5485,7 @@
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5"
+                              class="badge bg-warning text-dark font-monospace px-1.5"
                               [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || '23.0 °C' }}
                             </span>
@@ -5531,7 +5531,7 @@
                               {{ r.requirement || 'ISO 17025 Cl. 7.4' }}
                             </span>
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5">
+                              class="badge bg-warning text-dark font-monospace px-1.5">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || 'Conforming' }}
                             </span>
                             <ng-container *ngIf="c.key === 'resp' && r.bindingMode !== 'static' && c.bindingMode !== 'static'">
@@ -5578,7 +5578,7 @@
                           <td class="text-center font-monospace">
                             <!-- Static Mode -->
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5"
+                              class="badge bg-warning text-dark font-monospace px-1.5"
                               [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || 'Static' }}
                             </span>
@@ -5623,7 +5623,7 @@
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5"
+                              class="badge bg-warning text-dark font-monospace px-1.5"
                               [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || 'Static' }}
                             </span>
@@ -5666,7 +5666,7 @@
                         <td class="text-muted">{{ r.requirement || '≥ 420' }}</td>
                         <td>
                           <span *ngIf="r.bindingMode === 'static'"
-                            class="badge badge-warning font-monospace px-1.5">
+                            class="badge bg-warning text-dark font-monospace px-1.5">
                             <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || 'Static Fixed' }}
                           </span>
                           <input *ngIf="r.bindingMode !== 'static'" type="number"
@@ -5706,7 +5706,7 @@
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5">
+                              class="badge bg-warning text-dark font-monospace px-1.5">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || 'Static' }}
                             </span>
                             <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
@@ -5805,7 +5805,7 @@
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5">
+                              class="badge bg-warning text-dark font-monospace px-1.5">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || 'Static' }}
                             </span>
                             <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
@@ -5841,7 +5841,7 @@
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5">
+                              class="badge bg-warning text-dark font-monospace px-1.5">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || 'Static' }}
                             </span>
                             <input *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'" type="text"
@@ -5886,7 +5886,7 @@
                   </div>
                   <div class="text-end">
                     <span
-                      class="badge badge-success px-1.5 py-1.5 fs-6 font-monospace">
+                      class="badge bg-success px-1.5 py-1.5 fs-6 font-monospace">
                       Auto-Calculated
                     </span>
                   </div>
@@ -5918,7 +5918,7 @@
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
                             <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge badge-warning font-monospace px-1.5"
+                              class="badge bg-warning text-dark font-monospace px-1.5"
                               [title]="'Static: ' + (r.staticValue || c.staticValue || 'Static')">
                               <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || (c.key === 'tag' ? 'EQ-00' + (rIdx + 1) : 'Instron 600kN') }}
                             </span>
@@ -5952,7 +5952,7 @@
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
                             <span *ngIf="c.key === 'requirement'" class="text-muted small">{{ r.requirement || 'Conforms' }}</span>
-                            <span *ngIf="c.key === 'status'" class="badge badge-success badge-sm text-xxs">PASS</span>
+                            <span *ngIf="c.key === 'status'" class="badge bg-success text-xxs">PASS</span>
                             <input *ngIf="c.key !== 'requirement' && c.key !== 'status'" type="text"
                               class="form-control form-control-sm text-center entry-input font-monospace"
                               [placeholder]="c.label" [(ngModel)]="previewEntries['opinion_' + s.id + '_' + rIdx + '_' + cIdx]">
@@ -5978,7 +5978,7 @@
                       <span class="text-xxs text-muted d-block mb-1">Tested &amp; Recorded By:</span>
                       <div class="d-flex align-items-center justify-content-between">
                         <span class="fw-semibold small text-dark">Laboratory Analyst / Technician</span>
-                        <span class="badge badge-success badge-sm text-xxs">Signed (Preview)</span>
+                        <span class="badge bg-success text-xxs">Signed (Preview)</span>
                       </div>
                     </div>
                   </div>
@@ -5987,7 +5987,7 @@
                       <span class="text-xxs text-muted d-block mb-1">Technical Reviewer / Verifier:</span>
                       <div class="d-flex align-items-center justify-content-between">
                         <span class="fw-semibold small text-dark">Authorized Signatory</span>
-                        <span class="badge badge-warning badge-sm text-xxs">Pending Sign-off</span>
+                        <span class="badge bg-warning text-dark text-xxs">Pending Sign-off</span>
                       </div>
                     </div>
                   </div>
@@ -6042,7 +6042,7 @@
               [(ngModel)]="multiTestSearchTerm">
           </div>
           <div class="d-flex align-items-center gap-1.5">
-            <span class="badge badge-theme badge-sm font-monospace">{{ additionalMappedLeafKeys.length }}
+            <span class="badge bg-primary font-monospace">{{ additionalMappedLeafKeys.length }}
               Selected</span>
             <button type="button" class="btn-lims btn-lims-add btn-xs" (click)="selectAllAdditionalTests()">Select All
               Filtered</button>
@@ -6066,7 +6066,7 @@
                   <i class="bi" [ngClass]="t.isChemical ? 'bi-radioactive me-1.5' : 'bi-collection me-1.5'"></i><span>{{
                     t.isChemical ? 'Chemical' : 'General' }}</span>
                 </span>
-                <span class="badge badge-theme badge-sm font-monospace text-xxs"
+                <span class="badge bg-primary font-monospace text-xxs"
                   *ngIf="t.uniqueKey === getPrimaryLeafKey()">
                   Primary Target
                 </span>

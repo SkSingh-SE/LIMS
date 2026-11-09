@@ -516,8 +516,9 @@
           <div class="sections-stack">
             <div *ngFor="let s of sections; let i = index" class="exec-section-card"
               tabindex="0"
-              role="button"
+              role="group"
               [attr.aria-label]="s.title || ('Section ' + (i + 1))"
+              [attr.aria-selected]="selectedSectionId === s.id"
               (click)="selectSection(s.id)"
               (keydown)="onSectionKeyDown($event, s.id)"
               [ngClass]="{

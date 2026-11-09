@@ -2478,12 +2478,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     this.toastService.show(`Matrix orientation: ${s.config.orientation}`, 'info');
   }
 
-    onSectionKeyDown(event: KeyboardEvent, sectionId: number): void {
+  onSectionKeyDown(event: KeyboardEvent, sectionId: number): void {
+    if (event.target !== event.currentTarget) return;
     if (event.key === 'Enter' || event.key === ' ') {
-      const target = event.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
-        return;
-      }
       event.preventDefault();
       this.selectSection(sectionId);
     } else if (event.altKey && event.key === 'ArrowUp') {

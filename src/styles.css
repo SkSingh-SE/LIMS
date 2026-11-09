@@ -9529,8 +9529,8 @@ button i.bi:only-child,
 
 .exec-section-card:focus-visible {
   outline: none !important;
-  border-color: var(--primary-color, #da261c) !important;
-  box-shadow: 0 0 0 3px rgba(218, 38, 28, 0.25) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.12) !important;
 }
 
 .exec-sec-header {

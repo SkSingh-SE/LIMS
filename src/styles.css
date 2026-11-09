@@ -8762,8 +8762,8 @@ button i.bi:only-child,
 .border-purple-subtle { border-color: var(--primary-200, rgba(218, 38, 28, 0.28)) !important; }
 
 .compact-label {
-  font-size: 0.72rem !important;
-  font-weight: 600 !important;
+  font-size: var(--font-xs, 0.75rem) !important;
+  font-weight: 500 !important;
   color: var(--neutral-700, #374151) !important;
   margin-bottom: 0.15rem !important;
   font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
@@ -8772,7 +8772,7 @@ button i.bi:only-child,
 .compact-input {
   height: 28px !important;
   min-height: 28px !important;
-  font-size: 0.75rem !important;
+  font-size: var(--font-sm, 0.8rem) !important;
   padding: 0.2rem 0.5rem !important;
   font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
@@ -10516,6 +10516,17 @@ td:hover .btn-cell-row-del {
   font-weight: 600 !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.table-exec th {
+  font-size: var(--font-xs, 0.75rem) !important;
+  font-weight: 600 !important;
+  color: var(--neutral-700, #334155) !important;
+  background-color: var(--neutral-100, #f1f5f9) !important;
+  border: 1px solid var(--neutral-300, #cbd5e1) !important;
+  padding: 4px 6px !important;
+  vertical-align: middle !important;
   white-space: nowrap !important;
 }
 

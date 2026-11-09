@@ -1418,7 +1418,7 @@
 
                 <!-- 7. Traverse / Sequence -->
                 <ng-container *ngIf="s.type === 'traverse'">
-                  <div class="row g-1.5 align-items-center">
+                  <div class="row g-2 align-items-center">
                     <div [ngClass]="s.config.showCurve !== false ? 'col-md-7' : 'col-12'" *ngIf="s.config.showTable !== false">
                       <div class="table-responsive">
                         <table class="table-exec">
@@ -2343,7 +2343,7 @@
                   title="Stable key used by reports. Generated automatically and cannot be edited.">
               </div>
             </div>
-            <div class="row g-1.5 mb-1.5">
+            <div class="row g-2 mb-1.5">
               <div class="col-6">
                 <label for="selSectionWidth" class="form-label compact-label">Width</label>
                 <app-custom-select id="selSectionWidth" [options]="selectOptions.width" [(ngModel)]="s.config.width" size="sm"
@@ -2357,7 +2357,7 @@
                 </app-custom-select>
               </div>
             </div>
-            <div class="row g-1.5 mb-1.5">
+            <div class="row g-2 mb-1.5">
               <div class="col-6">
                 <label class="form-label compact-label" for="selSectionStatus">Section Is</label>
                 <select id="selSectionStatus" class="form-select form-select-sm compact-input"
@@ -2677,7 +2677,7 @@
                   placeholder="e.g. Grouped Observations, Mechanical Properties">
               </div>
 
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-7">
                   <label for="selHeaderMergeStartCol" class="form-label compact-label">Start Column</label>
                   <app-custom-select id="selHeaderMergeStartCol" [options]="getVisibleColumnsForSection(s)"
@@ -2748,7 +2748,7 @@
               </span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5">
+              <div class="row g-2">
                 <div class="col-6">
                   <label class="form-label compact-label" for="selParamDecimals">Decimal places</label>
                   <select id="selParamDecimals" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.decimals" [disabled]="isViewMode">
@@ -2815,7 +2815,7 @@
               <span class="text-xxs text-muted fw-semibold">Structure</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selMatrixOrientation" class="form-label compact-label">Matrix Orientation</label>
                   <app-custom-select id="selMatrixOrientation" [options]="selectOptions.orientation" [(ngModel)]="s.config.orientation" size="sm"
@@ -2986,7 +2986,7 @@
               </span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-4">
                   <label class="form-label compact-label" for="selSpecimenShape">Specimen shape</label>
                   <select id="selSpecimenShape" class="form-select form-select-sm compact-input" [ngModel]="s.config.specimenShape"
@@ -3058,7 +3058,7 @@
               <span class="text-xxs text-muted fw-semibold">Layout</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selReadingLayoutMode" class="form-label compact-label">Layout Mode</label>
                   <app-custom-select id="selReadingLayoutMode" [options]="selectOptions.layout" [(ngModel)]="s.config.layout" size="sm"
@@ -3169,7 +3169,7 @@
               <span class="text-xxs text-muted fw-semibold">Target</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="inpReadingSpotCount" class="form-label compact-label">Reading Count (Spots)</label>
                   <input id="inpReadingSpotCount" type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
@@ -3216,7 +3216,7 @@
               <span class="badge-auto-calc"><i class="bi bi-magic"></i>ƒx AUTO-CALC</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-12">
                   <label for="selReadingAggregation" class="form-label compact-label">Statistical Aggregation</label>
                   <app-custom-select id="selReadingAggregation" [options]="selectOptions.aggregation" [(ngModel)]="s.config.aggregation" size="sm"
@@ -3270,7 +3270,7 @@
                   Select a laboratory test to list its parameters.
                 </div>
               </div>
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-4">
                   <label class="form-label compact-label" for="numReadingMin">Min</label>
                   <input id="numReadingMin" type="number" class="form-control form-control-sm compact-input" step="any"
@@ -3323,7 +3323,7 @@
               <span class="text-xxs text-muted fw-semibold">Structure</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selLocationMode" class="form-label compact-label">Location Mode</label>
                   <select id="selLocationMode" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.locationMode"
@@ -3348,7 +3348,7 @@
                   placeholder="e.g. Weld Metal, HAZ, Base Metal"></textarea>
               </div>
 
-              <div class="row g-1.5 mb-1.5" *ngIf="s.config.locationMode === 'Numbered zones'">
+              <div class="row g-2 mb-1.5" *ngIf="s.config.locationMode === 'Numbered zones'">
                 <div class="col-6">
                   <label for="inpLocationZoneCount" class="form-label compact-label">Zone Count</label>
                   <input id="inpLocationZoneCount" type="number" min="1" max="50" class="form-control form-control-sm compact-input"
@@ -3476,7 +3476,7 @@
               <span class="text-xxs text-muted fw-semibold">Axes</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-8">
                   <label for="selTraverseXField" class="form-label compact-label">Distance / X-Axis</label>
                   <app-custom-select id="selTraverseXField" [options]="traverseXSelectOptions" [(ngModel)]="s.config.xField"
@@ -3490,7 +3490,7 @@
                 </div>
               </div>
 
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-8">
                   <label for="selTraverseYField" class="form-label compact-label">Hardness / Y-Axis</label>
                   <app-custom-select id="selTraverseYField" [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
@@ -3504,7 +3504,7 @@
                 </div>
               </div>
 
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selTraverseStepMode" class="form-label compact-label">Step Mode</label>
                   <select id="selTraverseStepMode" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.stepMode">
@@ -3519,7 +3519,7 @@
                 </div>
               </div>
 
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selTraverseCutoffMode" class="form-label compact-label">Cut-off Mode</label>
                   <select id="selTraverseCutoffMode" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.cutoffMode">
@@ -3545,7 +3545,7 @@
               <span class="text-xxs text-muted fw-semibold">Auto Step</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-4">
                   <label for="inpTraverseAutoStart" class="form-label compact-label">Start (mm)</label>
                   <input id="inpTraverseAutoStart" type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepStart">
@@ -3619,7 +3619,7 @@
                   [searchable]="false" placeholder="Chart Type">
                 </app-custom-select>
               </div>
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selChartXField" class="form-label compact-label">X-Axis Data Source</label>
                   <app-custom-select id="selChartXField" [options]="chartXSelectOptions" [(ngModel)]="s.config.xField"
@@ -3637,7 +3637,7 @@
                     placeholder="Strain">
                 </div>
               </div>
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selChartYField" class="form-label compact-label">Y-Axis Data Source</label>
                   <app-custom-select id="selChartYField" [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
@@ -3667,7 +3667,7 @@
               <span class="text-xxs text-muted font-monospace">Labels</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="inpChartXLabel" class="form-label compact-label">X-Axis Label</label>
                   <input id="inpChartXLabel" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xLabel"
@@ -3691,7 +3691,7 @@
               <span class="text-xxs text-muted font-monospace">Range</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="inpChartXMin" class="form-label compact-label">X-Axis Min (Auto if blank)</label>
                   <input id="inpChartXMin" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xMin"
@@ -3703,7 +3703,7 @@
                     placeholder="Auto">
                 </div>
               </div>
-              <div class="row g-1.5">
+              <div class="row g-2">
                 <div class="col-6">
                   <label for="inpChartYMin" class="form-label compact-label">Y-Axis Min (Auto if blank)</label>
                   <input id="inpChartYMin" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yMin"
@@ -3775,7 +3775,7 @@
                   [searchable]="true" placeholder="Select Target Parameter">
                 </app-custom-select>
               </div>
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selRuleOperator" class="form-label compact-label">Comparison Operator</label>
                   <app-custom-select id="selRuleOperator" [options]="selectOptions.operator" [(ngModel)]="s.config.operator" size="sm"
@@ -3815,7 +3815,7 @@
               <span class="text-xxs text-muted font-monospace">Actions</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selRuleEvaluation" class="form-label compact-label">Evaluation Timing</label>
                   <select id="selRuleEvaluation" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.evaluation">
@@ -3871,7 +3871,7 @@
               <span class="text-xxs text-muted font-monospace">Standard</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="inpRatingSystem" class="form-label compact-label">Standard Reference</label>
                   <input id="inpRatingSystem" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.ratingSystem"
@@ -4001,7 +4001,7 @@
             </div>
             <div class="config-subcard-body">
               <!-- Cell Selector Header -->
-              <div class="row g-1.5 mb-2 p-1.5 bg-light rounded border">
+              <div class="row g-2 mb-2 p-1.5 bg-light rounded border">
                 <div class="col-6">
                   <label for="selCustomCellRow" class="form-label compact-label">Select Row</label>
                   <select id="selCustomCellRow" class="form-select form-select-sm compact-input"
@@ -4038,7 +4038,7 @@
                   </button>
                 </div>
 
-                <div class="row g-1.5 mb-1.5">
+                <div class="row g-2 mb-1.5">
                   <div class="col-6">
                     <label for="selCustomCellDataType" class="form-label compact-label">Data Type</label>
                     <select id="selCustomCellDataType" class="form-select form-select-sm compact-input"
@@ -4063,7 +4063,7 @@
                   </div>
                 </div>
 
-                <div class="row g-1.5 mb-1.5">
+                <div class="row g-2 mb-1.5">
                   <div class="col-8">
                     <label for="inpCustomCellValue" class="form-label compact-label">Default / Static Value</label>
                     <input id="inpCustomCellValue" type="text" class="form-control form-control-sm compact-input"
@@ -4103,7 +4103,7 @@
                     placeholder="Acceptable, Marginal, Reject">
                 </div>
 
-                <div class="row g-1.5 mb-1.5">
+                <div class="row g-2 mb-1.5">
                   <div class="col-4">
                     <label for="selCustomCellAlign" class="form-label compact-label">Text Align</label>
                     <select id="selCustomCellAlign" class="form-select form-select-sm compact-input"
@@ -4174,7 +4174,7 @@
               <span class="text-xxs text-muted font-monospace">Media</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="inpPhotoSlotsCount" class="form-label compact-label">Photo slots</label>
                   <input id="inpPhotoSlotsCount" type="text" class="form-control form-control-sm compact-input bg-light" readonly
@@ -4286,7 +4286,7 @@
               </span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label class="form-label compact-label" for="selPhotoGrid">Photos per row</label>
                   <select id="selPhotoGrid" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.gridColumns" [disabled]="isViewMode">
@@ -4407,7 +4407,7 @@
               <span class="text-xxs text-muted font-monospace">Format</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selFormulaPrecision" class="form-label compact-label">Decimal Precision</label>
                   <select id="selFormulaPrecision" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.precision">
@@ -4469,7 +4469,7 @@
               <span class="text-xxs text-muted font-monospace">Input</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="inpNarrativeBoxLabel" class="form-label compact-label">Box Label</label>
                   <input id="inpNarrativeBoxLabel" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.label"
@@ -4544,7 +4544,7 @@
               <span class="text-xxs text-muted font-monospace">Format</span>
             </div>
             <div class="config-subcard-body">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selChecklistResponseType" class="form-label compact-label">Response Type</label>
                   <app-custom-select id="selChecklistResponseType" [options]="selectOptions.responseType" [(ngModel)]="s.config.responseType" size="sm"
@@ -4558,7 +4558,7 @@
                   </label>
                 </div>
               </div>
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="selChecklistFailAction" class="form-label compact-label">Failed Check Action</label>
                   <select id="selChecklistFailAction" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.failAction">
@@ -4946,7 +4946,7 @@
             </div>
 
             <!-- Start Column & Colspan Row -->
-            <div class="row g-1.5 mb-1.5">
+            <div class="row g-2 mb-1.5">
               <div class="col-7">
                 <label for="selGridHeaderMergeStartCol" class="form-label compact-label">Start Column</label>
                 <app-custom-select id="selGridHeaderMergeStartCol" [options]="getVisibleColumnsForSection(s)"
@@ -5050,7 +5050,7 @@
                   <span class="form-check-label">Upload photos</span>
                 </label>
               </div>
-              <div class="row g-1.5 mb-1.5" *ngIf="s.type === 'specimen' || s.type === 'reading'">
+              <div class="row g-2 mb-1.5" *ngIf="s.type === 'specimen' || s.type === 'reading'">
                 <div class="col-12">
                   <label class="form-label compact-label" [attr.for]="s.type === 'specimen' ? 'selExecModeSpecimen' : 'selExecModeReading'">
                     {{ s.type === 'specimen' ? 'Specimen count' : 'Reading count' }}
@@ -5096,7 +5096,7 @@
                 <input id="txtReportLabel" type="text" class="form-control form-control-sm compact-input"
                   [(ngModel)]="s.config.reportLabel" [placeholder]="s.title" maxlength="150" [disabled]="isViewMode">
               </div>
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label class="form-label compact-label" for="selPageBreak">Page break</label>
                   <select id="selPageBreak" class="form-select form-select-sm compact-input" [(ngModel)]="s.config.pageBreak" [disabled]="isViewMode">
@@ -5214,7 +5214,7 @@
               Place technical notes, standards, or caveats at the corners of this section:
             </div>
             <div class="corner-annotation-matrix p-1.5 bg-light border rounded mb-1.5">
-              <div class="row g-1.5 mb-1.5">
+              <div class="row g-2 mb-1.5">
                 <div class="col-6">
                   <label for="inpCornerTopLeft" class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1.5"
                     title="Top-Left Note">
@@ -5233,7 +5233,7 @@
                     [(ngModel)]="s.config.topRight" placeholder="e.g. ASTM ref...">
                 </div>
               </div>
-              <div class="row g-1.5">
+              <div class="row g-2">
                 <div class="col-6">
                   <label for="inpCornerBottomLeft" class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1.5"
                     title="Bottom-Left Note">
@@ -5469,7 +5469,7 @@
 
               <!-- Condition live entry -->
               <ng-container *ngIf="s.type === 'condition'">
-                <div class="row g-1.5" *ngIf="s.config.layout !== 'Table'">
+                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let f of getConditionFields(s)" class="col-md-3">
                     <label [attr.for]="'preview_cond_' + s.id + '_' + f" class="form-label compact-label">{{ getConditionLabel(f) }}</label>
                     <input [id]="'preview_cond_' + s.id + '_' + f" type="text" class="form-control form-control-sm compact-input font-monospace"
@@ -5560,7 +5560,7 @@
 
               <!-- Reading live entry -->
               <ng-container *ngIf="s.type === 'reading'">
-                <div class="row g-1.5" *ngIf="s.config.layout !== 'Table'">
+                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let i of getReadingCount(s)"
                     [ngClass]="{'col-md-3': s.config.layout === 'Compact cards', 'col-md-6': s.config.layout === 'Two-column cards', 'col-12': !s.config.layout}">
                     <label [attr.for]="'preview_read_' + s.id + '_' + i" class="form-label compact-label">Reading {{ i }} ({{ s.config.unit || 'HV' }})</label>
@@ -5863,7 +5863,7 @@
 
               <!-- Photo / Attachment live entry -->
               <ng-container *ngIf="s.type === 'photo'">
-                <div class="row g-1.5">
+                <div class="row g-2">
                   <div class="col-md-6" *ngFor="let pNum of [1, 2]">
                     <div class="photo-preview-card p-1.5 border rounded bg-light text-center">
                       <div class="photo-placeholder-box mb-1.5">
@@ -5901,7 +5901,7 @@
 
               <!-- Traceability live entry -->
               <ng-container *ngIf="s.type === 'traceability'">
-                <div class="row g-1.5" *ngIf="s.config.layout !== 'Table'">
+                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
                   <div *ngFor="let f of s.config.fields" class="col-md-3">
                     <label [attr.for]="'preview_trace_field_' + s.id + '_' + f" class="form-label compact-label">{{ f }}</label>
                     <input [id]="'preview_trace_field_' + s.id + '_' + f" type="text" class="form-control form-control-sm compact-input font-monospace"

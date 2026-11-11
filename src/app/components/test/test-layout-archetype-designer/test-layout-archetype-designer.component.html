@@ -425,7 +425,7 @@
       [class.is-collapsed]="leftPanelCollapsed" (mousedown)="startResizeLeft($event)" (dblclick)="resetLeftWidth()"
       title="Drag to resize Layout Components (Double-click to reset, Ctrl+[ to toggle)">
       <!-- Expand button when collapsed -->
-      <button type="button" class="resizer-expand-tab" *ngIf="leftPanelCollapsed" (click)="toggleLeftPanel()"
+      <button type="button" class="btn-nav-icon" (mousedown)="$event.stopPropagation()" *ngIf="leftPanelCollapsed" (click)="toggleLeftPanel()"
         title="Expand Layout Components (Ctrl+[)" aria-label="Expand Layout Components (Ctrl+[)">
         <i class="bi bi-chevron-right"></i>
       </button>
@@ -2265,7 +2265,7 @@
       [class.is-collapsed]="rightPanelCollapsed" (mousedown)="startResizeRight($event)" (dblclick)="resetRightWidth()"
       title="Drag to resize Section Inspector (Double-click to reset, Ctrl+] to toggle)">
       <!-- Expand button when collapsed -->
-      <button type="button" class="resizer-expand-tab" *ngIf="rightPanelCollapsed" (click)="toggleRightPanel()"
+      <button type="button" class="btn-nav-icon" (mousedown)="$event.stopPropagation()" *ngIf="rightPanelCollapsed" (click)="toggleRightPanel()"
         title="Expand Section Inspector (Ctrl+])" aria-label="Expand Section Inspector (Ctrl+])">
         <i class="bi bi-chevron-left"></i>
       </button>

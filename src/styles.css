@@ -9036,6 +9036,42 @@ button i.bi:only-child,
   border: none !important;
 }
 
+/* ── Studio panel resizers (drag handle + expand button when collapsed) ── */
+.panel-resizer {
+  width: 5px;
+  cursor: col-resize;
+  position: relative;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.panel-resizer:hover,
+.panel-resizer.is-active {
+  background-color: var(--primary-color);
+}
+
+.panel-resizer.is-collapsed {
+  cursor: default;
+}
+
+/* Expand button reuses the global .btn-nav-icon; only its position is local */
+.panel-resizer .btn-nav-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 11;
+}
+
+.panel-resizer-left .btn-nav-icon {
+  left: 2px;
+}
+
+.panel-resizer-right .btn-nav-icon {
+  right: 2px;
+}
+
 .panel-header {
   display: flex !important;
   align-items: center !important;

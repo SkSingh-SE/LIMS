@@ -7,6 +7,24 @@ import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ParameterService } from '../../../services/parameter.service';
+import {
+  buildTensileRoleIndex,
+  DERIVED_TENSILE_ROLES,
+  DIMENSION_ROLES,
+  isSpecimenRole,
+  parseTensileNumber,
+  planTensileWrites,
+  readTensileValues,
+  recalcTensileSpecimen,
+  RECALC_TRIGGER_ROLES,
+  resolveTensileRole,
+  roleOfRow,
+  savedHandTypedRoles,
+  SpecimenRole,
+  tensileArea,
+  TensileRoleIndex,
+  TensileValues,
+} from './tensile-parameter-roles';
 
 export interface SpecimenData {
   id: string;
@@ -122,6 +140,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   // Specimen matrix state
   specimens: SpecimenData[] = [];
+  /** Derived rows (area, stresses, elongation, RA) the user typed into in this session; the calculation never overwrites them. */
+  private userTypedDerivedRows = new WeakSet<AbstractControl>();
   specimenAverages: {
     proofStress: number | null;
     uts: number | null;
@@ -706,6 +726,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       ctrl.patchValue({ value: newVal });
       this.evaluateLimitForControl(ctrl);
       this.paramValueChanged.emit({ rowIdx: targetIdx, param: ctrl.value });
+      this.applyTableEdit(targetIdx, newVal);
       this.cdr.markForCheck();
     }
   }
@@ -828,50 +849,93 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     this.cdr.markForCheck();
   }
 
-  private hydrateSpecimensFromParameters(): void {
-    if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
+  /**
+   * Role -> FormArray row indexes for one specimen's parameter slice (exact name match, see tensile-parameter-roles.ts).
+   * Rows whose name has no role (or an ambiguous one) are not in the map, so nothing is read from or written to them.
+   */
+  private getSpecimenRoleIndex(spmIdx: number): TensileRoleIndex {
+    if (!this.parametersFormArray || spmIdx < 0) return new Map();
     const base = this.getBaseParameterCount();
+    if (base <= 0) return new Map();
+    const startIdx = spmIdx * base;
+    const endIdx = Math.min(startIdx + base, this.parametersFormArray.length);
+    const names: string[] = [];
+    for (let i = startIdx; i < endIdx; i++) {
+      names.push(this.parametersFormArray.at(i)?.get('parameterName')?.value || '');
+    }
+    return buildTensileRoleIndex(names, startIdx);
+  }
 
-    for (let sIdx = 0; sIdx < this.specimens.length; sIdx++) {
-      const spm = this.specimens[sIdx];
-      const startIdx = sIdx * base;
-      const endIdx = Math.min(startIdx + base, this.parametersFormArray.length);
-
-      for (let i = startIdx; i < endIdx; i++) {
-        const ctrl = this.parametersFormArray.at(i);
-        if (!ctrl) continue;
-        const name = (ctrl.get('parameterName')?.value || '').toLowerCase();
-        const val = ctrl.get('value')?.value;
-
-        if (val !== null && val !== undefined && val !== '' && !isNaN(Number(val))) {
-          const numVal = Number(val);
-          if (name.includes('thickness')) {
-            spm.thickness = numVal;
-          } else if (name.includes('width')) {
-            spm.width = numVal;
-          } else if (name.includes('diameter')) {
-            spm.diameter = numVal;
-          } else if (name.includes('cross section') || (name.includes('area') && !name.includes('reduction'))) {
-            spm.area = numVal;
-          } else if (name.includes('gauge length')) {
-            spm.gaugeLength = numVal;
-          } else if (name.includes('yield load')) {
-            spm.yieldLoad = numVal;
-          } else if (name.includes('peak load') || (name.includes('load') && !name.includes('yield'))) {
-            spm.peakLoad = numVal;
-          } else if (name.includes('final length')) {
-            spm.finalLength = numVal;
-          } else if (name.includes('proof stress') || name.includes('yield strength')) {
-            spm.proofStress = Math.round(numVal);
-          } else if (name.includes('tensile strength') || name.includes('uts')) {
-            spm.uts = Math.round(numVal);
-          } else if (name.includes('elongation')) {
-            spm.elongation = Number(numVal.toFixed(1));
-          } else if (name.includes('reduction of area')) {
-            spm.reductionOfArea = Number(numVal.toFixed(1));
+  /** Values the user typed in this session into derived rows (area, stresses, elongation, RA) of one specimen. */
+  private getLockedDerivedValues(spmIdx: number): TensileValues {
+    const locked: TensileValues = {};
+    this.getSpecimenRoleIndex(spmIdx).forEach((rows, role) => {
+      if (!isSpecimenRole(role) || !DERIVED_TENSILE_ROLES.has(role)) return;
+      for (const r of rows) {
+        const ctrl = this.parametersFormArray.at(r);
+        if (ctrl && this.userTypedDerivedRows.has(ctrl)) {
+          const v = parseTensileNumber(ctrl.get('value')?.value);
+          if (v != null) {
+            locked[role] = v;
+            return;
           }
         }
       }
+    });
+    return locked;
+  }
+
+  /**
+   * A value typed in a parameter-table row: update that specimen field (clearing clears it),
+   * remember user-typed derived rows, and re-run the specimen calculation when an input changed.
+   */
+  private applyTableEdit(rowIdx: number, rawVal: any): void {
+    const spmIdx = this.getSpecimenIndexForParam(rowIdx);
+    const spm = this.specimens[spmIdx];
+    if (!spm) return;
+    const role = roleOfRow(this.getSpecimenRoleIndex(spmIdx), rowIdx);
+    // Unknown and read-only quantities (ReH, ReL, Rp0.5) never feed the specimen model
+    if (!isSpecimenRole(role)) return;
+
+    const value = parseTensileNumber(rawVal);
+    spm[role] = value;
+
+    if (DERIVED_TENSILE_ROLES.has(role)) {
+      const ctrl = this.parametersFormArray.at(rowIdx);
+      if (value == null) this.userTypedDerivedRows.delete(ctrl);
+      else this.userTypedDerivedRows.add(ctrl);
+    }
+
+    let clearRoles: Set<SpecimenRole> | undefined;
+    if (RECALC_TRIGGER_ROLES.has(role)) {
+      // A dimension edit, or clearing S0 by hand, recalculates S0 from the dimensions (null when they give none)
+      const recomputeArea = DIMENSION_ROLES.has(role) || (role === 'area' && value == null);
+      clearRoles = recalcTensileSpecimen(spm, { recomputeArea, locked: this.getLockedDerivedValues(spmIdx) });
+    }
+    this.recalculateSpecimens();
+    if (clearRoles?.size) this.syncSpecimenToForm(spm, clearRoles);
+    this.cdr.markForCheck();
+  }
+
+  private hydrateSpecimensFromParameters(): void {
+    if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
+
+    for (let sIdx = 0; sIdx < this.specimens.length; sIdx++) {
+      const spm = this.specimens[sIdx];
+
+      // Read fallback for saved rows: each role reads only its own row group (exact name, never substring)
+      const roleIndex = this.getSpecimenRoleIndex(sIdx);
+      const values = readTensileValues(roleIndex, r => this.parametersFormArray.at(r)?.get('value')?.value);
+      Object.assign(spm, values);
+
+      // Reload rule (see savedHandTypedRoles): a saved S0 / Rp / Rm / A% that does not match its saved inputs was
+      // typed by hand, so it is locked like a value typed in this session and the calculation never replaces it.
+      savedHandTypedRoles(values).forEach(role => {
+        (roleIndex.get(role) || []).forEach(r => {
+          const ctrl = this.parametersFormArray.at(r);
+          if (ctrl && parseTensileNumber(ctrl.get('value')?.value) != null) this.userTypedDerivedRows.add(ctrl);
+        });
+      });
 
       if (!spm.area) {
         spm.area = this.calculateArea(spm.thickness || null, spm.width || null, spm.diameter || null);
@@ -885,59 +949,28 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private calculateArea(t: number | null, w: number | null, d: number | null): number | null {
-    if (d && d > 0) {
-      return Number(((Math.PI * d * d) / 4).toFixed(2));
-    }
-    if (t && w && t > 0 && w > 0) {
-      return Number((t * w).toFixed(2));
-    }
-    return null;
+    return tensileArea(t, w, d);
   }
 
   onSpecimenDimensionChange(spm: SpecimenData): void {
-    spm.area = this.calculateArea(spm.thickness || null, spm.width || null, spm.diameter || null);
-    this.recalculateSpecimenRow(spm);
+    // S0 follows the dimensions unless it was typed by hand; no area from the dimensions clears a calculated S0
+    const clearRoles = this.recalculateSpecimenRow(spm, true);
     this.recalculateSpecimens();
-    this.syncSpecimenToForm(spm);
+    this.syncSpecimenToForm(spm, clearRoles);
   }
 
   onSpecimenLoadChange(spm: SpecimenData): void {
-    this.recalculateSpecimenRow(spm);
+    const clearRoles = this.recalculateSpecimenRow(spm);
     this.recalculateSpecimens();
-    this.syncSpecimenToForm(spm);
+    this.syncSpecimenToForm(spm, clearRoles);
   }
 
-  private recalculateSpecimenRow(spm: SpecimenData): void {
-    const s0 = spm.area;
-    if (s0 && s0 > 0) {
-      // Proof Stress Rp0.2 = Yield Load (kN) * 1000 / S0 (mm2)
-      if (spm.yieldLoad && spm.yieldLoad > 0) {
-        spm.proofStress = Math.round((spm.yieldLoad * 1000) / s0);
-      } else {
-        spm.proofStress = null;
-      }
-
-      // UTS Rm = Peak Load (kN) * 1000 / S0 (mm2)
-      if (spm.peakLoad && spm.peakLoad > 0) {
-        spm.uts = Math.round((spm.peakLoad * 1000) / s0);
-      } else {
-        spm.uts = null;
-      }
-    }
-
-    // Elongation A% = ((Lu - L0) / L0) * 100
-    if (spm.finalLength && spm.gaugeLength && spm.gaugeLength > 0 && spm.finalLength >= spm.gaugeLength) {
-      spm.elongation = Number((((spm.finalLength - spm.gaugeLength) / spm.gaugeLength) * 100).toFixed(1));
-    } else {
-      spm.elongation = null;
-    }
-
-    // Reduction of Area Z% = ((S0 - Su) / S0) * 100
-    if (spm.finalArea && s0 && s0 > 0 && spm.finalArea <= s0) {
-      spm.reductionOfArea = Number((((s0 - spm.finalArea) / s0) * 100).toFixed(1));
-    } else {
-      spm.reductionOfArea = null;
-    }
+  /**
+   * Rp, Rm, A%, Z% for one specimen (formulas in tensile-parameter-roles.ts); values the user typed into derived rows win.
+   * Returns the calculated roles whose result is now empty, so their rows are cleared instead of keeping an old value.
+   */
+  private recalculateSpecimenRow(spm: SpecimenData, recomputeArea = false): Set<SpecimenRole> {
+    return recalcTensileSpecimen(spm, { recomputeArea, locked: this.getLockedDerivedValues(this.specimens.indexOf(spm)) });
   }
 
   private recalculateSpecimens(): void {
@@ -983,70 +1016,29 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return avg.toFixed(2);
   }
 
-  private syncSpecimenToForm(spm: SpecimenData): void {
+  /**
+   * Writes each specimen field only into the rows of its own role group (synonyms of one quantity), never into another role's row.
+   * A row that already holds the same number is not patched, so the input the user is typing in is left alone.
+   * `clearRoles` (from the calculation) empties calculated rows whose result is now null; inputs are never emptied here.
+   */
+  private syncSpecimenToForm(spm: SpecimenData, clearRoles?: ReadonlySet<SpecimenRole>): void {
     if (!this.parametersFormArray) return;
     const spmIdx = this.specimens.indexOf(spm);
     if (spmIdx < 0) return;
 
-    const base = this.getBaseParameterCount();
-    const startIdx = spmIdx * base;
-    const endIdx = Math.min(startIdx + base, this.parametersFormArray.length);
-
-    for (let i = startIdx; i < endIdx; i++) {
-      const ctrl = this.parametersFormArray.at(i);
-      if (!ctrl) continue;
-      const name = (ctrl.get('parameterName')?.value || '').toLowerCase();
-
-      if (spm.thickness != null && name.includes('thickness')) {
-        ctrl.patchValue({ value: spm.thickness });
+    planTensileWrites(this.getSpecimenRoleIndex(spmIdx), spm, clearRoles).forEach(({ rowIdx, value }) => {
+      const ctrl = this.parametersFormArray.at(rowIdx);
+      if (!ctrl) return;
+      const raw = ctrl.get('value')?.value;
+      const current = parseTensileNumber(raw);
+      if (current === value && (value != null || raw === null || raw === undefined || raw === '')) {
         this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.width != null && name.includes('width')) {
-        ctrl.patchValue({ value: spm.width });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.diameter != null && name.includes('diameter')) {
-        ctrl.patchValue({ value: spm.diameter });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.area != null && (name.includes('cross section') || (name.includes('area') && !name.includes('reduction')))) {
-        ctrl.patchValue({ value: spm.area });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.gaugeLength != null && name.includes('gauge length')) {
-        ctrl.patchValue({ value: spm.gaugeLength });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.yieldLoad != null && name.includes('yield load')) {
-        ctrl.patchValue({ value: spm.yieldLoad });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.peakLoad != null && (name.includes('peak load') || (name.includes('load') && !name.includes('yield')))) {
-        ctrl.patchValue({ value: spm.peakLoad });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.finalLength != null && name.includes('final length')) {
-        ctrl.patchValue({ value: spm.finalLength });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.proofStress != null && (name.includes('proof') || name.includes('yield strength'))) {
-        ctrl.patchValue({ value: spm.proofStress });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.uts != null && (name.includes('tensile strength') || name.includes('uts') || name.includes('ultimate'))) {
-        ctrl.patchValue({ value: spm.uts });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.elongation != null && name.includes('elongation')) {
-        ctrl.patchValue({ value: spm.elongation });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.reductionOfArea != null && (name.includes('reduction') || name.includes('area'))) {
-        ctrl.patchValue({ value: spm.reductionOfArea });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
+        return;
       }
-    }
+      ctrl.patchValue({ value });
+      this.evaluateLimitForControl(ctrl);
+      this.paramValueChanged.emit({ rowIdx, param: ctrl.value });
+    });
   }
 
   private syncSpecimenValuesToForm(): void {
@@ -1060,15 +1052,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Also update test.parameters in-memory if available so cards reflect values
     if (this.test?.parameters && Array.isArray(this.test.parameters)) {
       this.test.parameters.forEach((tp: any) => {
-        const name = (tp.parameterName || '').toLowerCase();
-        if (this.specimenAverages.proofStress != null && (name.includes('proof') || name.includes('yield'))) {
-          tp.value = this.specimenAverages.proofStress;
-        } else if (this.specimenAverages.uts != null && (name.includes('tensile') || name.includes('uts') || name.includes('ultimate'))) {
-          tp.value = this.specimenAverages.uts;
-        } else if (this.specimenAverages.elongation != null && name.includes('elongation')) {
-          tp.value = this.specimenAverages.elongation;
-        } else if (this.specimenAverages.reductionOfArea != null && (name.includes('reduction') || name.includes('area'))) {
-          tp.value = this.specimenAverages.reductionOfArea;
+        const role = resolveTensileRole(tp.parameterName);
+        if (role === 'proofStress' || role === 'uts' || role === 'elongation' || role === 'reductionOfArea') {
+          const avg = this.specimenAverages[role];
+          if (avg != null) tp.value = avg;
         }
       });
     }
@@ -1079,6 +1066,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
 
   setSpecimenCount(targetCount: number): void {
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const newCount = Math.max(1, Math.min(20, Math.round(targetCount)));
     const base = this.getBaseParameterCount();
 
@@ -1125,6 +1113,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   addSpecimen(): void {
     if (this.isViewMode || this.isLocked) return;
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const base = this.getBaseParameterCount();
     const nextNum = this.specimens.length + 1;
     const refSpm = this.specimens[0];
@@ -1169,6 +1158,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   removeSpecimen(spmIndex?: number): void {
     if (this.isViewMode || this.isLocked || this.specimens.length <= 1) return;
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const targetIdx = spmIndex !== undefined ? spmIndex : this.specimens.length - 1;
     const base = this.getBaseParameterCount();
 
@@ -1200,6 +1190,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   removeParameter(rowIdx: number): void {
     if (this.isViewMode || this.isLocked || !this.parametersFormArray || this.parametersFormArray.length <= 1) return;
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     this.parametersFormArray.removeAt(rowIdx);
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
@@ -1232,6 +1223,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   submitAddParam(): void {
     if (!this.newParamData.parameterName.trim() || !this.parametersFormArray) return;
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
 
     const count = this.newParamData.applyTo === 'all' ? this.specimens.length : 1;
     for (let i = 0; i < count; i++) {
@@ -1714,6 +1706,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!ctrl) return;
     this.evaluateLimitForControl(ctrl);
     this.paramValueChanged.emit({ rowIdx, param: ctrl.value });
+    // Keep the specimen model in step with the table so a later recalculation never writes an older value back
+    this.applyTableEdit(rowIdx, ctrl.get('value')?.value);
   }
 
   onUnitSelect(rowIdx: number): void {

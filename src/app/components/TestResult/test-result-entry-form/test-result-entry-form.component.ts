@@ -24,6 +24,7 @@ import { TestVerdictPanelComponent } from '../test-verdict-panel/test-verdict-pa
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
 import { ExecutionMetrics, countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
+import { findByTensileRole, TensileRole } from '../configured-test-layout-renderer/tensile-parameter-roles';
 
 @Component({
   selector: 'app-test-result-entry-form',
@@ -3273,12 +3274,16 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const findParam = (terms: string[]) =>
       params.find(pm => terms.some(term => (pm.parameterName || '').toLowerCase().includes(term.toLowerCase())));
 
-    const widthParam = findParam(['width']);
-    const thickParam = findParam(['thickness']);
-    const areaParam = findParam(['cross section area', 'cross-sectional area', 'area']);
-    const ysParam = findParam(['yield strength', 'proof stress', '0.5% (eul)', '0.2% proof', '0.5% extension']);
-    const utsParam = findParam(['uts', 'tensile strength', 'u.t.s']);
-    const elParam = findParam(['elongation']);
+    // Exact role match (see tensile-parameter-roles.ts): "Throat Thickness" is not the specimen thickness,
+    // "Reduction of Area" is not the cross section area.
+    const byRole = (role: TensileRole) => findByTensileRole(params, role, pm => pm.parameterName);
+    const widthParam = byRole('width');
+    const thickParam = byRole('thickness');
+    const areaParam = byRole('area');
+    // Display only: generic yield / Rp0.2 first, then the separate Rp0.5 / ReH / ReL quantities
+    const ysParam = byRole('proofStress') ?? byRole('proofStress05') ?? byRole('upperYield') ?? byRole('lowerYield');
+    const utsParam = byRole('uts');
+    const elParam = byRole('elongation');
     const ystsParam = findParam(['ys/ts', 'ratio']);
 
     // 1. Cross-sectional Area
@@ -3388,24 +3393,26 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const params: any[] = test?.parameters || [];
     const spm = this.layoutRendererComponent?.specimens?.[0];
 
+    const byRole = (role: TensileRole) => findByTensileRole(params, role, pm => pm.parameterName);
+
     if (dimKey === 'thickness') {
-      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('thickness'));
+      const pMatch = byRole('thickness');
       return String(pMatch?.value ?? spm?.thickness ?? this.sample?.thickness ?? '—');
     }
     if (dimKey === 'width') {
-      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('width'));
+      const pMatch = byRole('width');
       return String(pMatch?.value ?? spm?.width ?? this.sample?.width ?? '—');
     }
     if (dimKey === 'gaugeLength') {
-      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('original gauge'));
+      const pMatch = byRole('gaugeLength');
       return String(pMatch?.value ?? spm?.gaugeLength ?? '50.0');
     }
     if (dimKey === 'finalLength') {
-      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('final gauge'));
+      const pMatch = byRole('finalLength');
       return String(pMatch?.value ?? spm?.finalLength ?? '—');
     }
     if (dimKey === 'diameter') {
-      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('diameter'));
+      const pMatch = byRole('diameter');
       return String(pMatch?.value ?? spm?.diameter ?? this.sample?.diameter ?? '—');
     }
     return '—';

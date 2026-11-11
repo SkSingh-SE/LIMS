@@ -33,14 +33,14 @@
   </div>
 
   <!-- ================================================================ -->
-  <!-- 2. COMPACT TEST STRIP & CONTROLS TOOLBAR                         -->
+  <!-- 2. TEST STRIP (one pill per test; controls live in the per-test toolbar) -->
   <!-- ================================================================ -->
   <div class="compact-teststrip" *ngIf="plans.length > 0">
     <!-- Left: Selected Tests Pills -->
     <div class="teststrip-left lims-teststrip-pills">
       <span class="text-secondary fw-semibold text-xxs lims-teststrip-pills-label">Selected Tests:</span>
       <ng-container *ngFor="let plan of plans; let p = index">
-        <button *ngIf="getExecutionMetrics(p, 0) as pm" type="button" class="testpill-compact lims-testpill-status"
+        <button *ngIf="pillMetrics(p) as pm" type="button" class="testpill-compact lims-testpill-status"
           [class.active]="activePlanIndex === p" [class.lims-testpill-status--fail]="pm.fail > 0"
           [title]="getTestPillTitle(p)" (click)="selectPlanTab(p)">
           <span class="lims-testpill-dot" [ngClass]="getSampleStatusBadgeClass(plan.tests?.[0]?.status || 'In Progress')"
@@ -50,54 +50,6 @@
           <span class="lims-testpill-fail font-monospace" *ngIf="pm.fail > 0">{{ pm.fail }} Fail</span>
         </button>
       </ng-container>
-    </div>
-
-    <!-- Right: Layout Selector, Specimen Stepper, Metrics, Studio Link -->
-    <div class="teststrip-right">
-      <!-- Layout Searchable Dropdown -->
-      <div class="d-flex align-items-center gap-1">
-        <span class="text-xxs fw-semibold text-secondary">Layout:</span>
-        <div class="compact-layout-dropdown">
-          <app-searchable-dropdown
-            [placeholder]="'Select Layout...'"
-            [labelName]="'Layout'"
-            [fetchDataFn]="fetchLayoutTemplates"
-            [selectedItem]="selectedLayoutItem"
-            (itemSelected)="onLayoutItemSelected($event)"
-            [hideLabel]="true"
-            [smallInput]="true">
-          </app-searchable-dropdown>
-        </div>
-      </div>
-
-      <!-- Specimen Stepper -->
-      <div class="d-flex align-items-center gap-1">
-        <span class="text-xxs fw-semibold text-secondary">Spm:</span>
-        <div class="spm-stepper-compact">
-          <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
-            [disabled]="isViewMode || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
-          <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="isViewMode"
-            (change)="onWorkbenchSpecimenInputChange($event)" />
-          <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
-            [disabled]="isViewMode || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
-        </div>
-        <span class="spm-plan-badge">Plan: {{ getActivePlannedQuantity() }}</span>
-      </div>
-
-      <!-- Progress Metrics Badge -->
-      <div *ngIf="getExecutionMetrics() as metrics" class="d-flex align-items-center gap-1">
-        <span class="badge font-monospace text-xxs"
-          [ngClass]="metrics.entered === metrics.total && metrics.total > 0 ? 'bg-success text-white' : 'bg-secondary text-white'">
-          {{ metrics.entered }}/{{ metrics.total }}
-        </span>
-        <span class="badge bg-danger text-white font-monospace text-xxs" *ngIf="metrics.fail > 0">{{ metrics.fail }} Fail</span>
-      </div>
-
-      <!-- Studio Button -->
-      <a *ngIf="currentTestLayout" class="btn btn-xs btn-outline-danger py-0 px-2 font-semibold text-xxs text-decoration-none"
-        [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }">
-        <span>Studio</span>
-      </a>
     </div>
   </div>
 
@@ -119,6 +71,85 @@
           <div *ngFor="let test of getTests(p).controls; let t = index" [formGroupName]="t">
 
             <!-- ========================================================== -->
+            <!-- PER-TEST TOOLBAR (acts on this test only; rendered for the active test) -->
+            <!-- ========================================================== -->
+            <div class="lims-test-toolbar" *ngIf="activePlanIndex === p">
+              @let tbTest = plans[p].tests[t];
+              @let tbName = tbTest?.name || plans[p].type || 'Test';
+              @let tbMethod = plans[p].methodName || tbTest?.testMethodName || '';
+              @let tbStatus = tbTest?.status || 'In Progress';
+              <div class="lims-test-toolbar-id">
+                <span class="lims-test-toolbar-label">Test</span>
+                <strong class="lims-test-toolbar-name" [title]="'Test: ' + tbName">{{ tbName }}</strong>
+                <span class="lims-test-toolbar-method" *ngIf="tbMethod" [title]="'Method: ' + tbMethod">{{ tbMethod }}</span>
+                <span class="badge lims-test-toolbar-status" [ngClass]="getSampleStatusBadgeClass(tbStatus)"
+                  [title]="'Test status: ' + tbStatus">{{ tbStatus }}</span>
+              </div>
+
+              <div class="lims-test-toolbar-controls">
+                <!-- Layout -->
+                <div class="lims-test-toolbar-group">
+                  <span class="lims-test-toolbar-label">Layout</span>
+                  <div class="lims-test-toolbar-layout" [title]="selectedLayoutItem?.name || 'Select layout'">
+                    <app-searchable-dropdown
+                      [placeholder]="'Select Layout...'"
+                      [labelName]="'Layout'"
+                      [fetchDataFn]="fetchLayoutTemplates"
+                      [selectedItem]="selectedLayoutItem"
+                      (itemSelected)="onLayoutItemSelected($event)"
+                      [hideLabel]="true"
+                      [smallInput]="true">
+                    </app-searchable-dropdown>
+                  </div>
+                </div>
+
+                <!-- Specimen count -->
+                <div class="lims-test-toolbar-group">
+                  <span class="lims-test-toolbar-label">Spm</span>
+                  <div class="spm-stepper-compact">
+                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
+                      [disabled]="isViewMode || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
+                    <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="isViewMode"
+                      aria-label="Specimen count" (change)="onWorkbenchSpecimenInputChange($event)" />
+                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
+                      [disabled]="isViewMode || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
+                  </div>
+                  <span class="spm-plan-badge" title="Planned specimen quantity">Plan: {{ getActivePlannedQuantity() }}</span>
+                </div>
+
+                <!-- Entered / total and fail count -->
+                <div *ngIf="pillMetrics(p) as metrics" class="lims-test-toolbar-group" title="Parameters entered / total">
+                  <span class="badge font-monospace"
+                    [ngClass]="metrics.entered === metrics.total && metrics.total > 0 ? 'bg-success' : 'bg-secondary'">
+                    {{ metrics.entered }}/{{ metrics.total }}
+                  </span>
+                  <span class="badge bg-danger font-monospace" *ngIf="metrics.fail > 0">{{ metrics.fail }} Fail</span>
+                </div>
+              </div>
+
+              <div class="lims-test-toolbar-actions">
+                <button *ngIf="canStartTest(tbTest?.status)" type="button" class="btn btn-sm btn-lims btn-lims-primary"
+                  (click)="startTest(p, t)" [disabled]="isViewMode">
+                  <i class="bi bi-play-circle"></i><span>Start Test</span>
+                </button>
+                <button *ngIf="canViewRawDataSheet(tbTest?.status)" type="button" class="btn btn-sm btn-lims btn-lims-print"
+                  (click)="openRawDataSheetModal(p, t)" title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
+                  <i class="bi bi-file-earmark-text"></i><span>Raw Data Sheet</span>
+                </button>
+                <a *ngIf="currentTestLayout" class="btn btn-sm btn-lims btn-lims-secondary text-decoration-none"
+                  [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }"
+                  title="Open this layout in Layout Studio">
+                  <i class="bi bi-grid-1x2"></i><span>Studio</span>
+                </a>
+                @let completeBlockedReason = getCompleteBlockedReason(tbTest?.headerId);
+                <button type="button" class="btn btn-sm btn-lims btn-lims-save" (click)="completeTest(p, t)"
+                  [disabled]="!!completeBlockedReason" [title]="completeBlockedReason || 'Complete this test'">
+                  <i class="bi bi-check-circle"></i><span>Complete</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- ========================================================== -->
             <!-- PER-TEST TABS (test-related data only)                     -->
             <!-- ========================================================== -->
             <div class="test-tabbar">
@@ -130,16 +161,6 @@
                 <button type="button" role="tab" class="tab-compact" [class.active]="activeTab === 'nabl_audit'"
                   [attr.aria-selected]="activeTab === 'nabl_audit'" (click)="switchTab('nabl_audit')">
                   <span>2. NABL QA &amp; Audit</span>
-                </button>
-              </div>
-              <div class="test-tabbar-actions">
-                <span class="badge" [ngClass]="plans[p].tests[t]?.status === 'Completed' ? 'bg-success' : 'bg-warning text-dark'">{{
-                  plans[p].tests[t]?.status || 'In Progress' }}</span>
-                <button *ngIf="canStartTest(plans[p].tests[t]?.status)" type="button" class="btn btn-sm btn-lims-primary"
-                  (click)="startTest(p, t)" [disabled]="isViewMode">Start Test</button>
-                <button *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)" type="button" class="btn btn-sm btn-lims-print"
-                  (click)="openRawDataSheetModal(p, t)" title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
-                  <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
                 </button>
               </div>
             </div>
@@ -641,30 +662,17 @@
                 ✿ &nbsp; ISO/IEC 17025:2017 Compliance <span class="muted">· Validated test execution workbench</span>
               </div>
               <div class="footeractions">
-                <button type="button" class="btn btn-lims btn-lims-print me-1" (click)="openRawDataSheetModal(p, t)"
-                  *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)"
-                  title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
-                  <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
-                </button>
                 <button type="button" class="btn" (click)="saveAsDraft(p, t)" [disabled]="isViewMode">
                   <i class="bi bi-bookmark me-1"></i><span>Save Draft</span>
                 </button>
                 <button type="button" class="btn" (click)="cancel()">
                   <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
                 </button>
-                <button type="button" class="btn primary" *ngIf="canStartTest(plans[p].tests[t]?.status)"
-                  (click)="startTest(p, t)" [disabled]="isViewMode">
-                  <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
-                </button>
                 <button type="button" class="btn primary" (click)="goToNextTab()" *ngIf="activeTab === 'execution'">
                   <span>Next: NABL QA &amp; Audit →</span>
                 </button>
                 <button type="button" class="btn secondary" (click)="switchTab('execution')" *ngIf="activeTab === 'nabl_audit'">
                   <span>← Back to Execution</span>
-                </button>
-                <button type="button" class="btn primary" (click)="completeTest(p, t)" *ngIf="activeTab === 'execution'"
-                  [disabled]="isViewMode || isHeaderCompleted(plans[p].tests[t].headerId)">
-                  <i class="bi bi-check-circle me-1"></i><span>Complete Test</span>
                 </button>
               </div>
             </footer>
@@ -771,7 +779,7 @@
           </div>
           <app-searchable-dropdown [placeholder]="'Search Test Method (e.g. IS 1608, ASTM E415...)'"
             [labelName]="'Test Method'" [fetchDataFn]="getTestMethodDropdown"
-            (itemSelected)="onTestMethodSelected($event)" [hideLabel]="true"></app-searchable-dropdown>
+            (itemSelected)="onTestMethodSelected($event)" [hideLabel]="true" [smallInput]="true"></app-searchable-dropdown>
         </div>
 
         <!-- Loading indicator -->

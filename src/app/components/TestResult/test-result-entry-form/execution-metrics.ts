@@ -48,3 +48,13 @@ export function countExecutionMetrics(rows: ExecutionMetricsRow[] | null | undef
 
   return { total: list.length, entered, pass, fail, pending };
 }
+
+/** True when two per-test metrics lists hold the same counts (used as a signal equality check). */
+export function sameExecutionMetricsList(a: readonly ExecutionMetrics[], b: readonly ExecutionMetrics[]): boolean {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  return a.every((m, i) => {
+    const o = b[i];
+    return !!m && !!o && m.total === o.total && m.entered === o.entered && m.pass === o.pass && m.fail === o.fail && m.pending === o.pending;
+  });
+}

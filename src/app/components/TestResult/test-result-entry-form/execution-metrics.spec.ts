@@ -1,4 +1,4 @@
-import { countExecutionMetrics } from './execution-metrics';
+import { countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
 
 describe('countExecutionMetrics', () => {
   it('returns zeros for empty or missing rows', () => {
@@ -43,5 +43,20 @@ describe('countExecutionMetrics', () => {
     const m = countExecutionMetrics([{ value: 'x', status: 'Draft' }, { value: '' }]);
     expect(m.pending).toBe(2);
     expect(m.entered).toBe(1);
+  });
+});
+
+describe('sameExecutionMetricsList', () => {
+  const m = (entered: number, fail = 0) => ({ total: 4, entered, pass: 0, fail, pending: 4 - fail });
+
+  it('is true for the same counts in new objects', () => {
+    expect(sameExecutionMetricsList([m(1), m(2, 1)], [m(1), m(2, 1)])).toBeTrue();
+    expect(sameExecutionMetricsList([], [])).toBeTrue();
+  });
+
+  it('is false when a count or the length differs', () => {
+    expect(sameExecutionMetricsList([m(0)], [m(4)])).toBeFalse();
+    expect(sameExecutionMetricsList([m(1)], [m(1, 1)])).toBeFalse();
+    expect(sameExecutionMetricsList([m(1)], [m(1), m(1)])).toBeFalse();
   });
 });

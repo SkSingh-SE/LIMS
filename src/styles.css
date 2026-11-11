@@ -7073,8 +7073,95 @@ input[type="checkbox"]:checked {
 }
 
 .lims-teststrip-pills .testpill-compact.lims-testpill-status--fail,
-.lims-teststrip-pills .testpill-compact.lims-testpill-status--fail.active {
+.lims-teststrip-pills .testpill-compact.lims-testpill-status--fail.active,
+.lims-teststrip-pills .testpill-compact.lims-testpill-status--fail:hover {
   border-color: var(--danger-main);
+}
+
+/* Per-test toolbar: name, method, status, then Layout / Spm / counts, then actions.
+   Sits directly above the test's two tabs. Rows wrap instead of truncating: the
+   name/method group takes its full text width and moves the controls to the next
+   line when there is no room; only on a very narrow screen does the text itself
+   wrap onto a second line. Nothing is clipped. */
+.lims-test-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+  font-size: var(--font-xs, 0.72rem);
+}
+
+.lims-test-toolbar-id {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lims-test-toolbar-label {
+  flex-shrink: 0;
+  color: var(--neutral-500);
+  font-weight: 600;
+  font-size: var(--font-xs, 0.72rem);
+}
+
+.lims-test-toolbar-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--neutral-800);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.lims-test-toolbar-method {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--neutral-600);
+}
+
+.lims-test-toolbar-method::before {
+  content: '·';
+  margin-right: 6px;
+  color: var(--neutral-400);
+}
+
+.lims-test-toolbar-status {
+  flex-shrink: 0;
+}
+
+.lims-test-toolbar-controls,
+.lims-test-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.lims-test-toolbar-actions {
+  gap: 6px;
+  margin-left: auto;
+}
+
+.lims-test-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+/* Wide enough for typical "Layout name (CODE)" values; full name also on hover */
+.lims-test-toolbar-layout {
+  width: 440px;
+  max-width: calc(100vw - 120px);
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ B. Material & Metadata Summary Bar (.materialbar / .lims-materialbar) Ã¢â€â‚¬Ã¢â€â‚¬ */

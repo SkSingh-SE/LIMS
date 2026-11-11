@@ -1,5 +1,5 @@
 import { missingRequiredFacets, suggestDimensionalFactorKey, suggestProductSizeKey } from '../../../utility/helper/spec-condition.helper';
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TestResultService } from '../../../services/test-result.service';
@@ -12,7 +12,7 @@ import { HeatTreatmentService } from '../../../services/heat-treatment.service';
 import { ProductConditionService } from '../../../services/product-condition.service';
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { TestLayoutService } from '../../../services/test-layout.service';
-import { Observable, of } from 'rxjs';
+import { Observable, Subscription, of } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
@@ -23,7 +23,7 @@ import { ConfiguredTestLayoutRendererComponent } from '../configured-test-layout
 import { TestVerdictPanelComponent } from '../test-verdict-panel/test-verdict-panel.component';
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
-import { ExecutionMetrics, countExecutionMetrics } from './execution-metrics';
+import { ExecutionMetrics, countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
 
 @Component({
   selector: 'app-test-result-entry-form',
@@ -41,7 +41,7 @@ import { ExecutionMetrics, countExecutionMetrics } from './execution-metrics';
     FormsModule
   ],
 })
-export class TestResultEntryFormComponent implements OnInit, OnChanges {
+export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck, OnDestroy {
   @ViewChild('layoutRenderer') layoutRendererComponent?: ConfiguredTestLayoutRendererComponent;
   @Input() inputSampleId?: number;
   @Input() isInline: boolean = false;
@@ -460,6 +460,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         this.resultForm = this.fb.group({
           plans: this.fb.array(this.plans.map(plan => this.createPlanGroup(plan)))
         });
+        this.watchResultForm();
 
         // Patch values into form
         this.patchFormValues(data);
@@ -1329,6 +1330,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     this.resultForm = this.fb.group({
       plans: this.fb.array(this.plans.map(plan => this.createPlanGroup(plan)))
     });
+    this.watchResultForm();
   }
 
   get plansFA(): FormArray {
@@ -2645,12 +2647,54 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     })));
   }
 
+  /**
+   * Counts of each test (plans[] holds one test per header, so test 0), shown in the
+   * test pills and the per-test toolbar. Kept in a signal: the layout renderer fills
+   * values into the form while the page is being checked, and a signal written at
+   * that point makes Angular refresh the header in the same pass (no NG0100).
+   */
+  readonly planMetrics = signal<ExecutionMetrics[]>([], { equal: sameExecutionMetricsList });
+  private resultFormValueSub?: Subscription;
+  private static readonly EMPTY_METRICS: ExecutionMetrics = { total: 0, entered: 0, pass: 0, fail: 0, pending: 0 };
+
+  refreshPlanMetrics(): void {
+    this.planMetrics.set((this.plans || []).map((_, p) => this.getExecutionMetrics(p, 0)));
+  }
+
+  /** Call after every `this.resultForm = ...` so the counts follow the new form. */
+  private watchResultForm(): void {
+    this.resultFormValueSub?.unsubscribe();
+    this.resultFormValueSub = this.resultForm?.valueChanges.subscribe(() => this.refreshPlanMetrics());
+    this.refreshPlanMetrics();
+  }
+
+  pillMetrics(planIndex: number): ExecutionMetrics {
+    return this.planMetrics()[planIndex] ?? TestResultEntryFormComponent.EMPTY_METRICS;
+  }
+
+  ngDoCheck(): void {
+    // Picks up changes made without a form event (e.g. limit checks with emitEvent: false, plan list changes)
+    this.refreshPlanMetrics();
+  }
+
+  ngOnDestroy(): void {
+    this.resultFormValueSub?.unsubscribe();
+  }
+
+  /** Why Complete is disabled for this test, or null when it can be completed. Shown as the button's hover text. */
+  getCompleteBlockedReason(headerId: number): string | null {
+    if (this.isViewMode) return 'View mode';
+    if (this.isHeaderCompleted(headerId)) return 'Test already completed';
+    if (this.activeTab !== 'execution') return 'Open the Execution tab to complete this test';
+    return null;
+  }
+
   /** Hover text for a test pill: name, status and counts in plain words. */
   getTestPillTitle(planIndex: number): string {
     const plan = this.plans?.[planIndex];
     const name = plan?.tests?.[0]?.name || plan?.type || 'Test';
     const status = plan?.tests?.[0]?.status || 'In Progress';
-    const m = this.getExecutionMetrics(planIndex, 0);
+    const m = this.pillMetrics(planIndex);
     const failText = m.fail > 0 ? `, ${m.fail} fail` : '';
     return `${name} - ${status} - ${m.entered} of ${m.total} entered${failText}`;
   }

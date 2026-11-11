@@ -9393,9 +9393,13 @@ button i.bi:only-child,
   background-color: var(--primary-50, rgba(218, 38, 28, 0.08)) !important;
   color: var(--primary-color, #da261c) !important;
   border: 1px solid var(--primary-200, rgba(218, 38, 28, 0.25)) !important;
+  /* shrink before pushing the zoom controls out of the header */
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
 }
 
 .badge-mapped-text {
+  min-width: 0 !important;
   max-width: 180px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;

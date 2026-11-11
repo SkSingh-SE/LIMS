@@ -286,19 +286,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       this.sampleId = this.inputSampleId;
     } else {
       this.route.paramMap.subscribe(params => {
-        const idParam = params.get('id');
+        const idParam = params.get('sampleId') ?? params.get('id');
         if (idParam) {
           this.sampleId = Number(idParam);
         }
       });
     }
 
-    // View mode: check history.state first, then route path as fallback
-    const state = history.state as { mode?: string };
-    if (state?.mode === 'view' || this.route.snapshot.url.some(s => s.path === 'details')) {
+    // Mode comes only from the URL (?mode=edit|view|verify), so refresh and new tabs keep it
+    if (this.route.snapshot.url.some(s => s.path === 'details')) {
       this.isViewMode = true;
     }
-    // Also check query params (for verification mode)
     this.route.queryParams.subscribe(params => {
       if (params['mode'] === 'view' || params['mode'] === 'verify') {
         this.isViewMode = true;

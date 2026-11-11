@@ -178,9 +178,8 @@ export class TestResultVerificationComponent implements OnInit {
   // ── Navigation ──
   navigateToVerify(item: any, event: MouseEvent): void {
     event.stopPropagation();
-    this.router.navigate(['/testing/perform', item.sampleId], {
+    this.router.navigate(['/test-result/entry', item.sampleId], {
       queryParams: { mode: 'verify', headerId: item.headerId },
-      state: { mode: 'view' },
     });
   }
 

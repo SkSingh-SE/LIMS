@@ -59,7 +59,21 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // 2-Tab Consolidated Workflow Navigation (ISO 17025)
   // Tab 1: 'execution' (1. Test & Execution Workspace)
   // Tab 2: 'nabl_audit' (2. NABL QA & Audit)
-  activeTab: 'execution' | 'nabl_audit' = 'execution';
+  // Tab state is kept per test (plan), so every test remembers its own tab
+  private tabByPlan: Record<number, 'execution' | 'nabl_audit'> = {};
+  get activeTab(): 'execution' | 'nabl_audit' {
+    return this.tabByPlan[this.activePlanIndex] ?? 'execution';
+  }
+  set activeTab(value: 'execution' | 'nabl_audit') {
+    this.tabByPlan[this.activePlanIndex] = value;
+  }
+  caseDossierVisible = false;
+  openCaseDossier(): void {
+    this.caseDossierVisible = true;
+  }
+  closeCaseDossier(): void {
+    this.caseDossierVisible = false;
+  }
 
   testTabs: { id: 'execution' | 'nabl_audit'; label: string; icon: string }[] = [
     { id: 'execution', label: '1. Test & Execution Workspace', icon: 'bi-clipboard-data' },

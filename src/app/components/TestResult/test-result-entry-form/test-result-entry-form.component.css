@@ -2297,3 +2297,21 @@ input[type="number"] {
 .case-tests-table tr:hover td {
   background: var(--neutral-50, #f8fafc);
 }
+
+/* Per-test tab bar (two tabs per test) */
+.test-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0);
+}
+
+.test-tabs,
+.test-tabbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -4945,13 +4945,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const test = plan?.tests?.[testIndex];
     if (!test?.headerId) return;
     const headerId = test.headerId;
+    // The plan test objects do not carry the grade/method ids; they live in apiMetadata (keyed by headerId)
+    const meta = [...(this.apiMetadata?.generalTests || []), ...(this.apiMetadata?.chemicalTests || [])].find((m: any) => m.headerId === headerId);
     // Same grade sources the server uses: plan first, then the grade stored on the sample
-    const g1 = Number(test.specification1 || plan.specification1 || this.sample?.specificationGradeID || this.sample?.assignedGradeID || 0);
-    const g2 = Number(test.specification2 || plan.specification2 || 0) || null;
+    const g1 = Number(meta?.specification1 || plan.specSelected?.id || this.sample?.specificationGradeID || this.sample?.assignedGradeID || 0);
+    const g2 = Number(meta?.specification2 || 0) || null;
     this.conditionNoGrade[headerId] = !g1;
     if (!g1) return;
-    const labTestId = Number(test.laboratoryTestId || test.labTestId || plan.labTestId || 0) || null;
-    const methodId = Number(test.testMethodId || plan.methodId || 0) || null;
+    const labTestId = Number(meta?.laboratoryTestId || plan.labTestId || 0) || null;
+    const methodId = Number(meta?.testMethodId || 0) || null;
     const key = `${g1}_${g2}_${labTestId}_${methodId}`;
 
     const ready = (lines: any[]) => {

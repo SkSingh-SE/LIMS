@@ -1,38 +1,31 @@
 <div class="test-result-container p-0 m-0 w-100">
 
   <!-- ================================================================ -->
-  <!-- 1. COMPACT CONSOLIDATED HEADER (Case, Sample, Meta & Tabs)       -->
+  <!-- 1. CASE BAR (one line: case / sample, meta with tooltips, details) -->
   <!-- ================================================================ -->
   <div class="compact-casebar" *ngIf="!isInline">
-    <!-- Left: Back, Title, Case/Sample Chips, Status -->
+    <!-- Left: Back, Case / Sample chips, Status -->
     <div class="casebar-left">
-      <button class="casebar-back-btn" type="button" (click)="cancel()" title="Back to List">← Back</button>
-      <span class="casebar-title">Test Result Entry</span>
-      <span class="badge bg-light text-dark border font-monospace" *ngIf="inward?.caseNo">{{ inward.caseNo }}</span>
-      <span class="badge bg-light text-dark border font-monospace" *ngIf="sample?.sampleNo">{{ sample.sampleNo }}</span>
-      <span class="badge font-monospace" *ngIf="sample?.sampleStatus" [ngClass]="getSampleStatusBadgeClass(sample.sampleStatus)">
-        {{ sample.sampleStatus }}
-      </span>
+      <button class="casebar-back-btn" type="button" (click)="cancel()" title="Back to list">← Back</button>
+      <span class="badge bg-light text-dark border font-monospace" *ngIf="inward?.caseNo" [title]="'Case No: ' + inward.caseNo">{{ inward.caseNo }}</span>
+      <span class="badge bg-light text-dark border font-monospace" *ngIf="sample?.sampleNo" [title]="'Sample No: ' + sample.sampleNo">{{ sample.sampleNo }}</span>
+      <span class="badge font-monospace" *ngIf="sample?.sampleStatus" [ngClass]="getSampleStatusBadgeClass(sample.sampleStatus)"
+        [title]="'Sample status: ' + sample.sampleStatus">{{ sample.sampleStatus }}</span>
     </div>
 
-    <!-- Center: Horizontal Metadata Strip -->
-    <div class="casebar-meta">
-      <span>Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
-      <span class="casebar-meta-sep">|</span>
-      <span *ngIf="inward?.poNo">PO: <strong>{{ inward.poNo }}</strong><span class="casebar-meta-sep ms-2 me-0">|</span></span>
-      <span>Material: <strong>{{ sample?.material || sample?.productMasterName || 'Structural Steel' }}</strong></span>
-      <span class="casebar-meta-sep">|</span>
-      <span>Class: <strong>{{ sample?.metalClassification || 'Not specified' }}</strong></span>
-      <span class="casebar-meta-sep">|</span>
-      <span>Size: <strong>{{ sample?.productSizeFormatted || '—' }}</strong></span>
-      <span class="casebar-meta-sep" *ngIf="sample?.batchNo || sample?.heatNo">|</span>
-      <span *ngIf="sample?.batchNo || sample?.heatNo">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
-      <span class="casebar-meta-sep">|</span>
-      <span>Received: <strong>{{ inward?.receivedOn || '—' }}</strong></span>
+    <!-- Center: single-line metadata; each item truncates, full text on hover. PO and full details sit in Case Details. -->
+    <div class="lims-casebar-meta">
+      <span class="lims-casebar-meta-item" [title]="'Customer: ' + (inward?.customerName || '—')">Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
+      <span class="lims-casebar-meta-item" [title]="'Material: ' + (sample?.material || sample?.productMasterName || '—')">Material: <strong>{{ sample?.material || sample?.productMasterName || '—' }}</strong></span>
+      <span class="lims-casebar-meta-item" [title]="'Class: ' + (sample?.metalClassification || '—')">Class: <strong>{{ sample?.metalClassification || '—' }}</strong></span>
+      @let caseSizeText = (sample?.productSizeFormatted || '').trim() && (sample?.productSizeFormatted || '').trim() !== '-' ? sample.productSizeFormatted.trim() : '—';
+      <span class="lims-casebar-meta-item lims-casebar-meta-item--fixed" [title]="'Size: ' + caseSizeText">Size: <strong>{{ caseSizeText }}</strong></span>
+      <span class="lims-casebar-meta-item lims-casebar-meta-item--fixed" *ngIf="sample?.heatNo || sample?.batchNo" [title]="'Heat/Batch: ' + (sample.heatNo || sample.batchNo)">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
+      <span class="lims-casebar-meta-item lims-casebar-meta-item--fixed" [title]="'Received: ' + (inward?.receivedOn || '—')">Received: <strong>{{ inward?.receivedOn || '—' }}</strong></span>
     </div>
 
-    <!-- Right: Integrated Workflow Tabs -->
-    <div class="casebar-right" *ngIf="plans.length > 0">
+    <!-- Right: Case Details (case-level data panel) -->
+    <div class="casebar-right" *ngIf="inward || sample">
       <button type="button" class="btn btn-sm btn-lims-secondary" (click)="openCaseDetails()" title="Case registration, sample, dimensions and planned tests">
         <i class="bi bi-folder2-open me-1"></i><span>Case Details</span>
       </button>

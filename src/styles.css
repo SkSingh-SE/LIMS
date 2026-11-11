@@ -6964,6 +6964,44 @@ input[type="checkbox"]:checked {
   flex: 1;
 }
 
+/* Single-line case metadata: items shrink and truncate, full text via title tooltip */
+.lims-casebar-meta {
+  display: flex;
+  align-items: center;
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--font-xs, 0.72rem);
+  color: var(--muted, #65758a);
+}
+
+.lims-casebar-meta-item {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Short values (Size, Heat/Batch, Received) never shrink; only long text items ellipsize */
+.lims-casebar-meta-item--fixed {
+  flex-shrink: 0;
+  max-width: none;
+}
+
+.lims-casebar-meta-item + .lims-casebar-meta-item::before {
+  content: '|';
+  color: var(--line, #dce3eb);
+  margin: 0 8px;
+}
+
+.lims-casebar-meta-item strong {
+  color: var(--ink, #172334);
+  font-weight: 600;
+}
+
 /* Ã¢â€â‚¬Ã¢â€â‚¬ B. Material & Metadata Summary Bar (.materialbar / .lims-materialbar) Ã¢â€â‚¬Ã¢â€â‚¬ */
 .materialbar,
 .lims-materialbar {

@@ -253,6 +253,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   productConditions2List: any[] = [];
   specimenOrientationsList: any[] = [];
   loadingConditions = false;
+  /** Merge left-rail spec-condition selections into executionExtraJson so they survive reload. */
+  private mergeSelectedConditions(extraJson: any, headerId: number): string | null {
+    let extra: any = {};
+    if (extraJson) {
+      try {
+        extra = typeof extraJson === 'string' ? JSON.parse(extraJson) : { ...extraJson };
+      } catch {
+        extra = {};
+      }
+    }
+    const selected = this.selectedConditionsMap[headerId];
+    if (selected) {
+      extra.selectedConditions = selected;
+    }
+    return Object.keys(extra).length ? JSON.stringify(extra) : null;
+  }
+
   selectedConditionsMap: Record<number, {
     dimensionalFactorID: number | null;
     heatTreatmentID: number | null;
@@ -493,6 +510,16 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }
   }
 
+  /** Single source for the layout cache key (auto-resolve and manual pick must not collide). */
+  private buildLayoutCacheKey(plan: any, planIndex: number, pickedLayoutId?: number): string {
+    const headerId = plan?.headerId || plan?.tests?.[0]?.headerId || `plan_${planIndex}`;
+    const methodId = plan?.methodId || plan?.tests?.[0]?.testMethodId || null;
+    const methodName = plan?.methodName || plan?.tests?.[0]?.testMethodName || null;
+    const leafNode = plan?.leafNode || plan?.tests?.[0]?.name || null;
+    const key = `${headerId}_${plan?.labTestId}_${plan?.subGroupId || null}_${plan?.analysisTypeId || null}_${leafNode}_${methodId}_${methodName}`;
+    return pickedLayoutId ? `${key}_L${pickedLayoutId}` : key;
+  }
+
   loadTestLayoutForPlan(planIndex: number): void {
     const plan = this.plans[planIndex];
     if (!plan) return;
@@ -505,7 +532,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const methodId = plan.methodId || plan.tests?.[0]?.testMethodId || null;
     const methodName = plan.methodName || plan.tests?.[0]?.testMethodName || null;
 
-    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}_${methodId}_${methodName}`;
+    const cacheKey = this.buildLayoutCacheKey(plan, planIndex);
     if (this.layoutCache[cacheKey]) {
       this.currentTestLayout = this.layoutCache[cacheKey];
       this.selectedLayoutTemplateId = this.currentTestLayout?.id || null;
@@ -652,7 +679,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const analysisTypeId = plan?.analysisTypeId || null;
     const leafNode = plan?.leafNode || plan?.tests?.[0]?.name || null;
     const headerId = plan?.headerId || plan?.tests?.[0]?.headerId || `plan_${this.activePlanIndex}`;
-    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}`;
+    const cacheKey = this.buildLayoutCacheKey(plan, this.activePlanIndex, targetId);
 
     const found = this.availableLayoutTemplates.find(t => t.id === targetId);
     if (found && found.layoutConfigJson) {
@@ -971,11 +998,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               layoutVersion: generalTest.layoutVersion || '1.0',
               layoutSnapshotJson: generalTest.layoutSnapshotJson || null,
               executionExtraJson: generalTest.executionExtraJson || null,
-              readings: generalTest.readings || [],
-              locations: generalTest.locations || [],
-              traversePoints: generalTest.traversePoints || [],
-              checklist: generalTest.checklist || [],
-              observations: generalTest.observations || [],
+              readings: generalTest.readings,
+              locations: generalTest.locations,
+              traversePoints: generalTest.traversePoints,
+              checklist: generalTest.checklist,
+              observations: generalTest.observations,
               // Drive initial parameters strictly by plannedQuantity to prevent change detection mismatch
               parameters: (() => {
                 const allParams = generalTest.parameters || [];
@@ -1079,11 +1106,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               layoutVersion: chemicalTest.layoutVersion || '1.0',
               layoutSnapshotJson: chemicalTest.layoutSnapshotJson || null,
               executionExtraJson: chemicalTest.executionExtraJson || null,
-              readings: chemicalTest.readings || [],
-              locations: chemicalTest.locations || [],
-              traversePoints: chemicalTest.traversePoints || [],
-              checklist: chemicalTest.checklist || [],
-              observations: chemicalTest.observations || [],
+              readings: chemicalTest.readings,
+              locations: chemicalTest.locations,
+              traversePoints: chemicalTest.traversePoints,
+              checklist: chemicalTest.checklist,
+              observations: chemicalTest.observations,
               parameters: (chemicalTest.parameters || []).map((param: any) => ({
                 id: param.id,
                 parameterID: param.parameterID || null,
@@ -1560,7 +1587,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const rawVersion = testGroup.get('layoutVersion')?.value || testObj.layoutVersion || (isCurrentActive ? this.currentTestLayout?.version : 1);
     const layoutVersion = typeof rawVersion === 'number' ? Math.floor(rawVersion) : (parseInt(String(rawVersion).replace(/[^0-9]/g, ''), 10) || 1);
     const layoutSnapshotJson = (isCurrentActive && this.currentTestLayout) ? JSON.stringify(this.currentTestLayout) : (testGroup.get('layoutSnapshotJson')?.value || testObj.layoutSnapshotJson || null);
-    const executionExtraJson = testObj.executionExtraJson || (isCurrentActive && this.layoutRendererComponent ? this.layoutRendererComponent.getExecutionExtraJson() : null);
+    const executionExtraJson = this.mergeSelectedConditions(testObj.executionExtraJson || (isCurrentActive && this.layoutRendererComponent ? this.layoutRendererComponent.getExecutionExtraJson() : null), testObj.headerId);
 
     const commonData = {
       headerId,
@@ -1575,11 +1602,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       retestOfHeaderId: testObj.retestOfHeaderId || null,
       retestReasonCode: testObj.retestReasonCode || null,
       executionExtraJson: executionExtraJson || null,
-      readings: testObj.readings || [],
-      locations: testObj.locations || [],
-      traversePoints: testObj.traversePoints || [],
-      checklist: testObj.checklist || [],
-      observations: testObj.observations || [],
+      readings: testObj.readings,
+      locations: testObj.locations,
+      traversePoints: testObj.traversePoints,
+      checklist: testObj.checklist,
+      observations: testObj.observations,
       parameters: testParams.value.map((p: any) => ({
         id: p.id,
         parameterID: p.parameterID,
@@ -1712,7 +1739,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         const rawVersion = test.layoutVersion || testObj.layoutVersion || (isCurrentActive ? this.currentTestLayout?.version : 1);
         const layoutVersion = typeof rawVersion === 'number' ? Math.floor(rawVersion) : (parseInt(String(rawVersion).replace(/[^0-9]/g, ''), 10) || 1);
         const layoutSnapshotJson = (isCurrentActive && this.currentTestLayout) ? JSON.stringify(this.currentTestLayout) : (test.layoutSnapshotJson || testObj.layoutSnapshotJson || null);
-        const executionExtraJson = testObj.executionExtraJson || (isCurrentActive && this.layoutRendererComponent ? this.layoutRendererComponent.getExecutionExtraJson() : null);
+        const executionExtraJson = this.mergeSelectedConditions(testObj.executionExtraJson || (isCurrentActive && this.layoutRendererComponent ? this.layoutRendererComponent.getExecutionExtraJson() : null), testObj.headerId);
 
         const commonData = {
           headerId: headerId,
@@ -1727,11 +1754,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           retestOfHeaderId: testObj.retestOfHeaderId || null,
           retestReasonCode: testObj.retestReasonCode || null,
           executionExtraJson: executionExtraJson || null,
-          readings: testObj.readings || [],
-          locations: testObj.locations || [],
-          traversePoints: testObj.traversePoints || [],
-          checklist: testObj.checklist || [],
-          observations: testObj.observations || [],
+          readings: testObj.readings,
+          locations: testObj.locations,
+          traversePoints: testObj.traversePoints,
+          checklist: testObj.checklist,
+          observations: testObj.observations,
           parameters: testParams.map((param: any) => ({
             id: param.id,
             parameterID: param.parameterID,

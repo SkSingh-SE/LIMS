@@ -7,6 +7,19 @@ import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ParameterService } from '../../../services/parameter.service';
+import { ToastService } from '../../../services/toast.service';
+import {
+  addSpecimenRows,
+  insertPositionForSpecimen,
+  matchingRowInSpecimen,
+  removeSpecimenRows,
+  rowHasResult,
+  rowsOfSpecimen,
+  rowsOrderedBySpecimen,
+  rowValuesOf,
+  specimenIndexesOf,
+  SpecimenRowStore,
+} from './specimen-grouping';
 import {
   buildTensileRoleIndex,
   DERIVED_TENSILE_ROLES,
@@ -276,7 +289,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private parameterService: ParameterService
+    private parameterService: ParameterService,
+    private toastService: ToastService
   ) {}
 
   fetchParametersDropdown = (searchTerm: string, page: number, pageSize: number) => {
@@ -589,39 +603,18 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Specimen & Parameter Grouping / Detection
   // =========================================================================
 
-  /**
-   * Calculates the number of unique base parameters per specimen.
-   * e.g. If 18 total parameters are configured across 3 specimens, returns 6.
-   */
-  getBaseParameterCount(): number {
-    if (!this.parametersFormArray || this.parametersFormArray.length === 0) return 6;
-    const names = new Set<string>();
-    let count = 0;
-    for (let i = 0; i < this.parametersFormArray.length; i++) {
-      const ctrl = this.parametersFormArray.at(i);
-      if (!ctrl) continue;
-      const pName = (ctrl.get('parameterName')?.value || '').trim().toLowerCase();
-      if (pName && names.has(pName)) {
-        return count; // First duplicate found, this marks the end of specimen 1's parameter group!
-      }
-      if (pName) {
-        names.add(pName);
-      }
-      count++;
-    }
-    // If no duplicate was found at all, all parameters in array belong to a single specimen
-    if (count > 0) {
-      return count;
-    }
-    // Fallback based on specimen count
-    return this.specimens.length > 0
-      ? Math.max(1, Math.round(this.parametersFormArray.length / this.specimens.length))
-      : 6;
+  /** Specimen index of every row (each row carries its own; see specimen-grouping.ts). */
+  private getRowSpecimenIndexes(): number[] {
+    return specimenIndexesOf(this.parametersFormArray);
+  }
+
+  /** Number of rows that belong to one specimen. */
+  getSpecimenRowCount(spmIdx: number): number {
+    return rowsOfSpecimen(this.getRowSpecimenIndexes(), spmIdx).length;
   }
 
   getSpecimenIndexForParam(rowIdx: number): number {
-    const base = this.getBaseParameterCount();
-    return Math.floor(rowIdx / base);
+    return this.getRowSpecimenIndexes()[rowIdx] ?? 0;
   }
 
   getSpecimenLabelForParam(rowIdx: number): string {
@@ -630,27 +623,35 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   isFirstParamOfSpecimen(rowIdx: number): boolean {
-    const base = this.getBaseParameterCount();
-    return rowIdx % base === 0;
+    const indexes = this.getRowSpecimenIndexes();
+    return rowsOfSpecimen(indexes, indexes[rowIdx] ?? 0)[0] === rowIdx;
   }
 
   getFilteredParamIndices(): number[] {
     if (!this.parametersFormArray) return [];
-    const total = this.parametersFormArray.length;
-    const indices: number[] = [];
-
-    for (let i = 0; i < total; i++) {
-      if (this.selectedSpecimenFilter === 'all') {
-        indices.push(i);
-      } else {
-        const spmIdx = this.getSpecimenIndexForParam(i);
-        if (spmIdx === (this.selectedSpecimenFilter - 1)) {
-          indices.push(i);
-        }
-      }
-    }
-    return indices;
+    const indexes = this.getRowSpecimenIndexes();
+    if (this.selectedSpecimenFilter === 'all') return rowsOrderedBySpecimen(indexes);
+    return rowsOfSpecimen(indexes, this.selectedSpecimenFilter - 1);
   }
+
+  /** Shared store on the test object for rows taken out of the table (see SpecimenRowStore). */
+  private get rowStore(): SpecimenRowStore {
+    if (!this.test) this.test = {};
+    return this.test as SpecimenRowStore;
+  }
+
+  /** Empty copy of a row for another specimen. */
+  private cloneRowForSpecimen = (source: any, specimen: number): FormGroup =>
+    this.createParamControl({
+      ...source,
+      id: null,
+      value: null,
+      convertedValue: null,
+      resultStatus: null,
+      isWithinLimit: null,
+      remarks: '',
+      specimenIndex: specimen
+    });
 
   setSpecimenFilter(filter: number | 'all'): void {
     this.selectedSpecimenFilter = filter;
@@ -697,11 +698,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return name.includes('tensile') || name.includes('tension');
   }
 
+  /** S1 rows; the specimen matrix shows one line per S1 row and finds the matching row of every other specimen. */
   getBaseParameterList(): any[] {
     if (!this.parametersFormArray || this.parametersFormArray.length === 0) return [];
-    const base = this.getBaseParameterCount();
     const list: any[] = [];
-    for (let i = 0; i < Math.min(base, this.parametersFormArray.length); i++) {
+    for (const i of rowsOfSpecimen(this.getRowSpecimenIndexes(), 0)) {
       const ctrl = this.parametersFormArray.at(i);
       if (ctrl) {
         list.push({
@@ -716,16 +717,21 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return list;
   }
 
+  /** Form row of `spmIdx` that matches S1 row `baseParamIdx` (same parameter, same occurrence), or -1. */
+  private getMatchingRow(baseParamIdx: number, spmIdx: number): number {
+    if (!this.parametersFormArray) return -1;
+    return matchingRowInSpecimen(rowValuesOf(this.parametersFormArray), this.getRowSpecimenIndexes(), baseParamIdx, spmIdx);
+  }
+
   getParamValueForSpecimen(baseParamIdx: number, spmIdx: number): any {
-    const base = this.getBaseParameterCount();
-    const targetIdx = spmIdx * base + baseParamIdx;
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    if (targetIdx < 0) return '';
     return this.parametersFormArray?.at(targetIdx)?.get('value')?.value ?? '';
   }
 
   onParamValueChangeForSpecimen(baseParamIdx: number, spmIdx: number, newVal: any): void {
-    const base = this.getBaseParameterCount();
-    const targetIdx = spmIdx * base + baseParamIdx;
-    const ctrl = this.parametersFormArray?.at(targetIdx);
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    const ctrl = targetIdx >= 0 ? this.parametersFormArray?.at(targetIdx) : null;
     if (ctrl) {
       ctrl.patchValue({ value: newVal });
       this.evaluateLimitForControl(ctrl);
@@ -736,12 +742,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getBaseParamAverage(baseParamIdx: number): string {
-    const base = this.getBaseParameterCount();
     let sum = 0;
     let count = 0;
     for (let s = 0; s < this.specimens.length; s++) {
-      const idx = s * base + baseParamIdx;
-      const ctrl = this.parametersFormArray?.at(idx);
+      const idx = this.getMatchingRow(baseParamIdx, s);
+      const ctrl = idx >= 0 ? this.parametersFormArray?.at(idx) : null;
       const raw = ctrl?.get('value')?.value;
       if (raw !== null && raw !== undefined && raw !== '' && !isNaN(Number(raw))) {
         sum += Number(raw);
@@ -752,12 +757,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getBaseParamStatus(baseParamIdx: number): string {
-    const base = this.getBaseParameterCount();
     let hasFail = false;
     let hasPass = false;
     for (let s = 0; s < this.specimens.length; s++) {
-      const idx = s * base + baseParamIdx;
-      const ctrl = this.parametersFormArray?.at(idx);
+      const idx = this.getMatchingRow(baseParamIdx, s);
+      const ctrl = idx >= 0 ? this.parametersFormArray?.at(idx) : null;
       const st = ctrl?.get('resultStatus')?.value;
       if (st === 'Fail') hasFail = true;
       if (st === 'Pass') hasPass = true;
@@ -780,11 +784,15 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       this.test?.quantity ||
       1
     );
-    const count = Math.max(1, plannedQty);
+    // Never fewer specimens than the rows hold, so no saved row is hidden or trimmed
+    const rowIndexes = this.getRowSpecimenIndexes();
+    const maxRowSpecimen = rowIndexes.length ? Math.max(...rowIndexes) : 0;
+    const count = Math.max(1, plannedQty, maxRowSpecimen + 1);
     const prefix = 'S';
 
     // Guard: If specimen array already exists with target length and has values, avoid wiping
     if (this.specimens.length === count && this.specimens.some(s => s.yieldLoad != null || s.peakLoad != null || s.proofStress != null || s.uts != null)) {
+      this.ensureRowsForSpecimens();
       this.hydrateSpecimensFromParameters();
       this.recalculateSpecimens();
       this.cdr.markForCheck();
@@ -817,34 +825,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       });
     }
 
-    // Align parametersFormArray with initial count
-    if (this.parametersFormArray && this.parametersFormArray.length > 0) {
-      const base = this.getBaseParameterCount();
-      if (base > 0) {
-        const targetLen = count * base;
-        if (this.parametersFormArray.length > targetLen) {
-          while (this.parametersFormArray.length > targetLen) {
-            this.parametersFormArray.removeAt(this.parametersFormArray.length - 1);
-          }
-        } else if (this.parametersFormArray.length < targetLen) {
-          while (this.parametersFormArray.length < targetLen) {
-            const templateIdx = this.parametersFormArray.length % base;
-            const templateCtrl = this.parametersFormArray.at(templateIdx);
-            if (templateCtrl) {
-              const cloned = this.createParamControl({
-                ...templateCtrl.value,
-                id: null,
-                value: null,
-                resultStatus: null,
-                isWithinLimit: null,
-                remarks: ''
-              });
-              this.parametersFormArray.push(cloned);
-            }
-          }
-        }
-      }
-    }
+    // Every specimen gets its rows (saved rows are kept as they are; nothing is trimmed)
+    this.ensureRowsForSpecimens();
 
     // Hydrate specimen data from existing parameter controls (e.g. S1, S2 from database)
     this.hydrateSpecimensFromParameters();
@@ -859,15 +841,20 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    */
   private getSpecimenRoleIndex(spmIdx: number): TensileRoleIndex {
     if (!this.parametersFormArray || spmIdx < 0) return new Map();
-    const base = this.getBaseParameterCount();
-    if (base <= 0) return new Map();
-    const startIdx = spmIdx * base;
-    const endIdx = Math.min(startIdx + base, this.parametersFormArray.length);
-    const names: string[] = [];
-    for (let i = startIdx; i < endIdx; i++) {
-      names.push(this.parametersFormArray.at(i)?.get('parameterName')?.value || '');
+    const rows = rowsOfSpecimen(this.getRowSpecimenIndexes(), spmIdx);
+    const names = rows.map(r => this.parametersFormArray.at(r)?.get('parameterName')?.value || '');
+    // Positions inside the specimen -> form row indexes
+    const index: TensileRoleIndex = new Map();
+    buildTensileRoleIndex(names).forEach((list, role) => index.set(role, list.map(i => rows[i])));
+    return index;
+  }
+
+  /** Adds rows for every specimen that has none (saved rows removed earlier come back first, else copies of S1). */
+  private ensureRowsForSpecimens(): void {
+    if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
+    for (let s = 0; s < this.specimens.length; s++) {
+      addSpecimenRows(this.parametersFormArray, s, this.rowStore, this.cloneRowForSpecimen);
     }
-    return buildTensileRoleIndex(names, startIdx);
   }
 
   /** Values the user typed in this session into derived rows (area, stresses, elongation, RA) of one specimen. */
@@ -1072,7 +1059,6 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   setSpecimenCount(targetCount: number): void {
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const newCount = Math.max(1, Math.min(20, Math.round(targetCount)));
-    const base = this.getBaseParameterCount();
 
     if (newCount > this.specimens.length) {
       const diff = newCount - this.specimens.length;
@@ -1082,15 +1068,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     } else if (newCount < this.specimens.length) {
       const diff = this.specimens.length - newCount;
       for (let i = 0; i < diff; i++) {
-        this.removeSpecimen();
-      }
-    }
-
-    // Safety guard: ALWAYS enforce parametersFormArray length matches this.specimens.length * base
-    if (this.parametersFormArray && base > 0) {
-      const targetLen = this.specimens.length * base;
-      while (this.parametersFormArray.length > targetLen) {
-        this.parametersFormArray.removeAt(this.parametersFormArray.length - 1);
+        // Stops at the first specimen that holds results (removeSpecimen shows why)
+        if (!this.removeSpecimen()) break;
       }
     }
 
@@ -1118,7 +1097,6 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   addSpecimen(): void {
     if (this.isViewMode || this.isLocked) return;
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
-    const base = this.getBaseParameterCount();
     const nextNum = this.specimens.length + 1;
     const refSpm = this.specimens[0];
 
@@ -1140,31 +1118,34 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     };
     this.specimens.push(newSpm);
 
-    // Clone base parameters for the new specimen into the form array
-    if (this.parametersFormArray && base > 0) {
-      for (let i = 0; i < base; i++) {
-        const srcCtrl = this.parametersFormArray.at(i);
-        const clonedGroup = this.createParamControl({
-          ...srcCtrl.value,
-          id: null,
-          value: null,
-          resultStatus: null,
-          isWithinLimit: null,
-          remarks: ''
-        });
-        this.parametersFormArray.push(clonedGroup);
-      }
+    // Rows for the new specimen: saved rows removed earlier come back with their IDs, otherwise empty copies of S1
+    if (this.parametersFormArray && this.parametersFormArray.length > 0) {
+      addSpecimenRows(this.parametersFormArray, this.specimens.length - 1, this.rowStore, this.cloneRowForSpecimen);
     }
 
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
   }
 
-  removeSpecimen(spmIndex?: number): void {
-    if (this.isViewMode || this.isLocked || this.specimens.length <= 1) return;
+  /**
+   * Removes a specimen only when none of its rows holds a value or remark; otherwise nothing is removed and a
+   * message says which row to clear first. Saved empty rows are deleted on the next save. Returns true when removed.
+   */
+  removeSpecimen(spmIndex?: number): boolean {
+    if (this.isViewMode || this.isLocked || this.specimens.length <= 1) return false;
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const targetIdx = spmIndex !== undefined ? spmIndex : this.specimens.length - 1;
-    const base = this.getBaseParameterCount();
+
+    if (this.parametersFormArray) {
+      const blockingRow = removeSpecimenRows(this.parametersFormArray, targetIdx, this.rowStore);
+      if (blockingRow) {
+        this.toastService.show(
+          `Specimen S${targetIdx + 1} has results (${blockingRow}). Clear its values before removing the specimen.`,
+          'warning'
+        );
+        return false;
+      }
+    }
 
     // Remove from specimen array
     this.specimens.splice(targetIdx, 1);
@@ -1174,28 +1155,32 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       s.id = `S${idx + 1}`;
     });
 
-    // Remove corresponding parameter controls
-    if (this.parametersFormArray) {
-      const startRemove = targetIdx * base;
-      for (let i = 0; i < base; i++) {
-        if (this.parametersFormArray.length > startRemove) {
-          this.parametersFormArray.removeAt(startRemove);
-        }
-      }
-    }
-
     if (this.selectedSpecimenFilter !== 'all' && (this.selectedSpecimenFilter as number) > this.specimens.length) {
       this.selectedSpecimenFilter = 'all';
     }
 
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
+    return true;
   }
 
+  /** Removes one row. A saved row with a value or remark is kept (clear it first); a saved empty row is deleted on save. */
   removeParameter(rowIdx: number): void {
     if (this.isViewMode || this.isLocked || !this.parametersFormArray || this.parametersFormArray.length <= 1) return;
+    const ctrl = this.parametersFormArray.at(rowIdx);
+    if (!ctrl) return;
+    const row = (ctrl as FormGroup).getRawValue();
+    const savedId = Number(row?.id) || 0;
+    if (savedId > 0 && rowHasResult(row)) {
+      this.toastService.show(`"${row.parameterName || 'This row'}" has a saved result. Clear its value before removing the row.`, 'warning');
+      return;
+    }
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     this.parametersFormArray.removeAt(rowIdx);
+    if (savedId > 0) {
+      const store = this.rowStore;
+      store.removedParameterIds = [...(store.removedParameterIds || []), savedId];
+    }
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
   }
@@ -1229,9 +1214,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!this.newParamData.parameterName.trim() || !this.parametersFormArray) return;
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
 
-    const count = this.newParamData.applyTo === 'all' ? this.specimens.length : 1;
-    for (let i = 0; i < count; i++) {
+    // "All specimens": one row per specimen. "Single specimen": the specimen in view (S1 in the all-specimens view).
+    const targetSpecimens = this.newParamData.applyTo === 'all'
+      ? Array.from({ length: Math.max(1, this.specimens.length) }, (_, s) => s)
+      : [this.selectedSpecimenFilter === 'all' ? 0 : Math.max(0, this.selectedSpecimenFilter - 1)];
+    for (const specimen of targetSpecimens) {
       const newCtrl = this.createParamControl({
+        specimenIndex: specimen,
         parameterID: this.newParamData.parameterID,
         parameterName: this.newParamData.parameterName.trim(),
         unit: this.newParamData.unit.trim(),
@@ -1247,7 +1236,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         isCalculated: false,
         isBillable: true
       });
-      this.parametersFormArray.push(newCtrl);
+      // Placed after that specimen's last row so each specimen's rows stay together
+      this.parametersFormArray.insert(insertPositionForSpecimen(this.parametersFormArray, specimen), newCtrl);
     }
 
     this.closeAddParamModal();
@@ -1259,6 +1249,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return this.fb.group({
       // 0 = new row (not saved yet); the API inserts rows with id 0 and the reload brings the new id back
       id: [data.id || 0],
+      // Specimen this row belongs to (0 = S1), saved with the row
+      specimenIndex: [Number(data.specimenIndex) > 0 ? Math.floor(Number(data.specimenIndex)) : 0],
       parameterID: [data.parameterID || null],
       parameterName: [data.parameterName || '', Validators.required],
       unit: [data.unit || ''],

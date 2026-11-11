@@ -25,6 +25,14 @@ import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
 import { ExecutionMetrics, countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
 import { findByTensileRole, TensileRole } from '../configured-test-layout-renderer/tensile-parameter-roles';
+import {
+  addSpecimenRows,
+  removeSpecimenRows,
+  resolveSpecimenCount,
+  resolveSpecimenIndexes,
+  specimenIndexesOf,
+  SpecimenRowStore,
+} from '../configured-test-layout-renderer/specimen-grouping';
 
 @Component({
   selector: 'app-test-result-entry-form',
@@ -809,38 +817,38 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       this.configuredRenderers.forEach(r => r.setSpecimenCount(count));
     } else {
       // If configured renderers are not active in DOM (e.g. user is on Info tab), resize FormArray directly
+      // Same rules as the layout table: rows carry their specimen index, saved rows are reused, and a specimen
+      // that holds results is not removed
       const tg = this.getActiveTestGroup();
       const paramsFA = tg?.get('parameters') as FormArray;
+      const store: SpecimenRowStore = plan?.tests?.[0] || {};
       if (paramsFA && paramsFA.length > 0) {
-        const names = new Set<string>();
-        let base = 0;
-        for (let i = 0; i < paramsFA.length; i++) {
-          const pName = (paramsFA.at(i).get('parameterName')?.value || '').trim().toLowerCase();
-          if (pName && names.has(pName)) break;
-          if (pName) names.add(pName);
-          base++;
+        let current = Math.max(1, ...specimenIndexesOf(paramsFA).map(s => s + 1));
+        const clone = (src: any, specimen: number) => this.createParamGroup({
+          ...src,
+          id: 0,
+          value: null,
+          convertedValue: null,
+          resultStatus: null,
+          isWithinLimit: null,
+          remarks: '',
+          specimenIndex: specimen
+        }, plan?.type);
+        while (current < count) {
+          addSpecimenRows(paramsFA, current, store, clone);
+          current++;
         }
-        if (base === 0) base = 6;
-        const targetLen = count * base;
-        if (paramsFA.length > targetLen) {
-          while (paramsFA.length > targetLen) {
-            paramsFA.removeAt(paramsFA.length - 1);
+        while (current > count) {
+          const blockingRow = removeSpecimenRows(paramsFA, current - 1, store);
+          if (blockingRow) {
+            this.toastService.show(`Specimen S${current} has results (${blockingRow}). Clear its values before removing the specimen.`, 'warning');
+            break;
           }
-        } else if (paramsFA.length < targetLen) {
-          while (paramsFA.length < targetLen) {
-            const templateIdx = paramsFA.length % base;
-            const tCtrl = paramsFA.at(templateIdx);
-            if (tCtrl) {
-              paramsFA.push(this.createParamGroup({
-                ...tCtrl.value,
-                id: null,
-                value: null,
-                resultStatus: null,
-                isWithinLimit: null,
-                remarks: ''
-              }, plan?.type));
-            }
-          }
+          current--;
+        }
+        if (plan) {
+          plan.totalSpecimens = current;
+          if (plan.tests?.[0]) plan.tests[0].totalSpecimens = current;
         }
       }
     }
@@ -970,10 +978,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         );
 
         const plannedQuantity = Number(generalTest.plannedQuantity || generalTest.quantity || 1);
-        const totalSpecimens = plannedQuantity;
+        // Specimens shown in the result table: the saved count when rows carry a specimen index, else the planned count
+        const totalSpecimens = resolveSpecimenCount(generalTest.parameters || [], plannedQuantity);
         const sequenceNo = generalTest.sequenceNo || 1;
         const baseName = generalTest.laboratoryTest || 'General Test';
-        const testName = totalSpecimens > 1 ? `${baseName} - Specimen ${sequenceNo}` : baseName;
+        const testName = plannedQuantity > 1 ? `${baseName} - Specimen ${sequenceNo}` : baseName;
 
         const methodName = generalTest.standardName || '';
         const specName = specification && specification !== 'Unknown' ? specification : '';
@@ -999,7 +1008,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           methodName: methodName,
           methodSelected: generalTest.standard ? { id: generalTest.standard, name: methodName || `Method #${generalTest.standard}` } : null,
           specSelected: generalTest.specification1 ? { id: generalTest.specification1, name: specName || `Spec #${generalTest.specification1}` } : null,
-          specimenLabel: totalSpecimens > 1 ? `Specimen ${sequenceNo} of ${totalSpecimens}` : null,
+          specimenLabel: plannedQuantity > 1 ? `Specimen ${sequenceNo} of ${plannedQuantity}` : null,
           tests: [
             {
               id: `gen-${generalTest.headerId}`,
@@ -1024,21 +1033,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               traversePoints: generalTest.traversePoints,
               checklist: generalTest.checklist,
               observations: generalTest.observations,
-              // Drive initial parameters strictly by plannedQuantity to prevent change detection mismatch
+              // Every saved row is kept; each row carries its own specimen index (see specimen-grouping.ts)
               parameters: (() => {
                 const allParams = generalTest.parameters || [];
-                const uniqueNames = new Set<string>();
-                let baseCount = 0;
-                for (const p of allParams) {
-                  const pName = (p.parameterName || '').trim().toLowerCase();
-                  if (pName && uniqueNames.has(pName)) break;
-                  if (pName) uniqueNames.add(pName);
-                  baseCount++;
-                }
-                if (baseCount === 0) baseCount = 6;
-                const targetCount = plannedQuantity * baseCount;
-                return allParams.slice(0, targetCount).map((param: any) => ({
+                const specimenIndexes = resolveSpecimenIndexes(allParams);
+                return allParams.map((param: any, rowIdx: number) => ({
                   id: param.id,
+                  specimenIndex: specimenIndexes[rowIdx] ?? 0,
                   parameterID: param.parameterID || null,
                   parameterName: param.parameterName || '',
                   unit: param.unit || '',
@@ -1384,6 +1385,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
     return this.fb.group({
       id: [p.id || 0],
+      // Specimen this row belongs to (0 = S1); saved with the row so a reload groups rows the same way
+      specimenIndex: [Number(p.specimenIndex) > 0 ? Math.floor(Number(p.specimenIndex)) : 0],
       parameterID: [p.parameterID, Validators.required],
       parameterName: [p.parameterName],
       unit: [p.unit],
@@ -1656,8 +1659,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         convertedValue: p.convertedValue ?? null,
         selectedUnit: p.selectedUnit || '',
         isBillable: p.isBillable ?? true,
-        isReportable: p.isReportable !== false
-      }))
+        isReportable: p.isReportable !== false,
+        specimenIndex: Number(p.specimenIndex) > 0 ? Number(p.specimenIndex) : 0
+      })),
+      // Saved rows removed on the screen (only empty rows are removed; the API refuses rows with values)
+      removedParameterIds: [...(testObj.removedParameterIds || [])] as number[]
     };
 
     if (apiGeneral) {
@@ -1683,6 +1689,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       next: (response) => {
         this.isSavingResult = false;
         this.applySavedParameterIds(testParams, response);
+        // Removed rows are gone from the database now
+        const sentRemoved = commonData.removedParameterIds;
+        if (sentRemoved.length && Array.isArray(testObj.removedParameterIds)) {
+          testObj.removedParameterIds = testObj.removedParameterIds.filter((id: number) => !sentRemoved.includes(id));
+        }
         this.toastService.show(`${testName} — saved successfully`, 'success');
         this.resultSaved.emit(response);
         // Automatically evaluate formula parameters on backend
@@ -1829,8 +1840,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             convertedValue: param.convertedValue ?? null,
             selectedUnit: param.selectedUnit || '',
             isBillable: param.isBillable ?? true,
-            isReportable: param.isReportable !== false
-          }))
+            isReportable: param.isReportable !== false,
+            specimenIndex: Number(param.specimenIndex) > 0 ? Number(param.specimenIndex) : 0
+          })),
+          removedParameterIds: [...(testObj.removedParameterIds || [])] as number[]
         };
 
         if (apiGeneral) {

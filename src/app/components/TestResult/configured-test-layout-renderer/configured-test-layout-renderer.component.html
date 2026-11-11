@@ -624,7 +624,7 @@
                         type="button" class="spm-filter-pill"
                         [ngClass]="{ 'active': selectedSpecimenFilter === (spmIdx + 1) }"
                         (click)="setSpecimenFilter(spmIdx + 1)">
-                  {{ spm.id }} ({{ getBaseParameterCount() }})
+                  {{ spm.id }} ({{ getSpecimenRowCount(spmIdx) }})
                 </button>
               </div>
 
@@ -669,7 +669,7 @@
                             Specimen {{ getSpecimenIndexForParam(r) + 1 }} ({{ getSpecimenLabelForParam(r) }})
                           </span>
                           <span class="badge bg-white text-muted border text-xxs font-monospace">
-                            {{ getBaseParameterCount() }} Parameters
+                            {{ getSpecimenRowCount(getSpecimenIndexForParam(r)) }} Parameters
                           </span>
                         </div>
                       </td>

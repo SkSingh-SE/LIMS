@@ -37,13 +37,19 @@
   <!-- ================================================================ -->
   <div class="compact-teststrip" *ngIf="plans.length > 0">
     <!-- Left: Selected Tests Pills -->
-    <div class="teststrip-left">
-      <span class="text-secondary fw-semibold text-xxs">Selected Tests:</span>
-      <button *ngFor="let plan of plans; let p = index" type="button" class="testpill-compact"
-        [class.active]="activePlanIndex === p" (click)="selectPlanTab(p)">
-        <span>{{ plan.tests?.[0]?.name || plan.type }}</span>
-        <small class="text-muted ms-1">({{ plan.tests?.[0]?.status || 'In Progress' }})</small>
-      </button>
+    <div class="teststrip-left lims-teststrip-pills">
+      <span class="text-secondary fw-semibold text-xxs lims-teststrip-pills-label">Selected Tests:</span>
+      <ng-container *ngFor="let plan of plans; let p = index">
+        <button *ngIf="getExecutionMetrics(p, 0) as pm" type="button" class="testpill-compact lims-testpill-status"
+          [class.active]="activePlanIndex === p" [class.lims-testpill-status--fail]="pm.fail > 0"
+          [title]="getTestPillTitle(p)" (click)="selectPlanTab(p)">
+          <span class="lims-testpill-dot" [ngClass]="getSampleStatusBadgeClass(plan.tests?.[0]?.status || 'In Progress')"
+            aria-hidden="true"></span>
+          <span class="lims-testpill-name">{{ plan.tests?.[0]?.name || plan.type }}</span>
+          <span class="lims-testpill-count font-monospace">{{ pm.entered }}/{{ pm.total }}</span>
+          <span class="lims-testpill-fail font-monospace" *ngIf="pm.fail > 0">{{ pm.fail }} Fail</span>
+        </button>
+      </ng-container>
     </div>
 
     <!-- Right: Layout Selector, Specimen Stepper, Metrics, Studio Link -->

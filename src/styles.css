@@ -7002,6 +7002,81 @@ input[type="checkbox"]:checked {
   font-weight: 600;
 }
 
+/* Test pills row: name + status dot + entered/total; fail turns the border red.
+   Name truncates with ellipsis (full text in title); dot and counts never shrink. */
+.lims-teststrip-pills {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lims-teststrip-pills-label {
+  flex-shrink: 0;
+}
+
+.lims-testpill-status {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 300px;
+}
+
+.lims-testpill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  padding: 0;
+  background-color: var(--neutral-400) !important;
+  border: 1px solid var(--neutral-400) !important;
+}
+
+.lims-testpill-dot.badge-success {
+  background-color: var(--success-main) !important;
+  border-color: var(--success-main) !important;
+}
+
+.lims-testpill-dot.badge-warning {
+  background-color: var(--warning-main) !important;
+  border-color: var(--warning-main) !important;
+}
+
+.lims-testpill-dot.badge-danger {
+  background-color: var(--danger-main) !important;
+  border-color: var(--danger-main) !important;
+}
+
+.lims-testpill-dot.badge-info {
+  background-color: var(--info-main) !important;
+  border-color: var(--info-main) !important;
+}
+
+.lims-testpill-name {
+  flex: 0 1 auto;
+  min-width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lims-testpill-count,
+.lims-testpill-fail {
+  flex-shrink: 0;
+  font-size: var(--font-xs, 0.72rem);
+  font-weight: 600;
+}
+
+.lims-testpill-count {
+  color: var(--neutral-600);
+}
+
+.lims-testpill-fail {
+  color: var(--danger-main);
+}
+
+.lims-teststrip-pills .testpill-compact.lims-testpill-status--fail,
+.lims-teststrip-pills .testpill-compact.lims-testpill-status--fail.active {
+  border-color: var(--danger-main);
+}
+
 /* Ã¢â€â‚¬Ã¢â€â‚¬ B. Material & Metadata Summary Bar (.materialbar / .lims-materialbar) Ã¢â€â‚¬Ã¢â€â‚¬ */
 .materialbar,
 .lims-materialbar {

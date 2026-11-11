@@ -23,6 +23,7 @@ import { ConfiguredTestLayoutRendererComponent } from '../configured-test-layout
 import { TestVerdictPanelComponent } from '../test-verdict-panel/test-verdict-panel.component';
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
+import { ExecutionMetrics, countExecutionMetrics } from './execution-metrics';
 
 @Component({
   selector: 'app-test-result-entry-form',
@@ -2626,7 +2627,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }
   }
 
-  getExecutionMetrics(planIndex?: number, testIndex?: number): { total: number; entered: number; pass: number; fail: number; pending: number } {
+  getExecutionMetrics(planIndex?: number, testIndex?: number): ExecutionMetrics {
     const p = planIndex ?? this.activePlanIndex ?? 0;
     const t = testIndex ?? 0;
     const testGroup = this.getTests(p)?.at(t);
@@ -2636,29 +2637,22 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       return { total: rawParams.length, entered: 0, pass: 0, fail: 0, pending: rawParams.length };
     }
 
-    let entered = 0;
-    let pass = 0;
-    let fail = 0;
-    let pending = 0;
+    return countExecutionMetrics(paramsFA.controls.map(ctrl => ({
+      value: ctrl.get('value')?.value,
+      resultStatus: ctrl.get('resultStatus')?.value,
+      status: ctrl.get('status')?.value,
+      isWithinLimit: ctrl.get('isWithinLimit')?.value
+    })));
+  }
 
-    paramsFA.controls.forEach(ctrl => {
-      const val = ctrl.get('value')?.value;
-      const status = ctrl.get('resultStatus')?.value || ctrl.get('status')?.value;
-      const isWithinLimit = ctrl.get('isWithinLimit')?.value;
-      const hasValue = val !== null && val !== undefined && val !== '';
-      if (hasValue) {
-        entered++;
-      }
-      if (status === 'Pass' || status === 'Compliant' || status === 'Within Range' || isWithinLimit === true) {
-        pass++;
-      } else if (status === 'Fail' || status === 'Non-compliant' || status === 'Under Range' || status === 'Over Range' || isWithinLimit === false) {
-        fail++;
-      } else {
-        pending++;
-      }
-    });
-
-    return { total: paramsFA.length, entered, pass, fail, pending };
+  /** Hover text for a test pill: name, status and counts in plain words. */
+  getTestPillTitle(planIndex: number): string {
+    const plan = this.plans?.[planIndex];
+    const name = plan?.tests?.[0]?.name || plan?.type || 'Test';
+    const status = plan?.tests?.[0]?.status || 'In Progress';
+    const m = this.getExecutionMetrics(planIndex, 0);
+    const failText = m.fail > 0 ? `, ${m.fail} fail` : '';
+    return `${name} - ${status} - ${m.entered} of ${m.total} entered${failText}`;
   }
 
   formatDateDisplay(dateStr: any): string {

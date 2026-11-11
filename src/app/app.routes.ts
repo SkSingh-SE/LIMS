@@ -1,3 +1,4 @@
+import { permissionGuard } from './guards/permission.guard';
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
 import { LayoutComponent } from './components/layout/layout.component';
@@ -650,7 +651,7 @@ export const routes: Routes = [
             { path: 'testing/results/:id', redirectTo: ({ params, queryParams }) => inject(Router).createUrlTree(['/test-result/entry', params['id']], { queryParams: { mode: 'view', ...queryParams } }) },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
             { path: 'test-result', component: TestResultComponent },
-            { path: 'test-result/entry/:sampleId', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'test-result/entry/:sampleId', component: TestResultEntryFormComponent, canActivate: [permissionGuard], data: { permissions: ['CanReadPerformTest', 'CanReadTestResults', 'CanReadTestVerification'] }, canDeactivate: [unsavedChangesGuard] },
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },

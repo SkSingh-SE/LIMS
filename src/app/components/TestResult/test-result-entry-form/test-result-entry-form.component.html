@@ -1218,6 +1218,14 @@
                   <td class="bg-light fw-semibold text-secondary">Test Speed / Rate</td>
                   <td>{{ rawDataSheetData?.envData?.speed || '2 mm/min' }}</td>
                 </tr>
+                <tr *ngIf="rawDataSheetData?.conditions?.length">
+                  <td class="bg-light fw-semibold text-secondary">Specification Conditions</td>
+                  <td colspan="3">
+                    <span *ngFor="let c of rawDataSheetData.conditions; let last = last">
+                      <span class="text-secondary">{{ c.label }}:&nbsp;</span><span class="fw-semibold">{{ c.value }}</span><span *ngIf="!last">&nbsp;&nbsp;|&nbsp;&nbsp;</span>
+                    </span>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>

@@ -4678,6 +4678,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       observations,
       decisionRule,
       envData,
+      conditions: this.getSelectedConditionRows(test.headerId),
       rawParameters,
       timing: this.testTimingMap[test.headerId] || {},
       generatedAt: new Date()
@@ -4899,6 +4900,19 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   condSelection(headerId: number, facet: string): string | null {
     return this.getFacetSel(headerId, facet);
+  }
+
+  /** Chosen conditions of a test as label/value rows (used by the raw data sheet). Empty when nothing is chosen. */
+  getSelectedConditionRows(headerId: number): { label: string; value: string }[] {
+    const rows: { label: string; value: string }[] = [];
+    for (const facet of this.conditionFacets) {
+      if (!this.condFacetPresent(headerId, facet)) continue;
+      const sel = this.condSelection(headerId, facet);
+      if (!sel) continue;
+      const opt = this.condOptions(headerId, facet).find(o => o.value === sel);
+      if (opt?.label) rows.push({ label: this.conditionFacetLabels[facet] || facet, value: opt.label });
+    }
+    return rows;
   }
 
   /** Rebuild each dropdown from the lines left valid by the OTHER selections; auto-pick a single option. */

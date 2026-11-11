@@ -4764,6 +4764,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   private conditionOptionsMap: Record<number, Record<string, { value: string; label: string }[]>> = {};
   private conditionPresentMap: Record<number, Record<string, boolean>> = {};
   conditionConflicts: Record<number, string[]> = {};
+  /** True when neither the plan nor the sample carries a specification grade. */
+  conditionNoGrade: Record<number, boolean> = {};
   private conditionLinesCache: Record<string, any[]> = {};
   /** Facets pre-selected from the sample (shown with an "Auto" tag until the user changes them). */
   conditionAuto: Record<number, Record<string, boolean>> = {};
@@ -4943,8 +4945,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const test = plan?.tests?.[testIndex];
     if (!test?.headerId) return;
     const headerId = test.headerId;
-    const g1 = Number(test.specification1 || plan.specification1 || 0);
+    // Same grade sources the server uses: plan first, then the grade stored on the sample
+    const g1 = Number(test.specification1 || plan.specification1 || this.sample?.specificationGradeID || this.sample?.assignedGradeID || 0);
     const g2 = Number(test.specification2 || plan.specification2 || 0) || null;
+    this.conditionNoGrade[headerId] = !g1;
     if (!g1) return;
     const labTestId = Number(test.laboratoryTestId || test.labTestId || plan.labTestId || 0) || null;
     const methodId = Number(test.testMethodId || plan.methodId || 0) || null;

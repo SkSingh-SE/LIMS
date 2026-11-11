@@ -253,6 +253,9 @@
                         <div class="text-danger text-xxs mt-1" *ngIf="(conditionConflicts[hid] || []).length">
                           More than one limit applies to: {{ conditionConflicts[hid].join(', ') }}. Select the remaining conditions.
                         </div>
+                        <div class="text-secondary text-xxs mt-1" *ngIf="conditionNoGrade[hid]">
+                          No specification grade is linked to this test plan or sample, so conditions are not available.
+                        </div>
                         <div class="text-secondary text-xxs mt-1" *ngIf="conditionLines[hid] && conditionLines[hid].length === 0">
                           This grade has no condition-based lines for this test.
                         </div>

@@ -1,3 +1,4 @@
+import { missingRequiredFacets, suggestDimensionalFactorKey, suggestProductSizeKey } from '../../../utility/helper/spec-condition.helper';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -2473,6 +2474,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       return;
     }
 
+    // Conditions defined by the grade for this test must be chosen before completing
+    const missingConditions = this.getMissingConditions(headerId);
+    if (missingConditions.length > 0) {
+      this.conditionsAttempted[headerId] = true;
+      this.toastService.show(`Select specification conditions before completing: ${missingConditions.join(', ')}`, 'error');
+      return;
+    }
+
     // Check for empty values in parameters
     const missingValues = testParams.controls.filter((ctrl) => {
       const val = ctrl.get('value')?.value;
@@ -4756,6 +4765,20 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   private conditionPresentMap: Record<number, Record<string, boolean>> = {};
   conditionConflicts: Record<number, string[]> = {};
   private conditionLinesCache: Record<string, any[]> = {};
+  /** Facets pre-selected from the sample (shown with an "Auto" tag until the user changes them). */
+  conditionAuto: Record<number, Record<string, boolean>> = {};
+  /** Set once the user tries to complete, so unselected required conditions turn red. */
+  conditionsAttempted: Record<number, boolean> = {};
+  /** Which specification line each parameter's limits came from. */
+  requirementSources: Record<number, { name: string; min: any; max: any; unit: string; source: string }[]> = {};
+  readonly conditionFacetLabels: Record<string, string> = {
+    df: 'Dimensional Factor + Limit',
+    ht: 'Heat Treatment',
+    pc: 'Product Condition',
+    tc: 'Test Condition',
+    ps: 'Product Size',
+    or: 'Specimen Orientation'
+  };
 
   private lineFacetValue(line: any, facet: string): string | null {
     switch (facet) {
@@ -4877,6 +4900,43 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     f.specimenOrientationID = this.getFacetSel(headerId, 'or') ? Number(this.getFacetSel(headerId, 'or')) : null;
   }
 
+  /** Pre-select Dimensional Factor band and Product Size from the sample's own dimensions (editable). */
+  private autoSuggestConditions(headerId: number): void {
+    const lines = this.conditionLines[headerId] || [];
+    const auto = (this.conditionAuto[headerId] = this.conditionAuto[headerId] || {});
+    const suggestions: Record<string, string | null> = {
+      df: suggestDimensionalFactorKey(lines, this.sample),
+      ps: suggestProductSizeKey(lines, this.sample)
+    };
+    for (const fc of Object.keys(suggestions)) {
+      const key = suggestions[fc];
+      if (!key || this.getFacetSel(headerId, fc)) continue;
+      if (!this.condOptions(headerId, fc).some(o => o.value === key)) continue;
+      this.setFacetSel(headerId, fc, key);
+      auto[fc] = true;
+    }
+    this.refreshConditionOptions(headerId);
+  }
+
+  isAutoCondition(headerId: number, facet: string): boolean {
+    return !!this.conditionAuto[headerId]?.[facet];
+  }
+
+  /** Names of conditions this grade defines for the test that are still not chosen. */
+  getMissingConditions(headerId: number): string[] {
+    const selected: Record<string, string | null> = {};
+    const present: Record<string, boolean> = {};
+    for (const fc of this.conditionFacets) {
+      selected[fc] = this.getFacetSel(headerId, fc);
+      present[fc] = this.condFacetPresent(headerId, fc);
+    }
+    return missingRequiredFacets(this.conditionFacetLabels, present, selected);
+  }
+
+  isConditionInvalid(headerId: number, facet: string): boolean {
+    return !!this.conditionsAttempted[headerId] && this.condFacetPresent(headerId, facet) && !this.getFacetSel(headerId, facet);
+  }
+
   /** Load the grade's lines for this test + method, then build the dropdowns and apply limits. */
   initConditionEngine(planIndex: number, testIndex: number): void {
     const plan = this.plans[planIndex];
@@ -4893,6 +4953,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const ready = (lines: any[]) => {
       this.conditionLines[headerId] = lines;
       this.refreshConditionOptions(headerId);
+      if (!this.isViewMode) this.autoSuggestConditions(headerId);
       if (!this.isViewMode) this.applyConditionLines(planIndex, testIndex, false);
       this.cdr.markForCheck();
     };
@@ -4913,6 +4974,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const test = this.plans[planIndex]?.tests?.[testIndex];
     if (!test?.headerId) return;
     this.setFacetSel(test.headerId, facet, value || null);
+    if (this.conditionAuto[test.headerId]) this.conditionAuto[test.headerId][facet] = false;
     this.refreshConditionOptions(test.headerId);
     this.applyConditionLines(planIndex, testIndex, true);
   }
@@ -4933,6 +4995,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const matched = (this.conditionLines[headerId] || []).filter(l => this.lineMatchesSelection(l, headerId));
     this.matchedConditionLinesCount[headerId] = matched.length;
     const conflicts: string[] = [];
+    const sources: { name: string; min: any; max: any; unit: string; source: string }[] = [];
 
     const paramsFA = this.getParameters(planIndex, testIndex);
     for (let i = 0; paramsFA && i < paramsFA.length; i++) {
@@ -4957,8 +5020,16 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       if (line.unitName && !group.get('unit')?.value) group.get('unit')?.setValue(line.unitName);
       if (line.equation) group.get('formulaExpression')?.setValue(line.equation);
       if (line.acceptanceCriteria) group.get('acceptanceCriteria')?.setValue(line.acceptanceCriteria);
+      sources.push({
+        name: group.get('parameterName')?.value || '',
+        min: line.minValue,
+        max: line.maxValue,
+        unit: line.unitName || group.get('unit')?.value || '',
+        source: this.conditionFacets.map(fc => this.lineFacetLabel(line, fc)).filter(x => !!x).join(' · ') || 'Grade default'
+      });
     }
     this.conditionConflicts[headerId] = conflicts;
+    this.requirementSources[headerId] = sources;
 
     this.autoEvaluateAllFormulas();
     this.cdr.markForCheck();

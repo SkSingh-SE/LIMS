@@ -185,63 +185,69 @@
                       <ng-container *ngIf="plans[p].tests[t]?.headerId as hid">
                         <div class="spec-condition-grid">
                         <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'df')">
-                          <label class="spec-cond-label" [attr.for]="'cond-df-' + hid">Dimensional Factor + Limit</label>
-                          <select class="form-select form-select-sm" [id]="'cond-df-' + hid" [ngModel]="condSelection(hid, 'df')"
+                          <label class="spec-cond-label" [attr.for]="'cond-df-' + hid">Dimensional Factor + Limit <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, 'df')">Auto</span></label>
+                          <select class="form-select form-select-sm" [class.is-invalid]="isConditionInvalid(hid, 'df')" [id]="'cond-df-' + hid" [ngModel]="condSelection(hid, 'df')"
                             (ngModelChange)="onConditionFacetChanged(p, t, 'df', $event)" [ngModelOptions]="{ standalone: true }"
                             [disabled]="isViewMode">
                             <option [ngValue]="null">All sizes</option>
                             <option *ngFor="let o of condOptions(hid, 'df')" [ngValue]="o.value">{{ o.label }}</option>
                           </select>
+                          <span class="text-danger text-xxs" *ngIf="isConditionInvalid(hid, 'df')">Select dimensional factor.</span>
                         </div>
 
                         <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'ht')">
-                          <label class="spec-cond-label" [attr.for]="'cond-ht-' + hid">Heat Treatment</label>
-                          <select class="form-select form-select-sm" [id]="'cond-ht-' + hid" [ngModel]="condSelection(hid, 'ht')"
+                          <label class="spec-cond-label" [attr.for]="'cond-ht-' + hid">Heat Treatment <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, 'ht')">Auto</span></label>
+                          <select class="form-select form-select-sm" [class.is-invalid]="isConditionInvalid(hid, 'ht')" [id]="'cond-ht-' + hid" [ngModel]="condSelection(hid, 'ht')"
                             (ngModelChange)="onConditionFacetChanged(p, t, 'ht', $event)" [ngModelOptions]="{ standalone: true }"
                             [disabled]="isViewMode">
                             <option [ngValue]="null">All</option>
                             <option *ngFor="let o of condOptions(hid, 'ht')" [ngValue]="o.value">{{ o.label }}</option>
                           </select>
+                          <span class="text-danger text-xxs" *ngIf="isConditionInvalid(hid, 'ht')">Select heat treatment.</span>
                         </div>
 
                         <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'pc')">
-                          <label class="spec-cond-label" [attr.for]="'cond-pc-' + hid">Product Condition</label>
-                          <select class="form-select form-select-sm" [id]="'cond-pc-' + hid" [ngModel]="condSelection(hid, 'pc')"
+                          <label class="spec-cond-label" [attr.for]="'cond-pc-' + hid">Product Condition <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, 'pc')">Auto</span></label>
+                          <select class="form-select form-select-sm" [class.is-invalid]="isConditionInvalid(hid, 'pc')" [id]="'cond-pc-' + hid" [ngModel]="condSelection(hid, 'pc')"
                             (ngModelChange)="onConditionFacetChanged(p, t, 'pc', $event)" [ngModelOptions]="{ standalone: true }"
                             [disabled]="isViewMode">
                             <option [ngValue]="null">All</option>
                             <option *ngFor="let o of condOptions(hid, 'pc')" [ngValue]="o.value">{{ o.label }}</option>
                           </select>
+                          <span class="text-danger text-xxs" *ngIf="isConditionInvalid(hid, 'pc')">Select product condition.</span>
                         </div>
 
                         <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'tc')">
-                          <label class="spec-cond-label" [attr.for]="'cond-tc-' + hid">Test Condition</label>
-                          <select class="form-select form-select-sm" [id]="'cond-tc-' + hid" [ngModel]="condSelection(hid, 'tc')"
+                          <label class="spec-cond-label" [attr.for]="'cond-tc-' + hid">Test Condition <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, 'tc')">Auto</span></label>
+                          <select class="form-select form-select-sm" [class.is-invalid]="isConditionInvalid(hid, 'tc')" [id]="'cond-tc-' + hid" [ngModel]="condSelection(hid, 'tc')"
                             (ngModelChange)="onConditionFacetChanged(p, t, 'tc', $event)" [ngModelOptions]="{ standalone: true }"
                             [disabled]="isViewMode">
                             <option [ngValue]="null">All</option>
                             <option *ngFor="let o of condOptions(hid, 'tc')" [ngValue]="o.value">{{ o.label }}</option>
                           </select>
+                          <span class="text-danger text-xxs" *ngIf="isConditionInvalid(hid, 'tc')">Select test condition.</span>
                         </div>
 
                         <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'ps')">
-                          <label class="spec-cond-label" [attr.for]="'cond-ps-' + hid">Product Size</label>
-                          <select class="form-select form-select-sm" [id]="'cond-ps-' + hid" [ngModel]="condSelection(hid, 'ps')"
+                          <label class="spec-cond-label" [attr.for]="'cond-ps-' + hid">Product Size <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, 'ps')">Auto</span></label>
+                          <select class="form-select form-select-sm" [class.is-invalid]="isConditionInvalid(hid, 'ps')" [id]="'cond-ps-' + hid" [ngModel]="condSelection(hid, 'ps')"
                             (ngModelChange)="onConditionFacetChanged(p, t, 'ps', $event)" [ngModelOptions]="{ standalone: true }"
                             [disabled]="isViewMode">
                             <option [ngValue]="null">All</option>
                             <option *ngFor="let o of condOptions(hid, 'ps')" [ngValue]="o.value">{{ o.label }}</option>
                           </select>
+                          <span class="text-danger text-xxs" *ngIf="isConditionInvalid(hid, 'ps')">Select product size.</span>
                         </div>
 
                         <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'or')">
-                          <label class="spec-cond-label" [attr.for]="'cond-or-' + hid">Specimen Orientation</label>
-                          <select class="form-select form-select-sm" [id]="'cond-or-' + hid" [ngModel]="condSelection(hid, 'or')"
+                          <label class="spec-cond-label" [attr.for]="'cond-or-' + hid">Specimen Orientation <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, 'or')">Auto</span></label>
+                          <select class="form-select form-select-sm" [class.is-invalid]="isConditionInvalid(hid, 'or')" [id]="'cond-or-' + hid" [ngModel]="condSelection(hid, 'or')"
                             (ngModelChange)="onConditionFacetChanged(p, t, 'or', $event)" [ngModelOptions]="{ standalone: true }"
                             [disabled]="isViewMode">
                             <option [ngValue]="null">All</option>
                             <option *ngFor="let o of condOptions(hid, 'or')" [ngValue]="o.value">{{ o.label }}</option>
                           </select>
+                          <span class="text-danger text-xxs" *ngIf="isConditionInvalid(hid, 'or')">Select orientation.</span>
                         </div>
                         </div>
                         <div class="text-danger text-xxs mt-1" *ngIf="(conditionConflicts[hid] || []).length">
@@ -494,6 +500,30 @@
                   [isViewMode]="isViewMode">
                 </app-test-verdict-panel>
               </div>
+
+              <!-- Requirement source: which specification line gave each limit -->
+              <article class="dossier-card mb-2" *ngIf="(requirementSources[plans[p].tests[t]?.headerId] || []).length">
+                <div class="dossier-cardhead">
+                  <h3>Requirement Source</h3>
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">{{ (requirementSources[plans[p].tests[t]?.headerId] || []).length }} parameters</span>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered mb-0 text-xs">
+                    <thead>
+                      <tr><th>Parameter</th><th>Min</th><th>Max</th><th>Unit</th><th>Conditions applied</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of requirementSources[plans[p].tests[t]?.headerId]">
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.min ?? '—' }}</td>
+                        <td>{{ r.max ?? '—' }}</td>
+                        <td>{{ r.unit || '—' }}</td>
+                        <td>{{ r.source }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
 
               <!-- 7. Parameter-wise Scope & Measurement Uncertainty Table -->
               <article class="dossier-card mb-2">

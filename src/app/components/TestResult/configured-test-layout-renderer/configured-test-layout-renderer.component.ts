@@ -299,6 +299,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       next: (res: any) => {
         const details = res?.data || res;
         if (details) {
+          // The dropdown label carries the type ("Yield Strength - (Reported)"); the row keeps the master name
+          if (details.name && this.newParamData.parameterID === item.id) {
+            this.newParamData.parameterName = details.name;
+          }
           if (details.parameterUnit?.name) {
             this.newParamData.unit = details.parameterUnit.name;
           } else if (details.unit) {
@@ -1253,7 +1257,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   private createParamControl(data: any): FormGroup {
     return this.fb.group({
-      id: [data.id || null],
+      // 0 = new row (not saved yet); the API inserts rows with id 0 and the reload brings the new id back
+      id: [data.id || 0],
       parameterID: [data.parameterID || null],
       parameterName: [data.parameterName || '', Validators.required],
       unit: [data.unit || ''],

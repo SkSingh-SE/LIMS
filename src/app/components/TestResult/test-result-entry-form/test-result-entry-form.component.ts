@@ -1566,12 +1566,16 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const payload = this.buildSavePayload();
     console.log("SAVE Payload:", payload);
 
+    if (this.isSavingResult) return;
+    this.isSavingResult = true;
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
+        this.isSavingResult = false;
         this.toastService.show(response.message, 'success');
         this.resultSaved.emit(response);
       },
       error: (error) => {
+        this.isSavingResult = false;
         console.error("Error saving results:", error);
         this.toastService.show("Error saving test results", 'error');
       }
@@ -1579,6 +1583,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   }
 
   saveTestWise(planIndex: number, testIndex: number, onSaved?: (res?: any) => void): void {
+    // One save at a time: a second click before the first returns would send new rows (id 0) twice
+    if (this.isSavingResult) return;
     const planGroup = (this.resultForm.get('plans') as FormArray).at(planIndex) as FormGroup;
     const testGroup = (planGroup.get('tests') as FormArray).at(testIndex) as FormGroup;
     const testParams = testGroup.get('parameters') as FormArray;
@@ -1635,7 +1641,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       checklist: testObj.checklist,
       observations: testObj.observations,
       parameters: testParams.value.map((p: any) => ({
-        id: p.id,
+        id: p.id || 0, // new rows (added in this session) have no id yet
         parameterID: p.parameterID,
         parameterName: p.parameterName,
         unit: p.unit,
@@ -1672,8 +1678,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     }
 
     const testName = testObj.name || 'Test';
+    this.isSavingResult = true;
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
+        this.isSavingResult = false;
+        this.applySavedParameterIds(testParams, response);
         this.toastService.show(`${testName} — saved successfully`, 'success');
         this.resultSaved.emit(response);
         // Automatically evaluate formula parameters on backend
@@ -1683,8 +1692,25 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         }
       },
       error: (error) => {
+        this.isSavingResult = false;
         this.toastService.show(`Error saving ${testName}`, 'error');
       }
+    });
+  }
+
+  /** True while a save request is running; Save Draft / Complete are blocked until it returns. */
+  isSavingResult = false;
+
+  /**
+   * The save response lists the saved row IDs per test in the order they were sent.
+   * Rows added on this screen (id 0) take their new ID at once, so a second save updates them instead of inserting again.
+   */
+  private applySavedParameterIds(testParams: FormArray, response: any): void {
+    const ids: any[] = response?.saved?.[0]?.parameterIds || [];
+    if (!testParams || ids.length !== testParams.length) return;
+    ids.forEach((id, i) => {
+      const ctrl = testParams.at(i)?.get('id');
+      if (ctrl && !ctrl.value && Number(id) > 0) ctrl.setValue(Number(id), { emitEvent: false });
     });
   }
 
@@ -1788,7 +1814,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           checklist: testObj.checklist,
           observations: testObj.observations,
           parameters: testParams.map((param: any) => ({
-            id: param.id,
+            id: param.id || 0, // new rows (added in this session) have no id yet
             parameterID: param.parameterID,
             parameterName: param.parameterName,
             unit: param.unit,
@@ -2466,6 +2492,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   }
 
   completeTest(planIndex: number, testIndex: number): void {
+    if (this.isSavingResult) return; // a save is still running
     const test = this.plans[planIndex].tests[testIndex];
     const headerId = test.headerId;
 
@@ -5042,6 +5069,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     if (this.conditionAuto[test.headerId]) this.conditionAuto[test.headerId][facet] = false;
     this.refreshConditionOptions(test.headerId);
     this.applyConditionLines(planIndex, testIndex, true);
+  }
+
+  /** Rows added or removed in the layout table (Add Parameter, specimen count): new rows get their limits from the same matched spec lines. */
+  onRendererParametersAdjusted(planIndex: number, testIndex: number): void {
+    if (this.isViewMode) return;
+    this.applyConditionLines(planIndex, testIndex, false);
   }
 
   /** Re-apply limits after any selection change (kept for the older per-field handlers). */

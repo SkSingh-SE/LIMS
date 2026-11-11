@@ -143,7 +143,7 @@
                 </a>
                 @let completeBlockedReason = getCompleteBlockedReason(tbTest?.headerId);
                 <button type="button" class="btn btn-sm btn-lims btn-lims-save" (click)="completeTest(p, t)"
-                  [disabled]="!!completeBlockedReason" [title]="completeBlockedReason || 'Complete this test'">
+                  [disabled]="!!completeBlockedReason || isSavingResult" [title]="completeBlockedReason || 'Complete this test'">
                   <i class="bi bi-check-circle"></i><span>Complete</span>
                 </button>
               </div>
@@ -454,6 +454,7 @@
                       (environmentRequested)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])"
                       (multipleReadingsRequested)="openMultipleReadingsModal(p, t, $event.rowIdx)"
                       (photoUploadRequested)="switchTab('execution')"
+                      (parametersAdjusted)="onRendererParametersAdjusted(p, t)"
                       (specimenCountChanged)="onWorkbenchSpecimenCountChanged($event)">
                     </app-configured-test-layout-renderer>
                   </ng-container>
@@ -662,7 +663,7 @@
                 ✿ &nbsp; ISO/IEC 17025:2017 Compliance <span class="muted">· Validated test execution workbench</span>
               </div>
               <div class="footeractions">
-                <button type="button" class="btn" (click)="saveAsDraft(p, t)" [disabled]="isViewMode">
+                <button type="button" class="btn" (click)="saveAsDraft(p, t)" [disabled]="isViewMode || isSavingResult">
                   <i class="bi bi-bookmark me-1"></i><span>Save Draft</span>
                 </button>
                 <button type="button" class="btn" (click)="cancel()">

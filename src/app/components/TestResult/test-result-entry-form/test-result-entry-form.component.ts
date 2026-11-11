@@ -1216,6 +1216,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
               }
             } catch (e) {}
           }
+          this.restoreSpecConditions(test);
         }
       });
     });
@@ -1622,6 +1623,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       retestOfHeaderId: testObj.retestOfHeaderId || null,
       retestReasonCode: testObj.retestReasonCode || null,
       executionExtraJson: executionExtraJson || null,
+      ...this.getSpecConditionPayload(testObj.headerId),
       readings: testObj.readings,
       locations: testObj.locations,
       traversePoints: testObj.traversePoints,
@@ -1774,6 +1776,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           retestOfHeaderId: testObj.retestOfHeaderId || null,
           retestReasonCode: testObj.retestReasonCode || null,
           executionExtraJson: executionExtraJson || null,
+          ...this.getSpecConditionPayload(testObj.headerId),
           readings: testObj.readings,
           locations: testObj.locations,
           traversePoints: testObj.traversePoints,
@@ -4707,6 +4710,46 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // test + method), so only valid combinations are offered. A line that leaves a facet empty
   // is a wildcard for that facet.
   // ================================================================
+  /** Left-rail selections as real columns on the result header (limits are re-picked server-side from these). */
+  private getSpecConditionPayload(headerId: number): Record<string, any> {
+    const f: any = this.selectedConditionsMap[headerId];
+    const dfParts = (f?.facets?.['df'] || '').split('|');
+    const hasDf = !!f?.facets?.['df'];
+    const num = (v: string | undefined) => (v !== undefined && v !== '' ? Number(v) : null);
+    return {
+      specDimensionalFactorID: hasDf ? num(dfParts[0]) : null,
+      specDimLowerSymbol: hasDf ? dfParts[1] || null : null,
+      specDimLowerValue: hasDf ? num(dfParts[2]) : null,
+      specDimUpperSymbol: hasDf ? dfParts[3] || null : null,
+      specDimUpperValue: hasDf ? num(dfParts[4]) : null,
+      specHeatTreatmentID: f?.heatTreatmentID || null,
+      specProductConditionID1: f?.productConditionID1 || null,
+      specProductConditionID2: f?.productConditionID2 || null,
+      specProductSizeMasterID: f?.productSizeMasterID || null,
+      specTestCondition: f?.testCondition || null,
+      specSpecimenOrientationID: f?.specimenOrientationID || null
+    };
+  }
+
+  /** Rebuild the dropdown selections from the saved header columns (they win over the older JSON copy). */
+  private restoreSpecConditions(test: any): void {
+    const hasAny = test.specDimensionalFactorID || test.specHeatTreatmentID || test.specProductConditionID1 || test.specProductConditionID2
+      || test.specProductSizeMasterID || test.specTestCondition || test.specSpecimenOrientationID;
+    if (!hasAny) return;
+    const f: any = this.getConditionFilter(test.headerId);
+    f.facets = {
+      df: test.specDimensionalFactorID
+        ? [test.specDimensionalFactorID, test.specDimLowerSymbol ?? '', test.specDimLowerValue ?? '', test.specDimUpperSymbol ?? '', test.specDimUpperValue ?? ''].join('|')
+        : null,
+      ht: test.specHeatTreatmentID ? String(test.specHeatTreatmentID) : null,
+      pc: test.specProductConditionID1 || test.specProductConditionID2 ? `${test.specProductConditionID1 || 0}|${test.specProductConditionID2 || 0}` : null,
+      tc: test.specTestCondition || null,
+      ps: test.specProductSizeMasterID ? String(test.specProductSizeMasterID) : null,
+      or: test.specSpecimenOrientationID ? String(test.specSpecimenOrientationID) : null
+    };
+    this.syncLegacyConditionIds(test.headerId);
+  }
+
   private readonly conditionFacets = ['df', 'ht', 'pc', 'tc', 'ps', 'or'];
   conditionLines: Record<number, any[]> = {};
   private conditionOptionsMap: Record<number, Record<string, { value: string; label: string }[]>> = {};

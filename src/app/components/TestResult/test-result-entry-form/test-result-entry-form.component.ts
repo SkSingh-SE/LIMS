@@ -67,12 +67,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   set activeTab(value: 'execution' | 'nabl_audit') {
     this.tabByPlan[this.activePlanIndex] = value;
   }
-  caseDossierVisible = false;
-  openCaseDossier(): void {
-    this.caseDossierVisible = true;
+  caseDetailsVisible = false;
+  openCaseDetails(): void {
+    this.caseDetailsVisible = true;
   }
-  closeCaseDossier(): void {
-    this.caseDossierVisible = false;
+  closeCaseDetails(): void {
+    this.caseDetailsVisible = false;
   }
 
   testTabs: { id: 'execution' | 'nabl_audit'; label: string; icon: string }[] = [
@@ -290,6 +290,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     productConditionID1: number | null;
     productConditionID2: number | null;
     specimenOrientationID: number | null;
+    facets?: Record<string, string | null>;
+    productSizeMasterID?: number | null;
+    testCondition?: string | null;
   }> = {};
   cachedGradeSpecLines: Record<number, any[]> = {};
   matchedConditionLinesCount: Record<number, number> = {};
@@ -1216,6 +1219,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
         }
       });
     });
+
+    // Build left-rail condition dropdowns from each test's grade lines
+    this.plans.forEach((pl: any, pIdx: number) => (pl.tests || []).forEach((_t: any, tIdx: number) => this.initConditionEngine(pIdx, tIdx)));
 
     // Truthful empty state: never fabricate plans when API returns none
     this.payloadLoaded = true;
@@ -4695,89 +4701,234 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     return this.isEquipmentCalibrated(equipment) ? `Valid (${dateStr})` : `EXPIRED (${dateStr})`;
   }
 
-  onSpecificationConditionChanged(planIndex: number, testIndex: number): void {
+  // ================================================================
+  // Specification condition engine
+  // Dropdown options come ONLY from the grade's own specification lines (scoped to this
+  // test + method), so only valid combinations are offered. A line that leaves a facet empty
+  // is a wildcard for that facet.
+  // ================================================================
+  private readonly conditionFacets = ['df', 'ht', 'pc', 'tc', 'ps', 'or'];
+  conditionLines: Record<number, any[]> = {};
+  private conditionOptionsMap: Record<number, Record<string, { value: string; label: string }[]>> = {};
+  private conditionPresentMap: Record<number, Record<string, boolean>> = {};
+  conditionConflicts: Record<number, string[]> = {};
+  private conditionLinesCache: Record<string, any[]> = {};
+
+  private lineFacetValue(line: any, facet: string): string | null {
+    switch (facet) {
+      case 'df':
+        return line.dimensionalFactorID
+          ? [line.dimensionalFactorID, line.lowerLimitValue ?? '', line.lowerLimitDecimalValue ?? '', line.upperLimitValue ?? '', line.upperLimitDecimalValue ?? ''].join('|')
+          : null;
+      case 'ht':
+        return line.heatTreatmentID ? String(line.heatTreatmentID) : null;
+      case 'pc':
+        return line.productConditionID1 || line.productConditionID2 ? `${line.productConditionID1 || 0}|${line.productConditionID2 || 0}` : null;
+      case 'tc':
+        return (line.testCondition || '').trim() || null;
+      case 'ps':
+        return line.productSizeMasterID ? String(line.productSizeMasterID) : null;
+      case 'or':
+        return line.specimenOrientationID ? String(line.specimenOrientationID) : null;
+    }
+    return null;
+  }
+
+  /** Readable label, e.g. "Thickness > 16 ≤ 40 mm" or "As-Rolled + Descaled". */
+  private lineFacetLabel(line: any, facet: string): string {
+    switch (facet) {
+      case 'df': {
+        const lower = line.lowerLimitDecimalValue != null ? `${line.lowerLimitValue || '≥'} ${line.lowerLimitDecimalValue}` : '';
+        const upper = line.upperLimitDecimalValue != null ? `${line.upperLimitValue || '≤'} ${line.upperLimitDecimalValue}` : '';
+        return [line.dimensionalFactorName, lower, upper, line.dimensionalFactorUnit].filter(x => !!x).join(' ');
+      }
+      case 'ht':
+        return line.heatTreatmentName || '';
+      case 'pc':
+        return [line.productConditionName1, line.productConditionName2].filter(x => !!x).join(' + ');
+      case 'tc':
+        return (line.testCondition || '').trim();
+      case 'ps':
+        return line.productSizeName || '';
+      case 'or':
+        return line.specimenOrientationName || '';
+    }
+    return '';
+  }
+
+  private getFacetSel(headerId: number, facet: string): string | null {
+    return (this.getConditionFilter(headerId) as any).facets?.[facet] ?? null;
+  }
+
+  private setFacetSel(headerId: number, facet: string, value: string | null): void {
+    const f: any = this.getConditionFilter(headerId);
+    f.facets = f.facets || {};
+    f.facets[facet] = value;
+  }
+
+  private lineMatchesSelection(line: any, headerId: number, skipFacet?: string): boolean {
+    return this.conditionFacets.every(fc => {
+      if (fc === skipFacet) return true;
+      const sel = this.getFacetSel(headerId, fc);
+      if (!sel) return true;
+      const lv = this.lineFacetValue(line, fc);
+      return lv === null || lv === sel;
+    });
+  }
+
+  condFacetPresent(headerId: number, facet: string): boolean {
+    return !!this.conditionPresentMap[headerId]?.[facet];
+  }
+
+  condOptions(headerId: number, facet: string): { value: string; label: string }[] {
+    return this.conditionOptionsMap[headerId]?.[facet] || [];
+  }
+
+  condSelection(headerId: number, facet: string): string | null {
+    return this.getFacetSel(headerId, facet);
+  }
+
+  /** Rebuild each dropdown from the lines left valid by the OTHER selections; auto-pick a single option. */
+  private refreshConditionOptions(headerId: number): void {
+    const lines = this.conditionLines[headerId] || [];
+    const options: Record<string, { value: string; label: string }[]> = {};
+    const present: Record<string, boolean> = {};
+    for (let pass = 0; pass < 3; pass++) {
+      let changed = false;
+      for (const fc of this.conditionFacets) {
+        const found = new Map<string, string>();
+        for (const l of lines) {
+          if (!this.lineMatchesSelection(l, headerId, fc)) continue;
+          const v = this.lineFacetValue(l, fc);
+          if (v !== null && !found.has(v)) found.set(v, this.lineFacetLabel(l, fc));
+        }
+        options[fc] = Array.from(found, ([value, label]) => ({ value, label }));
+        present[fc] = lines.some(l => this.lineFacetValue(l, fc) !== null);
+        const sel = this.getFacetSel(headerId, fc);
+        if (sel && !found.has(sel)) {
+          this.setFacetSel(headerId, fc, null);
+          changed = true;
+        } else if (!sel && options[fc].length === 1) {
+          this.setFacetSel(headerId, fc, options[fc][0].value);
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
+    this.conditionOptionsMap[headerId] = options;
+    this.conditionPresentMap[headerId] = present;
+    this.syncLegacyConditionIds(headerId);
+  }
+
+  /** Keep the older id fields (persisted with the result) in step with the facet selections. */
+  private syncLegacyConditionIds(headerId: number): void {
+    const f: any = this.getConditionFilter(headerId);
+    const df = this.getFacetSel(headerId, 'df');
+    const pc = this.getFacetSel(headerId, 'pc');
+    f.dimensionalFactorID = df ? Number(df.split('|')[0]) : null;
+    f.heatTreatmentID = this.getFacetSel(headerId, 'ht') ? Number(this.getFacetSel(headerId, 'ht')) : null;
+    f.productConditionID1 = pc ? Number(pc.split('|')[0]) || null : null;
+    f.productConditionID2 = pc ? Number(pc.split('|')[1]) || null : null;
+    f.productSizeMasterID = this.getFacetSel(headerId, 'ps') ? Number(this.getFacetSel(headerId, 'ps')) : null;
+    f.testCondition = this.getFacetSel(headerId, 'tc');
+    f.specimenOrientationID = this.getFacetSel(headerId, 'or') ? Number(this.getFacetSel(headerId, 'or')) : null;
+  }
+
+  /** Load the grade's lines for this test + method, then build the dropdowns and apply limits. */
+  initConditionEngine(planIndex: number, testIndex: number): void {
     const plan = this.plans[planIndex];
     const test = plan?.tests?.[testIndex];
-    if (!test || !test.headerId) return;
-
+    if (!test?.headerId) return;
     const headerId = test.headerId;
-    const gradeId = Number(test.specification1 || test.specification2 || plan.specification1 || 0);
-    const filter = this.getConditionFilter(headerId);
+    const g1 = Number(test.specification1 || plan.specification1 || 0);
+    const g2 = Number(test.specification2 || plan.specification2 || 0) || null;
+    if (!g1) return;
+    const labTestId = Number(test.laboratoryTestId || test.labTestId || plan.labTestId || 0) || null;
+    const methodId = Number(test.testMethodId || plan.methodId || 0) || null;
+    const key = `${g1}_${g2}_${labTestId}_${methodId}`;
 
-    const applyLines = (lines: any[]) => {
-      if (!lines || lines.length === 0) return;
-      const targetLabTestId = test.laboratoryTestId || test.labTestId;
-      
-      const matched = lines.filter((line: any) => {
-        if (targetLabTestId && line.laboratoryTestID && line.laboratoryTestID !== targetLabTestId) {
-          return false;
-        }
-        if (filter.dimensionalFactorID && line.dimensionalFactorID && line.dimensionalFactorID !== Number(filter.dimensionalFactorID)) {
-          return false;
-        }
-        if (filter.heatTreatmentID && line.heatTreatmentID && line.heatTreatmentID !== Number(filter.heatTreatmentID)) {
-          return false;
-        }
-        if (filter.productConditionID1 && line.productConditionID1 && line.productConditionID1 !== Number(filter.productConditionID1)) {
-          return false;
-        }
-        if (filter.productConditionID2 && line.productConditionID2 && line.productConditionID2 !== Number(filter.productConditionID2)) {
-          return false;
-        }
-        if (filter.specimenOrientationID && line.specimenOrientationID && line.specimenOrientationID !== Number(filter.specimenOrientationID)) {
-          return false;
-        }
-        return true;
-      });
-
-      this.matchedConditionLinesCount[headerId] = matched.length;
-
-      const paramsFA = this.getParameters(planIndex, testIndex);
-      if (paramsFA && paramsFA.length > 0) {
-        matched.forEach((mLine: any) => {
-          for (let i = 0; i < paramsFA.length; i++) {
-            const group = paramsFA.at(i);
-            const pId = group.get('parameterID')?.value;
-            const pName = (group.get('parameterName')?.value || '').toLowerCase();
-            const mName = (mLine.parameterName || '').toLowerCase();
-
-            if ((pId && mLine.parameterID && pId === mLine.parameterID) || (pName && mName && pName === mName)) {
-              if (mLine.minValue !== undefined) group.get('minValue')?.setValue(mLine.minValue);
-              if (mLine.maxValue !== undefined) group.get('maxValue')?.setValue(mLine.maxValue);
-              if (mLine.unitName && !group.get('unit')?.value) group.get('unit')?.setValue(mLine.unitName);
-              if (mLine.equation) group.get('formulaExpression')?.setValue(mLine.equation);
-              if (mLine.acceptanceCriteria) group.get('acceptanceCriteria')?.setValue(mLine.acceptanceCriteria);
-              break;
-            }
-          }
-        });
-      }
-
-      this.autoEvaluateAllFormulas();
+    const ready = (lines: any[]) => {
+      this.conditionLines[headerId] = lines;
+      this.refreshConditionOptions(headerId);
+      if (!this.isViewMode) this.applyConditionLines(planIndex, testIndex, false);
       this.cdr.markForCheck();
-      this.toastService.show(`Conditions applied: ${matched.length} specification rule(s) active.`, 'info');
     };
+    if (this.conditionLinesCache[key]) {
+      ready(this.conditionLinesCache[key]);
+      return;
+    }
+    this.materialSpecService.getConditionOptions(g1, g2, labTestId, methodId).subscribe({
+      next: lines => {
+        this.conditionLinesCache[key] = lines || [];
+        ready(this.conditionLinesCache[key]);
+      },
+      error: () => this.toastService.show('Failed to load specification conditions for this grade', 'error')
+    });
+  }
 
-    if (gradeId > 0) {
-      if (this.cachedGradeSpecLines[gradeId]) {
-        applyLines(this.cachedGradeSpecLines[gradeId]);
-      } else {
-        this.materialSpecService.getMechanicalLimitsByGrade(gradeId).subscribe({
-          next: (lines: any[]) => {
-            this.cachedGradeSpecLines[gradeId] = lines || [];
-            applyLines(this.cachedGradeSpecLines[gradeId]);
-          },
-          error: () => {
-            this.toastService.show('Failed to fetch grade specification conditions', 'warning');
-          }
-        });
+  onConditionFacetChanged(planIndex: number, testIndex: number, facet: string, value: string | null): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test?.headerId) return;
+    this.setFacetSel(test.headerId, facet, value || null);
+    this.refreshConditionOptions(test.headerId);
+    this.applyConditionLines(planIndex, testIndex, true);
+  }
+
+  /** Re-apply limits after any selection change (kept for the older per-field handlers). */
+  onSpecificationConditionChanged(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test?.headerId) return;
+    this.refreshConditionOptions(test.headerId);
+    this.applyConditionLines(planIndex, testIndex, true);
+  }
+
+  /** Per parameter, the most specific matching line wins; equal-score lines with different limits are reported. */
+  private applyConditionLines(planIndex: number, testIndex: number, notify: boolean): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test?.headerId) return;
+    const headerId = test.headerId;
+    const matched = (this.conditionLines[headerId] || []).filter(l => this.lineMatchesSelection(l, headerId));
+    this.matchedConditionLinesCount[headerId] = matched.length;
+    const conflicts: string[] = [];
+
+    const paramsFA = this.getParameters(planIndex, testIndex);
+    for (let i = 0; paramsFA && i < paramsFA.length; i++) {
+      const group = paramsFA.at(i);
+      const pId = group.get('parameterID')?.value;
+      const pName = (group.get('parameterName')?.value || '').toLowerCase();
+      const candidates = matched.filter(l =>
+        (pId && l.parameterID && pId === l.parameterID) || (pName && (l.parameterName || '').toLowerCase() === pName));
+      if (!candidates.length) continue;
+
+      const score = (l: any) => this.conditionFacets.filter(fc => this.getFacetSel(headerId, fc) && this.lineFacetValue(l, fc) !== null).length;
+      const top = Math.max(...candidates.map(score));
+      const best = candidates.filter(l => score(l) === top);
+      const sameLimits = best.every(l => l.minValue === best[0].minValue && l.maxValue === best[0].maxValue);
+      if (!sameLimits) {
+        conflicts.push(group.get('parameterName')?.value || `Parameter ${pId}`);
+        if (top === 0) continue; // nothing selected yet: leave the limits as loaded
       }
+      const line = best[0];
+      if (line.minValue !== undefined) group.get('minValue')?.setValue(line.minValue);
+      if (line.maxValue !== undefined) group.get('maxValue')?.setValue(line.maxValue);
+      if (line.unitName && !group.get('unit')?.value) group.get('unit')?.setValue(line.unitName);
+      if (line.equation) group.get('formulaExpression')?.setValue(line.equation);
+      if (line.acceptanceCriteria) group.get('acceptanceCriteria')?.setValue(line.acceptanceCriteria);
+    }
+    this.conditionConflicts[headerId] = conflicts;
+
+    this.autoEvaluateAllFormulas();
+    this.cdr.markForCheck();
+    if (notify) {
+      this.toastService.show(
+        conflicts.length ? `${conflicts.length} parameter(s) still have more than one possible limit. Select the remaining conditions.` : `Conditions applied: ${matched.length} specification line(s) matched.`,
+        conflicts.length ? 'warning' : 'info');
     }
   }
 
   resetConditionFilters(planIndex: number, testIndex: number): void {
     const test = this.plans[planIndex]?.tests?.[testIndex];
-    if (!test || !test.headerId) return;
+    if (!test?.headerId) return;
     this.selectedConditionsMap[test.headerId] = {
       dimensionalFactorID: null,
       heatTreatmentID: null,
@@ -4785,16 +4936,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       productConditionID2: null,
       specimenOrientationID: null
     };
-    const f = this.selectedConditionsMap[test.headerId] as any;
-    f.dimensionalFactorItem = null;
-    f.heatTreatmentItem = null;
-    f.productCondition1Item = null;
-    f.productCondition2Item = null;
-    f.specimenOrientationItem = null;
-    this.onSpecificationConditionChanged(planIndex, testIndex);
+    this.refreshConditionOptions(test.headerId);
+    this.applyConditionLines(planIndex, testIndex, true);
   }
-
-
 
   // ================================================================
   // Searchable Dropdowns for Condition Engine & Layout Selection

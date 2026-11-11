@@ -33,8 +33,8 @@
 
     <!-- Right: Integrated Workflow Tabs -->
     <div class="casebar-right" *ngIf="plans.length > 0">
-      <button type="button" class="btn btn-sm btn-lims-secondary" (click)="openCaseDossier()" title="Case registration, sample, dimensions and planned tests">
-        <i class="bi bi-folder2-open me-1"></i><span>Case Dossier</span>
+      <button type="button" class="btn btn-sm btn-lims-secondary" (click)="openCaseDetails()" title="Case registration, sample, dimensions and planned tests">
+        <i class="bi bi-folder2-open me-1"></i><span>Case Details</span>
       </button>
     </div>
   </div>
@@ -178,86 +178,79 @@
                           <span class="text-secondary text-xxs">Grade:</span>
                           <strong class="text-dark">{{ plans[p].tests[t]?.specification || plans[p].specification || 'Standard Spec Grade' }}</strong>
                         </div>
-                        <span class="badge bg-secondary-subtle text-secondary text-xxs font-monospace">Line Filter</span>
+                        <span class="badge bg-secondary-subtle text-secondary text-xxs font-monospace">{{ (conditionLines[plans[p].tests[t]?.headerId] || []).length }} lines</span>
                       </div>
 
-                      <!-- 2-Column High-Density Grid for Condition Selectors -->
-                      <div class="spec-condition-grid">
-                        <!-- 1. Dimensional Factor (Size Band) -->
-                        <div class="spec-cond-item">
-                          <label class="spec-cond-label">Dimensional Factor</label>
-                          <app-searchable-dropdown
-                            [placeholder]="'All Sizes / Default'"
-                            [labelName]="'Dimensional Factor'"
-                            [fetchDataFn]="fetchDimensionalFactors"
-                            [selectedItem]="getDimensionalFactorItem(plans[p].tests[t]?.headerId)"
-                            (itemSelected)="onDimensionalFactorSelected(p, t, $event)"
-                            [hideLabel]="true"
-                            [smallInput]="true"
-                            [isDisabled]="isViewMode">
-                          </app-searchable-dropdown>
+                      <!-- Condition selectors: options come from this grade's own specification lines -->
+                      <ng-container *ngIf="plans[p].tests[t]?.headerId as hid">
+                        <div class="spec-condition-grid">
+                        <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'df')">
+                          <label class="spec-cond-label" [attr.for]="'cond-df-' + hid">Dimensional Factor + Limit</label>
+                          <select class="form-select form-select-sm" [id]="'cond-df-' + hid" [ngModel]="condSelection(hid, 'df')"
+                            (ngModelChange)="onConditionFacetChanged(p, t, 'df', $event)" [ngModelOptions]="{ standalone: true }"
+                            [disabled]="isViewMode">
+                            <option [ngValue]="null">All sizes</option>
+                            <option *ngFor="let o of condOptions(hid, 'df')" [ngValue]="o.value">{{ o.label }}</option>
+                          </select>
                         </div>
 
-                        <!-- 2. Heat Treatment -->
-                        <div class="spec-cond-item">
-                          <label class="spec-cond-label">Heat Treatment</label>
-                          <app-searchable-dropdown
-                            [placeholder]="'All Heat Treatments'"
-                            [labelName]="'Heat Treatment'"
-                            [fetchDataFn]="fetchHeatTreatments"
-                            [selectedItem]="getHeatTreatmentItem(plans[p].tests[t]?.headerId)"
-                            (itemSelected)="onHeatTreatmentSelected(p, t, $event)"
-                            [hideLabel]="true"
-                            [smallInput]="true"
-                            [isDisabled]="isViewMode">
-                          </app-searchable-dropdown>
+                        <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'ht')">
+                          <label class="spec-cond-label" [attr.for]="'cond-ht-' + hid">Heat Treatment</label>
+                          <select class="form-select form-select-sm" [id]="'cond-ht-' + hid" [ngModel]="condSelection(hid, 'ht')"
+                            (ngModelChange)="onConditionFacetChanged(p, t, 'ht', $event)" [ngModelOptions]="{ standalone: true }"
+                            [disabled]="isViewMode">
+                            <option [ngValue]="null">All</option>
+                            <option *ngFor="let o of condOptions(hid, 'ht')" [ngValue]="o.value">{{ o.label }}</option>
+                          </select>
                         </div>
 
-                        <!-- 3. Product Condition 1 -->
-                        <div class="spec-cond-item">
-                          <label class="spec-cond-label">Condition 1</label>
-                          <app-searchable-dropdown
-                            [placeholder]="'All Conditions'"
-                            [labelName]="'Condition 1'"
-                            [fetchDataFn]="fetchProductConditions1"
-                            [selectedItem]="getProductCondition1Item(plans[p].tests[t]?.headerId)"
-                            (itemSelected)="onProductCondition1Selected(p, t, $event)"
-                            [hideLabel]="true"
-                            [smallInput]="true"
-                            [isDisabled]="isViewMode">
-                          </app-searchable-dropdown>
+                        <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'pc')">
+                          <label class="spec-cond-label" [attr.for]="'cond-pc-' + hid">Product Condition</label>
+                          <select class="form-select form-select-sm" [id]="'cond-pc-' + hid" [ngModel]="condSelection(hid, 'pc')"
+                            (ngModelChange)="onConditionFacetChanged(p, t, 'pc', $event)" [ngModelOptions]="{ standalone: true }"
+                            [disabled]="isViewMode">
+                            <option [ngValue]="null">All</option>
+                            <option *ngFor="let o of condOptions(hid, 'pc')" [ngValue]="o.value">{{ o.label }}</option>
+                          </select>
                         </div>
 
-                        <!-- 4. Product Condition 2 -->
-                        <div class="spec-cond-item">
-                          <label class="spec-cond-label">Condition 2</label>
-                          <app-searchable-dropdown
-                            [placeholder]="'All Conditions'"
-                            [labelName]="'Condition 2'"
-                            [fetchDataFn]="fetchProductConditions2"
-                            [selectedItem]="getProductCondition2Item(plans[p].tests[t]?.headerId)"
-                            (itemSelected)="onProductCondition2Selected(p, t, $event)"
-                            [hideLabel]="true"
-                            [smallInput]="true"
-                            [isDisabled]="isViewMode">
-                          </app-searchable-dropdown>
+                        <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'tc')">
+                          <label class="spec-cond-label" [attr.for]="'cond-tc-' + hid">Test Condition</label>
+                          <select class="form-select form-select-sm" [id]="'cond-tc-' + hid" [ngModel]="condSelection(hid, 'tc')"
+                            (ngModelChange)="onConditionFacetChanged(p, t, 'tc', $event)" [ngModelOptions]="{ standalone: true }"
+                            [disabled]="isViewMode">
+                            <option [ngValue]="null">All</option>
+                            <option *ngFor="let o of condOptions(hid, 'tc')" [ngValue]="o.value">{{ o.label }}</option>
+                          </select>
                         </div>
 
-                        <!-- 5. Specimen Orientation (Spans full width) -->
-                        <div class="spec-cond-item spec-cond-item-full">
-                          <label class="spec-cond-label">Specimen Orientation</label>
-                          <app-searchable-dropdown
-                            [placeholder]="'All Orientations (L / T / Z)'"
-                            [labelName]="'Specimen Orientation'"
-                            [fetchDataFn]="fetchSpecimenOrientations"
-                            [selectedItem]="getSpecimenOrientationItem(plans[p].tests[t]?.headerId)"
-                            (itemSelected)="onSpecimenOrientationSelected(p, t, $event)"
-                            [hideLabel]="true"
-                            [smallInput]="true"
-                            [isDisabled]="isViewMode">
-                          </app-searchable-dropdown>
+                        <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'ps')">
+                          <label class="spec-cond-label" [attr.for]="'cond-ps-' + hid">Product Size</label>
+                          <select class="form-select form-select-sm" [id]="'cond-ps-' + hid" [ngModel]="condSelection(hid, 'ps')"
+                            (ngModelChange)="onConditionFacetChanged(p, t, 'ps', $event)" [ngModelOptions]="{ standalone: true }"
+                            [disabled]="isViewMode">
+                            <option [ngValue]="null">All</option>
+                            <option *ngFor="let o of condOptions(hid, 'ps')" [ngValue]="o.value">{{ o.label }}</option>
+                          </select>
                         </div>
-                      </div>
+
+                        <div class="spec-cond-item" *ngIf="condFacetPresent(hid, 'or')">
+                          <label class="spec-cond-label" [attr.for]="'cond-or-' + hid">Specimen Orientation</label>
+                          <select class="form-select form-select-sm" [id]="'cond-or-' + hid" [ngModel]="condSelection(hid, 'or')"
+                            (ngModelChange)="onConditionFacetChanged(p, t, 'or', $event)" [ngModelOptions]="{ standalone: true }"
+                            [disabled]="isViewMode">
+                            <option [ngValue]="null">All</option>
+                            <option *ngFor="let o of condOptions(hid, 'or')" [ngValue]="o.value">{{ o.label }}</option>
+                          </select>
+                        </div>
+                        </div>
+                        <div class="text-danger text-xxs mt-1" *ngIf="(conditionConflicts[hid] || []).length">
+                          More than one limit applies to: {{ conditionConflicts[hid].join(', ') }}. Select the remaining conditions.
+                        </div>
+                        <div class="text-secondary text-xxs mt-1" *ngIf="conditionLines[hid] && conditionLines[hid].length === 0">
+                          This grade has no condition-based lines for this test.
+                        </div>
+                      </ng-container>
                     </div>
                   </article>
 
@@ -1406,16 +1399,16 @@
 <!-- ================================================================ -->
 <!-- CASE DOSSIER (case-level data; not part of per-test tabs)        -->
 <!-- ================================================================ -->
-<div *ngIf="caseDossierVisible" class="modal d-block modal-backdrop-custom" tabindex="-1" (keydown.escape)="closeCaseDossier()">
+<div *ngIf="caseDetailsVisible" class="modal d-block modal-backdrop-custom" tabindex="-1" (keydown.escape)="closeCaseDetails()">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content border-0 shadow">
       <div class="modal-header modal-header-red py-2 px-3">
         <h6 class="modal-title m-0 d-flex align-items-center">
-          <i class="bi bi-folder2-open me-2 text-danger"></i><span>Case Dossier</span>
+          <i class="bi bi-folder2-open me-2 text-danger"></i><span>Case Details</span>
           <span class="badge bg-light text-dark border font-monospace ms-2" *ngIf="inward?.caseNo">{{ inward.caseNo }}</span>
           <span class="badge bg-light text-dark border font-monospace ms-1" *ngIf="sample?.sampleNo">{{ sample.sampleNo }}</span>
         </h6>
-        <button type="button" class="btn-close" aria-label="Close" (click)="closeCaseDossier()"></button>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeCaseDetails()"></button>
       </div>
       <div class="modal-body p-2">
     <!-- 2. Dual Case Registration & Sample Material Cards -->

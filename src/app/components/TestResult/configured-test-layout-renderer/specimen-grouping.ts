@@ -149,6 +149,67 @@ export function rowHasResult(row: { value?: unknown; remarks?: unknown } | null 
 export interface SpecimenRowStore {
   removedParameterIds?: number[];
   removedSpecimenRows?: AbstractControl[][];
+  /**
+   * IDs of saved rows whose value or remarks are stored in the database (as last loaded or saved).
+   * A row cleared on the screen but not saved yet still holds its value there, and the save refuses to delete it.
+   */
+  savedResultIds?: number[];
+}
+
+/** Why a row cannot be removed: it shows a value or remark, or its value is cleared but still saved. */
+export type RowRemovalReason = 'value' | 'saved';
+
+export interface RowRemovalBlock {
+  name: string;
+  reason: RowRemovalReason;
+}
+
+/** IDs of rows (as loaded from the API) that hold a value or remark. */
+export function savedResultIdsOf(rows: Array<{ id?: unknown; value?: unknown; remarks?: unknown }> | null | undefined): number[] {
+  return (rows || []).filter(r => Number(r?.id) > 0 && rowHasResult(r)).map(r => Number(r.id));
+}
+
+/**
+ * After a successful save: `sentRows` are the rows sent (payload order), `returnedIds` the IDs the save gave back in
+ * the same order, `removedIds` the rows deleted by that save.
+ */
+export function updateSavedResultIds(
+  store: SpecimenRowStore,
+  sentRows: Array<{ id?: unknown; value?: unknown; remarks?: unknown }>,
+  returnedIds: unknown[],
+  removedIds: number[] = []
+): void {
+  const ids = new Set<number>(store.savedResultIds || []);
+  (sentRows || []).forEach((r, i) => {
+    const id = Number(r?.id) > 0 ? Number(r.id) : Number(returnedIds?.[i]) || 0;
+    if (id <= 0) return;
+    if (rowHasResult(r)) ids.add(id);
+    else ids.delete(id);
+  });
+  removedIds.forEach(id => ids.delete(id));
+  store.savedResultIds = [...ids];
+}
+
+/** Null when the row may be removed; otherwise whether it shows a value or still has a saved one. */
+export function rowRemovalReason(row: any, store: SpecimenRowStore): RowRemovalReason | null {
+  if (rowHasResult(row)) return 'value';
+  const id = Number(row?.id) || 0;
+  if (id > 0 && (store.savedResultIds || []).includes(id)) return 'saved';
+  return null;
+}
+
+/** Plain message for a row that cannot be removed. */
+export function rowRemovalMessage(block: RowRemovalBlock): string {
+  return block.reason === 'value'
+    ? `"${block.name}" has a value. Clear the value first, then remove the row.`
+    : `"${block.name}" still has a saved value. Click Save Draft to save the cleared value, then remove the row.`;
+}
+
+/** Plain message for a specimen that cannot be removed. */
+export function specimenRemovalMessage(specimenLabel: string, block: RowRemovalBlock): string {
+  return block.reason === 'value'
+    ? `Specimen ${specimenLabel} has results (${block.name}). Clear its values first, then remove the specimen.`
+    : `Specimen ${specimenLabel} still has saved results (${block.name}). Click Save Draft to save the cleared values, then remove the specimen.`;
 }
 
 function rowValue(ctrl: AbstractControl | null | undefined): any {
@@ -216,14 +277,16 @@ export function addSpecimenRows(
 /**
  * Takes the rows of `specimen` out of the form when none of them holds a result. Saved IDs are queued for
  * deletion on the next save and the controls are kept for a later add. Specimens after it move down by one.
- * Returns the name of the first row that holds a result (nothing is removed then), or null when removed.
+ * Returns the first row that blocks the removal (a value on screen, or a cleared value not saved yet; nothing is
+ * removed then), or null when removed.
  */
-export function removeSpecimenRows(fa: FormArray, specimen: number, store: SpecimenRowStore): string | null {
+export function removeSpecimenRows(fa: FormArray, specimen: number, store: SpecimenRowStore): RowRemovalBlock | null {
   if (!fa) return null;
   const rows = rowsOfSpecimen(specimenIndexesOf(fa), specimen);
-  const blocking = rows.find(r => rowHasResult(rowValue(fa.at(r))));
-  if (blocking !== undefined) {
-    return rowValue(fa.at(blocking))?.parameterName || `Row ${blocking + 1}`;
+  for (const r of rows) {
+    const value = rowValue(fa.at(r));
+    const reason = rowRemovalReason(value, store);
+    if (reason) return { name: value?.parameterName || `Row ${r + 1}`, reason };
   }
 
   const removed: AbstractControl[] = rows.map(r => fa.at(r));

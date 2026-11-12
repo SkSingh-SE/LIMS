@@ -13,11 +13,13 @@ import {
   insertPositionForSpecimen,
   matchingRowInSpecimen,
   removeSpecimenRows,
-  rowHasResult,
+  rowRemovalMessage,
+  rowRemovalReason,
   rowsOfSpecimen,
   rowsOrderedBySpecimen,
   rowValuesOf,
   specimenIndexesOf,
+  specimenRemovalMessage,
   SpecimenRowStore,
 } from './specimen-grouping';
 import {
@@ -1137,12 +1139,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const targetIdx = spmIndex !== undefined ? spmIndex : this.specimens.length - 1;
 
     if (this.parametersFormArray) {
-      const blockingRow = removeSpecimenRows(this.parametersFormArray, targetIdx, this.rowStore);
-      if (blockingRow) {
-        this.toastService.show(
-          `Specimen S${targetIdx + 1} has results (${blockingRow}). Clear its values before removing the specimen.`,
-          'warning'
-        );
+      const block = removeSpecimenRows(this.parametersFormArray, targetIdx, this.rowStore);
+      if (block) {
+        this.toastService.show(specimenRemovalMessage(`S${targetIdx + 1}`, block), 'warning');
         return false;
       }
     }
@@ -1164,15 +1163,20 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return true;
   }
 
-  /** Removes one row. A saved row with a value or remark is kept (clear it first); a saved empty row is deleted on save. */
+  /**
+   * Removes one row (by its FormArray index; other rows keep their own controls, IDs and specimen index).
+   * A row with a value or remark is kept (clear it first). A row cleared on screen whose value is still saved is kept
+   * until Save Draft stores the cleared value. A saved empty row is deleted on the next save.
+   */
   removeParameter(rowIdx: number): void {
     if (this.isViewMode || this.isLocked || !this.parametersFormArray || this.parametersFormArray.length <= 1) return;
     const ctrl = this.parametersFormArray.at(rowIdx);
     if (!ctrl) return;
     const row = (ctrl as FormGroup).getRawValue();
     const savedId = Number(row?.id) || 0;
-    if (savedId > 0 && rowHasResult(row)) {
-      this.toastService.show(`"${row.parameterName || 'This row'}" has a saved result. Clear its value before removing the row.`, 'warning');
+    const reason = rowRemovalReason(row, this.rowStore);
+    if (reason) {
+      this.toastService.show(rowRemovalMessage({ name: row.parameterName || `Row ${rowIdx + 1}`, reason }), 'warning');
       return;
     }
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change

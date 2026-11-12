@@ -30,8 +30,10 @@ import {
   removeSpecimenRows,
   resolveSpecimenCount,
   resolveSpecimenIndexes,
+  savedResultIdsOf,
   specimenIndexesOf,
   SpecimenRowStore,
+  updateSavedResultIds,
 } from '../configured-test-layout-renderer/specimen-grouping';
 
 @Component({
@@ -1033,6 +1035,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               traversePoints: generalTest.traversePoints,
               checklist: generalTest.checklist,
               observations: generalTest.observations,
+              // Saved rows that hold a value or remark in the database: a row cleared on screen cannot be removed until saved
+              savedResultIds: savedResultIdsOf(generalTest.parameters),
               // Every saved row is kept; each row carries its own specimen index (see specimen-grouping.ts)
               parameters: (() => {
                 const allParams = generalTest.parameters || [];
@@ -1133,6 +1137,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               traversePoints: chemicalTest.traversePoints,
               checklist: chemicalTest.checklist,
               observations: chemicalTest.observations,
+              savedResultIds: savedResultIdsOf(chemicalTest.parameters),
               parameters: (chemicalTest.parameters || []).map((param: any) => ({
                 id: param.id,
                 parameterID: param.parameterID || null,
@@ -1688,6 +1693,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
         this.isSavingResult = false;
+        // Remember which rows now hold a saved value (uses the rows exactly as sent, before new ids are patched in)
+        updateSavedResultIds(
+          testObj as SpecimenRowStore,
+          commonData.parameters,
+          response?.saved?.[0]?.parameterIds || [],
+          commonData.removedParameterIds
+        );
         this.applySavedParameterIds(testParams, response);
         // Removed rows are gone from the database now
         const sentRemoved = commonData.removedParameterIds;

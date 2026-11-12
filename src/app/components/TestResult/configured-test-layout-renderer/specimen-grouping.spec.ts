@@ -8,10 +8,15 @@ import {
   resolveSpecimenCount,
   resolveSpecimenIndexes,
   rowHasResult,
+  rowRemovalMessage,
+  rowRemovalReason,
   rowsOfSpecimen,
   rowsOrderedBySpecimen,
+  savedResultIdsOf,
+  specimenRemovalMessage,
   specimenIndexesOf,
   SpecimenRowStore,
+  updateSavedResultIds,
 } from './specimen-grouping';
 
 const row = (id: number, name: string, specimenIndex: number | null = null, value: any = null) => ({
@@ -113,9 +118,26 @@ describe('specimen-grouping', () => {
     it('refuses to remove a specimen that holds results', () => {
       const fa = new FormArray([row(1, 'A', 0, 5), row(2, 'A', 1, 7)].map(formRow));
       const store: SpecimenRowStore = {};
-      expect(removeSpecimenRows(fa, 1, store)).toBe('A');
+      expect(removeSpecimenRows(fa, 1, store)).toEqual({ name: 'A', reason: 'value' });
       expect(fa.length).toBe(2);
       expect(store.removedParameterIds).toBeUndefined();
+    });
+
+    it('refuses a specimen whose value was cleared on screen but is still saved', () => {
+      const fa = new FormArray([row(1, 'A', 0, 5), row(2, 'A', 1, null)].map(formRow));
+      const store: SpecimenRowStore = { savedResultIds: [2] };
+      expect(removeSpecimenRows(fa, 1, store)).toEqual({ name: 'A', reason: 'saved' });
+      expect(fa.length).toBe(2);
+      expect(store.removedParameterIds).toBeUndefined();
+    });
+
+    it('removes the specimen once the cleared value has been saved', () => {
+      const fa = new FormArray([row(1, 'A', 0, 5), row(2, 'A', 1, null)].map(formRow));
+      const store: SpecimenRowStore = { savedResultIds: [2] };
+      updateSavedResultIds(store, [{ id: 2, value: null, remarks: '' }], [2]);
+      expect(store.savedResultIds).toEqual([]);
+      expect(removeSpecimenRows(fa, 1, store)).toBeNull();
+      expect(store.removedParameterIds).toEqual([2]);
     });
 
     it('removes an empty saved specimen, queues its ids, and brings the same rows back on add', () => {
@@ -143,6 +165,49 @@ describe('specimen-grouping', () => {
       const fa = new FormArray([row(1, 'A', 0), row(2, 'B', 0), row(3, 'A', 1)].map(formRow));
       expect(insertPositionForSpecimen(fa, 0)).toBe(2);
       expect(insertPositionForSpecimen(fa, 1)).toBe(3);
+    });
+  });
+
+  describe('saved results and row removal', () => {
+    it('lists the saved rows that hold a value or a remark', () => {
+      const rows = [
+        { id: 1, value: 5, remarks: '' },
+        { id: 2, value: null, remarks: '' },
+        { id: 3, value: '', remarks: 'note' },
+        { id: 0, value: 9, remarks: '' }, // new row, not saved yet
+      ];
+      expect(savedResultIdsOf(rows)).toEqual([1, 3]);
+      expect(savedResultIdsOf(null)).toEqual([]);
+    });
+
+    it('explains why a row cannot be removed', () => {
+      const store: SpecimenRowStore = { savedResultIds: [7] };
+      expect(rowRemovalReason({ id: 5, value: 3 }, store)).toBe('value');
+      expect(rowRemovalReason({ id: 7, value: null, remarks: '' }, store)).toBe('saved');
+      expect(rowRemovalReason({ id: 8, value: null, remarks: '' }, store)).toBeNull();
+      expect(rowRemovalReason({ id: 0, value: null, remarks: '' }, store)).toBeNull();
+    });
+
+    it('updates the saved ids after a save: new rows take the returned ids, cleared rows drop out, removed rows go', () => {
+      const store: SpecimenRowStore = { savedResultIds: [1, 2, 3] };
+      updateSavedResultIds(
+        store,
+        [
+          { id: 1, value: 5, remarks: '' }, // still has a value
+          { id: 2, value: null, remarks: '' }, // cleared and saved
+          { id: 0, value: 9, remarks: '' }, // new row, gets id 40
+        ],
+        [1, 2, 40],
+        [3]
+      );
+      expect(store.savedResultIds!.sort()).toEqual([1, 40]);
+    });
+
+    it('gives plain messages for rows and specimens', () => {
+      expect(rowRemovalMessage({ name: 'Width', reason: 'value' })).toContain('Clear the value first');
+      expect(rowRemovalMessage({ name: 'Width', reason: 'saved' })).toContain('Save Draft');
+      expect(specimenRemovalMessage('S2', { name: 'Width', reason: 'value' })).toContain('Specimen S2 has results');
+      expect(specimenRemovalMessage('S2', { name: 'Width', reason: 'saved' })).toContain('Save Draft');
     });
   });
 });

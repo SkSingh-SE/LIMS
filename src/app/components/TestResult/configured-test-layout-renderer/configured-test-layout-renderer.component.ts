@@ -501,6 +501,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['layoutConfig'] || changes['test'] || changes['testPlan']) {
       this.initLayoutData();
+    } else if (changes['environmentData']) {
+      this.applyRoomConditions();
     } else if (changes['activeTabSection']) {
       this.hydrateSpecimensFromParameters();
       this.recalculateSpecimens();
@@ -746,6 +748,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         }
         if (extra?.conditionValues) {
           this.conditionValues = { ...this.conditionValues, ...extra.conditionValues };
+          this.applyRoomConditions();
         }
         if (extra?.opinionData) {
           this.opinionData = { ...this.opinionData, ...extra.opinionData };
@@ -1498,6 +1501,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return this.getBaseParameterList().find(p => resolveTensileRole(p.name) === role)?.index ?? -1;
   }
 
+  /** Unit of the parameter behind a tensile result row (the unit that is saved and printed); the default when the row has none. */
+  roleUnit(role: SpecimenRole, fallback: string): string {
+    const idx = this.roleParamIndex(role);
+    const unit = idx >= 0 ? String(this.parametersFormArray.at(idx)?.get('unit')?.value || '').trim() : '';
+    return unit || fallback;
+  }
+
   /** Formula details of the parameter behind a tensile result row. */
   openRoleFormula(role: SpecimenRole): void {
     const idx = this.roleParamIndex(role);
@@ -2080,9 +2090,16 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Conditions & Environment
   // =========================================================================
   private initConditions(): void {
-    // Only what was recorded: room values from the environment record, speed and medium from the saved test
-    this.conditionValues['Temperature'] = this.test?.roomTemperature ?? this.environmentData?.roomTemperature ?? null;
-    this.conditionValues['Relative Humidity'] = this.test?.roomHumidity ?? this.environmentData?.roomHumidity ?? null;
+    this.applyRoomConditions();
+  }
+
+  /**
+   * Room temperature and humidity come from the environment record only (Record Ambient); a value kept in the saved
+   * extra data never replaces it, so this section and the traceability block always show the same.
+   */
+  private applyRoomConditions(): void {
+    this.conditionValues['Temperature'] = this.environmentData?.roomTemperature ?? this.test?.roomTemperature ?? null;
+    this.conditionValues['Relative Humidity'] = this.environmentData?.roomHumidity ?? this.test?.roomHumidity ?? null;
   }
 
   onConditionChange(key: string, val: any): void {

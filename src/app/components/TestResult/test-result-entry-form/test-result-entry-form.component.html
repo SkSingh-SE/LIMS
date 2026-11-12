@@ -445,7 +445,7 @@
                       [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
                       [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
                       [activeTabSection]="'execution'"
-                      [environmentData]="{ roomTemperature: getActiveTestGroup()?.get('roomTemperature')?.value, roomHumidity: getActiveTestGroup()?.get('roomHumidity')?.value }"
+                      [environmentData]="environmentMap[plans[p].tests[t]?.headerId]"
                       [timingData]="testTimingMap[plans[p].tests[t]?.headerId]"
                       [selectedEquipment]="selectedEquipmentMap[plans[p].tests[t]?.headerId] || []"
                       [testImages]="testImagesMap[plans[p].tests[t]?.headerId] || []"

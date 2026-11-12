@@ -250,9 +250,8 @@
                   <input type="number" step="0.1" class="form-control form-control-xs text-center fw-bold text-danger"
                          [(ngModel)]="conditionValues['Temperature']"
                          [ngModelOptions]="{ standalone: true }"
-                         (ngModelChange)="onConditionChange('Temperature', $event)"
-                         [readOnly]="isViewMode || isLocked"
-                         placeholder="°C" />
+                         [readOnly]="true" title="Recorded with Record Ambient"
+                         placeholder="Not recorded" />
                 </div>
               </div>
 
@@ -264,9 +263,8 @@
                   <input type="number" step="0.5" class="form-control form-control-xs text-center fw-bold text-primary"
                          [(ngModel)]="conditionValues['Relative Humidity']"
                          [ngModelOptions]="{ standalone: true }"
-                         (ngModelChange)="onConditionChange('Relative Humidity', $event)"
-                         [readOnly]="isViewMode || isLocked"
-                         placeholder="% RH" />
+                         [readOnly]="true" title="Recorded with Record Ambient"
+                         placeholder="Not recorded" />
                 </div>
               </div>
 
@@ -560,7 +558,7 @@
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>0.2% Proof Stress / Yield Strength</span>
                       </td>
-                      <td class="text-center fw-bold text-dark">MPa</td>
+                      <td class="text-center fw-bold text-dark">{{ roleUnit('proofStress', 'MPa') }}</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
                         {{ spm.proofStress != null ? spm.proofStress : '—' }}
                       </td>
@@ -591,7 +589,7 @@
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>Ultimate Tensile Strength (UTS)</span>
                       </td>
-                      <td class="text-center fw-bold text-dark">MPa</td>
+                      <td class="text-center fw-bold text-dark">{{ roleUnit('uts', 'MPa') }}</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
                         {{ spm.uts != null ? spm.uts : '—' }}
                       </td>
@@ -622,7 +620,7 @@
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>Percentage Elongation in 50mm / 4D</span>
                       </td>
-                      <td class="text-center fw-bold text-dark">%</td>
+                      <td class="text-center fw-bold text-dark">{{ roleUnit('elongation', '%') }}</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
                         {{ spm.elongation != null ? spm.elongation : '—' }}
                       </td>

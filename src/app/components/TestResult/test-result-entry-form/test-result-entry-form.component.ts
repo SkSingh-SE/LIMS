@@ -3382,12 +3382,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           labRoomId: res.labRoomId,
           labRoomName: res.labRoomName || (this.labRooms.find(r => r.id === payload.labRoomId)?.name) || ''
         };
+        // Keep the test form and model in step, so the layout section shows it and Save Draft sends the recorded values
+        this.syncRecordedEnvironment(headerId, res.roomTemperature, res.roomHumidity);
         this.closeRecordEnvironmentModal();
       },
       error: (err: any) => {
         this.toastService.show(err.error?.message || 'Failed to record lab environment', 'error');
       }
     });
+  }
+
+  private syncRecordedEnvironment(headerId: number, roomTemperature: any, roomHumidity: any): void {
+    this.plans.forEach((plan: any, p: number) => (plan.tests || []).forEach((test: any, t: number) => {
+      if (test?.headerId !== headerId) return;
+      test.roomTemperature = roomTemperature ?? null;
+      test.roomHumidity = roomHumidity ?? null;
+      this.getTests(p)?.at(t)?.patchValue({ roomTemperature: roomTemperature ?? null, roomHumidity: roomHumidity ?? null }, { emitEvent: false });
+    }));
   }
 
   fetchEnvironmentData(headerId: number): void {

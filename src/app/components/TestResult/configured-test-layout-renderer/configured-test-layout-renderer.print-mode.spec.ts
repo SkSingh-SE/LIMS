@@ -48,7 +48,7 @@ function tensileCase() {
       { pointSequence: 1, distanceMm: 0.1, hardnessValue: 600 },
       { pointSequence: 2, distanceMm: 0.2, hardnessValue: 500 },
     ],
-    executionExtraJson: JSON.stringify({ hiddenRows: ['finalLength'], conditionValues: { Medium: 'Air' } }),
+    executionExtraJson: JSON.stringify({ hiddenRows: ['finalLength'], conditionValues: { Medium: 'Air', Temperature: 23 } }),
   };
   const layoutConfig = {
     layoutName: 'Tensile',
@@ -131,6 +131,12 @@ describe('ConfiguredTestLayoutRendererComponent print mode', () => {
     expect(cmp.traversePoints.map(p => p.distance)).toEqual([0.1, 0.2]);
     expect(cmp.effectiveCaseDepth).toBe(0.15);
     expect(cmp.conditionValues['Medium']).toBe('Air');
+    // room temperature is taken from the environment record, never from the saved extra data
+    expect(cmp.conditionValues['Temperature']).toBeNull();
+    cmp.environmentData = { roomTemperature: 24.5, roomHumidity: 51 };
+    cmp.ngOnChanges({ environmentData: { currentValue: cmp.environmentData, previousValue: null, firstChange: false, isFirstChange: () => false } });
+    expect(cmp.conditionValues['Temperature']).toBe(24.5);
+    expect(cmp.roleUnit('proofStress', 'MPa')).toBe('MPa');
   });
 
   it('print mode shows no control: buttons, action columns and input borders are gone', () => {

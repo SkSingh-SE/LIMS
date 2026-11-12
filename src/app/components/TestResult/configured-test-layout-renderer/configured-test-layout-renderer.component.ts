@@ -67,7 +67,8 @@ export interface TraversePoint {
 export interface ChecklistItem {
   id: number;
   label: string;
-  status: 'Pass' | 'Fail' | 'NA';
+  /** '' = not answered yet; nothing is pre-ticked for the analyst. */
+  status: 'Pass' | 'Fail' | 'NA' | '';
 }
 
 export interface LocationData {
@@ -91,7 +92,7 @@ export interface DecisionRuleData {
   ruleType: string;
   confidenceLevel: number;
   guardBandMultiplier: number;
-  acceptanceStatus: 'Pass' | 'Fail' | 'Inconclusive' | 'Conditional';
+  acceptanceStatus: 'Pass' | 'Fail' | 'Inconclusive' | 'Conditional' | '';
   statementText: string;
 }
 
@@ -214,12 +215,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   cutoffLimit: number = 550; // HV
 
   // Checklist state
-  checklistItems: ChecklistItem[] = [
-    { id: 1, label: 'Specimen surface free from defects / machining marks', status: 'Pass' },
-    { id: 2, label: 'Physical dimensions verified within tolerance', status: 'Pass' },
-    { id: 3, label: 'Testing equipment calibration is valid', status: 'Pass' },
-    { id: 4, label: 'Standard testing SOP followed strictly', status: 'Pass' }
-  ];
+  // Items come from the layout (tableRows) or the saved test; nothing is pre-filled or pre-ticked
+  checklistItems: ChecklistItem[] = [];
 
   // Custom condition values
   conditionValues: Record<string, any> = {};
@@ -227,24 +224,22 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Hybrid Relational Collections & Extra state
   locations: LocationData[] = [];
   observations: ObservationData[] = [];
+  // Empty until the analyst fills them: no demo rule, rating or machine data is saved with a result
   decisionRule: DecisionRuleData = {
-    ruleType: 'Simple Acceptance',
+    ruleType: '',
     confidenceLevel: 95,
     guardBandMultiplier: 1.0,
-    acceptanceStatus: 'Pass',
-    statementText: 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).'
+    acceptanceStatus: '',
+    statementText: ''
   };
   classification: ClassificationData = {
-    classificationStandard: 'ASTM E45',
-    ratingType: 'Inclusion Rating',
-    selectedCategory: 'Type A (Sulfides)',
-    severity: 'Thin 1.0 / Heavy 0.5',
+    classificationStandard: '',
+    ratingType: '',
+    selectedCategory: '',
+    severity: '',
     remarks: ''
   };
-  customAttributes: CustomAttribute[] = [
-    { key: 'Machine Serial', value: 'UTM-500KN-02' },
-    { key: 'Calibration Due', value: '2027-03-31' }
-  ];
+  customAttributes: CustomAttribute[] = [];
 
   // Opinion & Interpretation state
   opinionData: {
@@ -535,13 +530,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       this.checklistItems = this.test.checklist.map((chk: any, idx: number) => ({
         id: chk.id || (idx + 1),
         label: chk.label || chk.inspectionPoint || `Item ${idx + 1}`,
-        status: chk.status || 'Pass'
+        status: chk.status || ''
       }));
     } else if (chkSec?.config?.tableRows && Array.isArray(chkSec.config.tableRows) && chkSec.config.tableRows.length > 0) {
       this.checklistItems = chkSec.config.tableRows.map((r: any, idx: number) => ({
         id: idx + 1,
         label: r.label,
-        status: 'Pass'
+        status: ''
       }));
     }
   }
@@ -1726,10 +1721,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Conditions & Environment
   // =========================================================================
   private initConditions(): void {
-    this.conditionValues['Temperature'] = this.test?.roomTemperature ?? this.environmentData?.roomTemperature ?? 23;
-    this.conditionValues['Relative Humidity'] = this.test?.roomHumidity ?? this.environmentData?.roomHumidity ?? 50;
-    this.conditionValues['Test Speed'] = '2 mm/min';
-    this.conditionValues['Medium'] = 'Ambient Air';
+    // Only what was recorded: room values from the environment record, speed and medium from the saved test
+    this.conditionValues['Temperature'] = this.test?.roomTemperature ?? this.environmentData?.roomTemperature ?? null;
+    this.conditionValues['Relative Humidity'] = this.test?.roomHumidity ?? this.environmentData?.roomHumidity ?? null;
   }
 
   onConditionChange(key: string, val: any): void {
@@ -1957,7 +1951,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     this.checklistItems.push({
       id: nextId,
       label: `Inspection check #${nextId}`,
-      status: 'Pass'
+      status: ''
     });
     this.syncCollectionsToTest();
     this.cdr.markForCheck();

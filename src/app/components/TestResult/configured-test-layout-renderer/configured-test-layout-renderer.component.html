@@ -220,19 +220,19 @@
               <div class="col-md-3 col-sm-6">
                 <div class="trace-box p-2 rounded bg-light border">
                   <span class="trace-label text-muted d-block text-xxs">Testing Equipment</span>
-                  <span class="trace-val text-dark">{{ selectedEquipment.length ? selectedEquipment[0]?.name : 'General Testing Machine' }}</span>
+                  <span class="trace-val text-dark">{{ selectedEquipment.length ? selectedEquipment[0]?.name : '—' }}</span>
                 </div>
               </div>
               <div class="col-md-3 col-sm-6">
                 <div class="trace-box p-2 rounded bg-light border">
                   <span class="trace-label text-muted d-block text-xxs">Performer / Analyst</span>
-                  <span class="trace-val text-dark">{{ timingData?.performedByName || 'Laboratory Analyst' }}</span>
+                  <span class="trace-val text-dark">{{ timingData?.performedByName || '—' }}</span>
                 </div>
               </div>
               <div class="col-md-3 col-sm-6">
                 <div class="trace-box p-2 rounded bg-light border">
                   <span class="trace-label text-muted d-block text-xxs">Test Discipline</span>
-                  <span class="trace-val text-dark">{{ testPlan?.discipline || 'Mechanical / Metallurgical' }}</span>
+                  <span class="trace-val text-dark">{{ testPlan?.discipline || '—' }}</span>
                 </div>
               </div>
             </div>
@@ -253,7 +253,7 @@
                          [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onConditionChange('Temperature', $event)"
                          [readOnly]="isViewMode || isLocked"
-                         placeholder="23.0" />
+                         placeholder="°C" />
                 </div>
               </div>
 
@@ -267,7 +267,7 @@
                          [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onConditionChange('Relative Humidity', $event)"
                          [readOnly]="isViewMode || isLocked"
-                         placeholder="50.0" />
+                         placeholder="% RH" />
                 </div>
               </div>
 
@@ -281,7 +281,7 @@
                          [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onConditionChange('Test Speed', $event)"
                          [readOnly]="isViewMode || isLocked"
-                         placeholder="2 mm/min" />
+                         placeholder="e.g. mm/min" />
                 </div>
               </div>
 
@@ -295,7 +295,7 @@
                          [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onConditionChange('Medium', $event)"
                          [readOnly]="isViewMode || isLocked"
-                         placeholder="Ambient Air" />
+                         placeholder="e.g. air, oil" />
                 </div>
               </div>
             </div>
@@ -1121,28 +1121,24 @@
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">0.2% Proof Stress (Rp0.2)</span>
                     <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rp }} MPa</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;250)</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Tensile Strength (Rm)</span>
                     <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rm }} MPa</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (485–650)</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Elongation (A%)</span>
                     <span class="fw-bold text-primary font-monospace fs-7">{{ chart.el }} %</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;22.0)</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Reduction of Area (Z%)</span>
                     <span class="fw-bold text-success font-monospace fs-7">{{ chart.ra }} %</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;30.0)</span>
                   </div>
                 </div>
               </div>
@@ -1336,7 +1332,7 @@
                 <div class="sign-box p-2 rounded border bg-light">
                   <span class="text-xxs text-muted d-block mb-1">Tested & Recorded By:</span>
                   <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-semibold small text-dark">{{ timingData?.performedByName || 'Laboratory Analyst' }}</span>
+                    <span class="fw-semibold small text-dark">{{ timingData?.performedByName || '—' }}</span>
                     <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs">Completed</span>
                   </div>
                 </div>
@@ -1556,7 +1552,7 @@
                         <input type="text" class="form-control form-control-xs"
                                [(ngModel)]="attr.value" [ngModelOptions]="{ standalone: true }"
                                (ngModelChange)="syncCollectionsToTest()"
-                               [readOnly]="isViewMode || isLocked" placeholder="e.g. UTM-500KN-02, Shift B..." />
+                               [readOnly]="isViewMode || isLocked" placeholder="Machine serial, shift, remarks..." />
                       </td>
                       <td class="text-center" *ngIf="!isViewMode && !isLocked">
                         <button type="button" class="btn-lims-icon btn-lims-delete"

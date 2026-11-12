@@ -23,6 +23,7 @@ import { ProductConditionService } from '../../../services/product-condition.ser
 import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { TestLayoutService } from '../../../services/test-layout.service';
 import { Observable, Subscription, of } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
@@ -36,7 +37,8 @@ import { TestVerdictPanelComponent } from '../test-verdict-panel/test-verdict-pa
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
 import { ExecutionMetrics, countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
-import { findByTensileRole, TensileRole } from '../configured-test-layout-renderer/tensile-parameter-roles';
+import { findByTensileRole,
+  tensileArea, TensileRole } from '../configured-test-layout-renderer/tensile-parameter-roles';
 import {
   addSpecimenRows,
   removeSpecimenRows,
@@ -803,15 +805,24 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return Number(plan?.tests?.[0]?.totalSpecimens || plan?.totalSpecimens || this.getActivePlannedQuantity());
   }
 
+  /** Completed, pending-verification and verified tests: no specimen count or layout change from the toolbar. */
+  isToolbarLocked(status?: string): boolean {
+    return ['Completed', 'PendingVerification', 'Verified'].includes(status || '');
+  }
+
+  isActiveTestFinalized(): boolean {
+    return this.isToolbarLocked(this.plans[this.activePlanIndex]?.tests?.[0]?.status);
+  }
+
   onWorkbenchSpecimenCountAdjust(delta: number): void {
-    if (this.isViewMode) return;
+    if (this.isViewMode || this.isActiveTestFinalized()) return;
     const current = this.getActiveSpecimenCount();
     const next = Math.max(1, Math.min(20, current + delta));
     this.updateWorkbenchSpecimenCount(next);
   }
 
   onWorkbenchSpecimenInputChange(event: Event): void {
-    if (this.isViewMode) return;
+    if (this.isViewMode || this.isActiveTestFinalized()) return;
     const input = event.target as HTMLInputElement;
     const val = Number(input.value);
     if (!isNaN(val) && val >= 1) {
@@ -1034,7 +1045,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               totalSpecimens: totalSpecimens,
               reportNo: generalTest.reportNo || `Auto-${gtIdx}`,
               status: generalTest.status || 'Pending',
-              testPurpose: generalTest.testPurpose || 'Material Qualification',
+              testPurpose: generalTest.testPurpose || '',
               remarks: generalTest.remarks || '',
               isNabl: generalTest.isNabl ?? false,
               equipmentId: generalTest.equipmentId || null,
@@ -1138,7 +1149,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               totalSpecimens: chemPlannedQuantity,
               reportNo: chemicalTest.reportNo || `Auto-${chemicalTest.headerId}`,
               status: chemicalTest.status || 'Pending',
-              testPurpose: chemicalTest.testPurpose || 'Material Qualification',
+              testPurpose: chemicalTest.testPurpose || '',
               remarks: chemicalTest.remarks || '',
               isNabl: chemicalTest.isNabl ?? false,
               equipmentId: chemicalTest.equipmentId || null,
@@ -1229,7 +1240,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           // Parse equipment IDs if available
           if (test.equipmentIdsJson) {
             try {
-              this.selectedEquipmentMap[test.headerId] = JSON.parse(test.equipmentIdsJson);
+              const saved = JSON.parse(test.equipmentIdsJson);
+              this.selectedEquipmentMap[test.headerId] = (Array.isArray(saved) ? saved : [])
+                .map((x: any) => (typeof x === 'object' && x ? x : { id: Number(x) }))
+                .filter((x: any) => x.id > 0);
+              this.selectedEquipmentMap[test.headerId].forEach((e: any) => this.loadEquipmentDetails(test.headerId, e.id));
             } catch (e) {
               this.selectedEquipmentMap[test.headerId] = [];
             }
@@ -1274,7 +1289,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           const parametersArray = testGroup.get('parameters') as FormArray;
 
           testGroup.patchValue({
-            testPurpose: generalTest.testPurpose || 'Material Qualification',
+            testPurpose: generalTest.testPurpose || '',
             remarks: generalTest.remarks || ''
           });
 
@@ -1307,7 +1322,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           const parametersArray = testGroup.get('parameters') as FormArray;
 
           testGroup.patchValue({
-            testPurpose: chemicalTest.testPurpose || 'Material Qualification',
+            testPurpose: chemicalTest.testPurpose || '',
             remarks: chemicalTest.remarks || ''
           });
 
@@ -1382,7 +1397,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       headerId: [test.headerId],
       name: [test.name],
       reportNo: [test.reportNo],
-      testPurpose: [test.testPurpose || 'Material Qualification'],
+      testPurpose: [test.testPurpose || ''],
       remarks: [test.remarks || ''],
       roomTemperature: [test.roomTemperature ?? null],
       roomHumidity: [test.roomHumidity ?? null],
@@ -1491,17 +1506,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
     // If parameter exists in DB (has ID), delete from backend first, then remove from UI
     if (paramId && paramId > 0) {
-      if (!confirm(`Delete parameter "${paramName}"? This cannot be undone.`)) return;
-
-      this.testResultService.deleteParameter(paramId).subscribe({
-        next: () => {
-          this.getParameters(planIndex, testIndex).removeAt(paramIndex);
-          this.toastService.show('Parameter removed', 'success');
-        },
-        error: (err: any) => {
-          this.toastService.show(err?.error?.message || 'Failed to delete parameter from server', 'error');
-        }
-      });
+      this.askConfirm('Delete parameter', `Delete parameter "${paramName}"? This cannot be undone.`, () => {
+        this.testResultService.deleteParameter(paramId).subscribe({
+          next: () => {
+            this.getParameters(planIndex, testIndex).removeAt(paramIndex);
+            this.toastService.show('Parameter removed', 'success');
+          },
+          error: (err: any) => {
+            this.toastService.show(err?.error?.message || 'Failed to delete parameter from server', 'error');
+          }
+        });
+      }, { confirmLabel: 'Delete', variant: 'danger' });
     } else {
       // New unsaved parameter — just remove from UI
       this.getParameters(planIndex, testIndex).removeAt(paramIndex);
@@ -1602,6 +1617,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
         this.isSavingResult = false;
+        this.equipmentDirty = {};
         this.toastService.show(response.message, 'success');
         this.resultSaved.emit(response);
       },
@@ -1655,7 +1671,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const commonData = {
       headerId,
       equipmentIdsJson,
-      testPurpose: testGroup.get('testPurpose')?.value || 'Material Qualification',
+      testPurpose: testGroup.get('testPurpose')?.value || '',
       remarks: testGroup.get('remarks')?.value || '',
       roomTemperature: testGroup.get('roomTemperature')?.value ?? null,
       roomHumidity: testGroup.get('roomHumidity')?.value ?? null,
@@ -1723,6 +1739,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     this.testResultService.saveTestResult(payload).subscribe({
       next: (response) => {
         this.isSavingResult = false;
+        this.equipmentDirty[headerId] = false;
         // Remember which rows now hold a saved value (uses the rows exactly as sent, before new ids are patched in)
         updateSavedResultIds(
           testObj as SpecimenRowStore,
@@ -1850,7 +1867,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         const commonData = {
           headerId: headerId,
           equipmentIdsJson: equipmentIdsJson,
-          testPurpose: test.testPurpose || 'Material Qualification',
+          testPurpose: test.testPurpose || '',
           remarks: test.remarks || '',
           roomTemperature: test.roomTemperature ?? null,
           roomHumidity: test.roomHumidity ?? null,
@@ -2503,6 +2520,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return;
     }
 
+    // The server checks the SAVED equipment, so a pick made on the screen must be saved first
+    if (this.equipmentDirty[headerId]) {
+      this.toastService.show('Equipment was changed. Click Save Draft to store it, then start the test.', 'warning');
+      return;
+    }
+
     // Call configuration validation endpoint
     this.testResultService.validateTestConfiguration(headerId).subscribe({
       next: (valResult) => {
@@ -2513,15 +2536,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           return;
         }
 
-        if (confirm(`Start test "${test.name}"? This will lock test configuration (methods, specifications, parameters) and record start time.`)) {
-          this.executeStartTest(planIndex, testIndex);
-        }
+        this.askConfirm('Start test', `Start test "${test.name}"? This will lock test configuration (methods, specifications, parameters) and record start time.`,
+          () => this.executeStartTest(planIndex, testIndex), { confirmLabel: 'Start Test' });
       },
       error: (err) => {
         console.warn('Validate test configuration call failed, proceeding with confirm prompt', err);
-        if (confirm(`Start test "${test.name}"? This will lock test configuration and record start time.`)) {
-          this.executeStartTest(planIndex, testIndex);
-        }
+        this.askConfirm('Start test', `Start test "${test.name}"? This will lock test configuration and record start time.`,
+          () => this.executeStartTest(planIndex, testIndex), { confirmLabel: 'Start Test' });
       }
     });
   }
@@ -2589,7 +2610,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     // Recalculate all formulas before completion
     this.calculateParameters(planIndex, testIndex);
 
-    if (confirm(`Complete test "${test.name}"? This will finalize test results, evaluate overall pass/fail status, and generate audit record.`)) {
+    this.askConfirm('Complete test', `Complete test "${test.name}"? This will finalize test results, evaluate overall pass/fail status, and generate audit record.`, () => {
       // Save test data first, then trigger completion sequentially
       this.saveTestWise(planIndex, testIndex, () => {
         this.testResultService.completeTest(headerId).subscribe({
@@ -2617,7 +2638,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           }
         });
       });
-    }
+    }, { confirmLabel: 'Complete Test' });
   }
 
   // ================================================================
@@ -2912,7 +2933,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   markAsNonconforming(planIndex: number, testIndex: number): void {
     const test = this.plans[planIndex]?.tests[testIndex];
-    if (confirm(`Mark test "${test?.name || 'Test'}" as Nonconforming work (ISO 17025 Clause 7.10)?`)) {
+    this.askConfirm('Nonconforming work', `Mark test "${test?.name || 'Test'}" as Nonconforming work (ISO 17025 Clause 7.10)?`, () => {
       this.router.navigate(['/non-conforming-work/create'], {
         state: {
           sampleId: this.sampleId,
@@ -2923,7 +2944,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           headerId: test?.headerId
         }
       });
-    }
+    }, { variant: 'warning', confirmLabel: 'Continue' });
   }
 
   saveAsDraft(planIndex: number, testIndex: number): void {
@@ -2997,6 +3018,24 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   isSubmittingVerification = false;
   isSubmittingReport = false;
   showVerificationConfirmDialog = false;
+
+  /** One confirm dialog for every "Are you sure?" on this screen (replaces window.confirm). */
+  confirmState: { visible: boolean; title: string; message: string; confirmLabel: string; variant: 'danger' | 'primary' | 'warning'; run: (() => void) | null } =
+    { visible: false, title: '', message: '', confirmLabel: 'Confirm', variant: 'primary', run: null };
+
+  askConfirm(title: string, message: string, run: () => void, opts: { confirmLabel?: string; variant?: 'danger' | 'primary' | 'warning' } = {}): void {
+    this.confirmState = { visible: true, title, message, confirmLabel: opts.confirmLabel || 'Confirm', variant: opts.variant || 'primary', run };
+  }
+
+  onGenericConfirmed(): void {
+    const run = this.confirmState.run;
+    this.confirmState = { ...this.confirmState, visible: false, run: null };
+    run?.();
+  }
+
+  onGenericCancelled(): void {
+    this.confirmState = { ...this.confirmState, visible: false, run: null };
+  }
   pendingVerificationTarget?: { planIndex: number; testIndex: number };
 
   canSubmitForVerification(status?: string): boolean {
@@ -3367,27 +3406,28 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return name.includes('tensile') || name.includes('tension') || name.includes('a370') || name.includes('is 1608');
   }
 
+  /**
+   * Key tensile results for the tiles. Values come from the live form rows (first specimen), limits only from the
+   * row's own applied limit: a result without a limit is shown as INFO, never judged against an invented number.
+   */
   getCalculatedKeyResults(planIndex: number, testIndex: number): Array<{
     symbol: string;
     name: string;
     value: string;
     unit: string;
     requirement: string;
-    status: 'PASS' | 'FAIL' | 'PENDING';
+    status: 'PASS' | 'FAIL' | 'PENDING' | 'INFO';
   }> {
     const test = this.plans?.[planIndex]?.tests?.[testIndex];
     if (!test) return [];
 
-    const results: Array<{
-      symbol: string;
-      name: string;
-      value: string;
-      unit: string;
-      requirement: string;
-      status: 'PASS' | 'FAIL' | 'PENDING';
-    }> = [];
+    type Tile = { symbol: string; name: string; value: string; unit: string; requirement: string; status: 'PASS' | 'FAIL' | 'PENDING' | 'INFO' };
+    const results: Tile[] = [];
 
-    const params: any[] = test.parameters || [];
+    const formRows = this.getParameters(planIndex, testIndex);
+    const params: any[] = formRows
+      ? formRows.controls.map(c => (c as FormGroup).getRawValue()).filter(r => !(Number(r.specimenIndex) > 0))
+      : (test.parameters || []);
     const spm = this.layoutRendererComponent?.specimens?.[0];
 
     const findParam = (terms: string[]) =>
@@ -3405,11 +3445,20 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const elParam = byRole('elongation');
     const ystsParam = findParam(['ys/ts', 'ratio']);
 
-    // 1. Cross-sectional Area
+    const num = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+    /** The limit the row applies (set by the specification conditions), min / max may each be missing. */
+    const limitOf = (pm: any) => ({ min: num(pm?.minValue ?? pm?.specMinValue), max: num(pm?.maxValue ?? pm?.specMaxValue) });
+    const limitText = (l: { min: number | null; max: number | null }) =>
+      l.min !== null && l.max !== null ? `${l.min} – ${l.max}` : l.min !== null ? `≥ ${l.min}` : l.max !== null ? `≤ ${l.max}` : '';
+    const verdict = (v: number, l: { min: number | null; max: number | null }): 'PASS' | 'FAIL' | 'INFO' =>
+      l.min === null && l.max === null ? 'INFO' : (l.min === null || v >= l.min) && (l.max === null || v <= l.max) ? 'PASS' : 'FAIL';
+
+    // 1. Cross-sectional area: a formula result, never judged
+    const sampleArea = tensileArea(num(this.sample?.thickness), num(this.sample?.width), num(this.sample?.diameter));
     const areaVal = areaParam?.value ?? spm?.area ?? (
-      (widthParam?.value && thickParam?.value)
+      (num(widthParam?.value) !== null && num(thickParam?.value) !== null)
         ? (Number(widthParam.value) * Number(thickParam.value))
-        : null
+        : sampleArea
     );
     if (areaVal != null && areaVal !== '') {
       results.push({
@@ -3418,72 +3467,45 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         value: Number(areaVal).toFixed(areaParam?.decimalPrecision != null ? areaParam.decimalPrecision : 2),
         unit: areaParam?.unit || 'mm²',
         requirement: 'Formula: W × T',
-        status: 'PASS'
+        status: 'INFO'
       });
     }
 
-    // 2. Yield Strength (0.5% EUL / 0.2% Proof)
-    const ysVal = ysParam?.value ?? spm?.proofStress;
-    if (ysVal != null && ysVal !== '') {
-      const reqMin = ysParam?.specMinValue ?? ysParam?.minValue ?? 485;
-      const reqMax = ysParam?.specMaxValue ?? ysParam?.maxValue ?? 605;
-      const isPass = Number(ysVal) >= reqMin && (reqMax ? Number(ysVal) <= reqMax : true);
+    const pushResult = (symbol: string, defaultName: string, pm: any, raw: any, defaultUnit: string) => {
+      const v = num(raw);
+      if (v === null) return;
+      const l = limitOf(pm);
       results.push({
-        symbol: 'R_p0.2',
-        name: ysParam?.parameterName || '0.5% Yield Strength',
-        value: String(ysVal),
-        unit: ysParam?.unit || 'MPa',
-        requirement: reqMin + ' - ' + reqMax,
-        status: isPass ? 'PASS' : 'FAIL'
+        symbol,
+        name: pm?.parameterName || defaultName,
+        value: String(raw),
+        unit: pm?.unit || defaultUnit,
+        requirement: limitText(l),
+        status: verdict(v, l)
       });
-    }
+    };
 
-    // 3. Ultimate Tensile Strength (UTS)
+    // 2-4. Yield strength, tensile strength, elongation
+    pushResult('R_p0.2', 'Yield Strength', ysParam, ysParam?.value ?? spm?.proofStress, 'MPa');
     const utsVal = utsParam?.value ?? spm?.uts;
-    if (utsVal != null && utsVal !== '') {
-      const reqMin = utsParam?.specMinValue ?? utsParam?.minValue ?? 570;
-      const reqMax = utsParam?.specMaxValue ?? utsParam?.maxValue ?? 760;
-      const isPass = Number(utsVal) >= reqMin && (reqMax ? Number(utsVal) <= reqMax : true);
-      results.push({
-        symbol: 'R_m',
-        name: utsParam?.parameterName || 'Tensile Strength (UTS)',
-        value: String(utsVal),
-        unit: utsParam?.unit || 'MPa',
-        requirement: reqMin + ' - ' + reqMax,
-        status: isPass ? 'PASS' : 'FAIL'
-      });
-    }
+    pushResult('R_m', 'Tensile Strength (UTS)', utsParam, utsVal, 'MPa');
+    pushResult('A', 'Elongation (%)', elParam, elParam?.value ?? spm?.elongation, '%');
 
-    // 4. Percentage Elongation
-    const elVal = elParam?.value ?? spm?.elongation;
-    if (elVal != null && elVal !== '') {
-      const reqMin = elParam?.specMinValue ?? elParam?.minValue ?? 25.0;
-      const isPass = Number(elVal) >= reqMin;
-      results.push({
-        symbol: 'A',
-        name: elParam?.parameterName || 'Elongation (%)',
-        value: String(elVal),
-        unit: elParam?.unit || '%',
-        requirement: '≥ ' + reqMin + ' min',
-        status: isPass ? 'PASS' : 'FAIL'
-      });
-    }
-
-    // 5. YS / TS Ratio
+    // 5. YS / TS ratio (calculated here when the test has no ratio parameter)
+    const ysVal = ysParam?.value ?? spm?.proofStress;
     let ystsVal = ystsParam?.value;
     if ((ystsVal == null || ystsVal === '') && ysVal && utsVal && Number(utsVal) > 0) {
       ystsVal = (Number(ysVal) / Number(utsVal)).toFixed(2);
     }
-    if (ystsVal != null && ystsVal !== '') {
-      const reqMax = ystsParam?.specMaxValue ?? ystsParam?.maxValue ?? 0.90;
-      const isPass = Number(ystsVal) <= reqMax;
+    if (num(ystsVal) !== null) {
+      const l = limitOf(ystsParam);
       results.push({
         symbol: 'YS/TS',
         name: 'Yield / Tensile Ratio',
         value: String(ystsVal),
         unit: '',
-        requirement: '≤ ' + reqMax + ' max',
-        status: isPass ? 'PASS' : 'FAIL'
+        requirement: limitText(l),
+        status: verdict(Number(ystsVal), l)
       });
     }
 
@@ -3491,13 +3513,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     if (results.length === 0) {
       for (const pm of params) {
         if (pm.isCalculated || pm.formulaExpression || pm.value != null) {
+          const l = limitOf(pm);
+          const v = num(pm.value);
           results.push({
             symbol: 'fx',
             name: pm.parameterName,
             value: String(pm.value ?? '—'),
             unit: pm.unit || '',
-            requirement: (pm.minValue != null ? String(pm.minValue) : '') + (pm.maxValue != null ? ' - ' + pm.maxValue : '—'),
-            status: pm.status === 'Pass' || pm.isWithinLimit === true ? 'PASS' : (pm.status === 'Fail' ? 'FAIL' : 'PENDING')
+            requirement: limitText(l),
+            status: v === null ? 'PENDING' : verdict(v, l)
           });
           if (results.length >= 4) break;
         }
@@ -3568,6 +3592,66 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return this.equipmentService.getEquipmentDropdown(term, page, pageSize, labTestId, undefined, analysisTypeId);
   };
 
+  /** Equipment chosen or removed on the screen and not saved yet (Start is refused until it is saved). */
+  equipmentDirty: Record<number, boolean> = {};
+  /** Changing this key re-creates the "Add equipment" dropdown so it is empty again after a pick. */
+  equipmentPickerKey: Record<number, number> = {};
+  private equipmentPickerCache: Record<string, (term: string, page: number, pageSize: number) => Observable<any[]>> = {};
+
+  trackByEquipment = (_: number, e: any) => e.id;
+
+  /** Stable fetch function per plan + test (a new function on every check would reload the dropdown). */
+  getEquipmentPicker(pIdx: number, tIdx: number): (term: string, page: number, pageSize: number) => Observable<any[]> {
+    const key = `${pIdx}_${tIdx}`;
+    if (!this.equipmentPickerCache[key]) {
+      const forTest = this.getEquipmentDropdownFor(pIdx, tIdx);
+      this.equipmentPickerCache[key] = (term: string, page: number, pageSize: number) => {
+        if (this.equipmentUnfiltered[key]) return this.equipmentService.getEquipmentDropdown(term, page, pageSize);
+        return forTest(term, page, pageSize).pipe(
+          switchMap((list: any) => {
+            // no equipment linked to this test in the master: list all equipment (and say so) instead of an empty list
+            if ((list || []).length > 0 || term || page > 0) return of(list);
+            return this.equipmentService.getEquipmentDropdown('', page, pageSize).pipe(
+              tap((all: any) => { this.equipmentUnfiltered[key] = (all || []).length > 0; }));
+          }));
+      };
+    }
+    return this.equipmentPickerCache[key];
+  }
+
+  /** Plan_test keys whose equipment list is the full master because nothing is linked to the test. */
+  equipmentUnfiltered: Record<string, boolean> = {};
+
+  onEquipmentPicked(headerId: number, item: any): void {
+    if (!item || item.id === null || item.id === undefined) return;
+    this.onEquipmentSelected(headerId, item);
+    this.equipmentPickerKey[headerId] = (this.equipmentPickerKey[headerId] || 0) + 1;
+    this.cdr.markForCheck();
+  }
+
+  /** Name and calibration data of one equipment (the saved result only keeps its id). */
+  private loadEquipmentDetails(headerId: number, equipmentId: number): void {
+    this.equipmentService.getEquipmentById(equipmentId).subscribe({
+      next: (eqDetails: any) => {
+        const item = this.selectedEquipmentMap[headerId]?.find((e: any) => e.id === equipmentId);
+        if (item && eqDetails) {
+          item.name = item.name || eqDetails.name || eqDetails.equipmentName || '';
+          item.calibrationRequired = eqDetails.calibrationRequired;
+          item.nextCalibrationDueDate = eqDetails.nextCalibrationDueDate;
+          item.labRoomName = eqDetails.labRoom?.roomName || '';
+        }
+        if (item) item.detailsLoaded = true;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // the API answers 400 "Equipment not found" for an inactive or deleted equipment
+        const item = this.selectedEquipmentMap[headerId]?.find((e: any) => e.id === equipmentId);
+        if (item) { item.detailsLoaded = true; item.notFound = true; }
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   onEquipmentSelected(headerId: number, selectedItem: any): void {
     if (!selectedItem) {
       return;
@@ -3583,25 +3667,18 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         calibrationRequired: selectedItem.calibrationRequired,
         nextCalibrationDueDate: selectedItem.nextCalibrationDueDate
       });
+      this.equipmentDirty[headerId] = true;
+      this.resultForm?.markAsDirty();
       // Query full equipment details to check calibration validity
-      this.equipmentService.getEquipmentById(selectedItem.id).subscribe({
-        next: (eqDetails: any) => {
-          const item = this.selectedEquipmentMap[headerId]?.find((e: any) => e.id === selectedItem.id);
-          if (item && eqDetails) {
-            item.calibrationRequired = eqDetails.calibrationRequired;
-            item.nextCalibrationDueDate = eqDetails.nextCalibrationDueDate;
-            item.labRoomName = eqDetails.labRoom?.roomName || '';
-            this.cdr.markForCheck();
-          }
-        },
-        error: () => {}
-      });
+      this.loadEquipmentDetails(headerId, selectedItem.id);
     }
   }
 
   removeEquipment(headerId: number, equipmentId: number): void {
     if (this.selectedEquipmentMap[headerId]) {
       this.selectedEquipmentMap[headerId] = this.selectedEquipmentMap[headerId].filter((e: any) => e.id !== equipmentId);
+      this.equipmentDirty[headerId] = true;
+      this.resultForm?.markAsDirty();
     }
   }
 
@@ -4251,15 +4328,16 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   }
 
   deleteMachiningItem(itemId: number): void {
-    if (!confirm('Delete this machining charge?')) return;
-    this.testResultService.deleteMachiningItem(itemId).subscribe({
-      next: () => {
-        this.loadMachiningItems(this.sampleId);
-        this.loadUnifiedPriceSummary(this.sampleId);
-        this.loadPreparationStatus(this.sampleId);
-      },
-      error: (err) => this.toastService.show(err?.error?.message || 'Failed to delete machining item', 'error'),
-    });
+    this.askConfirm('Delete machining charge', 'Delete this machining charge?', () => {
+      this.testResultService.deleteMachiningItem(itemId).subscribe({
+        next: () => {
+          this.loadMachiningItems(this.sampleId);
+          this.loadUnifiedPriceSummary(this.sampleId);
+          this.loadPreparationStatus(this.sampleId);
+        },
+        error: (err) => this.toastService.show(err?.error?.message || 'Failed to delete machining item', 'error'),
+      });
+    }, { confirmLabel: 'Delete', variant: 'danger' });
   }
 
   get machiningSubtotal(): number {
@@ -4798,6 +4876,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       decisionRule,
       envData,
       conditions: this.getSelectedConditionRows(test.headerId),
+      equipment: this.selectedEquipmentMap[test.headerId] || [],
       rawParameters,
       timing: this.testTimingMap[test.headerId] || {},
       generatedAt: new Date()
@@ -4868,11 +4947,39 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return due >= today;
   }
 
+  /** Green when calibrated, red when expired, grey when there is nothing to judge. */
+  equipmentBadgeClass(equipment: any): string {
+    const text = this.getEquipmentCalibrationText(equipment);
+    if (text.startsWith('Valid')) return 'bg-success-subtle text-success border border-success-subtle';
+    if (text.startsWith('EXPIRED') || text.startsWith('Equipment not found')) return 'bg-danger-subtle text-danger border border-danger-subtle';
+    return 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+  }
+
+  /** Method caption without doubled prefixes ("IS IS") or doubled years, shared by the toolbar and the trace card. */
+  getCleanMethodLabel(name?: string | null): string {
+    return String(name || '')
+      .replace(/\bIS\s+IS\b/gi, 'IS')
+      .replace(/\bASTM\s+ASTM\b/gi, 'ASTM')
+      .replace(/\bISO\s+ISO\b/gi, 'ISO')
+      .replace(/\(Part\s+(\d+)\)\s*[-–:]\s*\(Part\s+\1\)/gi, '(Part $1)')
+      .replace(/(\b\d{4}\b)\s+\1/g, '$1')
+      .trim();
+  }
+
+  equipmentNames(list: any[] | null | undefined): string {
+    const names = (list || []).map(e => e.name || `Equipment #${e.id}`);
+    return names.length ? names.join(', ') : 'Not recorded';
+  }
+
   getEquipmentCalibrationText(equipment: any): string {
-    if (!equipment) return 'Verified';
-    if (equipment.calibrationRequired === false) return 'Not Required';
+    if (!equipment) return 'Not assigned';
+    if (equipment.notFound) return 'Equipment not found in master';
+    if (equipment.detailsLoaded !== true && equipment.calibrationRequired === undefined && !equipment.nextCalibrationDueDate) {
+      return 'Checking calibration';
+    }
+    if (equipment.calibrationRequired === false) return 'Calibration not required';
     const dueDate = equipment.nextCalibrationDueDate || equipment.nextCalibrationDate;
-    if (!dueDate) return 'Valid (On File)';
+    if (!dueDate) return 'Due date not recorded';
     const d = new Date(dueDate);
     const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     return this.isEquipmentCalibrated(equipment) ? `Valid (${dateStr})` : `EXPIRED (${dateStr})`;

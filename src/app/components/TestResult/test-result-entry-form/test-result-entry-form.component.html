@@ -76,7 +76,8 @@
             <div class="lims-test-toolbar" *ngIf="activePlanIndex === p">
               @let tbTest = plans[p].tests[t];
               @let tbName = tbTest?.name || plans[p].type || 'Test';
-              @let tbMethod = plans[p].methodName || tbTest?.testMethodName || '';
+              @let tbMethod = getCleanMethodLabel(plans[p].methodName || tbTest?.testMethodName || '');
+              @let tbLocked = isViewMode || isToolbarLocked(tbTest?.status);
               @let tbStatus = tbTest?.status || 'In Progress';
               <div class="lims-test-toolbar-id">
                 <span class="lims-test-toolbar-label">Test</span>
@@ -96,6 +97,7 @@
                       [labelName]="'Layout'"
                       [fetchDataFn]="fetchLayoutTemplates"
                       [selectedItem]="selectedLayoutItem"
+                      [isDisabled]="tbLocked"
                       (itemSelected)="onLayoutItemSelected($event)"
                       [hideLabel]="true"
                       [smallInput]="true">
@@ -108,11 +110,11 @@
                   <span class="lims-test-toolbar-label">Spm</span>
                   <div class="spm-stepper-compact">
                     <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
-                      [disabled]="isViewMode || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
-                    <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="isViewMode"
+                      [disabled]="tbLocked || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
+                    <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="tbLocked"
                       aria-label="Specimen count" (change)="onWorkbenchSpecimenInputChange($event)" />
                     <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
-                      [disabled]="isViewMode || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
+                      [disabled]="tbLocked || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
                   </div>
                   <span class="spm-plan-badge" title="Planned specimen quantity">Plan: {{ getActivePlannedQuantity() }}</span>
                 </div>
@@ -205,7 +207,7 @@
                       <div class="spec-context-banner mb-2">
                         <div class="d-flex align-items-center gap-1.5 text-truncate">
                           <span class="text-secondary text-xxs">Grade:</span>
-                          <strong class="text-dark">{{ plans[p].tests[t]?.specification || plans[p].specification || 'Standard Spec Grade' }}</strong>
+                          <strong class="text-dark">{{ plans[p].tests[t]?.specification || plans[p].specification || '—' }}</strong>
                         </div>
                         <span class="badge bg-secondary-subtle text-secondary text-xxs font-monospace">{{ (conditionLines[plans[p].tests[t]?.headerId] || []).length }} lines</span>
                       </div>
@@ -283,7 +285,8 @@
                             <span class="kpi-status-badge" [ngClass]="{
                               'kpi-pass': metric.status === 'PASS',
                               'kpi-fail': metric.status === 'FAIL',
-                              'kpi-pending': metric.status === 'PENDING'
+                              'kpi-pending': metric.status === 'PENDING',
+                              'kpi-info': metric.status === 'INFO'
                             }">{{ metric.status }}</span>
                           </div>
                           <span class="kpi-name text-truncate" [title]="metric.name">{{ metric.name }}</span>
@@ -327,13 +330,31 @@
                       <div class="trace-grid">
                         <div class="trace-cell">
                           <span class="trace-lbl">Testing Equipment</span>
-                          <span class="trace-val text-dark text-truncate" [title]="selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM'">
-                            {{ selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]?.name || 'MCS 1500KN UTM' }}
-                          </span>
-                          <span class="badge mt-0.5 text-xxs"
-                            [ngClass]="isEquipmentCalibrated(selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]) ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
-                            {{ getEquipmentCalibrationText(selectedEquipmentMap[plans[p].tests[t]?.headerId]?.[0]) }}
-                          </span>
+                          <ng-container *ngIf="plans[p].tests[t]?.headerId as eqHid">
+                            <div *ngFor="let eq of selectedEquipmentMap[eqHid] || []; trackBy: trackByEquipment" class="d-flex align-items-center gap-1 flex-wrap">
+                              <span class="trace-val text-dark text-truncate" [title]="eq.name || ('Equipment #' + eq.id)">{{ eq.name || ('Equipment #' + eq.id) }}</span>
+                              <span class="badge text-xxs" [ngClass]="equipmentBadgeClass(eq)">{{ getEquipmentCalibrationText(eq) }}</span>
+                              <button *ngIf="!isViewMode && !isTestFinalized(plans[p].tests[t]?.status)" type="button" class="btn-lims-icon btn-lims-delete"
+                                      (click)="removeEquipment(eqHid, eq.id)" title="Remove this equipment">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                            <span class="trace-val text-muted" *ngIf="!(selectedEquipmentMap[eqHid] || []).length">Not assigned</span>
+                            <ng-container *ngIf="!isViewMode && !isTestFinalized(plans[p].tests[t]?.status)">
+                              <ng-container *ngFor="let pickerKey of [equipmentPickerKey[eqHid] || 0]">
+                                <app-searchable-dropdown
+                                  [hideLabel]="true"
+                                  [smallInput]="true"
+                                  [placeholder]="'Add equipment...'"
+                                  [fetchDataFn]="getEquipmentPicker(p, t)"
+                                  (itemSelected)="onEquipmentPicked(eqHid, $event)">
+                                </app-searchable-dropdown>
+                              </ng-container>
+                              <span class="text-muted text-xxs d-block" *ngIf="equipmentUnfiltered[p + '_' + t]">
+                                No equipment is linked to this test in the master; all equipment is listed.
+                              </span>
+                            </ng-container>
+                          </ng-container>
                         </div>
                         <div class="trace-cell">
                           <div class="d-flex justify-content-between align-items-center">
@@ -343,7 +364,7 @@
                             </button>
                           </div>
                           <span class="trace-val text-dark">
-                            {{ getEnvironmentDisplay(plans[p].tests[t].headerId) || '23.0 °C / 50.0% RH' }}
+                            {{ getEnvironmentDisplay(plans[p].tests[t].headerId) || 'Not recorded' }}
                           </span>
                           <span class="text-muted text-xxs d-block" *ngIf="environmentMap[plans[p].tests[t]?.headerId]?.labRoomName">
                             Room: {{ environmentMap[plans[p].tests[t]?.headerId]?.labRoomName }}
@@ -352,13 +373,13 @@
                         <div class="trace-cell">
                           <span class="trace-lbl">Performer / Analyst</span>
                           <span class="trace-val text-dark">
-                            {{ testTimingMap[plans[p].tests[t]?.headerId]?.performedByName || 'System Admin' }}
+                            {{ testTimingMap[plans[p].tests[t]?.headerId]?.performedByName || 'Not started' }}
                           </span>
                         </div>
                         <div class="trace-cell">
                           <span class="trace-lbl">Test Method Standard</span>
                           <span class="trace-val text-dark text-truncate" [title]="plans[p].methodName">
-                            {{ plans[p].methodName || 'ASTM A370:2026' }}
+                            {{ getCleanMethodLabel(plans[p].methodName) || '—' }}
                           </span>
                         </div>
                       </div>
@@ -1179,13 +1200,16 @@
                   <td class="bg-light fw-semibold text-secondary col-w-15">Test Name</td>
                   <td class="fw-bold text-dark col-w-35">{{ rawDataSheetData?.test?.name || rawDataSheetData?.plan?.type }}</td>
                   <td class="bg-light fw-semibold text-secondary col-w-15">Standard Method</td>
-                  <td class="fw-bold col-w-35">{{ rawDataSheetData?.plan?.methodName || 'Standard Method' }}</td>
+                  <td class="fw-bold col-w-35">{{ getCleanMethodLabel(rawDataSheetData?.plan?.methodName) || '—' }}</td>
                 </tr>
                 <tr>
                   <td class="bg-light fw-semibold text-secondary">Testing Equipment</td>
-                  <td class="fw-semibold">{{ rawDataSheetData?.test?.equipmentName || 'Laboratory Test Apparatus' }}</td>
+                  <td class="fw-semibold">{{ equipmentNames(rawDataSheetData?.equipment) }}</td>
                   <td class="bg-light fw-semibold text-secondary">Equipment Calibration</td>
-                  <td><span class="badge bg-success-subtle text-success border border-success">Valid & Traceable</span></td>
+                  <td>
+                    <span *ngFor="let eq of rawDataSheetData?.equipment || []" class="badge me-1" [ngClass]="equipmentBadgeClass(eq)">{{ getEquipmentCalibrationText(eq) }}</span>
+                    <span *ngIf="!(rawDataSheetData?.equipment || []).length" class="text-muted">Not recorded</span>
+                  </td>
                 </tr>
                 <tr>
                   <td class="bg-light fw-semibold text-secondary">Ambient Temperature</td>
@@ -1349,7 +1373,7 @@
                   <td class="col-w-75">{{ c.label || c.itemDescription }}</td>
                   <td class="text-center col-w-20">
                     <span class="badge" [ngClass]="c.status === 'Pass' ? 'bg-success text-white' : c.status === 'Fail' ? 'bg-danger text-white' : 'bg-secondary text-white'">
-                      {{ c.status || 'Verified' }}
+                      {{ c.status || '—' }}
                     </span>
                   </td>
                 </tr>
@@ -1641,6 +1665,17 @@
     </div>
   </div>
 </div>
+
+<!-- One shared confirm dialog (start / complete / delete / nonconforming work) -->
+<app-confirm-dialog
+  [visible]="confirmState.visible"
+  [title]="confirmState.title"
+  [message]="confirmState.message"
+  [confirmLabel]="confirmState.confirmLabel"
+  [variant]="confirmState.variant"
+  (confirmed)="onGenericConfirmed()"
+  (cancelled)="onGenericCancelled()">
+</app-confirm-dialog>
 
 <!-- Submit for Verification Confirmation Dialog (NABL ISO 17025 Cl 7.7) -->
 <app-confirm-dialog

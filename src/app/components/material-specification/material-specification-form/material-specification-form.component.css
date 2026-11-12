@@ -637,3 +637,8 @@ legend {
   color: #c2c8d0;
 }
 
+.spec-count-input {
+  max-width: 90px;
+  font-size: 0.75rem;
+  min-height: 28px;
+}

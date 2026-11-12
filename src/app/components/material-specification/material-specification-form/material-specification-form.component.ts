@@ -556,6 +556,14 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       numberOfTestSpecimen: [m?.numberOfTestSpecimen ?? null],
     });
   }
+  /** Specimens per method: whole number 1-99, empty when not set. */
+  clampSpecimenCount(m: AbstractControl): void {
+    const c = m.get('numberOfTestSpecimen');
+    const v = c?.value;
+    if (v === null || v === undefined || v === '') { c?.setValue(null); return; }
+    const n = Math.trunc(Number(v));
+    c?.setValue(Number.isFinite(n) ? Math.min(99, Math.max(1, n)) : null);
+  }
   addTestMethodMappingRow(line: AbstractControl): void {
     this.testMethodMappingArray(line).push(this.createTestMethodMappingRow());
   }
@@ -2113,7 +2121,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
           ...rest,
           // MS-E matrix: keep only filled Test Method Spec slots; Lab Test lives on the line (laboratoryTestID).
           testMethodMappings: (testMethodMapping || [])
-            .map((m: any, idx: number) => ({ testMethodSpecificationID: m.testMethodSpecificationID ?? null, displayOrder: idx + 1 }))
+            .map((m: any, idx: number) => ({ testMethodSpecificationID: m.testMethodSpecificationID ?? null, laboratoryTestID: m.laboratoryTestID ?? null, numberOfTestSpecimen: m.numberOfTestSpecimen ?? null, displayOrder: idx + 1 }))
             .filter((m: any) => m.testMethodSpecificationID != null),
           laboratoryTests: (laboratoryTestIDs || []).map((id: number) => ({
             specificationLineID: line.id || 0,

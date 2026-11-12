@@ -65,12 +65,11 @@
 
     <ng-container *ngFor="let s of sections; let sIdx = index">
 
-      <div *ngIf="isSectionVisible(s)" class="lims-workbench-card" [ngClass]="{ 'half-width': s.config?.width === 'Half Width' }">
+      <div *ngIf="isSectionVisible(s)" class="lims-workbench-card lims-section" [ngClass]="{ 'half-width': s.config?.width === 'Half Width' }">
 
         <!-- Section Header -->
-        <div class="lims-workbench-card-header flex-wrap gap-2 py-1 px-2">
+        <div class="lims-workbench-card-header lims-section-head">
           <div class="d-flex align-items-center gap-2">
-            <i [class]="getSectionIcon(s.type)"></i>
             <h6 class="lims-workbench-card-title mb-0">
               <span>{{ getSectionTitle(s) }}</span>
             </h6>
@@ -326,7 +325,7 @@
                       <th *ngIf="s.config?.showMinMax" class="w-col-85">Min</th>
                       <th *ngIf="s.config?.showMinMax" class="w-col-85">Max</th>
                       <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
-                      <th class="w-col-85">Action</th>
+                      <th class="w-col-85 action-col">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -716,7 +715,7 @@
                       <th *ngIf="s.config?.showAverage !== false" class="w-col-115 avg-col-header">Average</th>
                       <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
                       <th class="w-col-90">Status</th>
-                      <th class="w-col-85">Action</th>
+                      <th class="w-col-85 action-col">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -826,7 +825,7 @@
                     <th *ngIf="s.config?.columns?.method" class="w-col-160">Method / Standard</th>
                     <th *ngIf="s.config?.columns?.uncertainty" class="w-col-100">Uncertainty (±)</th>
                     <th *ngIf="s.config?.columns?.remarks" class="w-col-140">Remarks</th>
-                    <th class="w-col-75">Actions</th>
+                    <th class="w-col-75 action-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="parameters" *ngIf="parametersFormArray">
@@ -995,7 +994,7 @@
                       </td>
 
                       <!-- Actions -->
-                      <td class="text-center">
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="isParameterCalculated(parametersFormArray.at(r).value)"
                                   type="button" class="btn-lims-icon"

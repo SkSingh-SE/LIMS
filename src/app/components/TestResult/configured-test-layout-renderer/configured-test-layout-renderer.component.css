@@ -417,3 +417,72 @@ input[type="number"] {
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* ─── Print mode (raw data sheet): the saved test in the same layout, values as plain text, no controls ─── */
+:host(.print-mode) {
+  display: block;
+  pointer-events: none;
+}
+:host(.print-mode) button,
+:host(.print-mode) .btn-nav-link,
+:host(.print-mode) .workbench-action-toolbar,
+:host(.print-mode) .action-col,
+:host(.print-mode) .spm-filter-pill {
+  display: none !important;
+}
+/* Buttons that show a recorded choice stay, as plain text */
+:host(.print-mode) .btn-group .btn:not(.btn-outline-secondary),
+:host(.print-mode) .reportable-toggle-btn {
+  display: inline-block !important;
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: #111 !important;
+  padding: 0 !important;
+  font-weight: 600;
+}
+:host(.print-mode) input:not([type='checkbox']):not([type='radio']),
+:host(.print-mode) select,
+:host(.print-mode) textarea {
+  border: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: #111 !important;
+  -webkit-text-fill-color: #111;
+  opacity: 1 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  resize: none;
+}
+:host(.print-mode) textarea {
+  field-sizing: content;
+  min-height: 0;
+}
+:host(.print-mode) input::placeholder,
+:host(.print-mode) textarea::placeholder {
+  color: transparent !important;
+}
+:host(.print-mode) input::-webkit-outer-spin-button,
+:host(.print-mode) input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+:host(.print-mode) .input-group-text {
+  border: 0 !important;
+  background: transparent !important;
+  padding-left: 2px;
+}
+:host(.print-mode) .lims-workbench-card {
+  box-shadow: none !important;
+  break-inside: avoid;
+}
+:host(.print-mode) table {
+  break-inside: auto;
+}
+:host(.print-mode) tr {
+  break-inside: avoid;
+}

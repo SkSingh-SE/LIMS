@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -144,6 +144,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   @Input() selectedEquipment: any[] = [];
   @Input() testImages: any[] = [];
   @Input() activeTabSection: 'all' | 'parameters' | 'execution' | 'calculations' | 'info' = 'all';
+  /**
+   * Raw data sheet: shows the saved test in the same layout, read-only. In this mode the component never writes to the
+   * form or to the test object and never emits, so a second instance can sit next to the live result screen.
+   */
+  @Input() printMode = false;
+  @HostBinding('class.print-mode') get printModeClass(): boolean { return this.printMode; }
 
   @Output() paramValueChanged = new EventEmitter<{ rowIdx: number; param: any }>();
   @Output() unitChanged = new EventEmitter<{ rowIdx: number }>();
@@ -590,6 +596,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   private initLayoutData(): void {
     if (!this.layoutConfig) return;
+    if (this.printMode) {
+      this.isViewMode = true;
+      this.isLocked = true;
+    }
 
     // Resolve sections
     if (this.layoutConfig.sections && Array.isArray(this.layoutConfig.sections)) {
@@ -658,10 +668,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   private initTraverse(): void {
     const travSec = this.sections.find(s => s.type === 'traverse');
     if (this.test?.traversePoints && Array.isArray(this.test.traversePoints) && this.test.traversePoints.length > 0) {
+      // Print mode also reads the names this component writes back to the test (distanceMm, hardnessValue)
       this.traversePoints = this.test.traversePoints.map((pt: any) => ({
-        distance: pt.distance != null ? pt.distance : pt.depth,
-        hardness: pt.hardness != null ? pt.hardness : pt.value
+        distance: pt.distance != null ? pt.distance : (this.printMode && pt.distanceMm != null ? pt.distanceMm : pt.depth),
+        hardness: pt.hardness != null ? pt.hardness : (this.printMode && pt.hardnessValue != null ? pt.hardnessValue : pt.value)
       }));
+      if (this.printMode) this.recalculateEffectiveCaseDepth();
     } else if (travSec?.config?.tableRows && Array.isArray(travSec.config.tableRows) && travSec.config.tableRows.length > 0) {
       this.traversePoints = travSec.config.tableRows.map((r: any) => ({
         distance: parseFloat(r.label) || 0.1,
@@ -675,7 +687,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (this.test?.checklist && Array.isArray(this.test.checklist) && this.test.checklist.length > 0) {
       this.checklistItems = this.test.checklist.map((chk: any, idx: number) => ({
         id: chk.id || (idx + 1),
-        label: chk.label || chk.inspectionPoint || `Item ${idx + 1}`,
+        label: chk.label || (this.printMode ? chk.itemLabel : '') || chk.inspectionPoint || `Item ${idx + 1}`,
         status: chk.status || ''
       }));
     } else if (chkSec?.config?.tableRows && Array.isArray(chkSec.config.tableRows) && chkSec.config.tableRows.length > 0) {
@@ -1016,6 +1028,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** Adds rows for every specimen that has none (saved rows removed earlier come back first, else copies of S1). */
   private ensureRowsForSpecimens(): void {
+    if (this.printMode) return; // the sheet shows the saved rows only
     if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
     for (let s = 0; s < this.specimens.length; s++) {
       addSpecimenRows(this.parametersFormArray, s, this.rowStore, this.cloneRowForSpecimen);
@@ -1178,7 +1191,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    * `clearRoles` (from the calculation) empties calculated rows whose result is now null; inputs are never emptied here.
    */
   private syncSpecimenToForm(spm: SpecimenData, clearRoles?: ReadonlySet<SpecimenRole>): void {
-    if (!this.parametersFormArray) return;
+    if (this.printMode || !this.parametersFormArray) return;
     const spmIdx = this.specimens.indexOf(spm);
     if (spmIdx < 0) return;
 
@@ -1198,7 +1211,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private syncSpecimenValuesToForm(): void {
-    if (!this.parametersFormArray) return;
+    if (this.printMode || !this.parametersFormArray) return;
 
     // Sync each specimen's calculated values to the corresponding FormArray slice
     this.specimens.forEach(spm => {
@@ -2041,7 +2054,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     this.effectiveCaseDepth = ecd;
 
-    if (ecd != null && this.parametersFormArray) {
+    if (ecd != null && this.parametersFormArray && !this.printMode) {
       this.parametersFormArray.controls.forEach((ctrl, idx) => {
         const name = (ctrl.get('parameterName')?.value || '').toLowerCase();
         if (name.includes('case depth') || name.includes('effective case')) {
@@ -2119,7 +2132,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private evaluateLimitForControl(ctrl: any): void {
-    if (!ctrl) return;
+    if (!ctrl || this.printMode) return;
     const val = ctrl.get('value')?.value;
     if (val === null || val === undefined || val === '') {
       ctrl.patchValue({ isWithinLimit: null, resultStatus: null }, { emitEvent: false });
@@ -2389,7 +2402,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Sync Collections to Test Object & Extra JSON Serialization
   // =========================================================================
   syncCollectionsToTest(): void {
-    if (!this.test) return;
+    if (!this.test || this.printMode) return;
     const headerId = this.test.headerId || 0;
 
     this.test.locations = this.locations.map((loc, idx) => ({

@@ -2249,18 +2249,15 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
 
   // ─── Test Method Specification Selection ───
   getTestMethodSpecification = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    // E1.8: line stores the method (TestMethodSpecifications.ID), so list methods, not versions
-    return this.materialSpecificationService.getLineTestMethodDropdown(term, page, pageSize);
+    return this.testMethodSpecificationService.getTestMethodSpecificationDropdown(term, page, pageSize);
   };
 
   // ─── MS-E: Laboratory Test dropdowns (chemical vs general) ───
   getChemicalLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    // E1.8: line stores the root LaboratoryTests.ID, so list root tests, not analysis types
-    return this.materialSpecificationService.getLineLaboratoryTestDropdown(term, page, pageSize, true);
+    return this.laboratoryTestService.getLaboratoryTestDropdownForChemicals(term, page, pageSize);
   };
   getGeneralLaboratoryTest = (term: string, page: number, pageSize: number): Observable<any[]> => {
-    // E1.8: line stores the root LaboratoryTests.ID, so list root tests, not subgroups
-    return this.materialSpecificationService.getLineLaboratoryTestDropdown(term, page, pageSize, false);
+    return this.laboratoryTestService.getLaboratoryTestDropdownForGeneral(term, page, pageSize);
   };
 
   // ─── MS-D: Product Size band dropdown ───

@@ -83,18 +83,4 @@ export class MaterialSpecificationService {
     if (testMethodId) url += `&testMethodId=${testMethodId}`;
     return this.http.get<any[]>(url);
   }
-
-  /** Laboratory Test choices for a spec line: root LaboratoryTests ids only (never subgroup / analysis-type ids). */
-  getLineLaboratoryTestDropdown(searchTerm: string, pageNumber: number, pageSize: number, chemical: boolean): Observable<any[]> {
-    const term = searchTerm && searchTerm !== 'undefined' && searchTerm !== 'null' ? encodeURIComponent(searchTerm) : '';
-    return this.http.get<any[]>(
-      `${this.apiUrl}/line-laboratory-test-dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}&chemical=${chemical}`
-    );
-  }
-
-  /** Test Method choices for a spec line: TestMethodSpecifications ids (the method), not version ids. */
-  getLineTestMethodDropdown(searchTerm: string, pageNumber: number, pageSize: number): Observable<any[]> {
-    const term = searchTerm && searchTerm !== 'undefined' && searchTerm !== 'null' ? encodeURIComponent(searchTerm) : '';
-    return this.http.get<any[]>(`${this.apiUrl}/line-test-method-dropdown?searchTerm=${term}&pageNo=${pageNumber}&pageSize=${pageSize}`);
-  }
 }

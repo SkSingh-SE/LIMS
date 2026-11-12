@@ -72,6 +72,8 @@ export class CustomMaterialSpecificationFormComponent implements CanComponentDea
   chemicalParametersCache: any[] = [];
   mechanicalParametersCache: any[] = [];
 
+  /** Chemical Test Method / General Test Method tabs are hidden for now (kept in code; set true to show again). */
+  showTestMethodTabs = false;
   selectedGradeIndex = 0;
   selectedSpecTab: { [gradeIndex: number]: string } = { 0: 'chemical' };
 

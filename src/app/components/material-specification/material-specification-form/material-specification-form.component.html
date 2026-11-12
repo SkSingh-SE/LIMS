@@ -314,8 +314,8 @@
               <ul class="nav nav-tabs">
                 <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemical'" (click)="selectSpecTab(gi, 'chemical')">Chemical</a></li>
                 <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanical'" (click)="selectSpecTab(gi, 'mechanical')">General</a></li>
-                <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemicalTestMethod'" (click)="selectSpecTab(gi, 'chemicalTestMethod')">Chemical Test Method</a></li>
-                <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanicalTestMethod'" (click)="selectSpecTab(gi, 'mechanicalTestMethod')">General Test Method</a></li>
+                <li class="nav-item" *ngIf="showTestMethodTabs"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemicalTestMethod'" (click)="selectSpecTab(gi, 'chemicalTestMethod')">Chemical Test Method</a></li>
+                <li class="nav-item" *ngIf="showTestMethodTabs"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanicalTestMethod'" (click)="selectSpecTab(gi, 'mechanicalTestMethod')">General Test Method</a></li>
               </ul>
               <span *ngIf="grade.hasError('noSpecLine') && grade.touched" class="text-danger small">At least one specification line is required in Chemical or Mechanical tab.</span>
               <div [formGroupName]="'specificationLines'">

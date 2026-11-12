@@ -24,6 +24,16 @@ export class MaterialSpecificationService {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }
 
+  /** Lazy loading: header + header parameters + grades WITHOUT specification lines (each grade has linesLoaded=false). */
+  getMaterialSpecificationSummary(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/details-summary/${id}`);
+  }
+
+  /** Lazy loading: specification lines of one grade, fetched when the user opens that grade. */
+  getGradeSpecificationLines(gradeId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/grade-lines/${gradeId}`);
+  }
+
   // MS-A: detached deep-copy of a spec (IDs=0, Version cleared) to seed a new-version create form.
   getCloneTemplate(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/clone-template/${id}`);

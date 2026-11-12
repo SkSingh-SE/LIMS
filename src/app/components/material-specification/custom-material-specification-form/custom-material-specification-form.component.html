@@ -268,12 +268,12 @@
                     General
                   </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" *ngIf="showTestMethodTabs">
                   <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemicalTestMethod'" (click)="selectSpecTab(gi, 'chemicalTestMethod')">
                     Chemical Test Method
                   </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" *ngIf="showTestMethodTabs">
                   <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanicalTestMethod'" (click)="selectSpecTab(gi, 'mechanicalTestMethod')">
                     General Test Method
                   </a>

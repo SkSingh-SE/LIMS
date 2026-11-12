@@ -80,6 +80,8 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   chemicalParametersCache: any[] = [];
   mechanicalParametersCache: any[] = [];
 
+  /** Chemical Test Method / General Test Method tabs are hidden for now (kept in code; set true to show again). */
+  showTestMethodTabs = false;
   selectedGradeIndex = 0;
   selectedSpecTab: { [gradeIndex: number]: string } = { 0: 'chemical' };
 
@@ -354,6 +356,8 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
 
   /** Validator: at least one specification line in chemical or mechanical */
   private atLeastOneSpecLineValidator(group: AbstractControl): { [key: string]: boolean } | null {
+    // Lazy loading: lines of a grade that was never opened are not in the form, so do not require them.
+    if (group.get('linesLoaded')?.value === false) return null;
     const lines = group.get('specificationLines') as FormGroup;
     if (!lines) return null;
     const chemCount = (lines.get('chemical') as FormArray)?.length || 0;
@@ -397,6 +401,8 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
       unsSteelNumber: [''],
       metalClassificationID: [null],
       identifierValuesJson: [''],
+      // Lazy loading: false until the grade's lines are fetched; sent to the API so unopened grades are left untouched.
+      linesLoaded: [true],
       specificationLines: this.fb.group({
         chemical: chemArray,
         mechanical: mechArray,
@@ -421,6 +427,45 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
   selectGrade(index: number): void {
     this.selectedGradeIndex = index;
     this.selectedSpecTab[index] = this.selectedSpecTab[index] || 'chemical';
+    this.loadGradeLinesIfNeeded(index);
+  }
+
+  /** Grades whose lines are being fetched right now (avoids double requests on fast clicks). */
+  private gradeLinesLoading = new Set<number>();
+
+  /** True while this grade's lines have not been loaded yet (edit/view screen, lazy loading). */
+  isGradeLinesPending(gradeIndex: number): boolean {
+    return this.grades.at(gradeIndex)?.get('linesLoaded')?.value === false;
+  }
+
+  /** Lazy loading: fetch and bind the lines of one saved grade the first time the user opens it. */
+  loadGradeLinesIfNeeded(gradeIndex: number): void {
+    const gradeGroup = this.grades.at(gradeIndex) as FormGroup | undefined;
+    if (!gradeGroup || gradeGroup.get('linesLoaded')?.value !== false) return;
+    const gradeId = Number(gradeGroup.get('id')?.value) || 0;
+    if (gradeId <= 0 || this.gradeLinesLoading.has(gradeId)) return;
+
+    this.gradeLinesLoading.add(gradeId);
+    this.materialSpecificationService.getGradeSpecificationLines(gradeId).subscribe({
+      next: (lines) => {
+        this.gradeLinesLoading.delete(gradeId);
+        // The user may have removed or re-ordered grades while the request ran: find the grade again by id.
+        const idx = this.grades.controls.findIndex(g => Number(g.get('id')?.value) === gradeId);
+        if (idx < 0) return;
+        const target = this.grades.at(idx) as FormGroup;
+        const equivRows: Array<{ group: AbstractControl; unitId: number }> = [];
+        this.bindGradeLines(target, lines || [], equivRows);
+        target.get('linesLoaded')?.setValue(true, { emitEvent: false });
+        if (this.isViewMode) target.disable({ emitEvent: false });
+        target.updateValueAndValidity({ emitEvent: false });
+        this.fetchEquivalentUnitsFor(equivRows);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.gradeLinesLoading.delete(gradeId);
+        this.toastService.show('Could not load the specification lines of this grade. Click the grade again to retry.', 'error');
+      },
+    });
   }
 
   /** Remove a grade from its tab (stops tab-click) and keep selectedGradeIndex valid. */
@@ -1722,10 +1767,12 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
 
   loadMaterialSpecification() {
     this.materialSpecificationService
-      .getMaterialSpecificationById(this.materialSpecificationId)
+      // Lazy loading: header + grades only; the lines of a grade load when the user opens it.
+      .getMaterialSpecificationSummary(this.materialSpecificationId)
       .subscribe({
         next: (data) => {
           this.bindSpecificationData(data);
+          this.loadGradeLinesIfNeeded(this.selectedGradeIndex);
         },
         error: (error) => {
           console.error('Error fetching material specification:', error);
@@ -1804,9 +1851,38 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
         metalClassificationID: grade.metalClassificationID
       });
 
+      // Lazy loading: the summary endpoint sends linesLoaded=false (lines come later, per grade).
+      if (grade.linesLoaded === false) {
+        gradeGroup.get('linesLoaded')?.setValue(false, { emitEvent: false });
+        gradeGroup.updateValueAndValidity({ emitEvent: false });
+        return;
+      }
+      this.bindGradeLines(gradeGroup as FormGroup, grade.specificationLines || [], equivRows);
+    });
+
+    // Reattach change detection so the form renders the loaded data instantly (removes blank page freeze).
+    this.cdr.reattach();
+    this.cdr.detectChanges();
+
+    // ── 5.  Batch-fetch equivalent units (deduplicated) ──────────────
+    this.fetchEquivalentUnitsFor(equivRows);
+
+    // ── 6.  Fetch standard org details (fire-and-forget) ──────
+    if (this.selectedStandardOrganization == null) {
+      this.selectedStandardOrganization = { id: data.standardOrganizationID, name: data.standard };
+    }
+    this.autoApplyMasterFormulasIfEmpty();
+  }
+
+  /** Binds saved specification lines into one grade's chemical / mechanical / other arrays. */
+  private bindGradeLines(
+    gradeGroup: FormGroup,
+    lines: any[],
+    equivRows: Array<{ group: AbstractControl; unitId: number }>
+  ): void {
       const linesGroup = gradeGroup.get('specificationLines') as FormGroup;
 
-      grade.specificationLines?.forEach((line: any) => {
+      lines.forEach((line: any) => {
         const tab = line.type as 'chemical' | 'mechanical' | 'other';
         const formArray = linesGroup.get(tab) as FormArray;
         const lineGroup = this.createSpecificationLineFormGroup(tab);
@@ -1877,13 +1953,10 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
           equivRows.push({ group: lineGroup, unitId: Number(line.parameterUnitID) });
         }
       });
-    });
+  }
 
-    // Reattach change detection so the form renders the loaded data instantly (removes blank page freeze).
-    this.cdr.reattach();
-    this.cdr.detectChanges();
-
-    // ── 5.  Batch-fetch equivalent units (deduplicated) ──────────────
+  /** Batch-fetches equivalent units (deduplicated by unit) for the given spec line rows. */
+  private fetchEquivalentUnitsFor(equivRows: Array<{ group: AbstractControl; unitId: number }>): void {
     if (equivRows.length) {
       const uniqueUnitIds = [...new Set(equivRows.map(r => r.unitId))];
       const unitObs: { [unitId: number]: Observable<any[]> } = {};
@@ -1904,12 +1977,6 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
         }
       });
     }
-
-    // ── 6.  Fetch standard org details (fire-and-forget) ──────
-    if (this.selectedStandardOrganization == null) {
-      this.selectedStandardOrganization = { id: data.standardOrganizationID, name: data.standard };
-    }
-    this.autoApplyMasterFormulasIfEmpty();
   }
 
   generateSpecificationName() {
@@ -1984,6 +2051,7 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
 
   /** Returns how many header parameters of a given tab are missing from a grade's spec lines. */
   getMissingHeaderParamsCount(gradeIndex: number, tab: 'chemical' | 'mechanical'): number {
+    if (this.isGradeLinesPending(gradeIndex)) return 0; // lines not loaded yet (lazy loading)
     const headerIds = this.headerParametersByTab(tab).controls
       .map(c => c.get('parameterID')?.value)
       .filter(id => id != null && id !== '' && id !== null);

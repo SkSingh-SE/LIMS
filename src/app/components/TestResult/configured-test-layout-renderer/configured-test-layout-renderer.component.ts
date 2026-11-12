@@ -6,7 +6,10 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { Observable, of } from 'rxjs';
 import { ParameterService } from '../../../services/parameter.service';
+import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { formatBand } from '../../../utility/helper/spec-condition.helper';
 import { ToastService } from '../../../services/toast.service';
 import {
   addSpecimenRows,
@@ -170,6 +173,16 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Quick-Add Parameter modal state
   showAddParamModal = false;
   selectedParamDropdownItem: any = null;
+  /** Grade the parameter comes from (the test's own grade by default, changeable, may be cleared). */
+  paramGrade: { id: number; name: string } | null = null;
+  /** The chosen grade's lines for this kind of test: they decide which parameters are offered and their limits. */
+  private gradeParamLines: any[] = [];
+  /** Spec line the new row's limit comes from (saved with the row), and a hint when no single line fits. */
+  private newParamLineId: number | null = null;
+  paramLimitHint = '';
+  /** Another grade with several limits for one parameter (size band, heat treatment, ...): the user picks the one that applies. */
+  paramLineChoices: { id: number; label: string; min: number | null; max: number | null; note: string }[] = [];
+  paramLineChoiceItem: { id: number; name: string } | null = null;
   newParamData: {
     parameterID: number | null;
     parameterName: string;
@@ -288,23 +301,154 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private parameterService: ParameterService,
+    private materialSpecService: MaterialSpecificationService,
     private toastService: ToastService
   ) {}
 
-  fetchParametersDropdown = (searchTerm: string, page: number, pageSize: number) => {
-    return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
+  fetchGradeDropdown = (searchTerm: string, page: number, pageSize: number) => {
+    return this.materialSpecService.getGradeDropdown(searchTerm, page, pageSize);
   };
+
+  /** With a grade: only the parameters that grade defines for this test. Without: the whole parameter master. */
+  fetchParametersDropdown = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
+    if (!this.paramGrade) return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
+    const term = (searchTerm || '').toLowerCase().trim();
+    const seen = new Set<number>();
+    const items: any[] = [];
+    for (const l of this.gradeParamLines) {
+      const id = Number(l.parameterID);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      if (!term || String(l.parameterName || '').toLowerCase().includes(term)) items.push({ id, name: l.parameterName || `Parameter #${id}` });
+    }
+    return of(items.slice(page * pageSize, (page + 1) * pageSize));
+  };
+
+  private limitLabel(min: number | null | undefined, max: number | null | undefined): string {
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return '';
+  }
+
+  /** A parameter with several limits in another grade cannot be added before one is chosen. */
+  get paramNeedsLineChoice(): boolean {
+    return this.paramLineChoices.length > 0 && !this.newParamLineId;
+  }
+
+  private get paramTestKind(): 'chemical' | 'general' {
+    return this.testPlan?.type === 'Chemical' ? 'chemical' : 'general';
+  }
+
+  private loadGradeParamLines(gradeId: number | null): void {
+    this.gradeParamLines = [];
+    if (!gradeId) { this.cdr.markForCheck(); return; }
+    this.materialSpecService.getConditionOptions(gradeId, null, null, null, this.paramTestKind).subscribe({
+      next: (lines: any[]) => { this.gradeParamLines = lines || []; this.cdr.markForCheck(); },
+      error: () => { this.gradeParamLines = []; this.toastService.show('Could not load the parameters of this grade', 'error'); this.cdr.markForCheck(); }
+    });
+  }
+
+  onParamGradeSelected(item: any): void {
+    this.paramGrade = item && item.id ? { id: Number(item.id), name: item.name } : null;
+    // another grade means another parameter list: start the parameter choice again
+    this.onMasterParameterSelected(null);
+    this.loadGradeParamLines(this.paramGrade?.id ?? null);
+  }
+
+  fetchParamLineChoices = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
+    const term = (searchTerm || '').toLowerCase().trim();
+    const items = this.paramLineChoices.filter(c => !term || c.label.toLowerCase().includes(term)).map(c => ({ id: c.id, name: c.label }));
+    return of(items.slice(page * pageSize, (page + 1) * pageSize));
+  };
+
+  /** Conditions a grade line is written for, e.g. "Nominal Thickness ≥ 20 ≤ 40 mm · As-Rolled", or "Grade default". */
+  private lineConditionLabel(l: any): string {
+    const parts: string[] = [];
+    if (l.dimensionalFactorID) {
+      const band = formatBand({ lowerSymbol: l.lowerLimitValue ?? null, lowerValue: l.lowerLimitDecimalValue ?? null, upperSymbol: l.upperLimitValue ?? null, upperValue: l.upperLimitDecimalValue ?? null });
+      parts.push([l.dimensionalFactorName, band, l.dimensionalFactorUnit].filter(x => !!x).join(' '));
+    }
+    if (l.heatTreatmentName) parts.push(l.heatTreatmentName);
+    const pc = [l.productConditionName1, l.productConditionName2].filter(x => !!x).join(' + ');
+    if (pc) parts.push(pc);
+    if ((l.testCondition || '').trim()) parts.push(String(l.testCondition).trim());
+    if (l.productSizeName) parts.push(l.productSizeName);
+    if (l.specimenOrientationName) parts.push(l.specimenOrientationName);
+    return parts.join(' · ') || 'Grade default';
+  }
+
+  onParamLineChoice(item: any): void {
+    const choice = item?.id ? this.paramLineChoices.find(c => c.id === Number(item.id)) : null;
+    this.paramLineChoiceItem = choice ? { id: choice.id, name: choice.label } : null;
+    this.newParamLineId = choice?.id ?? null;
+    this.newParamData.minValue = choice?.min ?? null;
+    this.newParamData.maxValue = choice?.max ?? null;
+    this.newParamData.acceptanceCriteria = choice?.note ?? '';
+  }
+
+  /** Limit, note and unit of the chosen parameter from the grade's lines. */
+  private applyGradeLine(parameterId: number): void {
+    this.newParamLineId = null;
+    this.paramLimitHint = '';
+    this.paramLineChoices = [];
+    this.paramLineChoiceItem = null;
+    if (!this.paramGrade) return;
+    const lines = this.gradeParamLines.filter(l => Number(l.parameterID) === parameterId);
+    const hasNoCondition = (l: any) => !l.dimensionalFactorID && !l.heatTreatmentID && !l.productConditionID1 && !l.productConditionID2
+      && !(l.testCondition || '').trim() && !l.productSizeMasterID && !l.specimenOrientationID;
+    const pick = lines.find(hasNoCondition) ?? (lines.length === 1 ? lines[0] : null);
+    if (lines[0]?.unitName) this.newParamData.unit = lines[0].unitName;
+    if (!pick) {
+      if (lines.length > 1) {
+        const ownGradeId = Number(this.testPlan?.specSelected?.id || 0);
+        if (this.paramGrade.id === ownGradeId) {
+          // the test's own grade: the screen's selected conditions decide the limit
+          this.paramLimitHint = 'This grade gives more than one limit for this parameter, depending on the test conditions. The limit is applied from the conditions selected on the screen.';
+        } else {
+          // another grade: the screen's conditions belong to the test's grade, so the user picks the line that applies
+          this.paramLineChoices = lines.map(l => ({
+            id: Number(l.specificationLineID),
+            label: `${this.lineConditionLabel(l)}  (${this.limitLabel(l.minValue, l.maxValue) || 'no numeric limit'})`,
+            min: l.minValue ?? null,
+            max: l.maxValue ?? null,
+            note: l.acceptanceCriteria || ''
+          }));
+          this.paramLimitHint = 'This grade gives more than one limit for this parameter. Choose the one that applies.';
+        }
+      }
+      return;
+    }
+    this.newParamLineId = pick.specificationLineID ?? null;
+    this.newParamData.minValue = pick.minValue ?? null;
+    this.newParamData.maxValue = pick.maxValue ?? null;
+    this.newParamData.acceptanceCriteria = pick.acceptanceCriteria || '';
+  }
 
   onMasterParameterSelected(item: any): void {
     if (!item) {
       this.selectedParamDropdownItem = null;
       this.newParamData.parameterID = null;
       this.newParamData.parameterName = '';
+      this.newParamData.unit = '';
+      this.newParamData.minValue = null;
+      this.newParamData.maxValue = null;
+      this.newParamData.acceptanceCriteria = '';
+      this.newParamLineId = null;
+      this.paramLimitHint = '';
+      this.paramLineChoices = [];
+      this.paramLineChoiceItem = null;
       return;
     }
     this.selectedParamDropdownItem = item;
     this.newParamData.parameterID = item.id;
     this.newParamData.parameterName = item.name;
+    this.newParamData.unit = '';
+    this.newParamData.minValue = null;
+    this.newParamData.maxValue = null;
+    this.newParamData.acceptanceCriteria = '';
+    // limits, note and unit of the grade first; the parameter master fills what the grade does not say
+    this.applyGradeLine(Number(item.id));
 
     // Fetch full parameter details to populate unit, inputType, precision, etc.
     this.parameterService.getParameterById(item.id).subscribe({
@@ -315,10 +459,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           if (details.name && this.newParamData.parameterID === item.id) {
             this.newParamData.parameterName = details.name;
           }
-          if (details.parameterUnit?.name) {
-            this.newParamData.unit = details.parameterUnit.name;
-          } else if (details.unit) {
-            this.newParamData.unit = details.unit;
+          if (!this.newParamData.unit) {
+            if (details.parameterUnit?.name) {
+              this.newParamData.unit = details.parameterUnit.name;
+            } else if (details.unit) {
+              this.newParamData.unit = details.unit;
+            }
           }
           if (details.inputType) {
             this.newParamData.inputType = details.inputType;
@@ -1265,22 +1411,52 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       decimalPrecision: 2,
       dropdownOptions: []
     };
+    // the test's own grade is the starting point
+    const own = this.testPlan?.specSelected;
+    this.paramGrade = own?.id ? { id: Number(own.id), name: own.name || `Grade #${own.id}` } : null;
+    this.newParamLineId = null;
+    this.paramLimitHint = '';
+    this.loadGradeParamLines(this.paramGrade?.id ?? null);
     this.showAddParamModal = true;
   }
 
   closeAddParamModal(): void {
     this.showAddParamModal = false;
     this.selectedParamDropdownItem = null;
+    this.newParamLineId = null;
+    this.paramLimitHint = '';
+    this.paramLineChoices = [];
+    this.paramLineChoiceItem = null;
   }
 
   submitAddParam(): void {
     if (!this.newParamData.parameterName.trim() || !this.parametersFormArray) return;
+    if (this.paramNeedsLineChoice) {
+      this.toastService.show('Choose which limit of this grade applies.', 'warning');
+      return;
+    }
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
 
     // "All specimens": one row per specimen. "Single specimen": the specimen in view (S1 in the all-specimens view).
     const targetSpecimens = this.newParamData.applyTo === 'all'
       ? Array.from({ length: Math.max(1, this.specimens.length) }, (_, s) => s)
       : [this.selectedSpecimenFilter === 'all' ? 0 : Math.max(0, this.selectedSpecimenFilter - 1)];
+
+    // One result per parameter and specimen: a parameter the test already has is not added a second time
+    // (a second row would also give the parameter two limits). Remove the old row first to replace it.
+    const wantedName = this.newParamData.parameterName.trim().toLowerCase();
+    const indexes = this.getRowSpecimenIndexes();
+    const duplicateIn = targetSpecimens.find(sp => rowsOfSpecimen(indexes, sp).some(i => {
+      const c = this.parametersFormArray.at(i);
+      return Number(c.get('parameterID')?.value) === Number(this.newParamData.parameterID)
+        || String(c.get('parameterName')?.value || '').trim().toLowerCase() === wantedName;
+    }));
+    if (duplicateIn !== undefined) {
+      const where = targetSpecimens.length > 1 ? '' : ` (S${duplicateIn + 1})`;
+      this.toastService.show(`"${this.newParamData.parameterName.trim()}" is already in this test${where}. Remove it first to replace it.`, 'warning');
+      return;
+    }
+
     for (const specimen of targetSpecimens) {
       const newCtrl = this.createParamControl({
         specimenIndex: specimen,
@@ -1288,9 +1464,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         parameterName: this.newParamData.parameterName.trim(),
         unit: this.newParamData.unit.trim(),
         inputType: this.newParamData.inputType,
-        minValue: this.newParamData.minValue,
-        maxValue: this.newParamData.maxValue,
-        acceptanceCriteria: this.newParamData.acceptanceCriteria.trim(),
+        minValue: this.paramGrade ? this.newParamData.minValue : null,
+        maxValue: this.paramGrade ? this.newParamData.maxValue : null,
+        // the limit of a grade line keeps its source for traceability; without a grade there is no limit
+        specMinValue: this.paramGrade ? this.newParamData.minValue : null,
+        specMaxValue: this.paramGrade ? this.newParamData.maxValue : null,
+        specificationLineID: this.paramGrade ? this.newParamLineId : null,
+        acceptanceCriteria: this.paramGrade ? this.newParamData.acceptanceCriteria.trim() : '',
         testMethodUsed: this.newParamData.testMethodUsed.trim(),
         decimalPrecision: this.newParamData.decimalPrecision ?? 2,
         dropdownOptions: this.newParamData.dropdownOptions || [],

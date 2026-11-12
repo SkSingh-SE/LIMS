@@ -5519,6 +5519,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const paramsFA = this.getParameters(planIndex, testIndex);
     for (let i = 0; paramsFA && i < paramsFA.length; i++) {
       const group = paramsFA.at(i);
+      // a parameter added from ANOTHER grade keeps the limit of its own spec line (that line is not one of this test's grade lines)
+      const ownLineId = group.get('specificationLineID')?.value;
+      if (group.get('isAdditional')?.value && ownLineId && !(this.conditionLines[headerId] || []).some(l => l.specificationLineID === ownLineId)) continue;
       const pId = group.get('parameterID')?.value;
       const pName = (group.get('parameterName')?.value || '').toLowerCase();
       const candidates = matched.filter(l =>

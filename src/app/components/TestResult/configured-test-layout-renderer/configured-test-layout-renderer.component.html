@@ -1695,11 +1695,27 @@
         <!-- Body -->
         <div class="card-body p-3">
           <div class="row g-2">
-            <!-- Searchable Parameter Master Dropdown -->
+            <!-- Grade first: decides the parameters offered and their limits -->
+            <div class="col-12">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">Specification Grade</label>
+              <app-searchable-dropdown
+                [labelName]="'Specification Grade'"
+                [hideLabel]="true"
+                [placeholder]="'Select grade (empty = no limit)'"
+                [fetchDataFn]="fetchGradeDropdown"
+                [selectedItem]="paramGrade"
+                [reloadOnOpen]="true"
+                [smallInput]="true"
+                (itemSelected)="onParamGradeSelected($event)">
+              </app-searchable-dropdown>
+              <div class="text-muted text-xxs mt-1" *ngIf="!paramGrade">No grade: the whole parameter master is listed and no limit is set.</div>
+            </div>
+
+            <!-- Searchable Parameter Dropdown -->
             <div class="col-12">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <label class="form-label text-xxs fw-semibold text-muted mb-0">
-                  Select Master Parameter <span class="text-danger">*</span>
+                  {{ paramGrade ? 'Select Parameter of this Grade' : 'Select Master Parameter' }} <span class="text-danger">*</span>
                 </label>
                 <a routerLink="/parameter" target="_blank" class="btn-nav-link" title="Open Parameter Master in new tab">
                   <i class="bi bi-box-arrow-up-right me-1"></i><span>Manage Parameters</span>
@@ -1711,6 +1727,8 @@
                 [placeholder]="'Type parameter name (e.g. Yield Strength, UTS, % C, HRC)...'"
                 [fetchDataFn]="fetchParametersDropdown"
                 [selectedItem]="selectedParamDropdownItem"
+                [reloadKey]="paramGrade?.id || 0"
+                [reloadOnOpen]="true"
                 [smallInput]="true"
                 [required]="true"
                 (itemSelected)="onMasterParameterSelected($event)">
@@ -1738,20 +1756,38 @@
               </select>
             </div>
 
-            <div class="col-md-6" *ngIf="newParamData.parameterName">
-              <label class="form-label text-xxs fw-semibold text-muted mb-1">Min Value / Lower Limit</label>
-              <input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="newParamData.minValue" placeholder="Min limit" />
-            </div>
+            <ng-container *ngIf="newParamData.parameterName && paramGrade">
+              <div class="col-md-6">
+                <label class="form-label text-xxs fw-semibold text-muted mb-1">Min Value / Lower Limit</label>
+                <input type="number" step="any" class="form-control form-control-sm bg-light" [(ngModel)]="newParamData.minValue" readonly placeholder="From grade" />
+              </div>
 
-            <div class="col-md-6" *ngIf="newParamData.parameterName">
-              <label class="form-label text-xxs fw-semibold text-muted mb-1">Max Value / Upper Limit</label>
-              <input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="newParamData.maxValue" placeholder="Max limit" />
-            </div>
+              <div class="col-md-6">
+                <label class="form-label text-xxs fw-semibold text-muted mb-1">Max Value / Upper Limit</label>
+                <input type="number" step="any" class="form-control form-control-sm bg-light" [(ngModel)]="newParamData.maxValue" readonly placeholder="From grade" />
+              </div>
 
-            <div class="col-md-6" *ngIf="newParamData.parameterName">
-              <label class="form-label text-xxs fw-semibold text-muted mb-1">Acceptance Criteria</label>
-              <input type="text" class="form-control form-control-sm" [(ngModel)]="newParamData.acceptanceCriteria" placeholder="e.g. Min 20% or As Agreed" />
-            </div>
+              <div class="col-12">
+                <label class="form-label text-xxs fw-semibold text-muted mb-1">Acceptance Criteria</label>
+                <input type="text" class="form-control form-control-sm bg-light" [(ngModel)]="newParamData.acceptanceCriteria" readonly placeholder="From grade" />
+                <div class="text-secondary text-xxs mt-1" *ngIf="paramLimitHint">{{ paramLimitHint }}</div>
+              </div>
+
+              <div class="col-12" *ngIf="paramLineChoices.length">
+                <label class="form-label text-xxs fw-semibold text-muted mb-1">Applicable Limit <span class="text-danger">*</span></label>
+                <app-searchable-dropdown
+                  [labelName]="'Applicable Limit'"
+                  [hideLabel]="true"
+                  [placeholder]="'Choose the limit that applies...'"
+                  [fetchDataFn]="fetchParamLineChoices"
+                  [selectedItem]="paramLineChoiceItem"
+                  [reloadOnOpen]="true"
+                  [smallInput]="true"
+                  [isInvalid]="paramNeedsLineChoice"
+                  (itemSelected)="onParamLineChoice($event)">
+                </app-searchable-dropdown>
+              </div>
+            </ng-container>
 
             <div class="col-md-6" *ngIf="newParamData.parameterName">
               <label class="form-label text-xxs fw-semibold text-muted mb-1">Test Method Standard</label>
@@ -1788,7 +1824,7 @@
         <!-- Footer -->
         <div class="card-footer bg-light py-2 px-3 border-top d-flex align-items-center justify-content-end gap-2">
           <button type="button" class="btn-lims btn-lims-cancel" (click)="closeAddParamModal()">Cancel</button>
-          <button type="button" class="btn-lims btn-lims-save" (click)="submitAddParam()" [disabled]="!newParamData.parameterName.trim()">
+          <button type="button" class="btn-lims btn-lims-save" (click)="submitAddParam()" [disabled]="!newParamData.parameterName.trim() || paramNeedsLineChoice">
             <i class="bi bi-check-circle me-1"></i><span>Add to Test Parameters</span>
           </button>
         </div>

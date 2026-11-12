@@ -1,7 +1,12 @@
 import {
+  LimitBand,
   bandContains,
+  buildBandSegments,
   dimensionKind,
+  formatBand,
   missingRequiredFacets,
+  segmentContainingValue,
+  segmentWithinBand,
   suggestDimensionalFactorKey,
   suggestProductSizeKey
 } from './spec-condition.helper';
@@ -74,6 +79,72 @@ describe('spec-condition.helper', () => {
     });
     it('returns null when nothing matches', () => {
       expect(suggestProductSizeKey(lines, { thickness: 99 })).toBeNull();
+    });
+  });
+
+  describe('buildBandSegments', () => {
+    const b = (ls: string | null, lv: number | null, us: string | null, uv: number | null): LimitBand => ({ lowerSymbol: ls, lowerValue: lv, upperSymbol: us, upperValue: uv });
+    const labels = (segs: LimitBand[]) => segs.map(formatBand);
+
+    it('returns the standard bands when every parameter uses the same band set', () => {
+      const bands = [b(null, null, '<', 20), b('≥', 20, '≤', 40), b('>', 40, null, null), b(null, null, '<', 20), b('≥', 20, '≤', 40), b('>', 40, null, null)];
+      expect(labels(buildBandSegments(bands))).toEqual(['< 20', '≥ 20 ≤ 40', '> 40']);
+    });
+
+    it('cuts finer when parameters use different band sets (IS 2062: YS <20/20-40/>40, bend <=25/>25)', () => {
+      const bands = [b(null, null, '<', 20), b('≥', 20, '≤', 40), b('>', 40, null, null), b(null, null, '≤', 25), b('>', 25, null, null)];
+      expect(labels(buildBandSegments(bands))).toEqual(['< 20', '≥ 20 ≤ 25', '> 25 ≤ 40', '> 40']);
+    });
+
+    it('keeps a single point segment when two bands meet on the same edge from different sides', () => {
+      const bands = [b(null, null, '<', 10), b('≥', 10, null, null), b(null, null, '≤', 10), b('>', 10, null, null)];
+      expect(labels(buildBandSegments(bands))).toEqual(['< 10', '= 10', '> 10']);
+    });
+
+    it('drops a gap that no band covers and returns nothing for no bands', () => {
+      expect(labels(buildBandSegments([b(null, null, '<', 10), b('>', 20, null, null)]))).toEqual(['< 10', '> 20']);
+      expect(buildBandSegments([])).toEqual([]);
+    });
+
+    it('every segment lies inside exactly one band of each parameter', () => {
+      const ys = [b(null, null, '<', 20), b('≥', 20, '≤', 40), b('>', 40, null, null)];
+      const bend = [b(null, null, '≤', 25), b('>', 25, null, null)];
+      const segs = buildBandSegments([...ys, ...bend]);
+      for (const seg of segs) {
+        expect(ys.filter(x => segmentWithinBand(seg, x)).length).toBe(1);
+        expect(bend.filter(x => segmentWithinBand(seg, x)).length).toBe(1);
+      }
+    });
+  });
+
+  describe('segmentWithinBand', () => {
+    it('respects open ends and strict / inclusive edges', () => {
+      expect(segmentWithinBand({ lowerSymbol: '≥', lowerValue: 20, upperSymbol: '≤', upperValue: 25 }, { lowerSymbol: '≥', lowerValue: 20, upperSymbol: '≤', upperValue: 40 })).toBeTrue();
+      expect(segmentWithinBand({ lowerSymbol: '≥', lowerValue: 20, upperSymbol: '≤', upperValue: 25 }, { lowerSymbol: '>', lowerValue: 20, upperSymbol: '≤', upperValue: 40 })).toBeFalse();
+      expect(segmentWithinBand({ lowerSymbol: '>', lowerValue: 40 }, { lowerSymbol: '>', lowerValue: 40 })).toBeTrue();
+      expect(segmentWithinBand({ lowerSymbol: '>', lowerValue: 40 }, { lowerSymbol: '>', lowerValue: 20, upperSymbol: '≤', upperValue: 40 })).toBeFalse();
+      expect(segmentWithinBand({ upperSymbol: '<', upperValue: 20 }, { upperSymbol: '≤', upperValue: 20 })).toBeTrue();
+      expect(segmentWithinBand({ upperSymbol: '≤', upperValue: 20 }, { upperSymbol: '<', upperValue: 20 })).toBeFalse();
+    });
+    it('a band with no limits contains everything', () => {
+      expect(segmentWithinBand({ lowerSymbol: '≥', lowerValue: 1, upperSymbol: '≤', upperValue: 2 }, {})).toBeTrue();
+    });
+  });
+
+  describe('segmentContainingValue', () => {
+    const segs: LimitBand[] = [
+      { upperSymbol: '<', upperValue: 20 },
+      { lowerSymbol: '≥', lowerValue: 20, upperSymbol: '≤', upperValue: 25 },
+      { lowerSymbol: '>', lowerValue: 25 }
+    ];
+    it('picks the segment holding the sample dimension, boundaries included', () => {
+      expect(formatBand(segmentContainingValue(segs, 19.99)!)).toBe('< 20');
+      expect(formatBand(segmentContainingValue(segs, 20)!)).toBe('≥ 20 ≤ 25');
+      expect(formatBand(segmentContainingValue(segs, 25)!)).toBe('≥ 20 ≤ 25');
+      expect(formatBand(segmentContainingValue(segs, 25.01)!)).toBe('> 25');
+    });
+    it('returns null without a value', () => {
+      expect(segmentContainingValue(segs, null)).toBeNull();
     });
   });
 

@@ -1237,6 +1237,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         dropdownOptions: this.newParamData.dropdownOptions || [],
         isReportable: this.newParamData.isReportable,
         isStandalone: true,
+        isAdditional: true,
         isCalculated: false,
         isBillable: true
       });
@@ -1268,6 +1269,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       specMinValue: [data.specMinValue ?? null],
       specMaxValue: [data.specMaxValue ?? null],
       acceptanceCriteria: [data.acceptanceCriteria || ''],
+      specificationLineID: [data.specificationLineID ?? null],
+      isAdditional: [data.isAdditional ?? false],
+      specSource: [data.specSource || ''],
       isCalculated: [data.isCalculated || false],
       isStandalone: [data.isStandalone || false],
       sourceTestMethodId: [data.sourceTestMethodId ?? null],

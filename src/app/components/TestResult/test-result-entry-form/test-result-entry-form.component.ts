@@ -1,4 +1,14 @@
-import { missingRequiredFacets, suggestDimensionalFactorKey, suggestProductSizeKey } from '../../../utility/helper/spec-condition.helper';
+import {
+  LimitBand,
+  bandContains,
+  buildBandSegments,
+  dimensionKind,
+  formatBand,
+  missingRequiredFacets,
+  sampleDimension,
+  segmentWithinBand,
+  suggestProductSizeKey
+} from '../../../utility/helper/spec-condition.helper';
 import { ChangeDetectorRef, Component, DoCheck, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -1061,6 +1071,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
                   specMinValue: param.specMinValue ?? null,
                   specMaxValue: param.specMaxValue ?? null,
                   acceptanceCriteria: param.acceptanceCriteria || '',
+                  specificationLineID: param.specificationLineID ?? null,
+                  isAdditional: param.isAdditional ?? false,
                   isCalculated: param.isCalculated || !!param.formulaExpression || false,
                   isStandalone: param.isStandalone || false,
                   sourceTestMethodId: param.sourceTestMethodId ?? null,
@@ -1158,6 +1170,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
                 specMinValue: param.specMinValue ?? null,
                 specMaxValue: param.specMaxValue ?? null,
                 acceptanceCriteria: param.acceptanceCriteria || '',
+                specificationLineID: param.specificationLineID ?? null,
+                isAdditional: param.isAdditional ?? false,
                 isCalculated: param.isCalculated || !!param.formulaExpression || false,
                 isStandalone: param.isStandalone || false,
                 sourceTestMethodId: param.sourceTestMethodId ?? null,
@@ -1413,6 +1427,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       specMinValue: [p.specMinValue ?? null],
       specMaxValue: [p.specMaxValue ?? null],
       acceptanceCriteria: [p.acceptanceCriteria || ''],
+      // Specification line this row's limits came from (saved with the row for traceability)
+      specificationLineID: [p.specificationLineID ?? null],
+      isAdditional: [p.isAdditional ?? false],
+      // Screen-only text for the chip under the requirement (which spec line / size range applied); not saved
+      specSource: [p.specSource || ''],
       isStandalone: [p.isStandalone || false],
       sourceTestMethodId: [p.sourceTestMethodId ?? null],
       resultStatus: [p.resultStatus || null],
@@ -1661,6 +1680,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         remarks: p.remarks,
         minValue: p.minValue,
         maxValue: p.maxValue,
+        // The limit source of the row: the server stores exactly what the screen applied
+        specMinValue: p.specMinValue ?? null,
+        specMaxValue: p.specMaxValue ?? null,
+        acceptanceCriteria: p.acceptanceCriteria || null,
+        specificationLineID: p.specificationLineID ?? null,
+        isAdditional: p.isAdditional ?? false,
+        specFieldsSent: true,
         isWithinLimit: p.isWithinLimit,
         altered: p.altered || false,
         formula: p.formulaExpression || '',
@@ -1849,6 +1875,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             remarks: param.remarks,
             minValue: param.minValue,
             maxValue: param.maxValue,
+            specMinValue: param.specMinValue ?? null,
+            specMaxValue: param.specMaxValue ?? null,
+            acceptanceCriteria: param.acceptanceCriteria || null,
+            specificationLineID: param.specificationLineID ?? null,
+            isAdditional: param.isAdditional ?? false,
+            specFieldsSent: true,
             isWithinLimit: param.isWithinLimit,
             altered: param.altered || false,
             formula: param.formulaExpression || '',
@@ -3034,7 +3066,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       },
       error: (err: any) => {
         this.isSubmittingVerification = false;
-        this.toastService.show(err?.error?.message || err?.error || 'Failed to submit for verification', 'error');
+        const apiMessage = typeof err?.error === 'string' ? err.error : err?.error?.message;
+        this.toastService.show(apiMessage || 'Failed to submit for verification', 'error');
       }
     });
   }
@@ -4896,6 +4929,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   private conditionOptionsMap: Record<number, Record<string, { value: string; label: string }[]>> = {};
   private conditionPresentMap: Record<number, Record<string, boolean>> = {};
   conditionConflicts: Record<number, string[]> = {};
+  /** Parameters whose grade lines exist but none fits the selected conditions (no limit is shown for them). */
+  conditionNotApplicable: Record<number, string[]> = {};
+  /** Parameters whose limit changes with the size range (their limits are listed under the dropdowns). */
+  private conditionVaryingParams: Record<number, Set<string>> = {};
+  /** "Limits for this selection": limit of each size-dependent parameter for the chosen range. */
+  conditionLimitSummary: Record<number, { name: string; limit: string; source: string }[]> = {};
+  /** More ranges than this means the grade cuts its parameters' size ranges very differently. */
+  readonly maxComfortableSegments = 12;
   /** True when neither the plan nor the sample carries a specification grade. */
   conditionNoGrade: Record<number, boolean> = {};
   private conditionLinesCache: Record<string, any[]> = {};
@@ -4971,9 +5012,130 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       if (fc === skipFacet) return true;
       const sel = this.getFacetSel(headerId, fc);
       if (!sel) return true;
+      if (fc === 'df') return this.lineMatchesDf(line, sel);
       const lv = this.lineFacetValue(line, fc);
       return lv === null || lv === sel;
     });
+  }
+
+  // ---- Dimensional factor: the dropdown holds SEGMENTS of the factor, a line matches when the
+  // ---- chosen segment lies inside the line's own band (so "≥ 20 ≤ 25" matches a "≥ 20 ≤ 40" line).
+  private parseDfKey(key: string | null): { factorId: number; band: LimitBand } | null {
+    if (!key) return null;
+    const p = key.split('|');
+    const num = (v?: string) => (v !== undefined && v !== '' ? Number(v) : null);
+    return {
+      factorId: Number(p[0]),
+      band: { lowerSymbol: p[1] || null, lowerValue: num(p[2]), upperSymbol: p[3] || null, upperValue: num(p[4]) }
+    };
+  }
+
+  private dfKeyOf(factorId: number, seg: LimitBand): string {
+    return [factorId, seg.lowerSymbol ?? '', seg.lowerValue ?? '', seg.upperSymbol ?? '', seg.upperValue ?? ''].join('|');
+  }
+
+  private lineBand(line: any): LimitBand {
+    return {
+      lowerSymbol: line.lowerLimitValue ?? null,
+      lowerValue: line.lowerLimitDecimalValue ?? null,
+      upperSymbol: line.upperLimitValue ?? null,
+      upperValue: line.upperLimitDecimalValue ?? null
+    };
+  }
+
+  private lineMatchesDf(line: any, selectedKey: string): boolean {
+    if (!line.dimensionalFactorID) return true;
+    const sel = this.parseDfKey(selectedKey);
+    if (!sel) return true;
+    if (Number(line.dimensionalFactorID) !== sel.factorId) return false;
+    return segmentWithinBand(sel.band, this.lineBand(line));
+  }
+
+  private limitText(line: any): string {
+    const min = line?.minValue;
+    const max = line?.maxValue;
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return '';
+  }
+
+  /**
+   * Segment options of every factor used by these lines. The label stays short (band + how many limits change);
+   * `varyingNames` collects the parameters whose limit differs between segments, shown in "Limits for this selection".
+   */
+  private buildDfOptions(candidates: any[], varyingNames: Set<string>): { value: string; label: string }[] {
+    const byFactor = new Map<number, any[]>();
+    for (const l of candidates) {
+      if (!l.dimensionalFactorID) continue;
+      const id = Number(l.dimensionalFactorID);
+      byFactor.set(id, [...(byFactor.get(id) || []), l]);
+    }
+    const options: { value: string; label: string }[] = [];
+    byFactor.forEach((factorLines, factorId) => {
+      const segments = buildBandSegments(factorLines.map(l => this.lineBand(l)));
+      const name = factorLines[0].dimensionalFactorName || 'Dimension';
+      const unit = factorLines[0].dimensionalFactorUnit || '';
+
+      // limit of each parameter inside each segment (a line with this factor's band wins over a line without one)
+      const params = new Map<number, string>();
+      factorLines.forEach(l => params.set(l.parameterID, l.parameterName || ''));
+      const limitsBySegment: Map<number, string>[] = segments.map(seg => {
+        const m = new Map<number, string>();
+        params.forEach((_n, pid) => {
+          const own = candidates.filter(l => l.parameterID === pid);
+          const withBand = own.find(l => l.dimensionalFactorID && Number(l.dimensionalFactorID) === factorId && segmentWithinBand(seg, this.lineBand(l)));
+          const line = withBand || own.find(l => !l.dimensionalFactorID);
+          const text = this.limitText(line);
+          if (text) m.set(pid, text);
+        });
+        return m;
+      });
+      const varying = Array.from(params.keys()).filter(pid => new Set(limitsBySegment.map(m => m.get(pid) ?? '')).size > 1);
+
+      varying.forEach(pid => varyingNames.add(params.get(pid) || ''));
+
+      segments.forEach((seg, i) => {
+        const base = [name, formatBand(seg), unit].filter(x => !!x).join(' ');
+        const changing = varying.filter(pid => limitsBySegment[i].has(pid)).length;
+        const suffix = changing === 0 ? '' : changing === 1 ? ' · 1 limit differs' : ` · ${changing} limits differ`;
+        options.push({ value: this.dfKeyOf(factorId, seg), label: base + suffix });
+      });
+    });
+    return options;
+  }
+
+  /** Short text for the chip under a row's requirement, e.g. "≥ 20 ≤ 40 mm" or "Grade default". */
+  private lineChipLabel(line: any): string {
+    const parts: string[] = [];
+    if (line.dimensionalFactorID) {
+      parts.push([formatBand(this.lineBand(line)), line.dimensionalFactorUnit].filter(x => !!x).join(' '));
+    }
+    for (const fc of ['ht', 'pc', 'tc', 'ps', 'or']) {
+      const text = this.lineFacetLabel(line, fc);
+      if (text) parts.push(text);
+    }
+    return parts.filter(x => !!x).join(' · ') || 'Grade default';
+  }
+
+  /** View mode runs no condition engine: label each row from the spec line it was saved with. */
+  private labelRowSources(planIndex: number, testIndex: number, headerId: number): void {
+    const lines = this.conditionLines[headerId] || [];
+    const paramsFA = this.getParameters(planIndex, testIndex);
+    for (let i = 0; paramsFA && i < paramsFA.length; i++) {
+      const group = paramsFA.at(i);
+      const lineId = group.get('specificationLineID')?.value;
+      const line = lineId ? lines.find(l => l.specificationLineID === lineId) : null;
+      group.get('specSource')?.setValue(line ? this.lineChipLabel(line) : '', { emitEvent: false });
+    }
+    this.cdr.markForCheck();
+  }
+
+  /** True when the saved (possibly older, full-band) selection still lies inside some line of the same factor. */
+  private isDfSelectionUsable(candidates: any[], selectedKey: string): boolean {
+    const sel = this.parseDfKey(selectedKey);
+    if (!sel) return false;
+    return candidates.some(l => l.dimensionalFactorID && Number(l.dimensionalFactorID) === sel.factorId && segmentWithinBand(sel.band, this.lineBand(l)));
   }
 
   condFacetPresent(headerId: number, facet: string): boolean {
@@ -5010,10 +5172,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       let changed = false;
       for (const fc of this.conditionFacets) {
         const found = new Map<string, string>();
-        for (const l of lines) {
-          if (!this.lineMatchesSelection(l, headerId, fc)) continue;
-          const v = this.lineFacetValue(l, fc);
-          if (v !== null && !found.has(v)) found.set(v, this.lineFacetLabel(l, fc));
+        const candidates = lines.filter(l => this.lineMatchesSelection(l, headerId, fc));
+        if (fc === 'df') {
+          const varyingNames = new Set<string>();
+          this.buildDfOptions(candidates, varyingNames).forEach(o => found.set(o.value, o.label));
+          this.conditionVaryingParams[headerId] = varyingNames;
+          // an older save may hold a whole line band instead of a segment: keep it while a line still contains it
+          const saved = this.getFacetSel(headerId, 'df');
+          if (saved && !found.has(saved) && this.isDfSelectionUsable(candidates, saved)) {
+            const sel = this.parseDfKey(saved)!;
+            const first = candidates.find(l => Number(l.dimensionalFactorID) === sel.factorId);
+            found.set(saved, [first?.dimensionalFactorName, formatBand(sel.band), first?.dimensionalFactorUnit].filter(x => !!x).join(' '));
+          }
+        } else {
+          for (const l of candidates) {
+            const v = this.lineFacetValue(l, fc);
+            if (v !== null && !found.has(v)) found.set(v, this.lineFacetLabel(l, fc));
+          }
         }
         options[fc] = Array.from(found, ([value, label]) => ({ value, label }));
         present[fc] = lines.some(l => this.lineFacetValue(l, fc) !== null);
@@ -5030,7 +5205,50 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     }
     this.conditionOptionsMap[headerId] = options;
     this.conditionPresentMap[headerId] = present;
+    // new key => every condition dropdown drops its cached list and reloads on the next open
+    this.conditionVersion[headerId] = (this.conditionVersion[headerId] || 0) + 1;
     this.syncLegacyConditionIds(headerId);
+  }
+
+  // ---- Condition dropdowns use app-searchable-dropdown with a local list --------------------------
+  conditionVersion: Record<number, number> = {};
+  /** Display order of the condition dropdowns. */
+  readonly conditionFacetOrder: string[] = ['df', 'ht', 'pc', 'tc', 'ps', 'or'];
+  private condFetchCache: Record<string, (term: string, page: number, pageSize: number) => Observable<any[]>> = {};
+  private condSelectedCache: Record<string, { id: string; name: string }> = {};
+
+  /** Stable fetch function per header + facet (a new function on every check would reload the dropdown). */
+  condFetch(headerId: number, facet: string): (term: string, page: number, pageSize: number) => Observable<any[]> {
+    const key = `${headerId}_${facet}`;
+    if (!this.condFetchCache[key]) {
+      this.condFetchCache[key] = (term: string, page: number, pageSize: number) => {
+        const t = (term || '').toLowerCase().trim();
+        const items: any[] = [];
+        if (!t) items.push({ id: null, name: facet === 'df' ? 'All sizes' : 'All' });
+        for (const o of this.condOptions(headerId, facet)) {
+          if (!t || o.label.toLowerCase().includes(t)) items.push({ id: o.value, name: o.label });
+        }
+        return of(items.slice(page * pageSize, (page + 1) * pageSize));
+      };
+    }
+    return this.condFetchCache[key];
+  }
+
+  /** Selected option as an object with a stable reference (null when nothing is chosen). */
+  condSelectedItem(headerId: number, facet: string): { id: string; name: string } | null {
+    const sel = this.getFacetSel(headerId, facet);
+    if (!sel) return null;
+    // the "· N limits differ" count belongs to the list only; the chosen value shows just the band
+    const name = (this.condOptions(headerId, facet).find(o => o.value === sel)?.label ?? sel).replace(/ · \d+ limits? differs?$/, '');
+    const key = `${headerId}_${facet}`;
+    const cached = this.condSelectedCache[key];
+    if (cached && cached.id === sel && cached.name === name) return cached;
+    return (this.condSelectedCache[key] = { id: sel, name });
+  }
+
+  onCondItemSelected(planIndex: number, testIndex: number, facet: string, item: any): void {
+    const value = item && item.id !== null && item.id !== undefined ? String(item.id) : null;
+    this.onConditionFacetChanged(planIndex, testIndex, facet, value);
   }
 
   /** Keep the older id fields (persisted with the result) in step with the facet selections. */
@@ -5052,7 +5270,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const lines = this.conditionLines[headerId] || [];
     const auto = (this.conditionAuto[headerId] = this.conditionAuto[headerId] || {});
     const suggestions: Record<string, string | null> = {
-      df: suggestDimensionalFactorKey(lines, this.sample),
+      df: this.suggestDfSegmentKey(headerId, lines),
       ps: suggestProductSizeKey(lines, this.sample)
     };
     for (const fc of Object.keys(suggestions)) {
@@ -5063,6 +5281,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       auto[fc] = true;
     }
     this.refreshConditionOptions(headerId);
+  }
+
+  /**
+   * The option holding the sample's own thickness / diameter / width (per factor). A key is returned only when
+   * exactly one factor gives a match, so two factors never pick one at random.
+   */
+  private suggestDfSegmentKey(headerId: number, lines: any[]): string | null {
+    const hits = new Set<string>();
+    for (const opt of this.condOptions(headerId, 'df')) {
+      const sel = this.parseDfKey(opt.value);
+      if (!sel) continue;
+      const factorLine = lines.find(l => Number(l.dimensionalFactorID) === sel.factorId);
+      const dim = sampleDimension(this.sample, dimensionKind(factorLine?.dimensionalFactorName));
+      if (dim === null) continue;
+      if (bandContains(dim, sel.band.lowerSymbol, sel.band.lowerValue, sel.band.upperSymbol, sel.band.upperValue)) hits.add(opt.value);
+    }
+    return hits.size === 1 ? Array.from(hits)[0] : null;
   }
 
   isAutoCondition(headerId: number, facet: string): boolean {
@@ -5077,11 +5312,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       selected[fc] = this.getFacetSel(headerId, fc);
       present[fc] = this.condFacetPresent(headerId, fc);
     }
+    // A condition is only required while some parameter still has two possible limits; a condition that
+    // changes no limit never blocks Complete.
+    if (!(this.conditionConflicts[headerId] || []).length) return [];
     return missingRequiredFacets(this.conditionFacetLabels, present, selected);
   }
 
   isConditionInvalid(headerId: number, facet: string): boolean {
-    return !!this.conditionsAttempted[headerId] && this.condFacetPresent(headerId, facet) && !this.getFacetSel(headerId, facet);
+    return !!this.conditionsAttempted[headerId]
+      && (this.conditionConflicts[headerId] || []).length > 0
+      && this.condFacetPresent(headerId, facet)
+      && !this.getFacetSel(headerId, facet);
   }
 
   /** Load the grade's lines for this test + method, then build the dropdowns and apply limits. */
@@ -5099,20 +5340,24 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     if (!g1) return;
     const labTestId = Number(meta?.laboratoryTestId || plan.labTestId || 0) || null;
     const methodId = Number(meta?.testMethodId || 0) || null;
-    const key = `${g1}_${g2}_${labTestId}_${methodId}`;
+    // Chemical tests only use chemical lines, every other test only mechanical lines
+    const isChemicalTest = !!(this.apiMetadata?.chemicalTests || []).find((m: any) => m.headerId === headerId);
+    const testKind = isChemicalTest ? 'chemical' : 'general';
+    const key = `${g1}_${g2}_${labTestId}_${methodId}_${testKind}`;
 
     const ready = (lines: any[]) => {
       this.conditionLines[headerId] = lines;
       this.refreshConditionOptions(headerId);
       if (!this.isViewMode) this.autoSuggestConditions(headerId);
       if (!this.isViewMode) this.applyConditionLines(planIndex, testIndex, false);
+      if (this.isViewMode) this.labelRowSources(planIndex, testIndex, headerId);
       this.cdr.markForCheck();
     };
     if (this.conditionLinesCache[key]) {
       ready(this.conditionLinesCache[key]);
       return;
     }
-    this.materialSpecService.getConditionOptions(g1, g2, labTestId, methodId).subscribe({
+    this.materialSpecService.getConditionOptions(g1, g2, labTestId, methodId, testKind).subscribe({
       next: lines => {
         this.conditionLinesCache[key] = lines || [];
         ready(this.conditionLinesCache[key]);
@@ -5152,6 +5397,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const matched = (this.conditionLines[headerId] || []).filter(l => this.lineMatchesSelection(l, headerId));
     this.matchedConditionLinesCount[headerId] = matched.length;
     const conflicts: string[] = [];
+    const notApplicable: string[] = [];
     const sources: { name: string; min: any; max: any; unit: string; source: string }[] = [];
 
     const paramsFA = this.getParameters(planIndex, testIndex);
@@ -5161,28 +5407,43 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       const pName = (group.get('parameterName')?.value || '').toLowerCase();
       const candidates = matched.filter(l =>
         (pId && l.parameterID && pId === l.parameterID) || (pName && (l.parameterName || '').toLowerCase() === pName));
-      if (!candidates.length) continue;
+      if (!candidates.length) {
+        // The grade has lines for this parameter but none fits the selected conditions: no limit applies
+        const hasAnyLine = (this.conditionLines[headerId] || []).some(l =>
+          (pId && l.parameterID && pId === l.parameterID) || (pName && (l.parameterName || '').toLowerCase() === pName));
+        if (hasAnyLine) {
+          ['minValue', 'maxValue', 'specMinValue', 'specMaxValue', 'specificationLineID'].forEach(c => group.get(c)?.setValue(null));
+          group.get('acceptanceCriteria')?.setValue('');
+          group.get('specSource')?.setValue('');
+          notApplicable.push(group.get('parameterName')?.value || `Parameter ${pId}`);
+        }
+        continue;
+      }
 
+      // A line that carries no condition is the grade default and applies as long as no condition decides otherwise
+      const isDefaultLine = (l: any) => this.conditionFacets.every(fc => this.lineFacetValue(l, fc) === null);
       const score = (l: any) => this.conditionFacets.filter(fc => this.getFacetSel(headerId, fc) && this.lineFacetValue(l, fc) !== null).length;
       const top = Math.max(...candidates.map(score));
-      const best = candidates.filter(l => score(l) === top);
+      let best = candidates.filter(l => score(l) === top);
+      if (top === 0) {
+        const defaults = best.filter(isDefaultLine);
+        if (defaults.length) best = defaults;
+      }
       const sameLimits = best.every(l => l.minValue === best[0].minValue && l.maxValue === best[0].maxValue);
       if (!sameLimits) {
         conflicts.push(group.get('parameterName')?.value || `Parameter ${pId}`);
         if (top === 0) continue; // nothing selected yet: leave the limits as loaded
       }
       const line = best[0];
-      if (line.minValue !== undefined) {
-        group.get('minValue')?.setValue(line.minValue);
-        group.get('specMinValue')?.setValue(line.minValue);
-      }
-      if (line.maxValue !== undefined) {
-        group.get('maxValue')?.setValue(line.maxValue);
-        group.get('specMaxValue')?.setValue(line.maxValue);
-      }
+      group.get('minValue')?.setValue(line.minValue ?? null);
+      group.get('specMinValue')?.setValue(line.minValue ?? null);
+      group.get('maxValue')?.setValue(line.maxValue ?? null);
+      group.get('specMaxValue')?.setValue(line.maxValue ?? null);
+      group.get('specificationLineID')?.setValue(line.specificationLineID ?? null);
       if (line.unitName && !group.get('unit')?.value) group.get('unit')?.setValue(line.unitName);
       if (line.equation) group.get('formulaExpression')?.setValue(line.equation);
-      if (line.acceptanceCriteria) group.get('acceptanceCriteria')?.setValue(line.acceptanceCriteria);
+      group.get('acceptanceCriteria')?.setValue(line.acceptanceCriteria || '');
+      group.get('specSource')?.setValue(this.lineChipLabel(line));
       sources.push({
         name: group.get('parameterName')?.value || '',
         min: line.minValue,
@@ -5192,7 +5453,18 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       });
     }
     this.conditionConflicts[headerId] = conflicts;
+    this.conditionNotApplicable[headerId] = notApplicable;
     this.requirementSources[headerId] = sources;
+    // Only the parameters whose limit depends on the size range are listed; the rest are the same for every range
+    const varying = this.conditionVaryingParams[headerId] || new Set<string>();
+    // one entry per parameter, however many specimen rows it has
+    this.conditionLimitSummary[headerId] = sources
+      .filter((s, i) => varying.has(s.name) && sources.findIndex(x => x.name === s.name) === i)
+      .map(s => ({
+        name: s.name,
+        limit: this.limitText({ minValue: s.min, maxValue: s.max }) || '—',
+        source: s.source
+      }));
 
     this.autoEvaluateAllFormulas();
     this.cdr.markForCheck();
@@ -5213,6 +5485,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       productConditionID2: null,
       specimenOrientationID: null
     };
+    this.conditionAuto[test.headerId] = {};
     this.refreshConditionOptions(test.headerId);
     this.applyConditionLines(planIndex, testIndex, true);
   }

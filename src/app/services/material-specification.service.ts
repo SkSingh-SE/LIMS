@@ -86,11 +86,12 @@ export class MaterialSpecificationService {
   }
 
   /** All specification lines of the grade(s) that apply to this test/method, with display names. */
-  getConditionOptions(gradeId: number, gradeId2?: number | null, laboratoryTestId?: number | null, testMethodId?: number | null): Observable<any[]> {
+  getConditionOptions(gradeId: number, gradeId2?: number | null, laboratoryTestId?: number | null, testMethodId?: number | null, testKind?: 'general' | 'chemical' | null): Observable<any[]> {
     let url = `${this.apiUrl}/condition-options?gradeId=${gradeId}`;
     if (gradeId2) url += `&gradeId2=${gradeId2}`;
     if (laboratoryTestId) url += `&laboratoryTestId=${laboratoryTestId}`;
     if (testMethodId) url += `&testMethodId=${testMethodId}`;
+    if (testKind) url += `&testKind=${testKind}`;
     return this.http.get<any[]>(url);
   }
 }

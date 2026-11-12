@@ -726,6 +726,8 @@
                         <span class="badge bg-light text-dark border px-2 py-1 font-monospace text-xs">
                           {{ formatRequirement(parametersFormArray.at(r).value) }}
                         </span>
+                        <div class="text-muted text-xxs mt-1" *ngIf="parametersFormArray.at(r).get('specSource')?.value as src"
+                          [title]="'Specification line applied: ' + src">{{ src }}</div>
                       </td>
 
                       <!-- Observed Result Input -->

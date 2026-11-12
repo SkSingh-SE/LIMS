@@ -35,7 +35,7 @@
   <!-- ================================================================ -->
   <!-- 2. TEST STRIP (one pill per test; controls live in the per-test toolbar) -->
   <!-- ================================================================ -->
-  <div class="compact-teststrip" *ngIf="plans.length > 0">
+  <div class="compact-teststrip" *ngIf="plans.length > 1">
     <!-- Left: Selected Tests Pills -->
     <div class="teststrip-left lims-teststrip-pills">
       <span class="text-secondary fw-semibold text-xxs lims-teststrip-pills-label">Selected Tests:</span>
@@ -73,54 +73,19 @@
             <!-- ========================================================== -->
             <!-- PER-TEST TOOLBAR (acts on this test only; rendered for the active test) -->
             <!-- ========================================================== -->
+            @let tbTest = plans[p].tests[t];
+            @let tbName = tbTest?.name || plans[p].type || 'Test';
+            @let tbMethod = getCleanMethodLabel(plans[p].methodName || tbTest?.testMethodName || '');
+            @let tbLocked = isViewMode || isToolbarLocked(tbTest?.status);
+            @let tbStatus = tbTest?.status || 'In Progress';
             <div class="lims-test-toolbar" *ngIf="activePlanIndex === p">
-              @let tbTest = plans[p].tests[t];
-              @let tbName = tbTest?.name || plans[p].type || 'Test';
-              @let tbMethod = getCleanMethodLabel(plans[p].methodName || tbTest?.testMethodName || '');
-              @let tbLocked = isViewMode || isToolbarLocked(tbTest?.status);
-              @let tbStatus = tbTest?.status || 'In Progress';
               <div class="lims-test-toolbar-id">
-                <span class="lims-test-toolbar-label">Test</span>
                 <strong class="lims-test-toolbar-name" [title]="'Test: ' + tbName">{{ tbName }}</strong>
                 <span class="lims-test-toolbar-method" *ngIf="tbMethod" [title]="'Method: ' + tbMethod">{{ tbMethod }}</span>
                 <span class="badge lims-test-toolbar-status" [ngClass]="getSampleStatusBadgeClass(tbStatus)"
                   [title]="'Test status: ' + tbStatus">{{ tbStatus }}</span>
-              </div>
-
-              <div class="lims-test-toolbar-controls">
-                <!-- Layout -->
-                <div class="lims-test-toolbar-group">
-                  <span class="lims-test-toolbar-label">Layout</span>
-                  <div class="lims-test-toolbar-layout" [title]="selectedLayoutItem?.name || 'Select layout'">
-                    <app-searchable-dropdown
-                      [placeholder]="'Select Layout...'"
-                      [labelName]="'Layout'"
-                      [fetchDataFn]="fetchLayoutTemplates"
-                      [selectedItem]="selectedLayoutItem"
-                      [isDisabled]="tbLocked"
-                      (itemSelected)="onLayoutItemSelected($event)"
-                      [hideLabel]="true"
-                      [smallInput]="true">
-                    </app-searchable-dropdown>
-                  </div>
-                </div>
-
-                <!-- Specimen count -->
-                <div class="lims-test-toolbar-group">
-                  <span class="lims-test-toolbar-label">Spm</span>
-                  <div class="spm-stepper-compact">
-                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
-                      [disabled]="tbLocked || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
-                    <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="tbLocked"
-                      aria-label="Specimen count" (change)="onWorkbenchSpecimenInputChange($event)" />
-                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
-                      [disabled]="tbLocked || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
-                  </div>
-                  <span class="spm-plan-badge" title="Planned specimen quantity">Plan: {{ getActivePlannedQuantity() }}</span>
-                </div>
-
                 <!-- Entered / total and fail count -->
-                <div *ngIf="pillMetrics(p) as metrics" class="lims-test-toolbar-group" title="Parameters entered / total">
+                <div *ngIf="pillMetrics(p) as metrics" class="lims-test-toolbar-group lims-test-toolbar-count" title="Parameters entered / total">
                   <span class="badge font-monospace"
                     [ngClass]="metrics.entered === metrics.total && metrics.total > 0 ? 'bg-success' : 'bg-secondary'">
                     {{ metrics.entered }}/{{ metrics.total }}
@@ -138,11 +103,6 @@
                   (click)="openRawDataSheetModal(p, t)" title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
                   <i class="bi bi-file-earmark-text"></i><span>Raw Data Sheet</span>
                 </button>
-                <a *ngIf="currentTestLayout" class="btn btn-sm btn-lims btn-lims-secondary text-decoration-none"
-                  [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }"
-                  title="Open this layout in Layout Studio">
-                  <i class="bi bi-grid-1x2"></i><span>Studio</span>
-                </a>
                 @let completeBlockedReason = getCompleteBlockedReason(tbTest?.headerId);
                 <button type="button" class="btn btn-sm btn-lims btn-lims-save" (click)="completeTest(p, t)"
                   [disabled]="!!completeBlockedReason || isSavingResult" [title]="completeBlockedReason || 'Complete this test'">
@@ -174,6 +134,46 @@
                   <span>2. NABL QA &amp; Audit</span>
                 </button>
               </div>
+
+              <!-- Layout and specimen count of this test -->
+              <div class="lims-test-toolbar-controls" *ngIf="activePlanIndex === p">
+                <!-- Layout -->
+                <div class="lims-test-toolbar-group">
+                  <span class="lims-test-toolbar-label">Layout</span>
+                  <div class="lims-test-toolbar-layout" [title]="selectedLayoutItem?.name || 'Select layout'">
+                    <app-searchable-dropdown
+                      [placeholder]="'Select Layout...'"
+                      [labelName]="'Layout'"
+                      [fetchDataFn]="fetchLayoutTemplates"
+                      [selectedItem]="selectedLayoutItem"
+                      [isDisabled]="tbLocked"
+                      (itemSelected)="onLayoutItemSelected($event)"
+                      [hideLabel]="true"
+                      [smallInput]="true">
+                    </app-searchable-dropdown>
+                  </div>
+                </div>
+
+                <!-- Specimen count -->
+                <div class="lims-test-toolbar-group">
+                  <span class="lims-test-toolbar-label">Specimens</span>
+                  <div class="spm-stepper-compact">
+                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
+                      [disabled]="tbLocked || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
+                    <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="tbLocked"
+                      aria-label="Specimen count" (change)="onWorkbenchSpecimenInputChange($event)" />
+                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
+                      [disabled]="tbLocked || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
+                  </div>
+                  <span class="spm-plan-badge" title="Planned specimen quantity">Plan: {{ getActivePlannedQuantity() }}</span>
+                </div>
+
+              <a *ngIf="currentTestLayout" class="btn btn-sm btn-lims btn-lims-secondary lims-test-toolbar-studio text-decoration-none"
+                [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }"
+                title="Open this layout in Layout Studio">
+                <i class="bi bi-grid-1x2"></i><span>Studio</span>
+              </a>
+              </div>
             </div>
 
             <!-- ========================================================== -->
@@ -186,10 +186,10 @@
                 <div class="col-12 col-xl-4 col-lg-5 d-flex flex-column gap-2">
 
                   <!-- CARD 1: MATERIAL SPECIFICATION & CONDITION ENGINE -->
-                  <article class="card p-2 border-0 shadow-sm lims-card spec-condition-card">
-                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
+                  <article class="lims-section spec-condition-card">
+                    <div class="lims-section-head">
                       <div class="d-flex align-items-center gap-1.5">
-                        <h3 class="fs-7 fw-semibold text-danger m-0">Specification Conditions</h3>
+                        <h3 class="lims-section-title">Specification Conditions</h3>
                       </div>
                       <div class="d-flex align-items-center gap-1">
                         <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs"
@@ -266,10 +266,10 @@
                   </article>
 
                   <!-- CARD 2: LIVE CALCULATIONS & RESULT VERDICTS -->
-                  <article class="card p-2 border-0 shadow-sm lims-card">
-                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
+                  <article class="lims-section">
+                    <div class="lims-section-head">
                       <div class="d-flex align-items-center gap-1.5">
-                        <h3 class="fs-7 fw-semibold text-danger m-0">Live Calculations &amp; Verdicts</h3>
+                        <h3 class="lims-section-title">Live Calculations &amp; Verdicts</h3>
                       </div>
                       <button type="button" class="btn btn-xs btn-lims btn-lims-add py-0 px-2 text-xxs"
                               (click)="calculateParameters(p, t)" [disabled]="isViewMode" title="Recalculate live formulas">
@@ -319,10 +319,10 @@
                   </article>
 
                   <!-- CARD 3: EXECUTION TRACEABILITY & ENVIRONMENTAL COMPLIANCE -->
-                  <article class="card p-2 border-0 shadow-sm lims-card">
-                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
+                  <article class="lims-section">
+                    <div class="lims-section-head">
                       <div class="d-flex align-items-center gap-1.5">
-                        <h3 class="fs-7 fw-semibold text-danger m-0">Execution Traceability</h3>
+                        <h3 class="lims-section-title">Execution Traceability</h3>
                       </div>
                       <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs">ISO 17025 Cl 7.5</span>
                     </div>
@@ -387,10 +387,10 @@
                   </article>
 
                   <!-- CARD 4: ATTACHMENTS & EVIDENCE -->
-                  <article class="card p-2 border-0 shadow-sm lims-card">
-                    <div class="cardhead py-1 px-2 d-flex justify-content-between align-items-center mb-1">
+                  <article class="lims-section">
+                    <div class="lims-section-head">
                       <div class="d-flex align-items-center gap-1.5">
-                        <h3 class="fs-7 fw-semibold text-danger m-0">Attachments &amp; Evidence</h3>
+                        <h3 class="lims-section-title">Attachments &amp; Evidence</h3>
                       </div>
                       <label *ngIf="!isViewMode" class="btn btn-xs btn-lims btn-lims-add cursor-pointer m-0 py-0 px-2 text-xxs">
                         <i class="bi bi-plus-lg me-1"></i><span>Add</span>
@@ -476,48 +476,31 @@
             <!-- ========================================================== -->
             <div class="tab-pane-content" *ngIf="activeTab === 'nabl_audit'">
 
-              <!-- 5. NABL Accreditation & Scope Verification Summary -->
-              <div class="summarygrid mb-2">
-                <div class="metric">
-                  <label>Total Parameters</label>
-                  <strong>{{ plans[p].tests[t].parameters?.length || 0 }}</strong>
+              <!-- 5. Scope summary: counts over the parameters of the result screen -->
+              @let scopeCounts = getNablScopeCounts(p, t);
+              <article class="lims-section">
+                <div class="lims-section-head">
+                  <h3>Scope Summary</h3>
+                  <div>
+                    <button type="button" class="btn btn-lims btn-lims-secondary" (click)="navigateToScope()">Open ISO Scope</button>
+                  </div>
                 </div>
-                <div class="metric">
-                  <label>In-scope Parameters</label>
-                  <strong class="green">{{ getNablScopeSummary(plans[p].tests[t].headerId).inScopeCount }}</strong>
+                <div class="lims-kv-row">
+                  <div class="lims-kv"><span class="lims-kv-label">Parameters</span><span class="lims-kv-value">{{ scopeCounts.total }}</span></div>
+                  <div class="lims-kv"><span class="lims-kv-label">In scope</span><span class="lims-kv-value">{{ scopeCounts.inScope }}</span></div>
+                  <div class="lims-kv"><span class="lims-kv-label">Out of scope</span><span class="lims-kv-value">{{ scopeCounts.outOfScope }}</span></div>
+                  <div class="lims-kv"><span class="lims-kv-label">Accreditation standard</span><span class="lims-kv-value">ISO/IEC 17025:2017</span></div>
                 </div>
-                <div class="metric">
-                  <label>Out-of-scope</label>
-                  <strong>{{ getNablScopeSummary(plans[p].tests[t].headerId).outOfScopeCount +
-                    (plans[p].tests[t].parameters?.length -
-                    getNablScopeSummary(plans[p].tests[t].headerId).inScopeCount) }}</strong>
-                </div>
-                <div class="metric">
-                  <label>Accreditation Standard</label>
-                  <strong class="standard-label-blue">ISO/IEC 17025:2017</strong>
-                </div>
-              </div>
-
-              <!-- Scope Notice -->
-              <div class="notice mb-2">
-                <span>{{ hasAnyInScope(plans[p].tests[t].headerId) ? '✓' : '⚠' }}</span>
-                <div>
-                  <strong *ngIf="hasAnyInScope(plans[p].tests[t].headerId)">Accredited Scope Verified</strong>
-                  <strong *ngIf="!hasAnyInScope(plans[p].tests[t].headerId)">Scope Advisory Notice</strong>
-                  <span *ngIf="hasAnyInScope(plans[p].tests[t].headerId)">
-                    This test is covered under the laboratory's accredited NABL ISO/IEC 17025:2017 scope. All parameters
-                    marked 'In Scope' will carry accredited endorsement.
-                  </span>
-                  <span *ngIf="!hasAnyInScope(plans[p].tests[t].headerId)">
-                    No parameters are currently mapped to the laboratory accreditation scope. The certificate should
-                    clearly state: <em>"Test not under NABL Scope"</em> unless scope mapping is verified.
-                  </span>
-                </div>
-                <a class="link ms-auto align-self-start" (click)="navigateToScope()">Open ISO Scope →</a>
-              </div>
+                <p class="lims-section-note mb-0" *ngIf="scopeCounts.inScope > 0">
+                  This test is covered by the laboratory's accredited scope. Parameters marked In Scope carry the accredited endorsement.
+                </p>
+                <p class="lims-section-note mb-0" *ngIf="scopeCounts.inScope === 0">
+                  No parameter of this test is mapped to the accreditation scope. The certificate must state "Test not under NABL Scope" unless the scope mapping is verified.
+                </p>
+              </article>
 
               <!-- 6. Consolidated NABL ISO/IEC 17025 Conformity Assessment & Result Verdict Panel -->
-              <div class="mb-2">
+              <div>
                 <app-test-verdict-panel [plan]="plans[p]" [test]="plans[p].tests[t]"
                   [parametersFormArray]="getActiveParametersFormArray()"
                   [nablScopeData]="nablScopeMap[plans[p].tests[t]?.headerId] || []"
@@ -527,10 +510,11 @@
               </div>
 
               <!-- Requirement source: which specification line gave each limit -->
-              <article class="dossier-card mb-2" *ngIf="(requirementSources[plans[p].tests[t]?.headerId] || []).length">
-                <div class="dossier-cardhead">
+              @let reqRows = getRequirementSourceRows(plans[p].tests[t]?.headerId);
+              <article class="lims-section" *ngIf="reqRows.length">
+                <div class="lims-section-head">
                   <h3>Requirement Source</h3>
-                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">{{ (requirementSources[plans[p].tests[t]?.headerId] || []).length }} parameters</span>
+                  <span class="badge bg-secondary">{{ reqRows.length }} lines</span>
                 </div>
                 <div class="table-responsive">
                   <table class="table table-sm table-bordered mb-0 text-xs">
@@ -538,7 +522,7 @@
                       <tr><th>Parameter</th><th>Min</th><th>Max</th><th>Unit</th><th>Conditions applied</th></tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let r of requirementSources[plans[p].tests[t]?.headerId]">
+                      <tr *ngFor="let r of reqRows">
                         <td>{{ r.name }}</td>
                         <td>{{ r.min ?? '—' }}</td>
                         <td>{{ r.max ?? '—' }}</td>
@@ -551,8 +535,8 @@
               </article>
 
               <!-- 7. Parameter-wise Scope & Measurement Uncertainty Table -->
-              <article class="dossier-card mb-2">
-                <div class="dossier-cardhead">
+              <article class="lims-section">
+                <div class="lims-section-head">
                   <h3>Parameter-wise Scope &amp; Measurement Uncertainty</h3>
                   <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Scope &amp; MU Matrix</span>
                 </div>
@@ -565,11 +549,11 @@
                         <th style="width: 70px;">Unit</th>
                         <th style="width: 120px;">NABL Scope Status</th>
                         <th>Measurement Uncertainty (U)</th>
-                        <th style="width: 140px;">Coverage Factor (k)</th>
+                        <th style="width: 180px;">Coverage Factor (k)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let param of plans[p].tests[t].parameters; let r = index">
+                      <tr *ngFor="let param of getNablParameters(p, t); let r = index">
                         <td class="font-monospace text-muted">{{ r + 1 }}</td>
                         <td><strong>{{ param.parameterName }}</strong></td>
                         <td>{{ param.unit || '—' }}</td>
@@ -588,7 +572,7 @@
                           <span class="text-secondary font-monospace">k = 2.0 (95.45% CL)</span>
                         </td>
                       </tr>
-                      <tr *ngIf="!plans[p].tests[t].parameters?.length">
+                      <tr *ngIf="!scopeCounts.total">
                         <td colspan="6" class="text-center py-2 text-muted">No parameters configured.</td>
                       </tr>
                     </tbody>
@@ -596,84 +580,65 @@
                 </div>
               </article>
 
-              <!-- 8. Complete Chronological Audit Trail & Execution Timeline -->
-              <article class="dossier-card mb-2">
-                <div class="dossier-cardhead">
+              <!-- 8. Execution timeline -->
+              @let tlTest = plans[p].tests[t];
+              @let tlTiming = testTimingMap[tlTest.headerId];
+              <article class="lims-section">
+                <div class="lims-section-head">
                   <h3>Execution Timeline &amp; Audit Trail</h3>
-                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 17025 Cl 7.5</span>
+                  <span class="badge bg-secondary">ISO 17025 Cl 7.5</span>
                 </div>
-                <div class="cardbody p-2">
-                  <div class="timeline">
-                    <!-- Event 1: Test Planned -->
-                    <div class="event">
-                      <div class="dot">1</div>
-                      <div class="eventbox">
-                        <div class="eventtop">
-                          <strong>Test Planned &amp; Allocated</strong>
-                          <span class="state">{{ inward?.receivedOn || 'Planned' }}</span>
-                        </div>
-                        <p>Case {{ inward?.caseNo }} · Sample {{ sample?.sampleRegNo || inward?.sampleNo }} · Method
-                          {{ plans[p].methodName || plans[p].specification || 'General' }}</p>
-                      </div>
-                    </div>
-
-                    <!-- Event 2: In Progress -->
-                    <div class="event">
-                      <div class="dot">2</div>
-                      <div class="eventbox">
-                        <div class="eventtop">
-                          <strong>Testing Started</strong>
-                          <span class="state amber">{{ testTimingMap[plans[p].tests[t].headerId]?.testStartTime ?
-                            formatDateTime(testTimingMap[plans[p].tests[t].headerId].testStartTime) : 'In Progress' }}</span>
-                        </div>
-                        <p>Performer: {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || 'Laboratory Analyst' }} · Configuration locked at test start.</p>
-                      </div>
-                    </div>
-
-                    <!-- Event 3: Testing Completed -->
-                    <div class="event"
-                      *ngIf="plans[p].tests[t].status === 'Completed' || plans[p].tests[t].status === 'Verified' || plans[p].tests[t].status === 'PendingVerification'">
-                      <div class="dot">3</div>
-                      <div class="eventbox">
-                        <div class="eventtop">
-                          <strong class="text-success">Testing Completed</strong>
-                          <span class="state green">{{ formatDateTime(testTimingMap[plans[p].tests[t].headerId]?.testEndTime) }}</span>
-                        </div>
-                        <p>All parameters recorded &amp; calculated. Test execution concluded.</p>
-                      </div>
-                    </div>
-
-                    <!-- Event 4: Verification -->
-                    <div class="event" *ngIf="plans[p].tests[t].status === 'Verified'">
-                      <div class="dot">4</div>
-                      <div class="eventbox">
-                        <div class="eventtop">
-                          <strong class="text-primary">Verified &amp; Approved</strong>
-                          <span class="state green">Verified</span>
-                        </div>
-                        <p>Technical verification completed per ISO 17025 Clause 7.7.</p>
-                      </div>
-                    </div>
-                  </div>
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead>
+                      <tr><th class="lims-col-num">#</th><th>Event</th><th>Details</th><th class="lims-col-date">Date / time</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>1</td>
+                        <td>Test planned and allocated</td>
+                        <td>Case {{ inward?.caseNo }} · Sample {{ sample?.sampleRegNo || inward?.sampleNo }} · Method {{ plans[p].methodName || plans[p].specification || '—' }}</td>
+                        <td>{{ inward?.receivedOn || '—' }}</td>
+                      </tr>
+                      <tr>
+                        <td>2</td>
+                        <td>Testing started</td>
+                        <td>Performed by {{ tlTiming?.performedByName || '—' }}</td>
+                        <td>{{ tlTiming?.testStartTime ? formatDateTime(tlTiming.testStartTime) : '—' }}</td>
+                      </tr>
+                      <tr *ngIf="tlTest.status === 'Completed' || tlTest.status === 'Verified' || tlTest.status === 'PendingVerification'">
+                        <td>3</td>
+                        <td>Testing completed</td>
+                        <td>All parameters recorded and calculated.</td>
+                        <td>{{ tlTiming?.testEndTime ? formatDateTime(tlTiming.testEndTime) : '—' }}</td>
+                      </tr>
+                      <tr *ngIf="tlTest.status === 'Verified'">
+                        <td>4</td>
+                        <td>Verified and approved</td>
+                        <td>Technical verification completed (ISO 17025 Cl 7.7).</td>
+                        <td><span class="badge bg-success">Verified</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </article>
             </div>
 
             <footer class="footer">
-              <div class="compliance">
-                ✿ &nbsp; ISO/IEC 17025:2017 Compliance <span class="muted">· Validated test execution workbench</span>
+              <div class="compliance" *ngIf="pillMetrics(p) as fm">
+                {{ fm.entered }}/{{ fm.total }} entered<span *ngIf="fm.fail > 0" class="text-danger"> · {{ fm.fail }} fail</span>
               </div>
               <div class="footeractions">
-                <button type="button" class="btn" (click)="saveAsDraft(p, t)" [disabled]="isViewMode || isSavingResult">
+                <button type="button" class="btn btn-lims btn-lims-save" (click)="saveAsDraft(p, t)" [disabled]="isViewMode || isSavingResult">
                   <i class="bi bi-bookmark me-1"></i><span>Save Draft</span>
                 </button>
-                <button type="button" class="btn" (click)="cancel()">
+                <button type="button" class="btn btn-lims btn-lims-cancel" (click)="cancel()">
                   <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
                 </button>
-                <button type="button" class="btn primary" (click)="goToNextTab()" *ngIf="activeTab === 'execution'">
+                <button type="button" class="btn btn-lims btn-lims-secondary" (click)="goToNextTab()" *ngIf="activeTab === 'execution'">
                   <span>Next: NABL QA &amp; Audit →</span>
                 </button>
-                <button type="button" class="btn secondary" (click)="switchTab('execution')" *ngIf="activeTab === 'nabl_audit'">
+                <button type="button" class="btn btn-lims btn-lims-secondary" (click)="switchTab('execution')" *ngIf="activeTab === 'nabl_audit'">
                   <span>← Back to Execution</span>
                 </button>
               </div>
@@ -1477,8 +1442,8 @@
     <!-- 2. Dual Case Registration & Sample Material Cards -->
     <div class="dossier-grid mb-2">
       <!-- CARD A: CASE & CUSTOMER REGISTRATION -->
-      <article class="dossier-card">
-        <div class="dossier-cardhead">
+      <article class="lims-section">
+        <div class="lims-section-head">
           <h3>Case &amp; Customer Registration</h3>
           <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 17025 Cl 7.1</span>
         </div>
@@ -1515,8 +1480,8 @@
       </article>
 
       <!-- CARD B: SAMPLE MATERIAL & TECHNICAL CHARACTERIZATION -->
-      <article class="dossier-card">
-        <div class="dossier-cardhead">
+      <article class="lims-section">
+        <div class="lims-section-head">
           <h3>Sample Material &amp; Specification</h3>
           <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Sample Traceability</span>
         </div>
@@ -1576,8 +1541,8 @@
     </div>
 
     <!-- 3. As-Received Physical Dimensions & Geometric Profile Strip -->
-    <article class="dossier-card mb-2">
-      <div class="dossier-cardhead">
+    <article class="lims-section">
+      <div class="lims-section-head">
         <h3>As-Received Physical Dimensions &amp; Geometric Profile</h3>
         <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Dimensional Verification</span>
       </div>
@@ -1610,8 +1575,8 @@
     </article>
 
     <!-- 4. Planned Tests & Laboratory Execution Matrix for this Case / Sample -->
-    <article class="dossier-card mb-2">
-      <div class="dossier-cardhead">
+    <article class="lims-section">
+      <div class="lims-section-head">
         <div class="d-flex align-items-center gap-2">
           <h3>Planned Tests &amp; Laboratory Execution Matrix</h3>
           <span class="badge bg-light text-dark border font-monospace text-xxs">{{ getAllCaseTestsList().length }} Tests</span>
@@ -1656,10 +1621,10 @@
                 </span>
               </td>
               <td class="text-center">
-                <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 text-xxs"
+                <button type="button" class="btn btn-lims btn-lims-secondary lims-btn-row"
                   (click)="selectTestFromCaseDossier(ct.planIndex, ct.testIndex)"
                   title="Open this test in Execution Workspace">
-                  Open Test →
+                  Open
                 </button>
               </td>
             </tr>

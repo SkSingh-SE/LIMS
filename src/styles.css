@@ -7060,19 +7060,17 @@ input[type="checkbox"]:checked {
   border-color: var(--danger-main);
 }
 
-/* Per-test toolbar: name, method, status, then Layout / Spm / counts, then actions.
-   Sits directly above the test's two tabs. Rows wrap instead of truncating: the
-   name/method group takes its full text width and moves the controls to the next
-   line when there is no room; only on a very narrow screen does the text itself
-   wrap onto a second line. Nothing is clipped. */
+/* Per-test header, two rows.
+   Row 1 (.lims-test-toolbar): test name, method, status and entered count on the left, the test's actions on the right.
+   Row 2 (.test-tabbar): the two tabs on the left, Layout / Specimens / Studio on the right.
+   The name wraps inside its own block when it is long; the actions stay on the first line. */
 .lims-test-toolbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
+  gap: 12px;
   margin-bottom: 6px;
-  padding: 4px 8px;
-  background: var(--neutral-50);
+  padding: 6px 10px;
+  background: #fafbfc;
   border: 1px solid var(--neutral-200);
   border-left: 3px solid var(--primary-color);
   border-radius: 4px;
@@ -7083,15 +7081,15 @@ input[type="checkbox"]:checked {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2px 6px;
-  flex: 1 1 auto;
+  gap: 2px 8px;
+  flex: 1 1 0;
   min-width: 0;
 }
 
 .lims-test-toolbar-label {
   flex-shrink: 0;
-  color: var(--neutral-500);
-  font-weight: 600;
+  color: var(--neutral-600);
+  font-weight: 500;
   font-size: var(--font-xs, 0.72rem);
 }
 
@@ -7099,7 +7097,7 @@ input[type="checkbox"]:checked {
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--neutral-800);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 
@@ -7109,41 +7107,52 @@ input[type="checkbox"]:checked {
   color: var(--neutral-600);
 }
 
-.lims-test-toolbar-method::before {
-  content: '·';
-  margin-right: 6px;
-  color: var(--neutral-400);
-}
-
-.lims-test-toolbar-status {
+.lims-test-toolbar-status,
+.lims-test-toolbar-count {
   flex-shrink: 0;
 }
 
-.lims-test-toolbar-controls,
 .lims-test-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.lims-test-toolbar-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
-}
-
-.lims-test-toolbar-actions {
-  gap: 6px;
+  gap: 6px 14px;
   margin-left: auto;
 }
 
 .lims-test-toolbar-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
   max-width: 100%;
 }
 
-/* Wide enough for typical "Layout name (CODE)" values; full name also on hover */
+/* Full layout name on hover */
 .lims-test-toolbar-layout {
-  width: 440px;
+  width: 300px;
   max-width: calc(100vw - 120px);
+}
+
+@media (max-width: 767.98px) {
+  .lims-test-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .lims-test-toolbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .lims-test-toolbar-controls {
+    margin-left: 0;
+  }
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ B. Material & Metadata Summary Bar (.materialbar / .lims-materialbar) Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -10932,4 +10941,255 @@ fieldset.lims-prop-fieldset > legend.lims-prop-legend i.bi {
 fieldset.lims-prop-fieldset > legend.lims-prop-legend .badge {
   font-weight: 500;
   margin-left: 6px;
+}
+
+/* ═══ Page section (same look as fieldset.border + legend, for sections that also carry buttons) ═══
+   .lims-section        box with the theme colour on the left
+   .lims-section-head   sits on the top border: title on the left, buttons / counts on the right */
+.lims-section {
+  position: relative;
+  width: auto !important;
+  margin: 12px 0 0 !important;
+  padding: 16px 10px 10px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-left: 4px solid var(--primary-color, #da261c) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+  overflow: visible !important;
+}
+
+.lims-section-head {
+  position: absolute;
+  top: -12px;
+  left: 8px;
+  right: 8px;
+  width: auto !important;
+  min-height: 24px;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  display: flex !important;
+  flex-wrap: nowrap;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.lims-section-head > * {
+  pointer-events: auto;
+  background: #ffffff;
+  padding: 0 6px;
+  min-width: 0;
+}
+
+.lims-section-head > *:empty {
+  display: none;
+}
+
+.lims-section-head > *:first-child {
+  flex: 0 1 auto;
+}
+
+.lims-section-head > *:not(:first-child) {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lims-section-head h3,
+.lims-section-head h6,
+.lims-section-title {
+  margin: 0 !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  line-height: 24px;
+  color: var(--primary-color, #da261c) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lims-section-head .btn,
+.lims-section-head .btn-lims {
+  min-height: 22px !important;
+  height: 22px !important;
+  min-width: 0 !important;
+  padding: 0 8px !important;
+  font-size: 0.7rem !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.lims-section-head .badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* A button, link or badge placed straight in the head covers the border line behind it */
+.lims-section-head > .btn,
+.lims-section-head > button,
+.lims-section-head > a {
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 5px #ffffff !important;
+}
+
+.lims-section-head > .badge {
+  box-shadow: 0 0 0 5px #ffffff;
+}
+
+/* Label / value pairs in one row, and the small note under them */
+.lims-kv-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 32px;
+  margin-bottom: 6px;
+}
+
+.lims-kv {
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+}
+
+.lims-kv-label {
+  font-size: 0.7rem;
+  color: var(--neutral-600, #475569);
+}
+
+.lims-kv-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--neutral-800, #1e293b);
+}
+
+.lims-section-note {
+  font-size: 0.74rem;
+  color: var(--neutral-600, #475569);
+}
+
+/* ═══ Inside a page section: one font, one table style, one label/value box ═══ */
+.lims-section {
+  font-family: var(--font-family-base, 'Poppins', sans-serif);
+}
+
+.lims-section :where(span, div, p, td, th, label, strong, input, select, textarea, button):not(.font-monospace):not(.bi) {
+  font-family: inherit;
+}
+
+/* Tables */
+.lims-section.lims-section table thead th {
+  background: #f8fafc !important;
+  color: #334155 !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  padding: 5px 8px !important;
+  border-top: none !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  vertical-align: middle;
+}
+
+.lims-section.lims-section table tbody td {
+  font-size: 0.76rem !important;
+  padding: 4px 8px !important;
+  color: #1e293b;
+  border-bottom: 1px solid #e2e8f0 !important;
+  vertical-align: middle !important;
+}
+
+.lims-section.lims-section table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.lims-col-num {
+  width: 36px;
+}
+
+.lims-col-date {
+  width: 190px;
+}
+
+.lims-btn-row {
+  min-height: 22px !important;
+  height: 22px !important;
+  min-width: 0 !important;
+  padding: 0 10px !important;
+  font-size: 0.7rem !important;
+  white-space: nowrap;
+}
+
+/* Small boxes that hold one label and one value (environment, traceability, result tiles) */
+.lims-section.lims-section .condition-input-box,
+.lims-section.lims-section .trace-cell,
+.lims-section.lims-section .kpi-metric-tile {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  padding: 6px 8px !important;
+}
+
+.lims-section.lims-section .kpi-metric-tile:hover {
+  border-color: #e2e8f0 !important;
+}
+
+.lims-section.lims-section .condition-input-box label,
+.lims-section.lims-section .trace-lbl,
+.lims-section.lims-section .kpi-name {
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  color: #475569 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.lims-section.lims-section .condition-input-box .form-control,
+.lims-section.lims-section .trace-val {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+}
+
+.lims-section.lims-section .kpi-symbol,
+.lims-section.lims-section .kpi-req {
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.lims-section.lims-section .kpi-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.lims-section.lims-section .kpi-status-badge {
+  font-family: inherit;
+  font-size: 0.64rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border: 0;
+  border-radius: 4px;
+  color: #ffffff;
+  background: #6c757d;
+}
+
+.lims-section.lims-section .kpi-status-badge.kpi-pass {
+  background: #198754;
+}
+
+.lims-section.lims-section .kpi-status-badge.kpi-fail {
+  background: #dc3545;
+}
+
+.lims-section.lims-section .kpi-status-badge.kpi-pending {
+  background: #ffc107;
+  color: #1e293b;
 }

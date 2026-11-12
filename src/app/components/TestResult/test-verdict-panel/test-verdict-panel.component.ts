@@ -5,6 +5,8 @@ import { RouterModule } from '@angular/router';
 
 export interface ParameterEvaluationRow {
   index: number;
+  /** Specimen label of the row (S1, S2, ...) */
+  specimen: string;
   parameterName: string;
   unit: string;
   specifiedMin: number | null;
@@ -41,11 +43,13 @@ export class TestVerdictPanelComponent implements OnChanges {
 
   evaluationRows: ParameterEvaluationRow[] = [];
   overallVerdict: 'PASS' | 'FAIL' | 'BORDERLINE' | 'PENDING' = 'PENDING';
-  overallVerdictLabel: string = 'PENDING DATA ENTRY';
+  overallVerdictLabel: string = 'Results pending';
   overallVerdictSubtext: string = 'Test parameters await observation entry and calculation.';
   nablScopeStatus: 'ACCREDITED' | 'PARTIAL' | 'OUTSIDE_SCOPE' = 'ACCREDITED';
   decisionRuleName: string = 'ILAC-G8:09/2019 Binary Statement with Guard Band (Simple Acceptance)';
 
+  /** More than one specimen: the table shows which specimen each result belongs to */
+  multiSpecimen = false;
   totalParameters: number = 0;
   passedCount: number = 0;
   failedCount: number = 0;
@@ -212,8 +216,10 @@ export class TestVerdictPanelComponent implements OnChanges {
         }
       }
 
+      const spmIdx = Number(ctrl.get('specimenIndex')?.value) || 0;
       rows.push({
         index: i + 1,
+        specimen: 'S' + (spmIdx + 1),
         parameterName: pName || `Parameter ${i + 1}`,
         unit,
         specifiedMin: specMin,
@@ -233,7 +239,11 @@ export class TestVerdictPanelComponent implements OnChanges {
     }
 
     this.evaluationRows = rows;
-    this.totalParameters = rows.length;
+    this.multiSpecimen = new Set(rows.map(r => r.specimen)).size > 1;
+    const parameterCount = new Set(rows.map(r => r.parameterName.toLowerCase())).size;
+    const specimenCount = new Set(rows.map(r => r.specimen)).size;
+    const scopeText = `${parameterCount} parameter(s)${specimenCount > 1 ? ` on ${specimenCount} specimens` : ''}`;
+    this.totalParameters = parameterCount;
     this.passedCount = pass;
     this.failedCount = fail;
     this.borderlineCount = borderline;
@@ -245,24 +255,24 @@ export class TestVerdictPanelComponent implements OnChanges {
     // Determine Overall Verdict
     if (fail > 0) {
       this.overallVerdict = 'FAIL';
-      this.overallVerdictLabel = 'NON-CONFORMING TO SPECIFICATION';
-      this.overallVerdictSubtext = `${fail} parameter(s) failed specification limits. Material does not comply.`;
+      this.overallVerdictLabel = 'Does not conform to the specification';
+      this.overallVerdictSubtext = `${fail} result(s) are outside the specification limits. The material does not comply.`;
     } else if (borderline > 0 && pending === 0) {
       this.overallVerdict = 'BORDERLINE';
-      this.overallVerdictLabel = 'INCONCLUSIVE / BORDERLINE';
-      this.overallVerdictSubtext = `${borderline} parameter(s) fall within the measurement uncertainty guard-band zone.`;
+      this.overallVerdictLabel = 'Inconclusive (borderline)';
+      this.overallVerdictSubtext = `${borderline} result(s) fall within the measurement uncertainty guard band.`;
     } else if (pass > 0 && pending === 0) {
       this.overallVerdict = 'PASS';
-      this.overallVerdictLabel = 'CONFORMS TO SPECIFICATION (PASS)';
-      this.overallVerdictSubtext = `All ${pass} evaluated parameter(s) satisfy the requirements of ${this.getSpecificationTitle()}.`;
+      this.overallVerdictLabel = 'Conforms to the specification';
+      this.overallVerdictSubtext = `All ${scopeText} satisfy the requirements of ${this.getSpecificationTitle()}.`;
     } else if (pass > 0 && pending > 0) {
       this.overallVerdict = 'PENDING';
-      this.overallVerdictLabel = 'IN PROGRESS (PARTIAL ENTRY)';
+      this.overallVerdictLabel = 'In progress (some results pending)';
       this.overallVerdictSubtext = `${pass} passed, ${pending} pending entry. Complete all entries to finalize verdict.`;
     } else {
       this.overallVerdict = 'PENDING';
-      this.overallVerdictLabel = 'PENDING DATA ENTRY';
-      this.overallVerdictSubtext = 'Awaiting laboratory technician observation entries.';
+      this.overallVerdictLabel = 'Results pending';
+      this.overallVerdictSubtext = 'No result has been entered yet.';
     }
 
     // Determine NABL Scope Status
@@ -285,7 +295,7 @@ export class TestVerdictPanelComponent implements OnChanges {
     this.inScopeCount = 0;
     this.outOfScopeCount = 0;
     this.overallVerdict = 'PENDING';
-    this.overallVerdictLabel = 'PENDING DATA ENTRY';
+    this.overallVerdictLabel = 'Results pending';
     this.overallVerdictSubtext = 'No parameter controls available for evaluation.';
   }
 

@@ -2975,6 +2975,43 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return null;
   }
 
+  /**
+   * Parameters of the test as the result screen has them now: one entry per parameter (not per specimen row),
+   * read from the live form so a parameter added or removed on the Execution tab shows the same here.
+   */
+  getNablParameters(planIndex: number, testIndex: number): { parameterID: number; parameterName: string; unit: string; expandedUncertainty: any }[] {
+    const rows: any[] = this.getParameters(planIndex, testIndex)?.getRawValue?.() || [];
+    const seen = new Set<string>();
+    const list: { parameterID: number; parameterName: string; unit: string; expandedUncertainty: any }[] = [];
+    rows.forEach(r => {
+      const key = r.parameterID ? 'id:' + r.parameterID : 'name:' + String(r.parameterName || '').trim().toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      list.push({ parameterID: r.parameterID, parameterName: r.parameterName, unit: r.unit, expandedUncertainty: r.expandedUncertainty });
+    });
+    return list;
+  }
+
+  /** In-scope / out-of-scope counts over the parameters of the result screen. */
+  getNablScopeCounts(planIndex: number, testIndex: number): { total: number; inScope: number; outOfScope: number } {
+    const headerId = this.plans[planIndex]?.tests?.[testIndex]?.headerId;
+    const list = this.getNablParameters(planIndex, testIndex);
+    const hasScopeData = (this.nablScopeMap[headerId] || []).length > 0;
+    const inScope = hasScopeData ? list.filter(x => this.getNablScopeStatus(headerId, x.parameterID) === 'WithinScope').length : 0;
+    return { total: list.length, inScope, outOfScope: list.length - inScope };
+  }
+
+  /** Requirement source lines, one per parameter and limit (specimen rows of one parameter share a line). */
+  getRequirementSourceRows(headerId: number): { name: string; min: any; max: any; unit: string; source: string }[] {
+    const seen = new Set<string>();
+    return (this.requirementSources[headerId] || []).filter(r => {
+      const key = [r.name, r.min, r.max, r.unit, r.source].join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   getNablScopeStatus(headerId: number, parameterId: number): string {
     const statusObj = this.getNablStatus(headerId, parameterId);
     return statusObj?.scopeStatus || 'WithinScope';

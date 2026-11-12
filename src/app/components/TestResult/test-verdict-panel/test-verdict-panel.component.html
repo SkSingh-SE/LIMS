@@ -1,91 +1,47 @@
-<div class="nabl-verdict-card mb-2">
-
-  <!-- ── 1. GRAND VERDICT BANNER ── -->
-  <div class="verdict-banner"
-       [ngClass]="{
-         'verdict-pass': overallVerdict === 'PASS',
-         'verdict-fail': overallVerdict === 'FAIL',
-         'verdict-borderline': overallVerdict === 'BORDERLINE',
-         'verdict-pending': overallVerdict === 'PENDING'
-       }">
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi fs-5"
-           [ngClass]="{
-             'bi-patch-check-fill text-success': overallVerdict === 'PASS',
-             'bi-slash-circle-fill text-danger': overallVerdict === 'FAIL',
-             'bi-exclamation-diamond-fill text-warning': overallVerdict === 'BORDERLINE',
-             'bi-hourglass-split text-secondary': overallVerdict === 'PENDING'
-           }"></i>
-        <div>
-          <div class="verdict-title-text">
-            <span>{{ overallVerdictLabel }}</span>
-          </div>
-          <div class="text-xs text-muted">
-            <span>{{ overallVerdictSubtext }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Meta Chips & Accreditation Badges -->
-    <div class="verdict-meta-chips">
-      <!-- Material Spec Chip -->
-      <span class="verdict-chip verdict-chip-spec" title="Evaluated Material Specification">
-        <i class="bi bi-tag-fill me-1"></i>
-        <span>Spec: {{ getSpecificationTitle() }}</span>
-      </span>
-
-      <!-- Test Method Chip -->
-      <span class="verdict-chip verdict-chip-method" title="Standard Test Method">
-        <i class="bi bi-journal-bookmark-fill me-1"></i>
-        <span>Method: {{ getCleanTestMethod() }}</span>
-      </span>
-
-      <!-- NABL Scope Badge -->
-      <span class="verdict-chip"
-            [ngClass]="nablScopeStatus === 'ACCREDITED' ? 'verdict-chip-scope-in' : 'verdict-chip-scope-out'"
-            title="ISO/IEC 17025 Accreditation Status">
-        <i class="bi" [ngClass]="nablScopeStatus === 'ACCREDITED' ? 'bi-shield-check me-1' : 'bi-shield-exclamation me-1'"></i>
-        <span>{{ nablScopeStatus === 'ACCREDITED' ? 'NABL Accredited Scope' : nablScopeStatus === 'PARTIAL' ? 'Partial Scope' : 'Outside NABL Scope' }}</span>
-      </span>
-
-      <!-- Metric Pills -->
-      <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs">
-        {{ passedCount }} Pass
-      </span>
-      <span *ngIf="failedCount > 0" class="badge bg-danger text-white font-monospace text-xxs">
-        {{ failedCount }} Fail
-      </span>
-      <span *ngIf="borderlineCount > 0" class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace text-xxs">
-        {{ borderlineCount }} Borderline
-      </span>
-      <span *ngIf="pendingCount > 0" class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">
-        {{ pendingCount }} Pending
-      </span>
+<section class="lims-section">
+  <div class="lims-section-head">
+    <h3>Conformity Assessment</h3>
+    <div>
+      <span class="badge"
+            [ngClass]="{
+              'bg-success': overallVerdict === 'PASS',
+              'bg-danger': overallVerdict === 'FAIL',
+              'bg-warning text-dark': overallVerdict === 'BORDERLINE',
+              'bg-secondary': overallVerdict === 'PENDING'
+            }">{{ overallVerdict }}</span>
+      <span class="badge bg-success" *ngIf="passedCount > 0" title="Results within the requirement">{{ passedCount }} pass</span>
+      <span class="badge bg-danger" *ngIf="failedCount > 0">{{ failedCount }} fail</span>
+      <span class="badge bg-warning text-dark" *ngIf="borderlineCount > 0">{{ borderlineCount }} borderline</span>
+      <span class="badge bg-secondary" *ngIf="pendingCount > 0">{{ pendingCount }} pending</span>
     </div>
   </div>
 
-  <!-- ── 2. ISO 17025 CONFORMITY STATEMENT ── -->
-  <div class="conformity-statement d-flex align-items-start gap-2">
-    <i class="bi bi-info-circle-fill text-primary mt-0.5"></i>
-    <div class="flex-grow-1">
-      <div class="fw-semibold text-dark text-xs mb-0.5">
-        <span>ISO/IEC 17025:2017 Clause 7.8.6 Statement of Conformity</span>
-      </div>
-      <div>
-        <span>{{ getConformityStatement() }}</span>
-      </div>
-    </div>
+  <!-- Verdict, what it was judged against, and the statement of conformity -->
+  <div class="verdict-summary">
+    <div class="verdict-summary-title">{{ overallVerdictLabel }}</div>
+    <div class="verdict-summary-text">{{ overallVerdictSubtext }}</div>
   </div>
+  <div class="lims-kv-row">
+    <div class="lims-kv"><span class="lims-kv-label">Specification</span><span class="lims-kv-value">{{ getSpecificationTitle() }}</span></div>
+    <div class="lims-kv"><span class="lims-kv-label">Test method</span><span class="lims-kv-value">{{ getCleanTestMethod() }}</span></div>
+    <div class="lims-kv">
+      <span class="lims-kv-label">Accreditation scope</span>
+      <span class="lims-kv-value">{{ nablScopeStatus === 'ACCREDITED' ? 'In scope' : nablScopeStatus === 'PARTIAL' ? 'Partly in scope' : 'Outside scope' }}</span>
+    </div>
+    <div class="lims-kv"><span class="lims-kv-label">Decision rule</span><span class="lims-kv-value">{{ decisionRuleName }}</span></div>
+  </div>
+  <p class="lims-section-note">
+    <strong>Statement of conformity (ISO/IEC 17025:2017 Cl 7.8.6):</strong> {{ getConformityStatement() }}
+  </p>
 
   <!-- ── 3. PARAMETER COMPLIANCE MATRIX TABLE ── -->
-  <div class="table-responsive px-2 pb-2">
+  <div class="table-responsive">
     <table class="table table-sm table-bordered align-middle result-table mb-0">
       <thead class="result-table-head text-center">
         <tr>
           <th class="w-col-35">#</th>
           <th class="text-start w-col-22p">Parameter Name</th>
+          <th class="w-col-65" *ngIf="multiSpecimen">Specimen</th>
           <th class="w-col-65">Unit</th>
           <th class="w-col-130">Specified Requirement</th>
           <th class="w-col-110">Observed Result</th>
@@ -109,6 +65,8 @@
           <td>
             <div class="fw-semibold text-dark text-xs">{{ row.parameterName }}</div>
           </td>
+
+          <td class="text-center font-monospace text-xs text-muted" *ngIf="multiSpecimen">{{ row.specimen }}</td>
 
           <!-- Unit -->
           <td class="text-center font-monospace text-xs text-muted">{{ row.unit }}</td>
@@ -197,18 +155,4 @@
       </tbody>
     </table>
   </div>
-
-  <!-- ── 4. DECISION RULE & ACCREDITATION FOOTER ── -->
-  <div class="decision-rule-box">
-    <div class="d-flex align-items-center gap-1.5">
-      <i class="bi bi-shield-lock-fill text-danger me-1"></i>
-      <strong>Accreditation Compliance:</strong>
-      <span>{{ decisionRuleName }}</span>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-      <span class="text-muted">Standard: <strong>ISO/IEC 17025:2017</strong></span>
-      <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Clause 7.8.6 Compliant</span>
-    </div>
-  </div>
-
-</div>
+</section>

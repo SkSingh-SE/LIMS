@@ -708,6 +708,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           name: ctrl.get('parameterName')?.value || `Parameter ${i + 1}`,
           unit: ctrl.get('unit')?.value || '—',
           requirement: this.formatRequirement(ctrl.value),
+          inputType: ctrl.get('inputType')?.value || 'Decimal',
           isCalculated: ctrl.get('isCalculated')?.value || !!ctrl.get('formulaExpression')?.value
         });
       }
@@ -725,6 +726,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
     if (targetIdx < 0) return '';
     return this.parametersFormArray?.at(targetIdx)?.get('value')?.value ?? '';
+  }
+
+  /** Text parameters (input type Text) keep their result in Remarks. */
+  getParamTextForSpecimen(baseParamIdx: number, spmIdx: number): string {
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    if (targetIdx < 0) return '';
+    return this.parametersFormArray?.at(targetIdx)?.get('remarks')?.value ?? '';
+  }
+
+  onParamTextChangeForSpecimen(baseParamIdx: number, spmIdx: number, text: string): void {
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    const ctrl = targetIdx >= 0 ? this.parametersFormArray?.at(targetIdx) : null;
+    if (ctrl) {
+      ctrl.patchValue({ remarks: text });
+      this.paramValueChanged.emit({ rowIdx: targetIdx, param: ctrl.value });
+      this.cdr.markForCheck();
+    }
   }
 
   onParamValueChangeForSpecimen(baseParamIdx: number, spmIdx: number, newVal: any): void {

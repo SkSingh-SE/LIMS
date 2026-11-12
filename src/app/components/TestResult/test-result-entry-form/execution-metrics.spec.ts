@@ -13,6 +13,17 @@ describe('countExecutionMetrics', () => {
     expect(m.entered).toBe(2);
   });
 
+  it('counts a Text parameter as entered when its Remarks hold the result, a numeric one only by value', () => {
+    const m = countExecutionMetrics([
+      { inputType: 'Text', value: null, remarks: 'Within gauge length' },
+      { inputType: 'Text', value: null, remarks: '  ' },
+      { inputType: 'Decimal', value: null, remarks: 'a note' },
+      { inputType: 'Decimal', value: 5 },
+    ]);
+    expect(m.entered).toBe(2);
+    expect(m.total).toBe(4);
+  });
+
   it('uses isWithinLimit from the min/max check for pass and fail', () => {
     const m = countExecutionMetrics([
       { value: '10', isWithinLimit: true },

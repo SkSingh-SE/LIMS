@@ -564,9 +564,14 @@
                       </td>
                       <td class="text-center text-muted small">{{ p.unit }}</td>
                       <td *ngFor="let spm of specimens; let spmIdx = index">
-                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                        <input *ngIf="p.inputType !== 'Text'" type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
                                [value]="getParamValueForSpecimen(p.index, spmIdx)"
                                (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               [placeholder]="p.name + '...'" />
+                        <input *ngIf="p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
+                               [value]="getParamTextForSpecimen(p.index, spmIdx)"
+                               (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
                                [placeholder]="p.name + '...'" />
                       </td>
@@ -612,9 +617,14 @@
                       </td>
                       <td class="text-center text-muted small">{{ p.unit }}</td>
                       <td *ngFor="let spm of specimens; let spmIdx = index">
-                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                        <input *ngIf="p.inputType !== 'Text'" type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
                                [value]="getParamValueForSpecimen(p.index, spmIdx)"
                                (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               [placeholder]="p.name + '...'" />
+                        <input *ngIf="p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
+                               [value]="getParamTextForSpecimen(p.index, spmIdx)"
+                               (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
                                [placeholder]="p.name + '...'" />
                       </td>
@@ -811,8 +821,17 @@
                           </select>
                         </ng-container>
 
+                        <!-- 3b. Text result (e.g. Location of Fracture): kept in Remarks, the value stays empty -->
+                        <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType === 'Text'">
+                          <input type="text" class="form-control form-control-xs text-center fw-semibold"
+                                 formControlName="remarks"
+                                 (input)="onParameterInputChange(r)"
+                                 [readOnly]="isViewMode || isLocked"
+                                 placeholder="Result..." />
+                        </ng-container>
+
                         <!-- 4. Numeric / Decimal / Default Input -->
-                        <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType !== 'Boolean' && (parametersFormArray.at(r).value.inputType !== 'Dropdown' || !(parametersFormArray.at(r).value.dropdownOptions?.length))">
+                        <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType !== 'Boolean' && parametersFormArray.at(r).value.inputType !== 'Text' && (parametersFormArray.at(r).value.inputType !== 'Dropdown' || !(parametersFormArray.at(r).value.dropdownOptions?.length))">
                           <input type="number" step="any" class="form-control form-control-xs text-center font-monospace fw-semibold num-tabular"
                                  formControlName="value"
                                  (input)="onParameterInputChange(r)"

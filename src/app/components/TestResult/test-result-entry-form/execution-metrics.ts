@@ -10,6 +10,9 @@ export interface ExecutionMetrics {
 /** The parameter row fields the counts read (same fields the form saves). */
 export interface ExecutionMetricsRow {
   value?: unknown;
+  /** Text results (input type Text) are kept here. */
+  remarks?: unknown;
+  inputType?: string | null;
   resultStatus?: string | null;
   status?: string | null;
   isWithinLimit?: boolean | null;
@@ -34,7 +37,8 @@ export function countExecutionMetrics(rows: ExecutionMetricsRow[] | null | undef
     const val = row?.value;
     const status = row?.resultStatus || row?.status;
     const isWithinLimit = row?.isWithinLimit;
-    if (val !== null && val !== undefined && val !== '') {
+    const hasText = row?.inputType === 'Text' && String(row?.remarks ?? '').trim() !== '';
+    if ((val !== null && val !== undefined && val !== '') || hasText) {
       entered++;
     }
     if ((status && PASS_STATUSES.includes(status)) || isWithinLimit === true) {

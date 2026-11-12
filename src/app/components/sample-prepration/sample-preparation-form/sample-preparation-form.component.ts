@@ -878,7 +878,12 @@ export class SamplePreparationFormComponent implements OnInit, OnChanges {
                 }
               },
               error: (err) => {
-                this.toastService.show('Preparation saved as completed.', 'success');
+                // This sample is saved as completed; the case moves to Testing only when every sample is prepared.
+                // Say why, instead of a plain success.
+                const reason = typeof err?.error === 'string' ? err.error : err?.error?.message;
+                this.toastService.show(
+                  reason ? `This sample's preparation is saved as completed. ${reason}` : 'Preparation saved as completed.',
+                  reason ? 'warning' : 'success');
                 this.prepCompleted.emit({ inwardId: this.inwardId, sampleId: this.sampleId });
               }
             });

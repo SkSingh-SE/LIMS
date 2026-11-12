@@ -2602,8 +2602,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
     // Check for empty values in parameters
     const missingValues = testParams.controls.filter((ctrl) => {
-      const val = ctrl.get('value')?.value;
-      return val === null || val === undefined || String(val).trim() === '';
+      // a Text parameter (e.g. Location of Fracture) keeps its result in Remarks
+      const raw = ctrl.get('inputType')?.value === 'Text' ? ctrl.get('remarks')?.value : ctrl.get('value')?.value;
+      return raw === null || raw === undefined || String(raw).trim() === '';
     });
 
     if (missingValues.length > 0) {
@@ -2756,6 +2757,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
     return countExecutionMetrics(paramsFA.controls.map(ctrl => ({
       value: ctrl.get('value')?.value,
+      remarks: ctrl.get('remarks')?.value,
+      inputType: ctrl.get('inputType')?.value,
       resultStatus: ctrl.get('resultStatus')?.value,
       status: ctrl.get('status')?.value,
       isWithinLimit: ctrl.get('isWithinLimit')?.value

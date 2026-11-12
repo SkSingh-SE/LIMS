@@ -6,6 +6,7 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { ConfirmDialogComponent } from '../../../utility/components/confirm-dialog/confirm-dialog.component';
 import { Observable, of } from 'rxjs';
 import { ParameterService } from '../../../services/parameter.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
@@ -41,6 +42,7 @@ import {
   savedHandTypedRoles,
   SpecimenRole,
   tensileArea,
+  tensileDependents,
   TensileRoleIndex,
   TensileValues,
 } from './tensile-parameter-roles';
@@ -119,6 +121,7 @@ export interface CustomAttribute {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    ConfirmDialogComponent,
     RouterModule,
     DecimalOnlyDirective,
     TestStatusBadgeComponent,
@@ -402,20 +405,17 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!pick) {
       if (lines.length > 1) {
         const ownGradeId = Number(this.testPlan?.specSelected?.id || 0);
-        if (this.paramGrade.id === ownGradeId) {
-          // the test's own grade: the screen's selected conditions decide the limit
-          this.paramLimitHint = 'This grade gives more than one limit for this parameter, depending on the test conditions. The limit is applied from the conditions selected on the screen.';
-        } else {
-          // another grade: the screen's conditions belong to the test's grade, so the user picks the line that applies
-          this.paramLineChoices = lines.map(l => ({
-            id: Number(l.specificationLineID),
-            label: `${this.lineConditionLabel(l)}  (${this.limitLabel(l.minValue, l.maxValue) || 'no numeric limit'})`,
-            min: l.minValue ?? null,
-            max: l.maxValue ?? null,
-            note: l.acceptanceCriteria || ''
-          }));
-          this.paramLimitHint = 'This grade gives more than one limit for this parameter. Choose the one that applies.';
-        }
+        // several limits for one parameter (size band, heat treatment, ...): the user picks the line that applies and the limit follows
+        this.paramLineChoices = lines.map(l => ({
+          id: Number(l.specificationLineID),
+          label: `${this.lineConditionLabel(l)}  (${this.limitLabel(l.minValue, l.maxValue) || 'no numeric limit'})`,
+          min: l.minValue ?? null,
+          max: l.maxValue ?? null,
+          note: l.acceptanceCriteria || ''
+        }));
+        this.paramLimitHint = this.paramGrade.id === ownGradeId
+          ? 'This grade gives more than one limit for this parameter. Choose the one that applies; the conditions selected on the screen can change it later.'
+          : 'This grade gives more than one limit for this parameter. Choose the one that applies.';
       }
       return;
     }
@@ -736,6 +736,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         }
         if (extra?.opinionData) {
           this.opinionData = { ...this.opinionData, ...extra.opinionData };
+        }
+        if (Array.isArray(extra?.hiddenRows)) {
+          this.hiddenFixedRoles = new Set(extra.hiddenRows.filter((r: string) => ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(r as SpecimenRole)) as SpecimenRole[]);
         }
       } catch (e) {
         console.warn('Could not parse test.executionExtraJson', e);
@@ -1328,17 +1331,18 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    * A row with a value or remark is kept (clear it first). A row cleared on screen whose value is still saved is kept
    * until Save Draft stores the cleared value. A saved empty row is deleted on the next save.
    */
-  removeParameter(rowIdx: number): void {
+  removeParameter(rowIdx: number, discardResult = false): void {
     if (this.isViewMode || this.isLocked || !this.parametersFormArray || this.parametersFormArray.length <= 1) return;
     const ctrl = this.parametersFormArray.at(rowIdx);
     if (!ctrl) return;
     const row = (ctrl as FormGroup).getRawValue();
     const savedId = Number(row?.id) || 0;
     const reason = rowRemovalReason(row, this.rowStore);
-    if (reason) {
-      this.toastService.show(rowRemovalMessage({ name: row.parameterName || `Row ${rowIdx + 1}`, reason }), 'warning');
+    if (reason && !discardResult) {
+      this.askRemoveWithResult(row.parameterName || `Row ${rowIdx + 1}`, () => this.removeParameter(rowIdx, true));
       return;
     }
+    if (reason && savedId > 0) this.rowStore.discardedParameterIds = [...(this.rowStore.discardedParameterIds || []), savedId];
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     this.parametersFormArray.removeAt(rowIdx);
     if (savedId > 0) {
@@ -1353,32 +1357,166 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    * Multi-specimen tables: takes one parameter out of EVERY specimen (S1, S2, ...). Refused, with the reason, when any
    * specimen has a value for it; saved rows are deleted on the next save.
    */
-  removeBaseParameter(baseRowIdx: number): void {
-    if (this.isViewMode || this.isLocked || !this.parametersFormArray) return;
+  removeBaseParameter(baseRowIdx: number, opts: { discard?: boolean; after?: () => void } = {}): boolean {
+    if (this.isViewMode || this.isLocked || !this.parametersFormArray) return false;
+    const blockers = this.baseRowBlockers(baseRowIdx);
+    if (blockers.length) {
+      this.toastService.show(`This parameter is used to calculate ${blockers.join(', ')}. Remove ${blockers.length > 1 ? 'those' : 'it'} first.`, 'warning');
+      return false;
+    }
     const rows: number[] = [];
     for (let s = 0; s < Math.max(1, this.specimens.length); s++) {
       const idx = this.getMatchingRow(baseRowIdx, s);
       if (idx >= 0) rows.push(idx);
     }
-    if (rows.length === 0) return;
+    if (rows.length === 0) return false;
     if (this.parametersFormArray.length - rows.length < 1) {
       this.toastService.show('A test needs at least one parameter.', 'warning');
-      return;
+      return false;
     }
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows change
-    const block = removeParameterRows(this.parametersFormArray, rows, this.rowStore);
+    const block = removeParameterRows(this.parametersFormArray, rows, this.rowStore, !!opts.discard);
     if (block) {
-      this.toastService.show(rowRemovalMessage(block), 'warning');
-      return;
+      // the row holds a result: ask, then remove it with the old value recorded in the audit trail
+      this.askRemoveWithResult(block.name, () => this.removeBaseParameter(baseRowIdx, { discard: true, after: opts.after }));
+      return false;
     }
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
+    opts.after?.();
+    return true;
   }
 
-  /** Tensile matrix: removes the parameter behind one of its calculated result rows (every specimen). */
-  removeRoleParameter(role: SpecimenRole): void {
+  // ---- Confirmation before a parameter that holds a result is removed ----
+  removeConfirm = { visible: false, message: '' };
+  private removeConfirmRun: (() => void) | null = null;
+
+  private askRemoveWithResult(name: string, run: () => void): void {
+    this.removeConfirm = { visible: true, message: `"${name}" has a result. Remove it anyway? The removal and the old value are recorded in the audit trail.` };
+    this.removeConfirmRun = run;
+    this.cdr.markForCheck();
+  }
+
+  onRemoveConfirmed(): void {
+    const run = this.removeConfirmRun;
+    this.removeConfirm = { visible: false, message: '' };
+    this.removeConfirmRun = null;
+    run?.();
+    this.cdr.markForCheck();
+  }
+
+  onRemoveCancelled(): void {
+    this.removeConfirm = { visible: false, message: '' };
+    this.removeConfirmRun = null;
+    this.cdr.markForCheck();
+  }
+
+  // ---- Tensile matrix: every row can be removed, but not while another shown row is calculated from it ----
+
+  /** Rows of the tensile matrix that come from the specimen model (they exist even when the test has no parameter row for them). */
+  private static readonly FIXED_TENSILE_ROWS: readonly SpecimenRole[] = ['diameter', 'thickness', 'width', 'gaugeLength', 'area', 'yieldLoad', 'peakLoad', 'finalLength'];
+
+  private static readonly TENSILE_ROW_LABELS: Readonly<Partial<Record<SpecimenRole, string>>> = {
+    diameter: 'Diameter (D)',
+    thickness: 'Thickness (T)',
+    width: 'Width (W)',
+    gaugeLength: 'Gauge Length (L₀)',
+    area: 'Cross Section Area (S₀)',
+    yieldLoad: '0.2% Yield Load (F_p0.2)',
+    peakLoad: 'Maximum / Peak Load (F_m)',
+    finalLength: 'Final Length (L_u)',
+    proofStress: 'Yield Strength',
+    uts: 'Ultimate Tensile Strength',
+    elongation: '% Elongation',
+  };
+
+  /** Fixed rows the user took off the screen (saved with the test, so a reload keeps them off). */
+  hiddenFixedRoles = new Set<SpecimenRole>();
+
+  /** Whether a tensile matrix row is on the screen. */
+  isTensileRowShown(role: SpecimenRole): boolean {
+    if (ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(role)) {
+      if (this.hiddenFixedRoles.has(role)) return false;
+      const round = !!this.sample?.diameter;
+      if (role === 'diameter') return round || this.sample?.productForm === 'Round' || this.sample?.productForm === 'Bar';
+      if (role === 'thickness' || role === 'width') return !round;
+      return true;
+    }
+    return this.hasParameterRole(role);
+  }
+
+  /** Names of the shown rows that are calculated from this one; the row can be removed only when there are none. */
+  removalBlockers(role: SpecimenRole): string[] {
+    const shown = new Set<SpecimenRole>((Object.keys(ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS) as SpecimenRole[]).filter(r => this.isTensileRowShown(r)));
+    return tensileDependents(role, shown).map(r => ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS[r] || r);
+  }
+
+  /** Tooltip of the remove button: the reason when the row is still needed. */
+  removeTitle(role: SpecimenRole): string {
+    const blockers = this.removalBlockers(role);
+    return blockers.length ? `Needed to calculate ${blockers.join(', ')}. Remove ${blockers.length > 1 ? 'those' : 'it'} first.` : 'Remove this parameter from all specimens';
+  }
+
+  /** Removes one tensile matrix row (every specimen). Refused while a shown row is calculated from it. */
+  removeTensileRow(role: SpecimenRole): void {
+    if (this.isViewMode || this.isLocked) return;
+    const blockers = this.removalBlockers(role);
+    if (blockers.length) {
+      this.toastService.show(`${ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS[role] || role} is used to calculate ${blockers.join(', ')}. Remove ${blockers.length > 1 ? 'those' : 'it'} first.`, 'warning');
+      return;
+    }
+    // a test parameter behind the row is deleted by the usual rules (a value blocks it); a model-only row is just taken off the screen
     const base = this.getBaseParameterList().find(p => resolveTensileRole(p.name) === role);
-    if (base) this.removeBaseParameter(base.index);
+    const hideRow = () => {
+      if (ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(role)) {
+        this.hiddenFixedRoles = new Set([...this.hiddenFixedRoles, role]);
+        this.syncCollectionsToTest(); // keeps the choice in the saved test data
+        this.parametersAdjusted.emit();
+      }
+      this.cdr.markForCheck();
+    };
+    if (base) this.removeBaseParameter(base.index, { after: hideRow });
+    else hideRow();
+  }
+
+  /** Row index (S1) of the test parameter behind a tensile role, or -1 when the row only comes from the specimen model. */
+  roleParamIndex(role: SpecimenRole): number {
+    return this.getBaseParameterList().find(p => resolveTensileRole(p.name) === role)?.index ?? -1;
+  }
+
+  /** Formula details of the parameter behind a tensile result row. */
+  openRoleFormula(role: SpecimenRole): void {
+    const idx = this.roleParamIndex(role);
+    if (idx >= 0) this.formulaRequested.emit({ rowIdx: idx, param: this.parametersFormArray.at(idx).value });
+  }
+
+  /** Formula details of an extra parameter row. */
+  openRowFormula(rowIdx: number): void {
+    this.formulaRequested.emit({ rowIdx, param: this.parametersFormArray.at(rowIdx).value });
+  }
+
+  /** Labels of the fixed rows taken off the screen that the matrix can show again. */
+  get restorableTensileRows(): { role: SpecimenRole; label: string }[] {
+    return Array.from(this.hiddenFixedRoles).map(role => ({ role, label: ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS[role] || role }));
+  }
+
+  restoreTensileRow(role: SpecimenRole): void {
+    const next = new Set(this.hiddenFixedRoles);
+    next.delete(role);
+    this.hiddenFixedRoles = next;
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  /** Other parameters of the test whose formula uses this row's parameter (generic tables); they must be removed first. */
+  baseRowBlockers(baseRowIdx: number): string[] {
+    if (!this.parametersFormArray) return [];
+    const id = Number(this.parametersFormArray.at(baseRowIdx)?.get('parameterID')?.value) || 0;
+    if (!id) return [];
+    const token = new RegExp(`\\{?\\bP${id}\\b\\}?`, 'i');
+    return this.getBaseParameterList()
+      .filter(p => p.index !== baseRowIdx && token.test(String(this.parametersFormArray.at(p.index)?.get('formulaExpression')?.value || '')))
+      .map(p => p.name);
   }
 
   /** True when the test has a parameter row for this role, so the tensile matrix shows the matching result row. */
@@ -2340,7 +2478,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       classification: this.classification,
       custom: this.customAttributes,
       conditionValues: this.conditionValues,
-      opinionData: this.opinionData
+      opinionData: this.opinionData,
+      hiddenRows: Array.from(this.hiddenFixedRoles)
     };
     return JSON.stringify(extra);
   }

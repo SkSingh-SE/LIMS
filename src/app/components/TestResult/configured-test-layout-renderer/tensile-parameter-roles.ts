@@ -371,3 +371,34 @@ export function savedHandTypedRoles(saved: TensileValues): Set<SpecimenRole> {
 export function findByTensileRole<T>(items: ReadonlyArray<T>, role: TensileRole, getName: (item: T) => string | null | undefined): T | undefined {
   return items.find(item => resolveTensileRole(getName(item)) === role);
 }
+
+/**
+ * Which quantities a derived tensile quantity is calculated from (see recalcTensileSpecimen):
+ * S0 from the dimensions, Rp / Rm from a load and S0, A% from L0 and Lu, Z% from S0.
+ */
+export const TENSILE_INPUTS: Readonly<Partial<Record<SpecimenRole, readonly SpecimenRole[]>>> = {
+  area: ['thickness', 'width', 'diameter'],
+  proofStress: ['area', 'yieldLoad'],
+  uts: ['area', 'peakLoad'],
+  elongation: ['gaugeLength', 'finalLength'],
+  reductionOfArea: ['area'],
+};
+
+/**
+ * The visible quantities that need `role` for their calculation, directly or through another quantity
+ * (Thickness -> S0 -> Rp, so Thickness stays while Rp is shown even when S0 itself is hidden).
+ * A quantity can be removed from the screen only when this list is empty.
+ */
+export function tensileDependents(role: SpecimenRole, visible: ReadonlySet<SpecimenRole>): SpecimenRole[] {
+  const needs = (target: SpecimenRole, seen: Set<SpecimenRole>): boolean => {
+    for (const input of TENSILE_INPUTS[target] || []) {
+      if (input === role) return true;
+      if (!seen.has(input)) {
+        seen.add(input);
+        if (needs(input, seen)) return true;
+      }
+    }
+    return false;
+  };
+  return (Object.keys(TENSILE_INPUTS) as SpecimenRole[]).filter(r => r !== role && visible.has(r) && needs(r, new Set([r])));
+}

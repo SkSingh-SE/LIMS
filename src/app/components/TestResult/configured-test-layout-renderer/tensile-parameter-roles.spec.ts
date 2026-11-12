@@ -10,6 +10,8 @@ import {
   resolveTensileRole,
   roleOfRow,
   TENSILE_ROLE_NAMES,
+  tensileDependents,
+  SpecimenRole,
   TensileRole,
   TensileValues,
 } from './tensile-parameter-roles';
@@ -411,5 +413,42 @@ describe('tensile-parameter-roles', () => {
     expect(findByTensileRole(params, 'thickness', p => p.parameterName)?.value).toBe(12);
     expect(findByTensileRole(params, 'area', p => p.parameterName)?.value).toBe(150);
     expect(findByTensileRole(params, 'width', p => p.parameterName)).toBeUndefined();
+  });
+});
+
+describe('tensileDependents (remove a row only when nothing shown depends on it)', () => {
+  const all = new Set<SpecimenRole>(['thickness', 'width', 'gaugeLength', 'area', 'yieldLoad', 'peakLoad', 'finalLength', 'proofStress', 'uts', 'elongation']);
+
+  it('result rows have no dependents', () => {
+    expect(tensileDependents('proofStress', all)).toEqual([]);
+    expect(tensileDependents('uts', all)).toEqual([]);
+    expect(tensileDependents('elongation', all)).toEqual([]);
+  });
+
+  it('area is needed by Rp and Rm; the dimensions are needed through it', () => {
+    expect(tensileDependents('area', all).sort()).toEqual(['proofStress', 'uts']);
+    expect(tensileDependents('thickness', all).sort()).toEqual(['area', 'proofStress', 'uts']);
+    expect(tensileDependents('width', all).sort()).toEqual(['area', 'proofStress', 'uts']);
+  });
+
+  it('loads and lengths belong to one result each', () => {
+    expect(tensileDependents('yieldLoad', all)).toEqual(['proofStress']);
+    expect(tensileDependents('peakLoad', all)).toEqual(['uts']);
+    expect(tensileDependents('gaugeLength', all)).toEqual(['elongation']);
+    expect(tensileDependents('finalLength', all)).toEqual(['elongation']);
+  });
+
+  it('a row is free once its dependents are removed', () => {
+    const rest = new Set<SpecimenRole>(all);
+    ['proofStress', 'uts'].forEach(r => rest.delete(r as SpecimenRole));
+    expect(tensileDependents('area', rest)).toEqual([]);
+    expect(tensileDependents('yieldLoad', rest)).toEqual([]);
+    expect(tensileDependents('gaugeLength', rest)).toEqual(['elongation']);
+  });
+
+  it('keeps the dimensions while a result needs them even if S0 is hidden', () => {
+    const noArea = new Set<SpecimenRole>(all);
+    noArea.delete('area');
+    expect(tensileDependents('thickness', noArea).sort()).toEqual(['proofStress', 'uts']);
   });
 });

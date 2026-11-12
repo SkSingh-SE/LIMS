@@ -1719,7 +1719,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         specimenIndex: Number(p.specimenIndex) > 0 ? Number(p.specimenIndex) : 0
       })),
       // Saved rows removed on the screen (only empty rows are removed; the API refuses rows with values)
-      removedParameterIds: [...(testObj.removedParameterIds || [])] as number[]
+      removedParameterIds: [...(testObj.removedParameterIds || [])] as number[],
+      discardedParameterIds: [...(testObj.discardedParameterIds || [])] as number[]
     };
 
     if (apiGeneral) {
@@ -1757,6 +1758,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         const sentRemoved = commonData.removedParameterIds;
         if (sentRemoved.length && Array.isArray(testObj.removedParameterIds)) {
           testObj.removedParameterIds = testObj.removedParameterIds.filter((id: number) => !sentRemoved.includes(id));
+          testObj.discardedParameterIds = (testObj.discardedParameterIds || []).filter((id: number) => !sentRemoved.includes(id));
         }
         this.toastService.show(`${testName} — saved successfully`, 'success');
         this.resultSaved.emit(response);
@@ -1913,7 +1915,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             isReportable: param.isReportable !== false,
             specimenIndex: Number(param.specimenIndex) > 0 ? Number(param.specimenIndex) : 0
           })),
-          removedParameterIds: [...(testObj.removedParameterIds || [])] as number[]
+          removedParameterIds: [...(testObj.removedParameterIds || [])] as number[],
+          discardedParameterIds: [...(testObj.discardedParameterIds || [])] as number[]
         };
 
         if (apiGeneral) {

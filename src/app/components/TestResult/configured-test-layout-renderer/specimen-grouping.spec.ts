@@ -196,6 +196,24 @@ describe('removeParameterRows (one parameter out of every specimen)', () => {
       expect(store.removedParameterIds).toBeUndefined();
     });
 
+    it('removes a row that holds a result when the user confirmed it, and queues it as discarded', () => {
+      const fa = build();
+      fa.at(0).get('value')!.setValue(280);
+      fa.at(2).get('value')!.setValue(285);
+      const store: SpecimenRowStore = {};
+      expect(removeParameterRows(fa, [0, 2], store, true)).toBeNull();
+      expect(fa.controls.map(c => c.get('parameterName')!.value)).toEqual(['Elongation', 'Elongation']);
+      expect(store.removedParameterIds).toEqual([1, 3]);
+      expect(store.discardedParameterIds).toEqual([1, 3]);
+    });
+
+    it('does not mark empty rows as discarded', () => {
+      const fa = build();
+      const store: SpecimenRowStore = {};
+      removeParameterRows(fa, [0, 2], store, true);
+      expect(store.discardedParameterIds).toBeUndefined();
+    });
+
     it('removes nothing when a cleared value is still saved', () => {
       const fa = build();
       const store: SpecimenRowStore = { savedResultIds: [3] };

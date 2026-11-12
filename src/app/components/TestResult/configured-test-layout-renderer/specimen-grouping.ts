@@ -154,6 +154,8 @@ export interface SpecimenRowStore {
    * A row cleared on the screen but not saved yet still holds its value there, and the save refuses to delete it.
    */
   savedResultIds?: number[];
+  /** Saved rows the user confirmed to remove although they hold a result; sent with the save so the API deletes them. */
+  discardedParameterIds?: number[];
 }
 
 /** Why a row cannot be removed: it shows a value or remark, or its value is cleared but still saved. */
@@ -309,15 +311,20 @@ export function removeSpecimenRows(fa: FormArray, specimen: number, store: Speci
  * none of them holds a result. Saved IDs are queued for deletion on the next save. Returns the first row that blocks
  * the removal (nothing is removed then), or null when removed.
  */
-export function removeParameterRows(fa: FormArray, rowIdxs: number[], store: SpecimenRowStore): RowRemovalBlock | null {
+export function removeParameterRows(fa: FormArray, rowIdxs: number[], store: SpecimenRowStore, discardResults = false): RowRemovalBlock | null {
   if (!fa || rowIdxs.length === 0) return null;
+  const discarded: number[] = [];
   for (const r of rowIdxs) {
     const value = rowValue(fa.at(r));
     const reason = rowRemovalReason(value, store);
     if (reason) {
-      return { name: `${value?.parameterName || `Row ${r + 1}`} (S${toIndex(value?.specimenIndex) + 1})`, reason };
+      if (!discardResults) {
+        return { name: `${value?.parameterName || `Row ${r + 1}`} (S${toIndex(value?.specimenIndex) + 1})`, reason };
+      }
+      if (Number(value?.id) > 0) discarded.push(Number(value.id));
     }
   }
+  if (discarded.length) store.discardedParameterIds = [...(store.discardedParameterIds || []), ...discarded];
   const ids = rowIdxs.map(r => Number(fa.at(r)?.get('id')?.value) || 0).filter(id => id > 0);
   [...rowIdxs].sort((a, b) => b - a).forEach(r => fa.removeAt(r));
   if (ids.length) store.removedParameterIds = [...(store.removedParameterIds || []), ...ids];

@@ -412,4 +412,8 @@ input[type="number"] {
   border-bottom: 1px solid #e2e8f0;
 }
 
-
+/* A remove button whose row is still needed by a calculated row: looks off, the tooltip and the click message say why */
+.btn-lims-icon.btn-lims-delete.remove-blocked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

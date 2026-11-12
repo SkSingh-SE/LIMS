@@ -326,11 +326,12 @@
                       <th *ngIf="s.config?.showMinMax" class="w-col-85">Min</th>
                       <th *ngIf="s.config?.showMinMax" class="w-col-85">Max</th>
                       <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
+                      <th class="w-col-85">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     <!-- Diameter (if round) -->
-                    <tr *ngIf="sample?.diameter || sample?.productForm === 'Round' || sample?.productForm === 'Bar'">
+                    <tr *ngIf="isTensileRowShown('diameter')">
                       <td class="fw-semibold text-start"><span>Diameter (D)</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
@@ -347,10 +348,19 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('diameter').length > 0"
+                                  (click)="removeTensileRow('diameter')" [title]="removeTitle('diameter')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <!-- Thickness -->
-                    <tr *ngIf="!sample?.diameter">
+                    <tr *ngIf="isTensileRowShown('thickness')">
                       <td class="fw-semibold text-start"><span>Thickness (T)</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
@@ -367,10 +377,19 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('thickness').length > 0"
+                                  (click)="removeTensileRow('thickness')" [title]="removeTitle('thickness')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <!-- Width -->
-                    <tr *ngIf="!sample?.diameter">
+                    <tr *ngIf="isTensileRowShown('width')">
                       <td class="fw-semibold text-start"><span>Width (W)</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
@@ -387,10 +406,19 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('width').length > 0"
+                                  (click)="removeTensileRow('width')" [title]="removeTitle('width')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <!-- Gauge Length -->
-                    <tr>
+                    <tr *ngIf="isTensileRowShown('gaugeLength')">
                       <td class="fw-semibold text-start"><span>Gauge Length (L₀)</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
@@ -407,10 +435,19 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('gaugeLength').length > 0"
+                                  (click)="removeTensileRow('gaugeLength')" [title]="removeTitle('gaugeLength')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <!-- Area (Calculated) -->
-                    <tr>
+                    <tr *ngIf="isTensileRowShown('area')">
                       <td class="fw-semibold text-start"><i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i><span>Cross Section Area (S₀)</span></td>
                       <td class="text-center text-muted small">mm²</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-semibold text-primary">
@@ -422,10 +459,19 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">Formula: T &times; W</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('area').length > 0"
+                                  (click)="removeTensileRow('area')" [title]="removeTitle('area')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <!-- Measured Force Inputs -->
-                    <tr>
+                    <tr *ngIf="isTensileRowShown('yieldLoad')">
                       <td class="fw-semibold text-start"><span>0.2% Yield Load (F_p0.2)</span></td>
                       <td class="text-center text-muted small">kN</td>
                       <td *ngFor="let spm of specimens">
@@ -442,9 +488,18 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('yieldLoad').length > 0"
+                                  (click)="removeTensileRow('yieldLoad')" [title]="removeTitle('yieldLoad')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
-                    <tr>
+                    <tr *ngIf="isTensileRowShown('peakLoad')">
                       <td class="fw-semibold text-start"><span>Maximum / Peak Load (F_m)</span></td>
                       <td class="text-center text-muted small">kN</td>
                       <td *ngFor="let spm of specimens">
@@ -461,9 +516,18 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('peakLoad').length > 0"
+                                  (click)="removeTensileRow('peakLoad')" [title]="removeTitle('peakLoad')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
-                    <tr>
+                    <tr *ngIf="isTensileRowShown('finalLength')">
                       <td class="fw-semibold text-start"><span>Final Length (L_u)</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
@@ -480,6 +544,15 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('finalLength').length > 0"
+                                  (click)="removeTensileRow('finalLength')" [title]="removeTitle('finalLength')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <!-- Calculated Mechanical Results (Real-Time Synchronized to Form) -->
@@ -487,10 +560,6 @@
                       <td class="fw-bold text-start text-dark">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>0.2% Proof Stress / Yield Strength</span>
-                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
-                                (click)="removeRoleParameter('proofStress')" title="Remove this parameter from all specimens">
-                          <i class="bi bi-trash"></i>
-                        </button>
                       </td>
                       <td class="text-center fw-bold text-dark">MPa</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
@@ -504,16 +573,24 @@
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
                         {{ getParamRequirementByName('proof stress') !== '—' ? getParamRequirementByName('proof stress') : (getParamRequirementByName('yield') !== '—' ? getParamRequirementByName('yield') : '—') }}
                       </td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="roleParamIndex('proofStress') >= 0" type="button" class="btn-lims-icon" (click)="openRoleFormula('proofStress')" title="Formula Details">
+                            <i class="bi bi-calculator"></i>
+                          </button>
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('proofStress').length > 0"
+                                  (click)="removeTensileRow('proofStress')" [title]="removeTitle('proofStress')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <tr *ngIf="hasParameterRole('uts')">
                       <td class="fw-bold text-start text-dark">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>Ultimate Tensile Strength (UTS)</span>
-                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
-                                (click)="removeRoleParameter('uts')" title="Remove this parameter from all specimens">
-                          <i class="bi bi-trash"></i>
-                        </button>
                       </td>
                       <td class="text-center fw-bold text-dark">MPa</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
@@ -527,16 +604,24 @@
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
                         {{ getParamRequirementByName('tensile') !== '—' ? getParamRequirementByName('tensile') : (getParamRequirementByName('uts') !== '—' ? getParamRequirementByName('uts') : '—') }}
                       </td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="roleParamIndex('uts') >= 0" type="button" class="btn-lims-icon" (click)="openRoleFormula('uts')" title="Formula Details">
+                            <i class="bi bi-calculator"></i>
+                          </button>
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('uts').length > 0"
+                                  (click)="removeTensileRow('uts')" [title]="removeTitle('uts')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <tr *ngIf="hasParameterRole('elongation')">
                       <td class="fw-bold text-start text-dark">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>Percentage Elongation in 50mm / 4D</span>
-                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
-                                (click)="removeRoleParameter('elongation')" title="Remove this parameter from all specimens">
-                          <i class="bi bi-trash"></i>
-                        </button>
                       </td>
                       <td class="text-center fw-bold text-dark">%</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
@@ -550,6 +635,18 @@
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
                         {{ getParamRequirementByName('elongation') }}
                       </td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="roleParamIndex('elongation') >= 0" type="button" class="btn-lims-icon" (click)="openRoleFormula('elongation')" title="Formula Details">
+                            <i class="bi bi-calculator"></i>
+                          </button>
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                                  [class.remove-blocked]="removalBlockers('elongation').length > 0"
+                                  (click)="removeTensileRow('elongation')" [title]="removeTitle('elongation')">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                     <!-- Other parameters of the test (not one of the fixed rows above): entered per specimen, removable -->
@@ -557,10 +654,6 @@
                       <td class="fw-semibold text-start">
                         <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ p.name }}</span>
-                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
-                                (click)="removeBaseParameter(p.index)" title="Remove this parameter from all specimens">
-                          <i class="bi bi-trash"></i>
-                        </button>
                       </td>
                       <td class="text-center text-muted small">{{ p.unit }}</td>
                       <td *ngFor="let spm of specimens; let spmIdx = index">
@@ -583,10 +676,27 @@
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
                         {{ p.requirement }}
                       </td>
+                                          <td class="text-center action-col">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <button *ngIf="p.isCalculated" type="button" class="btn-lims-icon" (click)="openRowFormula(p.index)" title="Formula Details">
+                            <i class="bi bi-calculator"></i>
+                          </button>
+                          <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete" [class.remove-blocked]="baseRowBlockers(p.index).length > 0"
+                                  (click)="removeBaseParameter(p.index)" [title]="baseRowBlockers(p.index).length ? 'Used in the formula of ' + baseRowBlockers(p.index).join(', ') + '. Remove it first.' : 'Remove ' + p.name + ' from all specimens'">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
 
                   </tbody>
                 </table>
+                <div *ngIf="isTensileTest() && !isViewMode && !isLocked && restorableTensileRows.length" class="small text-muted d-flex flex-wrap align-items-center gap-2 px-1 mb-1">
+                  <span>Removed rows:</span>
+                  <button *ngFor="let r of restorableTensileRows" type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" (click)="restoreTensileRow(r.role)" title="Show {{ r.label }} again">
+                    <i class="bi bi-plus-lg me-1"></i>{{ r.label }}
+                  </button>
+                </div>
 
                 <!-- 2. Dynamic Multi-Specimen Parameter Matrix (When Active Test is Non-Tensile e.g. Hardness, Impact, etc.) -->
                 <table class="table lims-matrix-table align-middle mb-1" *ngIf="!isTensileTest()">
@@ -606,7 +716,7 @@
                       <th *ngIf="s.config?.showAverage !== false" class="w-col-115 avg-col-header">Average</th>
                       <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
                       <th class="w-col-90">Status</th>
-                      <th *ngIf="!isViewMode && !isLocked" class="w-col-65"></th>
+                      <th class="w-col-85">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -639,14 +749,18 @@
                           {{ getBaseParamStatus(p.index) }}
                         </span>
                       </td>
-                      <td *ngIf="!isViewMode && !isLocked" class="text-center">
-                        <button type="button" class="btn-lims-icon btn-lims-delete" (click)="removeBaseParameter(p.index)" title="Remove {{ p.name }} from all specimens">
+                      <td class="text-center action-col">
+                        <button *ngIf="p.isCalculated" type="button" class="btn-lims-icon me-1" (click)="openRowFormula(p.index)" title="Formula Details">
+                          <i class="bi bi-calculator"></i>
+                        </button>
+                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete" [class.remove-blocked]="baseRowBlockers(p.index).length > 0"
+                                (click)="removeBaseParameter(p.index)" [title]="baseRowBlockers(p.index).length ? 'Used in the formula of ' + baseRowBlockers(p.index).join(', ') + '. Remove it first.' : 'Remove ' + p.name + ' from all specimens'">
                           <i class="bi bi-trash"></i>
                         </button>
                       </td>
                     </tr>
                     <tr *ngIf="getBaseParameterList().length === 0">
-                      <td [attr.colspan]="3 + (!isViewMode && !isLocked ? 1 : 0) + specimens.length + (s.config?.showAverage !== false ? 1 : 0) + (s.config?.showRequirement !== false ? 1 : 0)" class="text-center py-2 text-muted">
+                      <td [attr.colspan]="4 + specimens.length + (s.config?.showAverage !== false ? 1 : 0) + (s.config?.showRequirement !== false ? 1 : 0)" class="text-center py-2 text-muted">
                         No parameters configured for this test.
                       </td>
                     </tr>
@@ -1834,3 +1948,13 @@
   </div>
 
 </div>
+
+<app-confirm-dialog
+  [visible]="removeConfirm.visible"
+  title="Remove parameter"
+  [message]="removeConfirm.message"
+  confirmLabel="Remove"
+  variant="danger"
+  (confirmed)="onRemoveConfirmed()"
+  (cancelled)="onRemoveCancelled()">
+</app-confirm-dialog>

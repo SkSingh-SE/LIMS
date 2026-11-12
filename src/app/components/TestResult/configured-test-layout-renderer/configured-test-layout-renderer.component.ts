@@ -1717,12 +1717,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   formatRequirement(param: any): string {
     if (!param) return '—';
-    if (param.acceptanceCriteria) return param.acceptanceCriteria;
     const min = param.specMinValue != null ? param.specMinValue : param.minValue;
     const max = param.specMaxValue != null ? param.specMaxValue : param.maxValue;
     if (min != null && max != null) return `${min} – ${max}`;
     if (min != null) return `≥ ${min}`;
     if (max != null) return `≤ ${max}`;
+    if (param.acceptanceCriteria) return param.acceptanceCriteria;
     return '—';
   }
 

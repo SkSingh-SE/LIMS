@@ -146,6 +146,15 @@
                   [disabled]="!!completeBlockedReason || isSavingResult" [title]="completeBlockedReason || 'Complete this test'">
                   <i class="bi bi-check-circle"></i><span>Complete</span>
                 </button>
+                <ng-container *hasPermission="'CanPerformTest'">
+                  <button *ngIf="canSubmitForVerification(tbTest?.status)"
+                    type="button" class="btn btn-sm btn-lims btn-lims-primary"
+                    (click)="requestSubmitForVerification(p, t)"
+                    [disabled]="isSubmittingVerification"
+                    title="Submit completed test for verification">
+                    <i class="bi bi-send-check"></i><span>Submit for Verification</span>
+                  </button>
+                </ng-container>
               </div>
             </div>
 
@@ -1661,3 +1670,14 @@
     </div>
   </div>
 </div>
+
+<!-- Submit for Verification Confirmation Dialog (NABL ISO 17025 Cl 7.7) -->
+<app-confirm-dialog
+  [visible]="showVerificationConfirmDialog"
+  title="Submit for Verification"
+  message="Are you sure you want to submit this test result for verification? Once submitted, the test will be locked pending reviewer verification."
+  confirmLabel="Submit for Verification"
+  variant="primary"
+  (confirmed)="onVerificationConfirmed()"
+  (cancelled)="onVerificationCancelled()">
+</app-confirm-dialog>

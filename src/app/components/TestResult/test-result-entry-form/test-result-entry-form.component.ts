@@ -16,6 +16,8 @@ import { Observable, Subscription, of } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
+import { HasPermissionDirective } from '../../../utility/directives/has-permission.directive';
+import { ConfirmDialogComponent } from '../../../utility/components/confirm-dialog/confirm-dialog.component';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
@@ -49,7 +51,9 @@ import {
     TestStatusBadgeComponent,
     ConfiguredTestLayoutRendererComponent,
     TestVerdictPanelComponent,
-    FormsModule
+    FormsModule,
+    HasPermissionDirective,
+    ConfirmDialogComponent
   ],
 })
 export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck, OnDestroy {
@@ -2960,6 +2964,32 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   // ================================================================
   isSubmittingVerification = false;
   isSubmittingReport = false;
+  showVerificationConfirmDialog = false;
+  pendingVerificationTarget?: { planIndex: number; testIndex: number };
+
+  canSubmitForVerification(status?: string): boolean {
+    if (this.isViewMode) return false;
+    return status === 'Completed';
+  }
+
+  requestSubmitForVerification(planIndex: number, testIndex: number): void {
+    this.pendingVerificationTarget = { planIndex, testIndex };
+    this.showVerificationConfirmDialog = true;
+  }
+
+  onVerificationConfirmed(): void {
+    if (this.pendingVerificationTarget) {
+      const { planIndex, testIndex } = this.pendingVerificationTarget;
+      this.pendingVerificationTarget = undefined;
+      this.showVerificationConfirmDialog = false;
+      this.submitForVerification(planIndex, testIndex);
+    }
+  }
+
+  onVerificationCancelled(): void {
+    this.pendingVerificationTarget = undefined;
+    this.showVerificationConfirmDialog = false;
+  }
 
   getVerificationBannerState(): { state: string; message: string } | null {
     const allTests = this.plans.flatMap((p: any) => p.tests || []);
@@ -2990,17 +3020,21 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   }
 
   submitForVerification(planIndex: number, testIndex: number): void {
-    const test = this.plans[planIndex].tests[testIndex];
-    const headerId = test.headerId;
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    const headerId = test?.headerId;
     if (!headerId) return;
+    if (this.isSubmittingVerification) return;
+    this.isSubmittingVerification = true;
 
     this.testResultService.submitForVerification(headerId).subscribe({
       next: () => {
+        this.isSubmittingVerification = false;
         this.toastService.show('Test submitted for verification', 'success');
         this.loadFullResultPayload(this.sampleId);
       },
       error: (err: any) => {
-        this.toastService.show(err?.error?.message || 'Failed to submit for verification', 'error');
+        this.isSubmittingVerification = false;
+        this.toastService.show(err?.error?.message || err?.error || 'Failed to submit for verification', 'error');
       }
     });
   }
@@ -5138,8 +5172,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         if (top === 0) continue; // nothing selected yet: leave the limits as loaded
       }
       const line = best[0];
-      if (line.minValue !== undefined) group.get('minValue')?.setValue(line.minValue);
-      if (line.maxValue !== undefined) group.get('maxValue')?.setValue(line.maxValue);
+      if (line.minValue !== undefined) {
+        group.get('minValue')?.setValue(line.minValue);
+        group.get('specMinValue')?.setValue(line.minValue);
+      }
+      if (line.maxValue !== undefined) {
+        group.get('maxValue')?.setValue(line.maxValue);
+        group.get('specMaxValue')?.setValue(line.maxValue);
+      }
       if (line.unitName && !group.get('unit')?.value) group.get('unit')?.setValue(line.unitName);
       if (line.equation) group.get('formulaExpression')?.setValue(line.equation);
       if (line.acceptanceCriteria) group.get('acceptanceCriteria')?.setValue(line.acceptanceCriteria);

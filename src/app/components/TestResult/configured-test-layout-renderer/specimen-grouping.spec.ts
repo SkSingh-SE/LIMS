@@ -4,6 +4,7 @@ import {
   insertPositionForSpecimen,
   legacyBlockSize,
   matchingRowInSpecimen,
+  removeParameterRows,
   removeSpecimenRows,
   resolveSpecimenCount,
   resolveSpecimenIndexes,
@@ -165,6 +166,48 @@ describe('specimen-grouping', () => {
       const fa = new FormArray([row(1, 'A', 0), row(2, 'B', 0), row(3, 'A', 1)].map(formRow));
       expect(insertPositionForSpecimen(fa, 0)).toBe(2);
       expect(insertPositionForSpecimen(fa, 1)).toBe(3);
+    });
+  });
+
+describe('removeParameterRows (one parameter out of every specimen)', () => {
+    const build = () =>
+      new FormArray([
+        formRow(row(1, 'Yield', 0)),
+        formRow(row(2, 'Elongation', 0)),
+        formRow(row(3, 'Yield', 1)),
+        formRow(row(4, 'Elongation', 1)),
+      ]);
+
+    it('removes the parameter from every specimen and queues the saved ids', () => {
+      const fa = build();
+      const store: SpecimenRowStore = {};
+      expect(removeParameterRows(fa, [0, 2], store)).toBeNull();
+      expect(fa.controls.map(c => c.get('parameterName')!.value)).toEqual(['Elongation', 'Elongation']);
+      expect(store.removedParameterIds).toEqual([1, 3]);
+    });
+
+    it('removes nothing when any specimen row holds a value, and names the specimen', () => {
+      const fa = build();
+      fa.at(2).get('value')!.setValue(280);
+      const store: SpecimenRowStore = {};
+      const block = removeParameterRows(fa, [0, 2], store);
+      expect(block).toEqual({ name: 'Yield (S2)', reason: 'value' });
+      expect(fa.length).toBe(4);
+      expect(store.removedParameterIds).toBeUndefined();
+    });
+
+    it('removes nothing when a cleared value is still saved', () => {
+      const fa = build();
+      const store: SpecimenRowStore = { savedResultIds: [3] };
+      expect(removeParameterRows(fa, [0, 2], store)).toEqual({ name: 'Yield (S2)', reason: 'saved' });
+      expect(fa.length).toBe(4);
+    });
+
+    it('does not queue ids of rows that were never saved', () => {
+      const fa = new FormArray([formRow(row(0, 'Yield', 0)), formRow(row(0, 'Yield', 1))]);
+      const store: SpecimenRowStore = {};
+      expect(removeParameterRows(fa, [0, 1], store)).toBeNull();
+      expect(store.removedParameterIds).toBeUndefined();
     });
   });
 

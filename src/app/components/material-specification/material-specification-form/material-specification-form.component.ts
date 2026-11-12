@@ -1,3 +1,4 @@
+import { duplicateSpecLineMessage, findDuplicateSpecLine } from '../spec-line-duplicates.helper';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, HostListener, ChangeDetectorRef, signal } from '@angular/core';
 import {
@@ -2075,6 +2076,12 @@ export class MaterialSpecificationFormComponent implements CanComponentDeactivat
     const formValue = this.MaterialSpecificationForm.getRawValue();
     const formattedData = this.formatedPayload(formValue);
     if (this.MaterialSpecificationForm.valid) {
+      // same configuration twice in one grade = two possible limits for one parameter
+      const duplicate = findDuplicateSpecLine(formattedData.grades);
+      if (duplicate) {
+        this.toastService.show(duplicateSpecLineMessage(duplicate), 'error');
+        return;
+      }
       this.saveData(formattedData);
     } else {
       this.toastService.show('Please fill all required fields.', 'warning');

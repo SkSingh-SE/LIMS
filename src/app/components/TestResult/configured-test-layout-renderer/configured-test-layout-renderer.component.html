@@ -100,6 +100,9 @@
               <button type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="removeSpecimen()" [disabled]="specimens.length <= 1" title="Remove the last specimen">
                 <i class="bi bi-dash-circle me-1"></i><span>Remove Specimen</span>
               </button>
+              <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()" title="Add a parameter to all specimens">
+                <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
+              </button>
             </ng-container>
 
             <!-- Multi-Reading Matrix Quick Actions (Adjustable Spot Count) -->
@@ -480,10 +483,14 @@
                     </tr>
 
                     <!-- Calculated Mechanical Results (Real-Time Synchronized to Form) -->
-                    <tr>
+                    <tr *ngIf="hasParameterRole('proofStress')">
                       <td class="fw-bold text-start text-dark">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>0.2% Proof Stress / Yield Strength</span>
+                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
+                                (click)="removeRoleParameter('proofStress')" title="Remove this parameter from all specimens">
+                          <i class="bi bi-trash"></i>
+                        </button>
                       </td>
                       <td class="text-center fw-bold text-dark">MPa</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
@@ -499,10 +506,14 @@
                       </td>
                     </tr>
 
-                    <tr>
+                    <tr *ngIf="hasParameterRole('uts')">
                       <td class="fw-bold text-start text-dark">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>Ultimate Tensile Strength (UTS)</span>
+                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
+                                (click)="removeRoleParameter('uts')" title="Remove this parameter from all specimens">
+                          <i class="bi bi-trash"></i>
+                        </button>
                       </td>
                       <td class="text-center fw-bold text-dark">MPa</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
@@ -518,10 +529,14 @@
                       </td>
                     </tr>
 
-                    <tr>
+                    <tr *ngIf="hasParameterRole('elongation')">
                       <td class="fw-bold text-start text-dark">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>Percentage Elongation in 50mm / 4D</span>
+                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
+                                (click)="removeRoleParameter('elongation')" title="Remove this parameter from all specimens">
+                          <i class="bi bi-trash"></i>
+                        </button>
                       </td>
                       <td class="text-center fw-bold text-dark">%</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
@@ -534,6 +549,34 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
                         {{ getParamRequirementByName('elongation') }}
+                      </td>
+                    </tr>
+
+                    <!-- Other parameters of the test (not one of the fixed rows above): entered per specimen, removable -->
+                    <tr *ngFor="let p of getExtraBaseParameterList(); trackBy: trackByBaseRow">
+                      <td class="fw-semibold text-start">
+                        <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                        <span>{{ p.name }}</span>
+                        <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete ms-1"
+                                (click)="removeBaseParameter(p.index)" title="Remove this parameter from all specimens">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                      <td class="text-center text-muted small">{{ p.unit }}</td>
+                      <td *ngFor="let spm of specimens; let spmIdx = index">
+                        <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [value]="getParamValueForSpecimen(p.index, spmIdx)"
+                               (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               [placeholder]="p.name + '...'" />
+                      </td>
+                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                        {{ getBaseParamAverage(p.index) }}
+                      </td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
+                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                        {{ p.requirement }}
                       </td>
                     </tr>
 
@@ -558,10 +601,11 @@
                       <th *ngIf="s.config?.showAverage !== false" class="w-col-115 avg-col-header">Average</th>
                       <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
                       <th class="w-col-90">Status</th>
+                      <th *ngIf="!isViewMode && !isLocked" class="w-col-65"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let p of getBaseParameterList()">
+                    <tr *ngFor="let p of getBaseParameterList(); trackBy: trackByBaseRow">
                       <td class="fw-semibold text-start">
                         <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ p.name }}</span>
@@ -585,9 +629,14 @@
                           {{ getBaseParamStatus(p.index) }}
                         </span>
                       </td>
+                      <td *ngIf="!isViewMode && !isLocked" class="text-center">
+                        <button type="button" class="btn-lims-icon btn-lims-delete" (click)="removeBaseParameter(p.index)" title="Remove {{ p.name }} from all specimens">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
                     </tr>
                     <tr *ngIf="getBaseParameterList().length === 0">
-                      <td [attr.colspan]="3 + specimens.length + (s.config?.showAverage !== false ? 1 : 0) + (s.config?.showRequirement !== false ? 1 : 0)" class="text-center py-2 text-muted">
+                      <td [attr.colspan]="3 + (!isViewMode && !isLocked ? 1 : 0) + specimens.length + (s.config?.showAverage !== false ? 1 : 0) + (s.config?.showRequirement !== false ? 1 : 0)" class="text-center py-2 text-muted">
                         No parameters configured for this test.
                       </td>
                     </tr>

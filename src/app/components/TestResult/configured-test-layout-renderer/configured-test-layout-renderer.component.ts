@@ -12,6 +12,7 @@ import {
   addSpecimenRows,
   insertPositionForSpecimen,
   matchingRowInSpecimen,
+  removeParameterRows,
   removeSpecimenRows,
   rowRemovalMessage,
   rowRemovalReason,
@@ -1187,6 +1188,51 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
+  }
+
+  /**
+   * Multi-specimen tables: takes one parameter out of EVERY specimen (S1, S2, ...). Refused, with the reason, when any
+   * specimen has a value for it; saved rows are deleted on the next save.
+   */
+  removeBaseParameter(baseRowIdx: number): void {
+    if (this.isViewMode || this.isLocked || !this.parametersFormArray) return;
+    const rows: number[] = [];
+    for (let s = 0; s < Math.max(1, this.specimens.length); s++) {
+      const idx = this.getMatchingRow(baseRowIdx, s);
+      if (idx >= 0) rows.push(idx);
+    }
+    if (rows.length === 0) return;
+    if (this.parametersFormArray.length - rows.length < 1) {
+      this.toastService.show('A test needs at least one parameter.', 'warning');
+      return;
+    }
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows change
+    const block = removeParameterRows(this.parametersFormArray, rows, this.rowStore);
+    if (block) {
+      this.toastService.show(rowRemovalMessage(block), 'warning');
+      return;
+    }
+    this.recalculateSpecimens();
+    this.parametersAdjusted.emit();
+  }
+
+  /** Tensile matrix: removes the parameter behind one of its calculated result rows (every specimen). */
+  removeRoleParameter(role: SpecimenRole): void {
+    const base = this.getBaseParameterList().find(p => resolveTensileRole(p.name) === role);
+    if (base) this.removeBaseParameter(base.index);
+  }
+
+  /** True when the test has a parameter row for this role, so the tensile matrix shows the matching result row. */
+  hasParameterRole(role: SpecimenRole): boolean {
+    return this.getBaseParameterList().some(p => resolveTensileRole(p.name) === role);
+  }
+
+  /** The list is rebuilt on every check; tracking by row index keeps the DOM rows (and the focus inside an input). */
+  trackByBaseRow = (_: number, p: { index: number }) => p.index;
+
+  /** Tensile matrix: parameters that are not one of its fixed rows (e.g. Bend Diameter, added parameters). */
+  getExtraBaseParameterList(): any[] {
+    return this.getBaseParameterList().filter(p => !isSpecimenRole(resolveTensileRole(p.name)));
   }
 
   openAddParamModal(): void {

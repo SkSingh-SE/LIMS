@@ -303,3 +303,23 @@ export function removeSpecimenRows(fa: FormArray, specimen: number, store: Speci
   });
   return null;
 }
+
+/**
+ * Takes one parameter out of every specimen: the given rows (the same parameter in S1, S2, ...) are removed only when
+ * none of them holds a result. Saved IDs are queued for deletion on the next save. Returns the first row that blocks
+ * the removal (nothing is removed then), or null when removed.
+ */
+export function removeParameterRows(fa: FormArray, rowIdxs: number[], store: SpecimenRowStore): RowRemovalBlock | null {
+  if (!fa || rowIdxs.length === 0) return null;
+  for (const r of rowIdxs) {
+    const value = rowValue(fa.at(r));
+    const reason = rowRemovalReason(value, store);
+    if (reason) {
+      return { name: `${value?.parameterName || `Row ${r + 1}`} (S${toIndex(value?.specimenIndex) + 1})`, reason };
+    }
+  }
+  const ids = rowIdxs.map(r => Number(fa.at(r)?.get('id')?.value) || 0).filter(id => id > 0);
+  [...rowIdxs].sort((a, b) => b - a).forEach(r => fa.removeAt(r));
+  if (ids.length) store.removedParameterIds = [...(store.removedParameterIds || []), ...ids];
+  return null;
+}

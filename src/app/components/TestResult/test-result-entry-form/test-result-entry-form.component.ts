@@ -478,10 +478,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           console.warn('[TestResultEntry] No test plans found in payload');
         }
 
+        // Store metadata for save/complete FIRST: mapping starts the specification condition engine, which reads the
+        // grade, test node and method ids from it (before, it ran with empty metadata and fell back to the plan row)
+        this.storeApiMetadata(data);
         // Map API response to component format
         this.mapApiResponseToComponentFormat(data);
-        // Store metadata for save/complete
-        this.storeApiMetadata(data);
 
         // Rebuild form with actual data
         this.resultForm = this.fb.group({
@@ -924,6 +925,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           generalTestId: generalTest.generalTestId,
           testMethodId: generalTest.testMethodId,
           laboratoryTestId: generalTest.laboratoryTestId,
+          conditionLabTestId: generalTest.conditionLabTestId ?? null,
+          conditionMethodId: generalTest.conditionMethodId ?? null,
           sequenceNo: generalTest.sequenceNo || 1,
           totalSpecimens: generalTest.totalSpecimens || 1,
           specification1: generalTest.specification1,
@@ -938,6 +941,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           chemicalTestId: chemicalTest.chemicalTestId,
           labTestId: chemicalTest.labTestId,
           parentLabTestId: chemicalTest.parentLabTestId || null,
+          conditionLabTestId: chemicalTest.conditionLabTestId ?? null,
+          conditionMethodId: chemicalTest.conditionMethodId ?? null,
           standard: chemicalTest.standard || null,
           standardName: chemicalTest.standardName || '',
           specification1: chemicalTest.specification1,
@@ -5445,8 +5450,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const g2 = Number(meta?.specification2 || 0) || null;
     this.conditionNoGrade[headerId] = !g1;
     if (!g1) return;
-    const labTestId = Number(meta?.laboratoryTestId || plan.labTestId || 0) || null;
-    const methodId = Number(meta?.testMethodId || 0) || null;
+    // The plan's own test node and the method specification id: that is how spec lines store them
+    const labTestId = Number(meta?.conditionLabTestId || meta?.laboratoryTestId || plan.labTestId || 0) || null;
+    const methodId = Number(meta?.conditionMethodId || meta?.testMethodId || 0) || null;
     // Chemical tests only use chemical lines, every other test only mechanical lines
     const isChemicalTest = !!(this.apiMetadata?.chemicalTests || []).find((m: any) => m.headerId === headerId);
     const testKind = isChemicalTest ? 'chemical' : 'general';

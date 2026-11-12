@@ -17,10 +17,6 @@ import { ParameterService } from '../../../services/parameter.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
-import { DimensionalFactorService } from '../../../services/dimensional-factor.service';
-import { HeatTreatmentService } from '../../../services/heat-treatment.service';
-import { ProductConditionService } from '../../../services/product-condition.service';
-import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { TestLayoutService } from '../../../services/test-layout.service';
 import { Observable, Subscription, of } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
@@ -290,12 +286,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   loadingMethodParams = false;
 
   // Material Specification Condition Filter Engine
-  dimensionalFactorsList: any[] = [];
-  heatTreatmentsList: any[] = [];
-  productConditions1List: any[] = [];
-  productConditions2List: any[] = [];
-  specimenOrientationsList: any[] = [];
-  loadingConditions = false;
   /** Merge left-rail spec-condition selections into executionExtraJson so they survive reload. */
   private mergeSelectedConditions(extraJson: any, headerId: number): string | null {
     let extra: any = {};
@@ -333,10 +323,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     private equipmentService: EquipmentService,
     private testMethodService: TestMethodSpecificationService,
     private materialSpecService: MaterialSpecificationService,
-    private dimensionalFactorService: DimensionalFactorService,
-    private heatTreatmentService: HeatTreatmentService,
-    private productConditionService: ProductConditionService,
-    private specimenOrientationService: SpecimenOrientationService,
     private testLayoutService: TestLayoutService,
     private toastService: ToastService,
     private route: ActivatedRoute,
@@ -3343,6 +3329,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   saveEnvironmentRecord(): void {
     if (this.recordEnvForm.invalid || !this.activeEnvHeaderId) {
       this.recordEnvForm.markAllAsTouched();
+      if (this.recordEnvForm.invalid) this.toastService.show('Enter room temperature (-50 to 100 °C) and humidity (0 to 100 %).', 'error');
       return;
     }
 
@@ -4910,30 +4897,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   // ================================================================
   // Material Specification Condition Filter Engine
   // ================================================================
-  loadConditionDropdowns(): void {
-    this.loadingConditions = true;
-    this.dimensionalFactorService.getDimensionalFactorDropdown('', 1, 100).subscribe({
-      next: (res: any) => { this.dimensionalFactorsList = res?.items || res?.data || res || []; },
-      error: () => {}
-    });
-    this.heatTreatmentService.getHeatTreatmentDropdown('', 1, 100).subscribe({
-      next: (res: any) => { this.heatTreatmentsList = res?.items || res?.data || res || []; },
-      error: () => {}
-    });
-    this.productConditionService.getProductConditionDropdown('', 1, 100).subscribe({
-      next: (res: any) => {
-        const items = res?.items || res?.data || res || [];
-        this.productConditions1List = items;
-        this.productConditions2List = items;
-      },
-      error: () => {}
-    });
-    this.specimenOrientationService.getSpecimenOrientationDropdown('', 1, 100).subscribe({
-      next: (res: any) => { this.specimenOrientationsList = res?.items || res?.data || res || []; },
-      error: () => {}
-    });
-  }
-
   getConditionFilter(headerId: number) {
     if (!this.selectedConditionsMap[headerId]) {
       this.selectedConditionsMap[headerId] = {
@@ -5500,14 +5463,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     this.applyConditionLines(planIndex, testIndex, false);
   }
 
-  /** Re-apply limits after any selection change (kept for the older per-field handlers). */
-  onSpecificationConditionChanged(planIndex: number, testIndex: number): void {
-    const test = this.plans[planIndex]?.tests?.[testIndex];
-    if (!test?.headerId) return;
-    this.refreshConditionOptions(test.headerId);
-    this.applyConditionLines(planIndex, testIndex, true);
-  }
-
   /** Per parameter, the most specific matching line wins; equal-score lines with different limits are reported. */
   private applyConditionLines(planIndex: number, testIndex: number, notify: boolean): void {
     const test = this.plans[planIndex]?.tests?.[testIndex];
@@ -5615,26 +5570,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   // ================================================================
   // Searchable Dropdowns for Condition Engine & Layout Selection
   // ================================================================
-  fetchDimensionalFactors = (term: string, page: number, pageSize: number) => {
-    return this.dimensionalFactorService.getDimensionalFactorDropdown(term, page, pageSize);
-  };
-
-  fetchHeatTreatments = (term: string, page: number, pageSize: number) => {
-    return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);
-  };
-
-  fetchProductConditions1 = (term: string, page: number, pageSize: number) => {
-    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
-  };
-
-  fetchProductConditions2 = (term: string, page: number, pageSize: number) => {
-    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
-  };
-
-  fetchSpecimenOrientations = (term: string, page: number, pageSize: number) => {
-    return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
-  };
-
   fetchLayoutTemplates = (term: string, page: number, pageSize: number): Observable<any[]> => {
     const termLower = (term || '').toLowerCase().trim();
     const items: any[] = [];
@@ -5669,116 +5604,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   onLayoutItemSelected(item: any): void {
     const id = item && item.id !== undefined ? item.id : null;
     this.onLayoutTemplateSelect(id, true);
-  }
-
-  getDimensionalFactorItem(headerId: number): any {
-    const f = this.getConditionFilter(headerId);
-    if ((f as any).dimensionalFactorItem !== undefined) return (f as any).dimensionalFactorItem;
-    if (f.dimensionalFactorID && this.dimensionalFactorsList?.length) {
-      const m = this.dimensionalFactorsList.find(x => (x.id || x.dimensionalFactorID) === f.dimensionalFactorID);
-      if (m) {
-        (f as any).dimensionalFactorItem = { id: m.id || m.dimensionalFactorID, name: m.name || m.factorName || m.dimensionalFactorName };
-        return (f as any).dimensionalFactorItem;
-      }
-    }
-    return null;
-  }
-
-  getHeatTreatmentItem(headerId: number): any {
-    const f = this.getConditionFilter(headerId);
-    if ((f as any).heatTreatmentItem !== undefined) return (f as any).heatTreatmentItem;
-    if (f.heatTreatmentID && this.heatTreatmentsList?.length) {
-      const m = this.heatTreatmentsList.find(x => (x.id || x.heatTreatmentID) === f.heatTreatmentID);
-      if (m) {
-        (f as any).heatTreatmentItem = { id: m.id || m.heatTreatmentID, name: m.name || m.heatTreatmentName };
-        return (f as any).heatTreatmentItem;
-      }
-    }
-    return null;
-  }
-
-  getProductCondition1Item(headerId: number): any {
-    const f = this.getConditionFilter(headerId);
-    if ((f as any).productCondition1Item !== undefined) return (f as any).productCondition1Item;
-    if (f.productConditionID1 && this.productConditions1List?.length) {
-      const m = this.productConditions1List.find(x => (x.id || x.productConditionID) === f.productConditionID1);
-      if (m) {
-        (f as any).productCondition1Item = { id: m.id || m.productConditionID, name: m.name || m.conditionName };
-        return (f as any).productCondition1Item;
-      }
-    }
-    return null;
-  }
-
-  getProductCondition2Item(headerId: number): any {
-    const f = this.getConditionFilter(headerId);
-    if ((f as any).productCondition2Item !== undefined) return (f as any).productCondition2Item;
-    if (f.productConditionID2 && this.productConditions2List?.length) {
-      const m = this.productConditions2List.find(x => (x.id || x.productConditionID) === f.productConditionID2);
-      if (m) {
-        (f as any).productCondition2Item = { id: m.id || m.productConditionID, name: m.name || m.conditionName };
-        return (f as any).productCondition2Item;
-      }
-    }
-    return null;
-  }
-
-  getSpecimenOrientationItem(headerId: number): any {
-    const f = this.getConditionFilter(headerId);
-    if ((f as any).specimenOrientationItem !== undefined) return (f as any).specimenOrientationItem;
-    if (f.specimenOrientationID && this.specimenOrientationsList?.length) {
-      const m = this.specimenOrientationsList.find(x => (x.id || x.specimenOrientationID) === f.specimenOrientationID);
-      if (m) {
-        (f as any).specimenOrientationItem = { id: m.id || m.specimenOrientationID, name: m.name || m.orientationName };
-        return (f as any).specimenOrientationItem;
-      }
-    }
-    return null;
-  }
-
-  onDimensionalFactorSelected(planIndex: number, testIndex: number, item: any): void {
-    const test = this.plans[planIndex]?.tests?.[testIndex];
-    if (!test || !test.headerId) return;
-    const filter = this.getConditionFilter(test.headerId);
-    filter.dimensionalFactorID = item ? item.id : null;
-    (filter as any).dimensionalFactorItem = item || null;
-    this.onSpecificationConditionChanged(planIndex, testIndex);
-  }
-
-  onHeatTreatmentSelected(planIndex: number, testIndex: number, item: any): void {
-    const test = this.plans[planIndex]?.tests?.[testIndex];
-    if (!test || !test.headerId) return;
-    const filter = this.getConditionFilter(test.headerId);
-    filter.heatTreatmentID = item ? item.id : null;
-    (filter as any).heatTreatmentItem = item || null;
-    this.onSpecificationConditionChanged(planIndex, testIndex);
-  }
-
-  onProductCondition1Selected(planIndex: number, testIndex: number, item: any): void {
-    const test = this.plans[planIndex]?.tests?.[testIndex];
-    if (!test || !test.headerId) return;
-    const filter = this.getConditionFilter(test.headerId);
-    filter.productConditionID1 = item ? item.id : null;
-    (filter as any).productCondition1Item = item || null;
-    this.onSpecificationConditionChanged(planIndex, testIndex);
-  }
-
-  onProductCondition2Selected(planIndex: number, testIndex: number, item: any): void {
-    const test = this.plans[planIndex]?.tests?.[testIndex];
-    if (!test || !test.headerId) return;
-    const filter = this.getConditionFilter(test.headerId);
-    filter.productConditionID2 = item ? item.id : null;
-    (filter as any).productCondition2Item = item || null;
-    this.onSpecificationConditionChanged(planIndex, testIndex);
-  }
-
-  onSpecimenOrientationSelected(planIndex: number, testIndex: number, item: any): void {
-    const test = this.plans[planIndex]?.tests?.[testIndex];
-    if (!test || !test.headerId) return;
-    const filter = this.getConditionFilter(test.headerId);
-    filter.specimenOrientationID = item ? item.id : null;
-    (filter as any).specimenOrientationItem = item || null;
-    this.onSpecificationConditionChanged(planIndex, testIndex);
   }
 
   

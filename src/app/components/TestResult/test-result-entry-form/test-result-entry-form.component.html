@@ -1078,16 +1078,26 @@
               <label class="form-label fw-semibold">Room Temperature (°C) <span class="text-danger">*</span></label>
               <div class="input-group input-group-sm">
                 <input type="number" step="0.1" class="form-control" formControlName="roomTemperature"
+                  [ngClass]="{ 'is-invalid': recordEnvForm.get('roomTemperature')?.touched && recordEnvForm.get('roomTemperature')?.invalid }"
                   placeholder="e.g. 23.5" />
                 <span class="input-group-text">°C</span>
+              </div>
+              <div *ngIf="recordEnvForm.get('roomTemperature')?.touched && recordEnvForm.get('roomTemperature')?.invalid">
+                <span *ngIf="recordEnvForm.get('roomTemperature')?.hasError('required')" class="text-danger text-sm">Room temperature is required.</span>
+                <span *ngIf="recordEnvForm.get('roomTemperature')?.hasError('min') || recordEnvForm.get('roomTemperature')?.hasError('max')" class="text-danger text-sm">Enter a value between -50 and 100 °C.</span>
               </div>
             </div>
             <div class="col-6">
               <label class="form-label fw-semibold">Relative Humidity (%) <span class="text-danger">*</span></label>
               <div class="input-group input-group-sm">
                 <input type="number" step="0.1" class="form-control" formControlName="roomHumidity"
+                  [ngClass]="{ 'is-invalid': recordEnvForm.get('roomHumidity')?.touched && recordEnvForm.get('roomHumidity')?.invalid }"
                   placeholder="e.g. 55.0" />
                 <span class="input-group-text">% RH</span>
+              </div>
+              <div *ngIf="recordEnvForm.get('roomHumidity')?.touched && recordEnvForm.get('roomHumidity')?.invalid">
+                <span *ngIf="recordEnvForm.get('roomHumidity')?.hasError('required')" class="text-danger text-sm">Relative humidity is required.</span>
+                <span *ngIf="recordEnvForm.get('roomHumidity')?.hasError('min') || recordEnvForm.get('roomHumidity')?.hasError('max')" class="text-danger text-sm">Enter a value between 0 and 100 %.</span>
               </div>
             </div>
           </div>
@@ -1096,7 +1106,7 @@
           <button type="button" class="btn btn-lims btn-lims-cancel" (click)="closeRecordEnvironmentModal()">
             <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </button>
-          <button type="submit" class="btn btn-lims btn-lims-save" [disabled]="recordEnvForm.invalid">
+          <button type="submit" class="btn btn-lims btn-lims-save">
             <i class="bi bi-check-circle me-1"></i><span>Save</span>
           </button>
         </div>

@@ -6916,24 +6916,6 @@ input[type="checkbox"]:checked {
    ========================================================================== */
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ A. Sticky Enterprise Case / Header Bar (.casebar / .lims-casebar) Ã¢â€â‚¬Ã¢â€â‚¬ */
-.casebar,
-.lims-casebar {
-  position: sticky;
-  top: 61px;
-  z-index: 30;
-  padding: 10px 22px;
-  background: #ffffff;
-  color: var(--ink, #172334);
-  border-top: 0;
-  border-bottom: 1px solid var(--line, #dce3eb);
-  box-shadow: 0 2px 7px rgba(23, 35, 52, 0.04);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-height: 46px;
-}
-
 .case-title {
   font-size: 14.5px;
   font-weight: 800;
@@ -7185,17 +7167,6 @@ input[type="checkbox"]:checked {
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ C. Segmented Strip & Selection Pills (.teststrip / .testpill) Ã¢â€â‚¬Ã¢â€â‚¬ */
-.teststrip,
-.lims-teststrip {
-  padding: 8px 22px;
-  gap: 7px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--line, #dce3eb);
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
 .testlabel {
   color: var(--muted, #65758a);
   font-size: 10px;
@@ -7327,26 +7298,6 @@ input[type="checkbox"]:checked {
   padding: 16px 22px 86px;
   max-width: 100%;
   margin: auto;
-}
-
-.pagehead,
-.lims-pagehead {
-  margin-bottom: 14px;
-  padding-bottom: 11px;
-  border-bottom: 1px solid #e5eaf0;
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.pagehead h2,
-.lims-pagehead h2 {
-  font-size: 16px;
-  letter-spacing: -.2px;
-  margin: 0;
-  font-weight: 800;
-  color: var(--ink, #172334);
 }
 
 .sub,

@@ -29,22 +29,6 @@
 }
 
 /* ─── 1. Clean Case Bar (Sticky White Header) ─── */
-.casebar {
-  position: sticky;
-  top: 61px;
-  z-index: 30;
-  padding: 10px 22px;
-  background: #fff;
-  color: var(--ink);
-  border-top: 0;
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 2px 7px rgba(23, 35, 52, 0.04);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-height: 46px;
-}
 .back {
   background: #fff;
   color: #334155;
@@ -106,15 +90,6 @@
 }
 
 /* ─── 3. Test Strip ─── */
-.teststrip {
-  padding: 8px 22px;
-  gap: 7px;
-  background: #fff;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
 .testlabel {
   color: var(--muted);
   font-size: 10px;
@@ -233,22 +208,6 @@
   padding: 16px 22px 86px;
   max-width: 100%;
   margin: auto;
-}
-.pagehead {
-  margin-bottom: 14px;
-  padding-bottom: 11px;
-  border-bottom: 1px solid #e5eaf0;
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-.pagehead h2 {
-  font-size: 16px;
-  letter-spacing: -.2px;
-  margin: 0;
-  font-weight: 800;
-  color: var(--ink);
 }
 .sub {
   font-size: 11px;
@@ -883,13 +842,6 @@
   }
 }
 @media(max-width: 720px) {
-  .casebar {
-    padding: 9px 10px;
-    gap: 6px;
-  }
-  .materialbar, .teststrip {
-    padding: 8px 10px;
-  }
   .tabs {
     padding: 0 6px;
     gap: 2px;
@@ -1948,34 +1900,6 @@ input[type="number"] {
   border-color: var(--neutral-400, #94a3b8);
 }
 
-.casebar-title {
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: var(--neutral-900, #0f172a);
-  letter-spacing: -0.2px;
-}
-
-.casebar-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.74rem;
-  color: var(--neutral-600, #475569);
-  flex: 1 1 0%;
-  min-width: 0;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
-.casebar-meta strong {
-  color: var(--neutral-900, #0f172a);
-  font-weight: 600;
-}
-
-.casebar-meta-sep {
-  color: var(--neutral-300, #cbd5e1);
-}
-
 .casebar-right {
   display: flex;
   align-items: center;
@@ -2057,19 +1981,6 @@ input[type="number"] {
   background: #fef2f2;
   color: var(--primary-color, #da261c);
   font-weight: 600;
-}
-
-.teststrip-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Compact Layout Dropdown Container */
-.compact-layout-dropdown {
-  min-width: 220px;
-  max-width: 280px;
 }
 
 /* Compact Specimen Stepper */
@@ -2310,8 +2221,7 @@ input[type="number"] {
   border-bottom: 1px solid var(--neutral-200, #e2e8f0);
 }
 
-.test-tabs,
-.test-tabbar-actions {
+.test-tabs {
   display: flex;
   align-items: center;
   gap: 6px;

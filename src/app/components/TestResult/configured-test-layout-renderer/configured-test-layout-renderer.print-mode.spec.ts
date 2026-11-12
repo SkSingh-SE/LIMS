@@ -172,6 +172,30 @@ describe('ConfiguredTestLayoutRendererComponent print mode', () => {
     }
   });
 
+  it('live mode restores checklist labels, traverse points and the case depth after a reload, without writing the row', () => {
+    const data = tensileCase();
+    create(false, data);
+    expect(cmp.checklistItems[0].label).toBe('Grips checked');
+    expect(cmp.traversePoints.map(p => p.distance)).toEqual([0.1, 0.2]);
+    expect(cmp.effectiveCaseDepth).toBe(0.15);
+    const caseDepthRow = (data.testFormGroup.get('parameters') as FormArray).controls.find(c => c.get('parameterName')?.value === 'Case Depth');
+    expect(caseDepthRow?.get('value')?.value).toBeNull();
+  });
+
+  it('the curve is not drawn from invented numbers', () => {
+    const data = tensileCase();
+    (data.testFormGroup.get('parameters') as FormArray).controls.forEach(c => c.get('value')?.setValue(null));
+    create(true, data);
+    expect(cmp.getStressStrainChartData()).toBeNull();
+    fixture.destroy();
+    create(true);
+    const chart = cmp.getStressStrainChartData();
+    expect(chart?.rp).toBe(280);
+    expect(chart?.rm).toBeNull();
+    expect(chart?.ra).toBeNull();
+    expect(cmp.hasCalculatedParameters()).toBeFalse();
+  });
+
   it('live mode keeps its controls', () => {
     const data = tensileCase();
     data.test.status = 'InProgress';

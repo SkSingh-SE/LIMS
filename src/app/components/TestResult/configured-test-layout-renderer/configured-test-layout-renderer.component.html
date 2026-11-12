@@ -1154,16 +1154,15 @@
           <!-- ARCHETYPE 7: STRESS-STRAIN / LOAD CURVE (chart / graph)        -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'chart' || s.type === 'graph'">
-            <div class="chart-box border rounded p-2 bg-light" *ngIf="getStressStrainChartData() as chart">
+            <div class="lims-empty-note" *ngIf="!getStressStrainChartData()">The curve is drawn once yield strength or tensile strength has a value.</div>
+            <div class="chart-box border rounded p-2" *ngIf="getStressStrainChartData() as chart">
               <div class="d-flex align-items-center justify-content-between mb-2 px-2">
                 <div class="d-flex align-items-center gap-2">
-                  <span class="fw-semibold small text-danger">Engineering Stress vs Strain Curve</span>
+                  <span class="lims-subhead">Engineering Stress vs Strain Curve</span>
                   <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 6892-1 / ASTM E8</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs">
-                    <i class="bi bi-activity me-1"></i>Real-time Synchronized
-                  </span>
+                  <span class="text-xxs text-muted">Drawn from the average Rp, Rm and A% (not a machine record)</span>
                 </div>
               </div>
 
@@ -1229,21 +1228,21 @@
                 <circle [attr.cx]="chart.yieldPt.x" [attr.cy]="chart.yieldPt.y" r="4.5" fill="#da261c" stroke="#ffffff" stroke-width="1.5" />
                 <rect [attr.x]="chart.yieldPt.x + 8" [attr.y]="chart.yieldPt.y - 18" width="105" height="18" rx="3" fill="#ffffff" stroke="#da261c" stroke-width="1" />
                 <text [attr.x]="chart.yieldPt.x + 12" [attr.y]="chart.yieldPt.y - 5" font-size="9.5" fill="#da261c" font-weight="700">
-                  Rp0.2: {{ chart.rp }} MPa
+                  Rp0.2: {{ chart.rp ?? '—' }} MPa
                 </text>
 
                 <!-- 2. Ultimate Tensile Strength (Peak) -->
                 <circle [attr.cx]="chart.peakPt.x" [attr.cy]="chart.peakPt.y" r="5" fill="#b91c1c" stroke="#ffffff" stroke-width="1.5" />
                 <rect [attr.x]="chart.peakPt.x - 55" [attr.y]="chart.peakPt.y - 22" width="115" height="18" rx="3" fill="#ffffff" stroke="#b91c1c" stroke-width="1" />
                 <text [attr.x]="chart.peakPt.x + 2" [attr.y]="chart.peakPt.y - 9" font-size="9.5" fill="#b91c1c" font-weight="700" text-anchor="middle">
-                  Rm (Peak): {{ chart.rm }} MPa
+                  Rm (Peak): {{ chart.rm ?? '—' }} MPa
                 </text>
 
                 <!-- 3. Rupture / Fracture Point -->
                 <circle [attr.cx]="chart.rupturePt.x" [attr.cy]="chart.rupturePt.y" r="4.5" fill="#475569" stroke="#ffffff" stroke-width="1.5" />
                 <rect [attr.x]="chart.rupturePt.x - 75" [attr.y]="chart.rupturePt.y - 20" width="75" height="18" rx="3" fill="#ffffff" stroke="#475569" stroke-width="1" />
                 <text [attr.x]="chart.rupturePt.x - 38" [attr.y]="chart.rupturePt.y - 7" font-size="9.5" fill="#475569" font-weight="700" text-anchor="middle">
-                  A: {{ chart.el }}%
+                  A: {{ chart.el ?? '—' }}%
                 </text>
               </svg>
 
@@ -1252,25 +1251,25 @@
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">0.2% Proof Stress (Rp0.2)</span>
-                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rp }} MPa</span>
+                    <span class="metric-card-value">{{ chart.rp != null ? chart.rp + ' MPa' : '—' }}</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Tensile Strength (Rm)</span>
-                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rm }} MPa</span>
+                    <span class="metric-card-value">{{ chart.rm != null ? chart.rm + ' MPa' : '—' }}</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Elongation (A%)</span>
-                    <span class="fw-bold text-primary font-monospace fs-7">{{ chart.el }} %</span>
+                    <span class="metric-card-value">{{ chart.el != null ? chart.el + ' %' : '—' }}</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Reduction of Area (Z%)</span>
-                    <span class="fw-bold text-success font-monospace fs-7">{{ chart.ra }} %</span>
+                    <span class="metric-card-value">{{ chart.ra != null ? chart.ra + ' %' : '—' }}</span>
                   </div>
                 </div>
               </div>
@@ -1281,7 +1280,8 @@
           <!-- ARCHETYPE 8: DERIVED CALCULATIONS & FORMULAS (calc / formula) -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'calc' || s.type === 'formula'">
-            <div class="row g-2">
+            <div class="lims-empty-note" *ngIf="!hasCalculatedParameters()">This test has no calculated parameter.</div>
+            <div class="row g-2" *ngIf="hasCalculatedParameters()">
               <ng-container *ngFor="let p of test?.parameters; let pIdx = index">
                 <div class="col-md-4 col-sm-6" *ngIf="p.isCalculated || p.formulaExpression">
                   <div class="formula-card p-2 rounded border bg-light h-100">
@@ -1411,11 +1411,11 @@
                 <div class="d-flex align-items-center gap-2">
                   <div class="btn-group btn-group-xs" role="group">
                     <button type="button" class="btn" [ngClass]="item.status === 'Pass' ? 'btn-success' : 'btn-outline-secondary'"
-                            (click)="setChecklistStatus(item, 'Pass'); syncCollectionsToTest()">Pass</button>
+                            [disabled]="isViewMode || isLocked" (click)="setChecklistStatus(item, 'Pass'); syncCollectionsToTest()">Pass</button>
                     <button type="button" class="btn" [ngClass]="item.status === 'Fail' ? 'btn-danger' : 'btn-outline-secondary'"
-                            (click)="setChecklistStatus(item, 'Fail'); syncCollectionsToTest()">Fail</button>
+                            [disabled]="isViewMode || isLocked" (click)="setChecklistStatus(item, 'Fail'); syncCollectionsToTest()">Fail</button>
                     <button type="button" class="btn" [ngClass]="item.status === 'NA' ? 'btn-secondary' : 'btn-outline-secondary'"
-                            (click)="setChecklistStatus(item, 'NA'); syncCollectionsToTest()">N/A</button>
+                            [disabled]="isViewMode || isLocked" (click)="setChecklistStatus(item, 'NA'); syncCollectionsToTest()">N/A</button>
                   </div>
                   <button *ngIf="!isViewMode && !isLocked && checklistItems.length > 1" type="button"
                           class="btn-lims-icon btn-lims-delete" (click)="removeChecklistItem(cIdx)" title="Remove item">

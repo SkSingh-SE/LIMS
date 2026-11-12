@@ -668,12 +668,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   private initTraverse(): void {
     const travSec = this.sections.find(s => s.type === 'traverse');
     if (this.test?.traversePoints && Array.isArray(this.test.traversePoints) && this.test.traversePoints.length > 0) {
-      // Print mode also reads the names this component writes back to the test (distanceMm, hardnessValue)
+      // Also reads the names this component writes back to the test (distanceMm, hardnessValue)
       this.traversePoints = this.test.traversePoints.map((pt: any) => ({
-        distance: pt.distance != null ? pt.distance : (this.printMode && pt.distanceMm != null ? pt.distanceMm : pt.depth),
-        hardness: pt.hardness != null ? pt.hardness : (this.printMode && pt.hardnessValue != null ? pt.hardnessValue : pt.value)
+        distance: pt.distance != null ? pt.distance : (pt.distanceMm != null ? pt.distanceMm : pt.depth),
+        hardness: pt.hardness != null ? pt.hardness : (pt.hardnessValue != null ? pt.hardnessValue : pt.value)
       }));
-      if (this.printMode) this.recalculateEffectiveCaseDepth();
+      // Shown again after a reload; the parameter row is only written when the user edits a point
+      this.effectiveCaseDepth = this.computeEffectiveCaseDepth();
     } else if (travSec?.config?.tableRows && Array.isArray(travSec.config.tableRows) && travSec.config.tableRows.length > 0) {
       this.traversePoints = travSec.config.tableRows.map((r: any) => ({
         distance: parseFloat(r.label) || 0.1,
@@ -687,7 +688,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (this.test?.checklist && Array.isArray(this.test.checklist) && this.test.checklist.length > 0) {
       this.checklistItems = this.test.checklist.map((chk: any, idx: number) => ({
         id: chk.id || (idx + 1),
-        label: chk.label || (this.printMode ? chk.itemLabel : '') || chk.inspectionPoint || `Item ${idx + 1}`,
+        label: chk.label || chk.itemLabel || chk.inspectionPoint || `Item ${idx + 1}`,
         status: chk.status || ''
       }));
     } else if (chkSec?.config?.tableRows && Array.isArray(chkSec.config.tableRows) && chkSec.config.tableRows.length > 0) {
@@ -2031,6 +2032,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private recalculateEffectiveCaseDepth(): void {
+    const ecd = this.computeEffectiveCaseDepth();
+    this.effectiveCaseDepth = ecd;
+    this.writeEffectiveCaseDepthToForm(ecd);
+  }
+
+  /** Depth where the hardness falls to the cut-off (linear between the two points around it). */
+  private computeEffectiveCaseDepth(): number | null {
     const cutoff = this.cutoffLimit || 550;
     let ecd: number | null = null;
 
@@ -2052,8 +2060,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       }
     }
 
-    this.effectiveCaseDepth = ecd;
+    return ecd;
+  }
 
+  private writeEffectiveCaseDepthToForm(ecd: number | null): void {
     if (ecd != null && this.parametersFormArray && !this.printMode) {
       this.parametersFormArray.controls.forEach((ctrl, idx) => {
         const name = (ctrl.get('parameterName')?.value || '').toLowerCase();
@@ -2163,6 +2173,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     ctrl.patchValue({ isWithinLimit: isWithin, resultStatus: isWithin ? 'Pass' : 'Fail' }, { emitEvent: false });
   }
 
+  /** The formula section lists calculated parameters; without any it shows a note instead of an empty box. */
+  hasCalculatedParameters(): boolean {
+    return (this.test?.parameters || []).some((p: any) => p.isCalculated || p.formulaExpression);
+  }
+
   isParameterCalculated(param: any): boolean {
     return param?.isCalculated || !!param?.formulaExpression;
   }
@@ -2180,20 +2195,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
   // Chart Helper (Dynamic Stress-Strain Curve Data & Markers)
   // =========================================================================
+  /** Sketch of the curve from the averaged Rp, Rm and A%. Null until Rp or Rm exists: nothing is drawn from made-up numbers. */
   getStressStrainChartData(): {
     curvePath: string;
-    rp: number;
-    rm: number;
-    el: number;
-    ra: number;
+    rp: number | null;
+    rm: number | null;
+    el: number | null;
+    ra: number | null;
     yieldPt: { x: number; y: number };
     peakPt: { x: number; y: number };
     rupturePt: { x: number; y: number };
-  } {
-    const rp = this.specimenAverages.proofStress || 325;
-    const rm = this.specimenAverages.uts || 540;
-    const el = this.specimenAverages.elongation || 28.4;
-    const ra = this.specimenAverages.reductionOfArea || 58.0;
+  } | null {
+    const avg = this.specimenAverages;
+    if (!avg.proofStress && !avg.uts) return null;
+    // Geometry only: a missing value takes the other one (or a mid position) so the line can be drawn; the labels show the real values
+    const rp = avg.proofStress || avg.uts || 0;
+    const rm = avg.uts || avg.proofStress || 0;
+    const el = avg.elongation || 20;
 
     // ViewBox: 0 0 760 210
     // X axis: 65 to 720 (range 0% to 35% strain)
@@ -2213,10 +2231,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     return {
       curvePath,
-      rp,
-      rm,
-      el,
-      ra,
+      rp: avg.proofStress || null,
+      rm: avg.uts || null,
+      el: avg.elongation || null,
+      ra: avg.reductionOfArea || null,
       yieldPt: { x: xYield, y: yYield },
       peakPt: { x: xPeak, y: yPeak },
       rupturePt: { x: xRupture, y: yRupture }

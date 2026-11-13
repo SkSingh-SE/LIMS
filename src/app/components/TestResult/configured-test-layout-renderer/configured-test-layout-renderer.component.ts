@@ -1239,6 +1239,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
 
   setSpecimenCount(targetCount: number): void {
+    if (this.printMode) return;
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const newCount = Math.max(1, Math.min(20, Math.round(targetCount)));
 

@@ -764,7 +764,7 @@
                   </tbody>
                 </table>
               </div>
-              <div class="small text-muted d-flex align-items-center gap-2 mt-2 px-1">
+              <div class="small text-muted d-flex align-items-center gap-2 mt-2 px-1 print-hide">
                 <i class="bi bi-info-circle text-primary"></i>
                 <span *ngIf="isTensileTest()">Values entered in the specimen matrix automatically evaluate proof stress, UTS, and elongation, and synchronize live with form parameters.</span>
                 <span *ngIf="!isTensileTest()">Specimen observation readings synchronize live across all test specimens and evaluate limits against configured specification requirements.</span>
@@ -1331,7 +1331,7 @@
                   </button>
                 </div>
 
-                <div *ngIf="observations.length === 0" class="text-center py-2 bg-light rounded border border-dashed">
+                <div *ngIf="observations.length === 0" class="text-center py-2 bg-light rounded border border-dashed print-hide">
                   <span class="text-xxs text-muted">No itemized observations recorded. Click "+ Add Observation" to log specific defects or microstructure features.</span>
                 </div>
 

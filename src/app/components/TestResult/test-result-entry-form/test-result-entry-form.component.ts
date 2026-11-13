@@ -828,7 +828,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       }
     }
     if (this.configuredRenderers && this.configuredRenderers.length > 0) {
-      this.configuredRenderers.forEach(r => r.setSpecimenCount(count));
+      this.configuredRenderers.filter(r => !r.printMode).forEach(r => r.setSpecimenCount(count));
     } else {
       // If configured renderers are not active in DOM (e.g. user is on Info tab), resize FormArray directly
       // Same rules as the layout table: rows carry their specimen index, saved rows are reused, and a specimen
@@ -4812,6 +4812,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   showRawDataSheetModal = false;
   rawDataSheetData: any = null;
 
+  /**
+   * Raw data sheet of one test: the fixed identification block plus the test itself, shown by the layout renderer in
+   * print mode on the layout the test was entered with (its saved snapshot). Nothing is filled in with default values.
+   */
   openRawDataSheetModal(planIndex?: number, testIndex?: number): void {
     const pIdx = planIndex ?? this.activePlanIndex;
     const tIdx = testIndex ?? 0;
@@ -4825,110 +4829,53 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return;
     }
 
-    // Retrieve active configured renderer if rendered for this test
-    const renderer = (this.activePlanIndex === pIdx && this.layoutRendererComponent)
-      ? this.layoutRendererComponent
-      : (this.configuredRenderers?.find(r => r.test === test || r.testPlan === plan) || null);
+    // The live renderer pushes its lists (checklist, traverse, observations, hidden rows) to the test before the copy reads them
+    if (pIdx === this.activePlanIndex) this.layoutRendererComponent?.syncCollectionsToTest();
 
-    const layout = (this.activePlanIndex === pIdx && this.currentTestLayout)
-      ? this.currentTestLayout
-      : (renderer?.layoutConfig || null);
-
-    // Collect reading table data
-    const readingSections = (layout?.sections || []).filter((s: any) => s.type === 'reading');
-    const readingRows: any[] = [];
-    if (renderer && readingSections.length > 0) {
-      readingSections.forEach((s: any) => {
-        const targets = renderer.getReadingTargetParameters(s);
-        const count = renderer.getReadingCount(s);
-        targets.forEach((targetName: string) => {
-          const ctrl = renderer.getParamControl(targetName);
-          const vals = Array.from({ length: count }, (_, i) => renderer.getReadingVal(targetName, i) ?? null);
-          const stats = renderer.readingStats[targetName] || { avg: null, min: null, max: null, stdev: null };
-          readingRows.push({
-            name: targetName,
-            unit: ctrl?.get('unit')?.value || '—',
-            values: vals,
-            avg: stats.avg != null ? stats.avg : (ctrl?.get('value')?.value ?? '—'),
-            min: stats.min != null ? stats.min : '—',
-            max: stats.max != null ? stats.max : '—',
-            stdev: stats.stdev != null ? stats.stdev : '—',
-            requirement: renderer.formatSpecRange(ctrl?.value),
-            status: renderer.getParamStatusLabel(targetName),
-            statusBadgeClass: renderer.getParamStatusBadgeClass(targetName)
-          });
-        });
-      });
-    }
-
-    // Collect specimen tensile data
-    const specimenData = renderer?.specimens || [];
-    const specimenAverages = renderer?.specimenAverages || null;
-
-    // Collect traverse data
-    const traversePoints = renderer?.traversePoints || [];
-    const effectiveCaseDepth = renderer?.effectiveCaseDepth || null;
-
-    // Collect checklist
-    const checklist = renderer?.checklistItems || [];
-
-    // Collect observations
-    const observations = renderer?.observations || [];
-
-    // Decision rule
-    const decisionRule = renderer?.decisionRule || {
-      ruleType: this.inward?.decisionRule || 'Simple Acceptance (Binary, w = 0)',
-      confidenceLevel: 95,
-      guardBandMultiplier: 1,
-      acceptanceStatus: 'Pass',
-      statementText: this.inward?.statementOfConformity || 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).'
-    };
-
-    // Environmental conditions
-    const envData = {
-      temperature: test.roomTemperature ?? renderer?.conditionValues?.['Temperature'] ?? 23,
-      humidity: test.roomHumidity ?? renderer?.conditionValues?.['Relative Humidity'] ?? 50,
-      speed: renderer?.conditionValues?.['Test Speed'] ?? '2 mm/min',
-      medium: renderer?.conditionValues?.['Medium'] ?? 'Ambient Air'
-    };
-
-    // Parameters fallback if no reading or specimen sections
-    const planGroup = (this.resultForm.get('plans') as FormArray)?.at(pIdx) as FormGroup;
-    const testGroup = (planGroup?.get('tests') as FormArray)?.at(tIdx) as FormGroup;
-    const testParamsFA = testGroup?.get('parameters') as FormArray;
-    const currentParams = (testParamsFA && testParamsFA.length > 0) ? testParamsFA.value : (test.parameters || []);
-
-    const rawParameters: any[] = (currentParams || []).map((p: any) => ({
-      name: p.parameterName,
-      unit: p.unit,
-      value: p.value,
-      requirement: this.formatRequirement(p),
-      status: this.getParameterStatus(p)
-    }));
+    const testGroup = this.getTests(pIdx)?.at(tIdx) as FormGroup;
+    const layout = this.resolveSheetLayout(pIdx, test, testGroup);
+    const rows: any[] = (testGroup?.get('parameters') as FormArray)?.getRawValue?.() || test.parameters || [];
 
     this.rawDataSheetData = {
       sample: this.sample,
       inward: this.inward,
       plan,
       test,
-      layout: layout || this.currentTestLayout,
-      readingRows,
-      specimenData,
-      specimenAverages,
-      traversePoints,
-      effectiveCaseDepth,
-      checklist,
-      observations,
-      decisionRule,
-      envData,
-      conditions: this.getSelectedConditionRows(test.headerId),
+      testGroup,
+      layout,
+      hasSignSection: !!(layout?.sections || []).some((s: any) => s.type === 'sign' && s.config?.enabled !== false),
+      env: this.environmentMap[test.headerId] || null,
+      // the dropdown label may carry a screen hint ("· 1 limit differs"); the record keeps the condition only
+      conditions: this.getSelectedConditionRows(test.headerId).map(c => ({ ...c, value: c.value.replace(/ · \d+ limits? differs?$/, '') })),
       equipment: this.selectedEquipmentMap[test.headerId] || [],
-      rawParameters,
+      images: this.testImagesMap[test.headerId] || [],
       timing: this.testTimingMap[test.headerId] || {},
+      rawParameters: rows.map((p: any) => ({
+        name: p.parameterName,
+        specimen: 'S' + ((Number(p.specimenIndex) || 0) + 1),
+        unit: p.unit,
+        value: p.value ?? (p.remarks || null),
+        requirement: this.formatRequirement(p),
+        status: this.getParameterStatus(p)
+      })),
       generatedAt: new Date()
     };
 
     this.showRawDataSheetModal = true;
+  }
+
+  /** Layout of the sheet: the snapshot saved with the test; for a test not saved with one yet, the layout on screen. */
+  private resolveSheetLayout(planIndex: number, test: any, testGroup: FormGroup | null): any {
+    const snapshot = testGroup?.get('layoutSnapshotJson')?.value || test?.layoutSnapshotJson;
+    if (snapshot) {
+      try {
+        const parsed = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot;
+        if (parsed?.sections?.length || parsed?.parsedConfig?.sections?.length) return parsed;
+      } catch {
+        // an unreadable snapshot falls through to the layout on screen
+      }
+    }
+    return planIndex === this.activePlanIndex ? (this.currentTestLayout || null) : null;
   }
 
   closeRawDataSheetModal(): void {

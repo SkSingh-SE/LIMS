@@ -465,6 +465,12 @@ input[type="number"] {
 :host(.print-mode) input::placeholder,
 :host(.print-mode) textarea::placeholder {
   color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Entry hints and empty-list prompts are not part of the record */
+:host(.print-mode) .print-hide {
+  display: none !important;
 }
 :host(.print-mode) input::-webkit-outer-spin-button,
 :host(.print-mode) input::-webkit-inner-spin-button {

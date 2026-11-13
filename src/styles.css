@@ -11240,3 +11240,124 @@ fieldset.lims-prop-fieldset > legend.lims-prop-legend .badge {
   font-size: 0.74rem;
   color: #64748b;
 }
+
+/* ═══ Raw data sheet (record document): plain black borders on screen and on paper ═══ */
+.raw-data-document {
+  background: #ffffff;
+  padding: 14px 16px;
+  color: #000000;
+  font-family: var(--font-family-base, 'Poppins', sans-serif);
+}
+
+.raw-data-doc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #000000;
+}
+
+.raw-data-doc-lab {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.raw-data-doc-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.raw-data-doc-sub {
+  font-size: 0.7rem;
+  color: #334155;
+}
+
+.raw-data-document .lims-section {
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.raw-data-document .lims-section-head h3,
+.raw-data-document .lims-section-head h6,
+.raw-data-document .lims-section-title {
+  color: #000000 !important;
+}
+
+.raw-data-document .lims-section.lims-section table thead th {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-bottom: 1px solid #000000 !important;
+}
+
+.raw-data-document .lims-section.lims-section table tbody td {
+  border-bottom: 1px solid #9ca3af !important;
+  color: #000000;
+}
+
+.raw-data-document .lims-section.lims-section table td.raw-data-label {
+  width: 17%;
+  color: #334155;
+  font-weight: 500;
+}
+
+.raw-data-sign {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  padding: 4px 8px 0;
+}
+
+.raw-data-sign-line {
+  height: 40px;
+  border-bottom: 1px solid #000000;
+  margin-bottom: 4px;
+}
+
+.raw-data-sign-name {
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+/* Printing with the sheet open: only the sheet goes to paper, at the top of the page, unclipped by the modal */
+@media print {
+  body:has(.raw-data-document) *:not(:has(.raw-data-document)):not(.raw-data-document):not(.raw-data-document *) {
+    display: none !important;
+  }
+
+  body:has(.raw-data-document) *:has(.raw-data-document) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  .raw-data-document {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+  }
+
+  .raw-data-document *,
+  .raw-data-document *::before,
+  .raw-data-document *::after {
+    box-sizing: border-box;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 10mm;
+}

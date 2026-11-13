@@ -11241,84 +11241,195 @@ fieldset.lims-prop-fieldset > legend.lims-prop-legend .badge {
   color: #64748b;
 }
 
-/* ═══ Raw data sheet (record document): plain black borders on screen and on paper ═══ */
+/* ═══ Raw data sheet (record document): one black grid, like the lab's report format, on screen and on paper ═══ */
 .raw-data-document {
   background: #ffffff;
   padding: 14px 16px;
   color: #000000;
   font-family: var(--font-family-base, 'Poppins', sans-serif);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  page: raw-data-sheet;
 }
 
-.raw-data-doc-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  padding-bottom: 8px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid #000000;
-}
-
-.raw-data-doc-lab {
-  font-size: 0.95rem;
+.rds-title {
+  border: 1px solid #000000;
+  padding: 5px 8px;
+  text-align: center;
+  font-size: 1rem;
   font-weight: 700;
 }
 
-.raw-data-doc-title {
-  font-size: 0.85rem;
+.rds-grid {
+  width: 100%;
+  margin-top: -1px;
+  border-collapse: collapse;
+}
+
+.rds-grid th,
+.rds-grid td {
+  border: 1px solid #000000;
+  padding: 3px 6px;
+  font-size: 0.76rem;
+  color: #000000;
+  vertical-align: top;
+  background: #ffffff;
+}
+
+.rds-grid th {
+  font-weight: 700;
+  text-align: center;
+}
+
+.rds-grid td.rds-label {
+  width: 16%;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rds-grid td.rds-band {
+  text-align: center;
   font-weight: 700;
 }
 
-.raw-data-doc-sub {
-  font-size: 0.7rem;
-  color: #334155;
+.rds-key {
+  font-weight: 600;
 }
 
-.raw-data-document .lims-section {
+.rds-strong {
+  font-weight: 700;
+}
+
+.rds-w-35 {
+  width: 35%;
+}
+
+/* The layout sections of the test: same sections as the result screen, drawn as boxes of the one grid */
+.raw-data-document .lims-section.lims-section {
+  margin: -1px 0 0 !important;
+  padding: 0 !important;
   border: 1px solid #000000 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  background: #ffffff !important;
+}
+
+.raw-data-document .lims-section .lims-section-head {
+  position: static !important;
+  min-height: 0 !important;
+  padding: 3px 6px !important;
+  border-bottom: 1px solid #000000 !important;
+  justify-content: center !important;
+}
+
+.raw-data-document .lims-section .lims-section-head > * {
+  padding: 0 !important;
+  background: transparent !important;
 }
 
 .raw-data-document .lims-section-head h3,
 .raw-data-document .lims-section-head h6,
-.raw-data-document .lims-section-title {
+.raw-data-document .lims-section-title,
+.raw-data-document .lims-workbench-card-title {
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
   color: #000000 !important;
+  text-transform: uppercase !important;
 }
 
-.raw-data-document .lims-section.lims-section table thead th {
+/* The outer frame of a table comes from its section box, so lines never double up */
+.raw-data-document .lims-section table.table {
+  width: 100% !important;
+  margin: 0 !important;
+  border-collapse: collapse !important;
+  border: hidden !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+.raw-data-document .lims-section table.table th,
+.raw-data-document .lims-section table.table td {
+  padding: 3px 6px !important;
+  border: 1px solid #000000 !important;
   background: #ffffff !important;
   color: #000000 !important;
-  border-bottom: 1px solid #000000 !important;
+  font-size: 0.76rem !important;
+  box-shadow: none !important;
 }
 
-.raw-data-document .lims-section.lims-section table tbody td {
-  border-bottom: 1px solid #9ca3af !important;
-  color: #000000;
+.raw-data-document .lims-section table.table th {
+  font-weight: 700 !important;
+  text-transform: none !important;
 }
 
-.raw-data-document .lims-section.lims-section table td.raw-data-label {
-  width: 17%;
-  color: #334155;
-  font-weight: 500;
+.raw-data-document .lims-section .table-responsive {
+  overflow: visible !important;
 }
 
-.raw-data-sign {
+.raw-data-document .lims-section .badge {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #000000 !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+}
+
+/* A section whose body is a table: the table fills the box, so its grid joins the box lines */
+.raw-data-document .lims-section .section-card-body:has(table.table) {
+  padding: 0 !important;
+}
+
+/* A long table may run over to the next page; a row is never split */
+.raw-data-document .lims-section.lims-section {
+  break-inside: auto !important;
+}
+
+.raw-data-document .lims-section:has(svg, canvas, img) {
+  break-inside: avoid !important;
+}
+
+/* No tints, icons, rounded cards or grey text on the record */
+.raw-data-document .lims-section i.bi {
+  display: none !important;
+}
+
+.raw-data-document .lims-section .section-card-body *:not(svg):not(svg *) {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000;
+}
+
+.raw-data-document .lims-section .section-card-body input::placeholder,
+.raw-data-document .lims-section .section-card-body textarea::placeholder {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.raw-data-document .lims-section .section-card-body div[class*='box'],
+.raw-data-document .lims-section .section-card-body div[class*='card'],
+.raw-data-document .lims-section .section-card-body div[class*='tile'] {
+  border-color: #000000 !important;
+}
+
+.rds-sign {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
-  padding: 4px 8px 0;
+  padding: 12px 6px 0;
+  break-inside: avoid;
 }
 
-.raw-data-sign-line {
-  height: 40px;
-  border-bottom: 1px solid #000000;
-  margin-bottom: 4px;
+.rds-sign-space {
+  height: 34px;
 }
 
-.raw-data-sign-name {
-  font-size: 0.76rem;
-  font-weight: 600;
+.rds-end {
+  padding-top: 10px;
+  text-align: center;
+  font-size: 0.72rem;
 }
 
 /* Printing with the sheet open: only the sheet goes to paper, at the top of the page, unclipped by the modal */
@@ -11360,4 +11471,14 @@ fieldset.lims-prop-fieldset > legend.lims-prop-legend .badge {
 @page {
   size: A4;
   margin: 10mm;
+}
+
+@page raw-data-sheet {
+  size: A4;
+  margin: 10mm 10mm 12mm;
+
+  @bottom-right {
+    content: 'Page ' counter(page) ' of ' counter(pages);
+    font-size: 8pt;
+  }
 }

@@ -950,6 +950,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     this.inward = {
       caseNo: apiData.inward?.caseNo || '',
       customerName: apiData.inward?.customerName || '',
+      customerAddress: apiData.inward?.customerAddress || '',
       poNo: apiData.inward?.poNo || '',
       receivedOn: apiData.inward?.receivedOn ? this.formatDateDisplay(apiData.inward.receivedOn) : '',
       statementOfConformity: apiData.inward?.statementOfConformity || '',
@@ -976,6 +977,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       heatTreatment: sampleData.heatTreatment || '',
       specimenOrientation: sampleData.specimenOrientation || '',
       remarks: sampleData.remarks || '',
+      details: sampleData.details || '',
+      additionalDetails: Array.isArray(sampleData.additionalDetails) ? sampleData.additionalDetails : [],
       thickness: sampleData.thickness,
       diameter: sampleData.diameter,
       width: sampleData.width,
@@ -4850,6 +4853,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       equipment: this.selectedEquipmentMap[test.headerId] || [],
       images: this.testImagesMap[test.headerId] || [],
       timing: this.testTimingMap[test.headerId] || {},
+      info: this.buildSheetInfo(plan, test),
       rawParameters: rows.map((p: any) => ({
         name: p.parameterName,
         specimen: 'S' + ((Number(p.specimenIndex) || 0) + 1),
@@ -4862,6 +4866,66 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     };
 
     this.showRawDataSheetModal = true;
+  }
+
+  /**
+   * Identification lines of the sheet, in the order of the lab's report format. A line with no recorded value is left
+   * out of the sheet (the template hides empty ones); nothing is filled in with a default.
+   */
+  private buildSheetInfo(plan: any, test: any): any {
+    const details: any[] = this.sample?.additionalDetails || [];
+    const norm = (s: any) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const detail = (...labels: string[]): string => {
+      const wanted = labels.map(norm);
+      const hit = details.find(d => wanted.includes(norm(d?.label)) && String(d?.value ?? '').trim() !== '');
+      return hit ? String(hit.value).trim() : '';
+    };
+    const timing = this.testTimingMap[test.headerId] || {};
+    const testedOn = timing.testEndTime || timing.testStartTime || null;
+    const spec = plan?.specification && plan.specification !== 'Unknown' ? plan.specification : '';
+    const env = this.environmentMap[test.headerId] || null;
+    const envParts: string[] = [];
+    if (env?.roomTemperature != null) envParts.push(`${env.roomTemperature} °C`);
+    if (env?.roomHumidity != null) envParts.push(`${env.roomHumidity} % RH`);
+
+    return {
+      reference: detail('Reference', 'Customer Reference', 'Letter No', 'Ref No') || this.inward?.poNo || '',
+      description: this.sample?.details || '',
+      stampedAs: detail('Stamped As', 'Stamped', 'Identification Mark', 'Marking'),
+      sampleDrawnBy: detail('Sample Drawn By', 'Drawn By'),
+      natureOfSample: detail('Nature of Sample') || this.sample?.productForm || this.sample?.productMasterName || '',
+      heatNo: detail('Heat No', 'Heat Number') || '',
+      batchNo: detail('Batch No', 'Batch Number') || '',
+      specification: spec,
+      discipline: String(plan?.discipline || '').toUpperCase(),
+      technique: plan?.analysisTechnique && plan.analysisTechnique !== '—' ? String(plan.analysisTechnique).toUpperCase() : '',
+      testName: String(test?.name || '').toUpperCase(),
+      method: this.getCleanMethodLabel(plan?.methodName),
+      testedOn: testedOn ? this.formatSheetDate(testedOn) : '',
+      environment: envParts.join(' / '),
+      testedBy: timing.performedByName || '',
+    };
+  }
+
+  /** dd-MM-yyyy, as on the lab's reports. */
+  formatSheetDate(value: any): string {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '';
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
+  }
+
+  /** "FIE 400KN UTM (DMSPL/07/01) Cal. Dt: … Due Dt.: …", only with the parts that are recorded. */
+  sheetEquipmentLine(eq: any): string {
+    if (!eq) return '';
+    const code = eq.code || eq.equipmentCode || eq.equipmentId || eq.assetCode || '';
+    const cal = eq.lastCalibrationDate || eq.calibrationDate || null;
+    const due = eq.nextCalibrationDueDate || eq.nextCalibrationDate || null;
+    let line = eq.name || `Equipment #${eq.id}`;
+    if (code) line += ` (${code})`;
+    if (cal) line += ` Cal. Dt: ${this.formatSheetDate(cal)}`;
+    if (due) line += ` Due Dt.: ${this.formatSheetDate(due)}`;
+    return line;
   }
 
   /** Layout of the sheet: the snapshot saved with the test; for a test not saved with one yet, the layout on screen. */

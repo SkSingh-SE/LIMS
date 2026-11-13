@@ -1097,92 +1097,101 @@
       <div class="modal-body p-2">
         <!-- The document: fixed identification, then the test in the layout it was entered with, then the sign-off -->
         <div class="raw-data-document" *ngIf="rawDataSheetData as rds">
-          <div class="raw-data-doc-head">
-            <div>
-              <div class="raw-data-doc-lab">DEEP METALLURGICAL SERVICES</div>
-              <div class="raw-data-doc-sub">NABL accredited testing laboratory (ISO/IEC 17025:2017)</div>
-            </div>
-            <div class="text-end">
-              <div class="raw-data-doc-title">Technical Raw Data Sheet</div>
-              <div class="raw-data-doc-sub">Format No: DMSPL/L4/TRD/01 · ISO/IEC 17025:2017 Cl 7.5</div>
-              <div class="raw-data-doc-sub">Printed: {{ rds.generatedAt | date:'dd-MMM-yyyy HH:mm' }}</div>
-            </div>
-          </div>
+          <div class="rds-title">Raw Data Sheet</div>
 
-          <section class="lims-section">
-            <div class="lims-section-head"><h3>Sample &amp; Customer</h3></div>
-            <table class="table table-sm mb-0">
-              <tbody>
-                <tr>
-                  <td class="raw-data-label">Sample No</td>
-                  <td>{{ rds.sample?.sampleNo || '—' }}</td>
-                  <td class="raw-data-label">Case No</td>
-                  <td>{{ rds.inward?.caseNo || '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="raw-data-label">Customer</td>
-                  <td>{{ rds.inward?.customerName || '—' }}</td>
-                  <td class="raw-data-label">PO / Ref No</td>
-                  <td>{{ rds.inward?.poNo || '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="raw-data-label">Material / Grade</td>
-                  <td>{{ rds.sample?.material || rds.sample?.productMasterName || '—' }}</td>
-                  <td class="raw-data-label">Metal classification</td>
-                  <td>{{ rds.sample?.metalClassification || '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="raw-data-label">Heat / Batch No</td>
-                  <td>{{ rds.sample?.heatNo || rds.sample?.batchNo || '—' }}</td>
-                  <td class="raw-data-label">Received on</td>
-                  <td>{{ rds.inward?.receivedOn || '—' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
+          <!-- Sample and customer -->
+          <table class="rds-grid">
+            <tbody>
+              <tr>
+                <td class="rds-label">Sample ID</td>
+                <td class="rds-strong">{{ rds.sample?.sampleNo || '—' }}</td>
+                <td class="rds-label">Case No</td>
+                <td>{{ rds.inward?.caseNo || '—' }}</td>
+                <td class="rds-label">Sample Received On</td>
+                <td>{{ rds.inward?.receivedOn || '—' }}</td>
+              </tr>
+              <tr>
+                <td class="rds-label">Customer Name</td>
+                <td colspan="5">{{ rds.inward?.customerName || '—' }}</td>
+              </tr>
+              <tr>
+                <td class="rds-label">Customer Address</td>
+                <td colspan="3">{{ rds.inward?.customerAddress || '—' }}</td>
+                <td colspan="2">Test Performed at: DMSPL, Ahmedabad.</td>
+              </tr>
+            </tbody>
+          </table>
 
-          <section class="lims-section">
-            <div class="lims-section-head"><h3>Test Method, Equipment &amp; Conditions</h3></div>
-            <table class="table table-sm mb-0">
-              <tbody>
-                <tr>
-                  <td class="raw-data-label">Test</td>
-                  <td>{{ rds.test?.name || rds.plan?.type || '—' }}</td>
-                  <td class="raw-data-label">Test method</td>
-                  <td>{{ getCleanMethodLabel(rds.plan?.methodName) || '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="raw-data-label">Equipment</td>
-                  <td>{{ rds.equipment.length ? equipmentNames(rds.equipment) : '—' }}</td>
-                  <td class="raw-data-label">Calibration</td>
-                  <td>
-                    <span *ngFor="let eq of rds.equipment; let last = last">{{ getEquipmentCalibrationText(eq) }}<span *ngIf="!last">, </span></span>
-                    <span *ngIf="!rds.equipment.length">—</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="raw-data-label">Room temperature</td>
-                  <td>{{ rds.env?.roomTemperature != null ? rds.env.roomTemperature + ' °C' : '—' }}</td>
-                  <td class="raw-data-label">Relative humidity</td>
-                  <td>{{ rds.env?.roomHumidity != null ? rds.env.roomHumidity + ' % RH' : '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="raw-data-label">Test status</td>
-                  <td>{{ rds.test?.status || '—' }}</td>
-                  <td class="raw-data-label">Completed on</td>
-                  <td>{{ rds.timing?.testEndTime ? formatDateTime(rds.timing.testEndTime) : '—' }}</td>
-                </tr>
-                <tr *ngIf="rds.conditions.length">
-                  <td class="raw-data-label">Specification conditions</td>
-                  <td colspan="3">
-                    <span *ngFor="let c of rds.conditions; let last = last">{{ c.label }}: {{ c.value }}<span *ngIf="!last"> · </span></span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
+          <!-- What the customer stated about the sample; a line that was not given is left out -->
+          <table class="rds-grid">
+            <tbody>
+              <tr><td colspan="4" class="rds-band">INFORMATION PROVIDED BY THE CUSTOMER</td></tr>
+              <tr *ngIf="rds.info.reference">
+                <td class="rds-label">Reference</td>
+                <td colspan="3">{{ rds.info.reference }}</td>
+              </tr>
+              <tr *ngIf="rds.info.description">
+                <td class="rds-label">Description</td>
+                <td colspan="3">{{ rds.info.description }}</td>
+              </tr>
+              <tr *ngIf="rds.info.stampedAs || rds.info.sampleDrawnBy">
+                <td class="rds-label">Stamped As</td>
+                <td>{{ rds.info.stampedAs || '—' }}</td>
+                <td class="rds-label">Sample Drawn By</td>
+                <td>{{ rds.info.sampleDrawnBy || '—' }}</td>
+              </tr>
+              <tr *ngIf="rds.info.heatNo || rds.info.batchNo">
+                <td class="rds-label">Heat No</td>
+                <td>{{ rds.info.heatNo || '—' }}</td>
+                <td class="rds-label">Batch No</td>
+                <td>{{ rds.info.batchNo || '—' }}</td>
+              </tr>
+              <tr *ngIf="rds.info.natureOfSample">
+                <td class="rds-label">Nature of Sample</td>
+                <td colspan="3">{{ rds.info.natureOfSample }}</td>
+              </tr>
+              <tr *ngIf="rds.info.specification">
+                <td class="rds-label">Specification</td>
+                <td colspan="3">{{ rds.info.specification }}</td>
+              </tr>
+            </tbody>
+          </table>
 
-          <!-- The test, in the layout it was entered with (read-only copy of the result screen) -->
+          <!-- The test: method, date, equipment, room conditions, selected specification conditions -->
+          <table class="rds-grid">
+            <tbody>
+              <tr>
+                <td colspan="2" class="rds-band">
+                  {{ rds.info.discipline || 'TEST' }}<span *ngIf="rds.info.technique && rds.info.technique !== rds.info.testName"> | {{ rds.info.technique }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2"><span class="rds-key">Test Name :</span> <span class="rds-strong">{{ rds.info.testName || '—' }}</span></td>
+              </tr>
+              <tr>
+                <td><span class="rds-key">Test Method :</span> {{ rds.info.method || '—' }}</td>
+                <td class="rds-w-35"><span class="rds-key">Dt. of Testing :</span> {{ rds.info.testedOn || '—' }}</td>
+              </tr>
+              <tr *ngFor="let eq of rds.equipment">
+                <td colspan="2"><span class="rds-key">Equipment :</span> {{ sheetEquipmentLine(eq) }}</td>
+              </tr>
+              <tr *ngIf="!rds.equipment.length">
+                <td colspan="2"><span class="rds-key">Equipment :</span> —</td>
+              </tr>
+              <tr>
+                <td><span class="rds-key">Environment :</span> {{ rds.info.environment || '—' }}</td>
+                <td class="rds-w-35"><span class="rds-key">Test Status :</span> {{ rds.test?.status || '—' }}</td>
+              </tr>
+              <tr *ngIf="rds.conditions.length">
+                <td colspan="2">
+                  <span class="rds-key">Specification Conditions :</span>
+                  <span *ngFor="let c of rds.conditions; let last = last"> {{ c.label }}: {{ c.value }}<span *ngIf="!last">;</span></span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- The results, in the layout the test was entered with (read-only copy of the result screen) -->
           <app-configured-test-layout-renderer *ngIf="rds.layout" [printMode]="true" [layoutConfig]="rds.layout"
             [testPlan]="rds.plan" [test]="rds.test" [testFormGroup]="rds.testGroup" [sample]="rds.sample" [inward]="rds.inward"
             [activeTabSection]="'execution'" [environmentData]="rds.env" [timingData]="rds.timing"
@@ -1190,41 +1199,36 @@
           </app-configured-test-layout-renderer>
 
           <!-- A test without a layout: plain list of its results -->
-          <section class="lims-section" *ngIf="!rds.layout">
-            <div class="lims-section-head"><h3>Results</h3></div>
-            <table class="table table-sm mb-0">
-              <thead>
-                <tr><th>Parameter</th><th>Specimen</th><th>Unit</th><th>Result</th><th>Requirement</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let r of rds.rawParameters">
-                  <td>{{ r.name }}</td>
-                  <td>{{ r.specimen }}</td>
-                  <td>{{ r.unit || '—' }}</td>
-                  <td>{{ r.value ?? '—' }}</td>
-                  <td>{{ r.requirement }}</td>
-                  <td>{{ r.status || '—' }}</td>
-                </tr>
-                <tr *ngIf="!rds.rawParameters.length"><td colspan="6">No parameters.</td></tr>
-              </tbody>
-            </table>
-          </section>
+          <table class="rds-grid rds-results" *ngIf="!rds.layout">
+            <thead>
+              <tr><th class="text-start">Parameter</th><th>Specimen</th><th>Unit</th><th>Result</th><th>Requirement</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of rds.rawParameters">
+                <td>{{ r.name }}</td>
+                <td class="text-center">{{ r.specimen }}</td>
+                <td class="text-center">{{ r.unit || '—' }}</td>
+                <td class="text-center">{{ r.value ?? '—' }}</td>
+                <td class="text-center">{{ r.requirement }}</td>
+              </tr>
+              <tr *ngIf="!rds.rawParameters.length"><td colspan="5">No parameters.</td></tr>
+            </tbody>
+          </table>
 
-          <section class="lims-section" *ngIf="!rds.hasSignSection">
-            <div class="lims-section-head"><h3>Sign-off</h3></div>
-            <div class="raw-data-sign">
-              <div>
-                <div class="raw-data-sign-line"></div>
-                <div class="raw-data-sign-name">Tested by: {{ rds.timing?.performedByName || '' }}</div>
-                <div class="raw-data-doc-sub">Date: {{ rds.timing?.testEndTime ? formatDateTime(rds.timing.testEndTime) : '' }}</div>
-              </div>
-              <div>
-                <div class="raw-data-sign-line"></div>
-                <div class="raw-data-sign-name">Reviewed by:</div>
-                <div class="raw-data-doc-sub">Date:</div>
-              </div>
+          <div class="rds-sign" *ngIf="!rds.hasSignSection">
+            <div>
+              <div class="rds-key">Tested By</div>
+              <div class="rds-sign-space"></div>
+              <div>{{ rds.info.testedBy }}</div>
             </div>
-          </section>
+            <div class="text-end">
+              <div class="rds-key">Reviewed &amp; Authorized by</div>
+              <div class="rds-sign-space"></div>
+              <div>&nbsp;</div>
+            </div>
+          </div>
+
+          <div class="rds-end">---------- End of Raw Data Sheet ----------</div>
         </div>
       </div>
 

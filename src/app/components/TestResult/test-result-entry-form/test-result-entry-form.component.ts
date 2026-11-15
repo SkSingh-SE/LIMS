@@ -4921,6 +4921,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const code = eq.code || eq.equipmentCode || eq.equipmentId || eq.assetCode || '';
     const cal = eq.lastCalibrationDate || eq.calibrationDate || null;
     const due = eq.nextCalibrationDueDate || eq.nextCalibrationDate || null;
+    // a saved id whose equipment is inactive or deleted: say so instead of printing a bare id
+    if (eq.notFound) return `Equipment #${eq.id} (not found in equipment master)`;
     let line = eq.name || `Equipment #${eq.id}`;
     if (code) line += ` (${code})`;
     if (cal) line += ` Cal. Dt: ${this.formatSheetDate(cal)}`;

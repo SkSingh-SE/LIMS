@@ -209,6 +209,22 @@ export function suggestProductSizeKey(lines: any[], sample: any): string | null 
   return ids.size === 1 ? String(Array.from(ids.keys())[0]) : null;
 }
 
+/**
+ * Short name of a parameter for a one-line limit hint, e.g. "YS ≥ 245 · El ≥ 23".
+ * Known mechanical properties get their usual short form; anything else keeps its own name.
+ */
+export function parameterShortName(name: string | null | undefined): string {
+  const n = String(name || '').toLowerCase();
+  if (!n) return '';
+  if (/yield|proof stress/.test(n)) return 'YS';
+  if (/ultimate|tensile strength|\buts\b/.test(n)) return 'UTS';
+  if (/elongation/.test(n)) return 'El';
+  if (/reduction (of|in) area/.test(n)) return 'RA';
+  if (/impact|charpy|izod/.test(n)) return 'Impact';
+  if (/hardness/.test(n)) return 'Hardness';
+  return String(name).trim();
+}
+
 /** Facets that exist for this grade/test but have no selection yet (labels for the error message). */
 export function missingRequiredFacets(
   facetLabels: Record<string, string>,

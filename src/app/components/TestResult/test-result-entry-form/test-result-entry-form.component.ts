@@ -4,7 +4,7 @@ import {
   buildBandSegments,
   dimensionKind,
   formatBand,
-  missingRequiredFacets,
+  parameterShortName,
   sampleDimension,
   segmentWithinBand,
   suggestProductSizeKey
@@ -45,6 +45,9 @@ import {
   SpecimenRowStore,
   updateSavedResultIds,
 } from '../configured-test-layout-renderer/specimen-grouping';
+
+/** One choice of a condition dropdown; `hint` lists the limits it sets (shown in the open list only). */
+type CondOption = { value: string; label: string; hint?: string };
 
 @Component({
   selector: 'app-test-result-entry-form',
@@ -2584,14 +2587,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return;
     }
 
-    // Conditions defined by the grade for this test must be chosen before completing
-    const missingConditions = this.getMissingConditions(headerId);
-    if (missingConditions.length > 0) {
-      this.conditionsAttempted[headerId] = true;
-      this.toastService.show(`Select specification conditions before completing: ${missingConditions.join(', ')}`, 'error');
-      return;
-    }
-
     // Check for empty values in parameters
     const missingValues = testParams.controls.filter((ctrl) => {
       // a Text parameter (e.g. Location of Fracture) keeps its result in Remarks
@@ -4848,8 +4843,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       layout,
       hasSignSection: !!(layout?.sections || []).some((s: any) => s.type === 'sign' && s.config?.enabled !== false),
       env: this.environmentMap[test.headerId] || null,
-      // the dropdown label may carry a screen hint ("· 1 limit differs"); the record keeps the condition only
-      conditions: this.getSelectedConditionRows(test.headerId).map(c => ({ ...c, value: c.value.replace(/ · \d+ limits? differs?$/, '') })),
+      conditions: this.getSelectedConditionRows(test.headerId),
       equipment: this.selectedEquipmentMap[test.headerId] || [],
       images: this.testImagesMap[test.headerId] || [],
       timing: this.testTimingMap[test.headerId] || {},
@@ -5068,9 +5062,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   private readonly conditionFacets = ['df', 'ht', 'pc', 'tc', 'ps', 'or'];
   conditionLines: Record<number, any[]> = {};
-  private conditionOptionsMap: Record<number, Record<string, { value: string; label: string }[]>> = {};
+  private conditionOptionsMap: Record<number, Record<string, CondOption[]>> = {};
   private conditionPresentMap: Record<number, Record<string, boolean>> = {};
   conditionConflicts: Record<number, string[]> = {};
+  /** Per condition: why choosing it matters (shown on hover of the "i" icon while it is not chosen). */
+  conditionHints: Record<number, Record<string, string>> = {};
   /** Parameters whose grade lines exist but none fits the selected conditions (no limit is shown for them). */
   conditionNotApplicable: Record<number, string[]> = {};
   /** Parameters whose limit changes with the size range (their limits are listed under the dropdowns). */
@@ -5084,8 +5080,6 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   private conditionLinesCache: Record<string, any[]> = {};
   /** Facets pre-selected from the sample (shown with an "Auto" tag until the user changes them). */
   conditionAuto: Record<number, Record<string, boolean>> = {};
-  /** Set once the user tries to complete, so unselected required conditions turn red. */
-  conditionsAttempted: Record<number, boolean> = {};
   /** Which specification line each parameter's limits came from. */
   requirementSources: Record<number, { name: string; min: any; max: any; unit: string; source: string }[]> = {};
   readonly conditionFacetLabels: Record<string, string> = {
@@ -5206,14 +5200,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
    * Segment options of every factor used by these lines. The label stays short (band + how many limits change);
    * `varyingNames` collects the parameters whose limit differs between segments, shown in "Limits for this selection".
    */
-  private buildDfOptions(candidates: any[], varyingNames: Set<string>): { value: string; label: string }[] {
+  private buildDfOptions(candidates: any[], varyingNames: Set<string>): CondOption[] {
     const byFactor = new Map<number, any[]>();
     for (const l of candidates) {
       if (!l.dimensionalFactorID) continue;
       const id = Number(l.dimensionalFactorID);
       byFactor.set(id, [...(byFactor.get(id) || []), l]);
     }
-    const options: { value: string; label: string }[] = [];
+    const options: CondOption[] = [];
     byFactor.forEach((factorLines, factorId) => {
       const segments = buildBandSegments(factorLines.map(l => this.lineBand(l)));
       const name = factorLines[0].dimensionalFactorName || 'Dimension';
@@ -5238,10 +5232,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       varying.forEach(pid => varyingNames.add(params.get(pid) || ''));
 
       segments.forEach((seg, i) => {
-        const base = [name, formatBand(seg), unit].filter(x => !!x).join(' ');
-        const changing = varying.filter(pid => limitsBySegment[i].has(pid)).length;
-        const suffix = changing === 0 ? '' : changing === 1 ? ' · 1 limit differs' : ` · ${changing} limits differ`;
-        options.push({ value: this.dfKeyOf(factorId, seg), label: base + suffix });
+        const label = [name, formatBand(seg), unit].filter(x => !!x).join(' ');
+        // only the limits that change with the range, e.g. "YS ≥ 245 · El ≥ 23"
+        const hint = varying
+          .filter(pid => limitsBySegment[i].has(pid))
+          .map(pid => `${parameterShortName(params.get(pid))} ${limitsBySegment[i].get(pid)}`)
+          .join(' · ');
+        options.push({ value: this.dfKeyOf(factorId, seg), label, hint });
       });
     });
     return options;
@@ -5284,7 +5281,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return !!this.conditionPresentMap[headerId]?.[facet];
   }
 
-  condOptions(headerId: number, facet: string): { value: string; label: string }[] {
+  condOptions(headerId: number, facet: string): CondOption[] {
     return this.conditionOptionsMap[headerId]?.[facet] || [];
   }
 
@@ -5308,16 +5305,20 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   /** Rebuild each dropdown from the lines left valid by the OTHER selections; auto-pick a single option. */
   private refreshConditionOptions(headerId: number): void {
     const lines = this.conditionLines[headerId] || [];
-    const options: Record<string, { value: string; label: string }[]> = {};
+    const options: Record<string, CondOption[]> = {};
     const present: Record<string, boolean> = {};
     for (let pass = 0; pass < 3; pass++) {
       let changed = false;
       for (const fc of this.conditionFacets) {
         const found = new Map<string, string>();
+        const hints = new Map<string, string>();
         const candidates = lines.filter(l => this.lineMatchesSelection(l, headerId, fc));
         if (fc === 'df') {
           const varyingNames = new Set<string>();
-          this.buildDfOptions(candidates, varyingNames).forEach(o => found.set(o.value, o.label));
+          this.buildDfOptions(candidates, varyingNames).forEach(o => {
+            found.set(o.value, o.label);
+            if (o.hint) hints.set(o.value, o.hint);
+          });
           this.conditionVaryingParams[headerId] = varyingNames;
           // an older save may hold a whole line band instead of a segment: keep it while a line still contains it
           const saved = this.getFacetSel(headerId, 'df');
@@ -5332,7 +5333,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             if (v !== null && !found.has(v)) found.set(v, this.lineFacetLabel(l, fc));
           }
         }
-        options[fc] = Array.from(found, ([value, label]) => ({ value, label }));
+        options[fc] = Array.from(found, ([value, label]) => ({ value, label, hint: hints.get(value) }));
         present[fc] = lines.some(l => this.lineFacetValue(l, fc) !== null);
         const sel = this.getFacetSel(headerId, fc);
         if (sel && !found.has(sel)) {
@@ -5355,7 +5356,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   // ---- Condition dropdowns use app-searchable-dropdown with a local list --------------------------
   conditionVersion: Record<number, number> = {};
   /** Display order of the condition dropdowns. */
-  readonly conditionFacetOrder: string[] = ['df', 'ht', 'pc', 'tc', 'ps', 'or'];
+  readonly conditionFacetOrder: string[] = ['or', 'df', 'ht', 'pc', 'ps', 'tc'];
   private condFetchCache: Record<string, (term: string, page: number, pageSize: number) => Observable<any[]>> = {};
   private condSelectedCache: Record<string, { id: string; name: string }> = {};
 
@@ -5368,7 +5369,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         const items: any[] = [];
         if (!t) items.push({ id: null, name: facet === 'df' ? 'All sizes' : 'All' });
         for (const o of this.condOptions(headerId, facet)) {
-          if (!t || o.label.toLowerCase().includes(t)) items.push({ id: o.value, name: o.label });
+          const name = o.hint ? `${o.label} (${o.hint})` : o.label;
+          if (!t || name.toLowerCase().includes(t)) items.push({ id: o.value, name });
         }
         return of(items.slice(page * pageSize, (page + 1) * pageSize));
       };
@@ -5380,8 +5382,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   condSelectedItem(headerId: number, facet: string): { id: string; name: string } | null {
     const sel = this.getFacetSel(headerId, facet);
     if (!sel) return null;
-    // the "· N limits differ" count belongs to the list only; the chosen value shows just the band
-    const name = (this.condOptions(headerId, facet).find(o => o.value === sel)?.label ?? sel).replace(/ · \d+ limits? differs?$/, '');
+    // the limit hint belongs to the open list only; the chosen value shows just the condition
+    const name = this.condOptions(headerId, facet).find(o => o.value === sel)?.label ?? sel;
     const key = `${headerId}_${facet}`;
     const cached = this.condSelectedCache[key];
     if (cached && cached.id === sel && cached.name === name) return cached;
@@ -5411,7 +5413,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   private autoSuggestConditions(headerId: number): void {
     const lines = this.conditionLines[headerId] || [];
     const auto = (this.conditionAuto[headerId] = this.conditionAuto[headerId] || {});
+    const sampleOrientation = String(this.sample?.specimenOrientation || '').trim().toLowerCase();
     const suggestions: Record<string, string | null> = {
+      or: sampleOrientation ? this.condOptions(headerId, 'or').find(o => o.label.trim().toLowerCase() === sampleOrientation)?.value ?? null : null,
       df: this.suggestDfSegmentKey(headerId, lines),
       ps: suggestProductSizeKey(lines, this.sample)
     };
@@ -5446,25 +5450,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return !!this.conditionAuto[headerId]?.[facet];
   }
 
-  /** Names of conditions this grade defines for the test that are still not chosen. */
-  getMissingConditions(headerId: number): string[] {
-    const selected: Record<string, string | null> = {};
-    const present: Record<string, boolean> = {};
-    for (const fc of this.conditionFacets) {
-      selected[fc] = this.getFacetSel(headerId, fc);
-      present[fc] = this.condFacetPresent(headerId, fc);
-    }
-    // A condition is only required while some parameter still has two possible limits; a condition that
-    // changes no limit never blocks Complete.
-    if (!(this.conditionConflicts[headerId] || []).length) return [];
-    return missingRequiredFacets(this.conditionFacetLabels, present, selected);
-  }
-
-  isConditionInvalid(headerId: number, facet: string): boolean {
-    return !!this.conditionsAttempted[headerId]
-      && (this.conditionConflicts[headerId] || []).length > 0
-      && this.condFacetPresent(headerId, facet)
-      && !this.getFacetSel(headerId, facet);
+  /** Text of the "i" icon next to a condition that is not chosen but would decide a limit (empty: no icon). */
+  conditionHint(headerId: number, facet: string): string {
+    if (this.getFacetSel(headerId, facet)) return '';
+    return this.conditionHints[headerId]?.[facet] || '';
   }
 
   /** Load the grade's lines for this test + method, then build the dropdowns and apply limits. */
@@ -5532,6 +5521,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const matched = (this.conditionLines[headerId] || []).filter(l => this.lineMatchesSelection(l, headerId));
     this.matchedConditionLinesCount[headerId] = matched.length;
     const conflicts: string[] = [];
+    const hints: Record<string, string[]> = {};
     const notApplicable: string[] = [];
     const sources: { name: string; min: any; max: any; unit: string; source: string }[] = [];
 
@@ -5569,8 +5559,27 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       }
       const sameLimits = best.every(l => l.minValue === best[0].minValue && l.maxValue === best[0].maxValue);
       if (!sameLimits) {
-        conflicts.push(group.get('parameterName')?.value || `Parameter ${pId}`);
-        if (top === 0) continue; // nothing selected yet: leave the limits as loaded
+        const pLabel = group.get('parameterName')?.value || `Parameter ${pId}`;
+        if (!conflicts.includes(pLabel)) {
+          conflicts.push(pLabel);
+          // which empty conditions tell these lines apart, and the limit under each choice
+          for (const fc of this.conditionFacets) {
+            if (this.getFacetSel(headerId, fc)) continue;
+            const byValue = new Map<string, string>();
+            best.forEach(l => {
+              const label = this.lineFacetLabel(l, fc);
+              if (label && !byValue.has(label)) byValue.set(label, this.limitText(l) || '—');
+            });
+            if (byValue.size < 2) continue;
+            const choices = Array.from(byValue, ([label, limit]) => `${label} ${limit}`).join(', ');
+            (hints[fc] = hints[fc] || []).push(`${pLabel}: ${choices}`);
+          }
+        }
+        // the condition that decides it is not chosen: that filter is skipped and no limit is guessed
+        ['minValue', 'maxValue', 'specMinValue', 'specMaxValue', 'specificationLineID'].forEach(c => group.get(c)?.setValue(null));
+        group.get('acceptanceCriteria')?.setValue('');
+        group.get('specSource')?.setValue('');
+        continue;
       }
       const line = best[0];
       group.get('minValue')?.setValue(line.minValue ?? null);
@@ -5591,6 +5600,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       });
     }
     this.conditionConflicts[headerId] = conflicts;
+    this.conditionHints[headerId] = Object.fromEntries(Object.entries(hints).map(([fc, list]) => [
+      fc,
+      `Different limits by ${(this.conditionFacetLabels[fc] || fc).toLowerCase()}. ${list.join('; ')}. Not selected, so this filter is skipped and ${list.length === 1 ? 'this parameter has' : 'these parameters have'} no limit.`
+    ]));
     this.conditionNotApplicable[headerId] = notApplicable;
     this.requirementSources[headerId] = sources;
     // Only the parameters whose limit depends on the size range are listed; the rest are the same for every range
@@ -5608,7 +5621,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     this.cdr.markForCheck();
     if (notify) {
       this.toastService.show(
-        conflicts.length ? `${conflicts.length} parameter(s) still have more than one possible limit. Select the remaining conditions.` : `Conditions applied: ${matched.length} specification line(s) matched.`,
+        conflicts.length ? `No limit applied to ${conflicts.join(', ')}: the specification has more than one limit for this selection.` : `Conditions applied: ${matched.length} specification line(s) matched.`,
         conflicts.length ? 'warning' : 'info');
     }
   }

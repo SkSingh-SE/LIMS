@@ -1694,6 +1694,12 @@ input[type="number"] {
   gap: 5px 8px;
 }
 
+.spec-cond-info {
+  color: var(--primary-color, #da261c);
+  font-size: 0.72rem;
+  cursor: help;
+}
+
 .spec-cond-item {
   display: flex;
   flex-direction: column;

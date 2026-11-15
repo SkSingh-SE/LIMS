@@ -5,6 +5,7 @@ import {
   dimensionKind,
   formatBand,
   missingRequiredFacets,
+  parameterShortName,
   segmentContainingValue,
   segmentWithinBand,
   suggestDimensionalFactorKey,
@@ -145,6 +146,16 @@ describe('spec-condition.helper', () => {
     });
     it('returns null without a value', () => {
       expect(segmentContainingValue(segs, null)).toBeNull();
+    });
+  });
+
+  describe('parameterShortName', () => {
+    it('shortens the usual tensile properties and keeps any other name', () => {
+      expect(parameterShortName('0.2% Proof Stress / Yield Strength')).toBe('YS');
+      expect(parameterShortName('Ultimate Tensile Strength (UTS)')).toBe('UTS');
+      expect(parameterShortName('Percentage Elongation in 50mm / 4D')).toBe('El');
+      expect(parameterShortName('Internal Bend Diameter')).toBe('Internal Bend Diameter');
+      expect(parameterShortName(null)).toBe('');
     });
   });
 

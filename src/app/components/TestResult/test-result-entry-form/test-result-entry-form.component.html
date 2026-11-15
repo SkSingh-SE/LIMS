@@ -218,6 +218,8 @@
                           <div class="spec-cond-item" *ngFor="let fc of conditionFacetOrder">
                             <label class="spec-cond-label">{{ conditionFacetLabels[fc] }}
                               <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, fc)">Auto</span>
+                              <i class="bi bi-info-circle spec-cond-info" *ngIf="conditionHint(hid, fc) as hint" [title]="hint"
+                                 tabindex="0" [attr.aria-label]="hint"></i>
                             </label>
                             <app-searchable-dropdown
                               [hideLabel]="true"
@@ -228,10 +230,8 @@
                               [reloadKey]="conditionVersion[hid]"
                               [reloadOnOpen]="true"
                               [isDisabled]="isViewMode || !condFacetPresent(hid, fc)"
-                              [isInvalid]="isConditionInvalid(hid, fc)"
                               (itemSelected)="onCondItemSelected(p, t, fc, $event)">
                             </app-searchable-dropdown>
-                            <span class="text-danger text-xxs" *ngIf="isConditionInvalid(hid, fc)">Select {{ conditionFacetLabels[fc] | lowercase }}.</span>
                           </div>
                         </div>
                         <div class="text-warning-emphasis text-xxs mt-1" *ngIf="condOptions(hid, 'df').length > maxComfortableSegments">
@@ -249,8 +249,8 @@
                             </tbody>
                           </table>
                         </details>
-                        <div class="text-danger text-xxs mt-1" *ngIf="(conditionConflicts[hid] || []).length">
-                          More than one limit applies to: {{ conditionConflicts[hid].join(', ') }}. Select the remaining conditions.
+                        <div class="text-secondary text-xxs mt-1" *ngIf="(conditionConflicts[hid] || []).length">
+                          No limit applied to {{ conditionConflicts[hid].join(', ') }}: the specification has more than one limit for this selection.
                         </div>
                         <div class="text-secondary text-xxs mt-1" *ngIf="(conditionNotApplicable[hid] || []).length">
                           No specification limit applies to: {{ conditionNotApplicable[hid].join(', ') }} for the selected conditions.

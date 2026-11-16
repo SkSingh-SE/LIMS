@@ -223,8 +223,8 @@ export type TensileValues = { [K in SpecimenRole]?: number | null } & { finalAre
 
 /** Rounding used when a saved row value is read into the specimen model. */
 export function roundForRole(role: SpecimenRole, value: number): number {
-  if (role === 'proofStress' || role === 'uts') return Math.round(value);
-  if (role === 'elongation' || role === 'reductionOfArea') return Number(value.toFixed(1));
+  if (role === 'proofStress' || role === 'uts') return Number(value.toFixed(3));
+  if (role === 'elongation' || role === 'reductionOfArea') return Number(value.toFixed(3));
   return value;
 }
 
@@ -269,10 +269,10 @@ export function planTensileWrites(index: TensileRoleIndex, values: TensileValues
   return plan;
 }
 
-/** S0 from diameter (round) or thickness x width (flat), 2 decimals. */
+/** S0 from diameter (round) or thickness x width (flat), 3 decimals (as the lab prints it). */
 export function tensileArea(t: number | null | undefined, w: number | null | undefined, d: number | null | undefined): number | null {
-  if (d && d > 0) return Number(((Math.PI * d * d) / 4).toFixed(2));
-  if (t && w && t > 0 && w > 0) return Number((t * w).toFixed(2));
+  if (d && d > 0) return Number(((Math.PI * d * d) / 4).toFixed(3));
+  if (t && w && t > 0 && w > 0) return Number((t * w).toFixed(3));
   return null;
 }
 
@@ -301,8 +301,8 @@ export function recalcTensileSpecimen(spm: TensileValues, opts: { recomputeArea?
   // Without S0 there is no Rp / Rm: unlocked stresses are cleared, never left from an old S0
   const s0 = spm.area;
   if (s0 && s0 > 0) {
-    spm.proofStress = spm.yieldLoad && spm.yieldLoad > 0 ? Math.round((spm.yieldLoad * 1000) / s0) : null;
-    spm.uts = spm.peakLoad && spm.peakLoad > 0 ? Math.round((spm.peakLoad * 1000) / s0) : null;
+    spm.proofStress = spm.yieldLoad && spm.yieldLoad > 0 ? Number(((spm.yieldLoad * 1000) / s0).toFixed(3)) : null;
+    spm.uts = spm.peakLoad && spm.peakLoad > 0 ? Number(((spm.peakLoad * 1000) / s0).toFixed(3)) : null;
   } else {
     spm.proofStress = null;
     spm.uts = null;
@@ -310,13 +310,13 @@ export function recalcTensileSpecimen(spm: TensileValues, opts: { recomputeArea?
   decided.push('proofStress', 'uts');
 
   if (spm.finalLength && spm.gaugeLength && spm.gaugeLength > 0 && spm.finalLength >= spm.gaugeLength) {
-    spm.elongation = Number((((spm.finalLength - spm.gaugeLength) / spm.gaugeLength) * 100).toFixed(1));
+    spm.elongation = Number((((spm.finalLength - spm.gaugeLength) / spm.gaugeLength) * 100).toFixed(3));
   } else {
     spm.elongation = null;
   }
 
   if (spm.finalArea && s0 && s0 > 0 && spm.finalArea <= s0) {
-    spm.reductionOfArea = Number((((s0 - spm.finalArea) / s0) * 100).toFixed(1));
+    spm.reductionOfArea = Number((((s0 - spm.finalArea) / s0) * 100).toFixed(3));
   } else {
     spm.reductionOfArea = null;
   }
@@ -349,21 +349,21 @@ export function isSavedAreaHandTyped(
 /**
  * Same reload rule for the other calculated values, so an edit after reload never wipes a value typed by hand:
  * a saved Rp / Rm / A% that cannot be reproduced from the saved inputs (load and S0, or L0 and Lu) counts as hand-typed.
- * Rp / Rm match when equal after rounding to whole MPa; A% within 0.1 %.
+ * Rp / Rm match within 0.001 MPa; A% within 0.001 %.
  */
 export function savedHandTypedRoles(saved: TensileValues): Set<SpecimenRole> {
   const out = new Set<SpecimenRole>();
   if (isSavedAreaHandTyped(saved.area, saved.thickness, saved.width, saved.diameter)) out.add('area');
   const s0 = saved.area;
-  const stress = (load: number | null | undefined) => (load && load > 0 && s0 && s0 > 0 ? Math.round((load * 1000) / s0) : null);
+  const stress = (load: number | null | undefined) => (load && load > 0 && s0 && s0 > 0 ? Number(((load * 1000) / s0).toFixed(3)) : null);
   const rp = stress(saved.yieldLoad);
-  if (saved.proofStress != null && (rp == null || Math.abs(rp - saved.proofStress) >= 1)) out.add('proofStress');
+  if (saved.proofStress != null && (rp == null || Math.abs(rp - saved.proofStress) > 0.001)) out.add('proofStress');
   const rm = stress(saved.peakLoad);
-  if (saved.uts != null && (rm == null || Math.abs(rm - saved.uts) >= 1)) out.add('uts');
+  if (saved.uts != null && (rm == null || Math.abs(rm - saved.uts) > 0.001)) out.add('uts');
   const l0 = saved.gaugeLength;
   const lu = saved.finalLength;
-  const a = l0 && lu && l0 > 0 && lu >= l0 ? Number((((lu - l0) / l0) * 100).toFixed(1)) : null;
-  if (saved.elongation != null && (a == null || Math.abs(a - saved.elongation) > 0.1)) out.add('elongation');
+  const a = l0 && lu && l0 > 0 && lu >= l0 ? Number((((lu - l0) / l0) * 100).toFixed(3)) : null;
+  if (saved.elongation != null && (a == null || Math.abs(a - saved.elongation) > 0.001)) out.add('elongation');
   return out;
 }
 

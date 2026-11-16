@@ -61,6 +61,13 @@
   <!-- ========================================================================= -->
   <!-- 2. DYNAMIC SECTIONS STACK                                                 -->
   <!-- ========================================================================= -->
+  <!-- Sections the user hid on this screen: one click shows them again -->
+  <div *ngIf="!printMode && userHiddenSections.length" class="hidden-sections-bar d-flex align-items-center flex-wrap gap-1 mb-2 text-xxs">
+    <span class="text-secondary fw-semibold">Hidden on this screen:</span>
+    <button *ngFor="let h of userHiddenSections" type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 text-xxs" (click)="showSection(h.key)" [title]="'Show ' + h.title + ' again'">
+      <i class="bi bi-eye me-1"></i>{{ h.title }}
+    </button>
+  </div>
   <div class="sections-stack d-flex flex-wrap gap-0" [formGroup]="testFormGroup">
 
     <ng-container *ngFor="let s of sections; let sIdx = index">
@@ -94,6 +101,46 @@
 
           <!-- Section Header Action Items -->
           <div class="d-flex align-items-center gap-2">
+            <!-- Hide this section on the screen (not saved; the last result section always stays) -->
+            <button *ngIf="canHideSection(s)" type="button" class="btn-lims-icon btn-lims-delete" style="order: 99"
+                    (click)="hideSection(s)" [title]="'Hide ' + getSectionTitle(s) + ' on this screen'" [attr.aria-label]="'Hide ' + getSectionTitle(s)">
+              <i class="bi bi-x-lg"></i>
+            </button>
+            <!-- Specimen matrix / reading grid: which columns show on this screen -->
+            <details class="loc-adjust" *ngIf="!printMode && adjustableColumns(s).length">
+              <summary class="btn btn-xs btn-outline-secondary py-0 px-2 text-xxs" title="Columns of this section"><i class="bi bi-sliders me-1"></i>Adjust</summary>
+              <div class="loc-adjust-menu border rounded bg-white shadow-sm p-2">
+                <div class="text-xxs fw-semibold text-secondary mb-1">Columns</div>
+                <label *ngFor="let c of adjustableColumns(s); trackBy: trackByPosition" class="d-flex align-items-center gap-1 text-xxs mb-1">
+                  <input type="checkbox" class="form-check-input m-0" [checked]="isColumnShown(s, c.key)" (change)="toggleColumn(s, c.key)" />
+                  <span>{{ c.label }}</span>
+                </label>
+              </div>
+            </details>
+            <!-- Location grid: readings per location and which parameters show an average -->
+            <ng-container *ngIf="isLocationGrid(s) && !isViewMode && !isLocked">
+              <div *ngIf="canAdjustCount(s)" class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1">
+                <span class="text-xxs fw-semibold text-secondary">Readings:</span>
+                <button type="button" class="spm-stepper-btn" (click)="adjustLocationReadings(s, -1)" [disabled]="locationReadingCount(s) <= 1" title="One reading less per location"><i class="bi bi-dash"></i></button>
+                <span class="fw-bold text-danger text-xs px-1">{{ locationReadingCount(s) }}</span>
+                <button type="button" class="spm-stepper-btn" (click)="adjustLocationReadings(s, 1)" [disabled]="locationReadingCount(s) >= 10" title="One reading more per location"><i class="bi bi-plus"></i></button>
+              </div>
+              <details class="loc-adjust">
+                <summary class="btn btn-xs btn-outline-secondary py-0 px-2 text-xxs" title="Average per parameter"><i class="bi bi-sliders me-1"></i>Adjust</summary>
+                <div class="loc-adjust-menu border rounded bg-white shadow-sm p-2">
+                  <div class="text-xxs fw-semibold text-secondary mb-1">Average</div>
+                  <label *ngFor="let lp of locationParamsOf(s); trackBy: trackByLocParam" class="d-flex align-items-center gap-1 text-xxs mb-1">
+                    <input type="checkbox" class="form-check-input m-0" [checked]="lp.average" (change)="toggleLocationAverage(s, lp.name)" />
+                    <span>{{ lp.displayName }}</span>
+                  </label>
+                  <div class="text-xxs fw-semibold text-secondary mt-2 mb-1">Columns</div>
+                  <label class="d-flex align-items-center gap-1 text-xxs">
+                    <input type="checkbox" class="form-check-input m-0" [checked]="locShowRequirement(s)" (change)="toggleLocationRequirement(s)" />
+                    <span>Requirement</span>
+                  </label>
+                </div>
+              </details>
+            </ng-container>
             <!-- Specimen Matrix Quick Actions -->
             <ng-container *ngIf="(s.type === 'spm' || s.type === 'specimen') && !isViewMode && !isLocked">
               <div *ngIf="canAdjustCount(s)" class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1 me-1">
@@ -163,9 +210,13 @@
             </button>
 
             <!-- Location Section Action -->
-            <button *ngIf="(s.type === 'location' || s.type === 'loc') && !isViewMode && !isLocked"
+            <button *ngIf="(s.type === 'location' || s.type === 'loc') && !isViewMode && !isLocked && canAddRemoveRows(s)"
                     type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addLocation()">
               <i class="bi bi-plus-circle me-1"></i><span>Add Location Zone</span>
+            </button>
+            <button *ngIf="isLocationGrid(s) && !isViewMode && !isLocked && canAddRemoveRows(s)"
+                    type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="removeLastLocation(s)" [disabled]="locations.length <= 1" title="Remove the last location">
+              <i class="bi bi-dash-circle me-1"></i><span>Remove Location</span>
             </button>
 
             <!-- Traverse Section Action -->
@@ -178,12 +229,6 @@
             <button *ngIf="(s.type === 'checklist') && !isViewMode && !isLocked"
                     type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addChecklistItem()">
               <i class="bi bi-plus-circle me-1"></i><span>Add Check</span>
-            </button>
-
-            <!-- Narrative / Observation Action -->
-            <button *ngIf="(s.type === 'narrative' || s.type === 'rem') && !isViewMode && !isLocked"
-                    type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addObservation()">
-              <i class="bi bi-plus-circle me-1"></i><span>Add Observation</span>
             </button>
 
             <!-- Custom Attributes Action -->
@@ -266,7 +311,29 @@
           <!-- ARCHETYPE 2: TEST CONDITIONS & ENVIRONMENT (cond / condition) -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'cond' || s.type === 'condition'">
-            <div class="row g-2">
+            <!-- Conditions the layout lists (test temperature, specimen size, test force ...) plus the ones added on this screen -->
+            <div class="row g-2 mb-2" *ngIf="conditionFields(s).length">
+              <div class="col-md-3 col-sm-6" *ngFor="let f of conditionFields(s)">
+                <div class="condition-input-box p-2 rounded border bg-light">
+                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center justify-content-between gap-1">
+                    <span>{{ f }}</span>
+                    <button *ngIf="isRuntimeConditionField(s, f) && !isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
+                            (click)="removeConditionField(s, f)" [title]="'Remove ' + f"><i class="bi bi-x"></i></button>
+                  </label>
+                  <input type="text" class="form-control form-control-xs text-center" [value]="conditionValues[f] ?? ''"
+                         (input)="onConditionChange(f, $any($event.target).value)" [readOnly]="isViewMode || isLocked" placeholder="—" />
+                </div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-1 mb-2 print-hide" *ngIf="!isViewMode && !isLocked && !printMode && s.config?.allowRuntimeEdit !== false">
+              <input #newCond type="text" class="form-control form-control-xs w-auto" placeholder="New condition, e.g. Test Force" aria-label="New condition name"
+                     (keydown.enter)="addConditionField(s, newCond.value); newCond.value = ''" />
+              <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addConditionField(s, newCond.value); newCond.value = ''">
+                <i class="bi bi-plus-circle me-1"></i><span>Add Condition</span>
+              </button>
+            </div>
+            <!-- Ambient conditions: only when the layout lists no conditions of its own, or asks for them -->
+            <div class="row g-2" *ngIf="!conditionFields(s).length || s.config?.showAmbient">
               <div class="col-md-3 col-sm-6">
                 <div class="condition-input-box p-2 rounded border bg-light">
                   <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
@@ -362,7 +429,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (input)="onSpecimenDimensionChange(spm)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="D..." />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('diameter') }}
@@ -391,7 +458,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (input)="onSpecimenDimensionChange(spm)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="T..." />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('thickness') }}
@@ -420,7 +487,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (input)="onSpecimenDimensionChange(spm)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="W..." />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('width') }}
@@ -449,7 +516,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (input)="onSpecimenDimensionChange(spm)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="L₀..." />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('gaugeLength') }}
@@ -502,7 +569,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (input)="onSpecimenLoadChange(spm)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="kN..." />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('yieldLoad') }}
@@ -530,7 +597,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (input)="onSpecimenLoadChange(spm)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="kN..." />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('peakLoad') }}
@@ -558,7 +625,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (input)="onSpecimenLoadChange(spm)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="L_u..." />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('finalLength') }}
@@ -683,12 +750,12 @@
                                [value]="getParamValueForSpecimen(p.index, spmIdx)"
                                (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
-                               [placeholder]="p.name + '...'" />
+                               placeholder="—" />
                         <input *ngIf="p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
                                [value]="getParamTextForSpecimen(p.index, spmIdx)"
                                (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
-                               [placeholder]="p.name + '...'" />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getBaseParamAverage(p.index) }}
@@ -760,12 +827,12 @@
                                [value]="getParamValueForSpecimen(p.index, spmIdx)"
                                (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
-                               [placeholder]="p.name + '...'" />
+                               placeholder="—" />
                         <input *ngIf="!p.isStatic && p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
                                [value]="getParamTextForSpecimen(p.index, spmIdx)"
                                (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
-                               [placeholder]="p.name + '...'" />
+                               placeholder="—" />
                       </td>
                       <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ p.isStatic ? '' : getBaseParamAverage(p.index) }}
@@ -829,12 +896,12 @@
                                [value]="getParamValueForSpecimen(p.index, spmIdx)"
                                (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
-                               [placeholder]="p.displayName + '...'" />
+                               placeholder="—" />
                         <input *ngIf="!p.isStatic && p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
                                [value]="getParamTextForSpecimen(p.index, spmIdx)"
                                (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
                                [readOnly]="isViewMode || isLocked"
-                               [placeholder]="p.displayName + '...'" />
+                               placeholder="—" />
                       </td>
                     </tr>
                     <tr *ngIf="specimenShow(s, 'avg')">
@@ -1033,7 +1100,7 @@
                                  formControlName="remarks"
                                  (input)="onParameterInputChange(r)"
                                  [readOnly]="isViewMode || isLocked"
-                                 placeholder="Result..." />
+                                 placeholder="—" />
                         </ng-container>
 
                         <!-- 4. Numeric / Decimal / Default Input -->
@@ -1042,7 +1109,7 @@
                                  formControlName="value"
                                  (input)="onParameterInputChange(r)"
                                  [readOnly]="isViewMode || isLocked"
-                                 placeholder="Result..." />
+                                 placeholder="—" />
                         </ng-container>
                       </td>
 
@@ -1211,7 +1278,7 @@
                         <th *ngFor="let idx of getReadingIndices(s)" class="w-col-80">{{ getReadingColumnHeader(s, idx) }}</th>
                       </ng-container>
                       <th *ngIf="columnVisible(s, 'agg')" class="w-col-95">{{ gridAggregateLabel(s) }}</th>
-                      <ng-container *ngIf="s.config?.showStatistics !== false">
+                      <ng-container *ngIf="gridStatsShown(s)">
                         <th class="w-col-70">{{ columnLabel(s, 'min', 'Min') }}</th>
                         <th class="w-col-70">{{ columnLabel(s, 'max', 'Max') }}</th>
                       </ng-container>
@@ -1233,7 +1300,7 @@
                         </td>
                       </ng-container>
                       <td *ngIf="columnVisible(s, 'agg')" class="text-center font-monospace fw-bold">{{ gridFmt(s, gridAggregate(s, row.code)) }}</td>
-                      <ng-container *ngIf="s.config?.showStatistics !== false">
+                      <ng-container *ngIf="gridStatsShown(s)">
                         <td class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'min')) }}</td>
                         <td class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'max')) }}</td>
                       </ng-container>
@@ -1284,7 +1351,7 @@
                       <td class="fw-semibold text-start">{{ gridAggregateLabel(s) }}</td>
                       <td *ngFor="let row of readingGridRows(s)" class="text-center font-monospace fw-bold">{{ gridFmt(s, gridAggregate(s, row.code)) }}</td>
                     </tr>
-                    <ng-container *ngIf="s.config?.showStatistics !== false">
+                    <ng-container *ngIf="gridStatsShown(s)">
                       <tr>
                         <td class="fw-semibold text-start">{{ columnLabel(s, 'min', 'Min') }}</td>
                         <td *ngFor="let row of readingGridRows(s)" class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'min')) }}</td>
@@ -1339,7 +1406,7 @@
                                [ngModelOptions]="{ standalone: true }"
                                (ngModelChange)="onTraverseChange(ptIdx, $event)"
                                [readOnly]="isViewMode || isLocked"
-                               placeholder="HV..." />
+                               placeholder="—" />
                       </td>
                     </tr>
                   </tbody>
@@ -1525,6 +1592,21 @@
           <!-- ARCHETYPE 9: REMARKS & STATEMENTS (narrative / rem)           -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'narrative' || s.type === 'rem'">
+            <!-- Witness: one name / organisation line -->
+            <div *ngIf="isWitnessSection(s)" class="narrative-box">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">{{ s.config?.label || 'Test Witnessed By' }}</label>
+              <input type="text" class="form-control form-control-sm" [value]="narratives[narrativeKey(s)] || ''"
+                     (input)="onNarrativeChange(s, $any($event.target).value)" [attr.maxlength]="s.config?.maxLength || 300"
+                     [readOnly]="isViewMode || isLocked" placeholder="Name / organisation of the witness (empty when not witnessed)" />
+            </div>
+            <!-- A second note (Note, Remarks ...): its own text, not the test remarks -->
+            <div *ngIf="!isWitnessSection(s) && !isPrimaryNarrative(s)" class="narrative-box">
+              <label class="form-label text-xxs fw-semibold text-muted mb-1">{{ s.config?.label || getSectionTitle(s) }}</label>
+              <textarea class="form-control form-control-sm" rows="2" [value]="narratives[narrativeKey(s)] || ''"
+                        (input)="onNarrativeChange(s, $any($event.target).value)" [attr.maxlength]="s.config?.maxLength || null"
+                        [readOnly]="isViewMode || isLocked"></textarea>
+            </div>
+            <ng-container *ngIf="!isWitnessSection(s) && isPrimaryNarrative(s)">
             <div class="narrative-box d-flex flex-column gap-2">
               <div>
                 <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
@@ -1607,6 +1689,7 @@
                 </div>
               </div>
             </div>
+            </ng-container>
           </ng-container>
 
           <!-- ───────────────────────────────────────────────────────────── -->
@@ -1699,7 +1782,7 @@
           <!-- ARCHETYPE 13: LOCATION SURVEY & SAMPLING ZONES (location / loc)-->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'location' || s.type === 'loc'">
-            <div class="location-zone-section">
+            <div class="location-zone-section" *ngIf="!isLocationGrid(s)">
               <div class="table-responsive mb-1">
                 <table class="table table-sm table-bordered align-middle result-table mb-1">
                   <thead class="result-table-head text-center">
@@ -1760,6 +1843,120 @@
                 </button>
               </div>
             </div>
+
+            <!-- Location grid: the layout lists the parameters measured at each location -->
+            <div class="location-grid-section" *ngIf="isLocationGrid(s)">
+              <ng-container *ngFor="let p of locationParamsOf(s); trackBy: trackByLocParam">
+                <div class="small text-danger mb-1 print-hide" *ngIf="!p.found">The layout's parameter "{{ p.name }}" is not a parameter of this test.</div>
+              </ng-container>
+              <div class="small text-muted mb-1 print-hide" *ngIf="locations.length === 0">No location yet. Use Add Location Zone.</div>
+              <div class="table-responsive" *ngIf="locations.length > 0">
+
+                <!-- the parameters of a location as rows under its name (impact: energy, shear area, lateral expansion) -->
+                <table class="table table-sm table-bordered align-middle result-table mb-1" *ngIf="locationLayout(s) === 'under'">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="text-start">{{ s.config?.locationColHeader }}</th>
+                      <th *ngFor="let idx of locationReadingIndices(s)" class="w-col-80">{{ getReadingColumnHeader(s, idx) }}</th>
+                      <th *ngIf="locAnyAverage(s)" class="w-col-95">{{ columnLabel(s, 'avg', 'Average') }}</th>
+                      <th *ngIf="locShowRequirement(s)" class="w-col-110">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ng-container *ngFor="let loc of locations">
+                      <tr *ngIf="s.config?.locationNameOnOwnRow">
+                        <td [attr.colspan]="1 + locationReadingIndices(s).length + (locAnyAverage(s) ? 1 : 0) + (locShowRequirement(s) ? 1 : 0)" class="fw-semibold text-start">{{ loc.locationName }}</td>
+                      </tr>
+                      <tr *ngFor="let p of locationParamsOf(s); trackBy: trackByLocParam; let pi = index">
+                        <td class="text-start" [class.fw-semibold]="pi === 0 && !s.config?.locationNameOnOwnRow">
+                          {{ (pi === 0 && !s.config?.locationNameOnOwnRow) ? loc.locationName : p.displayName }}
+                        </td>
+                        <td *ngFor="let idx of locationReadingIndices(s)">
+                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace" [class.is-invalid]="locReadingOutOfLimit(p.name, getLocReading(p.name, loc.locationCode, idx))"
+                                 [ngModel]="getLocReading(p.name, loc.locationCode, idx)" [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="onLocationReadingChange(p.name, loc.locationCode, idx, $event)"
+                                 [readOnly]="isViewMode || isLocked" placeholder="—" />
+                        </td>
+                        <td *ngIf="locAnyAverage(s)" class="text-center font-monospace fw-bold">{{ p.average ? locFmt(p.name, locAverage(p.name, loc.locationCode)) : '' }}</td>
+                        <td *ngIf="locShowRequirement(s)" class="text-center small font-monospace">{{ locParamRequirement(p.name) || '—' }}</td>
+                      </tr>
+                    </ng-container>
+                  </tbody>
+                </table>
+
+                <!-- locations as rows, a cell of readings per parameter, the rows split into column groups when asked -->
+                <table class="table table-sm table-bordered align-middle result-table mb-1" *ngIf="locationLayout(s) === 'columns'">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <ng-container *ngFor="let g of locationGroups(s); trackBy: trackByPosition">
+                        <th class="text-start">{{ s.config?.locationColHeader }}</th>
+                        <ng-container *ngFor="let p of locationParamsOf(s); trackBy: trackByLocParam">
+                          <th>
+                            {{ p.displayName }}
+                            <div *ngIf="p.unit" class="text-muted small fw-normal">{{ p.unit }}</div>
+                          </th>
+                          <th *ngIf="p.average" class="w-col-95">{{ columnLabel(s, 'avg', 'Average') }}</th>
+                        </ng-container>
+                      </ng-container>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let k of locationRowIndices(s)">
+                      <ng-container *ngFor="let g of locationGroups(s); trackBy: trackByPosition">
+                        <ng-container *ngIf="g[k] as loc; else noLocation">
+                          <td class="text-start">{{ loc.locationName }}</td>
+                          <ng-container *ngFor="let p of locationParamsOf(s); trackBy: trackByLocParam">
+                            <td class="text-center">
+                              <ng-container *ngIf="locJoinedView(s)">{{ locJoined(p.name, loc.locationCode) }}</ng-container>
+                              <div *ngIf="!locJoinedView(s)" class="d-flex gap-1 justify-content-center">
+                                <input *ngFor="let idx of locationReadingIndices(s)" type="number" step="any" class="form-control form-control-xs text-center font-monospace loc-reading-input" [class.is-invalid]="locReadingOutOfLimit(p.name, getLocReading(p.name, loc.locationCode, idx))"
+                                       [ngModel]="getLocReading(p.name, loc.locationCode, idx)" [ngModelOptions]="{ standalone: true }"
+                                       (ngModelChange)="onLocationReadingChange(p.name, loc.locationCode, idx, $event)"
+                                       [readOnly]="isViewMode || isLocked" placeholder="—" />
+                              </div>
+                            </td>
+                            <td *ngIf="p.average" class="text-center font-monospace fw-bold">{{ locFmt(p.name, locAverage(p.name, loc.locationCode)) }}</td>
+                          </ng-container>
+                        </ng-container>
+                        <ng-template #noLocation><td [attr.colspan]="locGroupColumns(s)"></td></ng-template>
+                      </ng-container>
+                    </tr>
+                    <tr *ngIf="locShowRequirement(s)">
+                      <td class="fw-semibold text-start">Requirement</td>
+                      <td [attr.colspan]="locTotalColumns(s) - 1" class="text-center small font-monospace">{{ locRequirement(s) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- parameters as rows, the locations across -->
+                <table class="table table-sm table-bordered align-middle result-table mb-1" *ngIf="locationLayout(s) === 'rows'">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="text-start">{{ s.config?.locationColHeader }}</th>
+                      <th *ngFor="let loc of locations">{{ loc.locationName }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of locationParamsOf(s); trackBy: trackByLocParam">
+                      <td class="fw-semibold text-start">{{ p.displayName }}<span *ngIf="p.unit" class="text-muted small"> ({{ p.unit }})</span></td>
+                      <td *ngFor="let loc of locations" class="text-center">
+                        <ng-container *ngIf="locJoinedView(s)">{{ locJoined(p.name, loc.locationCode) }}</ng-container>
+                        <div *ngIf="!locJoinedView(s)" class="d-flex gap-1 justify-content-center">
+                          <input *ngFor="let idx of locationReadingIndices(s)" type="number" step="any" class="form-control form-control-xs text-center font-monospace loc-reading-input" [class.is-invalid]="locReadingOutOfLimit(p.name, getLocReading(p.name, loc.locationCode, idx))"
+                                 [ngModel]="getLocReading(p.name, loc.locationCode, idx)" [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="onLocationReadingChange(p.name, loc.locationCode, idx, $event)"
+                                 [readOnly]="isViewMode || isLocked" placeholder="—" />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="locShowRequirement(s)">
+                      <td class="fw-semibold text-start">Requirement</td>
+                      <td [attr.colspan]="locations.length" class="text-center small font-monospace">{{ locRequirement(s) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </ng-container>
 
           <!-- ───────────────────────────────────────────────────────────── -->
@@ -1800,11 +1997,12 @@
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
                     <i class="bi bi-award text-success me-1"></i><span>Conformity Verdict</span>
                   </label>
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-success text-white px-2 py-1 fs-7">
-                      <i class="bi bi-check-circle me-1"></i>CONFORMING (PASS)
+                  <div class="d-flex align-items-center gap-2" *ngIf="conformityVerdict as cv">
+                    <span class="badge text-white px-2 py-1 fs-7"
+                          [ngClass]="{ 'bg-success': cv.status === 'PASS', 'bg-danger': cv.status === 'FAIL', 'bg-secondary': cv.status === 'PENDING' || cv.status === 'NO_LIMIT' }">
+                      <i class="bi me-1" [ngClass]="cv.status === 'PASS' ? 'bi-check-circle' : cv.status === 'FAIL' ? 'bi-x-circle' : 'bi-hourglass-split'"></i>{{ cv.label }}
                     </span>
-                    <span class="text-xxs text-muted">All parameters satisfy guard-band acceptance criteria</span>
+                    <span class="text-xxs text-muted">{{ cv.detail }}</span>
                   </div>
                 </div>
               </div>

@@ -516,8 +516,49 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Sections the user hides on this screen (Note, witness, sign ...). Screen only:
+  // nothing is saved, the layout keeps the section, the sheet / report still follow the layout.
+  // One result section always stays visible.
+  // ---------------------------------------------------------------------------
+  private static readonly RESULT_TYPES = new Set(['spm', 'specimen', 'reading', 'location', 'loc', 'param', 'parameter', 'custom', 'attrs', 'traverse', 'case_depth']);
+  hiddenSectionKeys = new Set<string>();
+
+  sectionUiKey(s: any): string {
+    const i = this.sections.indexOf(s);
+    return String(s?.id ?? s?.config?.sectionKey ?? '') + '#' + i;
+  }
+
+  isResultSection(s: any): boolean {
+    return ConfiguredTestLayoutRendererComponent.RESULT_TYPES.has(String(s?.type || '').toLowerCase());
+  }
+
+  canHideSection(s: any): boolean {
+    if (this.printMode || !s) return false;
+    if (!this.isResultSection(s)) return true;
+    // the last visible result section cannot be hidden
+    return this.sections.filter(x => this.isResultSection(x) && !this.isUnsupportedSection(x) && this.isSectionVisible(x)).length > 1;
+  }
+
+  hideSection(s: any): void {
+    if (!this.canHideSection(s)) return;
+    this.hiddenSectionKeys = new Set(this.hiddenSectionKeys).add(this.sectionUiKey(s));
+  }
+
+  showSection(key: string): void {
+    const next = new Set(this.hiddenSectionKeys);
+    next.delete(key);
+    this.hiddenSectionKeys = next;
+  }
+
+  get userHiddenSections(): { key: string; title: string }[] {
+    if (!this.hiddenSectionKeys.size) return [];
+    return this.sections.filter(s => this.hiddenSectionKeys.has(this.sectionUiKey(s))).map(s => ({ key: this.sectionUiKey(s), title: this.getSectionTitle(s) }));
+  }
+
   isSectionVisible(s: any): boolean {
     if (!s) return false;
+    if (!this.printMode && this.hiddenSectionKeys.size && this.hiddenSectionKeys.has(this.sectionUiKey(s))) return false;
     const t = (s.type || '').toLowerCase();
     const isChemical = this.testPlan?.type === 'Chemical' ||
       this.test?.discipline === 'Chemical' ||
@@ -603,6 +644,51 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return this.testFormGroup?.get('parameters') as FormArray;
   }
 
+  /**
+   * Verdict of this test from the entered values and the limits of the plan / specification (never a fixed text).
+   * No value yet: pending. Values but no limit: not assessed. Any value outside its limit: non conforming.
+   */
+  get conformityVerdict(): { status: 'PASS' | 'FAIL' | 'PENDING' | 'NO_LIMIT'; label: string; detail: string } {
+    const rows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
+    const num = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+    let withValue = 0;
+    let judged = 0;
+    const failed: string[] = [];
+    const judge = (name: string, v: number, min: number | null, max: number | null) => {
+      withValue++;
+      if (min === null && max === null) return;
+      judged++;
+      if ((min !== null && v < min) || (max !== null && v > max)) failed.push(name || 'Parameter');
+    };
+    // every reading of a reading / location grid is a result of its own (Charpy: each impact value against min 35 J)
+    const withReadings = new Set<string>();
+    Object.keys(this.readingValues).forEach(key => {
+      const sep = key.lastIndexOf('|');
+      const paramName = sep >= 0 ? key.slice(0, sep) : key;
+      const ctrl = this.locParamControl(paramName)?.value;
+      const min = num(ctrl?.minValue ?? ctrl?.specMinValue);
+      const max = num(ctrl?.maxValue ?? ctrl?.specMaxValue);
+      (this.readingValues[key] || []).forEach(raw => {
+        const v = num(raw);
+        if (v === null) return;
+        withReadings.add(this.normKey(paramName));
+        judge(ctrl?.parameterName || paramName, v, min, max);
+      });
+    });
+    // parameter rows; a row that only holds the average of its readings is not counted twice
+    for (const r of rows) {
+      const v = num(r.value);
+      if (v === null || withReadings.has(this.normKey(r.parameterName))) continue;
+      judge(r.parameterName, v, num(r.minValue ?? r.specMinValue), num(r.maxValue ?? r.specMaxValue));
+    }
+    const rule = String(this.decisionRule?.ruleType || '');
+    const ruleNote = rule && !/simple/i.test(rule) ? ' (no measurement uncertainty entered: judged without guard band)' : '';
+    if (withValue === 0) return { status: 'PENDING', label: 'RESULTS PENDING', detail: 'No result entered yet' };
+    if (judged === 0) return { status: 'NO_LIMIT', label: 'NOT ASSESSED', detail: 'No specification limit applies to the entered results (select the grade / conditions)' };
+    if (failed.length) return { status: 'FAIL', label: 'NON-CONFORMING (FAIL)', detail: `${failed.length} of ${judged} result(s) outside the limit: ${Array.from(new Set(failed)).join(', ')}${ruleNote}` };
+    return { status: 'PASS', label: 'CONFORMING (PASS)', detail: `${judged} of ${withValue} result(s) judged, all within the specification limits${ruleNote}` };
+  }
+
   private initLayoutData(): void {
     if (!this.layoutConfig) return;
     if (this.printMode) {
@@ -617,6 +703,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // a layout saved with the literal "spm" type has always hidden the plain parameter table: keep that
     this.hasLegacySpmSection = rawSections.some((s: any) => s?.type === 'spm' && s?.config?.enabled !== false);
     this.sections = normalizeLayoutConfig({ sections: rawSections }).sections.filter((s: any) => s.config?.enabled !== false);
+    // Every test needs a place to enter its results: a layout without a result section gets the parameter table
+    if (!this.sections.some((s: any) => this.isResultSection(s) && !this.isUnsupportedSection(s))) {
+      this.sections = [...this.sections, { id: 'auto-results', type: 'parameter', title: 'Test Results', config: {} }];
+    }
+    this.hiddenSectionKeys = new Set();
 
     // Initialize Specimen Matrix
     this.initSpecimens();
@@ -651,29 +742,28 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   private initLocations(): void {
     const locSec = this.sections.find(s => s.type === 'location' || s.type === 'loc');
+    const layoutLabels = this.layoutLocationLabels(locSec);
     if (this.test?.locations && Array.isArray(this.test.locations) && this.test.locations.length > 0) {
+      // the server names them displayName / sequenceNo; the names this component writes back are accepted too
       this.locations = this.test.locations.map((loc: any, idx: number) => ({
         id: loc.id,
         locationCode: loc.locationCode || `LOC${idx + 1}`,
-        locationName: loc.locationName || `Zone ${idx + 1}`,
-        displayOrder: loc.displayOrder || (idx + 1),
+        locationName: loc.displayName || loc.locationName || `Zone ${idx + 1}`,
+        displayOrder: loc.sequenceNo || loc.displayOrder || (idx + 1),
         isReportable: loc.isReportable !== false,
         remarks: loc.remarks || ''
       }));
-    } else if (locSec?.config?.tableRows && Array.isArray(locSec.config.tableRows) && locSec.config.tableRows.length > 0) {
-      this.locations = locSec.config.tableRows.map((r: any, idx: number) => ({
-        locationCode: r.key || `LOC${idx + 1}`,
-        locationName: r.label,
+    } else if (layoutLabels.length) {
+      this.locations = layoutLabels.map((label, idx) => ({
+        locationCode: `LOC${idx + 1}`,
+        locationName: label,
         displayOrder: idx + 1,
         isReportable: true,
         remarks: ''
       }));
-    } else if (this.locations.length === 0) {
-      this.locations = [
-        { locationCode: 'SURF', locationName: 'Surface Zone', displayOrder: 1, isReportable: true, remarks: '0-2mm depth' },
-        { locationCode: 'CORE', locationName: 'Core / Mid-Radius', displayOrder: 2, isReportable: true, remarks: 'Center axis' }
-      ];
     }
+    // no invented list: a layout that lists no location starts without one, the technician adds them
+    this.initLocationGrids();
   }
 
   private initTraverse(): void {
@@ -761,6 +851,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         }
         if (extra?.opinionData) {
           this.opinionData = { ...this.opinionData, ...extra.opinionData };
+        }
+        if (extra?.conditionFields && typeof extra.conditionFields === 'object') {
+          this.runtimeConditionFields = { ...extra.conditionFields };
+        }
+        if (extra?.narratives && typeof extra.narratives === 'object') {
+          this.narratives = { ...extra.narratives };
         }
         if (extra?.specimenCountApplied === true) this.specimenCountApplied = true;
         if (Array.isArray(extra?.hiddenRows)) {
@@ -1163,11 +1259,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const validArea = this.specimens.map(s => s.area).filter((v): v is number => v != null && v > 0);
 
     this.specimenAverages = {
-      proofStress: validProof.length ? Math.round(validProof.reduce((a, b) => a + b, 0) / validProof.length) : null,
-      uts: validUts.length ? Math.round(validUts.reduce((a, b) => a + b, 0) / validUts.length) : null,
-      elongation: validElong.length ? Number((validElong.reduce((a, b) => a + b, 0) / validElong.length).toFixed(1)) : null,
+      proofStress: validProof.length ? Number((validProof.reduce((a, b) => a + b, 0) / validProof.length).toFixed(3)) : null,
+      uts: validUts.length ? Number((validUts.reduce((a, b) => a + b, 0) / validUts.length).toFixed(3)) : null,
+      elongation: validElong.length ? Number((validElong.reduce((a, b) => a + b, 0) / validElong.length).toFixed(3)) : null,
       reductionOfArea: validRA.length ? Number((validRA.reduce((a, b) => a + b, 0) / validRA.length).toFixed(1)) : null,
-      area: validArea.length ? Number((validArea.reduce((a, b) => a + b, 0) / validArea.length).toFixed(2)) : null
+      area: validArea.length ? Number((validArea.reduce((a, b) => a + b, 0) / validArea.length).toFixed(3)) : null
     };
 
     // Auto-sync calculated specimen values with parameters FormArray!
@@ -1193,7 +1289,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       return avg.toFixed(1);
     }
     if (field === 'proofStress' || field === 'uts') {
-      return String(Math.round(avg));
+      return avg.toFixed(3);
     }
     return avg.toFixed(2);
   }
@@ -1568,6 +1664,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** The list is rebuilt on every check; tracking by row index keeps the DOM rows (and the focus inside an input). */
   trackByBaseRow = (_: number, p: { index: number }) => p.index;
+
+  /** The location grid builds its parameter and group lists on every check; these keep the rows (and the inputs in them) alive. */
+  trackByLocParam = (_: number, p: { name: string }) => p.name;
+  trackByPosition = (i: number) => i;
 
   /** Tensile matrix: parameters that are not one of its fixed rows (e.g. Bend Diameter, added parameters). */
   getExtraBaseParameterList(): any[] {
@@ -2037,7 +2137,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (this.specimenShow(s, 'unit')) n++;
     if (this.showGridReadings(s)) n += this.getReadingCount(s);
     if (this.columnVisible(s, 'agg')) n++;
-    if (cfg.showStatistics !== false) n += 2;
+    if (this.gridStatsShown(s)) n += 2;
     if (this.columnVisible(s, 'requirement') && !cfg.requirementRow) n++;
     if (this.columnVisible(s, 'status')) n++;
     return n;
@@ -2110,6 +2210,339 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     delete this.readingValues[vkey];
     delete this.readingStats[vkey];
     this.updateGridParameter(s);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Location grid (A3): the layout lists the parameters measured at each location; every location holds the
+  // readings of each of them (saved with the location code).
+  // =========================================================================
+  /** A location section the layout gave parameters to. Without them it is the plain list of locations. */
+  isLocationGrid(s: any): boolean {
+    return (s?.type === 'location' || s?.type === 'loc') && Array.isArray(s?.config?.locationParams) && s.config.locationParams.length > 0;
+  }
+
+  /** How the parameters of a location are laid out: under the location, as columns, or as rows (locations across). */
+  locationLayout(s: any): 'under' | 'columns' | 'rows' {
+    const o = String(s?.config?.orientation ?? '').trim().toLowerCase();
+    if (o.startsWith('parameters under')) return 'under';
+    if (o.startsWith('parameters')) return 'rows';
+    return 'columns';
+  }
+
+  private locParamControl(name: string): AbstractControl | null {
+    const want = this.normKey(name);
+    const fa = this.parametersFormArray;
+    for (let i = 0; fa && i < fa.length; i++) {
+      if (this.normKey(fa.at(i).get('parameterName')?.value) === want) return fa.at(i);
+    }
+    return null;
+  }
+
+  /** The parameters the layout lists for each location, as the test names them. */
+  locationParamsOf(s: any): { name: string; displayName: string; unit: string; average: boolean; found: boolean }[] {
+    const avgList: string[] | null = Array.isArray(s?.config?.locationAverageParams) ? s.config.locationAverageParams : null;
+    return (s?.config?.locationParams || []).map((layoutName: string) => {
+      const ctrl = this.locParamControl(layoutName);
+      const name = String(ctrl?.get('parameterName')?.value ?? '').trim() || layoutName;
+      return {
+        name,
+        displayName: name,
+        unit: String(ctrl?.get('unit')?.value ?? '').trim(),
+        average: this.locAvgOverride[this.readingSecKey(s)]?.[this.normKey(name)]
+          ?? (s?.config?.showAverage !== false && (!avgList || avgList.some(n => this.normKey(n) === this.normKey(layoutName)))),
+        found: !!ctrl,
+      };
+    });
+  }
+
+  /** Average shown for one location parameter: the layout decides, the user can switch it per section on this screen. */
+  private locAvgOverride: Record<string, Record<string, boolean>> = {};
+
+  toggleLocationAverage(s: any, paramName: string): void {
+    const sec = this.readingSecKey(s);
+    const cur = this.locationParamsOf(s).find(p => this.normKey(p.name) === this.normKey(paramName))?.average ?? false;
+    this.locAvgOverride[sec] = { ...(this.locAvgOverride[sec] || {}), [this.normKey(paramName)]: !cur };
+  }
+
+  /** Readings per location (R1..Rn) changed on this screen; within the configured range 1..10. */
+  adjustLocationReadings(s: any, delta: number): void {
+    if (this.isViewMode || this.isLocked || !this.canAdjustCount(s)) return;
+    const sec = this.readingSecKey(s);
+    const n = Math.min(10, Math.max(1, (this.locReadingCount[sec] ?? this.configuredLocationReadings(s)) + delta));
+    // a reading already entered is never cut off
+    const params = this.locationParamsOf(s).filter(p => p.found);
+    const used = Math.max(0, ...params.flatMap(p => this.locations.map(loc => {
+      const arr = this.readingValues[this.locKey(p.name, loc.locationCode)] || [];
+      let last = 0; arr.forEach((v, i) => { if (v != null && (v as any) !== '') last = i + 1; });
+      return last;
+    })));
+    if (n < used) return;
+    this.locReadingCount[sec] = n;
+    params.forEach(p => this.locations.forEach(loc => {
+      const key = this.locKey(p.name, loc.locationCode);
+      const arr = [...(this.readingValues[key] || [])];
+      while (arr.length < n) arr.push(null);
+      arr.length = n;
+      this.readingValues[key] = arr;
+    }));
+    this.syncCollectionsToTest();
+  }
+
+  locationReadingCount(s: any): number {
+    return this.locReadingCount[this.readingSecKey(s)] ?? this.configuredLocationReadings(s);
+  }
+
+  locAnyAverage(s: any): boolean {
+    return this.locationParamsOf(s).some(p => p.average);
+  }
+
+  locationReadingIndices(s: any): number[] {
+    return Array.from({ length: this.locReadingCount[this.readingSecKey(s)] ?? this.configuredLocationReadings(s) }, (_, i) => i);
+  }
+
+  private configuredLocationReadings(s: any): number {
+    return Math.min(10, Math.max(1, Math.round(Number(s?.config?.locationReadings) || 3)));
+  }
+
+  private locReadingCount: Record<string, number> = {};
+
+  private locKey(paramName: string, code: string): string {
+    return `${paramName}|loc:${code}`;
+  }
+
+  /** Locations the layout lists (its rows, else its names); a saved test keeps its own list. */
+  private layoutLocationLabels(locSec: any): string[] {
+    const cfg = locSec?.config || {};
+    const fromRows = (Array.isArray(cfg.locationRows) ? cfg.locationRows : []).map((n: any) => String(n ?? '').trim()).filter(Boolean);
+    if (fromRows.length) return fromRows;
+    const fromTable = (Array.isArray(cfg.tableRows) ? cfg.tableRows : [])
+      .filter((r: any) => r?.visible !== false).map((r: any) => String(r?.label ?? '').trim()).filter(Boolean);
+    if (fromTable.length) return fromTable;
+    return String(cfg.locationNames ?? '').split(',').map(n => n.trim()).filter(Boolean);
+  }
+
+  /** Readings the test holds for a parameter at a location, in order of their number. */
+  private savedLocationReadings(paramName: string, code: string): (number | null)[] {
+    const want = this.normKey(paramName);
+    const arr: (number | null)[] = [];
+    const stored: any[] = Array.isArray(this.test?.readings) ? this.test.readings : [];
+    stored
+      .filter(r => this.normKey(r.parameterName || r.parameterCode) === want && this.normKey(r.locationCode) === this.normKey(code) && r.isVoided !== true)
+      .forEach(r => {
+        const seq = Number(r.readingNumber || r.sequenceNo || 1);
+        const v = r.readingValue ?? r.value;
+        if (seq < 1 || v == null || v === '' || isNaN(Number(v))) return;
+        while (arr.length < seq) arr.push(null);
+        arr[seq - 1] = Number(v);
+      });
+    return arr;
+  }
+
+  private initLocationGrids(): void {
+    (this.sections || []).filter(sec => this.isLocationGrid(sec)).forEach(sec => this.initLocationGrid(sec));
+  }
+
+  /**
+   * Readings saved under a location the list does not hold (an older list) bring that location back, named by its
+   * code, so the next save does not drop them.
+   */
+  private restoreLocationsOfSavedReadings(paramNames: string[]): void {
+    const wanted = new Set(paramNames.map(n => this.normKey(n)));
+    const stored: any[] = Array.isArray(this.test?.readings) ? this.test.readings : [];
+    stored.forEach(r => {
+      const code = String(r.locationCode ?? '').trim();
+      if (!code || r.isVoided === true || !wanted.has(this.normKey(r.parameterName || r.parameterCode))) return;
+      if (this.locations.some(l => this.normKey(l.locationCode) === this.normKey(code))) return;
+      this.locations.push({ locationCode: code, locationName: code, displayOrder: this.locations.length + 1, isReportable: true, remarks: '' });
+    });
+  }
+
+  private initLocationGrid(s: any): void {
+    const params = this.locationParamsOf(s).filter(p => p.found);
+    this.restoreLocationsOfSavedReadings(params.map(p => p.name));
+    let n = this.configuredLocationReadings(s);
+    params.forEach(p => this.locations.forEach(loc => (n = Math.max(n, this.savedLocationReadings(p.name, loc.locationCode).length))));
+    n = Math.min(10, n);
+    this.locReadingCount[this.readingSecKey(s)] = n;
+    params.forEach(p => this.locations.forEach(loc => {
+      const key = this.locKey(p.name, loc.locationCode);
+      // what was typed in this session stays; a missing list is built from the saved readings
+      const arr: (number | null)[] = this.readingValues[key] ? [...this.readingValues[key]] : [...this.savedLocationReadings(p.name, loc.locationCode)];
+      while (arr.length < n) arr.push(null);
+      arr.length = n;
+      this.readingValues[key] = arr;
+    }));
+  }
+
+  getLocReading(paramName: string, code: string, idx: number): number | null | undefined {
+    return this.readingValues[this.locKey(paramName, code)]?.[idx];
+  }
+
+  private locDecimals(paramName: string): number {
+    const d = Number(this.locParamControl(paramName)?.get('decimalPrecision')?.value);
+    return Number.isFinite(d) && d >= 0 && d <= 6 ? d : 2;
+  }
+
+  /** Average of the readings of one parameter at one location (null without a reading). */
+  locAverage(paramName: string, code: string): number | null {
+    const vals = (this.readingValues[this.locKey(paramName, code)] || []).filter((v): v is number => v != null && !isNaN(v));
+    return vals.length ? Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(this.locDecimals(paramName))) : null;
+  }
+
+  locFmt(paramName: string, v: number | null | undefined): string {
+    return v == null ? '' : v.toFixed(this.locDecimals(paramName));
+  }
+
+  /** The readings of a cell as one list ("163,163,162"). */
+  locJoined(paramName: string, code: string): string {
+    return (this.readingValues[this.locKey(paramName, code)] || []).filter(v => v != null && !isNaN(v as number)).join(',');
+  }
+
+  /** Readings are shown as one list in the finished record when the layout asks for it. */
+  locJoinedView(s: any): boolean {
+    return !!s?.config?.readingsJoined && (this.isViewMode || this.isLocked || this.printMode);
+  }
+
+  /** Locations split into the column groups of the layout (the first group takes `locationGroupRows` rows). */
+  locationGroups(s: any): LocationData[][] {
+    const groups = Math.min(3, Math.max(1, Math.round(Number(s?.config?.locationColumns) || 1)));
+    const all = this.locations;
+    if (groups === 1) return [all];
+    const size = Math.max(1, Math.round(Number(s?.config?.locationGroupRows) || Math.ceil(all.length / groups)));
+    return Array.from({ length: groups }, (_, g) => all.slice(g * size, (g + 1) * size));
+  }
+
+  locationRowIndices(s: any): number[] {
+    const longest = Math.max(0, ...this.locationGroups(s).map(g => g.length));
+    return Array.from({ length: longest }, (_, i) => i);
+  }
+
+  /** Columns of one group of the "locations as rows" table: the name and a cell per parameter (plus its average). */
+  locGroupColumns(s: any): number {
+    return 1 + this.locationParamsOf(s).reduce((n, p) => n + 1 + (p.average ? 1 : 0), 0);
+  }
+
+  locTotalColumns(s: any): number {
+    return this.locationGroups(s).length * this.locGroupColumns(s);
+  }
+
+  /** Requirement of the parameters of the section (one text per parameter when there are several). */
+  locRequirement(s: any): string {
+    const params = this.locationParamsOf(s);
+    const text = (p: { name: string }) => this.formatSpecRange(this.locParamControl(p.name)?.value);
+    return params.length === 1 ? text(params[0]) : params.map(p => `${p.displayName}: ${text(p)}`).join(' · ');
+  }
+
+  /**
+   * Readings entered / expected over the reading and location grids of this layout (the counter of the screen),
+   * and whether a parameter is measured in such a grid (its parameter row then only holds the average).
+   */
+  readingProgress(): { entered: number; expected: number } {
+    let entered = 0;
+    let expected = 0;
+    const count = (arr: any[] | undefined) => (arr || []).filter(v => v !== null && v !== undefined && v !== '').length;
+    this.sections.forEach(s => {
+      if (!this.isSectionVisible(s)) return;
+      if (this.isLocationGrid(s)) {
+        const n = this.locationReadingCount(s);
+        this.locationParamsOf(s).filter(p => p.found).forEach(p => this.locations.forEach(loc => {
+          expected += n;
+          entered += count(this.readingValues[this.locKey(p.name, loc.locationCode)]);
+        }));
+      } else if (this.isReadingGrid(s)) {
+        const n = this.getReadingCount(s);
+        this.readingGridRows(s).forEach(r => {
+          expected += n;
+          entered += count(this.readingValues[this.readingGridKey(s, r.code)]);
+        });
+      }
+    });
+    return { entered, expected };
+  }
+
+  isGridParameter(name: string): boolean {
+    const want = this.normKey(name);
+    return this.sections.some(s =>
+      (this.isLocationGrid(s) && this.locationParamsOf(s).some(p => this.normKey(p.name) === want)) ||
+      (this.isReadingGrid(s) && this.normKey(this.readingGridParam(s)) === want));
+  }
+
+  /** Requirement column / row of a location grid: the layout decides, the user can switch it per section on this screen. */
+  private locReqOverride: Record<string, boolean> = {};
+
+  locShowRequirement(s: any): boolean {
+    return this.locReqOverride[this.readingSecKey(s)] ?? !!s?.config?.showRequirement;
+  }
+
+  toggleLocationRequirement(s: any): void {
+    this.locReqOverride = { ...this.locReqOverride, [this.readingSecKey(s)]: !this.locShowRequirement(s) };
+  }
+
+  /** Requirement of one location parameter, from its parameter row (plan / specification limit); '' when none. */
+  locParamRequirement(paramName: string): string {
+    const v = this.locParamControl(paramName)?.value;
+    const min = this.toNum(v?.minValue ?? v?.specMinValue);
+    const max = this.toNum(v?.maxValue ?? v?.specMaxValue);
+    return min !== null && max !== null ? `${min} – ${max}` : min !== null ? `≥ ${min}` : max !== null ? `≤ ${max}` : '';
+  }
+
+  /** True when an entered reading lies outside the limit of its parameter (the cell turns red). */
+  locReadingOutOfLimit(paramName: string, value: any): boolean {
+    const n = this.toNum(value);
+    if (n === null) return false;
+    const v = this.locParamControl(paramName)?.value;
+    const min = this.toNum(v?.minValue ?? v?.specMinValue);
+    const max = this.toNum(v?.maxValue ?? v?.specMaxValue);
+    return (min !== null && n < min) || (max !== null && n > max);
+  }
+
+  private toNum(v: any): number | null {
+    return v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v);
+  }
+
+  /** Writes the average of all readings of the parameter (and the readings by location) into its parameter row. */
+  private updateLocationParameter(paramName: string): void {
+    const ctrl = this.locParamControl(paramName);
+    const fa = this.parametersFormArray;
+    if (!ctrl || !fa) return;
+    const byLocation: Record<string, (number | null)[]> = {};
+    const all: number[] = [];
+    this.locations.forEach(loc => {
+      const arr = this.readingValues[this.locKey(paramName, loc.locationCode)] || [];
+      byLocation[loc.locationCode] = arr;
+      arr.forEach(v => { if (v != null && !isNaN(v)) all.push(v); });
+    });
+    const avg = all.length ? Number((all.reduce((a, b) => a + b, 0) / all.length).toFixed(this.locDecimals(paramName))) : null;
+    ctrl.patchValue({ value: avg, remarks: JSON.stringify(byLocation) });
+    this.evaluateLimitForControl(ctrl);
+    this.paramValueChanged.emit({ rowIdx: fa.controls.indexOf(ctrl as any), param: ctrl.value });
+  }
+
+  onLocationReadingChange(paramName: string, code: string, idx: number, val: any): void {
+    if (this.printMode) return;
+    const key = this.locKey(paramName, code);
+    const parsed = val !== null && val !== '' && !isNaN(Number(val)) ? parseFloat(val) : null;
+    const arr = this.readingValues[key] || (this.readingValues[key] = []);
+    while (arr.length <= idx) arr.push(null);
+    arr[idx] = parsed;
+    this.updateLocationParameter(paramName);
+    this.syncCollectionsToTest();
+  }
+
+  /** Removes the last location of a grid; refused while it holds a reading (clear it first). */
+  removeLastLocation(s: any): void {
+    if (this.isViewMode || this.isLocked || !this.canAddRemoveRows(s) || this.locations.length <= 1) return;
+    const last = this.locations[this.locations.length - 1];
+    const params = this.locationParamsOf(s);
+    if (params.some(p => (this.readingValues[this.locKey(p.name, last.locationCode)] || []).some(v => v != null))) {
+      this.toastService.show(`${last.locationName} holds readings. Clear them before removing the location.`, 'warning');
+      return;
+    }
+    params.forEach(p => delete this.readingValues[this.locKey(p.name, last.locationCode)]);
+    this.locations.pop();
+    params.forEach(p => this.updateLocationParameter(p.name));
     this.syncCollectionsToTest();
     this.cdr.markForCheck();
   }
@@ -2244,6 +2677,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** A column the layout lists as hidden is not drawn; a column it does not list follows the section's own switches. */
   columnVisible(sec: any, key: string): boolean {
+    const ov = this.columnOverride[this.sectionUiKey(sec)]?.[key];
+    if (ov !== undefined) return ov;
     const c = this.columnDef(sec, key);
     return !c || c.visible !== false;
   }
@@ -2254,9 +2689,45 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return def && typeof def.label === 'string' ? def.label.trim() : fallback;
   }
 
+  // ---------------------------------------------------------------------------
+  // Column switches a user can change per section on this screen (not saved; the layout gives the default).
+  // ---------------------------------------------------------------------------
+  private columnOverride: Record<string, Record<string, boolean>> = {};
+
+  gridStatsShown(s: any): boolean {
+    const ov = this.columnOverride[this.sectionUiKey(s)]?.['stats'];
+    return ov !== undefined ? ov : s?.config?.showStatistics !== false;
+  }
+
+  /** The columns the Adjust menu of a section offers, by section type. */
+  adjustableColumns(s: any): { key: string; label: string }[] {
+    const t = String(s?.type || '').toLowerCase();
+    if (t === 'spm' || t === 'specimen') {
+      return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }];
+    }
+    if (t === 'reading' && this.isReadingGrid(s)) {
+      return [{ key: 'agg', label: this.gridAggregateLabel(s) || 'Average' }, { key: 'stats', label: 'Min / Max' }, { key: 'requirement', label: 'Requirement' }, { key: 'status', label: 'Status' }, { key: 'unit', label: 'Unit' }];
+    }
+    return [];
+  }
+
+  isColumnShown(s: any, key: string): boolean {
+    if (key === 'stats') return this.gridStatsShown(s);
+    if (['avg', 'requirement', 'status', 'unit'].includes(key) && !this.isReadingGrid(s)) return this.specimenShow(s, key as any);
+    if (key === 'unit') return this.specimenShow(s, 'unit');
+    return this.columnVisible(s, key);
+  }
+
+  toggleColumn(s: any, key: string): void {
+    const sec = this.sectionUiKey(s);
+    this.columnOverride = { ...this.columnOverride, [sec]: { ...(this.columnOverride[sec] || {}), [key]: !this.isColumnShown(s, key) } };
+  }
+
   /** Average / Requirement / Status / Unit column switches of the specimen matrix. */
   specimenShow(sec: any, what: 'avg' | 'requirement' | 'status' | 'unit'): boolean {
     const cfg = sec?.config || {};
+    const ov = this.columnOverride[this.sectionUiKey(sec)]?.[what];
+    if (ov !== undefined) return ov;
     switch (what) {
       case 'avg': return cfg.showAverage !== false && this.columnVisible(sec, 'avg');
       case 'requirement': return cfg.showRequirement !== false && this.columnVisible(sec, 'requirement');
@@ -2406,7 +2877,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   /** Parameters a reading grid already shows are left out of the plain parameter table. */
   private isGridTargetRow(rowIdx: number): boolean {
     const name = this.normKey(this.parametersFormArray?.at(rowIdx)?.get('parameterName')?.value);
-    return !!name && (this.sections || []).some(sec => this.isReadingGrid(sec) && this.normKey(this.readingGridTarget(sec)) === name);
+    return !!name && (this.sections || []).some(sec =>
+      (this.isReadingGrid(sec) && this.normKey(this.readingGridTarget(sec)) === name) ||
+      (this.isLocationGrid(sec) && (sec.config.locationParams as string[]).some(n => this.normKey(n) === name)));
   }
 
   /** A section whose type this screen cannot draw (it would otherwise vanish without a trace). */
@@ -2656,6 +3129,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     } else if (key === 'Relative Humidity' && this.test) {
       this.test.roomHumidity = val ? parseFloat(val) : null;
     }
+    this.syncCollectionsToTest();
   }
 
   // =========================================================================
@@ -2834,6 +3308,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       isReportable: true,
       remarks: ''
     });
+    this.initLocationGrids(); // the new location gets its reading lists
     this.syncCollectionsToTest();
     this.cdr.markForCheck();
   }
@@ -2989,6 +3464,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     this.test.locations = this.locations.map((loc, idx) => ({
       ...loc,
+      displayName: loc.locationName,
+      sequenceNo: idx + 1,
       displayOrder: idx + 1,
       testResultHeaderId: headerId
     }));
@@ -3029,7 +3506,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       // a grid key is "<parameter>|<sample code>"; the legacy key is the parameter name
       const sep = key.lastIndexOf('|');
       const paramName = sep >= 0 ? key.slice(0, sep) : key;
-      const specimenCode = sep >= 0 ? key.slice(sep + 1) : 'S1';
+      let specimenCode = sep >= 0 ? key.slice(sep + 1) : 'S1';
+      // a location reading is keyed "<parameter>|loc:<location code>"
+      let locationCode: string | null = null;
+      if (specimenCode.startsWith('loc:')) {
+        locationCode = specimenCode.slice(4);
+        specimenCode = 'S1';
+      }
       let paramId: number | null = null;
       let paramCode = '';
       if (this.parametersFormArray) {
@@ -3053,6 +3536,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
             parameterCode: paramCode || paramName,
             parameterName: paramName,
             specimenCode,
+            locationCode,
             sequenceNo: idx + 1,
             readingNumber: idx + 1,
             value: Number(v),
@@ -3071,8 +3555,74 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return readings;
   }
 
+  // ---------------------------------------------------------------------------
+  // Condition section: the layout's `fields` (test temperature, specimen size ...) plus fields added on the
+  // screen (kept per section in executionExtraJson.conditionFields); values live in conditionValues.
+  // ---------------------------------------------------------------------------
+  runtimeConditionFields: Record<string, string[]> = {};
+
+  private configuredConditionFields(s: any): string[] {
+    const list = Array.isArray(s?.config?.fields) ? s.config.fields : [];
+    return list.map((f: any) => String(typeof f === 'string' ? f : f?.label ?? f?.name ?? '').trim()).filter(Boolean);
+  }
+
+  conditionFields(s: any): string[] {
+    const cfg = this.configuredConditionFields(s);
+    const extra = (this.runtimeConditionFields[this.readingSecKey(s)] || []).filter(f => !cfg.includes(f));
+    return extra.length ? [...cfg, ...extra] : cfg;
+  }
+
+  isRuntimeConditionField(s: any, name: string): boolean {
+    return !this.configuredConditionFields(s).includes(name);
+  }
+
+  addConditionField(s: any, raw: string): void {
+    const name = String(raw ?? '').trim();
+    if (!name || this.isViewMode || this.isLocked) return;
+    if (this.conditionFields(s).some(f => f.toLowerCase() === name.toLowerCase())) return;
+    const key = this.readingSecKey(s);
+    this.runtimeConditionFields = { ...this.runtimeConditionFields, [key]: [...(this.runtimeConditionFields[key] || []), name] };
+    this.syncCollectionsToTest();
+  }
+
+  removeConditionField(s: any, name: string): void {
+    if (!this.isRuntimeConditionField(s, name) || this.isViewMode || this.isLocked) return;
+    const key = this.readingSecKey(s);
+    this.runtimeConditionFields = { ...this.runtimeConditionFields, [key]: (this.runtimeConditionFields[key] || []).filter(f => f !== name) };
+    const next = { ...this.conditionValues };
+    delete next[name];
+    this.conditionValues = next;
+    this.syncCollectionsToTest();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Narrative sections: the first note keeps the test remarks (and observations); every other note and the
+  // witness line keep their own text, saved in executionExtraJson.narratives by section key.
+  // ---------------------------------------------------------------------------
+  narratives: Record<string, string> = {};
+
+  narrativeKey(s: any): string {
+    return String(s?.config?.sectionKey || `narrative-${this.sections.indexOf(s)}`);
+  }
+
+  isWitnessSection(s: any): boolean {
+    return String(s?.config?.sectionKey || '').toLowerCase() === 'witness' || /witness/i.test(String(s?.title || s?.config?.label || ''));
+  }
+
+  isPrimaryNarrative(s: any): boolean {
+    const first = this.sections.find(x => ['narrative', 'rem'].includes(String(x?.type || '').toLowerCase()) && !this.isWitnessSection(x));
+    return first === s;
+  }
+
+  onNarrativeChange(s: any, value: string): void {
+    this.narratives = { ...this.narratives, [this.narrativeKey(s)]: value };
+    this.syncCollectionsToTest();
+  }
+
   getExecutionExtraJson(): string {
     const extra = {
+      narratives: this.narratives,
+      conditionFields: this.runtimeConditionFields,
       decisionRule: this.decisionRule,
       classification: this.classification,
       custom: this.customAttributes,

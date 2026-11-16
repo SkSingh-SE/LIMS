@@ -535,3 +535,9 @@ input[type="number"] {
 :host(.print-mode) tr {
   break-inside: avoid;
 }
+
+/* Location grid: per-section average menu (screen only) */
+.loc-adjust { position: relative; }
+.loc-adjust > summary { list-style: none; cursor: pointer; }
+.loc-adjust > summary::-webkit-details-marker { display: none; }
+.loc-adjust-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 200px; }

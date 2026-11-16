@@ -190,7 +190,7 @@ describe('tensile-parameter-roles', () => {
       const vals: Array<number | null> = [null, 450.4, 290];
       const idx = buildTensileRoleIndex(names);
       const read = readTensileValues(idx, r => vals[r]);
-      expect(read.uts).toBe(450);
+      expect(read.uts).toBe(450.4);
       expect(read.proofStress).toBe(290);
       const plan = planTensileWrites(idx, read);
       expect(plan.filter(p => p.role === 'uts').map(p => p.rowIdx)).toEqual([0, 1]);

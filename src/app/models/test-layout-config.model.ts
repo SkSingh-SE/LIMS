@@ -173,6 +173,16 @@ export interface SectionConfig {
   readingsAs?: 'columns' | 'rows';
   /** Reading section: the requirement as a closing row instead of a column. */
   requirementRow?: boolean;
+  /** Location section: the parameters measured at each location (names), and those that get an average. */
+  locationParams?: string[];
+  locationAverageParams?: string[];
+  /** Location section: readings per location, column groups side by side, rows in the first group. */
+  locationReadings?: number;
+  locationColumns?: number;
+  locationGroupRows?: number;
+  locationNameOnOwnRow?: boolean;
+  /** Location section: readings of a cell printed as one list ("163,163,162"). */
+  readingsJoined?: boolean;
   targetParameter?: string;
   unit?: string;
   targetParamId?: number | string;

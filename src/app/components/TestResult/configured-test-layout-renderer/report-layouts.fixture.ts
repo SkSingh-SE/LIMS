@@ -19,7 +19,7 @@ export interface ReportCase {
   /** Number of specimens the test holds (parameter rows per specimen). */
   specimens?: number;
   /** Readings saved for the test (the rows of TestResultReadings). */
-  readings?: { parameterName: string; specimenCode: string; sequenceNo: number; value: number }[];
+  readings?: { parameterName: string; specimenCode: string; locationCode?: string; sequenceNo: number; value: number }[];
 }
 
 /** A parameter row with every control the result entry form gives it. */
@@ -201,4 +201,93 @@ export const REPORT_CASES: ReportCase[] = [
       { name: 'Ultimate Tensile Strength', unit: 'N/mm²', minValue: 410 }, { name: 'Elongation', unit: '%', minValue: 23 },
     ],
   },
+
+  // ---- L3: Charpy impact @ 0 °C, four locations, three parameters each ("Impact Test - ASTM E23 (Charpy at 0 deg C).jpeg")
+  {
+    id: 'L3-impact-0c',
+    reference: 'Impact Test - ASTM E23 (Charpy at 0 deg C).jpeg',
+    testName: 'Impact Test @ 0°C',
+    layout: {
+      layoutName: 'Charpy impact (locations)',
+      sections: [{
+        id: 1, type: 'location', title: 'Impact Energy Observed (in Joules)',
+        config: {
+          sectionKey: 'impact0', orientation: 'Parameters under each location', locationMode: 'Named locations',
+          locationRows: ['WELD-TOP', 'FL-TOP', 'FL+2-TOP', 'FL+5-TOP'], locationColHeader: '',
+          locationParams: ['Impact Energy', '% of Shear Area', 'Lateral Expansion (in mm)'],
+          locationAverageParams: ['Impact Energy', '% of Shear Area'], locationReadings: 3, showAverage: true, showRequirement: false,
+        },
+      }],
+    },
+    parameters: [
+      { name: 'Impact Energy', unit: 'J', decimals: 2 },
+      { name: '% of Shear Area', unit: '%', decimals: 2 },
+      { name: 'Lateral Expansion (in mm)', unit: 'mm', decimals: 2 },
+    ],
+    readings: (() => {
+      const data: Record<string, Record<string, number[]>> = {
+        LOC1: { 'Impact Energy': [154, 150, 128], '% of Shear Area': [90, 90, 90], 'Lateral Expansion (in mm)': [1.99, 1.88, 1.5] },
+        LOC2: { 'Impact Energy': [280, 280, 286], '% of Shear Area': [95, 95, 95], 'Lateral Expansion (in mm)': [2.76, 2.73, 2.77] },
+        LOC3: { 'Impact Energy': [280, 276, 275], '% of Shear Area': [95, 95, 95], 'Lateral Expansion (in mm)': [2.7, 2.67, 2.68] },
+        LOC4: { 'Impact Energy': [282, 284, 286], '% of Shear Area': [95, 95, 95], 'Lateral Expansion (in mm)': [2.7, 2.72, 2.78] },
+      };
+      return Object.keys(data).flatMap(loc => Object.keys(data[loc]).flatMap(p =>
+        data[loc][p].map((value, i) => ({ parameterName: p, specimenCode: 'S1', locationCode: loc, sequenceNo: i + 1, value }))));
+    })(),
+  },
+
+  // ---- L3: Charpy impact @ -29 °C, one row of three energies and the average ("Impact (Charpy).pdf")
+  {
+    id: 'L3-impact-29c',
+    reference: 'Impact (Charpy).pdf',
+    testName: 'Impact Test @ -29°C',
+    layout: {
+      layoutName: 'Charpy impact (one row)',
+      sections: [{
+        id: 1, type: 'reading', title: 'Impact Energy Observed (in Joules)',
+        config: {
+          sectionKey: 'impact29', targetParamName: 'Impact Energy Observed', count: 3, readingLabel: '', readingsAs: 'columns', aggregation: 'Average',
+          showIndividual: true, showStatistics: false, requirementRow: false,
+          tableColumns: [column('specimen', ''), column('unit', 'Unit', false), column('agg', 'Avg.'), column('requirement', 'Requirement', false), column('status', 'Status', false)],
+          tableRows: [row('spec_0', '-')],
+        },
+      }],
+    },
+    parameters: [{ name: 'Impact Energy Observed', unit: 'J', decimals: 2 }],
+    readings: [11, 23, 31].map((value, i) => ({ parameterName: 'Impact Energy Observed', specimenCode: 'S1', sequenceNo: i + 1, value })),
+  },
+
+  // ---- L6: hardness at many locations, two column groups side by side ("Hardness Multi Location.pdf")
+  (() => {
+    const left: [string, number[]][] = [
+      ['BASE LEFT SIDE TOP', [163, 163, 162]], ['HAZ LEFT SIDE TOP', [154, 156, 158]], ['HAZ LEFT SIDE TOP', [156, 155, 158]],
+      ['WELD TOP', [158, 158, 157]], ['WELD TOP', [157, 157, 158]], ['HAZ RIGHT SIDE TOP', [156, 154, 156]], ['HAZ RIGHT SIDE TOP', [155, 155, 156]],
+      ['BASE RIGHT SIDE TOP', [162, 162, 163]], ['BASE LEFT SIDE BOTTOM', [162, 162, 161]], ['HAZ LEFT SIDE BOTTOM', [156, 155, 156]],
+      ['HAZ LEFT SIDE BOTTOM', [157, 157, 156]],
+    ];
+    const right: [string, number[]][] = [
+      ['WELD BOTTOM', [157, 158, 157]], ['WELD BOTTOM', [158, 159, 158]], ['HAZ RIGHT SIDE BOTTOM', [154, 156, 156]],
+      ['HAZ RIGHT SIDE BOTTOM', [156, 155, 154]], ['BASE RIGHT SIDE BOTTOM', [162, 163, 162]], ['HAZ LEFT SIDE MIDDLE', [155]],
+      ['WELD MIDDLE', [159]], ['HAZ RIGHT SIDE MIDDLE', [154]],
+    ];
+    const all = [...left, ...right];
+    return {
+      id: 'L6-hardness-multi-location',
+      reference: 'Hardness Multi Location.pdf',
+      testName: 'Hardness Test',
+      layout: {
+        layoutName: 'Vickers survey (two column groups)',
+        sections: [{
+          id: 1, type: 'location', title: 'Hardness in HV10',
+          config: {
+            sectionKey: 'vsurvey', orientation: 'Locations × Parameters', locationMode: 'Named locations', locationRows: all.map(a => a[0]),
+            locationColHeader: 'Sample ID/Locaton', locationParams: ['Hardness in HV10'], locationReadings: 3, locationColumns: 2, locationGroupRows: 11,
+            readingsJoined: true, showAverage: false, showRequirement: true,
+          },
+        }],
+      },
+      parameters: [{ name: 'Hardness in HV10', decimals: 2, acceptance: '248-HV10 Max.' }],
+      readings: all.flatMap(([, vals], li) => vals.map((value, i) => ({ parameterName: 'Hardness in HV10', specimenCode: 'S1', locationCode: `LOC${li + 1}`, sequenceNo: i + 1, value }))),
+    } as ReportCase;
+  })(),
 ];

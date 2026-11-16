@@ -9,7 +9,7 @@ import {
   segmentWithinBand,
   suggestProductSizeKey
 } from '../../../utility/helper/spec-condition.helper';
-import { ChangeDetectorRef, Component, DoCheck, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, DoCheck, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { TestResultService } from '../../../services/test-result.service';
@@ -17,6 +17,7 @@ import { ParameterService } from '../../../services/parameter.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { SampleInwardService } from '../../../services/sample-inward.service';
 import { TestLayoutService } from '../../../services/test-layout.service';
 import { Observable, Subscription, of } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
@@ -987,7 +988,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       width: sampleData.width,
       length: sampleData.length,
       crossSectionArea: sampleData.crossSectionArea,
-      gaugeLength: sampleData.gaugeLength
+      gaugeLength: sampleData.gaugeLength,
+      id: sampleData.id || this.sampleId,
+      specificationGradeID: sampleData.specificationGradeID || null,
+      assignedGradeID: sampleData.assignedGradeID || null,
+      specificationGradeName: sampleData.specificationGradeName || sampleData.assignedGradeName || ''
     };
 
     // Map Plans
@@ -1006,7 +1011,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         const totalSpecimens = resolveSpecimenCount(generalTest.parameters || [], plannedQuantity);
         const sequenceNo = generalTest.sequenceNo || 1;
         const baseName = generalTest.laboratoryTest || 'General Test';
-        const testName = plannedQuantity > 1 ? `${baseName} - Specimen ${sequenceNo}` : baseName;
+        const testName = plannedQuantity > 1 ? `${baseName} - Test ${sequenceNo}` : baseName;
 
         const methodName = generalTest.standardName || '';
         const specName = specification && specification !== 'Unknown' ? specification : '';
@@ -1032,7 +1037,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           methodName: methodName,
           methodSelected: generalTest.standard ? { id: generalTest.standard, name: methodName || `Method #${generalTest.standard}` } : null,
           specSelected: generalTest.specification1 ? { id: generalTest.specification1, name: specName || `Spec #${generalTest.specification1}` } : null,
-          specimenLabel: plannedQuantity > 1 ? `Specimen ${sequenceNo} of ${plannedQuantity}` : null,
+          specimenLabel: plannedQuantity > 1 ? `Test ${sequenceNo} of ${plannedQuantity}` : null,
           tests: [
             {
               id: `gen-${generalTest.headerId}`,
@@ -1245,6 +1250,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             } catch (e) {
               this.selectedEquipmentMap[test.headerId] = [];
             }
+          }
+          // Nothing saved yet: take the equipment linked to this test (sub-group / analysis type) in the master
+          if (!(this.selectedEquipmentMap[test.headerId] || []).length && !this.isViewMode && !this.isTestFinalized(test.status)) {
+            this.autoAssignLinkedEquipment(test.headerId, test.subGroupId || test.laboratoryTestSubGroupID, test.analysisTypeId || test.analysisTypeID);
           }
           // Fetch environment data
           this.fetchEnvironmentData(test.headerId);
@@ -2742,7 +2751,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return { total: rawParams.length, entered: 0, pass: 0, fail: 0, pending: rawParams.length };
     }
 
-    return countExecutionMetrics(paramsFA.controls.map(ctrl => ({
+    // The open test with a reading / location grid counts its readings (36 Charpy values), not the parameter
+    // rows that only hold their averages. Other tabs count rows until they are opened.
+    const renderer = p === this.activePlanIndex ? this.layoutRendererComponent : undefined;
+    const controls = renderer
+      ? paramsFA.controls.filter(ctrl => !renderer.isGridParameter(String(ctrl.get('parameterName')?.value ?? '')))
+      : paramsFA.controls;
+    const rowMetrics = countExecutionMetrics(controls.map(ctrl => ({
       value: ctrl.get('value')?.value,
       remarks: ctrl.get('remarks')?.value,
       inputType: ctrl.get('inputType')?.value,
@@ -2750,6 +2765,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       status: ctrl.get('status')?.value,
       isWithinLimit: ctrl.get('isWithinLimit')?.value
     })));
+    const rp = renderer?.readingProgress();
+    if (!rp || !rp.expected) return rowMetrics;
+    return {
+      ...rowMetrics,
+      total: rowMetrics.total + rp.expected,
+      entered: rowMetrics.entered + rp.entered,
+      pending: rowMetrics.pending + (rp.expected - rp.entered),
+    };
   }
 
   /**
@@ -3497,6 +3520,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const verdict = (v: number, l: { min: number | null; max: number | null }): 'PASS' | 'FAIL' | 'INFO' =>
       l.min === null && l.max === null ? 'INFO' : (l.min === null || v >= l.min) && (l.max === null || v <= l.max) ? 'PASS' : 'FAIL';
 
+    // Tensile roles (area, yield, UTS, elongation, ratio) only make sense for a tensile test; every other test
+    // shows the results of its own formula parameters (fallback below).
+    const isTensile = this.isTensileActive(planIndex, testIndex);
+
     // 1. Cross-sectional area: a formula result, never judged
     const sampleArea = tensileArea(num(this.sample?.thickness), num(this.sample?.width), num(this.sample?.diameter));
     const areaVal = areaParam?.value ?? spm?.area ?? (
@@ -3504,7 +3531,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         ? (Number(widthParam.value) * Number(thickParam.value))
         : sampleArea
     );
-    if (areaVal != null && areaVal !== '') {
+    if (isTensile && areaVal != null && areaVal !== '') {
       results.push({
         symbol: 'S₀',
         name: 'Cross Section Area',
@@ -3517,7 +3544,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
     const pushResult = (symbol: string, defaultName: string, pm: any, raw: any, defaultUnit: string) => {
       const v = num(raw);
-      if (v === null) return;
+      if (!isTensile || v === null) return;
       const l = limitOf(pm);
       results.push({
         symbol,
@@ -3541,7 +3568,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     if ((ystsVal == null || ystsVal === '') && ysVal && utsVal && Number(utsVal) > 0) {
       ystsVal = (Number(ysVal) / Number(utsVal)).toFixed(2);
     }
-    if (num(ystsVal) !== null) {
+    if (isTensile && num(ystsVal) !== null) {
       const l = limitOf(ystsParam);
       results.push({
         symbol: 'YS/TS',
@@ -3556,7 +3583,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     // Fallback: If not standard tensile or no tensile parameters detected
     if (results.length === 0) {
       for (const pm of params) {
-        if (pm.isCalculated || pm.formulaExpression || pm.value != null) {
+        if (pm.isCalculated || pm.formulaExpression || (isTensile && pm.value != null)) {
           const l = limitOf(pm);
           const v = num(pm.value);
           results.push({
@@ -3694,6 +3721,54 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         this.cdr.markForCheck();
       }
     });
+  }
+
+  private inwardService = inject(SampleInwardService);
+
+  /** Grade dropdown of the result screen (same source as the plan). */
+  fetchGrades = (term: string, page: number, pageSize: number): Observable<any[]> => this.materialSpecService.getGradeDropdown(term, page, pageSize);
+
+  /** Grade currently applied to the sample: shown selected in the Specification Conditions card. */
+  get currentGradeItem(): any {
+    const id = this.sample?.assignedGradeID || this.sample?.specificationGradeID;
+    if (!id) return null;
+    const name = this.sample?.specificationGradeName || this.sample?.assignedGradeName || ('Grade #' + id);
+    // same object while nothing changed, so the dropdown is not re-bound on every change detection
+    if (!this.gradeItemCache || this.gradeItemCache.id !== id || this.gradeItemCache.name !== name) this.gradeItemCache = { id, name };
+    return this.gradeItemCache;
+  }
+  private gradeItemCache: { id: number; name: string } | null = null;
+
+  /** The user picks / changes the grade on the result screen: store it on the sample and rebuild the limits. */
+  onGradePicked(item: any, planIndex: number): void {
+    if (!item?.id || !this.sample?.id) return;
+    this.inwardService.assignGrade({ sampleID: this.sample.id, specificationGradeID: +item.id, notes: 'Grade selected on the result entry screen' }).subscribe({
+      next: () => {
+        this.sample.assignedGradeID = +item.id;
+        this.sample.specificationGradeID = +item.id;
+        this.sample.specificationGradeName = item.name || item.displayText || '';
+        this.toastService.show('Grade applied: ' + (item.name || item.displayText || item.id), 'success');
+        (this.plans?.[planIndex]?.tests || []).forEach((_: any, tIdx: number) => this.initConditionEngine(planIndex, tIdx));
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => this.toastService.show(err?.error?.message || 'Failed to apply the grade.', 'error')
+    });
+  }
+
+  /** Pre-fills the equipment of a test from the equipment linked to its sub-group / analysis type (kept until Save Draft). */
+  private autoAssignLinkedEquipment(headerId: number, subGroupId?: number | null, analysisTypeId?: number | null): void {
+    if (!headerId || (!subGroupId && !analysisTypeId)) return;
+    this.equipmentService
+      .getEquipmentDropdown('', 0, 5, undefined, analysisTypeId ? undefined : Number(subGroupId), analysisTypeId ? Number(analysisTypeId) : undefined)
+      .subscribe({
+        next: (res: any) => {
+          const list: any[] = Array.isArray(res) ? res : res?.items || res?.data || [];
+          if ((this.selectedEquipmentMap[headerId] || []).length) return;
+          list.slice(0, 3).forEach(item => this.onEquipmentSelected(headerId, item));
+          this.cdr.markForCheck();
+        },
+        error: () => {}
+      });
   }
 
   onEquipmentSelected(headerId: number, selectedItem: any): void {
@@ -5669,14 +5744,38 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return { id: -1, name: 'Standard Layout (No Template)' };
     }
     if (this.selectedLayoutTemplateId === null || this.selectedLayoutTemplateId === undefined) {
-      return { id: null, name: `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}` };
+      // id -2 only so the dropdown shows the resolved layout as selected (picking it again means Auto)
+      const autoName = `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}`;
+      if (!this.autoLayoutItem || this.autoLayoutItem.name !== autoName) this.autoLayoutItem = { id: -2, name: autoName };
+      return this.autoLayoutItem;
     }
-    const found = this.availableLayoutTemplates?.find(t => t.id === this.selectedLayoutTemplateId);
-    return found ? { id: found.id, name: `${found.layoutName} (${found.layoutCode || 'Layout'})` } : null;
+    // the list holds only the newest layouts: the applied layout is shown from the layout itself
+    const found = this.availableLayoutTemplates?.find(t => t.id === this.selectedLayoutTemplateId)
+      ?? (this.currentTestLayout?.id === this.selectedLayoutTemplateId ? this.currentTestLayout : null);
+    if (!found) return null;
+    const name = `${found.layoutName} (${found.layoutCode || 'Layout'})`;
+    if (!this.pickedLayoutItem || this.pickedLayoutItem.id !== found.id || this.pickedLayoutItem.name !== name) this.pickedLayoutItem = { id: found.id, name };
+    return this.pickedLayoutItem;
+  }
+
+  private autoLayoutItem: { id: number; name: string } | null = null;
+  private pickedLayoutItem: { id: number; name: string } | null = null;
+
+  /** The toolbar specimen stepper drives the specimen matrix; a layout without one (reading / location grid) does not show it. */
+  layoutUsesSpecimenMatrix(): boolean {
+    const secs: any[] = this.currentTestLayout?.sections || [];
+    if (!secs.length) return true;
+    return secs.some(x => ['spm', 'specimen'].includes(String(x?.type || '').toLowerCase()) && x?.config?.enabled !== false);
+  }
+
+  /** Test pill text: the "Test N of M" label is shown in front, so the name drops its own " - Test N" suffix. */
+  pillName(plan: any): string {
+    const name = String(plan?.tests?.[0]?.name || plan?.type || '');
+    return plan?.specimenLabel ? name.replace(/\s+-\s+Test\s+\d+$/, '') : name;
   }
 
   onLayoutItemSelected(item: any): void {
-    const id = item && item.id !== undefined ? item.id : null;
+    const id = item && item.id !== undefined && item.id !== -2 ? item.id : null;
     this.onLayoutTemplateSelect(id, true);
   }
 

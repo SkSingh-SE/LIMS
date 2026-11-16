@@ -158,6 +158,104 @@ describe('Report layouts render like the lab reports', () => {
     });
   });
 
+  describe('L3 Impact @ 0 °C: locations with energy, shear area and lateral expansion', () => {
+    it('prints each location with its three parameters; the average only where the layout asks for it', async () => {
+      const rows = tableRows(await renderStable(caseOf('L3-impact-0c')));
+      expect(rows.slice(1, 4)).toEqual([
+        ['WELD-TOP', '154', '150', '128', '144.00'],
+        ['% of Shear Area', '90', '90', '90', '90.00'],
+        ['Lateral Expansion (in mm)', '1.99', '1.88', '1.5', ''],
+      ]);
+      expect(rows.slice(4, 7).map(r => r[0] + '|' + r[r.length - 1])).toEqual(['FL-TOP|282.00', '% of Shear Area|95.00', 'Lateral Expansion (in mm)|']);
+      expect(rows[7][0]).toBe('FL+2-TOP');
+      expect(rows[7][rows[7].length - 1]).toBe('277.00');
+      expect(rows[10][rows[10].length - 1]).toBe('284.00');
+      expect(rows.length).toBe(13);
+    });
+
+    it('a location of the layout needs no demo list and a typed reading is saved under its location code', async () => {
+      await renderStable(caseOf('L3-impact-0c'));
+      expect(cmp.locations.map(l => l.locationName)).toEqual(['WELD-TOP', 'FL-TOP', 'FL+2-TOP', 'FL+5-TOP']);
+      cmp.onLocationReadingChange('Impact Energy', 'LOC1', 0, 160);
+      const saved = cmp.buildReadingsArray().filter(r => r.parameterName === 'Impact Energy' && r.locationCode === 'LOC1');
+      expect(saved.map(r => [r.sequenceNo, r.value])).toEqual([[1, 160], [2, 150], [3, 128]]);
+      expect(saved.every(r => r.specimenCode === 'S1')).toBeTrue();
+      const row = cmp.parametersFormArray.at(0);
+      expect(Object.keys(JSON.parse(row.get('remarks')?.value || '{}'))).toEqual(['LOC1', 'LOC2', 'LOC3', 'LOC4']);
+    });
+
+    it('the locations sent to the server carry the names the server reads', async () => {
+      await renderStable(caseOf('L3-impact-0c'));
+      cmp.syncCollectionsToTest();
+      expect(cmp.test.locations.map((l: any) => [l.locationCode, l.displayName, l.sequenceNo])).toEqual([
+        ['LOC1', 'WELD-TOP', 1], ['LOC2', 'FL-TOP', 2], ['LOC3', 'FL+2-TOP', 3], ['LOC4', 'FL+5-TOP', 4],
+      ]);
+    });
+
+    it('a saved location list wins over the layout (names come back as saved, not as Zone N)', async () => {
+      const c = JSON.parse(JSON.stringify(caseOf('L3-impact-0c')));
+      c.readings = []; // no reading points at another location
+      render(c);
+      cmp.test = { ...cmp.test, locations: [{ id: 7, locationCode: 'LOC1', displayName: 'SAVED NAME', sequenceNo: 1, isReportable: true }] };
+      cmp.layoutConfig = JSON.parse(JSON.stringify(c.layout));
+      cmp.ngOnChanges({ layoutConfig: { currentValue: cmp.layoutConfig, previousValue: null, firstChange: false, isFirstChange: () => false } } as any);
+      expect(cmp.locations.map(l => [l.id, l.locationName])).toEqual([[7, 'SAVED NAME']]);
+    });
+  });
+
+  describe('the grids are stable across change detection', () => {
+    // A grid that rebuilt its rows on every check re-created every input, and the page never settled in the browser
+    ['L3-impact-0c', 'L6-hardness-multi-location', 'L5-brinell'].forEach(id => {
+      it(`${id}: the same input stays in the page after another check`, async () => {
+        const host = await renderStable(caseOf(id));
+        const input = host.querySelector('table input');
+        expect(input).not.toBeNull();
+        fixture.detectChanges();
+        await fixture.whenStable();
+        fixture.detectChanges();
+        expect(host.querySelector('table input')).toBe(input);
+      });
+    });
+  });
+
+  describe('readings saved under a location the list does not hold', () => {
+    it('bring that location back and are sent again on the next save, not dropped', async () => {
+      const c = JSON.parse(JSON.stringify(caseOf('L3-impact-0c')));
+      c.readings.push({ parameterName: 'Impact Energy', specimenCode: 'S1', locationCode: 'SURF', sequenceNo: 1, value: 99 });
+      await renderStable(c);
+      expect(cmp.locations.map(l => l.locationCode)).toEqual(['LOC1', 'LOC2', 'LOC3', 'LOC4', 'SURF']);
+      cmp.syncCollectionsToTest();
+      expect(cmp.test.readings.some((r: any) => r.locationCode === 'SURF' && r.value === 99)).toBeTrue();
+    });
+  });
+
+  describe('L3 Impact @ -29 °C: one row of three energies', () => {
+    it('prints the row and its average', async () => {
+      const rows = tableRows(await renderStable(caseOf('L3-impact-29c')));
+      expect(rows[1]).toEqual(['-', '11', '23', '31', '21.67']);
+    });
+  });
+
+  describe('L6 Hardness at many locations: two column groups, readings as one list', () => {
+    it('splits the locations into the groups and prints each reading list', async () => {
+      const host = await renderStable(caseOf('L6-hardness-multi-location'), { viewMode: true });
+      const rows = tableRows(host);
+      expect(rows[0]).toEqual(['Sample ID/Locaton', 'Hardness in HV10', 'Sample ID/Locaton', 'Hardness in HV10']);
+      expect(rows[1]).toEqual(['BASE LEFT SIDE TOP', '163,163,162', 'WELD BOTTOM', '157,158,157']);
+      expect(rows[6]).toEqual(['HAZ RIGHT SIDE TOP', '156,154,156', 'HAZ LEFT SIDE MIDDLE', '155']);
+      expect(rows[8]).toEqual(['BASE RIGHT SIDE TOP', '162,162,163', 'HAZ RIGHT SIDE MIDDLE', '154']);
+      expect(rows[11]).toEqual(['HAZ LEFT SIDE BOTTOM', '157,157,156', '']); // the right group has no more rows
+      expect(rows[12]).toEqual(['Requirement', '248-HV10 Max.']);
+      expect(rows.length).toBe(13);
+    });
+
+    it('while entering, every cell holds one input per reading', async () => {
+      const host = await renderStable(caseOf('L6-hardness-multi-location'));
+      const firstCell = host.querySelector('table tbody tr td:nth-child(2)') as HTMLElement;
+      expect(Array.from(firstCell.querySelectorAll('input')).map(i => (i as HTMLInputElement).value)).toEqual(['163', '163', '162']);
+    });
+  });
+
   describe('L11 Ferrite content: frames as rows, two phases', () => {
     it('prints the five frames, the average and the requirement of the ferrite column', fakeAsync(() => {
       const host = render(caseOf('L11-ferrite'));

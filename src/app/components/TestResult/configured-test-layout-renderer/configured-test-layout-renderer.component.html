@@ -322,24 +322,24 @@
             <div class="specimen-section">
               <div class="table-responsive">
                 <!-- 1. Dedicated Tensile Specimen Matrix (When Active Test is Tensile) -->
-                <table class="table lims-matrix-table align-middle mb-1" *ngIf="isTensileTest()">
+                <table class="table lims-matrix-table align-middle mb-1" *ngIf="isTensileTest()" [class.hide-unit-col]="!specimenShow(s, 'unit')">
                   <thead class="text-center">
                     <tr>
-                      <th class="text-start w-col-220">Parameter / Dimension</th>
-                      <th class="w-col-65">Unit</th>
+                      <th class="text-start w-col-220">{{ columnLabel(s, 'param', 'Parameter / Dimension') }}</th>
+                      <th class="w-col-65">{{ columnLabel(s, 'unit', 'Unit') }}</th>
                       <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
                         <div class="d-flex align-items-center justify-content-center gap-1">
-                          <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ spm.id }}</span>
+                          <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ specimenLabel(spmIdx, s) }}</span>
                           <button *ngIf="!isViewMode && !isLocked && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-delete"
-                                  (click)="removeSpecimen(spmIdx)" title="Remove {{ spm.id }}">
+                                  (click)="removeSpecimen(spmIdx)" title="Remove {{ specimenLabel(spmIdx, s) }}">
                             <i class="bi bi-x"></i>
                           </button>
                         </div>
                       </th>
-                      <th *ngIf="s.config?.showAverage !== false" class="w-col-115 avg-col-header">Average</th>
+                      <th *ngIf="specimenShow(s, 'avg')" class="w-col-115 avg-col-header">{{ columnLabel(s, 'avg', 'Average') }}</th>
                       <th *ngIf="s.config?.showMinMax" class="w-col-85">Min</th>
                       <th *ngIf="s.config?.showMinMax" class="w-col-85">Max</th>
-                      <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
+                      <th *ngIf="specimenShow(s, 'requirement')" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
                       <th class="w-col-85 action-col">Action</th>
                     </tr>
                   </thead>
@@ -356,12 +356,12 @@
                                [readOnly]="isViewMode || isLocked"
                                placeholder="D..." />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('diameter') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -385,12 +385,12 @@
                                [readOnly]="isViewMode || isLocked"
                                placeholder="T..." />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('thickness') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -414,12 +414,12 @@
                                [readOnly]="isViewMode || isLocked"
                                placeholder="W..." />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('width') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -443,12 +443,12 @@
                                [readOnly]="isViewMode || isLocked"
                                placeholder="L₀..." />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('gaugeLength') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -467,12 +467,12 @@
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-semibold text-primary">
                         {{ spm.area != null ? spm.area : '-' }}
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('area') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">Formula: T &times; W</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">Formula: T &times; W</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -496,12 +496,12 @@
                                [readOnly]="isViewMode || isLocked"
                                placeholder="kN..." />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('yieldLoad') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -524,12 +524,12 @@
                                [readOnly]="isViewMode || isLocked"
                                placeholder="kN..." />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('peakLoad') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -552,12 +552,12 @@
                                [readOnly]="isViewMode || isLocked"
                                placeholder="L_u..." />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('finalLength') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-muted small">—</td>
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
                                           <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked" type="button" class="btn-lims-icon btn-lims-delete"
@@ -579,12 +579,12 @@
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
                         {{ spm.proofStress != null ? spm.proofStress : '—' }}
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('proofStress') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ getParamRequirementByName('proof stress') !== '—' ? getParamRequirementByName('proof stress') : (getParamRequirementByName('yield') !== '—' ? getParamRequirementByName('yield') : '—') }}
                       </td>
                                           <td class="text-center action-col">
@@ -610,12 +610,12 @@
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
                         {{ spm.uts != null ? spm.uts : '—' }}
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('uts') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ getParamRequirementByName('tensile') !== '—' ? getParamRequirementByName('tensile') : (getParamRequirementByName('uts') !== '—' ? getParamRequirementByName('uts') : '—') }}
                       </td>
                                           <td class="text-center action-col">
@@ -641,12 +641,12 @@
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-bold text-dark num-tabular">
                         {{ spm.elongation != null ? spm.elongation : '—' }}
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getDimensionAverage('elongation') }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ getParamRequirementByName('elongation') }}
                       </td>
                                           <td class="text-center action-col">
@@ -682,12 +682,12 @@
                                [readOnly]="isViewMode || isLocked"
                                [placeholder]="p.name + '...'" />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getBaseParamAverage(p.index) }}
                       </td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center font-monospace text-muted">—</td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ p.requirement }}
                       </td>
                                           <td class="text-center action-col">
@@ -713,31 +713,31 @@
                 </div>
 
                 <!-- 2. Dynamic Multi-Specimen Parameter Matrix (When Active Test is Non-Tensile e.g. Hardness, Impact, etc.) -->
-                <table class="table lims-matrix-table align-middle mb-1" *ngIf="!isTensileTest()">
+                <table class="table lims-matrix-table align-middle mb-1" *ngIf="!isTensileTest() && !isTransposed(s)" [class.hide-unit-col]="!specimenShow(s, 'unit')">
                   <thead class="text-center">
                     <tr>
-                      <th class="text-start w-col-220">Parameter / Property</th>
-                      <th class="w-col-65">Unit</th>
+                      <th class="text-start w-col-220">{{ columnLabel(s, 'param', 'Parameter / Property') }}</th>
+                      <th class="w-col-65">{{ columnLabel(s, 'unit', 'Unit') }}</th>
                       <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
                         <div class="d-flex align-items-center justify-content-center gap-1">
-                          <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ spm.id }}</span>
+                          <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ specimenLabel(spmIdx, s) }}</span>
                           <button *ngIf="!isViewMode && !isLocked && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-delete"
-                                  (click)="removeSpecimen(spmIdx)" title="Remove {{ spm.id }}">
+                                  (click)="removeSpecimen(spmIdx)" title="Remove {{ specimenLabel(spmIdx, s) }}">
                             <i class="bi bi-x"></i>
                           </button>
                         </div>
                       </th>
-                      <th *ngIf="s.config?.showAverage !== false" class="w-col-115 avg-col-header">Average</th>
-                      <th *ngIf="s.config?.showRequirement !== false" class="w-col-120">Requirement</th>
-                      <th class="w-col-90">Status</th>
+                      <th *ngIf="specimenShow(s, 'avg')" class="w-col-115 avg-col-header">{{ columnLabel(s, 'avg', 'Average') }}</th>
+                      <th *ngIf="specimenShow(s, 'requirement')" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
+                      <th *ngIf="specimenShow(s, 'status')" class="w-col-90">{{ columnLabel(s, 'status', 'Status') }}</th>
                       <th class="w-col-85 action-col">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let p of getBaseParameterList(); trackBy: trackByBaseRow">
+                    <tr *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow">
                       <td class="fw-semibold text-start">
                         <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
-                        <span>{{ p.name }}</span>
+                        <span>{{ p.displayName }}</span>
                       </td>
                       <td class="text-center text-muted small">{{ p.unit }}</td>
                       <td *ngFor="let spm of specimens; let spmIdx = index">
@@ -752,13 +752,13 @@
                                [readOnly]="isViewMode || isLocked"
                                [placeholder]="p.name + '...'" />
                       </td>
-                      <td *ngIf="s.config?.showAverage !== false" class="avg-col-cell num-tabular">
+                      <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                         {{ getBaseParamAverage(p.index) }}
                       </td>
-                      <td *ngIf="s.config?.showRequirement !== false" class="text-center text-dark small">
+                      <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ p.requirement }}
                       </td>
-                      <td class="text-center">
+                      <td *ngIf="specimenShow(s, 'status')" class="text-center">
                         <span class="badge" [ngClass]="getBaseParamStatus(p.index) === 'Pass' ? 'bg-success' : (getBaseParamStatus(p.index) === 'Fail' ? 'bg-danger' : 'bg-secondary')">
                           {{ getBaseParamStatus(p.index) }}
                         </span>
@@ -773,10 +773,70 @@
                         </button>
                       </td>
                     </tr>
-                    <tr *ngIf="getBaseParameterList().length === 0">
-                      <td [attr.colspan]="4 + specimens.length + (s.config?.showAverage !== false ? 1 : 0) + (s.config?.showRequirement !== false ? 1 : 0)" class="text-center py-2 text-muted">
+                    <tr *ngIf="specimenParams(s).length === 0">
+                      <td [attr.colspan]="2 + specimens.length + (specimenShow(s, 'avg') ? 1 : 0) + (specimenShow(s, 'requirement') ? 1 : 0) + (specimenShow(s, 'status') ? 1 : 0)" class="text-center py-2 text-muted">
                         No parameters configured for this test.
                       </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- 3. The layout asks for specimens as rows and parameters as columns (non-tensile tests) -->
+                <table class="table lims-matrix-table align-middle mb-1" *ngIf="!isTensileTest() && isTransposed(s)">
+                  <thead class="text-center">
+                    <tr>
+                      <th class="text-start w-col-160">{{ s.config?.specimenColHeader || 'Specimen' }}</th>
+                      <th *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow" class="w-col-110">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary" title="Formula Parameter"></i>
+                          <span>{{ p.displayName }}</span>
+                        </div>
+                        <div *ngIf="specimenShow(s, 'unit') && p.unit" class="text-muted small fw-normal">{{ p.unit }}</div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let spm of specimens; let spmIdx = index">
+                      <td class="fw-semibold text-start">
+                        <div class="d-flex align-items-center gap-1">
+                          <span>{{ specimenLabel(spmIdx, s) }}</span>
+                          <button *ngIf="!isViewMode && !isLocked && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-delete"
+                                  (click)="removeSpecimen(spmIdx)" title="Remove {{ specimenLabel(spmIdx, s) }}">
+                            <i class="bi bi-x"></i>
+                          </button>
+                        </div>
+                      </td>
+                      <td *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow">
+                        <input *ngIf="p.inputType !== 'Text'" type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [value]="getParamValueForSpecimen(p.index, spmIdx)"
+                               (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               [placeholder]="p.displayName + '...'" />
+                        <input *ngIf="p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
+                               [value]="getParamTextForSpecimen(p.index, spmIdx)"
+                               (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               [placeholder]="p.displayName + '...'" />
+                      </td>
+                    </tr>
+                    <tr *ngIf="specimenShow(s, 'avg')">
+                      <td class="avg-col-cell text-start">{{ columnLabel(s, 'avg', 'Average') }}</td>
+                      <td *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow" class="avg-col-cell num-tabular">{{ getBaseParamAverage(p.index) }}</td>
+                    </tr>
+                    <tr *ngIf="specimenShow(s, 'requirement')">
+                      <td class="fw-semibold text-start">{{ columnLabel(s, 'requirement', 'Requirement') }}</td>
+                      <td *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow" class="text-center text-dark small">{{ p.requirement }}</td>
+                    </tr>
+                    <tr *ngIf="specimenShow(s, 'status')">
+                      <td class="fw-semibold text-start">{{ columnLabel(s, 'status', 'Status') }}</td>
+                      <td *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow" class="text-center">
+                        <span class="badge" [ngClass]="getBaseParamStatus(p.index) === 'Pass' ? 'bg-success' : (getBaseParamStatus(p.index) === 'Fail' ? 'bg-danger' : 'bg-secondary')">
+                          {{ getBaseParamStatus(p.index) }}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="specimenParams(s).length === 0">
+                      <td [attr.colspan]="2" class="text-center py-2 text-muted">No parameters configured for this test.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -811,7 +871,7 @@
                         type="button" class="spm-filter-pill"
                         [ngClass]="{ 'active': selectedSpecimenFilter === (spmIdx + 1) }"
                         (click)="setSpecimenFilter(spmIdx + 1)">
-                  {{ spm.id }} ({{ getSpecimenRowCount(spmIdx) }})
+                  {{ specimenLabel(spmIdx) }} ({{ getSpecimenRowCount(spmIdx) }})
                 </button>
               </div>
 

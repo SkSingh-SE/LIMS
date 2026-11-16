@@ -644,6 +644,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     // Initialize Execution Extra
     this.initExecutionExtra();
+
+    // A test that has not started takes its specimen count from the layout
+    this.scheduleLayoutSpecimenCount();
   }
 
   private initLocations(): void {
@@ -759,6 +762,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         if (extra?.opinionData) {
           this.opinionData = { ...this.opinionData, ...extra.opinionData };
         }
+        if (extra?.specimenCountApplied === true) this.specimenCountApplied = true;
         if (Array.isArray(extra?.hiddenRows)) {
           this.hiddenFixedRoles = new Set(extra.hiddenRows.filter((r: string) => ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(r as SpecimenRole)) as SpecimenRole[]);
         }
@@ -787,8 +791,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getSpecimenLabelForParam(rowIdx: number): string {
-    const spmIdx = this.getSpecimenIndexForParam(rowIdx);
-    return `S${spmIdx + 1}`;
+    return this.specimenLabel(this.getSpecimenIndexForParam(rowIdx));
   }
 
   isFirstParamOfSpecimen(rowIdx: number): boolean {
@@ -1263,6 +1266,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
 
     this.recalculateSpecimens();
+    this.specimenCountApplied = true; // from now on the count is the user's (or the layout's) choice
     this.parametersAdjusted.emit();
     this.specimenCountChanged.emit(this.specimens.length);
   }
@@ -1879,6 +1883,104 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (status === 'FAIL') return 'table-danger bg-danger-subtle';
     if (status === 'PASS') return 'table-success bg-success-subtle';
     return '';
+  }
+
+  // ---- Specimen matrix follows the layout (A1) --------------------------------------------------------------
+
+  /** First specimen-matrix section of the layout. */
+  get specimenSection(): any {
+    return (this.sections || []).find(sec => sec.type === 'specimen') || null;
+  }
+
+  /** Header text of specimen i: the layout's own name, else its prefix + number, else S{n}. */
+  specimenLabel(spmIdx: number, sec?: any): string {
+    const s = sec ?? this.specimenSection;
+    const named = s?.config?.specimenRows?.[spmIdx];
+    const text = typeof named === 'string' ? named.trim() : '';
+    if (text) return text;
+    const prefix = String(s?.config?.prefix ?? '').trim();
+    return prefix ? `${prefix}${spmIdx + 1}` : `S${spmIdx + 1}`;
+  }
+
+  private columnDef(sec: any, key: string): any {
+    return (Array.isArray(sec?.config?.tableColumns) ? sec.config.tableColumns : []).find((c: any) => c?.key === key);
+  }
+
+  /** A column the layout lists as hidden is not drawn; a column it does not list follows the section's own switches. */
+  columnVisible(sec: any, key: string): boolean {
+    const c = this.columnDef(sec, key);
+    return !c || c.visible !== false;
+  }
+
+  columnLabel(sec: any, key: string, fallback: string): string {
+    const text = String(this.columnDef(sec, key)?.label ?? '').trim();
+    return text || fallback;
+  }
+
+  /** Average / Requirement / Status / Unit column switches of the specimen matrix. */
+  specimenShow(sec: any, what: 'avg' | 'requirement' | 'status' | 'unit'): boolean {
+    const cfg = sec?.config || {};
+    switch (what) {
+      case 'avg': return cfg.showAverage !== false && this.columnVisible(sec, 'avg');
+      case 'requirement': return cfg.showRequirement !== false && this.columnVisible(sec, 'requirement');
+      case 'status': return cfg.showStatus !== false && this.columnVisible(sec, 'status');
+      case 'unit': return cfg.showUnit !== false && this.columnVisible(sec, 'unit');
+    }
+  }
+
+  /** The layout asks for specimens as rows and parameters as columns (the tensile matrix always keeps its own shape). */
+  isTransposed(sec: any): boolean {
+    return !this.isTensileTest() && String(sec?.config?.orientation ?? '').trim().toLowerCase().startsWith('specimens');
+  }
+
+  /**
+   * Parameters the specimen matrix shows: the layout's parameter checklist (specimenColumns) and its row list
+   * (hidden rows, renamed rows) applied to the test's own parameters. A layout that names none of them shows all.
+   */
+  specimenParams(sec: any): any[] {
+    const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const base = this.getBaseParameterList();
+    const picked: string[] = Array.isArray(sec?.config?.specimenColumns) ? sec.config.specimenColumns : [];
+    const useChecklist = picked.length > 0 && base.some(p => picked.some(n => norm(n) === norm(p.name)));
+    const rows: any[] = Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : [];
+    const out: any[] = [];
+    for (const p of base) {
+      if (useChecklist && !picked.some(n => norm(n) === norm(p.name))) continue;
+      const row = rows.find(r => String(r?.key ?? '').startsWith('param_') && norm(r.sourceName || r.label) === norm(p.name));
+      if (row && row.visible === false) continue;
+      out.push({ ...p, displayName: String(row?.label ?? '').trim() || p.name });
+    }
+    return out;
+  }
+
+  /** The specimen count the layout asks for (its specimen names, else its count); 0 when it asks for none. */
+  private layoutSpecimenCount(): number {
+    const cfg = this.specimenSection?.config;
+    if (!cfg) return 0;
+    const named = Array.isArray(cfg.specimenRows) ? cfg.specimenRows.filter((n: any) => String(n ?? '').trim() !== '').length : 0;
+    return Math.min(20, named || Number(cfg.count) || 0);
+  }
+
+  /** Set once the specimen count was fixed (from the layout, or by the user); saved with the test. */
+  private specimenCountApplied = false;
+
+  /**
+   * A test that has not started takes its specimen count from the layout, once. The plan's quantity is only the
+   * starting value; the user can still change it afterwards and that choice is kept.
+   */
+  private scheduleLayoutSpecimenCount(): void {
+    if (this.printMode || this.isViewMode || this.isLocked || this.specimenCountApplied) return;
+    const status = String(this.test?.status ?? 'Pending').toLowerCase();
+    if (status && status !== 'pending') return;
+    const wanted = this.layoutSpecimenCount();
+    if (wanted < 1) return;
+    // after the current change detection: the parent reacts to the new count
+    Promise.resolve().then(() => {
+      if (this.printMode || this.isViewMode || this.isLocked || this.specimenCountApplied) return;
+      if (wanted !== this.specimens.length) this.setSpecimenCount(wanted);
+      this.specimenCountApplied = true;
+      this.cdr.markForCheck();
+    });
   }
 
   /** True when the saved layout used the literal legacy type "spm" (see initLayoutData). */
@@ -2548,7 +2650,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       custom: this.customAttributes,
       conditionValues: this.conditionValues,
       opinionData: this.opinionData,
-      hiddenRows: Array.from(this.hiddenFixedRoles)
+      hiddenRows: Array.from(this.hiddenFixedRoles),
+      specimenCountApplied: this.specimenCountApplied
     };
     return JSON.stringify(extra);
   }

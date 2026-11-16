@@ -403,6 +403,8 @@ export interface LayoutRowItem {
   id?: string;
   key: string;
   label: string;
+  /** Name of the test parameter this row stands for, kept when `label` is renamed in the studio. */
+  sourceName?: string;
   bindingMode: DataBindingMode;
   nature?: 'data' | 'summary';
   rowOrigin?: 'manual' | 'pattern' | 'db';

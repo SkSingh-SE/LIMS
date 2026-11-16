@@ -1521,7 +1521,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         config.countMode = 'Fixed count';
         config.count = 3;
         config.prefix = 'S';
-        config.orientation = 'Specimens × Parameters';
+        // Parameters as rows, one column per specimen: the shape of every report of the lab
+        config.orientation = 'Parameters × Specimens';
         config.specimenShape = 'rectangular';
         config.gaugeLength = '';
         // Default orientation is chosen from the SpecimenOrientation master (no hardcoded demo value)
@@ -6304,6 +6305,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
           rows.push({
             key: `param_${idx}`,
             label: p.name,
+            sourceName: p.name,
             bindingMode: defaultMode,
             requirement: p.requirement,
             unit: p.unit,

@@ -49,6 +49,12 @@
   background: #ffffff;
 }
 
+/* The layout hid the Unit column of a specimen matrix (it is the second cell of every row) */
+.hide-unit-col th:nth-child(2),
+.hide-unit-col td:nth-child(2) {
+  display: none;
+}
+
 /* Section width follows the layout: every section takes a full row unless the studio set "Half Width",
    and two Half Width sections that follow each other share one row. */
 /* styles.css gives every .sections-stack a column direction with !important (the studio canvas uses it);

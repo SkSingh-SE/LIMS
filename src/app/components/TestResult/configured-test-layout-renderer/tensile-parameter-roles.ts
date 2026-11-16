@@ -402,3 +402,21 @@ export function tensileDependents(role: SpecimenRole, visible: ReadonlySet<Speci
   };
   return (Object.keys(TENSILE_INPUTS) as SpecimenRole[]).filter(r => r !== role && visible.has(r) && needs(r, new Set([r])));
 }
+
+/**
+ * The rows of the tensile matrix in the order they are drawn, with their default labels. The layout studio lists
+ * them in its Rows editor as `tensile_<role>` so a layout can rename or hide them.
+ */
+export const TENSILE_LAYOUT_ROWS: ReadonlyArray<{ role: SpecimenRole; label: string }> = [
+  { role: 'diameter', label: 'Diameter (D)' },
+  { role: 'thickness', label: 'Thickness (T)' },
+  { role: 'width', label: 'Width (W)' },
+  { role: 'gaugeLength', label: 'Gauge Length (L₀)' },
+  { role: 'area', label: 'Cross Section Area (S₀)' },
+  { role: 'yieldLoad', label: '0.2% Yield Load (F_p0.2)' },
+  { role: 'peakLoad', label: 'Maximum / Peak Load (F_m)' },
+  { role: 'finalLength', label: 'Final Length (L_u)' },
+  { role: 'proofStress', label: '0.2% Proof Stress / Yield Strength' },
+  { role: 'uts', label: 'Ultimate Tensile Strength (UTS)' },
+  { role: 'elongation', label: 'Percentage Elongation in 50mm / 4D' },
+];

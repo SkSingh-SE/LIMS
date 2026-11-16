@@ -1247,8 +1247,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Specimen & Parameter Adjustments (Dynamic Count / Stepper / Add / Remove)
   // =========================================================================
 
-  setSpecimenCount(targetCount: number): void {
+  setSpecimenCount(targetCount: number, fromLayout = false): void {
     if (this.printMode) return;
+    const sec = this.specimenSection;
+    if (!fromLayout && sec && !this.canAdjustCount(sec)) {
+      this.toastService.show('The layout fixes the number of specimens.', 'warning');
+      this.specimenCountChanged.emit(this.specimens.length); // the toolbar shows the real count again
+      return;
+    }
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const newCount = Math.max(1, Math.min(20, Math.round(targetCount)));
 
@@ -1463,6 +1469,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** Whether a tensile matrix row is on the screen. */
   isTensileRowShown(role: SpecimenRole): boolean {
+    if (!this.tensileRowOn(this.specimenSection, role)) return false;
     if (ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(role)) {
       if (this.hiddenFixedRoles.has(role)) return false;
       const round = !!this.sample?.diameter;
@@ -1933,24 +1940,93 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return !this.isTensileTest() && String(sec?.config?.orientation ?? '').trim().toLowerCase().startsWith('specimens');
   }
 
+  /** The layout asks for its structure exactly as designed (studio: "Structure on result screen: Fixed (as designed)"). */
+  isFixedStructure(sec: any): boolean {
+    const c = sec?.config || {};
+    return c.renderMode === 'fixed' || (c.allowRuntimeAdd === false && c.runtimeAdjust === false);
+  }
+
+  /** Add / remove parameter rows (studio: "Add / remove rows"). */
+  canAddRemoveRows(sec: any): boolean {
+    return !this.isFixedStructure(sec) && sec?.config?.allowRuntimeAdd !== false;
+  }
+
+  /** Change the specimen count (studio: "Change counts"). */
+  canAdjustCount(sec: any): boolean {
+    return !this.isFixedStructure(sec) && sec?.config?.runtimeAdjust !== false;
+  }
+
   /**
-   * Parameters the specimen matrix shows: the layout's parameter checklist (specimenColumns) and its row list
-   * (hidden rows, renamed rows) applied to the test's own parameters. A layout that names none of them shows all.
+   * Parameter rows the specimen matrix shows.
+   * - Technician can adjust: the test's own parameters, under the layout's names.
+   * - Fixed (as designed): the layout's rows in its order (a row with a value written in the layout is shown as
+   *   that value); the checklist counts when the layout has no rows. A test parameter the layout does not list is
+   *   still entered, in a separate "Other parameters of this test" group, so it can never block Complete unseen.
+   * A layout that names none of the test's parameters restricts nothing.
    */
   specimenParams(sec: any): any[] {
     const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const base = this.getBaseParameterList();
+    const rows: any[] = (Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : []).filter((r: any) => !String(r?.key ?? '').startsWith('tensile_'));
+    const isStaticRow = (r: any) => r?.bindingMode === 'static' && !r.sourceName && !String(r.key ?? '').startsWith('param_');
+    const nameOfRow = (r: any) => norm(r?.sourceName || r?.label);
+    const named = (p: any) => {
+      const row = rows.find(r => !isStaticRow(r) && nameOfRow(r) === norm(p.name));
+      return { ...p, displayName: String(row?.label ?? '').trim() || p.name };
+    };
+    if (!this.isFixedStructure(sec)) return base.map(named);
+
     const picked: string[] = Array.isArray(sec?.config?.specimenColumns) ? sec.config.specimenColumns : [];
-    const useChecklist = picked.length > 0 && base.some(p => picked.some(n => norm(n) === norm(p.name)));
-    const rows: any[] = Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : [];
-    const out: any[] = [];
-    for (const p of base) {
-      if (useChecklist && !picked.some(n => norm(n) === norm(p.name))) continue;
-      const row = rows.find(r => String(r?.key ?? '').startsWith('param_') && norm(r.sourceName || r.label) === norm(p.name));
-      if (row && row.visible === false) continue;
-      out.push({ ...p, displayName: String(row?.label ?? '').trim() || p.name });
+    const layoutRows = rows.filter(r => r?.visible !== false);
+    const main: any[] = [];
+    const used = new Set<number>();
+    if (layoutRows.some(r => isStaticRow(r) || base.some(p => nameOfRow(r) === norm(p.name)))) {
+      let statics = 0;
+      for (const r of layoutRows) {
+        if (isStaticRow(r)) {
+          main.push({ index: -(1000 + statics++), name: r.label, displayName: String(r.label ?? ''), unit: r.unit || '', requirement: r.requirement || '', inputType: 'Text', isCalculated: false, isStatic: true, staticValue: String(r.staticValue ?? '') });
+          continue;
+        }
+        const p = base.find(x => nameOfRow(r) === norm(x.name) && !used.has(x.index));
+        if (p) {
+          used.add(p.index);
+          main.push({ ...p, displayName: String(r.label ?? '').trim() || p.name });
+        }
+      }
+    } else if (picked.length > 0 && base.some(p => picked.some(n => norm(n) === norm(p.name)))) {
+      for (const p of base) {
+        if (!picked.some(n => norm(n) === norm(p.name))) continue;
+        used.add(p.index);
+        main.push(named(p));
+      }
+    } else {
+      return base.map(named);
     }
-    return out;
+    const others = base.filter(p => !used.has(p.index)).map(p => ({ ...named(p), isOther: true }));
+    return others.length && main.length ? [...main, { index: -1, isDivider: true, name: '', displayName: '' }, ...others] : [...main, ...others];
+  }
+
+  /** The parameters as columns of the transposed matrix (no group divider). */
+  specimenColumnList(sec: any): any[] {
+    return this.specimenParams(sec).filter(p => !p.isDivider);
+  }
+
+  private tensileRowDef(sec: any, role: string): any {
+    return (Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : []).find((r: any) => r?.key === `tensile_${role}`);
+  }
+
+  /** A layout that fixes its structure lists the tensile rows it wants; a row it does not list (or hides) is not drawn. */
+  tensileRowOn(sec: any, role: string): boolean {
+    if (!sec || !this.isFixedStructure(sec)) return true;
+    const rows: any[] = Array.isArray(sec.config?.tableRows) ? sec.config.tableRows : [];
+    if (!rows.some(r => String(r?.key ?? '').startsWith('tensile_'))) return true;
+    const def = this.tensileRowDef(sec, role);
+    return !!def && def.visible !== false;
+  }
+
+  /** Label of a tensile row: the layout's own name when it set one. */
+  tensileLabel(sec: any, role: string, fallback: string): string {
+    return String(this.tensileRowDef(sec, role)?.label ?? '').trim() || fallback;
   }
 
   /** The specimen count the layout asks for (its specimen names, else its count); 0 when it asks for none. */
@@ -1977,7 +2053,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // after the current change detection: the parent reacts to the new count
     Promise.resolve().then(() => {
       if (this.printMode || this.isViewMode || this.isLocked || this.specimenCountApplied) return;
-      if (wanted !== this.specimens.length) this.setSpecimenCount(wanted);
+      if (wanted !== this.specimens.length) this.setSpecimenCount(wanted, true);
       this.specimenCountApplied = true;
       this.cdr.markForCheck();
     });

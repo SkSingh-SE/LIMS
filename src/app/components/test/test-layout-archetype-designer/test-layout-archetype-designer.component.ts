@@ -1,3 +1,4 @@
+import { TENSILE_LAYOUT_ROWS, resolveTensileRole } from '../../TestResult/configured-test-layout-renderer/tensile-parameter-roles';
 import { Component, OnInit, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -6300,7 +6301,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
           });
         }
       } else {
-        const params = this.getSpecimenParamsForSection(sec);
+        // A tensile test draws the fixed rows of its matrix (dimensions, loads, lengths, results): list them so the
+        // layout can rename or hide them; the other parameters follow as usual
+        const tensile = this.selectedArchetypeKey === 'tensile' || /tensile|tension/i.test(`${this.currentTest?.label || ""} ${this.currentTest?.leaf || ""}`);
+        if (tensile) {
+          TENSILE_LAYOUT_ROWS.forEach(t => rows.push({ key: `tensile_${t.role}`, label: t.label, bindingMode: defaultMode, visible: true, removable: false }));
+        }
+        const params = this.getSpecimenParamsForSection(sec).filter(p => !tensile || !resolveTensileRole(p.name));
         params.forEach((p, idx) => {
           rows.push({
             key: `param_${idx}`,

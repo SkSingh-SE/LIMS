@@ -81,19 +81,109 @@ describe('ConfiguredTestLayoutRendererComponent specimen layout', () => {
   });
 
   describe('parameter rows', () => {
-    it('follow the checklist, the row list (hidden, renamed through sourceName) and show all when none is named', () => {
+    const rows = [
+      { key: 'param_0', label: 'Hardness in HV10', sourceName: 'Hardness HV', visible: true },
+      { key: 'param_1', label: 'Case Depth', sourceName: 'Case Depth', visible: false },
+    ];
+
+    it('Technician can adjust: the test parameters under the layout names; checklist and hidden rows do not apply', () => {
+      create({ orientation: 'Parameters × Specimens', specimenColumns: ['Hardness HV'], tableRows: rows });
+      const list = cmp.specimenParams(cmp.specimenSection);
+      expect(list.map(p => p.displayName)).toEqual(['Hardness in HV10', 'Case Depth', 'Spread']);
+      expect(list.some(p => p.isOther || p.isDivider)).toBeFalse();
+    });
+
+    it('Fixed: the layout rows in its order; what it does not list is entered below in its own group', () => {
+      create({ renderMode: 'fixed', orientation: 'Parameters × Specimens', tableRows: rows });
+      const list = cmp.specimenParams(cmp.specimenSection);
+      expect(list.map(p => (p.isDivider ? '--' : p.displayName))).toEqual(['Hardness in HV10', '--', 'Case Depth', 'Spread']);
+      expect(list.filter(p => p.isOther).length).toBe(2);
+    });
+
+    it('Fixed: a row written into the layout is shown as its value, not as an input', fakeAsync(() => {
       create({
-        orientation: 'Parameters × Specimens',
-        specimenColumns: ['Hardness HV', 'Case Depth'],
+        renderMode: 'fixed', orientation: 'Parameters × Specimens', specimenRows: ['A'], showAverage: false, showRequirement: false, showStatus: false,
         tableRows: [
-          { key: 'param_0', label: 'Hardness in HV10', sourceName: 'Hardness HV', visible: true },
-          { key: 'param_1', label: 'Case Depth', sourceName: 'Case Depth', visible: false },
+          { key: 'row_test_force', label: 'Test force (kgf.)', bindingMode: 'static', staticValue: 'HV 1', visible: true },
+          { key: 'param_0', label: 'Hardness HV', sourceName: 'Hardness HV', visible: true },
         ],
       });
-      expect(cmp.specimenParams(cmp.specimenSection).map(p => p.displayName)).toEqual(['Hardness in HV10']);
+      flushMicrotasks();
+      fixture.detectChanges();
+      const list = cmp.specimenParams(cmp.specimenSection);
+      expect(list[0].isStatic).toBeTrue();
+      expect(list[0].staticValue).toBe('HV 1');
+      const first = host().querySelector('table.lims-matrix-table tbody tr') as HTMLElement;
+      expect(first.textContent).toContain('Test force (kgf.)');
+      expect(first.textContent).toContain('HV 1');
+      expect(first.querySelector('input')).toBeNull();
+    }));
 
-      create({ orientation: 'Parameters × Specimens', specimenColumns: ['Not a parameter of this test'] });
+    it('Fixed: with no row the checklist counts; a layout that names nothing of the test restricts nothing', () => {
+      create({ renderMode: 'fixed', orientation: 'Parameters × Specimens', specimenColumns: ['Hardness HV'] });
+      expect(cmp.specimenParams(cmp.specimenSection).filter(p => !p.isOther && !p.isDivider).map(p => p.displayName)).toEqual(['Hardness HV']);
+      create({ renderMode: 'fixed', orientation: 'Parameters × Specimens', specimenColumns: ['Not a parameter of this test'] });
       expect(cmp.specimenParams(cmp.specimenSection).length).toBe(3);
+    });
+  });
+
+  describe('structure on the result screen', () => {
+    it('follows the studio: Fixed, or both runtime switches off, fixes the structure', () => {
+      create({});
+      const s = cmp.specimenSection;
+      expect([cmp.isFixedStructure(s), cmp.canAddRemoveRows(s), cmp.canAdjustCount(s)]).toEqual([false, true, true]);
+      create({ renderMode: 'fixed' });
+      expect([cmp.isFixedStructure(cmp.specimenSection), cmp.canAddRemoveRows(cmp.specimenSection), cmp.canAdjustCount(cmp.specimenSection)]).toEqual([true, false, false]);
+      create({ allowRuntimeAdd: false, runtimeAdjust: false });
+      expect(cmp.isFixedStructure(cmp.specimenSection)).toBeTrue();
+      create({ allowRuntimeAdd: false });
+      expect([cmp.canAddRemoveRows(cmp.specimenSection), cmp.canAdjustCount(cmp.specimenSection)]).toEqual([false, true]);
+    });
+
+    it('a fixed layout shows no add / remove buttons and refuses a count change from outside', fakeAsync(() => {
+      create({ renderMode: 'fixed', orientation: 'Parameters × Specimens', specimenRows: ['A', 'B'] });
+      flushMicrotasks();
+      fixture.detectChanges();
+      expect(host().textContent).not.toContain('Add Specimen');
+      expect(host().textContent).not.toContain('Add Parameter');
+      expect(host().querySelectorAll('.btn-lims-delete').length).toBe(0);
+      counts.length = 0;
+      cmp.setSpecimenCount(5);
+      expect(cmp.specimens.length).toBe(2);
+      expect(counts).toEqual([2]); // the toolbar is told the real count
+    }));
+
+    it('an adjustable layout keeps its buttons', fakeAsync(() => {
+      create({ orientation: 'Parameters × Specimens', specimenRows: ['A', 'B'] });
+      flushMicrotasks();
+      fixture.detectChanges();
+      expect(host().textContent).toContain('Add Specimen');
+      expect(host().textContent).toContain('Add Parameter');
+    }));
+  });
+
+  describe('tensile rows', () => {
+    const tensileRows = [
+      { key: 'tensile_thickness', label: 'Thickness of specimen (mm)', visible: true },
+      { key: 'tensile_width', label: 'Width of specimen (mm)', visible: false },
+      { key: 'tensile_yieldLoad', label: 'Yield load (kN)', visible: true },
+    ];
+
+    it('the layout name is used in any mode; only a fixed layout hides rows it leaves out', () => {
+      create({ tableRows: tensileRows }, { testName: 'Tensile Test' });
+      const s = cmp.specimenSection;
+      expect(cmp.tensileLabel(s, 'thickness', 'Thickness (T)')).toBe('Thickness of specimen (mm)');
+      expect(cmp.tensileLabel(s, 'peakLoad', 'Maximum / Peak Load (F_m)')).toBe('Maximum / Peak Load (F_m)');
+      expect(cmp.tensileRowOn(s, 'width')).toBeTrue(); // adjustable: nothing is hidden
+
+      create({ renderMode: 'fixed', tableRows: tensileRows }, { testName: 'Tensile Test' });
+      const f = cmp.specimenSection;
+      expect(['thickness', 'width', 'yieldLoad', 'peakLoad'].map(r => cmp.tensileRowOn(f, r))).toEqual([true, false, true, false]);
+    });
+
+    it('a fixed layout without any tensile row keeps the standard rows', () => {
+      create({ renderMode: 'fixed' }, { testName: 'Tensile Test' });
+      expect(cmp.tensileRowOn(cmp.specimenSection, 'peakLoad')).toBeTrue();
     });
   });
 

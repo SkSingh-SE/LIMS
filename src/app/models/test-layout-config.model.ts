@@ -169,6 +169,10 @@ export interface SectionConfig {
   showIndividual?: boolean;
   showStatistics?: boolean;
   readingLabel?: string;
+  /** Reading section: readings across the columns (one row per sample) or down the rows (one column per sample). */
+  readingsAs?: 'columns' | 'rows';
+  /** Reading section: the requirement as a closing row instead of a column. */
+  requirementRow?: boolean;
   targetParameter?: string;
   unit?: string;
   targetParamId?: number | string;

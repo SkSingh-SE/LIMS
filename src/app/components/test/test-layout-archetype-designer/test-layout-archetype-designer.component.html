@@ -3170,6 +3170,15 @@
                     placeholder="e.g. Reading, Spot, Notch">
                 </div>
               </div>
+              <div class="mb-1.5">
+                <label for="selReadingsAs" class="form-label compact-label">Readings are shown as</label>
+                <select id="selReadingsAs" class="form-select form-select-sm compact-input" [ngModel]="s.config.readingsAs || 'columns'"
+                  (ngModelChange)="s.config.readingsAs = $event" [disabled]="isViewMode">
+                  <option value="columns">Columns (one row per sample)</option>
+                  <option value="rows">Rows (one column per sample)</option>
+                </select>
+                <div class="text-muted text-xxs mt-1">Used on the result screen when a target parameter is selected below.</div>
+              </div>
             </div>
           </div>
 
@@ -3233,6 +3242,10 @@
                 <label class="form-check compact-check">
                   <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showStatistics">
                   <span class="form-check-label">Show Statistics (Avg/Min/Max)</span>
+                </label>
+                <label class="form-check compact-check">
+                  <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.requirementRow">
+                  <span class="form-check-label">Requirement as a closing row</span>
                 </label>
               </div>
             </div>

@@ -1551,6 +1551,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         config.targetRequirement = '';
         config.readingLabel = 'Readings';
         config.aggregation = 'Average / Mean';
+        config.readingsAs = 'columns';
+        config.requirementRow = false;
         config.showIndividual = true;
         config.showStatistics = true;
         config.showOverallAverageRow = true;

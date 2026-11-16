@@ -229,7 +229,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   // Multi-reading state
   readingValues: Record<string, (number | null)[]> = {};
-  readingStats: Record<string, { avg: number | null; min: number | null; max: number | null; stdev: number | null }> = {};
+  readingStats: Record<string, { avg: number | null; min: number | null; max: number | null; stdev: number | null; median?: number | null }> = {};
 
   // Case depth traverse state
   traversePoints: TraversePoint[] = [
@@ -802,8 +802,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   getFilteredParamIndices(): number[] {
     if (!this.parametersFormArray) return [];
     const indexes = this.getRowSpecimenIndexes();
-    if (this.selectedSpecimenFilter === 'all') return rowsOrderedBySpecimen(indexes);
-    return rowsOfSpecimen(indexes, this.selectedSpecimenFilter - 1);
+    const rows = this.selectedSpecimenFilter === 'all' ? rowsOrderedBySpecimen(indexes) : rowsOfSpecimen(indexes, this.selectedSpecimenFilter - 1);
+    return rows.filter(i => !this.isGridTargetRow(i));
   }
 
   /** Shared store on the test object for rows taken out of the table (see SpecimenRowStore). */
@@ -1716,6 +1716,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (readingSections.length === 0) return;
 
     readingSections.forEach(s => {
+      if (this.isReadingGrid(s)) {
+        this.initReadingGrid(s);
+        return;
+      }
       const tableReadingCols = s.config?.tableColumns?.filter((c: any) => c.key && c.key.startsWith('reading_'))?.length;
       const defaultCount = tableReadingCols || parseInt(s.config?.count || s.config?.readingCount || '5', 10) || 5;
       const targets = this.getReadingTargetParameters(s);
@@ -1786,6 +1790,330 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
   }
 
+  // =========================================================================
+  // Reading grid (A2): ONE target parameter, a row per sample / location, the readings across or down.
+  // Used when the layout names the parameter (studio: Target Parameter). Without it the section lists the
+  // parameters of the test as before.
+  // =========================================================================
+  readingRowsState: Record<string, { code: string; label: string }[]> = {};
+  readingGridCount: Record<string, number> = {};
+  private readingGridSignature: Record<string, string> = {};
+
+  private readingSecKey(s: any): string {
+    return String(s?.config?.sectionKey ?? s?.id ?? 'reading');
+  }
+
+  private normKey(v: any): string {
+    return String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  /** The parameter the layout set for a reading section ('' = the section lists the test's parameters). */
+  readingGridTarget(s: any): string {
+    return String(s?.config?.targetParamName ?? '').trim();
+  }
+
+  isReadingGrid(s: any): boolean {
+    return s?.type === 'reading' && !!this.readingGridTarget(s);
+  }
+
+  readingsAsRows(s: any): boolean {
+    return String(s?.config?.readingsAs ?? '').toLowerCase() === 'rows';
+  }
+
+  private gridParamControl(s: any): AbstractControl | null {
+    const want = this.normKey(this.readingGridTarget(s));
+    const fa = this.parametersFormArray;
+    for (let i = 0; fa && i < fa.length; i++) {
+      if (this.normKey(fa.at(i).get('parameterName')?.value) === want) return fa.at(i);
+    }
+    return null;
+  }
+
+  /** True when the test has the parameter the layout names. */
+  gridParamFound(s: any): boolean {
+    return !!this.gridParamControl(s);
+  }
+
+  /** Name of the target parameter as the test spells it (the layout's spelling when the test has none). */
+  readingGridParam(s: any): string {
+    return String(this.gridParamControl(s)?.get('parameterName')?.value ?? '').trim() || this.readingGridTarget(s);
+  }
+
+  readingGridRows(s: any): { code: string; label: string }[] {
+    return this.readingRowsState[this.readingSecKey(s)] || [];
+  }
+
+  readingGridKey(s: any, code: string): string {
+    return `${this.readingGridParam(s)}|${code}`;
+  }
+
+  /** Row names the layout lists: its sample rows, else its specimen names, else one row. */
+  private configuredReadingRows(s: any): string[] {
+    const cfg = s?.config || {};
+    const fromRows = (Array.isArray(cfg.tableRows) ? cfg.tableRows : [])
+      .filter((r: any) => String(r?.key ?? '').startsWith('spec_') && r.visible !== false)
+      .map((r: any) => String(r.label ?? '').trim()).filter(Boolean);
+    if (fromRows.length) return fromRows;
+    const fromList = (Array.isArray(cfg.specimenRows) ? cfg.specimenRows : []).map((n: any) => String(n ?? '').trim()).filter(Boolean);
+    return fromList.length ? fromList : [this.readingGridTarget(s)];
+  }
+
+  private configuredReadingCount(s: any): number {
+    const n = Number(s?.config?.count) || Number(s?.config?.spotCount) || 5;
+    return Math.min(25, Math.max(1, Math.round(n)));
+  }
+
+  /** Readings of the target parameter held by the test, by sample code (database rows first, else the saved remarks). */
+  private savedGridReadings(s: any): Map<string, (number | null)[]> {
+    const out = new Map<string, (number | null)[]>();
+    const want = this.normKey(this.readingGridTarget(s));
+    const put = (code: string, seq: number, v: any) => {
+      if (v == null || v === '' || isNaN(Number(v)) || seq < 1) return;
+      const arr = out.get(code) || [];
+      while (arr.length < seq) arr.push(null);
+      arr[seq - 1] = Number(v);
+      out.set(code, arr);
+    };
+    const stored: any[] = Array.isArray(this.test?.readings) ? this.test.readings : [];
+    stored.filter(r => this.normKey(r.parameterName || r.parameterCode) === want && r.isVoided !== true)
+      .forEach(r => put(String(r.specimenCode || 'S1'), Number(r.readingNumber || r.sequenceNo || 1), r.readingValue ?? r.value));
+    if (out.size) return out;
+    // older saves kept the readings only in the remarks of the parameter row
+    const raw = this.gridParamControl(s)?.get('remarks')?.value;
+    if (typeof raw === 'string' && /^[\[{]/.test(raw.trim())) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) parsed.forEach((v, i) => put('S1', i + 1, v));
+        else if (parsed && typeof parsed === 'object') Object.keys(parsed).forEach(code => (parsed[code] || []).forEach((v: any, i: number) => put(code, i + 1, v)));
+      } catch {
+        // not readings
+      }
+    }
+    return out;
+  }
+
+  private initReadingGrid(s: any): void {
+    const key = this.readingSecKey(s);
+    const labels = this.configuredReadingRows(s);
+    const count = this.configuredReadingCount(s);
+    const signature = JSON.stringify([this.readingGridParam(s), labels, count, this.test?.headerId]);
+    if (this.readingGridSignature[key] === signature) return; // nothing about the layout changed: keep what was typed
+    this.readingGridSignature[key] = signature;
+
+    const rows = labels.map((label, i) => ({ code: `S${i + 1}`, label }));
+    const saved = this.savedGridReadings(s);
+    saved.forEach((_vals, code) => {
+      if (!rows.some(r => r.code === code)) rows.push({ code, label: code }); // saved, though the layout does not list it
+    });
+    let n = count;
+    saved.forEach(vals => (n = Math.max(n, vals.length)));
+    n = Math.min(25, n);
+    this.readingRowsState[key] = rows;
+    this.readingGridCount[key] = n;
+    rows.forEach(r => {
+      const arr: (number | null)[] = Array(n).fill(null);
+      (saved.get(r.code) || []).forEach((v, i) => { if (i < n) arr[i] = v; });
+      this.readingValues[this.readingGridKey(s, r.code)] = arr;
+      this.recalcGridStats(s, r.code);
+    });
+  }
+
+  private gridDecimals(s: any): number {
+    const d = Number(this.gridParamControl(s)?.get('decimalPrecision')?.value);
+    return Number.isFinite(d) && d >= 0 && d <= 6 ? d : 2;
+  }
+
+  private recalcGridStats(s: any, code: string): void {
+    const key = this.readingGridKey(s, code);
+    const vals = (this.readingValues[key] || []).filter((v): v is number => v != null && !isNaN(v));
+    if (!vals.length) {
+      this.readingStats[key] = { avg: null, min: null, max: null, stdev: null, median: null };
+      return;
+    }
+    const dec = this.gridDecimals(s);
+    const round = (v: number) => Number(v.toFixed(dec));
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const sorted = [...vals].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    const stdev = vals.length > 1 ? Math.sqrt(vals.reduce((a, v) => a + Math.pow(v - mean, 2), 0) / (vals.length - 1)) : null;
+    this.readingStats[key] = { avg: round(mean), min: Math.min(...vals), max: Math.max(...vals), stdev: stdev == null ? null : round(stdev), median: round(median) };
+  }
+
+  getGridReading(s: any, code: string, idx: number): number | null | undefined {
+    return this.readingValues[this.readingGridKey(s, code)]?.[idx];
+  }
+
+  /** Individual readings are shown while entering; a layout can leave them out of the finished record. */
+  showGridReadings(s: any): boolean {
+    return s?.config?.showIndividual !== false || (!this.isViewMode && !this.isLocked);
+  }
+
+  gridUnit(s: any): string {
+    return String(s?.config?.targetUnit ?? '').trim() || String(this.gridParamControl(s)?.get('unit')?.value ?? '').trim();
+  }
+
+  gridAggregateLabel(s: any): string {
+    return this.columnLabel(s, 'agg', String(s?.config?.aggregation ?? '').trim() || 'Average');
+  }
+
+  gridAggregate(s: any, code: string): number | null {
+    const st = this.readingStats[this.readingGridKey(s, code)];
+    if (!st) return null;
+    const a = String(s?.config?.aggregation ?? 'Average').toLowerCase();
+    if (a.startsWith('min')) return st.min;
+    if (a.startsWith('max')) return st.max;
+    if (a.startsWith('median')) return st.median ?? null;
+    if (a.startsWith('standard')) return st.stdev;
+    return st.avg;
+  }
+
+  gridStat(s: any, code: string, field: 'min' | 'max'): number | null {
+    return this.readingStats[this.readingGridKey(s, code)]?.[field] ?? null;
+  }
+
+  gridFmt(s: any, v: number | null | undefined): string {
+    return v == null ? '—' : v.toFixed(this.gridDecimals(s));
+  }
+
+  private gridLimits(s: any): { min: number | null; max: number | null } {
+    const num = (v: any) => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+    const cfgMin = num(s?.config?.targetMin);
+    const cfgMax = num(s?.config?.targetMax);
+    if (cfgMin != null || cfgMax != null) return { min: cfgMin, max: cfgMax };
+    const c = this.gridParamControl(s);
+    return { min: num(c?.get('specMinValue')?.value ?? c?.get('minValue')?.value), max: num(c?.get('specMaxValue')?.value ?? c?.get('maxValue')?.value) };
+  }
+
+  /** The requirement text: the layout's own, else the limits of the specification. */
+  gridRequirement(s: any): string {
+    const own = String(s?.config?.targetRequirement ?? '').trim();
+    if (own) return own;
+    const { min, max } = this.gridLimits(s);
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return this.formatSpecRange(this.gridParamControl(s)?.value);
+  }
+
+  gridStatus(s: any, code: string): 'PASS' | 'FAIL' | 'PENDING' {
+    const v = this.gridAggregate(s, code);
+    const { min, max } = this.gridLimits(s);
+    if (v == null || (min == null && max == null)) return 'PENDING';
+    return (min != null && v < min) || (max != null && v > max) ? 'FAIL' : 'PASS';
+  }
+
+  gridBadge(status: string): string {
+    return status === 'PASS' ? 'bg-success text-white' : status === 'FAIL' ? 'bg-danger text-white' : 'bg-light text-muted border';
+  }
+
+  private gridAllValues(s: any): number[] {
+    const all: number[] = [];
+    this.readingGridRows(s).forEach(r => (this.readingValues[this.readingGridKey(s, r.code)] || []).forEach(v => { if (v != null && !isNaN(v)) all.push(v); }));
+    return all;
+  }
+
+  /** Average of every reading of the section (the value the parameter row carries). */
+  gridOverallAverage(s: any): number | null {
+    const all = this.gridAllValues(s);
+    return all.length ? Number((all.reduce((a, b) => a + b, 0) / all.length).toFixed(this.gridDecimals(s))) : null;
+  }
+
+  /** Largest minus smallest reading of the section; null with fewer than two readings. */
+  gridSpread(s: any): number | null {
+    const all = this.gridAllValues(s);
+    return all.length > 1 ? Number((Math.max(...all) - Math.min(...all)).toFixed(this.gridDecimals(s))) : null;
+  }
+
+  gridSpreadExceeded(s: any): boolean {
+    const limit = Number(s?.config?.outlierSpreadLimit);
+    const spread = this.gridSpread(s);
+    return Number.isFinite(limit) && limit > 0 && spread != null && spread > limit;
+  }
+
+  gridColumnCount(s: any): number {
+    const cfg = s?.config || {};
+    let n = 1;
+    if (this.specimenShow(s, 'unit')) n++;
+    if (this.showGridReadings(s)) n += this.getReadingCount(s);
+    if (this.columnVisible(s, 'agg')) n++;
+    if (cfg.showStatistics !== false) n += 2;
+    if (this.columnVisible(s, 'requirement') && !cfg.requirementRow) n++;
+    if (this.columnVisible(s, 'status')) n++;
+    return n;
+  }
+
+  /** Writes the average of all readings (and the readings themselves) into the parameter row, like the legacy table. */
+  private updateGridParameter(s: any): void {
+    const ctrl = this.gridParamControl(s);
+    const fa = this.parametersFormArray;
+    if (!ctrl || !fa) return;
+    const rows = this.readingGridRows(s);
+    const remarks = rows.length === 1
+      ? JSON.stringify(this.readingValues[this.readingGridKey(s, rows[0].code)] || [])
+      : JSON.stringify(Object.fromEntries(rows.map(r => [r.code, this.readingValues[this.readingGridKey(s, r.code)] || []])));
+    ctrl.patchValue({ value: this.gridOverallAverage(s), remarks });
+    this.evaluateLimitForControl(ctrl);
+    this.paramValueChanged.emit({ rowIdx: fa.controls.indexOf(ctrl as any), param: ctrl.value });
+  }
+
+  onGridReadingChange(s: any, code: string, rIdx: number, val: any): void {
+    if (this.printMode) return;
+    const key = this.readingGridKey(s, code);
+    const parsed = val !== null && val !== '' && !isNaN(Number(val)) ? parseFloat(val) : null;
+    const arr = this.readingValues[key] || (this.readingValues[key] = []);
+    while (arr.length <= rIdx) arr.push(null);
+    arr[rIdx] = parsed;
+    this.recalcGridStats(s, code);
+    this.updateGridParameter(s);
+    this.syncCollectionsToTest();
+  }
+
+  private setGridCount(s: any, n: number): void {
+    this.readingGridCount[this.readingSecKey(s)] = n;
+    this.readingGridRows(s).forEach(r => {
+      const arr = this.readingValues[this.readingGridKey(s, r.code)] || (this.readingValues[this.readingGridKey(s, r.code)] = []);
+      while (arr.length < n) arr.push(null);
+      arr.length = n;
+      this.recalcGridStats(s, r.code);
+    });
+    this.updateGridParameter(s);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  addReadingRow(s: any): void {
+    if (this.isViewMode || this.isLocked || !this.canAddRemoveRows(s)) return;
+    const key = this.readingSecKey(s);
+    const rows = this.readingRowsState[key] || (this.readingRowsState[key] = []);
+    if (rows.length >= 30) return;
+    const code = `S${rows.length + 1}`;
+    rows.push({ code, label: code });
+    this.readingValues[this.readingGridKey(s, code)] = Array(this.getReadingCount(s)).fill(null);
+    this.recalcGridStats(s, code);
+    this.cdr.markForCheck();
+  }
+
+  /** Removes the last row; refused while it holds a reading (clear it first). */
+  removeReadingRow(s: any): void {
+    if (this.isViewMode || this.isLocked || !this.canAddRemoveRows(s)) return;
+    const key = this.readingSecKey(s);
+    const rows = this.readingRowsState[key] || [];
+    if (rows.length <= 1) return;
+    const last = rows[rows.length - 1];
+    const vkey = this.readingGridKey(s, last.code);
+    if ((this.readingValues[vkey] || []).some(v => v != null)) {
+      this.toastService.show(`${last.label} holds readings. Clear them before removing the row.`, 'warning');
+      return;
+    }
+    rows.pop();
+    delete this.readingValues[vkey];
+    delete this.readingStats[vkey];
+    this.updateGridParameter(s);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
   getReadingTargetParameters(s: any): string[] {
     if (s?.config?.parameters && Array.isArray(s.config.parameters) && s.config.parameters.length > 0) {
       return s.config.parameters;
@@ -1829,6 +2157,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getReadingCount(s: any): number {
+    if (this.isReadingGrid(s)) return this.readingGridCount[this.readingSecKey(s)] ?? this.configuredReadingCount(s);
     const targets = this.getReadingTargetParameters(s);
     const primary = targets[0] || this.getTargetParamName();
     if (this.readingValues[primary] && this.readingValues[primary].length > 0) {
@@ -1919,9 +2248,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return !c || c.visible !== false;
   }
 
+  /** The layout's own heading; a heading it left empty on purpose stays empty, one it does not list gets the default. */
   columnLabel(sec: any, key: string, fallback: string): string {
-    const text = String(this.columnDef(sec, key)?.label ?? '').trim();
-    return text || fallback;
+    const def = this.columnDef(sec, key);
+    return def && typeof def.label === 'string' ? def.label.trim() : fallback;
   }
 
   /** Average / Requirement / Status / Unit column switches of the specimen matrix. */
@@ -1953,7 +2283,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** Change the specimen count (studio: "Change counts"). */
   canAdjustCount(sec: any): boolean {
-    return !this.isFixedStructure(sec) && sec?.config?.runtimeAdjust !== false;
+    const mode = sec?.type === 'reading' ? sec?.config?.readingExecutionMode : sec?.config?.specimenExecutionMode;
+    return !this.isFixedStructure(sec) && sec?.config?.runtimeAdjust !== false && mode !== 'fixed';
   }
 
   /**
@@ -2067,6 +2398,17 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param'));
   }
 
+  /** A reading section that lists the test's parameters itself (no target parameter): the plain parameter table is then not drawn. */
+  hasLegacyReadingSection(): boolean {
+    return (this.sections || []).some(sec => sec.type === 'reading' && !this.isReadingGrid(sec));
+  }
+
+  /** Parameters a reading grid already shows are left out of the plain parameter table. */
+  private isGridTargetRow(rowIdx: number): boolean {
+    const name = this.normKey(this.parametersFormArray?.at(rowIdx)?.get('parameterName')?.value);
+    return !!name && (this.sections || []).some(sec => this.isReadingGrid(sec) && this.normKey(this.readingGridTarget(sec)) === name);
+  }
+
   /** A section whose type this screen cannot draw (it would otherwise vanish without a trace). */
   isUnsupportedSection(s: any): boolean {
     return !!s && !SUPPORTED_SECTION_TYPES.has(String(s.type || '').trim().toLowerCase());
@@ -2079,6 +2421,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   getReadingColumnHeader(s: any, idx: number): string {
     const rawPrefix = s?.config?.readingLabel || s?.config?.readingPrefix;
+    // a label the layout cleared on purpose (empty text, not missing) numbers the readings 1, 2, 3 ...
+    if (typeof s?.config?.readingLabel === 'string' && s.config.readingLabel.trim() === '' && !s?.config?.readingPrefix) return String(idx + 1);
     let prefix = 'R';
     if (rawPrefix && typeof rawPrefix === 'string') {
       const trimmed = rawPrefix.trim();
@@ -2127,6 +2471,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   setReadingCount(s: any, count: number): void {
     if (this.isViewMode || this.isLocked) return;
     const validCount = Math.min(25, Math.max(1, count));
+    if (this.isReadingGrid(s)) {
+      this.setGridCount(s, validCount);
+      return;
+    }
     const targets = this.getReadingTargetParameters(s);
 
     targets.forEach(targetName => {
@@ -2676,8 +3024,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const readings: any[] = [];
     const headerId = this.test?.headerId || 0;
 
-    Object.keys(this.readingValues).forEach(paramName => {
-      const vals = this.readingValues[paramName] || [];
+    Object.keys(this.readingValues).forEach(key => {
+      const vals = this.readingValues[key] || [];
+      // a grid key is "<parameter>|<sample code>"; the legacy key is the parameter name
+      const sep = key.lastIndexOf('|');
+      const paramName = sep >= 0 ? key.slice(0, sep) : key;
+      const specimenCode = sep >= 0 ? key.slice(sep + 1) : 'S1';
       let paramId: number | null = null;
       let paramCode = '';
       if (this.parametersFormArray) {
@@ -2700,7 +3052,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
             testResultParameterId: paramId,
             parameterCode: paramCode || paramName,
             parameterName: paramName,
-            specimenCode: `S${idx + 1}`,
+            specimenCode,
             sequenceNo: idx + 1,
             readingNumber: idx + 1,
             value: Number(v),

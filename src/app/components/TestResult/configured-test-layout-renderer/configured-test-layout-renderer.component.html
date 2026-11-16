@@ -123,7 +123,7 @@
 
             <!-- Multi-Reading Matrix Quick Actions (Adjustable Spot Count) -->
             <ng-container *ngIf="s.type === 'reading' && !isViewMode && !isLocked">
-              <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1 me-1">
+              <div *ngIf="canAdjustCount(s)" class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1 me-1">
                 <span class="text-xxs fw-semibold text-secondary">Spots / Readings:</span>
                 <button type="button" class="spm-stepper-btn" (click)="adjustReadingCount(s, -1)" [disabled]="getReadingCount(s) <= 1" title="Decrease reading spots">
                   <i class="bi bi-dash"></i>
@@ -137,19 +137,27 @@
                 </button>
                 <span class="badge bg-white text-muted border text-xxs" role="button" (click)="resetReadingCountToTemplate(s)" title="Click to reset to template default">Template: {{ getDefaultReadingCount(s) }}</span>
               </div>
-              <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="adjustReadingCount(s, 1)" [disabled]="getReadingCount(s) >= 25" title="Add another reading spot">
+              <button *ngIf="canAdjustCount(s)" type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="adjustReadingCount(s, 1)" [disabled]="getReadingCount(s) >= 25" title="Add another reading spot">
                 <i class="bi bi-plus-circle me-1"></i><span>Add Spot</span>
               </button>
-              <button type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="adjustReadingCount(s, -1)" [disabled]="getReadingCount(s) <= 1" title="Remove the last reading spot">
+              <button *ngIf="canAdjustCount(s)" type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="adjustReadingCount(s, -1)" [disabled]="getReadingCount(s) <= 1" title="Remove the last reading spot">
                 <i class="bi bi-dash-circle me-1"></i><span>Remove Spot</span>
               </button>
-              <button type="button" class="btn btn-xs btn-lims btn-lims-add ms-1" (click)="openAddParamModal()" title="Add parameter to reading matrix">
+              <ng-container *ngIf="isReadingGrid(s) && canAddRemoveRows(s)">
+                <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addReadingRow(s)" title="Add a sample / location row">
+                  <i class="bi bi-plus-circle me-1"></i><span>Add Row</span>
+                </button>
+                <button type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="removeReadingRow(s)" [disabled]="readingGridRows(s).length <= 1" title="Remove the last row">
+                  <i class="bi bi-dash-circle me-1"></i><span>Remove Row</span>
+                </button>
+              </ng-container>
+              <button *ngIf="!isReadingGrid(s) && canAddRemoveRows(s)" type="button" class="btn btn-xs btn-lims btn-lims-add ms-1" (click)="openAddParamModal()" title="Add parameter to reading matrix">
                 <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
               </button>
             </ng-container>
 
             <!-- Parameters Table Action (Suppressed when unified reading or specimen matrix is active) -->
-            <button *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasSectionOfType('reading') && !hasSectionOfType('spm') && !isViewMode && !isLocked"
+            <button *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSectionOfType('spm') && !isViewMode && !isLocked"
                     type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()">
               <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
             </button>
@@ -862,7 +870,7 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <!-- ARCHETYPE 4: PARAMETERS VERIFICATION TABLE (param / parameter) -->
           <!-- ───────────────────────────────────────────────────────────── -->
-          <ng-container *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasSectionOfType('reading') && !hasSectionOfType('spm')">
+          <ng-container *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSectionOfType('spm')">
 
             <!-- Specimen Filtering & Adjustment Toolbar -->
             <div class="specimen-toolbar bg-light border rounded p-1 mb-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -1111,7 +1119,7 @@
           <!-- ARCHETYPE 5: MULTI-READING MATRIX (reading)                    -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'reading'">
-            <div class="reading-matrix-section">
+            <div class="reading-matrix-section" *ngIf="!isReadingGrid(s)">
               <div class="table-responsive">
                 <table class="table table-sm table-bordered align-middle result-table mb-1">
                   <thead class="result-table-head text-center">
@@ -1180,6 +1188,127 @@
                             <i class="bi bi-dash"></i>
                           </button>
                         </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Reading grid: the layout names one parameter; rows are samples / locations -->
+            <div class="reading-matrix-section" *ngIf="isReadingGrid(s)">
+              <div class="small text-danger mb-1 print-hide" *ngIf="!gridParamFound(s)">
+                The layout's parameter "{{ readingGridTarget(s) }}" is not a parameter of this test. Readings are kept, but no result is written.
+              </div>
+              <div class="table-responsive">
+                <!-- readings across the columns -->
+                <table class="table table-sm table-bordered align-middle result-table mb-1" *ngIf="!readingsAsRows(s)">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="text-start">{{ columnLabel(s, 'specimen', 'Sample / Test Point') }}</th>
+                      <th *ngIf="specimenShow(s, 'unit')" class="w-col-60">{{ columnLabel(s, 'unit', 'Unit') }}</th>
+                      <ng-container *ngIf="showGridReadings(s)">
+                        <th *ngFor="let idx of getReadingIndices(s)" class="w-col-80">{{ getReadingColumnHeader(s, idx) }}</th>
+                      </ng-container>
+                      <th *ngIf="columnVisible(s, 'agg')" class="w-col-95">{{ gridAggregateLabel(s) }}</th>
+                      <ng-container *ngIf="s.config?.showStatistics !== false">
+                        <th class="w-col-70">{{ columnLabel(s, 'min', 'Min') }}</th>
+                        <th class="w-col-70">{{ columnLabel(s, 'max', 'Max') }}</th>
+                      </ng-container>
+                      <th *ngIf="columnVisible(s, 'requirement') && !s.config?.requirementRow" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
+                      <th *ngIf="columnVisible(s, 'status')" class="w-col-85">{{ columnLabel(s, 'status', 'Status') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of readingGridRows(s)">
+                      <td class="fw-semibold text-start">{{ row.label }}</td>
+                      <td *ngIf="specimenShow(s, 'unit')" class="text-center font-monospace text-muted small">{{ gridUnit(s) || '—' }}</td>
+                      <ng-container *ngIf="showGridReadings(s)">
+                        <td *ngFor="let idx of getReadingIndices(s)">
+                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                                 [ngModel]="getGridReading(s, row.code, idx)"
+                                 [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="onGridReadingChange(s, row.code, idx, $event)"
+                                 [readOnly]="isViewMode || isLocked" placeholder="—" />
+                        </td>
+                      </ng-container>
+                      <td *ngIf="columnVisible(s, 'agg')" class="text-center font-monospace fw-bold">{{ gridFmt(s, gridAggregate(s, row.code)) }}</td>
+                      <ng-container *ngIf="s.config?.showStatistics !== false">
+                        <td class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'min')) }}</td>
+                        <td class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'max')) }}</td>
+                      </ng-container>
+                      <td *ngIf="columnVisible(s, 'requirement') && !s.config?.requirementRow" class="text-center small font-monospace">{{ gridRequirement(s) }}</td>
+                      <td *ngIf="columnVisible(s, 'status')" class="text-center">
+                        <span class="badge text-xxs" [ngClass]="gridBadge(gridStatus(s, row.code))">{{ gridStatus(s, row.code) }}</span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="s.config?.requirementRow">
+                      <td class="fw-semibold text-start">{{ columnLabel(s, 'requirement', 'Requirement') }}</td>
+                      <td [attr.colspan]="gridColumnCount(s) - 1" class="text-center small font-monospace">{{ gridRequirement(s) }}</td>
+                    </tr>
+                    <tr *ngIf="(s.config?.showOverallAverageRow || s.config?.showSpreadRow) && readingGridRows(s).length > 0">
+                      <td [attr.colspan]="gridColumnCount(s)" class="text-start small">
+                        <span *ngIf="s.config?.showOverallAverageRow"><strong>Overall average:</strong> {{ gridFmt(s, gridOverallAverage(s)) }}</span>
+                        <span *ngIf="s.config?.showOverallAverageRow && s.config?.showSpreadRow"> &nbsp;·&nbsp; </span>
+                        <span *ngIf="s.config?.showSpreadRow" [class.text-danger]="gridSpreadExceeded(s)"><strong>Spread:</strong> {{ gridFmt(s, gridSpread(s)) }}<span *ngIf="gridSpreadExceeded(s)"> (above {{ s.config?.outlierSpreadLimit }})</span></span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- readings down the rows, one column per sample -->
+                <table class="table table-sm table-bordered align-middle result-table mb-1" *ngIf="readingsAsRows(s)">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="text-start">{{ columnLabel(s, 'specimen', 'Sample / Test Point') }}</th>
+                      <th *ngFor="let row of readingGridRows(s)">
+                        {{ row.label }}
+                        <div *ngIf="specimenShow(s, 'unit') && gridUnit(s)" class="text-muted small fw-normal">{{ gridUnit(s) }}</div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ng-container *ngIf="showGridReadings(s)">
+                      <tr *ngFor="let idx of getReadingIndices(s)">
+                        <td class="fw-semibold text-start">{{ getReadingColumnHeader(s, idx) }}</td>
+                        <td *ngFor="let row of readingGridRows(s)">
+                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                                 [ngModel]="getGridReading(s, row.code, idx)"
+                                 [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="onGridReadingChange(s, row.code, idx, $event)"
+                                 [readOnly]="isViewMode || isLocked" placeholder="—" />
+                        </td>
+                      </tr>
+                    </ng-container>
+                    <tr *ngIf="columnVisible(s, 'agg')">
+                      <td class="fw-semibold text-start">{{ gridAggregateLabel(s) }}</td>
+                      <td *ngFor="let row of readingGridRows(s)" class="text-center font-monospace fw-bold">{{ gridFmt(s, gridAggregate(s, row.code)) }}</td>
+                    </tr>
+                    <ng-container *ngIf="s.config?.showStatistics !== false">
+                      <tr>
+                        <td class="fw-semibold text-start">{{ columnLabel(s, 'min', 'Min') }}</td>
+                        <td *ngFor="let row of readingGridRows(s)" class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'min')) }}</td>
+                      </tr>
+                      <tr>
+                        <td class="fw-semibold text-start">{{ columnLabel(s, 'max', 'Max') }}</td>
+                        <td *ngFor="let row of readingGridRows(s)" class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'max')) }}</td>
+                      </tr>
+                    </ng-container>
+                    <tr *ngIf="columnVisible(s, 'status')">
+                      <td class="fw-semibold text-start">{{ columnLabel(s, 'status', 'Status') }}</td>
+                      <td *ngFor="let row of readingGridRows(s)" class="text-center">
+                        <span class="badge text-xxs" [ngClass]="gridBadge(gridStatus(s, row.code))">{{ gridStatus(s, row.code) }}</span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="s.config?.requirementRow || columnVisible(s, 'requirement')">
+                      <td class="fw-semibold text-start">{{ columnLabel(s, 'requirement', 'Requirement') }}</td>
+                      <td [attr.colspan]="readingGridRows(s).length" class="text-center small font-monospace">{{ gridRequirement(s) }}</td>
+                    </tr>
+                    <tr *ngIf="(s.config?.showOverallAverageRow || s.config?.showSpreadRow) && readingGridRows(s).length > 0">
+                      <td [attr.colspan]="readingGridRows(s).length + 1" class="text-start small">
+                        <span *ngIf="s.config?.showOverallAverageRow"><strong>Overall average:</strong> {{ gridFmt(s, gridOverallAverage(s)) }}</span>
+                        <span *ngIf="s.config?.showOverallAverageRow && s.config?.showSpreadRow"> &nbsp;·&nbsp; </span>
+                        <span *ngIf="s.config?.showSpreadRow" [class.text-danger]="gridSpreadExceeded(s)"><strong>Spread:</strong> {{ gridFmt(s, gridSpread(s)) }}<span *ngIf="gridSpreadExceeded(s)"> (above {{ s.config?.outlierSpreadLimit }})</span></span>
                       </td>
                     </tr>
                   </tbody>

@@ -49,10 +49,47 @@
   background: #ffffff;
 }
 
-.section-card.half-width {
-  width: calc(50% - 0.25rem);
-  display: inline-block;
-  vertical-align: top;
+/* Section width follows the layout: every section takes a full row unless the studio set "Half Width",
+   and two Half Width sections that follow each other share one row. */
+/* styles.css gives every .sections-stack a column direction with !important (the studio canvas uses it);
+   the result screen needs rows that wrap, so this has to be !important as well. Sections keep no gap between
+   rows (each card has its own top margin); two Half Width sections get 12px between them (bootstrap's gap-0
+   on the element is !important too). */
+.sections-stack {
+  display: flex;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  column-gap: 12px !important;
+  container-type: inline-size;
+}
+
+.sections-stack > .lims-section {
+  flex: 0 0 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sections-stack > .lims-section.half-width {
+  flex-basis: calc(50% - 6px);
+}
+
+/* an area too narrow for two tables side by side stacks them */
+@container (max-width: 640px) {
+  .sections-stack > .lims-section.half-width {
+    flex-basis: 100%;
+  }
+}
+
+:host(.print-mode) .sections-stack {
+  column-gap: 0 !important;
+}
+
+:host(.print-mode) .sections-stack > .lims-section.half-width {
+  flex-basis: 50%;
+}
+
+:host(.print-mode) .unsupported-section {
+  display: none !important;
 }
 
 .section-card-header {

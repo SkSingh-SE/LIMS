@@ -11,6 +11,13 @@ import { Observable, of } from 'rxjs';
 import { ParameterService } from '../../../services/parameter.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { formatBand } from '../../../utility/helper/spec-condition.helper';
+import { normalizeLayoutConfig } from '../../../utility/helper/test-layout-config.helper';
+
+/** Section types this screen can draw (canonical names, after normalizeLayoutConfig). */
+export const SUPPORTED_SECTION_TYPES: ReadonlySet<string> = new Set([
+  'parameter', 'specimen', 'reading', 'location', 'condition', 'rule', 'traverse', 'chart', 'photo',
+  'formula', 'narrative', 'checklist', 'traceability', 'opinion', 'sign', 'classification', 'custom',
+]);
 import { ToastService } from '../../../services/toast.service';
 import {
   addSpecimenRows,
@@ -603,14 +610,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       this.isLocked = true;
     }
 
-    // Resolve sections
-    if (this.layoutConfig.sections && Array.isArray(this.layoutConfig.sections)) {
-      this.sections = this.layoutConfig.sections.filter((s: any) => s.config?.enabled !== false);
-    } else if (this.layoutConfig.parsedConfig?.sections) {
-      this.sections = this.layoutConfig.parsedConfig.sections.filter((s: any) => s.config?.enabled !== false);
-    } else {
-      this.sections = [];
-    }
+    // Resolve sections: legacy / shorthand type names (spm, loc, chk, note ...) become the studio's canonical names
+    const rawSections: any[] = Array.isArray(this.layoutConfig.sections)
+      ? this.layoutConfig.sections
+      : Array.isArray(this.layoutConfig.parsedConfig?.sections) ? this.layoutConfig.parsedConfig.sections : [];
+    // a layout saved with the literal "spm" type has always hidden the plain parameter table: keep that
+    this.hasLegacySpmSection = rawSections.some((s: any) => s?.type === 'spm' && s?.config?.enabled !== false);
+    this.sections = normalizeLayoutConfig({ sections: rawSections }).sections.filter((s: any) => s.config?.enabled !== false);
 
     // Initialize Specimen Matrix
     this.initSpecimens();
@@ -1875,8 +1881,22 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return '';
   }
 
+  /** True when the saved layout used the literal legacy type "spm" (see initLayoutData). */
+  private hasLegacySpmSection = false;
+
   hasSectionOfType(type: string): boolean {
+    if (type === 'spm' && this.hasLegacySpmSection) return true;
     return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param'));
+  }
+
+  /** A section whose type this screen cannot draw (it would otherwise vanish without a trace). */
+  isUnsupportedSection(s: any): boolean {
+    return !!s && !SUPPORTED_SECTION_TYPES.has(String(s.type || '').trim().toLowerCase());
+  }
+
+  /** The warning card is for the person editing the result; it is not part of the printed record. */
+  showUnsupportedCard(s: any): boolean {
+    return !this.printMode && this.isUnsupportedSection(s) && (this.activeTabSection === 'all' || this.activeTabSection === 'execution');
   }
 
   getReadingColumnHeader(s: any, idx: number): string {

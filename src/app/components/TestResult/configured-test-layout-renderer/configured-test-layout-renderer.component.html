@@ -61,11 +61,28 @@
   <!-- ========================================================================= -->
   <!-- 2. DYNAMIC SECTIONS STACK                                                 -->
   <!-- ========================================================================= -->
-  <div class="sections-stack d-flex flex-column gap-0" [formGroup]="testFormGroup">
+  <div class="sections-stack d-flex flex-wrap gap-0" [formGroup]="testFormGroup">
 
     <ng-container *ngFor="let s of sections; let sIdx = index">
 
-      <div *ngIf="isSectionVisible(s)" class="lims-workbench-card lims-section" [ngClass]="{ 'half-width': s.config?.width === 'Half Width' }">
+      <!-- A type this screen cannot draw: say so instead of dropping the section (screen only, not printed) -->
+      <div *ngIf="showUnsupportedCard(s)" class="lims-workbench-card lims-section unsupported-section" role="alert">
+        <div class="lims-workbench-card-header lims-section-head">
+          <div class="d-flex align-items-center gap-2">
+            <h6 class="lims-workbench-card-title mb-0"><span>Unsupported section</span></h6>
+          </div>
+          <a *ngIf="!isViewMode && !isLocked" class="btn-nav-link text-nowrap" [routerLink]="['/test/layout-archetypes']"
+             [queryParams]="{ id: layoutConfig?.id }" title="Open this layout in the Layout Studio">
+            <span>Open Studio</span>
+          </a>
+        </div>
+        <div class="section-card-body p-2 text-xs">
+          Section "<strong>{{ s.title || 'Untitled' }}</strong>" (type: <span class="font-monospace">{{ s.type || 'none' }}</span>) is not
+          supported on this screen, so it is not shown. Open the Layout Studio and replace it.
+        </div>
+      </div>
+
+      <div *ngIf="isSectionVisible(s) && !isUnsupportedSection(s)" class="lims-workbench-card lims-section" [ngClass]="{ 'half-width': s.config?.width === 'Half Width' }">
 
         <!-- Section Header -->
         <div class="lims-workbench-card-header lims-section-head">

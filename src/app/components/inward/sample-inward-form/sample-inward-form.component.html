@@ -497,7 +497,7 @@
               <colgroup>
                 <col class="col-w-150" />   <!-- Sample No -->
                 <col />                      <!-- Sample Identification & Description — flexible main column -->
-                <col class="col-w-340" />    <!-- Size (mm) -->
+                <col *ngIf="showSampleSize" class="col-w-340" />    <!-- Size (mm): hidden, see showSampleSize -->
                 <col class="col-w-140" />    <!-- Qty -->
                 <col class="col-w-260" />    <!-- Image / Photo Attachment -->
                 <col class="col-w-90" />     <!-- Action -->
@@ -506,7 +506,7 @@
                 <tr class="sample-table-header">
                   <th class="text-center text-nowrap py-2">Sample No</th>
                   <th class="text-nowrap py-2">Sample Identification & Description <span class="text-danger">*</span></th>
-                  <th class="text-nowrap py-2">Size (mm)</th>
+                  <th *ngIf="showSampleSize" class="text-nowrap py-2">Size (mm)</th>
                   <th class="text-center text-nowrap py-2">Qty</th>
                   <th class="text-nowrap py-2">Image / Photo Attachment</th>
                   <th class="text-center py-2">Action</th>
@@ -533,7 +533,7 @@
                       Sample description is required.
                     </span>
                   </td>
-                  <td class="align-middle">
+                  <td class="align-middle" *ngIf="showSampleSize">
                     <div class="row g-1">
                       <div class="col-3" *ngFor="let d of dimensionFields">
                         <label class="d-block text-muted mb-0 text-xs-68" [for]="'dim-' + d.key + '-' + i">{{ d.label }}</label>

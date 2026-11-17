@@ -1432,6 +1432,13 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     { key: 'width', label: 'Width' },
     { key: 'length', label: 'Length' },
   ];
+  /**
+   * Size (thickness / diameter / width / length) column of the Sample Details table: hidden on request (2026-11-17).
+   * The form controls stay, so sizes already saved on a sample are kept on edit and still reach plan, result entry,
+   * pricing and report. Set to true to show the column again.
+   */
+  readonly showSampleSize = false;
+
   private readonly dimensionValidators = [Validators.min(0), Validators.max(this.dimensionMax), Validators.pattern(/^\d+(\.\d{1,2})?$/)];
 
   isSampleFieldInvalid(sample: AbstractControl, key: string): boolean {

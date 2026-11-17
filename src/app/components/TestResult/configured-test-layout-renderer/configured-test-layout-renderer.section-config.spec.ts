@@ -163,6 +163,17 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     expect(cmp.customHeaders(cmp.sections[0])).toEqual(['Property Description', 'Value']);
   });
 
+  it('reading: normalized targetParameter returns targetParamName when form has no parameters', () => {
+    const raw = {
+      sections: [
+        { id: 1, type: 'reading', title: 'Hardness', config: { targetParameter: 'Hardness HV' } }
+      ]
+    };
+    const cfg = normalizeLayoutConfig(raw);
+    create(cfg.sections, { rows: [] });
+    expect(cmp.getReadingTargetParameters(cmp.sections[0])).toEqual(['Hardness HV']);
+  });
+
   it('print: a section the layout does not print is left out, and titles show only when asked', () => {
     const host = create([sec('narrative', { reportable: false, label: 'Internal note', sectionKey: 'n1' }), sec('checklist', { printTitle: true }, 'Checks'), sec('parameter')], { printMode: true });
     expect(host.querySelectorAll('.lims-workbench-card').length).toBe(2);

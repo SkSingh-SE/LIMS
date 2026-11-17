@@ -2642,7 +2642,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (s?.config?.parameters && Array.isArray(s.config.parameters) && s.config.parameters.length > 0) {
       return s.config.parameters;
     }
-    const specified = s?.config?.targetParameter;
+    const specified = s?.config?.targetParamName || s?.config?.targetParameter;
     const names: string[] = [];
 
     if (this.parametersFormArray && this.parametersFormArray.length > 0) {

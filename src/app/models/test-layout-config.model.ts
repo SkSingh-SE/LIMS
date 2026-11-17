@@ -115,6 +115,8 @@ export interface SectionConfig {
   highlightStatus?: boolean;
   keepHeader?: boolean;
   reportable?: boolean;
+  /** Print the section's title above it (the lab's reports print none, so the default is off). */
+  printTitle?: boolean;
   printCertificate?: boolean;
   showRaw?: boolean;
   reportProjection?: string;
@@ -211,9 +213,20 @@ export interface SectionConfig {
   layout?: string;
   source?: string;
   allowRuntimeEdit?: boolean;
+  /** Condition section: also show the ambient temperature / humidity boxes. */
+  showAmbient?: boolean;
+  /** Condition section: the field whose value is added to the test name on the record ("@ -29 °C"). */
+  titleSuffixField?: string;
+  /** Narrative section: text a note starts with. */
+  defaultText?: string;
   showMissing?: string;
 
   // Rule
+  /** Where the statement of conformity and its decision rule come from. */
+  verdictSource?: 'inward' | 'scope' | 'fixed';
+  /** verdictSource "fixed": the statement / decision rule printed (empty = automatic wording). */
+  statementText?: string;
+  decisionRuleText?: string;
   parameter?: string;
   operator?: string;
   valueSource?: string;
@@ -460,6 +473,8 @@ export interface PhotoSlotItem {
   mandatory?: boolean;
   reportable?: boolean;
   mockUrl?: string;
+  /** Fixed image of the slot (data URL kept in the layout); used when bindingSource is 'static'. */
+  imageUrl?: string;
   fieldNo?: string;
   aspectRatio?: string;
 }

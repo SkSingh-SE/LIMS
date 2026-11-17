@@ -144,6 +144,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   @Input() testFormGroup!: FormGroup;
   @Input() sample: any = null;
   @Input() inward: any = null;
+  /** Lab scope of this test: true = every tested parameter is within the accredited scope, null = not known. */
+  @Input() nablInScope: boolean | null = null;
+  /** Measurement uncertainty per parameter ({ parameterID, expandedUncertainty }); used when the decision rule takes it into account. */
+  @Input() uncertaintyData: any[] = [];
   @Input() isViewMode: boolean = false;
   @Input() isLocked: boolean = false;
   @Input() environmentData: any = null;
@@ -241,7 +245,35 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     { distance: 1.0, hardness: null }
   ];
   effectiveCaseDepth: number | null = null;
-  cutoffLimit: number = 550; // HV
+  /** Hardness at which the effective case depth is read: the layout's value, else 550 (IS 6416). */
+  get cutoffLimit(): number {
+    const cfg = (this.sections || []).find(s => s.type === 'traverse')?.config;
+    const v = Number(cfg?.cutoffHardness ?? cfg?.cutoff);
+    return isFinite(v) && v > 0 ? v : 550;
+  }
+
+  /** A traverse of hardness against depth (the effective case depth applies); other traverses are plain series (exposure time / rating). */
+  isCaseDepthTraverse(s: any): boolean {
+    return /^h/i.test(this.traverseUnit(s, 'y'));
+  }
+
+  /** The curve is a screen aid for a hardness traverse; the layout can switch it off. */
+  showTraverseCurve(s: any): boolean {
+    return !this.printMode && s?.config?.showCurve !== false && this.isCaseDepthTraverse(s);
+  }
+
+  /** Row headings of the traverse table: the layout's own names with their units. */
+  traverseLabel(s: any, axis: 'x' | 'y'): string {
+    const name = String((axis === 'x' ? s?.config?.xField : s?.config?.yField) ?? '').trim();
+    const generic = /^runtime|^auto/i.test(name) || !name;
+    return `${generic ? (axis === 'x' ? 'Distance from Surface' : 'Hardness Value') : name} (${this.traverseUnit(s, axis)})`;
+  }
+
+  /** Units of the traverse table (layout), with the lab's usual ones as default. */
+  traverseUnit(s: any, axis: 'x' | 'y'): string {
+    const u = String((axis === 'x' ? s?.config?.xUnit : s?.config?.yUnit) ?? '').trim();
+    return u || (axis === 'x' ? 'mm' : 'HV');
+  }
 
   // Checklist state
   // Items come from the layout (tableRows) or the saved test; nothing is pre-filled or pre-ticked
@@ -560,6 +592,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!s) return false;
     if (!this.printMode && this.hiddenSectionKeys.size && this.hiddenSectionKeys.has(this.sectionUiKey(s))) return false;
     const t = (s.type || '').toLowerCase();
+    if (this.printMode && s.config?.reportable === false) return false;
+    // the printed record carries the rule only when a statement of conformity is given and the layout prints it
+    if (this.printMode && t === 'rule' && (!this.ruleBasis(s.config).applicable || s.config?.showRule === false)) return false;
     const isChemical = this.testPlan?.type === 'Chemical' ||
       this.test?.discipline === 'Chemical' ||
       (this.test?.name || '').toLowerCase().includes('chemical');
@@ -648,17 +683,28 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    * Verdict of this test from the entered values and the limits of the plan / specification (never a fixed text).
    * No value yet: pending. Values but no limit: not assessed. Any value outside its limit: non conforming.
    */
-  get conformityVerdict(): { status: 'PASS' | 'FAIL' | 'PENDING' | 'NO_LIMIT'; label: string; detail: string } {
+  get conformityVerdict(): { status: 'PASS' | 'FAIL' | 'BORDERLINE' | 'PENDING' | 'NO_LIMIT'; label: string; detail: string } {
     const rows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
     const num = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
     let withValue = 0;
     let judged = 0;
     const failed: string[] = [];
-    const judge = (name: string, v: number, min: number | null, max: number | null) => {
+    const borderline: string[] = [];
+    const withMU = this.ruleBasis().withMU;
+    let uncertaintyUsed = false;
+    const judge = (name: string, v: number, min: number | null, max: number | null, u = 0) => {
       withValue++;
       if (min === null && max === null) return;
       judged++;
-      if ((min !== null && v < min) || (max !== null && v > max)) failed.push(name || 'Parameter');
+      if ((min !== null && v < min) || (max !== null && v > max)) {
+        failed.push(name || 'Parameter');
+        return;
+      }
+      // decision rule with measurement uncertainty: a result closer to its limit than U is not a clear pass
+      if (withMU && u > 0) {
+        uncertaintyUsed = true;
+        if ((min !== null && v - min < u) || (max !== null && max - v < u)) borderline.push(name || 'Parameter');
+      }
     };
     // every reading of a reading / location grid is a result of its own (Charpy: each impact value against min 35 J)
     const withReadings = new Set<string>();
@@ -672,20 +718,22 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         const v = num(raw);
         if (v === null) return;
         withReadings.add(this.normKey(paramName));
-        judge(ctrl?.parameterName || paramName, v, min, max);
+        judge(ctrl?.parameterName || paramName, v, min, max, this.uncertaintyOf(ctrl?.parameterID));
       });
     });
     // parameter rows; a row that only holds the average of its readings is not counted twice
     for (const r of rows) {
       const v = num(r.value);
       if (v === null || withReadings.has(this.normKey(r.parameterName))) continue;
-      judge(r.parameterName, v, num(r.minValue ?? r.specMinValue), num(r.maxValue ?? r.specMaxValue));
+      judge(r.parameterName, v, num(r.minValue ?? r.specMinValue), num(r.maxValue ?? r.specMaxValue), this.uncertaintyOf(r.parameterID));
     }
-    const rule = String(this.decisionRule?.ruleType || '');
-    const ruleNote = rule && !/simple/i.test(rule) ? ' (no measurement uncertainty entered: judged without guard band)' : '';
+    const ruleNote = withMU && judged > 0 && !uncertaintyUsed ? ' (no measurement uncertainty available: judged without it)' : '';
     if (withValue === 0) return { status: 'PENDING', label: 'RESULTS PENDING', detail: 'No result entered yet' };
     if (judged === 0) return { status: 'NO_LIMIT', label: 'NOT ASSESSED', detail: 'No specification limit applies to the entered results (select the grade / conditions)' };
     if (failed.length) return { status: 'FAIL', label: 'NON-CONFORMING (FAIL)', detail: `${failed.length} of ${judged} result(s) outside the limit: ${Array.from(new Set(failed)).join(', ')}${ruleNote}` };
+    if (borderline.length) {
+      return { status: 'BORDERLINE', label: 'BORDERLINE (WITHIN MEASUREMENT UNCERTAINTY)', detail: `${borderline.length} of ${judged} result(s) inside the limit but closer to it than the uncertainty: ${Array.from(new Set(borderline)).join(', ')}` };
+    }
     return { status: 'PASS', label: 'CONFORMING (PASS)', detail: `${judged} of ${withValue} result(s) judged, all within the specification limits${ruleNote}` };
   }
 
@@ -735,6 +783,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     // Initialize Execution Extra
     this.initExecutionExtra();
+
+    const clsStandard = String(this.sections.find((s: any) => s.type === 'classification')?.config?.ratingSystem ?? '').trim();
+    if (clsStandard && !this.classification.classificationStandard && /^(ASTM|ISO|IS|EN|DIN|JIS|BS)\b/i.test(clsStandard)) {
+      this.classification = { ...this.classification, classificationStandard: clsStandard };
+    }
 
     // A test that has not started takes its specimen count from the layout
     this.scheduleLayoutSpecimenCount();
@@ -793,11 +846,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         status: chk.status || ''
       }));
     } else if (chkSec?.config?.tableRows && Array.isArray(chkSec.config.tableRows) && chkSec.config.tableRows.length > 0) {
-      this.checklistItems = chkSec.config.tableRows.map((r: any, idx: number) => ({
+      this.checklistItems = chkSec.config.tableRows.filter((r: any) => r?.visible !== false).map((r: any, idx: number) => ({
         id: idx + 1,
         label: r.label,
         status: ''
       }));
+    } else if (typeof chkSec?.config?.items === 'string' && chkSec.config.items.trim()) {
+      // older layouts keep the items as one comma-separated text
+      this.checklistItems = chkSec.config.items.split(',').map((x: string) => x.trim()).filter(Boolean).map((label: string, idx: number) => ({ id: idx + 1, label, status: '' }));
     }
   }
 
@@ -855,6 +911,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         if (extra?.conditionFields && typeof extra.conditionFields === 'object') {
           this.runtimeConditionFields = { ...extra.conditionFields };
         }
+        if (extra?.customCells && typeof extra.customCells === 'object') {
+          this.customCells = { ...extra.customCells };
+        }
         if (extra?.narratives && typeof extra.narratives === 'object') {
           this.narratives = { ...extra.narratives };
         }
@@ -899,7 +958,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!this.parametersFormArray) return [];
     const indexes = this.getRowSpecimenIndexes();
     const rows = this.selectedSpecimenFilter === 'all' ? rowsOrderedBySpecimen(indexes) : rowsOfSpecimen(indexes, this.selectedSpecimenFilter - 1);
-    return rows.filter(i => !this.isGridTargetRow(i));
+    const shown = rows.filter(i => !this.isGridTargetRow(i));
+    if (!this.parameterSubset().length) return shown;
+    // the layout's parameters first within each specimen, the test's other parameters after them
+    return shown
+      .map((i, pos) => ({ i, pos, spm: this.getSpecimenIndexForParam(i), out: this.isOutsideSubset(i) ? 1 : 0 }))
+      .sort((a, b) => a.spm - b.spm || a.out - b.out || a.pos - b.pos)
+      .map(x => x.i);
   }
 
   /** Shared store on the test object for rows taken out of the table (see SpecimenRowStore). */
@@ -1273,6 +1338,31 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   /**
    * Computes the dynamic arithmetic average across all active specimens for any measurement/dimension.
    */
+  /** Smallest / largest value of a tensile row over the specimens (studio: "Show Min / Max"). */
+  getDimensionStat(field: keyof SpecimenData, which: 'min' | 'max'): string {
+    const vals = this.specimens
+      .map(s => s[field])
+      .filter((v): v is number => v !== null && v !== undefined && !isNaN(v as number) && (v as number) > 0) as number[];
+    if (vals.length === 0) return '-';
+    return this.trimNumber(which === 'min' ? Math.min(...vals) : Math.max(...vals));
+  }
+
+  /** Smallest / largest value of a parameter row over the specimens. */
+  getBaseParamStat(baseParamIdx: number, which: 'min' | 'max'): string {
+    const vals: number[] = [];
+    for (let s = 0; s < this.specimens.length; s++) {
+      const idx = this.getMatchingRow(baseParamIdx, s);
+      const raw = idx >= 0 ? this.parametersFormArray?.at(idx)?.get('value')?.value : null;
+      if (raw !== null && raw !== undefined && raw !== '' && !isNaN(Number(raw))) vals.push(Number(raw));
+    }
+    if (vals.length === 0) return '-';
+    return this.trimNumber(which === 'min' ? Math.min(...vals) : Math.max(...vals));
+  }
+
+  private trimNumber(v: number): string {
+    return String(Number(v.toFixed(3)));
+  }
+
   getDimensionAverage(field: keyof SpecimenData): string {
     const vals = this.specimens
       .map(s => s[field])
@@ -2776,7 +2866,19 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       const row = rows.find(r => !isStaticRow(r) && nameOfRow(r) === norm(p.name));
       return { ...p, displayName: String(row?.label ?? '').trim() || p.name };
     };
-    if (!this.isFixedStructure(sec)) return base.map(named);
+    const staticOf = (r: any, n: number) => ({ index: -(2000 + n), name: r.label, displayName: String(r.label ?? ''), unit: r.unit || '', requirement: r.requirement || '', inputType: 'Text', isCalculated: false, isStatic: true, staticValue: String(r.staticValue ?? '') });
+    if (!this.isFixedStructure(sec)) {
+      // the test's own parameters, with the layout's fixed-value rows above / below them as the layout places them
+      const before: any[] = [];
+      const after: any[] = [];
+      let seenParam = false;
+      let n = 0;
+      for (const r of rows.filter(x => x?.visible !== false)) {
+        if (isStaticRow(r)) (seenParam ? after : before).push(staticOf(r, n++));
+        else seenParam = true;
+      }
+      return [...before, ...base.map(named), ...after];
+    }
 
     const picked: string[] = Array.isArray(sec?.config?.specimenColumns) ? sec.config.specimenColumns : [];
     const layoutRows = rows.filter(r => r?.visible !== false);
@@ -3420,16 +3522,103 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
   // Decision Rule & Classification Operations (Gaps 5 & 6)
   // =========================================================================
-  onDecisionRuleTypeChange(type: string): void {
-    this.decisionRule.ruleType = type;
-    if (type === 'Simple Acceptance') {
-      this.decisionRule.statementText = 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).';
-    } else if (type === 'Guard Banded (ILAC-G8)') {
-      this.decisionRule.statementText = 'Statements of conformity apply ILAC-G8:09/2019 binary decision rule with guard band w = 1.0 U (95% coverage probability).';
-    } else {
-      this.decisionRule.statementText = 'Non-binary acceptance criteria evaluated with conditional pass / inconclusive zone.';
+  /** The rule section of the layout (one per layout), or null. */
+  private get ruleConfig(): any {
+    return (this.sections || []).find(s => s.type === 'rule')?.config || null;
+  }
+
+  private uncertaintyOf(parameterId: any): number {
+    if (parameterId == null || !Array.isArray(this.uncertaintyData)) return 0;
+    const row = this.uncertaintyData.find((u: any) => String(u?.parameterID ?? u?.parameterId) === String(parameterId));
+    const u = Number(row?.expandedUncertainty);
+    return isFinite(u) && u > 0 ? u : 0;
+  }
+
+  /**
+   * Where the statement of conformity and its decision rule come from (studio: "Verdict source").
+   * - inward: the choice made on the sample inward / plan (Conformity: Applicable / Not Applicable;
+   *   Decision Rule: With MOU consideration / Without taking MOU into account).
+   * - scope:  the lab scope decides; outside the accredited scope the rule is always "without uncertainty".
+   * - fixed:  the text written in the layout; judged without uncertainty.
+   */
+  ruleBasis(cfg: any = this.ruleConfig): { source: 'inward' | 'scope' | 'fixed'; applicable: boolean; withMU: boolean; basis: string } {
+    const source: 'inward' | 'scope' | 'fixed' = cfg?.verdictSource === 'scope' || cfg?.verdictSource === 'fixed' ? cfg.verdictSource : 'inward';
+    const conformity = String(this.inward?.statementOfConformity ?? '').trim().toLowerCase();
+    const rule = String(this.inward?.decisionRule ?? '').trim().toLowerCase();
+    const inwardApplicable = conformity === 'applicable';
+    const inwardWithMU = inwardApplicable && rule.startsWith('with ') && !rule.startsWith('without');
+    if (source === 'fixed') {
+      return { source, applicable: true, withMU: false, basis: 'Fixed text of the layout' };
     }
+    if (source === 'scope') {
+      if (this.nablInScope === false) {
+        return { source, applicable: true, withMU: false, basis: 'Lab scope: outside the accredited scope, without measurement uncertainty' };
+      }
+      return {
+        source, applicable: true, withMU: inwardWithMU,
+        basis: `Lab scope: ${this.nablInScope ? 'within the accredited scope' : 'scope not known'}, ${inwardWithMU ? 'with' : 'without'} measurement uncertainty`
+      };
+    }
+    if (!inwardApplicable) {
+      return { source, applicable: false, withMU: false, basis: 'Sample inward: statement of conformity not applicable' };
+    }
+    return { source, applicable: true, withMU: inwardWithMU, basis: `Sample inward: ${inwardWithMU ? 'with' : 'without'} measurement uncertainty` };
+  }
+
+  /** The statement the verdict gives; empty until there is a clear pass or fail. */
+  private autoRuleStatement(cfg: any = this.ruleConfig): string {
+    const fixed = String(cfg?.statementText ?? '').trim();
+    if (this.ruleBasis(cfg).source === 'fixed' && fixed) return fixed;
+    const spec = String(this.testPlan?.specification ?? '').trim();
+    const target = spec ? `the Requirement of ${spec}` : 'the Customer Requirement';
+    const status = this.conformityVerdict.status;
+    if (status === 'PASS') return `The Result meets ${target}.`;
+    if (status === 'FAIL') return `The Result does not meet ${target}.`;
+    return '';
+  }
+
+  /** Statement of conformity shown and printed: the technician's own wording when given, else the automatic one. */
+  ruleStatement(s?: any): string {
+    return String(this.decisionRule.statementText ?? '').trim() || this.autoRuleStatement(s?.config ?? this.ruleConfig);
+  }
+
+  isRuleStatementEdited(): boolean {
+    return String(this.decisionRule.statementText ?? '').trim() !== '';
+  }
+
+  onRuleStatementChange(s: any, value: string): void {
+    const text = String(value ?? '').trim();
+    // the automatic wording is not stored: it keeps following the verdict
+    this.decisionRule.statementText = text === this.autoRuleStatement(s?.config) ? '' : text;
     this.syncCollectionsToTest();
+  }
+
+  resetRuleStatement(): void {
+    this.decisionRule.statementText = '';
+    this.syncCollectionsToTest();
+  }
+
+  ruleDecisionText(s?: any): string {
+    const cfg = s?.config ?? this.ruleConfig;
+    const basis = this.ruleBasis(cfg);
+    const fixed = String(cfg?.decisionRuleText ?? '').trim();
+    if (basis.source === 'fixed' && fixed) return fixed;
+    return basis.withMU
+      ? 'Statement of Conformity is provided with consideration of measurement uncertainty.'
+      : 'Statement of Conformity is provided without consideration measurement uncertainty.';
+  }
+
+  /** What the rule resolved to, saved with the test so the report prints the same lines. */
+  private resolvedRule(): { applicable: boolean; withMU: boolean; ruleType: string; resolvedStatement: string; resolvedDecisionRule: string } {
+    const cfg = this.ruleConfig;
+    const basis = this.ruleBasis(cfg);
+    return {
+      applicable: basis.applicable,
+      withMU: basis.withMU,
+      ruleType: basis.withMU ? 'With measurement uncertainty' : 'Simple Acceptance',
+      resolvedStatement: basis.applicable ? this.ruleStatement() : '',
+      resolvedDecisionRule: basis.applicable ? this.ruleDecisionText() : ''
+    };
   }
 
   onClassificationChange(): void {
@@ -3619,11 +3808,347 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     this.syncCollectionsToTest();
   }
 
+  // ---------------------------------------------------------------------------
+  // Layout settings the sections below honour (2026-11 config audit)
+  // ---------------------------------------------------------------------------
+
+  /** Location grid: the heading the layout puts over the reading columns ("Impact Energy Observed (in Joules)"). */
+  locMergedTitle(s: any): string {
+    const hm = s?.config?.headerMerge;
+    if (hm && hm.isMerged === false) return '';
+    return String(hm?.title ?? s?.config?.columns?.mergedHeader ?? '').trim();
+  }
+
+  /** Under a merged heading the R1 / R2 ... labels are drawn only when the layout keeps them. */
+  locShowReadingLabels(s: any): boolean {
+    return !this.locMergedTitle(s) || s?.config?.headerMerge?.showSubLabels !== false;
+  }
+
+  // ----- narrative -----
+  /** Text of a note: what was entered, else the default text of the layout. */
+  narrativeValue(s: any): string {
+    const saved = this.narratives[this.narrativeKey(s)];
+    return saved !== undefined ? saved : String(s?.config?.defaultText ?? s?.config?.extraFields ?? '');
+  }
+
+  isSingleLineNarrative(s: any): boolean {
+    return String(s?.config?.inputType ?? '').toLowerCase().startsWith('single');
+  }
+
+  isNarrativeMissing(s: any): boolean {
+    return s?.config?.required === true && !this.narrativeValue(s).trim();
+  }
+
+  // ----- checklist -----
+  /** The answers the layout offers; the saved value stays Pass / Fail / NA. */
+  checklistOptions(s: any): { value: 'Pass' | 'Fail' | 'NA'; label: string }[] {
+    const t = String(s?.config?.responseType ?? '').toLowerCase();
+    if (t.startsWith('yes')) return [{ value: 'Pass', label: 'Yes' }, { value: 'Fail', label: 'No' }];
+    if (t.startsWith('applied')) return [{ value: 'Pass', label: 'Applied' }, { value: 'Fail', label: 'Not applied' }];
+    return [{ value: 'Pass', label: 'Pass' }, { value: 'Fail', label: 'Fail' }, { value: 'NA', label: 'N/A' }];
+  }
+
+  checklistButtonClass(item: ChecklistItem, value: string): string {
+    if (item.status !== value) return 'btn-outline-secondary';
+    return value === 'Pass' ? 'btn-success' : value === 'Fail' ? 'btn-danger' : 'btn-secondary';
+  }
+
+  // ----- traceability / sign -----
+  private shortDate(v: any): string {
+    if (!v) return '';
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return String(v);
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
+  }
+
+  /** The traceability boxes the layout lists; null when it lists none (the standard boxes are drawn). */
+  traceFields(s: any): { label: string; value: string }[] | null {
+    const fields: string[] = Array.isArray(s?.config?.fields) ? s.config.fields.map((f: any) => String(f ?? '').trim()).filter(Boolean) : [];
+    if (!fields.length) return null;
+    const eq = this.selectedEquipment || [];
+    const env = [this.conditionValues?.['Temperature'], this.conditionValues?.['Relative Humidity']];
+    const valueOf = (label: string): string => {
+      switch (label.toLowerCase().replace(/[^a-z]/g, '')) {
+        case 'analysttester': return this.timingData?.performedByName || '';
+        case 'reviewerauthorisedsignatory': return this.test?.verifiedByName || this.test?.reviewedByName || '';
+        case 'testdate': return this.shortDate(this.timingData?.testEndTime || this.timingData?.testStartTime);
+        case 'dateofreceipt': return this.shortDate(this.inward?.receivedDate || this.inward?.inwardDate || this.inward?.sampleReceivedOn);
+        case 'samplelabid': return this.sample?.sampleNo || '';
+        case 'equipmentid': return eq.map((e: any) => e?.equipmentNo || e?.name).filter(Boolean).join(', ');
+        case 'calibrationdue': return eq.map((e: any) => this.shortDate(e?.nextCalibrationDueDate || e?.nextCalibrationDate)).filter(Boolean).join(', ');
+        case 'methodstandard': return this.getCleanTestMethod();
+        case 'environmentalreference':
+          return [env[0] != null && env[0] !== '' ? `${env[0]} °C` : '', env[1] != null && env[1] !== '' ? `${env[1]} % RH` : ''].filter(Boolean).join(' / ');
+        default: return '';
+      }
+    };
+    return fields.map(label => ({ label, value: valueOf(label) || '—' }));
+  }
+
+  /** A sign box the layout lists (a layout that lists none shows both). */
+  signShows(s: any, field: string): boolean {
+    const fields: any[] = Array.isArray(s?.config?.fields) ? s.config.fields : [];
+    return !fields.length || fields.includes(field);
+  }
+
+  // ----- photo -----
+  private static readonly PHOTO_COL_CLASS: Record<number, string> = { 1: 'col-12', 2: 'col-6', 3: 'col-4', 4: 'col-3' };
+
+  photoColClass(s: any): string {
+    const n = parseInt(String(s?.config?.gridColumns ?? ''), 10);
+    return ConfiguredTestLayoutRendererComponent.PHOTO_COL_CLASS[n] || 'col-md-3 col-sm-6';
+  }
+
+  photoText(s: any, where: 'pre' | 'post'): string {
+    const c = s?.config || {};
+    const on = where === 'pre' ? c.showPreText : c.showPostText;
+    return on === false ? '' : String((where === 'pre' ? c.preText : c.postText) ?? '').trim();
+  }
+
+  /**
+   * The photo plates of the section: one per slot of the layout, filled with the test's images in order
+   * (a slot with an image of its own in the layout shows that one), then any further image.
+   * The printed record leaves out the slots the layout does not print and the ones still empty.
+   */
+  photoCells(s: any): { title: string; caption: string; required: boolean; url: string; fixed: boolean }[] {
+    const slots: any[] = Array.isArray(s?.config?.photoSlots) ? s.config.photoSlots.filter((x: any) => !!x) : [];
+    const images = [...(this.testImages || [])];
+    const cells: { title: string; caption: string; required: boolean; url: string; fixed: boolean }[] = [];
+    // an image uploaded with a slot's title as its caption belongs to that slot; the rest fill the free slots in order
+    const captionOf = (img: any) => this.normKey(img?.caption ?? img?.description ?? '');
+    const named = new Map<any, any>();
+    for (const slot of slots) {
+      const want = this.normKey(slot.title);
+      const at = want ? images.findIndex(img => captionOf(img) === want) : -1;
+      if (at >= 0) named.set(slot, images.splice(at, 1)[0]);
+    }
+    for (const slot of slots) {
+      const own = String(slot.imageUrl ?? slot.mockUrl ?? '').trim();
+      const fixed = slot.bindingSource === 'static' && !!own;
+      const img = fixed ? null : (named.get(slot) ?? images.shift());
+      if (this.printMode && (slot.reportable === false || (!fixed && !img))) continue;
+      cells.push({
+        title: String(slot.title ?? '').trim(), caption: String(slot.caption ?? '').trim(),
+        required: slot.mandatory === true && !fixed && !img, url: fixed ? own : (img?.url || ''), fixed
+      });
+    }
+    images.forEach(img => cells.push({ title: img?.name || '', caption: '', required: false, url: img?.url || '', fixed: false }));
+    return cells;
+  }
+
+  // ----- custom table (cell by cell) -----
+  /** Values entered in the cells of custom tables, by section key and cell id; saved in executionExtraJson.customCells. */
+  customCells: Record<string, Record<string, string>> = {};
+
+  customMatrix(s: any): any[][] | null {
+    const m = s?.config?.cellMatrix;
+    return Array.isArray(m) && m.length > 0 && Array.isArray(m[0]) && m[0].length > 0 ? m : null;
+  }
+
+  private customColumnVisible(s: any, c: number): boolean {
+    return s?.config?.tableColumns?.[c]?.visible !== false;
+  }
+
+  customHeaders(s: any): string[] {
+    const cols: any[] = Array.isArray(s?.config?.tableColumns) ? s.config.tableColumns : [];
+    return cols.filter((_: any, c: number) => this.customColumnVisible(s, c)).map((c: any) => String(c?.label ?? ''));
+  }
+
+  /** Rows of a custom table as the cells to draw (hidden rows / columns and cells covered by a span are left out). */
+  customRows(s: any): any[][] {
+    const m = this.customMatrix(s) || [];
+    const covered = new Set<string>();
+    const out: any[][] = [];
+    m.forEach((row, r) => {
+      if (s?.config?.tableRows?.[r]?.visible === false) return;
+      const cells: any[] = [];
+      row.forEach((cell: any, c: number) => {
+        if (!cell || !this.customColumnVisible(s, c) || covered.has(`${r}|${c}`)) return;
+        const cs = Math.max(1, Number(cell.colspan) || 1);
+        const rs = Math.max(1, Number(cell.rowspan) || 1);
+        for (let dr = 0; dr < rs; dr++) for (let dc = 0; dc < cs; dc++) if (dr || dc) covered.add(`${r + dr}|${c + dc}`);
+        cells.push(cell);
+      });
+      out.push(cells);
+    });
+    return out;
+  }
+
+  isCustomCellFixed(cell: any): boolean {
+    return cell?.bindingMode === 'static' || cell?.isLocked === true || cell?.dataType === 'formula';
+  }
+
+  private customCellRaw(s: any, cell: any): string {
+    if (cell?.bindingMode === 'static' || cell?.isLocked === true) return String(cell.staticValue ?? cell.value ?? '');
+    const saved = this.customCells[this.narrativeKey(s)]?.[cell.id];
+    return saved !== undefined ? saved : '';
+  }
+
+  /** Value a cell shows; a formula cell (=[r0,c1] * 1.05) is worked out from the cells it names. */
+  customCellValue(s: any, cell: any, depth = 0): string {
+    if (cell?.dataType !== 'formula') return this.customCellRaw(s, cell);
+    const m = this.customMatrix(s) || [];
+    let missing = depth > 5;
+    const expr = String(cell.formulaExpression ?? '').replace(/^\s*=/, '').replace(/\[\s*r(\d+)\s*,\s*c(\d+)\s*\]/gi, (_: string, r: string, c: string) => {
+      const ref = m[Number(r)]?.[Number(c)];
+      const v = ref && ref !== cell ? Number(this.customCellValue(s, ref, depth + 1)) : NaN;
+      if (!isFinite(v) || (ref && this.customCellValue(s, ref, depth + 1) === '')) missing = true;
+      return isFinite(v) ? `(${v})` : '0';
+    });
+    if (missing || !expr.trim() || !/^[0-9+\-*/().\s]+$/.test(expr)) return '';
+    try {
+      const result = Number(new Function(`return (${expr});`)());
+      if (!isFinite(result)) return '';
+      const p = Number(cell.precision);
+      return isFinite(p) && cell.precision !== undefined && cell.precision !== null && String(cell.precision) !== '' ? result.toFixed(Math.min(6, Math.max(0, p))) : String(Number(result.toFixed(4)));
+    } catch {
+      return '';
+    }
+  }
+
+  customCellOptions(cell: any): string[] {
+    if (Array.isArray(cell?.selectOptions) && cell.selectOptions.length) return cell.selectOptions;
+    return String(cell?.selectOptionsRaw ?? '').split(',').map((o: string) => o.trim()).filter(Boolean);
+  }
+
+  onCustomCellChange(s: any, cell: any, value: any): void {
+    if (this.isViewMode || this.isLocked) return;
+    const key = this.narrativeKey(s);
+    this.customCells = { ...this.customCells, [key]: { ...(this.customCells[key] || {}), [cell.id]: String(value ?? '') } };
+    this.syncCollectionsToTest();
+  }
+
+  // ----- classification / formula -----
+  classificationStandards(s: any): string[] {
+    const base = ['ASTM E45', 'ASTM A247', 'ASTM E112', 'ISO 4967'];
+    const own = String(s?.config?.ratingSystem ?? '').trim();
+    const saved = String(this.classification?.classificationStandard ?? '').trim();
+    return [own, saved].reduce((list, v) => (v && !list.includes(v) ? [...list, v] : list), base);
+  }
+
+  /** A formula section that names its result shows that parameter only; one that names none shows every calculated one. */
+  formulaShows(s: any, p: any): boolean {
+    if (!(p?.isCalculated || p?.formulaExpression)) return false;
+    const target = this.normKey(s?.config?.targetOutput);
+    if (!target) return true;
+    const names = (this.test?.parameters || []).filter((x: any) => x?.isCalculated || x?.formulaExpression).map((x: any) => this.normKey(x.parameterName));
+    return !names.includes(target) || this.normKey(p.parameterName) === target;
+  }
+
+  // ----- chart drawn from the layout (X and Y are parameters of the test, one point per specimen) -----
+  configuredChart(s: any): {
+    type: 'line' | 'scatter' | 'bar'; points: { px: number; py: number; x: number; y: number }[]; path: string;
+    xTitle: string; yTitle: string; xMin: number; xMax: number; yMin: number; yMax: number;
+    limits: { py: number; label: string }[]; showPoints: boolean; showGrid: boolean; baseY: number;
+  } | null {
+    const c = s?.config || {};
+    const xName = this.normKey(c.xField);
+    const yName = this.normKey(c.yField);
+    if (!xName || !yName) return null;
+    const rows: any[] = (this.parametersFormArray?.controls || []).map(ctl => (ctl as FormGroup).getRawValue());
+    const xRows = rows.filter(r => this.normKey(r.parameterName) === xName);
+    const yRows = rows.filter(r => this.normKey(r.parameterName) === yName);
+    if (!xRows.length || !yRows.length) return null;
+    const num = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+    const data: { x: number; y: number }[] = [];
+    for (const xr of xRows) {
+      const yr = yRows.find(r => (r.specimenIndex ?? 0) === (xr.specimenIndex ?? 0));
+      const x = num(xr.value);
+      const y = num(yr?.value);
+      if (x !== null && y !== null) data.push({ x, y });
+    }
+    data.sort((a, b) => a.x - b.x);
+    // the limit of the first specimen row that has one (not every specimen row carries it)
+    const firstLimit = (pick: (r: any) => any): number | null => {
+      for (const r of yRows) {
+        const v = num(pick(r));
+        if (v !== null) return v;
+      }
+      return null;
+    };
+    const yLimits = [firstLimit(r => r.minValue ?? r.specMinValue), firstLimit(r => r.maxValue ?? r.specMaxValue)];
+    const span = (vals: number[], lo: any, hi: any): [number, number] => {
+      let min = num(lo) ?? (vals.length ? Math.min(...vals) : 0);
+      let max = num(hi) ?? (vals.length ? Math.max(...vals) : 1);
+      if (max <= min) { max = min + 1; min = min - 1; }
+      return [min, max];
+    };
+    const wantLimit = c.showLimit === true;
+    const [xMin, xMax] = span(data.map(d => d.x), c.xMin, c.xMax);
+    const [yMin, yMax] = span([...data.map(d => d.y), ...(wantLimit ? (yLimits.filter(v => v !== null) as number[]) : [])], c.yMin, c.yMax);
+    const L = 45, R = 390, T = 10, B = 135;
+    const sx = (x: number) => L + ((x - xMin) / (xMax - xMin)) * (R - L);
+    const sy = (y: number) => B - ((y - yMin) / (yMax - yMin)) * (B - T);
+    const points = data.map(d => ({ ...d, px: Math.round(sx(d.x) * 10) / 10, py: Math.round(sy(d.y) * 10) / 10 }));
+    const t = String(c.chartType ?? '').toLowerCase();
+    const type: 'line' | 'scatter' | 'bar' = t.startsWith('bar') ? 'bar' : t.startsWith('scatter') ? 'scatter' : 'line';
+    const title = (label: any, field: any, unit: any) => {
+      const name = String(label ?? '').trim();
+      const text = name && !/^runtime/i.test(name) ? name : String(field ?? '').trim();
+      const u = String(unit ?? '').trim();
+      return u ? `${text} (${u})` : text;
+    };
+    const limits = wantLimit
+      ? [{ v: yLimits[0], label: 'Min' }, { v: yLimits[1], label: 'Max' }].filter(l => l.v !== null && l.v! >= yMin && l.v! <= yMax)
+        .map(l => ({ py: Math.round(sy(l.v as number) * 10) / 10, label: `${l.label} ${l.v}` }))
+      : [];
+    return {
+      type, points, path: points.map((p, i) => `${i ? 'L' : 'M'}${p.px},${p.py}`).join(' '),
+      xTitle: title(c.xLabel, c.xField, c.xUnit), yTitle: title(c.yLabel, c.yField, c.yUnit),
+      xMin, xMax, yMin, yMax, limits, showPoints: c.showPoints !== false || type === 'scatter', showGrid: c.showGrid !== false, baseY: B
+    };
+  }
+
+  // ----- what the layout requires before a test is completed / sent for verification -----
+  /** Required notes, required conditions and unanswered checklist items; empty when nothing is missing. */
+  requiredGaps(): string[] {
+    const gaps: string[] = [];
+    for (const s of this.sections || []) {
+      const c = s.config || {};
+      if (s.type === 'narrative' && !this.isPrimaryNarrative(s) && this.isNarrativeMissing(s)) gaps.push(String(c.label || s.title || 'Note'));
+      if (s.type === 'condition' && c.required === true) {
+        this.conditionFields(s).filter(f => String(this.conditionValues?.[f] ?? '').trim() === '').forEach(f => gaps.push(f));
+      }
+      if (s.type === 'checklist' && c.requireAll === true && this.checklistItems.some(i => !i.status)) {
+        gaps.push(`${s.title || 'Checklist'}: every item needs an answer`);
+      }
+    }
+    return gaps;
+  }
+
+  /** Required photos still missing, for layouts that ask for them before verification. */
+  photoGaps(): string[] {
+    const gaps: string[] = [];
+    for (const s of this.sections || []) {
+      if (s.type !== 'photo' || s.config?.requirePhotoToVerify !== true) continue;
+      this.photoCells(s).filter(c => c.required).forEach(c => gaps.push(c.title || 'Photo'));
+    }
+    return gaps;
+  }
+
+  // ----- parameter table: the layout's own parameters first -----
+  private parameterSubset(): string[] {
+    const cfg = (this.sections || []).find(s => s.type === 'parameter')?.config;
+    if (!cfg || !/subset/i.test(String(cfg.parameterMode ?? '')) || !Array.isArray(cfg.subset)) return [];
+    return cfg.subset.map((n: any) => this.normKey(n)).filter(Boolean);
+  }
+
+  /** A parameter of the test that the layout's subset does not list (still entered, shown after the listed ones). */
+  isOutsideSubset(rowIdx: number): boolean {
+    const subset = this.parameterSubset();
+    if (!subset.length) return false;
+    return !subset.includes(this.normKey(this.parametersFormArray?.at(rowIdx)?.get('parameterName')?.value));
+  }
+
   getExecutionExtraJson(): string {
     const extra = {
-      narratives: this.narratives,
+      // every note with the text it shows (the layout's default text included), so the report prints the same
+      narratives: (this.sections || []).filter(s => s.type === 'narrative' && !this.isPrimaryNarrative(s))
+        .reduce((all: Record<string, string>, s: any) => ({ ...all, [this.narrativeKey(s)]: this.narrativeValue(s) }), { ...this.narratives }),
+      customCells: this.customCells,
       conditionFields: this.runtimeConditionFields,
-      decisionRule: this.decisionRule,
+      decisionRule: { ...this.decisionRule, ...this.resolvedRule() },
       classification: this.classification,
       custom: this.customAttributes,
       conditionValues: this.conditionValues,

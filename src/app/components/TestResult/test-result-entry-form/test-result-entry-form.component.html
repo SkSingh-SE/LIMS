@@ -454,6 +454,7 @@
                   <ng-container *ngIf="currentTestLayout">
                     <app-configured-test-layout-renderer #layoutRenderer [layoutConfig]="currentTestLayout" [testPlan]="plans[p]"
                       [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
+                      [nablInScope]="isNablAccredited(plans[p].tests[t])" [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []"
                       [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
                       [activeTabSection]="'execution'"
                       [environmentData]="environmentMap[plans[p].tests[t]?.headerId]"
@@ -1205,6 +1206,7 @@
           <!-- The results, in the layout the test was entered with (read-only copy of the result screen) -->
           <app-configured-test-layout-renderer *ngIf="rds.layout" [printMode]="true" [layoutConfig]="rds.layout"
             [testPlan]="rds.plan" [test]="rds.test" [testFormGroup]="rds.testGroup" [sample]="rds.sample" [inward]="rds.inward"
+            [nablInScope]="isNablAccredited(rds.test)" [uncertaintyData]="uncertaintyMap[rds.test?.headerId] || []"
             [activeTabSection]="'execution'" [environmentData]="rds.env" [timingData]="rds.timing"
             [selectedEquipment]="rds.equipment" [testImages]="rds.images">
           </app-configured-test-layout-renderer>

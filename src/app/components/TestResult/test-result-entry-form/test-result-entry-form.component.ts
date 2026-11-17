@@ -2609,6 +2609,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return;
     }
 
+    // What the layout marks as required (notes, conditions, checklist answers)
+    const renderer = this.layoutRendererComponent?.test === test ? this.layoutRendererComponent : null;
+    const gaps = renderer?.requiredGaps() || [];
+    if (gaps.length > 0) {
+      this.toastService.show(`Cannot complete test. Required by the layout: ${gaps.slice(0, 3).join(', ')}${gaps.length > 3 ? '...' : ''}`, 'error');
+      return;
+    }
+
     // Recalculate all formulas before completion
     this.calculateParameters(planIndex, testIndex);
 
@@ -3150,6 +3158,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const headerId = test?.headerId;
     if (!headerId) return;
     if (this.isSubmittingVerification) return;
+    // Photos the layout requires before verification
+    const photoGaps = (this.layoutRendererComponent?.test === test ? this.layoutRendererComponent : null)?.photoGaps() || [];
+    if (photoGaps.length > 0) {
+      this.toastService.show(`Cannot submit for verification. Required photo missing: ${photoGaps.slice(0, 3).join(', ')}${photoGaps.length > 3 ? '...' : ''}`, 'error');
+      return;
+    }
     this.isSubmittingVerification = true;
 
     this.testResultService.submitForVerification(headerId).subscribe({
@@ -4922,7 +4936,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       equipment: this.selectedEquipmentMap[test.headerId] || [],
       images: this.testImagesMap[test.headerId] || [],
       timing: this.testTimingMap[test.headerId] || {},
-      info: this.buildSheetInfo(plan, test),
+      info: this.withConditionSuffix(this.buildSheetInfo(plan, test), layout, test),
       rawParameters: rows.map((p: any) => ({
         name: p.parameterName,
         specimen: 'S' + ((Number(p.specimenIndex) || 0) + 1),
@@ -4941,6 +4955,20 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
    * Identification lines of the sheet, in the order of the lab's report format. A line with no recorded value is left
    * out of the sheet (the template hides empty ones); nothing is filled in with a default.
    */
+  /** Adds the condition the layout names to the test name of the record ("IMPACT TEST @ -29 °C"). */
+  private withConditionSuffix(info: any, layout: any, test: any): any {
+    const sec = (layout?.sections || []).find((s: any) => ['condition', 'cond'].includes(String(s?.type || '').toLowerCase()) && String(s?.config?.titleSuffixField ?? '').trim());
+    if (!sec || !info) return info;
+    let extra: any = test?.executionExtraJson;
+    try {
+      extra = typeof extra === 'string' ? JSON.parse(extra) : extra;
+    } catch {
+      extra = null;
+    }
+    const value = String(extra?.conditionValues?.[String(sec.config.titleSuffixField).trim()] ?? '').trim();
+    return value ? { ...info, testName: `${info.testName} @ ${value}`.trim() } : info;
+  }
+
   private buildSheetInfo(plan: any, test: any): any {
     const details: any[] = this.sample?.additionalDetails || [];
     const norm = (s: any) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');

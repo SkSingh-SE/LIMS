@@ -30,6 +30,35 @@ const UI_STATE_KEYS = [
   'customRows'
 ];
 
+/**
+ * Settings the studio no longer offers (2026-11 config audit): nothing reads them, or another key says the same.
+ * Dropped on load and on save, so old layouts shed them the next time they are saved.
+ */
+const RETIRED_KEYS = [
+  // a section is either in the layout or not; the technician hides it on the result screen
+  'enabled', 'visibility', 'sectionStatus', 'isOptional',
+  // report group: only `reportable` and `printTitle` remain
+  'printCertificate', 'reportLabel', 'pageBreak', 'density', 'keepHeader', 'showLabels', 'highlightStatus', 'showRaw',
+  'showMUReport', 'showConformity', 'showEquipment', 'showScopeMark', 'reportProjection', 'alignment',
+  // binding lives on each row / column
+  'dataBindingMode',
+  // duplicates (migrated in normalizeSection)
+  'showConformanceVerdict', 'showAreaCol', 'showOrientationCol',
+  // controls removed from the section panels: nothing reads these
+  'stepMode', 'cutoffMode', 'xSource', 'ySource', 'showCriteria', 'allowedFormats', 'watermarkReport', 'showMU', 'derivedOnly',
+  'specimenSource', 'gaugeLength', 'countMode', 'editable',
+  'readingSource', 'locationSource', 'formulaSource', 'observedSource', 'dataSource',
+  // parameter section: decimals come from the parameter master, requirement / status are column switches
+  'decimals', 'resultMode', 'requirement', 'status',
+  // rule section: replaced by verdictSource
+  'evaluation', 'valueSource', 'operator', 'parameter', 'failAction', 'decisionRule'
+];
+
+/** 'manual' meant the same as 'runtime' on the result screen: one value, "Entry". */
+function normalizeBinding(item: any): void {
+  if (item && item.bindingMode === 'manual') item.bindingMode = 'runtime';
+}
+
 export function normalizeSectionType(type: string | null | undefined): string {
   const t = (type || '').trim().toLowerCase();
   return SECTION_TYPE_ALIASES[t] || t;
@@ -58,7 +87,17 @@ function normalizeSection(sec: any, index: number): ExecutionSection {
     const clean = String(title).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
     config.sectionKey = `${clean || 'section'}_${id}`;
   }
-  if (config.enabled === undefined) config.enabled = true;
+
+  // Retired / duplicate keys (2026-11 config audit)
+  if (config.showConformanceVerdict !== undefined && config.showStatus === undefined) {
+    config.showStatus = !!config.showConformanceVerdict;
+  }
+  if (config.width !== 'Half Width') config.width = 'Full Width';
+  if (Array.isArray(config.tableRows)) config.tableRows.forEach(normalizeBinding);
+  if (Array.isArray(config.tableColumns)) config.tableColumns.forEach(normalizeBinding);
+  if (Array.isArray(config.cellMatrix)) {
+    config.cellMatrix.forEach((row: any) => Array.isArray(row) && row.forEach(normalizeBinding));
+  }
 
   // Normalize legacy shorthand / duplicate aliases (see LAYOUT_STUDIO_CONFIG_MATRIX.md §3)
   if (config.showAreaCol !== undefined && config.showAreaCalculation === undefined) {
@@ -69,6 +108,8 @@ function normalizeSection(sec: any, index: number): ExecutionSection {
   }
   // Note: `showConformity` (Report: print conformity statement) and `conformity` (Rule: evaluate conformity)
   // are different settings and must never be mapped onto each other.
+
+  RETIRED_KEYS.forEach(k => delete config[k]);
 
   return { ...sec, id, type, title, config };
 }
@@ -88,7 +129,10 @@ export function normalizeLayoutConfig(raw: unknown): LayoutConfigPayload {
   if (!obj || typeof obj !== 'object') {
     return { configVersion: LAYOUT_CONFIG_VERSION, sections: [] };
   }
-  const sections = Array.isArray(obj.sections) ? obj.sections.map((s: any, i: number) => normalizeSection(s, i)) : [];
+  // A section an old layout had switched off ("Enable Section" unticked) was never shown: it is left out.
+  const sections = Array.isArray(obj.sections)
+    ? obj.sections.filter((s: any) => s?.config?.enabled !== false).map((s: any, i: number) => normalizeSection(s, i))
+    : [];
   return { ...obj, configVersion: obj.configVersion || LAYOUT_CONFIG_VERSION, sections };
 }
 
@@ -97,6 +141,7 @@ export function serializeLayoutConfig(payload: LayoutConfigPayload): string {
   const sections = (payload.sections || []).map(sec => {
     const config: any = { ...(sec.config || {}) };
     UI_STATE_KEYS.forEach(k => delete config[k]);
+    RETIRED_KEYS.forEach(k => delete config[k]);
     return { ...sec, type: normalizeSectionType(sec.type), config };
   });
   return JSON.stringify({ ...payload, configVersion: LAYOUT_CONFIG_VERSION, sections });

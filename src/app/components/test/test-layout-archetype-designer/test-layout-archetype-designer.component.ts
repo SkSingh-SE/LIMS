@@ -83,24 +83,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
   readonly bindingModeSelectOptions = [
     {
       value: 'runtime',
-      label: 'Runtime',
-      shortLabel: 'Run',
-      icon: 'bi-lightning-charge-fill text-theme',
+      label: 'Entry',
+      shortLabel: 'Entry',
+      icon: 'bi-pencil-square text-theme',
       triggerClass: 'binding-pill-runtime',
     },
     {
       value: 'static',
-      label: 'Static',
-      shortLabel: 'Static',
+      label: 'Fixed value',
+      shortLabel: 'Fixed',
       icon: 'bi-pin-angle-fill text-warning-emphasis',
       triggerClass: 'binding-pill-static',
-    },
-    {
-      value: 'manual',
-      label: 'Manual',
-      shortLabel: 'Manual',
-      icon: 'bi-pencil-square text-success',
-      triggerClass: 'binding-pill-manual',
     },
   ];
 
@@ -109,13 +102,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     width: [
       { value: 'Full Width', label: 'Full Width' },
       { value: 'Half Width', label: 'Half Width' },
-      { value: 'Auto', label: 'Auto' },
-    ],
-    visibility: [
-      { value: 'Always', label: 'Always' },
-      { value: 'Only when data exists', label: 'Only when data exists' },
-      { value: 'Only when PASS', label: 'Only when PASS' },
-      { value: 'Only when FAIL', label: 'Only when FAIL' },
     ],
     parameterMode: [
       { value: 'All runtime parameters', label: 'All runtime parameters' },
@@ -176,6 +162,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     responseType: [
       { value: 'Pass / Fail / NA', label: 'Pass / Fail / NA' },
       { value: 'Yes / No', label: 'Yes / No' },
+      { value: 'Applied / Not applied', label: 'Applied / Not applied' },
     ],
     checklistResponse: [
       { value: 'PASS', label: 'Pass / Acceptable' },
@@ -558,6 +545,37 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     return { id, name: sec.config.selectedOrientationNotation || String(id) };
   }
 
+  // ── Location: parameters measured at each location (readings per location) ──
+  isLocationParam(sec: ExecutionSection, name: string): boolean {
+    return (sec.config.locationParams || []).includes(name);
+  }
+
+  toggleLocationParam(sec: ExecutionSection, name: string): void {
+    const list = [...(sec.config.locationParams || [])];
+    const i = list.indexOf(name);
+    if (i >= 0) list.splice(i, 1);
+    else list.push(name);
+    sec.config.locationParams = list;
+    // an average list that names a parameter no longer measured is trimmed
+    if (Array.isArray(sec.config.locationAverageParams)) {
+      sec.config.locationAverageParams = sec.config.locationAverageParams.filter(n => list.includes(n));
+    }
+  }
+
+  /** A measured parameter gets an average unless the layout turned it off (no list = all of them). */
+  isLocationAverage(sec: ExecutionSection, name: string): boolean {
+    const avg = sec.config.locationAverageParams;
+    return !Array.isArray(avg) || avg.includes(name);
+  }
+
+  toggleLocationAverage(sec: ExecutionSection, name: string): void {
+    const base = Array.isArray(sec.config.locationAverageParams) ? [...sec.config.locationAverageParams] : [...(sec.config.locationParams || [])];
+    const i = base.indexOf(name);
+    if (i >= 0) base.splice(i, 1);
+    else base.push(name);
+    sec.config.locationAverageParams = base;
+  }
+
   // ── Reading: target parameter picked from the selected test's parameters ──
   setReadingTargetParam(sec: ExecutionSection, paramName: string): void {
     const p = (this.currentDataset?.parameters || []).find(x => x.name === paramName);
@@ -580,12 +598,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const v = Number(sec.config.maxFileSizeMb);
     if (!v || v < 1) sec.config.maxFileSizeMb = 1;
     else if (v > 10) sec.config.maxFileSizeMb = 10;
-  }
-
-  /** Required / Optional on the result screen. Keeps the legacy isOptional flag in sync. */
-  setSectionStatus(sec: ExecutionSection, status: 'Required' | 'Optional'): void {
-    sec.config.sectionStatus = status;
-    sec.config.isOptional = status === 'Optional';
   }
 
   isSectionFixed(sec: ExecutionSection): boolean {
@@ -712,7 +724,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const newCol: LayoutColumnItem = {
       key: `col_custom_${Date.now()}_${nextNum}`,
       label: `Custom Obs ${nextNum}`,
-      bindingMode: 'manual',
+      bindingMode: 'runtime',
       origin: 'entry',
       visible: true,
       align: 'center',
@@ -731,7 +743,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       key: `param_${Date.now()}_${nextNum}`,
       label: `Observation ${nextNum}`,
       unit: '',
-      bindingMode: 'manual',
+      bindingMode: 'runtime',
       origin: 'entry',
       visible: true,
       align: 'center',
@@ -764,7 +776,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       nature: 'summary',
       summaryFn: summaryFn,
       summaryScope: 'all',
-      bindingMode: 'manual',
+      bindingMode: 'runtime',
       visible: true,
       isCalculated: true,
       removable: true
@@ -1176,6 +1188,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
   ];
 
   ngOnInit(): void {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     this.initResponsiveLeftPanel();
     this.initResponsiveRightPanel();
     this.loadCustomPoolsFromStorage();
@@ -1479,31 +1492,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const config: SectionConfig = {
       sectionKey: `${cleanTitle}_${id}`,
       width: 'Full Width',
-      visibility: 'Always',
-      enabled: true,
       runtimeAdjust: true,
-      showUnit: true,
-      showLabels: true,
-      highlightStatus: true,
-      keepHeader: true,
       reportable: true,
-      printCertificate: true,
-      showRaw: false,
-      reportProjection: 'Same execution structure',
-      pageBreak: 'Auto',
-      density: 'Normal',
-      alignment: 'Standard',
-      reportLabel: title
+      // the lab's reports print no section headings
+      printTitle: false
     };
+    // Unit column: only the table sections have one
+    if (type === 'specimen' || type === 'reading' || type === 'location') config.showUnit = true;
 
     switch (type) {
       case 'parameter':
-        config.dataSource = 'Selected Test → Leaf Node → Parameters';
         config.parameterMode = 'All runtime parameters';
-        config.resultMode = 'Observed Result';
-        config.requirement = 'Runtime Requirement';
-        config.status = 'Runtime PASS / FAIL';
-        config.decimals = 'Auto';
         config.columns = {
           unit: true,
           requirement: true,
@@ -1518,30 +1517,19 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         break;
 
       case 'specimen':
-        config.specimenSource = 'Execution Specimens';
-        config.countMode = 'Fixed count';
         config.count = 3;
         config.prefix = 'S';
         // Parameters as rows, one column per specimen: the shape of every report of the lab
         config.orientation = 'Parameters × Specimens';
         config.specimenShape = 'rectangular';
-        config.gaugeLength = '';
-        // Default orientation is chosen from the SpecimenOrientation master (no hardcoded demo value)
-        config.showOrientationColumn = true;
-        config.showDimensions = true;
-        config.showAreaCalculation = true;
         config.showAverage = true;
         config.showMinMax = false;
         config.showRequirement = true;
-        config.showConformanceVerdict = true;
+        config.showStatus = true;
         config.specimenExecutionMode = 'runtime';
-        config.editable = true;
-        config.showIdentity = true;
-        config.ident = this.specimenIdentFields.slice(0, 3);
         break;
 
       case 'reading':
-        config.readingSource = 'Runtime readings';
         config.readingCount = 'Fixed count';
         config.count = 5;
         config.spotCount = 5;
@@ -1562,9 +1550,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         break;
 
       case 'location':
-        config.locationSource = 'Execution Locations / Zones';
         config.locationMode = 'Named locations';
         config.locationNames = 'Weld Metal, HAZ, Base Metal';
+        config.locationParams = [];
+        config.locationReadings = 3;
+        config.locationColumns = 1;
+        config.locationNameOnOwnRow = false;
+        config.readingsJoined = false;
         config.count = 3;
         config.prefix = 'Zone';
         config.orientation = 'Locations × Parameters';
@@ -1584,12 +1576,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         break;
 
       case 'rule':
-        config.parameter = 'Runtime Parameter';
-        config.operator = '≥';
-        config.valueSource = 'Runtime Requirement';
-        config.evaluation = 'Runtime PASS / FAIL';
-        config.failAction = 'Mark parameter FAIL';
-        config.decisionRule = 'Simple acceptance (no guard band)';
+        // Statement + decision rule follow the sample inward / plan unless the layout says otherwise
+        config.verdictSource = 'inward';
+        config.statementText = '';
+        config.decisionRuleText = '';
         config.conformity = true;
         config.showRule = true;
         break;
@@ -1599,25 +1589,20 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         config.yField = 'Runtime Parameter Result';
         config.xUnit = 'mm';
         config.yUnit = 'HV';
-        config.stepMode = 'Runtime readings';
         config.stepValue = '0.1';
-        config.cutoffMode = 'Runtime requirement';
         config.showTable = true;
         config.showCurve = true;
         break;
 
       case 'chart':
         config.chartType = 'line';
-        config.xSource = 'Parameter';
         config.xField = 'Auto – Parameter 1';
         config.xLabel = 'Runtime X';
         config.xUnit = 'mm';
-        config.ySource = 'Parameter Result';
         config.yField = 'Auto – Parameter 2';
         config.yLabel = 'Runtime Result';
         config.yUnit = 'MPa';
         config.showPoints = true;
-        config.showLabels = false;
         config.showLegend = true;
         config.showGrid = true;
         config.showLimit = false;
@@ -1625,9 +1610,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
       case 'classification':
         config.ratingSystem = 'ASTM / Method-defined rating';
-        config.observedSource = 'Runtime result';
         config.decision = 'Runtime classification';
-        config.showCriteria = true;
         break;
 
       case 'custom':
@@ -1657,11 +1640,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         config.allowRuntimeUpload = true;
         config.allowZoomModal = true;
         config.requirePhotoToVerify = false;
-        config.allowedFormats = 'JPG, PNG, WEBP, PDF';
         config.maxFileSizeMb = 5;
         config.reportPlacement = 'Inline with section';
-        config.watermarkReport = false;
-        config.pageBreak = 'Auto';
         config.count = 1;
         // No demo text or demo plates: pre/post text and slots are set per layout (or via a photo preset)
         config.showPreText = false;
@@ -1688,14 +1668,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         break;
 
       case 'formula':
-        config.formulaSource = 'Formula Master / Runtime mapping';
         config.inputs = 'Mapped runtime parameters';
         config.resultLabel = 'Calculated Result';
         config.precision = 'Auto';
         config.showFormula = false;
         config.showInputs = true;
         config.rounding = 'Round half up';
-        config.showMU = false;
         break;
 
       case 'narrative':
@@ -1712,8 +1690,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         config.source = 'Execution Checklist';
         config.items = 'Visual condition, Dimensions verified, Equipment calibrated';
         config.responseType = 'Pass / Fail / NA';
-        config.failAction = 'Block completion';
-        config.showCriteria = true;
         config.requireAll = true;
         break;
 
@@ -1726,9 +1702,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
       case 'opinion':
         config.source = 'Derived Parameters & Expert Evaluation';
-        config.isOptional = true;
-        config.sectionStatus = 'Optional';
-        config.derivedOnly = true;
         config.showOverallStatement = true;
         config.overallStatement = '';
         config.tableColumns = [
@@ -1741,9 +1714,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         break;
 
       case 'sign':
-        config.reportLabel = customTitle || 'Sign-off & Review';
         config.reportable = true;
-        config.printCertificate = true;
         config.fields = ['Tested & Recorded By', 'Technical Reviewer / Verifier'];
         config.layout = 'Two-column cards';
         break;
@@ -1806,9 +1777,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         spec.config.showMinMax = true;
         const param = this.createSectionObject('parameter', 'Absorbed Energy & Lateral Expansion');
         const rule = this.createSectionObject('rule', 'Minimum Absorbed Energy Acceptance Rule');
-        rule.config.parameter = 'Impact Energy';
-        rule.config.operator = '≥';
-        rule.config.valueSource = '27 J (Avg) / 20 J (Indiv)';
         const narr = this.createSectionObject('narrative', 'Fracture Surface Appearance (% Shear)');
         narr.config.label = 'Appearance & Shear Fracture %';
         return [cond, spec, param, rule, narr];
@@ -1823,9 +1791,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         spec.config.showAverage = true;
         const param = this.createSectionObject('parameter', 'Izod Absorbed Energy & Impact Strength');
         const rule = this.createSectionObject('rule', 'Izod Acceptance Criteria');
-        rule.config.parameter = 'Absorbed Energy';
-        rule.config.operator = '≥';
-        rule.config.valueSource = '20 J';
         const narr = this.createSectionObject('narrative', 'Observations & Break Type');
         narr.config.label = 'Complete / Partial Break';
         return [cond, spec, param, rule, narr];
@@ -1841,9 +1806,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         read.config.showStatistics = true;
         const param = this.createSectionObject('parameter', 'Observed Hardness & Tensile Equivalent');
         const rule = this.createSectionObject('rule', 'Hardness Range Acceptance');
-        rule.config.parameter = 'Hardness (HRC)';
-        rule.config.operator = 'Within Range';
-        rule.config.valueSource = '28 – 34 HRC';
         const narr = this.createSectionObject('narrative', 'Surface Preparation & Impression Quality');
         narr.config.label = 'Test Surface Quality & Calibration Check';
         return [cond, read, param, rule, narr];
@@ -1906,9 +1868,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         chart.config.showLimit = true;
         const param = this.createSectionObject('parameter', 'Effective Case Depth & Core Hardness');
         const rule = this.createSectionObject('rule', 'Case Depth Tolerance Rule');
-        rule.config.parameter = 'Effective Case Depth';
-        rule.config.operator = 'Within Range';
-        rule.config.valueSource = '0.80 – 1.20 mm';
         const narr = this.createSectionObject('narrative', 'Heat Treatment & Case Structure Remarks');
         narr.config.label = 'Effective Case Depth Verification Statement';
         return [cond, trav, chart, param, rule, narr];
@@ -1940,9 +1899,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         form.config.inputs = 'C, Mn, Cr, Mo, V, Ni, Cu';
         form.config.resultLabel = 'Carbon Equivalent CE = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15';
         const rule = this.createSectionObject('rule', 'Standard Grade Chemical Conformity Rule');
-        rule.config.parameter = 'Chemical Elements';
-        rule.config.operator = 'Within Range';
-        rule.config.valueSource = 'Grade Specification';
         const narr = this.createSectionObject('narrative', 'Chemical Analysis Certification Statement');
         narr.config.label = 'Compliance with Material Specification';
         return [cond, param, spec, form, rule, narr];
@@ -2037,9 +1993,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         trav.config.showCurve = false;
         const param = this.createSectionObject('parameter', 'Rust Onset Durations & Rating');
         const rule = this.createSectionObject('rule', 'Corrosion Resistance Duration Rule');
-        rule.config.parameter = 'Red Rust Observed';
-        rule.config.operator = '≥';
-        rule.config.valueSource = '96 Hours';
         const photo = this.createSectionObject('photo', 'Test Panel Surface Condition (Pre-test & Post-test)');
         photo.config.caption = 'Coated test panel appearance after salt spray exposure';
         photo.config.showDateTime = true;
@@ -4154,12 +4107,24 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
   // Execution Preview Modal
   openPreviewModal(): void {
+    this.populateDemoDataForAllSections();
     this.populatePreviewEntriesWithDemoData();
     this.previewModalOpen = true;
   }
 
   closePreviewModal(): void {
     this.previewModalOpen = false;
+  }
+
+  getFormulaPreviewValue(sec: ExecutionSection): string {
+    const cfg = sec?.config as Record<string, any> | undefined;
+    if (cfg?.['demoResult']) return String(cfg['demoResult']);
+    if (cfg?.['formulaExpression']) {
+      const expr = String(cfg['formulaExpression']).toLowerCase();
+      if (expr.includes('ce') || expr.includes('pcm')) return '0.3967';
+      if (expr.includes('uts') || expr.includes('area')) return '625.4';
+    }
+    return '0.3967';
   }
 
   onPreviewEntryChange(key: string, value: string, req?: string, groupKey?: string): void {
@@ -5990,7 +5955,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     result: { label: 'Observed Result', bindingMode: 'runtime', width: '24%' },
     status: { label: 'Status', bindingMode: 'runtime', width: '16%' },
     method: { label: 'Method / Standard', bindingMode: 'runtime', width: '18%' },
-    remarks: { label: 'Remarks', bindingMode: 'manual', width: '18%' },
+    remarks: { label: 'Remarks', bindingMode: 'runtime', width: '18%' },
     uncertainty: { label: 'Uncertainty (±)', bindingMode: 'runtime', width: '14%' },
     dl: { label: 'Detection Limit', bindingMode: 'runtime', width: '14%' },
     scope: { label: 'Scope Mark', bindingMode: 'runtime', width: '12%' }
@@ -6065,7 +6030,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       });
       if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '16%' });
       if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', visible: true, width: '18%' });
-      if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', visible: true, width: '18%' });
+      if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'runtime', visible: true, width: '18%' });
       if (sec.config.columns?.uncertainty) cols.push({ key: 'uncertainty', label: 'Uncertainty (±)', bindingMode: 'runtime', visible: true, width: '14%' });
       if (sec.config.columns?.dl) cols.push({ key: 'dl', label: 'Detection Limit', bindingMode: 'runtime', visible: true, width: '14%' });
       if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', visible: true, width: '12%' });
@@ -6085,13 +6050,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
         if (sec.config.showDimensions !== false) {
           if (sec.config.specimenShape === 'round') {
-            cols.push({ key: 'd0', label: 'Diameter D0 (mm)', bindingMode: 'manual', visible: true, width: '12%' });
+            cols.push({ key: 'd0', label: 'Diameter D0 (mm)', bindingMode: 'runtime', visible: true, width: '12%' });
           } else if (sec.config.specimenShape === 'tubular') {
-            cols.push({ key: 'd0', label: 'OD D0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
-            cols.push({ key: 't0', label: 'WT T0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+            cols.push({ key: 'd0', label: 'OD D0 (mm)', bindingMode: 'runtime', visible: true, width: '10%' });
+            cols.push({ key: 't0', label: 'WT T0 (mm)', bindingMode: 'runtime', visible: true, width: '10%' });
           } else {
-            cols.push({ key: 'w0', label: 'Width W0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
-            cols.push({ key: 't0', label: 'Thick T0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+            cols.push({ key: 'w0', label: 'Width W0 (mm)', bindingMode: 'runtime', visible: true, width: '10%' });
+            cols.push({ key: 't0', label: 'Thick T0 (mm)', bindingMode: 'runtime', visible: true, width: '10%' });
           }
         }
 
@@ -6107,10 +6072,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
           });
         }
 
-        cols.push({ key: 'fm', label: 'Peak Load Fm (kN)', bindingMode: 'manual', visible: true, width: '12%' });
+        cols.push({ key: 'fm', label: 'Peak Load Fm (kN)', bindingMode: 'runtime', visible: true, width: '12%' });
         cols.push({ key: 'rm', label: 'Tensile Rm (MPa)', isCalculated: true, formulaDisplay: 'Fm × 1000 / S0', bindingMode: 'runtime', visible: true, width: '13%' });
-        cols.push({ key: 'reh', label: 'Yield ReH (MPa)', bindingMode: 'manual', visible: true, width: '12%' });
-        cols.push({ key: 'a', label: 'Elongation A (%)', bindingMode: 'manual', visible: true, width: '11%' });
+        cols.push({ key: 'reh', label: 'Yield ReH (MPa)', bindingMode: 'runtime', visible: true, width: '12%' });
+        cols.push({ key: 'a', label: 'Elongation A (%)', bindingMode: 'runtime', visible: true, width: '11%' });
 
         if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
         if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
@@ -6142,7 +6107,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         cols.push({
           key: `spot_${sIdx}`,
           label: `Spot #${sIdx}`,
-          bindingMode: 'manual',
+          bindingMode: 'runtime',
           visible: true,
           removable: true,
           width: `${Math.floor(38 / spotN)}%`
@@ -6191,8 +6156,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     } else if (sec.type === 'classification') {
       cols.push({ key: 'grade', label: 'Inclusion / Structure Class', bindingMode: 'static', visible: true, width: '26%' });
       cols.push({ key: 'system', label: 'Standard / System', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'thin', label: 'Thin Series', bindingMode: 'manual', visible: true, width: '14%' });
-      cols.push({ key: 'heavy', label: 'Heavy Series', bindingMode: 'manual', visible: true, width: '14%' });
+      cols.push({ key: 'thin', label: 'Thin Series', bindingMode: 'runtime', visible: true, width: '14%' });
+      cols.push({ key: 'heavy', label: 'Heavy Series', bindingMode: 'runtime', visible: true, width: '14%' });
       cols.push({ key: 'limit', label: 'Specified Limit', bindingMode: 'static', visible: true, width: '14%' });
       cols.push({ key: 'result', label: 'Result', bindingMode: defaultMode, visible: true, width: '14%' });
     } else if (sec.type === 'custom') {
@@ -6210,12 +6175,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       cols.push({ key: 'setpoint', label: 'Specified Set Point', bindingMode: 'static', visible: true, width: '20%' });
       cols.push({ key: 'tolerance', label: 'Tolerance Range', bindingMode: 'static', visible: true, width: '18%' });
       cols.push({ key: 'val', label: 'Observed Reading', bindingMode: defaultMode, visible: true, width: '18%' });
-      cols.push({ key: 'sensor', label: 'Sensor / Instrument ID', bindingMode: 'manual', visible: true, width: '16%' });
+      cols.push({ key: 'sensor', label: 'Sensor / Instrument ID', bindingMode: 'runtime', visible: true, width: '16%' });
     } else if (sec.type === 'checklist') {
       cols.push({ key: 'clause', label: 'Standard Clause', bindingMode: 'static', visible: true, width: '18%' });
       cols.push({ key: 'item', label: 'Inspection Point Description', bindingMode: 'static', visible: true, width: '38%' });
       cols.push({ key: 'method', label: 'Verification Mode', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'resp', label: 'Compliance Response', bindingMode: 'manual', visible: true, width: '16%' });
+      cols.push({ key: 'resp', label: 'Compliance Response', bindingMode: 'runtime', visible: true, width: '16%' });
       cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '10%' });
     } else if (sec.type === 'rule') {
       cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '25%' });
@@ -6292,7 +6257,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
             visible: true
           });
         }
-        if (sec.config.showConformanceVerdict !== false) {
+        if (sec.config.showStatus !== false) {
           rows.push({
             key: 'summary_verdict',
             label: 'SPECIFICATION CONFORMANCE',
@@ -6443,7 +6408,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
           key: item.key,
           label: item.label,
           requirement: item.req,
-          bindingMode: 'manual',
+          bindingMode: 'runtime',
           visible: true,
           removable: true
         });
@@ -6979,18 +6944,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     return 'binding-pill-runtime';
   }
 
-  setSectionDefaultBinding(sec: ExecutionSection, mode: DataBindingMode, propagate: boolean = false): void {
-    sec.config.dataBindingMode = mode;
-    if (propagate) {
-      if (sec.config.tableRows) {
-        sec.config.tableRows.forEach(r => r.bindingMode = mode);
-      }
-      if (sec.config.tableColumns) {
-        sec.config.tableColumns.forEach(c => c.bindingMode = mode);
-      }
-    }
-  }
-
   // Auto-Step Generator State for Hardness Traverse & Surveys
   autoStepStart: number = 0.05;
   autoStepIncrement: number = 0.05;
@@ -7030,7 +6983,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       const newCol: LayoutColumnItem = {
         key: `reading_${newNum}`,
         label: `R${newNum}`,
-        bindingMode: 'manual',
+        bindingMode: 'runtime',
         visible: true,
         removable: true
       };
@@ -7083,16 +7036,16 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
   applyChecklistPreset(sec: ExecutionSection, presetKey: string): void {
     const rows: LayoutRowItem[] = [];
     if (presetKey === 'iso17025') {
-      rows.push({ key: 'chk_1', label: 'Sample identification & labeling integrity verified', requirement: 'ISO 17025 Cl. 7.4.2', bindingMode: 'manual', visible: true, removable: true });
-      rows.push({ key: 'chk_2', label: 'Test machine calibration validity & zero balance checked', requirement: 'ISO 17025 Cl. 6.4.1', bindingMode: 'manual', visible: true, removable: true });
-      rows.push({ key: 'chk_3', label: 'Ambient temperature and relative humidity logged', requirement: 'ISO 17025 Cl. 6.3', bindingMode: 'manual', visible: true, removable: true });
-      rows.push({ key: 'chk_4', label: 'Standard test method & test parameters confirmed', requirement: 'ISO 17025 Cl. 7.2', bindingMode: 'manual', visible: true, removable: true });
-      rows.push({ key: 'chk_5', label: 'Raw data recorded contemporaneously with audit trail', requirement: 'ISO 17025 Cl. 7.5', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'chk_1', label: 'Sample identification & labeling integrity verified', requirement: 'ISO 17025 Cl. 7.4.2', bindingMode: 'runtime', visible: true, removable: true });
+      rows.push({ key: 'chk_2', label: 'Test machine calibration validity & zero balance checked', requirement: 'ISO 17025 Cl. 6.4.1', bindingMode: 'runtime', visible: true, removable: true });
+      rows.push({ key: 'chk_3', label: 'Ambient temperature and relative humidity logged', requirement: 'ISO 17025 Cl. 6.3', bindingMode: 'runtime', visible: true, removable: true });
+      rows.push({ key: 'chk_4', label: 'Standard test method & test parameters confirmed', requirement: 'ISO 17025 Cl. 7.2', bindingMode: 'runtime', visible: true, removable: true });
+      rows.push({ key: 'chk_5', label: 'Raw data recorded contemporaneously with audit trail', requirement: 'ISO 17025 Cl. 7.5', bindingMode: 'runtime', visible: true, removable: true });
     } else if (presetKey === 'pretest') {
-      rows.push({ key: 'pre_1', label: 'Specimen surface finish, parallelism & dimensions checked', requirement: 'ASTM E8 / ISO 6892', bindingMode: 'manual', visible: true, removable: true });
-      rows.push({ key: 'pre_2', label: 'Grip alignment and hydraulic clamping pressure verified', requirement: 'SOP-MEC-01', bindingMode: 'manual', visible: true, removable: true });
-      rows.push({ key: 'pre_3', label: 'Extensometer knife-edge gauge length confirmed', requirement: 'Class 0.5 Calibration', bindingMode: 'manual', visible: true, removable: true });
-      rows.push({ key: 'pre_4', label: 'Emergency stop and protective interlock operational', requirement: 'Lab Safety Manual', bindingMode: 'manual', visible: true, removable: true });
+      rows.push({ key: 'pre_1', label: 'Specimen surface finish, parallelism & dimensions checked', requirement: 'ASTM E8 / ISO 6892', bindingMode: 'runtime', visible: true, removable: true });
+      rows.push({ key: 'pre_2', label: 'Grip alignment and hydraulic clamping pressure verified', requirement: 'SOP-MEC-01', bindingMode: 'runtime', visible: true, removable: true });
+      rows.push({ key: 'pre_3', label: 'Extensometer knife-edge gauge length confirmed', requirement: 'Class 0.5 Calibration', bindingMode: 'runtime', visible: true, removable: true });
+      rows.push({ key: 'pre_4', label: 'Emergency stop and protective interlock operational', requirement: 'Lab Safety Manual', bindingMode: 'runtime', visible: true, removable: true });
     }
     sec.config.tableRows = rows;
     this.toastService.show(`Loaded ${rows.length} checklist items for ${presetKey.toUpperCase()}`, 'success');
@@ -7126,6 +7079,32 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     rows.push({ key: 'tr_4', label: 'Ambient Temp / Humidity Logger (TH-LOG-01)', requirement: 'Cal Cert: NABL/2026/0304', unit: 'Due: 2027-03-10', staticValue: 'Testo 174H', bindingMode: 'static', visible: true, removable: true });
     sec.config.tableRows = rows;
     this.toastService.show('Loaded Equipment Calibration Traceability Records', 'success');
+  }
+
+  /** Fixed image of a photo slot (sketch / reference drawing): kept inside the layout, so it is limited in size. */
+  onPhotoSlotImageSelected(slot: PhotoSlotItem, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      this.toastService.show('Only PNG or JPG images can be used.', 'error');
+      input.value = '';
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      this.toastService.show('The image is larger than 500 KB. Use a smaller sketch.', 'error');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      slot.imageUrl = String(reader.result || '');
+      slot.bindingSource = 'static';
+      slot.mandatory = false;
+      this.markLayoutDirty();
+    };
+    reader.onerror = () => this.toastService.show('The image could not be read.', 'error');
+    reader.readAsDataURL(file);
   }
 
   ensurePhotoSlots(sec: ExecutionSection): PhotoSlotItem[] {
@@ -7719,7 +7698,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       while (matrix[r].length < cCount) {
         const c = matrix[r].length;
         const colItem = cols[c];
-        const defaultMode = (c === 0 ? 'static' : (colItem.bindingMode || 'manual')) as DataBindingMode;
+        const defaultMode = (c === 0 ? 'static' : (colItem.bindingMode || 'runtime')) as DataBindingMode;
         const defaultVal = c === 0 ? (rowItem.label || `Row ${r + 1}`) : (rowItem.staticValue || '');
         matrix[r].push({
           id: `cell_${r}_${c}`,
@@ -7884,9 +7863,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     if (preset === 'corrosion') {
       sec.config.tableColumns = [
         { key: 'col_interval', label: 'Exposure Interval', bindingMode: 'static', visible: true },
-        { key: 'col_appearance', label: 'Visual Surface Rating', bindingMode: 'manual', visible: true },
-        { key: 'col_pit_depth', label: 'Max Pit Depth (mm)', bindingMode: 'manual', visible: true, unit: 'mm' },
-        { key: 'col_status', label: 'Pass / Fail Verdict', bindingMode: 'manual', visible: true }
+        { key: 'col_appearance', label: 'Visual Surface Rating', bindingMode: 'runtime', visible: true },
+        { key: 'col_pit_depth', label: 'Max Pit Depth (mm)', bindingMode: 'runtime', visible: true, unit: 'mm' },
+        { key: 'col_status', label: 'Pass / Fail Verdict', bindingMode: 'runtime', visible: true }
       ];
       sec.config.tableRows = [
         { key: 'r_24h', label: '24 Hours Exposure', bindingMode: 'static', visible: true },
@@ -7918,8 +7897,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     } else if (preset === 'mass_loss') {
       sec.config.tableColumns = [
         { key: 'col_spec', label: 'Specimen ID', bindingMode: 'static', visible: true },
-        { key: 'col_initial', label: 'Initial Weight (g)', bindingMode: 'manual', visible: true, unit: 'g' },
-        { key: 'col_final', label: 'Final Weight (g)', bindingMode: 'manual', visible: true, unit: 'g' },
+        { key: 'col_initial', label: 'Initial Weight (g)', bindingMode: 'runtime', visible: true, unit: 'g' },
+        { key: 'col_final', label: 'Final Weight (g)', bindingMode: 'runtime', visible: true, unit: 'g' },
         { key: 'col_loss', label: 'Mass Loss Δm (g)', bindingMode: 'runtime', visible: true, unit: 'g' },
         { key: 'col_rate', label: 'Corrosion Rate (mpy)', bindingMode: 'runtime', visible: true, unit: 'mpy' }
       ];
@@ -7951,9 +7930,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     } else {
       sec.config.tableColumns = [
         { key: 'col_feature', label: 'Feature / Test Point', bindingMode: 'static', visible: true },
-        { key: 'col_nominal', label: 'Specified Target', bindingMode: 'manual', visible: true },
-        { key: 'col_obs', label: 'Observed Reading', bindingMode: 'manual', visible: true },
-        { key: 'col_eval', label: 'Evaluation Status', bindingMode: 'manual', visible: true }
+        { key: 'col_nominal', label: 'Specified Target', bindingMode: 'runtime', visible: true },
+        { key: 'col_obs', label: 'Observed Reading', bindingMode: 'runtime', visible: true },
+        { key: 'col_eval', label: 'Evaluation Status', bindingMode: 'runtime', visible: true }
       ];
       sec.config.tableRows = [
         { key: 'row_1', label: 'Point A (Surface)', bindingMode: 'static', visible: true },

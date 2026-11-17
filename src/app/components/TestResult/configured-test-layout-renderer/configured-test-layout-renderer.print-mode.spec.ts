@@ -69,7 +69,10 @@ describe('ConfiguredTestLayoutRendererComponent print mode', () => {
   let cmp: ConfiguredTestLayoutRendererComponent;
   let emitted: string[];
 
-  function create(printMode: boolean, data = tensileCase()) {
+  /** Conformity as chosen on the sample inward / plan; a statement of conformity is given unless a test says otherwise. */
+  const APPLICABLE = { statementOfConformity: 'Applicable', decisionRule: 'Without taking MOU into account' };
+
+  function create(printMode: boolean, data = tensileCase(), inward: any = APPLICABLE, uncertainty: any[] = []) {
     fixture = TestBed.createComponent(ConfiguredTestLayoutRendererComponent);
     cmp = fixture.componentInstance;
     cmp.layoutConfig = data.layoutConfig;
@@ -77,6 +80,8 @@ describe('ConfiguredTestLayoutRendererComponent print mode', () => {
     cmp.testPlan = { type: 'Mechanical' };
     cmp.testFormGroup = data.testFormGroup;
     cmp.sample = data.sample;
+    cmp.inward = inward;
+    cmp.uncertaintyData = uncertainty;
     cmp.activeTabSection = 'execution';
     cmp.printMode = printMode;
     emitted = [];
@@ -210,5 +215,67 @@ describe('ConfiguredTestLayoutRendererComponent print mode', () => {
     expect(host.classList.contains('print-mode')).toBeFalse();
     expect(host.querySelectorAll('.btn-lims-delete').length).toBeGreaterThan(0);
     expect(Array.from(host.querySelectorAll<HTMLElement>('.action-col')).every(el => getComputedStyle(el).display !== 'none')).toBeTrue();
+  });
+
+  describe('rule section (statement of conformity)', () => {
+    const ruleCase = (config: Record<string, any> = {}) => {
+      const data = tensileCase();
+      data.layoutConfig.sections.push({ id: 'r1', type: 'rule', title: 'Conformity', config });
+      return data;
+    };
+    const NOT_APPLICABLE = { statementOfConformity: 'Not Applicable', decisionRule: 'Not Applicable' };
+    const WITH_MOU = { statementOfConformity: 'Applicable', decisionRule: 'With MOU consideration' };
+
+    it('follows the sample inward: without MOU the result within its limit passes and the lines are written', () => {
+      create(false, ruleCase());
+      expect(cmp.ruleBasis().applicable).toBeTrue();
+      expect(cmp.ruleBasis().withMU).toBeFalse();
+      expect(cmp.conformityVerdict.status).toBe('PASS');
+      expect(cmp.ruleStatement()).toBe('The Result meets the Customer Requirement.');
+      expect(cmp.ruleDecisionText()).toBe('Statement of Conformity is provided without consideration measurement uncertainty.');
+    });
+
+    it('conformity "Not Applicable" on the inward: note on screen, no rule card on the printed record', () => {
+      create(false, ruleCase(), NOT_APPLICABLE);
+      expect(cmp.ruleBasis().applicable).toBeFalse();
+      expect((fixture.nativeElement as HTMLElement).querySelector('.decision-rule-section')?.textContent).toContain('No statement of conformity');
+      fixture.destroy();
+      create(true, ruleCase(), NOT_APPLICABLE);
+      expect((fixture.nativeElement as HTMLElement).querySelector('.decision-rule-section')).toBeNull();
+    });
+
+    it('with MOU consideration: a result closer to its limit than the uncertainty is borderline', () => {
+      // Yield Strength 280 against min 240: U = 50 reaches the limit, U = 10 does not
+      create(false, ruleCase(), WITH_MOU, [{ parameterID: 5, expandedUncertainty: 50 }]);
+      expect(cmp.ruleBasis().withMU).toBeTrue();
+      expect(cmp.conformityVerdict.status).toBe('BORDERLINE');
+      expect(cmp.ruleStatement()).toBe('');
+      fixture.destroy();
+      create(false, ruleCase(), WITH_MOU, [{ parameterID: 5, expandedUncertainty: 10 }]);
+      expect(cmp.conformityVerdict.status).toBe('PASS');
+      expect(cmp.ruleDecisionText()).toContain('with consideration of measurement uncertainty');
+    });
+
+    it('lab scope source: a test outside the accredited scope is judged without uncertainty', () => {
+      create(false, ruleCase({ verdictSource: 'scope' }), WITH_MOU, [{ parameterID: 5, expandedUncertainty: 50 }]);
+      cmp.nablInScope = false;
+      expect(cmp.ruleBasis().withMU).toBeFalse();
+      expect(cmp.conformityVerdict.status).toBe('PASS');
+      cmp.nablInScope = true;
+      expect(cmp.conformityVerdict.status).toBe('BORDERLINE');
+    });
+
+    it('fixed text source: the layout text is used even when the inward says not applicable; the technician can reword it', () => {
+      const cfg = { verdictSource: 'fixed', statementText: 'Complies with the drawing.', decisionRuleText: 'Simple acceptance.' };
+      create(false, ruleCase(cfg), NOT_APPLICABLE);
+      expect(cmp.ruleBasis().applicable).toBeTrue();
+      expect(cmp.ruleStatement()).toBe('Complies with the drawing.');
+      expect(cmp.ruleDecisionText()).toBe('Simple acceptance.');
+      cmp.onRuleStatementChange({ config: cfg }, 'Own wording');
+      expect(cmp.ruleStatement()).toBe('Own wording');
+      expect(JSON.parse(cmp.getExecutionExtraJson()).decisionRule.resolvedStatement).toBe('Own wording');
+      cmp.resetRuleStatement();
+      expect(cmp.ruleStatement()).toBe('Complies with the drawing.');
+    });
   });
 });

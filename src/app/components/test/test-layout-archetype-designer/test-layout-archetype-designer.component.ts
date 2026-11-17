@@ -1,9 +1,11 @@
 import { TENSILE_LAYOUT_ROWS, resolveTensileRole } from '../../TestResult/configured-test-layout-renderer/tensile-parameter-roles';
 import { Component, OnInit, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { ToastService } from '../../../services/toast.service';
 import { LaboratoryTestService } from '../../../services/laboratory-test.service';
@@ -73,6 +75,7 @@ export interface TestDef {
   styleUrls: ['./test-layout-archetype-designer.component.css']
 })
 export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponentDeactivate {
+  private http = inject(HttpClient);
   private toastService = inject(ToastService);
   private labService = inject(LaboratoryTestService);
   private testLayoutService = inject(TestLayoutService);
@@ -7126,7 +7129,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     this.toastService.show('Loaded Equipment Calibration Traceability Records', 'success');
   }
 
-  /** Fixed image of a photo slot (sketch / reference drawing): kept inside the layout, so it is limited in size. */
+  /** Fixed image of a photo slot (sketch / reference drawing): uploaded to Uploads/layout-images/ (limit 10 MB). */
   onPhotoSlotImageSelected(slot: PhotoSlotItem, event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input?.files?.[0];
@@ -7136,20 +7139,34 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       input.value = '';
       return;
     }
-    if (file.size > 500 * 1024) {
-      this.toastService.show('The image is larger than 500 KB. Use a smaller sketch.', 'error');
+    if (file.size > 10 * 1024 * 1024) {
+      this.toastService.show('The image is larger than 10 MB. Use a smaller image.', 'error');
       input.value = '';
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      slot.imageUrl = String(reader.result || '');
-      slot.bindingSource = 'static';
-      slot.mandatory = false;
-      this.markLayoutDirty();
-    };
-    reader.onerror = () => this.toastService.show('The image could not be read.', 'error');
-    reader.readAsDataURL(file);
+
+    const layoutId = this.currentLayoutId || 0;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.http.post<{ success: boolean; url: string }>(`${environment.apiUrl}/TestLayoutTemplate/${layoutId}/image`, formData).subscribe({
+      next: (res) => {
+        if (res?.url) {
+          slot.imageUrl = res.url;
+          slot.bindingSource = 'static';
+          slot.mandatory = false;
+          this.markLayoutDirty();
+          this.toastService.show('Image uploaded successfully.', 'success');
+        } else {
+          this.toastService.show('Image upload failed: no URL returned.', 'error');
+        }
+      },
+      error: (err) => {
+        const msg = err?.error?.message || err?.message || 'Failed to upload layout image.';
+        this.toastService.show(msg, 'error');
+        input.value = '';
+      }
+    });
   }
 
   ensurePhotoSlots(sec: ExecutionSection): PhotoSlotItem[] {

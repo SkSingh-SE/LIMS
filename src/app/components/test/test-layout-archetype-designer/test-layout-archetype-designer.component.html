@@ -4079,7 +4079,7 @@
                       (change)="onPhotoSlotImageSelected(slot, $event)" [attr.aria-label]="'Fixed image of photo ' + (i + 1)" [disabled]="isViewMode">
                     <button *ngIf="slot.imageUrl && !isViewMode" type="button" class="btn-nav-icon text-danger" (click)="slot.imageUrl = ''" title="Remove image" aria-label="Remove image"><i class="bi bi-x-lg"></i></button>
                   </div>
-                  <div class="text-muted text-xxs mt-1">PNG or JPG up to 500 KB (sketch / reference drawing). Shown read-only on the result screen and the record.</div>
+                  <div class="text-muted text-xxs mt-1">PNG or JPG up to 10 MB (sketch / reference drawing). Shown read-only on the result screen and the record.</div>
                 </div>
                 <div class="d-flex gap-2 mt-1">
                   <label class="form-check compact-check mb-0">

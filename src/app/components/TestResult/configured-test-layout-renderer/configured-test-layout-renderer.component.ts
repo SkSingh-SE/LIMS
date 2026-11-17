@@ -3612,7 +3612,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const fixed = String(cfg?.statementText ?? '').trim();
     if (this.ruleBasis(cfg).source === 'fixed' && fixed) return fixed;
     const spec = String(this.testPlan?.specification ?? '').trim();
-    const target = spec ? `the Requirement of ${spec}` : 'the Customer Requirement';
+    const target = spec && spec.toLowerCase() !== 'unknown' ? `the Requirement of ${spec}` : 'the Customer Requirement';
     const status = this.conformityVerdict.status;
     if (status === 'PASS') return `The Result meets ${target}.`;
     if (status === 'FAIL') return `The Result does not meet ${target}.`;

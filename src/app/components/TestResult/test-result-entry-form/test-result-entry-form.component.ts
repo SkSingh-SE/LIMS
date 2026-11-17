@@ -1007,7 +1007,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       (plan.generalTests || []).forEach((generalTest: any, gtIdx: number) => {
         const specification = this.buildSpecificationName(
           generalTest.specfication1Name,
-          generalTest.specfication2Name
+          generalTest.specfication2Name,
+          generalTest,
+          sampleData
         );
 
         const plannedQuantity = Number(generalTest.plannedQuantity || generalTest.quantity || 1);
@@ -1124,7 +1126,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       (plan.chemicalTests || []).forEach((chemicalTest: any) => {
         const specification = this.buildSpecificationName(
           chemicalTest.specfication1Name,
-          chemicalTest.specfication2Name
+          chemicalTest.specfication2Name,
+          chemicalTest,
+          sampleData
         );
 
         const chemPlannedQuantity = Number(chemicalTest.plannedQuantity || chemicalTest.quantity || 1);
@@ -1396,9 +1400,46 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return batchNo?.value || '';
   }
 
-  private buildSpecificationName(spec1Name: string, spec2Name: string): string {
-    if (!spec1Name) return 'Unknown';
-    return spec2Name ? `${spec1Name} / ${spec2Name}` : spec1Name;
+  private buildSpecificationName(
+    spec1Name?: string,
+    spec2Name?: string,
+    test?: any,
+    sample?: any
+  ): string {
+    const s1 = (spec1Name || '').trim();
+    const s2 = (spec2Name || '').trim();
+    if (s1 && s2) return `${s1} / ${s2}`;
+    if (s1) return s1;
+    if (s2) return s2;
+
+    // No named specification on plan: check if limits exist on parameters or test
+    const params = test?.parameters || [];
+    const hasSpecLimit =
+      (test?.specificationLineID != null && Number(test.specificationLineID) > 0) ||
+      params.some((p: any) =>
+        (p?.specificationLineID != null && Number(p.specificationLineID) > 0) ||
+        p?.specMinValue != null ||
+        p?.specMaxValue != null ||
+        p?.minValue != null ||
+        p?.maxValue != null
+      );
+
+    if (!hasSpecLimit) {
+      return 'Unknown';
+    }
+
+    // Limit comes from grade default: show real source (grade / "Grade default")
+    const grade = (
+      test?.gradeName ||
+      test?.specificationGradeName ||
+      test?.grade ||
+      sample?.specificationGradeName ||
+      sample?.assignedGradeName ||
+      sample?.grade ||
+      ''
+    ).trim();
+
+    return grade ? `${grade} (Grade default)` : 'Grade default';
   }
 
   // ----------------------------------------------------------------

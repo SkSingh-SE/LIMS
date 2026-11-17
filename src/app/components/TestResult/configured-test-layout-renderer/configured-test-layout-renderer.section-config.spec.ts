@@ -339,4 +339,17 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     expect(cmp.specimens.length).toBe(2);
     expect(cmp.conformityVerdict.status).toBe('PASS');
   });
+
+  it('L6.2: autoRuleStatement uses Customer Requirement when specification is Unknown, and real specification when set', () => {
+    create([sec('rule')], {
+      rows: [paramRow(1, 'Hardness', 157.73, 0, { maxValue: 200 })]
+    });
+    cmp.testPlan.specification = 'Unknown';
+    fixture.detectChanges();
+    expect(cmp.ruleStatement()).toBe('The Result meets the Customer Requirement.');
+
+    cmp.testPlan.specification = 'TP316L (Grade default)';
+    fixture.detectChanges();
+    expect(cmp.ruleStatement()).toBe('The Result meets the Requirement of TP316L (Grade default).');
+  });
 });

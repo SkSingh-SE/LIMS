@@ -39,6 +39,9 @@ import { findByTensileRole,
   tensileArea, TensileRole } from '../configured-test-layout-renderer/tensile-parameter-roles';
 import {
   addSpecimenRows,
+  filterEmptyExtraSpecimenRows,
+  layoutDeclaredSpecimenCount,
+  layoutHasSpecimenSection,
   removeSpecimenRows,
   resolveSpecimenCount,
   resolveSpecimenIndexes,
@@ -794,7 +797,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   getActiveSpecimenCount(): number {
     const plan = this.plans[this.activePlanIndex];
-    return Number(plan?.tests?.[0]?.totalSpecimens || plan?.totalSpecimens || this.getActivePlannedQuantity());
+    return Number(plan?.tests?.[0]?.totalSpecimens || plan?.totalSpecimens || 1);
   }
 
   /** Completed, pending-verification and verified tests: no specimen count or layout change from the toolbar. */
@@ -1008,8 +1011,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         );
 
         const plannedQuantity = Number(generalTest.plannedQuantity || generalTest.quantity || 1);
-        // Specimens shown in the result table: the saved count when rows carry a specimen index, else the planned count
-        const totalSpecimens = resolveSpecimenCount(generalTest.parameters || [], plannedQuantity);
+        const hasSpmSec = layoutHasSpecimenSection(generalTest.layoutSnapshotJson);
+        const validParams = filterEmptyExtraSpecimenRows(generalTest.parameters || [], hasSpmSec, {
+          readings: generalTest.readings,
+          testImages: generalTest.testImages
+        });
+        const declaredSpmCount = hasSpmSec ? layoutDeclaredSpecimenCount(generalTest.layoutSnapshotJson) : 0;
+        // In-header specimen count: layout declared count when specimen section exists, otherwise max(1, highest saved SpecimenIndex + 1)
+        const totalSpecimens = declaredSpmCount || resolveSpecimenCount(validParams, 1);
         const sequenceNo = generalTest.sequenceNo || 1;
         const baseName = generalTest.laboratoryTest || 'General Test';
         const testName = plannedQuantity > 1 ? `${baseName} - Test ${sequenceNo}` : baseName;
@@ -1064,10 +1073,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               checklist: generalTest.checklist,
               observations: generalTest.observations,
               // Saved rows that hold a value or remark in the database: a row cleared on screen cannot be removed until saved
-              savedResultIds: savedResultIdsOf(generalTest.parameters),
+              savedResultIds: savedResultIdsOf(validParams),
               // Every saved row is kept; each row carries its own specimen index (see specimen-grouping.ts)
               parameters: (() => {
-                const allParams = generalTest.parameters || [];
+                const allParams = validParams;
                 const specimenIndexes = resolveSpecimenIndexes(allParams);
                 return allParams.map((param: any, rowIdx: number) => ({
                   id: param.id,
@@ -1119,10 +1128,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         );
 
         const chemPlannedQuantity = Number(chemicalTest.plannedQuantity || chemicalTest.quantity || 1);
+        const chemHasSpmSec = layoutHasSpecimenSection(chemicalTest.layoutSnapshotJson);
+        const chemValidParams = filterEmptyExtraSpecimenRows(chemicalTest.parameters || [], chemHasSpmSec, {
+          readings: chemicalTest.readings,
+          testImages: chemicalTest.testImages
+        });
+        const chemDeclaredCount = chemHasSpmSec ? layoutDeclaredSpecimenCount(chemicalTest.layoutSnapshotJson) : 0;
+        const chemTotalSpecimens = chemDeclaredCount || resolveSpecimenCount(chemValidParams, 1);
         const chemPlan: any = {
           type: 'Chemical',
           plannedQuantity: chemPlannedQuantity,
-          totalSpecimens: chemPlannedQuantity,
+          totalSpecimens: chemTotalSpecimens,
           discipline: chemicalTest.discipline || 'Chemical',
           analysisTechnique: chemicalTest.analysisTechnique || '—',
           sampleType: sampleData.productForm || sampleData.productMasterName || sampleData.productCondition || '—',
@@ -1149,7 +1165,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               headerId: chemicalTest.headerId,
               name: chemicalTest.laboratoryTest || 'Chemical Test',
               plannedQuantity: chemPlannedQuantity,
-              totalSpecimens: chemPlannedQuantity,
+              totalSpecimens: chemTotalSpecimens,
               reportNo: chemicalTest.reportNo || `Auto-${chemicalTest.headerId}`,
               status: chemicalTest.status || 'Pending',
               testPurpose: chemicalTest.testPurpose || '',
@@ -1167,9 +1183,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               traversePoints: chemicalTest.traversePoints,
               checklist: chemicalTest.checklist,
               observations: chemicalTest.observations,
-              savedResultIds: savedResultIdsOf(chemicalTest.parameters),
-              parameters: (chemicalTest.parameters || []).map((param: any) => ({
-                id: param.id,
+              savedResultIds: savedResultIdsOf(chemValidParams),
+              parameters: (() => {
+                const allParams = chemValidParams;
+                const specimenIndexes = resolveSpecimenIndexes(allParams);
+                return allParams.map((param: any, rowIdx: number) => ({
+                  id: param.id,
+                  specimenIndex: specimenIndexes[rowIdx] ?? 0,
                 parameterID: param.parameterID || null,
                 parameterName: param.parameterName || '',
                 unit: param.unit || '',
@@ -1202,6 +1222,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
                 inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
                 dropdownOptions: param.dropdownOptions || []
               }))
+            })()
             }
           ]
         };
@@ -1300,9 +1321,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             remarks: generalTest.remarks || ''
           });
 
-          (generalTest.parameters || []).forEach((param: any, paramIdx: number) => {
-            if (paramIdx < parametersArray.length) {
-              const paramGroup = parametersArray.at(paramIdx) as FormGroup;
+          (generalTest.parameters || []).forEach((param: any) => {
+            const paramGroup = parametersArray.controls.find(c => {
+              const cId = c.get('id')?.value;
+              if (cId && param.id && Number(cId) === Number(param.id)) return true;
+              return Number(c.get('parameterID')?.value) === Number(param.parameterID) &&
+                Number(c.get('specimenIndex')?.value) === Number(param.specimenIndex || 0);
+            }) as FormGroup;
+            if (paramGroup) {
               paramGroup.patchValue({
                 id: param.id,
                 parameterID: param.parameterID,
@@ -1333,9 +1359,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             remarks: chemicalTest.remarks || ''
           });
 
-          (chemicalTest.parameters || []).forEach((param: any, paramIdx: number) => {
-            if (paramIdx < parametersArray.length) {
-              const paramGroup = parametersArray.at(paramIdx) as FormGroup;
+          (chemicalTest.parameters || []).forEach((param: any) => {
+            const paramGroup = parametersArray.controls.find(c => {
+              const cId = c.get('id')?.value;
+              if (cId && param.id && Number(cId) === Number(param.id)) return true;
+              return Number(c.get('parameterID')?.value) === Number(param.parameterID) &&
+                Number(c.get('specimenIndex')?.value) === Number(param.specimenIndex || 0);
+            }) as FormGroup;
+            if (paramGroup) {
               paramGroup.patchValue({
                 id: param.id,
                 parameterID: param.parameterID,

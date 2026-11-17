@@ -24,13 +24,17 @@ import {
   addSpecimenRows,
   insertPositionForSpecimen,
   matchingRowInSpecimen,
+  filterEmptyExtraSpecimenRows,
+  layoutHasSpecimenSection,
   removeParameterRows,
   removeSpecimenRows,
+  resolveSpecimenIndexes,
   rowRemovalMessage,
   rowRemovalReason,
   rowsOfSpecimen,
   rowsOrderedBySpecimen,
   rowValuesOf,
+  specimenHasData,
   specimenIndexesOf,
   specimenRemovalMessage,
   SpecimenRowStore,
@@ -685,7 +689,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    * No value yet: pending. Values but no limit: not assessed. Any value outside its limit: non conforming.
    */
   get conformityVerdict(): { status: 'PASS' | 'FAIL' | 'BORDERLINE' | 'PENDING' | 'NO_LIMIT'; label: string; detail: string } {
-    const rows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
+    const rawRows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
+    const rows = filterEmptyExtraSpecimenRows(rawRows, this.hasSpecimenSection, {
+      readings: this.test?.readings,
+      readingValues: this.readingValues,
+      testImages: this.testImages
+    });
     const num = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
     let withValue = 0;
     let judged = 0;
@@ -959,7 +968,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!this.parametersFormArray) return [];
     const indexes = this.getRowSpecimenIndexes();
     const rows = this.selectedSpecimenFilter === 'all' ? rowsOrderedBySpecimen(indexes) : rowsOfSpecimen(indexes, this.selectedSpecimenFilter - 1);
-    const shown = rows.filter(i => !this.isGridTargetRow(i));
+    const rawFormRows = (this.parametersFormArray.controls || []).map(c => (c as FormGroup).getRawValue());
+    const validRows = filterEmptyExtraSpecimenRows(rawFormRows, this.hasSpecimenSection, {
+      readings: this.test?.readings,
+      readingValues: this.readingValues,
+      testImages: this.testImages
+    });
+    const validSet = new Set(validRows);
+    const shown = rows.filter(i => !this.isGridTargetRow(i) && (this.hasSpecimenSection || validSet.has(rawFormRows[i])));
     if (!this.parameterSubset().length) return shown;
     // the layout's parameters first within each specimen, the test's other parameters after them
     return shown
@@ -1127,19 +1143,39 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Specimen Matrix Operations
   // =========================================================================
   private initSpecimens(): void {
-    const plannedQty = Number(
-      this.testPlan?.totalSpecimens ||
-      this.test?.totalSpecimens ||
-      this.testPlan?.plannedQuantity ||
-      this.testPlan?.quantity ||
-      this.test?.plannedQuantity ||
-      this.test?.quantity ||
-      1
-    );
-    // Never fewer specimens than the rows hold, so no saved row is hidden or trimmed
-    const rowIndexes = this.getRowSpecimenIndexes();
-    const maxRowSpecimen = rowIndexes.length ? Math.max(...rowIndexes) : 0;
-    const count = Math.max(1, plannedQty, maxRowSpecimen + 1);
+    let count = 1;
+    if (this.hasSpecimenSection) {
+      const declared = this.layoutSpecimenCount();
+      const rowIndexes = this.getRowSpecimenIndexes();
+      const maxRowSpecimen = rowIndexes.length ? Math.max(...rowIndexes) : 0;
+      const userSpecified = Number(this.testPlan?.totalSpecimens || this.test?.totalSpecimens || 0);
+      count = declared || Math.max(1, userSpecified, maxRowSpecimen + 1);
+    } else {
+      // Layout without specimen section:
+      // An already saved extra specimen row (SpecimenIndex > 0) that has no value, no reading,
+      // and no photo is not drawn and not counted in the conformity table.
+      if (this.parametersFormArray && this.parametersFormArray.length > 0) {
+        const rawControls = [...this.parametersFormArray.controls];
+        const rawRows = rawControls.map(c => (c as FormGroup).getRawValue());
+        const indexes = resolveSpecimenIndexes(rawRows);
+        for (let i = rawControls.length - 1; i >= 0; i--) {
+          const s = indexes[i];
+          if (s > 0 && !specimenHasData(s, rawRows, { readings: this.test?.readings, readingValues: this.readingValues, testImages: this.testImages })) {
+            this.parametersFormArray.removeAt(i);
+          }
+        }
+      }
+      const rawRows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
+      const sourceRows = rawRows.length > 0 ? rawRows : (this.test?.parameters || []);
+      const validRows = filterEmptyExtraSpecimenRows(sourceRows, false, {
+        readings: this.test?.readings,
+        readingValues: this.readingValues,
+        testImages: this.testImages
+      });
+      const validIndexes = resolveSpecimenIndexes(validRows);
+      const maxRowSpecimen = validIndexes.length ? Math.max(...validIndexes) : 0;
+      count = Math.max(1, maxRowSpecimen + 1);
+    }
     const prefix = 'S';
 
     // Guard: If specimen array already exists with target length and has values, avoid wiping
@@ -2746,6 +2782,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   // ---- Specimen matrix follows the layout (A1) --------------------------------------------------------------
+
+  /** True when the layout contains a specimen-matrix section. */
+  get hasSpecimenSection(): boolean {
+    return layoutHasSpecimenSection(this.sections);
+  }
 
   /** First specimen-matrix section of the layout. */
   get specimenSection(): any {

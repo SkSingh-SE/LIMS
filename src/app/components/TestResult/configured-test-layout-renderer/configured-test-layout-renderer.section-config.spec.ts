@@ -299,4 +299,44 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     expect(cmp.getBaseParamStat(load.index, 'min')).toBe('10');
     expect(cmp.getBaseParamStat(load.index, 'max')).toBe('30');
   });
+
+  it('L6.1: layout without specimen section has one specimen per header and ignores empty S2', () => {
+    // 1. Layout without specimen section + plannedQuantity: 2 -> 1 specimen
+    create([sec('rule'), sec('narrative')], {
+      rows: [paramRow(1, 'Hardness', null, 0, { maxValue: 200 })]
+    });
+    cmp.test.plannedQuantity = 2;
+    cmp.testPlan.plannedQuantity = 2;
+    cmp.testPlan.totalSpecimens = 2;
+    fixture.detectChanges();
+    expect(cmp.specimens.length).toBe(1);
+
+    // 2. Saved rows S1 (value) + S2 (empty) -> 1 specimen and rule section shows no "pending" for S2
+    create([sec('rule'), sec('narrative')], {
+      rows: [
+        paramRow(1, 'Hardness', 157.73, 0, { maxValue: 200 }),
+        paramRow(2, 'Hardness', null, 1, { maxValue: 200, parameterID: 1 })
+      ]
+    });
+    cmp.test.plannedQuantity = 2;
+    cmp.testPlan.plannedQuantity = 2;
+    cmp.testPlan.totalSpecimens = 2;
+    fixture.detectChanges();
+    expect(cmp.specimens.length).toBe(1);
+    expect(cmp.conformityVerdict.status).toBe('PASS');
+
+    // 3. S1 + S2 both with values -> 2 specimens
+    create([sec('rule'), sec('narrative')], {
+      rows: [
+        paramRow(1, 'Hardness', 157.73, 0, { maxValue: 200 }),
+        paramRow(2, 'Hardness', 165.20, 1, { maxValue: 200, parameterID: 1 })
+      ]
+    });
+    cmp.test.plannedQuantity = 2;
+    cmp.testPlan.plannedQuantity = 2;
+    cmp.testPlan.totalSpecimens = 2;
+    fixture.detectChanges();
+    expect(cmp.specimens.length).toBe(2);
+    expect(cmp.conformityVerdict.status).toBe('PASS');
+  });
 });

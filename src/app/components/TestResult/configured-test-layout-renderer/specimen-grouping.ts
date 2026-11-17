@@ -13,9 +13,15 @@ import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
  */
 
 export interface SpecimenRowLike {
+  id?: number | string | null;
   parameterID?: number | string | null;
   parameterName?: string | null;
   specimenIndex?: number | string | null;
+  value?: unknown;
+  remarks?: unknown;
+  textValue?: unknown;
+  convertedValue?: unknown;
+  [key: string]: any;
 }
 
 function hasExplicitIndex(row: SpecimenRowLike): boolean {
@@ -71,15 +77,15 @@ export function resolveSpecimenIndexes(rows: ReadonlyArray<SpecimenRowLike>): nu
 
 /**
  * Number of specimens to show.
- * With saved indexes: highest saved index + 1 (the saved count). Without: the planned count, but never fewer
+ * With saved indexes: highest saved index + 1 (the saved count). Without: the fallback count (default 1), but never fewer
  * than the specimens the rows already hold.
  */
-export function resolveSpecimenCount(rows: ReadonlyArray<SpecimenRowLike>, planned: number): number {
+export function resolveSpecimenCount(rows: ReadonlyArray<SpecimenRowLike>, fallback: number = 1): number {
   const list = rows || [];
   const indexes = resolveSpecimenIndexes(list);
   const maxIdx = indexes.length ? Math.max(...indexes) : -1;
   if (hasSavedSpecimenIndexes(list)) return Math.max(1, maxIdx + 1);
-  return Math.max(1, Math.floor(Number(planned) || 1), maxIdx + 1);
+  return Math.max(1, Math.floor(Number(fallback) || 1), maxIdx + 1);
 }
 
 /** Row positions of one specimen, in row order. */
@@ -127,14 +133,154 @@ export function matchingRowInSpecimen(
   return -1;
 }
 
-/** True when a row holds a result (value or remarks) that must not be thrown away. */
-export function rowHasResult(row: { value?: unknown; remarks?: unknown } | null | undefined): boolean {
+/** True when a row holds a result (value, remarks, converted value, or text value) that must not be thrown away. */
+export function rowHasResult(row: { value?: unknown; remarks?: unknown; textValue?: unknown; convertedValue?: unknown } | null | undefined): boolean {
   if (!row) return false;
-  const v = row.value;
+  const v = (row as any).value;
   const hasValue = v !== null && v !== undefined && String(v).trim() !== '';
-  const r = row.remarks;
+  const r = (row as any).remarks;
   const hasRemarks = r !== null && r !== undefined && String(r).trim() !== '';
-  return hasValue || hasRemarks;
+  const tv = (row as any).textValue;
+  const hasTv = tv !== null && tv !== undefined && String(tv).trim() !== '';
+  const cv = (row as any).convertedValue;
+  const hasCv = cv !== null && cv !== undefined && String(cv).trim() !== '';
+  return hasValue || hasRemarks || hasTv || hasCv;
+}
+
+export interface SpecimenActivityContext {
+  readings?: ReadonlyArray<{ specimenIndex?: unknown; specimenCode?: unknown; value?: unknown; readingValue?: unknown }> | null;
+  readingValues?: Record<string, (number | null)[]> | null;
+  testImages?: ReadonlyArray<any> | null;
+}
+
+/**
+ * Checks whether a layout configuration or saved snapshot has a specimen-matrix section.
+ */
+export function layoutHasSpecimenSection(layoutOrSnapshot: any): boolean {
+  if (!layoutOrSnapshot) return false;
+  let parsed = layoutOrSnapshot;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return false;
+    }
+  }
+  if (parsed.layoutConfigJson) {
+    try {
+      parsed = JSON.parse(parsed.layoutConfigJson);
+    } catch {}
+  } else if (parsed.parsedConfig) {
+    parsed = parsed.parsedConfig;
+  }
+  const sections = Array.isArray(parsed?.sections) ? parsed.sections : (Array.isArray(parsed) ? parsed : []);
+  return sections.some((s: any) => {
+    const t = String(s?.type || '').toLowerCase();
+    return t === 'specimen' || t === 'spm';
+  });
+}
+
+/**
+ * Declared specimen count configured on the layout's specimen section, or 0 when none.
+ */
+export function layoutDeclaredSpecimenCount(layoutOrSnapshot: any): number {
+  if (!layoutOrSnapshot) return 0;
+  let parsed = layoutOrSnapshot;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return 0;
+    }
+  }
+  if (parsed.layoutConfigJson) {
+    try {
+      parsed = JSON.parse(parsed.layoutConfigJson);
+    } catch {}
+  } else if (parsed.parsedConfig) {
+    parsed = parsed.parsedConfig;
+  }
+  const sections = Array.isArray(parsed?.sections) ? parsed.sections : (Array.isArray(parsed) ? parsed : []);
+  const spm = sections.find((s: any) => {
+    const t = String(s?.type || '').toLowerCase();
+    return t === 'specimen' || t === 'spm';
+  });
+  if (!spm?.config) return 0;
+  const named = Array.isArray(spm.config.specimenRows)
+    ? spm.config.specimenRows.filter((n: any) => String(n ?? '').trim() !== '').length
+    : 0;
+  return Math.min(20, named || Number(spm.config.count) || 0);
+}
+
+/**
+ * Whether a specimen (by index 0 = S1, 1 = S2, ...) has recorded results (parameter value, reading, or photo).
+ * Specimen 0 (S1) is always treated as having data.
+ */
+export function specimenHasData(
+  specimenIdx: number,
+  rows: ReadonlyArray<any>,
+  context?: SpecimenActivityContext | null
+): boolean {
+  if (specimenIdx === 0) return true; // S1 is always kept
+  const indexes = resolveSpecimenIndexes(rows);
+  const myRowIndexes = rowsOfSpecimen(indexes, specimenIdx);
+  for (const r of myRowIndexes) {
+    if (rowHasResult(rows[r])) return true;
+  }
+  if (context?.readings?.length) {
+    const sCode = `s${specimenIdx + 1}`;
+    const hasReading = context.readings.some(rd => {
+      const idx = rd.specimenIndex != null ? Number(rd.specimenIndex) : null;
+      const code = String(rd.specimenCode || '').trim().toLowerCase();
+      const val = rd.value ?? rd.readingValue;
+      const hasVal = val !== null && val !== undefined && String(val).trim() !== '';
+      return (idx === specimenIdx || code === sCode) && hasVal;
+    });
+    if (hasReading) return true;
+  }
+  if (context?.readingValues) {
+    const sCode = `S${specimenIdx + 1}`;
+    for (const key of Object.keys(context.readingValues)) {
+      const sep = key.lastIndexOf('|');
+      const suffix = sep >= 0 ? key.slice(sep + 1) : '';
+      if (suffix === sCode) {
+        const vals = context.readingValues[key] || [];
+        if (vals.some(v => v !== null && v !== undefined && String(v).trim() !== '')) {
+          return true;
+        }
+      }
+    }
+  }
+  if (context?.testImages?.length) {
+    const sCode = `s${specimenIdx + 1}`;
+    const hasPhoto = context.testImages.some(img => {
+      const idx = img.specimenIndex != null ? Number(img.specimenIndex) : null;
+      const code = String(img.specimenCode || img.specimen || '').trim().toLowerCase();
+      const cap = String(img.caption || img.title || img.name || '').toLowerCase();
+      return idx === specimenIdx || code === sCode || cap.includes(sCode);
+    });
+    if (hasPhoto) return true;
+  }
+  return false;
+}
+
+/**
+ * On layouts without a specimen section, filters out extra specimen rows (specimenIndex > 0)
+ * that have no value, no reading, and no photo.
+ */
+export function filterEmptyExtraSpecimenRows<T extends SpecimenRowLike>(
+  rows: ReadonlyArray<T>,
+  hasSpecimenSection: boolean,
+  context?: SpecimenActivityContext | null
+): T[] {
+  if (hasSpecimenSection) return [...(rows || [])];
+  const list = rows || [];
+  const indexes = resolveSpecimenIndexes(list);
+  return list.filter((r, i) => {
+    const s = indexes[i];
+    if (s === 0) return true;
+    return specimenHasData(s, list, context);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +313,7 @@ export interface RowRemovalBlock {
 }
 
 /** IDs of rows (as loaded from the API) that hold a value or remark. */
-export function savedResultIdsOf(rows: Array<{ id?: unknown; value?: unknown; remarks?: unknown }> | null | undefined): number[] {
+export function savedResultIdsOf(rows: ReadonlyArray<SpecimenRowLike> | null | undefined): number[] {
   return (rows || []).filter(r => Number(r?.id) > 0 && rowHasResult(r)).map(r => Number(r.id));
 }
 

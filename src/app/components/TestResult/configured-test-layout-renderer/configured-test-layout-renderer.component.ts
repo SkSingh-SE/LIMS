@@ -12,6 +12,7 @@ import { ParameterService } from '../../../services/parameter.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { formatBand } from '../../../utility/helper/spec-condition.helper';
 import { normalizeLayoutConfig } from '../../../utility/helper/test-layout-config.helper';
+import { layoutRequiredGaps, layoutPhotoGaps } from './layout-required-gaps';
 
 /** Section types this screen can draw (canonical names, after normalizeLayoutConfig). */
 export const SUPPORTED_SECTION_TYPES: ReadonlySet<string> = new Set([
@@ -4103,28 +4104,20 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // ----- what the layout requires before a test is completed / sent for verification -----
   /** Required notes, required conditions and unanswered checklist items; empty when nothing is missing. */
   requiredGaps(): string[] {
-    const gaps: string[] = [];
-    for (const s of this.sections || []) {
-      const c = s.config || {};
-      if (s.type === 'narrative' && !this.isPrimaryNarrative(s) && this.isNarrativeMissing(s)) gaps.push(String(c.label || s.title || 'Note'));
-      if (s.type === 'condition' && c.required === true) {
-        this.conditionFields(s).filter(f => String(this.conditionValues?.[f] ?? '').trim() === '').forEach(f => gaps.push(f));
-      }
-      if (s.type === 'checklist' && c.requireAll === true && this.checklistItems.some(i => !i.status)) {
-        gaps.push(`${s.title || 'Checklist'}: every item needs an answer`);
-      }
-    }
-    return gaps;
+    return layoutRequiredGaps(
+      this.sections,
+      {
+        narratives: this.narratives,
+        conditionValues: this.conditionValues,
+        conditionFields: this.runtimeConditionFields
+      },
+      this.checklistItems
+    );
   }
 
   /** Required photos still missing, for layouts that ask for them before verification. */
   photoGaps(): string[] {
-    const gaps: string[] = [];
-    for (const s of this.sections || []) {
-      if (s.type !== 'photo' || s.config?.requirePhotoToVerify !== true) continue;
-      this.photoCells(s).filter(c => c.required).forEach(c => gaps.push(c.title || 'Photo'));
-    }
-    return gaps;
+    return layoutPhotoGaps(this.sections, this.testImages);
   }
 
   // ----- parameter table: the layout's own parameters first -----

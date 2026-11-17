@@ -30,6 +30,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { ConfiguredTestLayoutRendererComponent } from '../configured-test-layout-renderer/configured-test-layout-renderer.component';
+import { layoutRequiredGaps, layoutPhotoGaps } from '../configured-test-layout-renderer/layout-required-gaps';
 import { TestVerdictPanelComponent } from '../test-verdict-panel/test-verdict-panel.component';
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
@@ -2611,7 +2612,15 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
     // What the layout marks as required (notes, conditions, checklist answers)
     const renderer = this.layoutRendererComponent?.test === test ? this.layoutRendererComponent : null;
-    const gaps = renderer?.requiredGaps() || [];
+    let gaps: string[] = [];
+    if (renderer) {
+      gaps = renderer.requiredGaps();
+    } else {
+      const testGroup = this.getTests(planIndex)?.at(testIndex) as FormGroup;
+      const layout = this.resolveSheetLayout(planIndex, test, testGroup);
+      const rawSections = layout ? (layout.sections || layout.parsedConfig?.sections || []) : [];
+      gaps = layoutRequiredGaps(rawSections, test.executionExtraJson, test.checklist);
+    }
     if (gaps.length > 0) {
       this.toastService.show(`Cannot complete test. Required by the layout: ${gaps.slice(0, 3).join(', ')}${gaps.length > 3 ? '...' : ''}`, 'error');
       return;
@@ -3159,7 +3168,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     if (!headerId) return;
     if (this.isSubmittingVerification) return;
     // Photos the layout requires before verification
-    const photoGaps = (this.layoutRendererComponent?.test === test ? this.layoutRendererComponent : null)?.photoGaps() || [];
+    const renderer = this.layoutRendererComponent?.test === test ? this.layoutRendererComponent : null;
+    let photoGaps: string[] = [];
+    if (renderer) {
+      photoGaps = renderer.photoGaps();
+    } else {
+      const testGroup = this.getTests(planIndex)?.at(testIndex) as FormGroup;
+      const layout = this.resolveSheetLayout(planIndex, test, testGroup);
+      const rawSections = layout ? (layout.sections || layout.parsedConfig?.sections || []) : [];
+      const images = this.testImagesMap[headerId] || test.images || [];
+      photoGaps = layoutPhotoGaps(rawSections, images);
+    }
     if (photoGaps.length > 0) {
       this.toastService.show(`Cannot submit for verification. Required photo missing: ${photoGaps.slice(0, 3).join(', ')}${photoGaps.length > 3 ? '...' : ''}`, 'error');
       return;

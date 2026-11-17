@@ -5880,6 +5880,21 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   private autoLayoutItem: { id: number; name: string } | null = null;
   private pickedLayoutItem: { id: number; name: string } | null = null;
 
+  /** Whether the top toolbar should display specimen controls. */
+  shouldShowSpecimenToolbar(): boolean {
+    return !!this.currentTestLayout;
+  }
+
+  /** Whether the specimen count can be manually adjusted (disabled if template fixes it or in view mode). */
+  canAdjustSpecimenCount(): boolean {
+    if (this.isViewMode || this.isActiveTestFinalized()) return false;
+    const renderer = this.configuredRenderers?.find(r => !r.printMode);
+    if (renderer?.specimenSection) {
+      return renderer.canAdjustCount(renderer.specimenSection);
+    }
+    return true;
+  }
+
   /** The toolbar specimen stepper drives the specimen matrix; a layout without one (reading / location grid) does not show it. */
   layoutUsesSpecimenMatrix(): boolean {
     const secs: any[] = this.currentTestLayout?.sections || [];

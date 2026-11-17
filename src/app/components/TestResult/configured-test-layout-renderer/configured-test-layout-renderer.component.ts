@@ -928,6 +928,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           this.narratives = { ...extra.narratives };
         }
         if (extra?.specimenCountApplied === true) this.specimenCountApplied = true;
+        if (extra?.userSpecimenCount != null && Number(extra.userSpecimenCount) > 0) {
+          this.savedUserSpecimenCount = Number(extra.userSpecimenCount);
+        }
         if (Array.isArray(extra?.hiddenRows)) {
           this.hiddenFixedRoles = new Set(extra.hiddenRows.filter((r: string) => ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(r as SpecimenRole)) as SpecimenRole[]);
         }
@@ -1174,7 +1177,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       });
       const validIndexes = resolveSpecimenIndexes(validRows);
       const maxRowSpecimen = validIndexes.length ? Math.max(...validIndexes) : 0;
-      count = Math.max(1, maxRowSpecimen + 1);
+      const userSpecified = Number(this.testPlan?.totalSpecimens || this.test?.totalSpecimens || this.savedUserSpecimenCount || 0);
+      count = Math.max(1, userSpecified, maxRowSpecimen + 1);
     }
     const prefix = 'S';
 
@@ -1518,6 +1522,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   addSpecimen(): void {
     if (this.isViewMode || this.isLocked) return;
+    this.specimenCountApplied = true;
     this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const nextNum = this.specimens.length + 1;
     const refSpm = this.specimens[0];
@@ -2985,6 +2990,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** Set once the specimen count was fixed (from the layout, or by the user); saved with the test. */
   private specimenCountApplied = false;
+  private savedUserSpecimenCount: number | null = null;
 
   /**
    * A test that has not started takes its specimen count from the layout, once. The plan's quantity is only the
@@ -4192,6 +4198,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       conditionValues: this.conditionValues,
       opinionData: this.opinionData,
       hiddenRows: Array.from(this.hiddenFixedRoles),
+      userSpecimenCount: this.specimens.length,
       specimenCountApplied: this.specimenCountApplied
     };
     return JSON.stringify(extra);

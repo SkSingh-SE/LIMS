@@ -155,10 +155,10 @@
                   </div>
                 </div>
 
-                <!-- Specimen count: only for a layout with a specimen matrix (grids count readings per row, set in the section) -->
-                <div class="lims-test-toolbar-group" *ngIf="layoutUsesSpecimenMatrix()">
+                <!-- Specimen count: available for all layouts unless fixed by template -->
+                <div class="lims-test-toolbar-group" *ngIf="shouldShowSpecimenToolbar()">
                   <span class="lims-test-toolbar-label">Specimens</span>
-                  <div class="spm-stepper-compact">
+                  <div class="spm-stepper-compact" *ngIf="canAdjustSpecimenCount(); else fixedSpecimenBadge">
                     <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
                       [disabled]="tbLocked || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
                     <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="tbLocked"
@@ -166,7 +166,10 @@
                     <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
                       [disabled]="tbLocked || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
                   </div>
-                  <span class="spm-plan-badge" title="Planned specimen quantity">Plan: {{ getActivePlannedQuantity() }}</span>
+                  <ng-template #fixedSpecimenBadge>
+                    <span class="badge bg-light text-dark border">{{ getActiveSpecimenCount() }}</span>
+                  </ng-template>
+                  <span class="spm-plan-badge" *ngIf="getActivePlannedQuantity() > 1" title="Tests in plan">Tests in plan: {{ getActivePlannedQuantity() }}</span>
                 </div>
 
               <a *ngIf="currentTestLayout" class="btn btn-sm btn-lims btn-lims-secondary lims-test-toolbar-studio text-decoration-none"

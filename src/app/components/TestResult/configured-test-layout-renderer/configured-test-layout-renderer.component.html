@@ -43,6 +43,9 @@
         <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addSpecimen()" title="Add another test specimen">
           <i class="bi bi-plus-circle me-1"></i><span>Add Specimen</span>
         </button>
+        <button *ngIf="specimens.length > 1" type="button" class="btn btn-xs btn-lims btn-lims-remove" (click)="removeSpecimen()" [disabled]="specimens.length <= 1" title="Remove the last specimen">
+          <i class="bi bi-dash-circle me-1"></i><span>Remove Specimen</span>
+        </button>
         <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addLocation()" title="Add test location zone (e.g. HAZ, Weld, Surface)">
           <i class="bi bi-geo-alt me-1"></i><span>Add Location Zone</span>
         </button>

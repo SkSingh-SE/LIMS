@@ -84,6 +84,85 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     expect(serializeLayoutConfig(cfg)).not.toContain('showConformanceVerdict');
   });
 
+  it('normalizer: L3 duplicate keys migration (location, photo, reading, custom, classification)', () => {
+    const raw = {
+      sections: [
+        // 1. Location: locationNames (CSV) -> locationRows; tableRows -> locationRows fallback
+        { id: 1, type: 'location', title: 'Loc1', config: { locationNames: 'Base Metal, HAZ, Weld Metal' } },
+        { id: 2, type: 'location', title: 'Loc2', config: { tableRows: [{ label: 'Zone 1', visible: true }, { label: 'Zone 2', visible: false }, { label: 'Zone 3', visible: true }] } },
+        // 2. Photo: showPreText/showPostText false -> preText/postText cleared
+        { id: 3, type: 'photo', title: 'Photo', config: { showPreText: false, preText: 'Pre', showPostText: false, postText: 'Post' } },
+        // 3. Reading: spotCount / readingCount -> count; targetParameter -> targetParamName
+        { id: 4, type: 'reading', title: 'Read1', config: { spotCount: 7, readingCount: 'Fixed count', targetParameter: 'Hardness HV' } },
+        { id: 5, type: 'reading', title: 'Read2', config: { readingCount: '3' } },
+        // 4. Custom: locationColHeader -> rowHeaderLabel; customColumns -> tableColumns; rows (CSV) -> tableRows
+        { id: 6, type: 'custom', title: 'Custom', config: { locationColHeader: 'Spec / Property', customColumns: [{ label: 'Nominal', type: 'static' }, { label: 'Observed', type: 'runtime' }], rows: 'Initial, Final' } },
+        // 5. Classification: rows (CSV) -> tableRows
+        { id: 7, type: 'classification', title: 'Class', config: { rows: 'Grain Size Number, Mean Diameter' } },
+      ],
+    };
+
+    const cfg = normalizeLayoutConfig(raw);
+    expect(cfg.sections.length).toBe(7);
+
+    // 1. Location
+    const c1: any = cfg.sections[0].config;
+    expect(c1.locationRows).toEqual(['Base Metal', 'HAZ', 'Weld Metal']);
+    expect(c1.locationNames).toBeUndefined();
+    const c2: any = cfg.sections[1].config;
+    expect(c2.locationRows).toEqual(['Zone 1', 'Zone 3']);
+
+    // 2. Photo
+    const c3: any = cfg.sections[2].config;
+    expect(c3.preText).toBe('');
+    expect(c3.postText).toBe('');
+    expect(c3.showPreText).toBeUndefined();
+    expect(c3.showPostText).toBeUndefined();
+
+    // 3. Reading
+    const c4: any = cfg.sections[3].config;
+    expect(c4.count).toBe(7);
+    expect(c4.targetParamName).toBe('Hardness HV');
+    expect(c4.spotCount).toBeUndefined();
+    expect(c4.readingCount).toBeUndefined();
+    expect(c4.targetParameter).toBeUndefined();
+    const c5: any = cfg.sections[4].config;
+    expect(c5.count).toBe(3);
+
+    // 4. Custom
+    const c6: any = cfg.sections[5].config;
+    expect(c6.rowHeaderLabel).toBe('Spec / Property');
+    expect(c6.locationColHeader).toBeUndefined();
+    expect(c6.customColumns).toBeUndefined();
+    expect(c6.tableColumns.map((c: any) => c.label)).toEqual(['Nominal', 'Observed']);
+    expect(c6.rows).toBeUndefined();
+    expect(c6.tableRows.map((r: any) => r.label)).toEqual(['Initial', 'Final']);
+
+    // 5. Classification
+    const c7: any = cfg.sections[6].config;
+    expect(c7.rows).toBeUndefined();
+    expect(c7.tableRows.map((r: any) => r.label)).toEqual(['Grain Size Number', 'Mean Diameter']);
+
+    // Serialized output does not contain any retired duplicate keys
+    const json = serializeLayoutConfig(cfg);
+    expect(json).not.toContain('locationNames');
+    expect(json).not.toContain('showPreText');
+    expect(json).not.toContain('showPostText');
+    expect(json).not.toContain('spotCount');
+    expect(json).not.toContain('readingCount');
+    expect(json).not.toContain('targetParameter');
+    expect(json).not.toContain('customColumns');
+  });
+
+  it('customHeaders: uses rowHeaderLabel for column 0 when set', () => {
+    const custom = sec('custom', {
+      rowHeaderLabel: 'Property Description',
+      tableColumns: [{ key: 'c0', label: 'Default Head', visible: true }, { key: 'c1', label: 'Value', visible: true }]
+    });
+    create([custom, sec('parameter')]);
+    expect(cmp.customHeaders(cmp.sections[0])).toEqual(['Property Description', 'Value']);
+  });
+
   it('print: a section the layout does not print is left out, and titles show only when asked', () => {
     const host = create([sec('narrative', { reportable: false, label: 'Internal note', sectionKey: 'n1' }), sec('checklist', { printTitle: true }, 'Checks'), sec('parameter')], { printMode: true });
     expect(host.querySelectorAll('.lims-workbench-card').length).toBe(2);

@@ -1530,9 +1530,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         break;
 
       case 'reading':
-        config.readingCount = 'Fixed count';
         config.count = 5;
-        config.spotCount = 5;
         // Target parameter is picked from the test's parameters in the properties panel (no demo defaults)
         config.targetParamName = '';
         config.targetUnit = '';
@@ -1551,7 +1549,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
       case 'location':
         config.locationMode = 'Named locations';
-        config.locationNames = 'Weld Metal, HAZ, Base Metal';
+        config.locationRows = ['Weld Metal', 'HAZ', 'Base Metal'];
         config.locationParams = [];
         config.locationReadings = 3;
         config.locationColumns = 1;
@@ -1614,7 +1612,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         break;
 
       case 'custom':
-        config.rows = 'Runtime rows';
         config.source = 'Runtime transaction data';
         config.allowRuntimeRows = true;
         config.showHeader = true;
@@ -1644,9 +1641,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         config.reportPlacement = 'Inline with section';
         config.count = 1;
         // No demo text or demo plates: pre/post text and slots are set per layout (or via a photo preset)
-        config.showPreText = false;
         config.preText = '';
-        config.showPostText = false;
         config.postText = '';
         config.photoSlots = [
           {
@@ -1832,7 +1827,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         const cond = this.createSectionObject('condition', 'Weld Joint Geometry & Test Standard');
         cond.config.fields = ['Method / Standard (ISO 9015)', 'Load (HV 10)', 'Joint Type', 'Welding Process'];
         const loc = this.createSectionObject('location', 'Zone Multi-Location Matrix (Base Metal / HAZ / Weld Metal)');
-        loc.config.locationNames = 'Base Metal (BM), Heat Affected Zone (HAZ), Weld Metal (WM)';
+        loc.config.locationRows = ['Base Metal (BM)', 'Heat Affected Zone (HAZ)', 'Weld Metal (WM)'];
         loc.config.count = 3;
         loc.config.orientation = 'Locations × Parameters';
         loc.config.showAverage = true;
@@ -4551,6 +4546,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     if (sec.config.locationNames && typeof sec.config.locationNames === 'string' && sec.config.locationNames.trim()) {
       initialRows = sec.config.locationNames.split(',').map(l => l.trim()).filter(Boolean);
     }
+    if (!initialRows.length && Array.isArray(sec.config.tableRows) && sec.config.tableRows.length > 0) {
+      initialRows = sec.config.tableRows.filter((r: any) => r?.visible !== false).map((r: any) => String(r?.label ?? '').trim()).filter(Boolean);
+    }
     if (!initialRows.length) {
       const n = Math.max(1, Math.min(15, Number(sec.config.count) || 3));
       const prefix = sec.config.prefix || 'Zone';
@@ -4558,12 +4556,24 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     }
     sec.config.locationRows = initialRows;
     sec.config.count = initialRows.length;
-    sec.config.locationNames = initialRows.join(', ');
     return sec.config.locationRows;
   }
 
   getLocationList(sec: ExecutionSection): string[] {
     return this.ensureLocationRows(sec);
+  }
+
+  getLocationNamesCsv(sec: ExecutionSection): string {
+    return (this.ensureLocationRows(sec) || []).join(', ');
+  }
+
+  onLocationNamesCsvChange(sec: ExecutionSection, value: string): void {
+    const raw = (value || '').split(',').map(s => s.trim()).filter(Boolean);
+    const resolved = raw.length ? raw : ['Location 1'];
+    sec.config.locationRows = resolved;
+    sec.config.count = resolved.length;
+    this.syncLocationTableRows(sec, resolved);
+    this.markLayoutDirty();
   }
 
   addLocationRow(sec: ExecutionSection, customName?: string): void {
@@ -4573,7 +4583,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     rows.push(newName);
     sec.config.locationRows = [...rows];
     sec.config.count = rows.length;
-    sec.config.locationNames = rows.join(', ');
     this.toastService.show(`Added location row: "${newName}"`, 'success');
   }
 
@@ -4586,7 +4595,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const removed = rows.splice(index, 1);
     sec.config.locationRows = [...rows];
     sec.config.count = rows.length;
-    sec.config.locationNames = rows.join(', ');
     this.toastService.show(`Removed location row: "${removed[0]}"`, 'info');
   }
 
@@ -4598,7 +4606,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const rows = this.ensureLocationRows(sec);
     if (rows && rows[index] !== undefined) {
       rows[index] = value;
-      sec.config.locationNames = rows.join(', ');
     }
   }
 
@@ -4610,7 +4617,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     rows[index] = rows[target];
     rows[target] = temp;
     sec.config.locationRows = [...rows];
-    sec.config.locationNames = rows.join(', ');
   }
 
   applyLocationPreset(sec: ExecutionSection, preset: string): void {
@@ -4632,7 +4638,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     }
     sec.config.locationRows = names;
     sec.config.count = names.length;
-    sec.config.locationNames = names.join(', ');
 
     const defaultMode = sec.config.dataBindingMode || 'runtime';
     sec.config.tableRows = names.map((name, i) => ({
@@ -4666,11 +4671,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
   private syncLocationNamedRows(sec: ExecutionSection): void {
     const raw = sec.config.locationNames || '';
-    const names = raw.split(',').map(s => s.trim()).filter(Boolean);
-    const resolved = names.length ? names : ['Location 1'];
-    sec.config.locationRows = resolved;
-    sec.config.count = resolved.length;
-    this.syncLocationTableRows(sec, resolved);
+    if (raw) {
+      const names = raw.split(',').map(s => s.trim()).filter(Boolean);
+      const resolved = names.length ? names : ['Location 1'];
+      sec.config.locationRows = resolved;
+      sec.config.count = resolved.length;
+      delete sec.config.locationNames;
+      this.syncLocationTableRows(sec, resolved);
+    } else {
+      const rows = this.ensureLocationRows(sec);
+      this.syncLocationTableRows(sec, rows);
+    }
   }
 
   private syncLocationNumberedRows(sec: ExecutionSection): void {
@@ -4678,7 +4689,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const prefix = (sec.config.prefix || 'Zone').trim();
     const rows = Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}`);
     sec.config.locationRows = rows;
-    sec.config.locationNames = rows.join(', ');
     this.syncLocationTableRows(sec, rows);
   }
 
@@ -4699,6 +4709,42 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     if (sec.config.showAverage) count++;
     if (sec.config.showRequirement) count++;
     return count;
+  }
+
+  getCustomRowsCsv(sec: ExecutionSection): string {
+    const rows = this.ensureTableRows(sec);
+    return rows.map(r => r.label).filter(Boolean).join(', ');
+  }
+
+  onCustomRowsCsvChange(sec: ExecutionSection, value: string): void {
+    const labels = (value || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!labels.length) return;
+    const existing = Array.isArray(sec.config.tableRows) ? sec.config.tableRows : [];
+    sec.config.tableRows = labels.map((lbl, idx) => ({
+      key: existing[idx]?.key || `r${idx}`,
+      label: lbl,
+      visible: existing[idx]?.visible !== false,
+      bindingMode: existing[idx]?.bindingMode || 'runtime'
+    }));
+    this.markLayoutDirty();
+  }
+
+  getClassificationRowsCsv(sec: ExecutionSection): string {
+    const rows = this.ensureTableRows(sec);
+    return rows.map(r => r.label).filter(Boolean).join(', ');
+  }
+
+  onClassificationRowsCsvChange(sec: ExecutionSection, value: string): void {
+    const labels = (value || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!labels.length) return;
+    const existing = Array.isArray(sec.config.tableRows) ? sec.config.tableRows : [];
+    sec.config.tableRows = labels.map((lbl, idx) => ({
+      key: existing[idx]?.key || `class_${idx}`,
+      label: lbl,
+      visible: existing[idx]?.visible !== false,
+      bindingMode: existing[idx]?.bindingMode || 'runtime'
+    }));
+    this.markLayoutDirty();
   }
 
   toggleArrayItem(arr: string[] | undefined, item: string): string[] {
@@ -5487,8 +5533,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
   // Reading Target Parameter
   getReadingTargetForSection(sec: ExecutionSection): DatasetParameter {
     const all = this.currentDataset.parameters;
-    if (sec.config.targetParameter) {
-      const match = all.find(p => p.name === sec.config.targetParameter);
+    const targetName = sec.config.targetParamName || sec.config.targetParameter;
+    if (targetName) {
+      const match = all.find(p => p.name === targetName);
       if (match) return match;
     }
     return all[0] || { name: 'Measured Value', symbol: 'Val', unit: '—', requirement: 'Runtime', demoValue: '100', type: 'numeric' };
@@ -5899,7 +5946,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
           });
         } else if (s.type === 'reading') {
           const readCount = s.config.count || 1;
-          sectionData.targetParameter = s.config.targetParameter;
+          sectionData.targetParameter = s.config.targetParamName || s.config.targetParameter || '';
           sectionData.readings = Array.from({ length: readCount }).map((_, i) => `R${i + 1}_Value`);
           if (s.config.showStatistics) {
             sectionData.statistics = { average: '...', min: '...', max: '...' };
@@ -6102,7 +6149,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
         width: '22%'
       });
 
-      const spotN = sec.config.spotCount || 5;
+      const spotN = Number(sec.config.count) || Number(sec.config.spotCount) || 5;
       for (let sIdx = 1; sIdx <= spotN; sIdx++) {
         cols.push({
           key: `spot_${sIdx}`,
@@ -6686,7 +6733,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const rawName = event.name || event.displayText || 'Hardness';
     const cleanName = (rawName.includes(' - ') ? rawName.split(' - ')[0] : rawName).trim();
     sec.config.targetParamName = cleanName;
-    sec.config.targetParameter = cleanName;
     sec.config.readingLabel = `${cleanName} Spot Readings`;
 
     if (event.additionalValues) {
@@ -6709,7 +6755,6 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
   setReadingSpotCount(sec: ExecutionSection, count: number): void {
     const clamped = Math.max(1, Math.min(10, count));
-    sec.config.spotCount = clamped;
     sec.config.count = clamped;
     delete sec.config.tableColumns;
     this.ensureTableColumns(sec);

@@ -272,6 +272,7 @@ export interface SectionConfig {
   showCriteria?: boolean;
 
   // Custom
+  rowHeaderLabel?: string;
   rows?: string;
   allowRuntimeRows?: boolean;
   showHeader?: boolean;
@@ -301,9 +302,7 @@ export interface SectionConfig {
   reportPlacement?: string;
   watermarkReport?: boolean;
   photoSlots?: PhotoSlotItem[];
-  showPreText?: boolean;
   preText?: string;
-  showPostText?: boolean;
   postText?: string;
 
   // Opinion & Interpretation (ISO 17025 Cl. 7.8.7)

@@ -51,7 +51,9 @@ const RETIRED_KEYS = [
   // parameter section: decimals come from the parameter master, requirement / status are column switches
   'decimals', 'resultMode', 'requirement', 'status',
   // rule section: replaced by verdictSource
-  'evaluation', 'valueSource', 'operator', 'parameter', 'failAction', 'decisionRule'
+  'evaluation', 'valueSource', 'operator', 'parameter', 'failAction', 'decisionRule',
+  // L3 duplicate keys (2026-11 config audit §4)
+  'locationNames', 'showPreText', 'showPostText', 'spotCount', 'readingCount', 'targetParameter', 'customColumns', 'rows'
 ];
 
 /** 'manual' meant the same as 'runtime' on the result screen: one value, "Entry". */
@@ -109,6 +111,88 @@ function normalizeSection(sec: any, index: number): ExecutionSection {
   // Note: `showConformity` (Report: print conformity statement) and `conformity` (Rule: evaluate conformity)
   // are different settings and must never be mapped onto each other.
 
+  // L3.1: Location names live only in locationRows
+  if (type === 'location' || type === 'loc') {
+    if (!Array.isArray(config.locationRows) || config.locationRows.length === 0) {
+      if (typeof config.locationNames === 'string' && config.locationNames.trim()) {
+        config.locationRows = config.locationNames.split(',').map((s: string) => s.trim()).filter(Boolean);
+      } else if (Array.isArray(config.tableRows) && config.tableRows.length > 0) {
+        config.locationRows = config.tableRows
+          .filter((r: any) => r?.visible !== false)
+          .map((r: any) => String(r?.label ?? '').trim())
+          .filter(Boolean);
+      }
+    }
+  }
+
+  // L3.2: Photo text — showPreText / showPostText removed; empty text = hidden
+  if (type === 'photo') {
+    if (config.showPreText === false) config.preText = '';
+    if (config.showPostText === false) config.postText = '';
+  }
+
+  // L3.3: Reading — spotCount, readingCount (string), targetParameter → count / targetParamName
+  if (type === 'reading') {
+    if (config.count === undefined || config.count === null) {
+      const fromSpot = Number(config.spotCount);
+      const fromReading = parseInt(String(config.readingCount ?? ''), 10);
+      if (!isNaN(fromSpot) && fromSpot > 0) {
+        config.count = fromSpot;
+      } else if (!isNaN(fromReading) && fromReading > 0) {
+        config.count = fromReading;
+      }
+    }
+    if (!config.targetParamName && typeof config.targetParameter === 'string' && config.targetParameter.trim()) {
+      config.targetParamName = config.targetParameter.trim();
+    }
+  }
+
+  // L3.4: Custom — locationColHeader → rowHeaderLabel; customColumns → tableColumns; rows (CSV) → tableRows
+  if (type === 'custom' || type === 'attrs') {
+    if (config.locationColHeader && !config.rowHeaderLabel) {
+      config.rowHeaderLabel = config.locationColHeader;
+    }
+    delete config.locationColHeader;
+
+    if (Array.isArray(config.customColumns) && (!Array.isArray(config.tableColumns) || config.tableColumns.length === 0)) {
+      config.tableColumns = config.customColumns.map((c: any, idx: number) => ({
+        key: `col_${idx}`,
+        label: typeof c === 'string' ? c : (c?.label || `Column ${idx + 1}`),
+        bindingMode: (c?.type === 'static' || c?.bindingMode === 'static') ? 'static' : 'runtime',
+        visible: true,
+        unit: typeof c === 'object' ? c?.unit : undefined,
+        staticValue: typeof c === 'object' ? (c?.default ?? c?.staticValue) : undefined
+      }));
+    }
+
+    if (typeof config.rows === 'string' && config.rows.trim() && (!Array.isArray(config.tableRows) || config.tableRows.length === 0)) {
+      const rowLabels = config.rows.split(',').map((r: string) => r.trim()).filter(Boolean);
+      if (rowLabels.length) {
+        config.tableRows = rowLabels.map((lbl: string, idx: number) => ({
+          key: `r${idx}`,
+          label: lbl,
+          visible: true,
+          bindingMode: 'runtime'
+        }));
+      }
+    }
+  }
+
+  // L3.5: Classification — rows (CSV) → tableRows
+  if (type === 'classification' || type === 'class') {
+    if (typeof config.rows === 'string' && config.rows.trim() && (!Array.isArray(config.tableRows) || config.tableRows.length === 0)) {
+      const rowLabels = config.rows.split(',').map((r: string) => r.trim()).filter(Boolean);
+      if (rowLabels.length) {
+        config.tableRows = rowLabels.map((lbl: string, idx: number) => ({
+          key: `class_${idx}`,
+          label: lbl,
+          visible: true,
+          bindingMode: 'runtime'
+        }));
+      }
+    }
+  }
+
   RETIRED_KEYS.forEach(k => delete config[k]);
 
   return { ...sec, id, type, title, config };
@@ -142,7 +226,11 @@ export function serializeLayoutConfig(payload: LayoutConfigPayload): string {
     const config: any = { ...(sec.config || {}) };
     UI_STATE_KEYS.forEach(k => delete config[k]);
     RETIRED_KEYS.forEach(k => delete config[k]);
-    return { ...sec, type: normalizeSectionType(sec.type), config };
+    const normType = normalizeSectionType(sec.type);
+    if (normType === 'custom' || normType === 'attrs') {
+      delete config.locationColHeader;
+    }
+    return { ...sec, type: normType, config };
   });
   return JSON.stringify({ ...payload, configVersion: LAYOUT_CONFIG_VERSION, sections });
 }

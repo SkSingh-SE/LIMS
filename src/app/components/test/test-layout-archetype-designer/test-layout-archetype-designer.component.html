@@ -3219,7 +3219,7 @@
               <div class="mb-1.5" *ngIf="s.config.locationMode === 'Named locations' || !s.config.locationMode">
                 <label for="txtLocationNames" class="form-label compact-label">Location Names (comma-separated)</label>
                 <textarea id="txtLocationNames" class="form-control form-control-sm compact-input" rows="2"
-                  [(ngModel)]="s.config.locationNames" (ngModelChange)="onLocationNamesChange(s)"
+                  [ngModel]="getLocationNamesCsv(s)" (ngModelChange)="onLocationNamesCsvChange(s, $event)"
                   placeholder="e.g. Weld Metal, HAZ, Base Metal"></textarea>
               </div>
 
@@ -3755,7 +3755,8 @@
             <div class="config-subcard-body">
               <div class="mb-1.5">
                 <label for="inpRatingItems" class="form-label compact-label">Rated Items (comma separated)</label>
-                <input id="inpRatingItems" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
+                <input id="inpRatingItems" type="text" class="form-control form-control-sm compact-input"
+                  [ngModel]="getClassificationRowsCsv(s)" (ngModelChange)="onClassificationRowsCsvChange(s, $event)"
                   placeholder="e.g. Grain Size No., Microstructure">
               </div>
               <div class="d-flex flex-wrap gap-1.5">
@@ -3805,7 +3806,7 @@
               <div class="mb-1.5">
                 <label for="inpCustomTableColHeader" class="form-label compact-label">First Column Header Label</label>
                 <input id="inpCustomTableColHeader" type="text" class="form-control form-control-sm compact-input"
-                  [(ngModel)]="s.config.locationColHeader" placeholder="e.g. Description, Item, Parameter">
+                  [(ngModel)]="s.config.rowHeaderLabel" placeholder="e.g. Description, Item, Parameter">
               </div>
             </div>
           </div>
@@ -3824,7 +3825,8 @@
             <div class="config-subcard-body">
               <div class="mb-1.5">
                 <label for="inpCustomTableRowNames" class="form-label compact-label">Row Names (comma separated)</label>
-                <input id="inpCustomTableRowNames" type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
+                <input id="inpCustomTableRowNames" type="text" class="form-control form-control-sm compact-input"
+                  [ngModel]="getCustomRowsCsv(s)" (ngModelChange)="onCustomRowsCsvChange(s, $event)"
                   placeholder="Row 1, Row 2, Row 3">
               </div>
             </div>
@@ -4117,18 +4119,16 @@
                   <span class="form-check-label">Required photos needed before verify</span>
                 </label>
               </div>
-              <label class="form-check compact-check mb-1">
-                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showPreText" [disabled]="isViewMode">
-                <span class="form-check-label">Text above photos</span>
-              </label>
-              <textarea class="form-control form-control-sm compact-input mb-1.5" rows="2" maxlength="1000" *ngIf="s.config.showPreText"
-                [(ngModel)]="s.config.preText" placeholder="e.g. Examination carried out on transverse section." [disabled]="isViewMode"></textarea>
-              <label class="form-check compact-check mb-1">
-                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showPostText" [disabled]="isViewMode">
-                <span class="form-check-label">Text below photos</span>
-              </label>
-              <textarea class="form-control form-control-sm compact-input" rows="2" maxlength="1000" *ngIf="s.config.showPostText"
-                [(ngModel)]="s.config.postText" placeholder="e.g. Observations" [disabled]="isViewMode"></textarea>
+              <div class="mb-1.5">
+                <label for="txtPhotoPreText" class="form-label compact-label">Text above photos</label>
+                <textarea id="txtPhotoPreText" class="form-control form-control-sm compact-input" rows="2" maxlength="1000"
+                  [(ngModel)]="s.config.preText" placeholder="e.g. Examination carried out on transverse section." [disabled]="isViewMode"></textarea>
+              </div>
+              <div class="mb-1.5">
+                <label for="txtPhotoPostText" class="form-label compact-label">Text below photos</label>
+                <textarea id="txtPhotoPostText" class="form-control form-control-sm compact-input" rows="2" maxlength="1000"
+                  [(ngModel)]="s.config.postText" placeholder="e.g. Observations" [disabled]="isViewMode"></textarea>
+              </div>
             </div>
           </div>
         </fieldset>

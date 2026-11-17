@@ -3903,8 +3903,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   photoText(s: any, where: 'pre' | 'post'): string {
     const c = s?.config || {};
-    const on = where === 'pre' ? c.showPreText : c.showPostText;
-    return on === false ? '' : String((where === 'pre' ? c.preText : c.postText) ?? '').trim();
+    return String((where === 'pre' ? c.preText : c.postText) ?? '').trim();
   }
 
   /**
@@ -3953,7 +3952,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   customHeaders(s: any): string[] {
     const cols: any[] = Array.isArray(s?.config?.tableColumns) ? s.config.tableColumns : [];
-    return cols.filter((_: any, c: number) => this.customColumnVisible(s, c)).map((c: any) => String(c?.label ?? ''));
+    const headers = cols.filter((_: any, c: number) => this.customColumnVisible(s, c)).map((c: any) => String(c?.label ?? ''));
+    const rowHeader = s?.config?.rowHeaderLabel || s?.config?.locationColHeader;
+    if (rowHeader && headers.length > 0) {
+      headers[0] = rowHeader;
+    }
+    return headers;
   }
 
   /** Rows of a custom table as the cells to draw (hidden rows / columns and cells covered by a span are left out). */

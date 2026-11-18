@@ -207,7 +207,7 @@
             </ng-container>
 
             <!-- Parameters Table Action (Suppressed when unified reading or specimen matrix is active) -->
-            <button *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSectionOfType('spm') && !isViewMode && !isLocked"
+            <button *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSpecimenSection && !isViewMode && !isLocked"
                     type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()">
               <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
             </button>
@@ -971,44 +971,83 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <!-- ARCHETYPE 4: PARAMETERS VERIFICATION TABLE (param / parameter) -->
           <!-- ───────────────────────────────────────────────────────────── -->
-          <ng-container *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSectionOfType('spm')">
+          <ng-container *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSpecimenSection">
 
-            <!-- Specimen Filtering & Adjustment Toolbar -->
-            <div class="specimen-toolbar bg-light border rounded p-1 mb-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div class="d-flex align-items-center gap-1 flex-wrap">
-                <span class="text-muted text-xxs fw-semibold me-1">
-                  <i class="bi bi-filter-circle me-1 text-danger"></i>Specimen View:
-                </span>
-                <!-- All Specimens Tab -->
-                <button type="button" class="spm-filter-pill"
-                        [ngClass]="{ 'active': selectedSpecimenFilter === 'all' }"
-                        (click)="setSpecimenFilter('all')">
-                  All Specimens ({{ parametersFormArray?.length || 0 }})
-                </button>
-                <!-- Individual Specimen Tabs -->
-                <button *ngFor="let spm of specimens; let spmIdx = index"
-                        type="button" class="spm-filter-pill"
-                        [ngClass]="{ 'active': selectedSpecimenFilter === (spmIdx + 1) }"
-                        (click)="setSpecimenFilter(spmIdx + 1)">
-                  {{ specimenLabel(spmIdx) }} ({{ getSpecimenRowCount(spmIdx) }})
-                </button>
-              </div>
-
-              <!-- Specimen & Parameter Quick Adjustment Buttons -->
-              <div class="d-flex align-items-center gap-1" *ngIf="!isViewMode && !isLocked">
-                <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()" title="Add custom parameter">
-                  <i class="bi bi-plus-square me-1"></i><span>+ Parameter</span>
-                </button>
-              </div>
+            <!-- When multi-specimen (specimens.length > 1): Render Horizontal Specimen Matrix (Image 2 style) -->
+            <div class="table-responsive" *ngIf="specimens.length > 1">
+              <table class="table lims-matrix-table align-middle mb-1" [class.hide-unit-col]="!specimenShow(s, 'unit')">
+                <thead class="text-center">
+                  <tr>
+                    <th class="text-start w-col-220">{{ columnLabel(s, 'param', 'Parameter / Property') }}</th>
+                    <th class="w-col-65">{{ columnLabel(s, 'unit', 'Unit') }}</th>
+                    <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ specimenLabel(spmIdx, s) }}</span>
+                        <button *ngIf="!isViewMode && !isLocked && canAdjustCount(s) && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-delete"
+                                (click)="removeSpecimen(spmIdx)" title="Remove {{ specimenLabel(spmIdx, s) }}">
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </div>
+                    </th>
+                    <th *ngIf="specimenShow(s, 'avg')" class="w-col-115 avg-col-header">{{ columnLabel(s, 'avg', 'Average') }}</th>
+                    <th *ngIf="s.config?.showMinMax" class="w-col-85">{{ columnLabel(s, 'min', 'Min') }}</th>
+                    <th *ngIf="s.config?.showMinMax" class="w-col-85">{{ columnLabel(s, 'max', 'Max') }}</th>
+                    <th *ngIf="specimenShow(s, 'requirement')" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
+                    <th *ngIf="specimenShow(s, 'status')" class="w-col-90">{{ columnLabel(s, 'status', 'Status') }}</th>
+                    <th class="w-col-85 action-col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ng-container *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow">
+                  <tr *ngIf="!p.isDivider">
+                    <td class="fw-semibold text-start">
+                      <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                      <span>{{ p.displayName }}</span>
+                    </td>
+                    <td class="text-center text-muted small">{{ p.unit }}</td>
+                    <td *ngFor="let spm of specimens; let spmIdx = index">
+                      <span *ngIf="p.isStatic" class="small">{{ p.staticValue }}</span>
+                      <input *ngIf="!p.isStatic && p.inputType !== 'Text'" type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                             [value]="getParamValueForSpecimen(p.index, spmIdx)"
+                             (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                             [readOnly]="isViewMode || isLocked"
+                             placeholder="—" />
+                      <input *ngIf="!p.isStatic && p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
+                             [value]="getParamTextForSpecimen(p.index, spmIdx)"
+                             (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                             [readOnly]="isViewMode || isLocked"
+                             placeholder="—" />
+                    </td>
+                    <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
+                      {{ p.isStatic ? '' : getBaseParamAverage(p.index) }}
+                    </td>
+                    <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ p.isStatic ? '' : getBaseParamStat(p.index, 'min') }}</td>
+                    <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getBaseParamStat(p.index, 'max') }}</td>
+                    <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
+                      {{ p.requirement }}
+                    </td>
+                    <td *ngIf="specimenShow(s, 'status')" class="text-center">
+                      <span *ngIf="!p.isStatic" class="badge" [ngClass]="getBaseParamStatus(p.index) === 'Pass' ? 'bg-success' : (getBaseParamStatus(p.index) === 'Fail' ? 'bg-danger' : 'bg-secondary')">
+                        {{ getBaseParamStatus(p.index) }}
+                      </span>
+                    </td>
+                    <td class="text-center action-col">
+                      <button *ngIf="p.isCalculated && !p.isStatic" type="button" class="btn-lims-icon me-1" (click)="openRowFormula(p.index)" title="Formula Details">
+                        <i class="bi bi-calculator"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  </ng-container>
+                </tbody>
+              </table>
             </div>
 
-            <!-- Parameters Table -->
-            <div class="table-responsive">
+            <!-- Single-specimen Parameter Table (when specimens.length <= 1) -->
+            <div class="table-responsive" *ngIf="specimens.length <= 1">
               <table class="table lims-data-grid align-middle mb-1">
                 <thead class="text-center">
                   <tr>
                     <th class="w-col-35">#</th>
-                    <th class="w-col-50">Spm</th>
                     <th class="text-start w-col-24p">Parameter Name</th>
                     <th class="w-col-80">Source</th>
                     <th *ngIf="s.config?.columns?.unit !== false" class="w-col-75">Unit</th>
@@ -1026,21 +1065,6 @@
 
                   <ng-container *ngFor="let r of getFilteredParamIndices()">
 
-                    <!-- Specimen Group Divider (shown only in All Specimens view at boundary) -->
-                    <tr *ngIf="selectedSpecimenFilter === 'all' && isFirstParamOfSpecimen(r)" class="specimen-group-divider">
-                      <td colspan="13" class="py-1 px-2">
-                        <div class="d-flex align-items-center justify-content-between">
-                          <span class="fw-bold text-dark font-monospace">
-                            <i class="bi bi-box-seam me-1 text-danger"></i>
-                            Specimen {{ getSpecimenIndexForParam(r) + 1 }} ({{ getSpecimenLabelForParam(r) }})
-                          </span>
-                          <span class="badge bg-white text-muted border text-xxs font-monospace">
-                            {{ getSpecimenRowCount(getSpecimenIndexForParam(r)) }} Parameters
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-
                     <!-- Parameter Row -->
                     <tr [formGroupName]="r"
                         [ngClass]="{
@@ -1050,13 +1074,6 @@
 
                       <!-- Index -->
                       <td class="text-center text-muted small fw-semibold">{{ r + 1 }}</td>
-
-                      <!-- Specimen Badge -->
-                      <td class="text-center">
-                        <span class="badge bg-secondary-subtle text-secondary font-monospace px-2 py-1">
-                          {{ getSpecimenLabelForParam(r) }}
-                        </span>
-                      </td>
 
                       <!-- Parameter Name -->
                       <td class="text-start">

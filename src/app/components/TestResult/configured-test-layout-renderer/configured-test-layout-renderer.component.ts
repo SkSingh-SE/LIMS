@@ -609,6 +609,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       return false;
     }
 
+    // Suppress parameter section when specimen matrix section is present,
+    // or when reading grid section handles parameters
+    if (t === 'param' || t === 'parameter') {
+      if (this.hasSpecimenSection || this.hasLegacyReadingSection()) {
+        return false;
+      }
+    }
+
     // In Execution tab or 'all' mode, all configured layout sections are rendered together in order
     if (this.activeTabSection === 'all' || this.activeTabSection === 'execution') return true;
 
@@ -3060,7 +3068,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   hasSectionOfType(type: string): boolean {
     if (type === 'spm' && this.hasLegacySpmSection) return true;
-    return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param'));
+    if (type === 'specimen' && this.hasSpecimenSection) return true;
+    return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param') || ((type === 'spm' || type === 'specimen') && (s.type === 'spm' || s.type === 'specimen')));
   }
 
   /** A reading section that lists the test's parameters itself (no target parameter): the plain parameter table is then not drawn. */

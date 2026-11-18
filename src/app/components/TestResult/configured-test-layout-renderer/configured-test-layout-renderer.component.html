@@ -110,7 +110,7 @@
               <i class="bi bi-x-lg"></i>
             </button>
             <!-- Specimen matrix / reading grid: which columns show on this screen -->
-            <details class="loc-adjust" *ngIf="!printMode && adjustableColumns(s).length">
+            <details class="loc-adjust" *ngIf="!printMode && isDynamicMode && adjustableColumns(s).length">
               <summary class="btn btn-xs btn-outline-secondary py-0 px-2 text-xxs" title="Columns of this section"><i class="bi bi-sliders me-1"></i>Adjust</summary>
               <div class="loc-adjust-menu border rounded bg-white shadow-sm p-2">
                 <div class="text-xxs fw-semibold text-secondary mb-1">Columns</div>

@@ -6154,11 +6154,94 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   /** Whether the specimen count can be manually adjusted (disabled if template fixes it or in view mode). */
   canAdjustSpecimenCount(): boolean {
     if (this.isViewMode || this.isActiveTestFinalized()) return false;
+    if (!this.isDynamicAdjustMode) return false;
     const renderer = this.configuredRenderers?.find(r => !r.printMode);
     if (renderer?.specimenSection) {
       return renderer.canAdjustCount(renderer.specimenSection);
     }
     return true;
+  }
+
+  // ================================================================
+  // Dual Layout Operational Mode (Template vs Dynamic Adjust) & Fresh Reset
+  // ================================================================
+  isDynamicAdjustMode: boolean = true;
+
+  setDynamicAdjustMode(enabled: boolean): void {
+    if (this.isViewMode || this.isActiveTestFinalized()) return;
+    this.isDynamicAdjustMode = enabled;
+    if (enabled) {
+      this.toastService.show('Dynamic Layout Mode enabled: You can adjust specimens, dimensions, and columns on the fly.', 'info');
+    } else {
+      this.loadTemplatedData();
+    }
+  }
+
+  loadTemplatedData(): void {
+    if (this.isViewMode || this.isActiveTestFinalized()) return;
+    this.isDynamicAdjustMode = false;
+    const targetId = this.selectedLayoutTemplateId || this.currentTestLayout?.id;
+    if (!targetId) {
+      this.toastService.show('No active layout template selected.', 'warning');
+      return;
+    }
+
+    this.testLayoutService.getLayoutById(targetId).subscribe({
+      next: (template: any) => {
+        if (template && template.layoutConfigJson) {
+          try {
+            const parsed = JSON.parse(template.layoutConfigJson);
+            this.currentTestLayout = {
+              ...template,
+              parsedConfig: parsed,
+              sections: (parsed.sections || []).filter((s: any) => s.type === 'specimen')
+            };
+
+            const spmSec = this.currentTestLayout.sections.find((s: any) => s.type === 'specimen' || s.type === 'spm');
+            const targetCount = spmSec?.config?.count ? Number(spmSec.config.count) : 1;
+            this.updateWorkbenchSpecimenCount(targetCount);
+
+            const renderer = this.configuredRenderers?.find(r => !r.printMode);
+            if (renderer) {
+              renderer.tensileRowPrintMap = {};
+              renderer.initSpecimens();
+            }
+
+            this.toastService.show(`Loaded Template Mode: ${template.templateName || template.layoutName}`, 'success');
+          } catch (e) {
+            console.error('Failed to parse layoutConfigJson', e);
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Failed to reload template data', err);
+        this.toastService.show('Failed to reload master template data.', 'error');
+      }
+    });
+  }
+
+  confirmResetSampleResults(): void {
+    if (!this.sampleId || this.isViewMode || this.isActiveTestFinalized()) return;
+    this.askConfirm(
+      'Reset Test Results (Fresh Entry)',
+      'Are you sure you want to clear all entered test result data for this sample? All observations, dimensions, and entered values will be reset for a fresh entry.',
+      () => this.executeResetSampleResults(),
+      { confirmLabel: 'Reset All Results', variant: 'danger' }
+    );
+  }
+
+  executeResetSampleResults(): void {
+    if (!this.sampleId) return;
+    this.testResultService.resetSampleResults(this.sampleId).subscribe({
+      next: (res) => {
+        this.toastService.show(res?.message || 'Test results reset for fresh entry.', 'success');
+        this.loadFullResultPayload(this.sampleId);
+      },
+      error: (err) => {
+        console.error('Failed to reset test results', err);
+        this.toastService.show('Failed to reset test results.', 'error');
+      }
+    });
   }
 
   /** The toolbar specimen stepper drives the specimen matrix; a layout without one (reading / location grid) does not show it. */

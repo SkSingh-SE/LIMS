@@ -190,6 +190,35 @@
                   </button>
                 </div>
 
+                <!-- Layout Mode: Template vs Dynamic Adjust -->
+                <div class="lims-test-toolbar-group" *ngIf="currentTestLayout">
+                  <span class="lims-test-toolbar-label">Mode</span>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Layout Mode">
+                    <button type="button" class="btn btn-xs py-0 px-2"
+                      [ngClass]="!isDynamicAdjustMode ? 'btn-primary' : 'btn-outline-secondary'"
+                      (click)="setDynamicAdjustMode(false)"
+                      [disabled]="tbLocked"
+                      title="Template Mode: Load pristine template structure from master">
+                      <i class="bi bi-file-earmark-ruled me-1"></i>Template
+                    </button>
+                    <button type="button" class="btn btn-xs py-0 px-2"
+                      [ngClass]="isDynamicAdjustMode ? 'btn-primary' : 'btn-outline-secondary'"
+                      (click)="setDynamicAdjustMode(true)"
+                      [disabled]="tbLocked"
+                      title="Dynamic Mode: Dynamically adjust specimens, dimensions, columns, and parameters on the fly">
+                      <i class="bi bi-sliders me-1"></i>Adjust
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Fresh Entry (Clear results) -->
+                <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 text-xxs"
+                  (click)="confirmResetSampleResults()"
+                  *ngIf="!isViewMode && !isTestFinalized(tbTest?.status)"
+                  title="Clear all entered results and restart with fresh entry">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Fresh Entry
+                </button>
+
               <a *ngIf="currentTestLayout" class="btn btn-sm btn-lims btn-lims-secondary lims-test-toolbar-studio text-decoration-none"
                 [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }"
                 title="Open this layout in Layout Studio">
@@ -477,6 +506,7 @@
                       [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
                       [nablInScope]="isNablAccredited(plans[p].tests[t])" [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []"
                       [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
+                      [isDynamicMode]="isDynamicAdjustMode"
                       [activeTabSection]="'execution'"
                       [environmentData]="environmentMap[plans[p].tests[t]?.headerId]"
                       [timingData]="testTimingMap[plans[p].tests[t]?.headerId]"

@@ -165,6 +165,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    * form or to the test object and never emits, so a second instance can sit next to the live result screen.
    */
   @Input() printMode = false;
+  @Input() isDynamicMode = true;
   @HostBinding('class.print-mode') get printModeClass(): boolean { return this.printMode; }
 
   @Output() paramValueChanged = new EventEmitter<{ rowIdx: number; param: any }>();
@@ -1156,7 +1157,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
   // Specimen Matrix Operations
   // =========================================================================
-  private initSpecimens(): void {
+  public initSpecimens(): void {
     let count = 1;
     if (this.hasSpecimenSection) {
       const declared = this.layoutSpecimenCount();

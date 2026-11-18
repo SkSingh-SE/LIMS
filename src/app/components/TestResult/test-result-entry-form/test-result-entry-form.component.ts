@@ -800,6 +800,259 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return Number(plan?.tests?.[0]?.totalSpecimens || plan?.totalSpecimens || 1);
   }
 
+  getActivePlanSpecimenCount(p: number): number {
+    const plan = this.plans[p];
+    if (!plan) return 1;
+    return Number(plan.tests?.[0]?.totalSpecimens || plan.totalSpecimens || plan.plannedQuantity || 1);
+  }
+
+  // ----------------------------------------------------------------
+  // Task L8.1: Specimen Size Prompt & Dimensions Management
+  // ----------------------------------------------------------------
+  specimenSizeModalVisible = false;
+  activeSizePlanIndex = 0;
+  activeSizeTestIndex = 0;
+  specimenSizeProfile: 'round' | 'flat' | 'pipe' = 'round';
+  specimenSizeDiameter: number | null = null;
+  specimenSizeThickness: number | null = null;
+  specimenSizeWidth: number | null = null;
+  specimenSizeOuterDiameter: number | null = null;
+  specimenSizeWallThickness: number | null = null;
+  specimenSizeLength: number | null = null;
+  specimenSizeGaugeLength: number | null = null;
+  specimenSizeArea: number | null = null;
+  isSavingSpecimenSize = false;
+
+  isSpecimenSizeRequired(test?: any): boolean {
+    if (!test) test = this.plans[this.activePlanIndex]?.tests?.[0];
+    if (!test) return false;
+    const name = String(test.name || test.laboratoryTest || test.leafNode || '').toLowerCase();
+    const technique = String(test.analysisTechnique || '').toLowerCase();
+    if (name.includes('tensile') || name.includes('yield') || name.includes('proof') || name.includes('uts') ||
+        technique.includes('tensile') || technique.includes('yield') || technique.includes('proof')) {
+      return true;
+    }
+    if (this.currentTestLayout && (this.currentTestLayout.sections || []).some((s: any) => s.type === 'spm' || s.type === 'specimen')) {
+      return true;
+    }
+    const priceSummary = this.priceSummaryMap[test.headerId];
+    if (priceSummary?.availablePricingTypes?.includes('SizeRange') || priceSummary?.availablePricingTypes?.includes('SizeAndLoad') ||
+        priceSummary?.selectedPricingType === 'SizeRange' || priceSummary?.selectedPricingType === 'SizeAndLoad') {
+      return true;
+    }
+    return false;
+  }
+
+  hasSpecimenSize(planIndex?: number, testIndex?: number): boolean {
+    const p = planIndex ?? this.activePlanIndex ?? 0;
+    const t = testIndex ?? 0;
+    const test = this.plans?.[p]?.tests?.[t];
+    if (!test) return false;
+    if (test.pricingDimensionValue && Number(test.pricingDimensionValue) > 0) return true;
+    if (this.layoutRendererComponent?.specimens?.some((s: any) => (s.diameter && s.diameter > 0) || (s.thickness && s.thickness > 0) || (s.area && s.area > 0))) return true;
+    if (Number(this.sample?.diameter) > 0 || (Number(this.sample?.thickness) > 0 && Number(this.sample?.width) > 0) || Number(this.sample?.crossSectionArea) > 0) return true;
+    return false;
+  }
+
+  hasSpecimenSizeForHeader(headerId: number): boolean {
+    const plan = this.plans?.find((p: any) => p.tests?.some((t: any) => t.headerId === headerId));
+    const pIdx = plan ? this.plans.indexOf(plan) : -1;
+    const tIdx = plan?.tests?.findIndex((t: any) => t.headerId === headerId) ?? -1;
+    if (pIdx < 0 || tIdx < 0) return true;
+    return this.hasSpecimenSize(pIdx, tIdx);
+  }
+
+  getSpecimenSizeDisplay(planIndex?: number, testIndex?: number): string {
+    const p = planIndex ?? this.activePlanIndex ?? 0;
+    const t = testIndex ?? 0;
+    const test = this.plans?.[p]?.tests?.[t];
+    const spm = this.layoutRendererComponent?.specimens?.[0];
+    if (spm) {
+      if (spm.diameter && spm.diameter > 0) return `⌀ ${spm.diameter} mm`;
+      if (spm.thickness && spm.width) return `${spm.thickness} × ${spm.width} mm`;
+      if (spm.area && spm.area > 0) return `${spm.area} mm²`;
+    }
+    if (test?.pricingDimensionValue && Number(test.pricingDimensionValue) > 0) {
+      return `⌀ ${test.pricingDimensionValue} mm`;
+    }
+    if (Number(this.sample?.diameter) > 0) {
+      return `⌀ ${this.sample.diameter} mm`;
+    }
+    if (Number(this.sample?.thickness) > 0 && Number(this.sample?.width) > 0) {
+      return `${this.sample.thickness} × ${this.sample.width} mm`;
+    }
+    return 'Set Size';
+  }
+
+  getSpecimenSizeSummary(planIndex?: number, testIndex?: number): string {
+    const p = planIndex ?? this.activePlanIndex ?? 0;
+    const t = testIndex ?? 0;
+    const test = this.plans?.[p]?.tests?.[t];
+    const spm = this.layoutRendererComponent?.specimens?.[0];
+    if (spm) {
+      if (spm.diameter && spm.diameter > 0) return `Round Bar: ⌀ ${spm.diameter} mm (Area: ${spm.area || '-'} mm²)`;
+      if (spm.thickness && spm.width) return `Flat Plate: ${spm.thickness} × ${spm.width} mm (Area: ${spm.area || '-'} mm²)`;
+    }
+    if (test?.pricingDimensionValue && Number(test.pricingDimensionValue) > 0) {
+      return `Pricing Dimension: ⌀ ${test.pricingDimensionValue} mm`;
+    }
+    if (Number(this.sample?.diameter) > 0) {
+      return `Sample Diameter: ⌀ ${this.sample.diameter} mm`;
+    }
+    if (Number(this.sample?.thickness) > 0 && Number(this.sample?.width) > 0) {
+      return `Sample Size: ${this.sample.thickness} × ${this.sample.width} mm`;
+    }
+    return 'Configure specimen cross-section dimensions';
+  }
+
+  shouldShowSpecimenSizePrompt(): boolean {
+    const plan = this.plans[this.activePlanIndex];
+    return !!plan;
+  }
+
+  openSpecimenSizeModal(planIndex?: number, testIndex?: number): void {
+    if (this.isViewMode || this.isActiveTestFinalized()) return;
+    this.activeSizePlanIndex = planIndex ?? this.activePlanIndex ?? 0;
+    this.activeSizeTestIndex = testIndex ?? 0;
+    const test = this.plans?.[this.activeSizePlanIndex]?.tests?.[this.activeSizeTestIndex];
+    const spm = this.layoutRendererComponent?.specimens?.[0];
+
+    const sampleDiam = Number(this.sample?.diameter) || null;
+    const sampleThick = Number(this.sample?.thickness) || null;
+    const sampleWidth = Number(this.sample?.width) || null;
+    const sampleLen = Number(this.sample?.length) || null;
+    const sampleGaugeLen = Number(this.sample?.gaugeLength) || null;
+    const pricingDim = Number(test?.pricingDimensionValue) || null;
+
+    if (spm?.thickness && spm?.width) {
+      this.specimenSizeProfile = 'flat';
+      this.specimenSizeThickness = spm.thickness;
+      this.specimenSizeWidth = spm.width;
+      this.specimenSizeDiameter = null;
+    } else if (spm?.diameter || pricingDim || sampleDiam) {
+      this.specimenSizeProfile = 'round';
+      this.specimenSizeDiameter = spm?.diameter || pricingDim || sampleDiam;
+      this.specimenSizeThickness = null;
+      this.specimenSizeWidth = null;
+    } else if (sampleThick && sampleWidth) {
+      this.specimenSizeProfile = 'flat';
+      this.specimenSizeThickness = sampleThick;
+      this.specimenSizeWidth = sampleWidth;
+      this.specimenSizeDiameter = null;
+    } else {
+      this.specimenSizeProfile = 'round';
+      this.specimenSizeDiameter = null;
+      this.specimenSizeThickness = null;
+      this.specimenSizeWidth = null;
+    }
+
+    this.specimenSizeLength = sampleLen || 300;
+    this.specimenSizeGaugeLength = spm?.gaugeLength || sampleGaugeLen || 50;
+    this.onSpecimenSizeDimensionChange();
+    this.specimenSizeModalVisible = true;
+  }
+
+  closeSpecimenSizeModal(): void {
+    this.specimenSizeModalVisible = false;
+  }
+
+  setSpecimenSizeProfile(profile: 'round' | 'flat' | 'pipe'): void {
+    this.specimenSizeProfile = profile;
+    this.onSpecimenSizeDimensionChange();
+  }
+
+  onSpecimenSizeDimensionChange(): void {
+    if (this.specimenSizeProfile === 'round') {
+      const d = Number(this.specimenSizeDiameter);
+      if (d > 0) {
+        this.specimenSizeArea = parseFloat((Math.PI * Math.pow(d / 2, 2)).toFixed(2));
+        this.specimenSizeGaugeLength = parseFloat((5.65 * Math.sqrt(this.specimenSizeArea)).toFixed(2));
+      } else {
+        this.specimenSizeArea = null;
+      }
+    } else if (this.specimenSizeProfile === 'flat') {
+      const t = Number(this.specimenSizeThickness);
+      const w = Number(this.specimenSizeWidth);
+      if (t > 0 && w > 0) {
+        this.specimenSizeArea = parseFloat((t * w).toFixed(2));
+        this.specimenSizeGaugeLength = parseFloat((5.65 * Math.sqrt(this.specimenSizeArea)).toFixed(2));
+      } else {
+        this.specimenSizeArea = null;
+      }
+    } else if (this.specimenSizeProfile === 'pipe') {
+      const od = Number(this.specimenSizeOuterDiameter);
+      const wt = Number(this.specimenSizeWallThickness);
+      if (od > 0 && wt > 0 && od > wt) {
+        this.specimenSizeArea = parseFloat((Math.PI * (od - wt) * wt).toFixed(2));
+        this.specimenSizeGaugeLength = parseFloat((5.65 * Math.sqrt(this.specimenSizeArea)).toFixed(2));
+      } else {
+        this.specimenSizeArea = null;
+      }
+    }
+  }
+
+  applySpecimenSize(): void {
+    const test = this.plans?.[this.activeSizePlanIndex]?.tests?.[this.activeSizeTestIndex];
+    if (!test) return;
+    const headerId = test.headerId;
+
+    let dimValue: number | null = null;
+    if (this.specimenSizeProfile === 'round') {
+      dimValue = Number(this.specimenSizeDiameter) || null;
+    } else if (this.specimenSizeProfile === 'flat') {
+      dimValue = Number(this.specimenSizeThickness) || null;
+    } else if (this.specimenSizeProfile === 'pipe') {
+      dimValue = Number(this.specimenSizeOuterDiameter) || null;
+    }
+
+    this.isSavingSpecimenSize = true;
+    const payload = {
+      pricingType: 'SizeRange',
+      dimensionValue: dimValue != null ? String(dimValue) : null
+    };
+
+    this.testResultService.setPricingWithValue(headerId, payload).subscribe({
+      next: (summary) => {
+        this.isSavingSpecimenSize = false;
+        test.pricingDimensionValue = payload.dimensionValue;
+        if (summary) {
+          this.priceSummaryMap[headerId] = summary;
+        }
+
+        if (this.layoutRendererComponent) {
+          this.layoutRendererComponent.applySpecimenSizeDimensions({
+            diameter: this.specimenSizeProfile === 'round' ? this.specimenSizeDiameter : null,
+            thickness: this.specimenSizeProfile === 'flat' ? this.specimenSizeThickness : null,
+            width: this.specimenSizeProfile === 'flat' ? this.specimenSizeWidth : null,
+            area: this.specimenSizeArea,
+            gaugeLength: this.specimenSizeGaugeLength
+          });
+        }
+
+        this.closeSpecimenSizeModal();
+        this.toastService.show('Specimen size applied to test and specimens', 'success');
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.isSavingSpecimenSize = false;
+        console.error('Failed to update specimen size pricing', err);
+        test.pricingDimensionValue = payload.dimensionValue;
+        if (this.layoutRendererComponent) {
+          this.layoutRendererComponent.applySpecimenSizeDimensions({
+            diameter: this.specimenSizeProfile === 'round' ? this.specimenSizeDiameter : null,
+            thickness: this.specimenSizeProfile === 'flat' ? this.specimenSizeThickness : null,
+            width: this.specimenSizeProfile === 'flat' ? this.specimenSizeWidth : null,
+            area: this.specimenSizeArea,
+            gaugeLength: this.specimenSizeGaugeLength
+          });
+        }
+        this.closeSpecimenSizeModal();
+        this.toastService.show('Specimen size applied', 'success');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   /** Completed, pending-verification and verified tests: no specimen count or layout change from the toolbar. */
   isToolbarLocked(status?: string): boolean {
     return ['Completed', 'PendingVerification', 'Verified'].includes(status || '');
@@ -1023,7 +1276,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         const totalSpecimens = declaredSpmCount || resolveSpecimenCount(validParams, 1);
         const sequenceNo = generalTest.sequenceNo || 1;
         const baseName = generalTest.laboratoryTest || 'General Test';
-        const testName = plannedQuantity > 1 ? `${baseName} - Test ${sequenceNo}` : baseName;
+        const testName = baseName;
 
         const methodName = generalTest.standardName || '';
         const specName = specification && specification !== 'Unknown' ? specification : '';
@@ -1041,6 +1294,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           specification: specification,
           grade: '',
           headerId: generalTest.headerId,
+          pricingDimensionValue: generalTest.pricingDimensionValue || null,
+          selectedPricingType: generalTest.selectedPricingType || null,
           labTestId: (generalTest as any).laboratoryTestId || null,
           subGroupId: (generalTest as any).subGroupId || (generalTest as any).laboratoryTestSubGroupID || null,
           analysisTypeId: (generalTest as any).analysisTypeId || (generalTest as any).analysisTypeID || null,
@@ -1049,7 +1304,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           methodName: methodName,
           methodSelected: generalTest.standard ? { id: generalTest.standard, name: methodName || `Method #${generalTest.standard}` } : null,
           specSelected: generalTest.specification1 ? { id: generalTest.specification1, name: specName || `Spec #${generalTest.specification1}` } : null,
-          specimenLabel: plannedQuantity > 1 ? `Test ${sequenceNo} of ${plannedQuantity}` : null,
+          specimenLabel: null,
           tests: [
             {
               id: `gen-${generalTest.headerId}`,
@@ -1057,6 +1312,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               name: testName,
               plannedQuantity: plannedQuantity,
               totalSpecimens: totalSpecimens,
+              pricingDimensionValue: generalTest.pricingDimensionValue || null,
+              selectedPricingType: generalTest.selectedPricingType || null,
               reportNo: generalTest.reportNo || `Auto-${gtIdx}`,
               status: generalTest.status || 'Pending',
               testPurpose: generalTest.testPurpose || '',
@@ -1153,6 +1410,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           specification: specification,
           grade: '',
           headerId: chemicalTest.headerId,
+          pricingDimensionValue: chemicalTest.pricingDimensionValue || null,
+          selectedPricingType: chemicalTest.selectedPricingType || null,
           methodId: chemicalTest.standard || null,
           methodName: chemicalTest.standardName || '',
           methodSelected: chemicalTest.standard ? { id: chemicalTest.standard, name: chemicalTest.standardName || `Method #${chemicalTest.standard}` } : null,
@@ -1170,6 +1429,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               name: chemicalTest.laboratoryTest || 'Chemical Test',
               plannedQuantity: chemPlannedQuantity,
               totalSpecimens: chemTotalSpecimens,
+              pricingDimensionValue: chemicalTest.pricingDimensionValue || null,
+              selectedPricingType: chemicalTest.selectedPricingType || null,
               reportNo: chemicalTest.reportNo || `Auto-${chemicalTest.headerId}`,
               status: chemicalTest.status || 'Pending',
               testPurpose: chemicalTest.testPurpose || '',
@@ -2903,6 +3164,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     if (this.isViewMode) return 'View mode';
     if (this.isHeaderCompleted(headerId)) return 'Test already completed';
     if (this.activeTab !== 'execution') return 'Open the Execution tab to complete this test';
+    const plan = this.plans?.find((p: any) => p.tests?.some((t: any) => t.headerId === headerId));
+    const test = plan?.tests?.find((t: any) => t.headerId === headerId);
+    if (test && this.isSpecimenSizeRequired(test) && !this.hasSpecimenSizeForHeader(headerId)) {
+      return 'Specimen Size is required before completing this test';
+    }
     return null;
   }
 

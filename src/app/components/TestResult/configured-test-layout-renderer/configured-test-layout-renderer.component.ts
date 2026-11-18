@@ -1192,9 +1192,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
 
     this.specimens = [];
+    const pricingDim = Number(this.test?.pricingDimensionValue);
+    const d = this.sample?.diameter != null ? Number(this.sample.diameter) : (pricingDim > 0 ? pricingDim : null);
     const t = this.sample?.thickness != null ? Number(this.sample.thickness) : null;
     const w = this.sample?.width != null ? Number(this.sample.width) : null;
-    const d = this.sample?.diameter != null ? Number(this.sample.diameter) : null;
     const l0 = this.sample?.gaugeLength != null ? Number(this.sample.gaugeLength) : 50;
 
     for (let i = 1; i <= count; i++) {
@@ -1223,6 +1224,49 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Hydrate specimen data from existing parameter controls (e.g. S1, S2 from database)
     this.hydrateSpecimensFromParameters();
 
+    this.recalculateSpecimens();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Apply specimen dimensions (from Specimen Size Prompt / toolbar) across all specimens
+   * and update corresponding parameter inputs.
+   */
+  applySpecimenSizeDimensions(dims: {
+    diameter?: number | null;
+    thickness?: number | null;
+    width?: number | null;
+    area?: number | null;
+    gaugeLength?: number | null;
+  }): void {
+    if (!this.specimens || this.specimens.length === 0) return;
+    for (let i = 0; i < this.specimens.length; i++) {
+      const spm = this.specimens[i];
+      if (dims.diameter != null && dims.diameter > 0) spm.diameter = dims.diameter;
+      if (dims.thickness != null && dims.thickness > 0) spm.thickness = dims.thickness;
+      if (dims.width != null && dims.width > 0) spm.width = dims.width;
+      if (dims.area != null && dims.area > 0) spm.area = dims.area;
+      if (dims.gaugeLength != null && dims.gaugeLength > 0) spm.gaugeLength = dims.gaugeLength;
+
+      if (this.parametersFormArray) {
+        const roleMap = this.getSpecimenRoleIndex(i);
+        if (dims.diameter != null && roleMap.has('diameter')) {
+          roleMap.get('diameter')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.diameter }, { emitEvent: false }));
+        }
+        if (dims.thickness != null && roleMap.has('thickness')) {
+          roleMap.get('thickness')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.thickness }, { emitEvent: false }));
+        }
+        if (dims.width != null && roleMap.has('width')) {
+          roleMap.get('width')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.width }, { emitEvent: false }));
+        }
+        if (dims.area != null && roleMap.has('area')) {
+          roleMap.get('area')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.area }, { emitEvent: false }));
+        }
+        if (dims.gaugeLength != null && roleMap.has('gaugeLength')) {
+          roleMap.get('gaugeLength')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.gaugeLength }, { emitEvent: false }));
+        }
+      }
+    }
     this.recalculateSpecimens();
     this.cdr.markForCheck();
   }

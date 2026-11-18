@@ -2121,3 +2121,54 @@ input[type="number"] {
   align-items: center;
   gap: 6px;
 }
+
+/* Specimen Size Toolbar & Modal Styles */
+.lims-test-toolbar-size {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.size-prompt-btn {
+  height: 26px;
+  font-size: 0.75rem;
+  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-color: #cbd5e1;
+  background-color: #fff;
+  color: #334155;
+  border-radius: 4px;
+  transition: all 0.15s ease-in-out;
+}
+
+.size-prompt-btn:hover {
+  border-color: var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+  background-color: var(--primary-50, #fef2f2);
+}
+
+.size-summary-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.specimen-size-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.55);
+  z-index: var(--z-index-modal, 1055);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.specimen-size-dialog {
+  max-width: 520px;
+  width: 100%;
+  margin: 1rem;
+}

@@ -541,3 +541,56 @@ input[type="number"] {
 .loc-adjust > summary { list-style: none; cursor: pointer; }
 .loc-adjust > summary::-webkit-details-marker { display: none; }
 .loc-adjust-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 200px; }
+
+/* ── Parameter Single-Row Guarantee & Clean UI ── */
+.param-name-col {
+  min-width: 235px !important;
+  white-space: nowrap !important;
+}
+
+.param-name-cell {
+  white-space: nowrap !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  padding-right: 10px !important;
+}
+
+/* ── Matrix Table High-Density Optimization ── */
+.lims-matrix-table th {
+  padding: 6px 8px !important;
+  font-size: 0.72rem !important;
+}
+
+.lims-matrix-table td {
+  padding: 3px 8px !important;
+  font-size: 0.76rem !important;
+}
+
+.lims-matrix-table .spm-input-control {
+  max-width: 70px !important;
+  height: 25px !important;
+  font-size: 0.75rem !important;
+  padding: 1px 4px !important;
+}
+
+/* ── Print Checkbox Styling ── */
+.print-checkbox {
+  cursor: pointer !important;
+  width: 15px !important;
+  height: 15px !important;
+  margin: 0 !important;
+  border-color: #cbd5e1 !important;
+  border-radius: 4px !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.print-checkbox:checked {
+  background-color: var(--primary-color, #da261c) !important;
+  border-color: var(--primary-color, #da261c) !important;
+}
+
+.print-checkbox:focus {
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.2) !important;
+}
+

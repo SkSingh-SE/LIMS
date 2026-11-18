@@ -939,6 +939,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         if (extra?.userSpecimenCount != null && Number(extra.userSpecimenCount) > 0) {
           this.savedUserSpecimenCount = Number(extra.userSpecimenCount);
         }
+        if (extra?.tensileRowPrintMap && typeof extra.tensileRowPrintMap === 'object') {
+          this.tensileRowPrintMap = { ...extra.tensileRowPrintMap };
+        }
         if (Array.isArray(extra?.hiddenRows)) {
           this.hiddenFixedRoles = new Set(extra.hiddenRows.filter((r: string) => ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(r as SpecimenRole)) as SpecimenRole[]);
         }
@@ -2892,7 +2895,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   adjustableColumns(s: any): { key: string; label: string }[] {
     const t = String(s?.type || '').toLowerCase();
     if (t === 'spm' || t === 'specimen') {
-      return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }];
+      return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }, { key: 'print', label: 'Print Checkbox' }];
     }
     if (t === 'reading' && this.isReadingGrid(s)) {
       return [{ key: 'agg', label: this.gridAggregateLabel(s) || 'Average' }, { key: 'stats', label: 'Min / Max' }, { key: 'requirement', label: 'Requirement' }, { key: 'status', label: 'Status' }, { key: 'unit', label: 'Unit' }];
@@ -2902,7 +2905,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   isColumnShown(s: any, key: string): boolean {
     if (key === 'stats') return this.gridStatsShown(s);
-    if (['avg', 'requirement', 'status', 'unit'].includes(key) && !this.isReadingGrid(s)) return this.specimenShow(s, key as any);
+    if (['avg', 'requirement', 'status', 'unit', 'print'].includes(key) && !this.isReadingGrid(s)) return this.specimenShow(s, key as any);
     if (key === 'unit') return this.specimenShow(s, 'unit');
     return this.columnVisible(s, key);
   }
@@ -2912,8 +2915,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     this.columnOverride = { ...this.columnOverride, [sec]: { ...(this.columnOverride[sec] || {}), [key]: !this.isColumnShown(s, key) } };
   }
 
-  /** Average / Requirement / Status / Unit column switches of the specimen matrix. */
-  specimenShow(sec: any, what: 'avg' | 'requirement' | 'status' | 'unit'): boolean {
+  /** Average / Requirement / Status / Unit / Print column switches of the specimen matrix. */
+  specimenShow(sec: any, what: 'avg' | 'requirement' | 'status' | 'unit' | 'print'): boolean {
     const cfg = sec?.config || {};
     const ov = this.columnOverride[this.sectionUiKey(sec)]?.[what];
     if (ov !== undefined) return ov;
@@ -2922,6 +2925,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       case 'requirement': return cfg.showRequirement !== false && this.columnVisible(sec, 'requirement');
       case 'status': return cfg.showStatus !== false && this.columnVisible(sec, 'status');
       case 'unit': return cfg.showUnit !== false && this.columnVisible(sec, 'unit');
+      case 'print': return cfg.showPrint !== false && this.columnVisible(sec, 'print');
     }
   }
 
@@ -3727,8 +3731,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   // =========================================================================
-  // Parameter Reportability Toggle (Gap 10)
+  // Parameter & Row Printability / Reportability Toggle (Checkboxes)
   // =========================================================================
+  tensileRowPrintMap: Record<string, boolean> = {};
+
   isParamReportable(rowIdx: number): boolean {
     const ctrl = this.parametersFormArray?.at(rowIdx);
     if (!ctrl) return true;
@@ -3737,11 +3743,71 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   toggleParamReportable(rowIdx: number): void {
     if (this.isViewMode || this.isLocked) return;
-    const ctrl = this.parametersFormArray?.at(rowIdx);
-    if (!ctrl) return;
-    const current = ctrl.get('isReportable')?.value !== false;
-    ctrl.patchValue({ isReportable: !current });
-    this.paramValueChanged.emit({ rowIdx, param: ctrl.value });
+    const current = this.isParamReportable(rowIdx);
+    this.setParamReportableAllSpecimens(rowIdx, !current);
+  }
+
+  setParamReportableAllSpecimens(baseIdx: number, isReportable: boolean): void {
+    const baseCtrl = this.parametersFormArray?.at(baseIdx);
+    if (!baseCtrl) return;
+    const paramName = String(baseCtrl.get('parameterName')?.value || '').trim();
+    const paramId = baseCtrl.get('parameterID')?.value;
+
+    this.parametersFormArray.controls.forEach((ctrl, idx) => {
+      const name = String(ctrl.get('parameterName')?.value || '').trim();
+      const id = ctrl.get('parameterID')?.value;
+      const matchName = name && name.toLowerCase() === paramName.toLowerCase();
+      const matchId = paramId != null && id === paramId;
+      if (matchName || matchId) {
+        ctrl.patchValue({ isReportable });
+        this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
+      }
+    });
+    this.parametersAdjusted.emit();
+    this.cdr.markForCheck();
+  }
+
+  isRowPrintable(target: string | number): boolean {
+    if (typeof target === 'number') {
+      return this.isParamReportable(target);
+    }
+    const role = target as SpecimenRole;
+    const paramIdx = this.roleParamIndex(role);
+    if (paramIdx >= 0) {
+      return this.isParamReportable(paramIdx);
+    }
+    if (this.tensileRowPrintMap[role] !== undefined) {
+      return this.tensileRowPrintMap[role];
+    }
+    // Default for dimensions (thickness, width, diameter, gaugeLength, area): true
+    if (role === 'thickness' || role === 'width' || role === 'diameter' || role === 'gaugeLength' || role === 'area') {
+      return true;
+    }
+    // Default for raw forces/loads/final lengths: false
+    if (role === 'yieldLoad' || role === 'peakLoad' || role === 'finalLength') {
+      return false;
+    }
+    return true;
+  }
+
+  toggleRowPrintable(target: string | number): void {
+    if (this.isViewMode || this.isLocked) return;
+    const current = this.isRowPrintable(target);
+    const next = !current;
+
+    if (typeof target === 'number') {
+      this.setParamReportableAllSpecimens(target, next);
+      return;
+    }
+
+    const role = target as SpecimenRole;
+    const paramIdx = this.roleParamIndex(role);
+    if (paramIdx >= 0) {
+      this.setParamReportableAllSpecimens(paramIdx, next);
+    }
+
+    this.tensileRowPrintMap = { ...this.tensileRowPrintMap, [role]: next };
+    this.parametersAdjusted.emit();
     this.cdr.markForCheck();
   }
 
@@ -4251,6 +4317,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       conditionValues: this.conditionValues,
       opinionData: this.opinionData,
       hiddenRows: Array.from(this.hiddenFixedRoles),
+      tensileRowPrintMap: this.tensileRowPrintMap,
       userSpecimenCount: this.specimens.length,
       specimenCountApplied: this.specimenCountApplied
     };

@@ -422,28 +422,29 @@
                 <table class="table lims-matrix-table align-middle mb-1" *ngIf="isTensileTest()" [class.hide-unit-col]="!specimenShow(s, 'unit')">
                   <thead class="text-center">
                     <tr>
-                      <th class="text-start w-col-220">{{ columnLabel(s, 'param', 'Parameter / Dimension') }}</th>
-                      <th class="w-col-65">{{ columnLabel(s, 'unit', 'Unit') }}</th>
-                      <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
+                      <th class="text-start text-nowrap param-name-col">{{ columnLabel(s, 'param', 'Parameter / Dimension') }}</th>
+                      <th class="w-col-50">{{ columnLabel(s, 'unit', 'Unit') }}</th>
+                      <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-75 spm-col-header">
                         <div class="d-flex align-items-center justify-content-center gap-1">
-                          <span class="badge bg-secondary-subtle text-secondary px-2 py-1">{{ specimenLabel(spmIdx, s) }}</span>
+                          <span class="badge bg-secondary-subtle text-secondary px-1.5 py-0.5 text-xxs">{{ specimenLabel(spmIdx, s) }}</span>
                           <button *ngIf="!isViewMode && !isLocked && canAdjustCount(s) && specimens.length > 1" type="button" class="btn-lims-icon btn-lims-delete"
                                   (click)="removeSpecimen(spmIdx)" title="Remove {{ specimenLabel(spmIdx, s) }}">
                             <i class="bi bi-x"></i>
                           </button>
                         </div>
                       </th>
-                      <th *ngIf="specimenShow(s, 'avg')" class="w-col-115 avg-col-header">{{ columnLabel(s, 'avg', 'Average') }}</th>
-                      <th *ngIf="s.config?.showMinMax" class="w-col-85">Min</th>
-                      <th *ngIf="s.config?.showMinMax" class="w-col-85">Max</th>
-                      <th *ngIf="specimenShow(s, 'requirement')" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
-                      <th class="w-col-85 action-col">Action</th>
+                      <th *ngIf="specimenShow(s, 'avg')" class="w-col-75 avg-col-header">{{ columnLabel(s, 'avg', 'Average') }}</th>
+                      <th *ngIf="s.config?.showMinMax" class="w-col-50">Min</th>
+                      <th *ngIf="s.config?.showMinMax" class="w-col-50">Max</th>
+                      <th *ngIf="specimenShow(s, 'requirement')" class="w-col-100">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
+                      <th *ngIf="specimenShow(s, 'print')" class="w-col-50 text-center text-nowrap"><i class="bi bi-printer me-1 text-primary"></i>Print</th>
+                      <th class="w-col-50 action-col">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     <!-- Diameter (if round) -->
                     <tr *ngIf="isTensileRowShown('diameter')">
-                      <td class="fw-semibold text-start"><span>{{ tensileLabel(s, 'diameter', 'Diameter (D)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><span>{{ tensileLabel(s, 'diameter', 'Diameter (D)') }}</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
                         <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
@@ -459,7 +460,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('diameter', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('diameter', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('diameter')"
+                                 (change)="toggleRowPrintable('diameter')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('diameter') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('diameter').length > 0"
@@ -472,7 +482,7 @@
 
                     <!-- Thickness -->
                     <tr *ngIf="isTensileRowShown('thickness')">
-                      <td class="fw-semibold text-start"><span>{{ tensileLabel(s, 'thickness', 'Thickness (T)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><span>{{ tensileLabel(s, 'thickness', 'Thickness (T)') }}</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
                         <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
@@ -488,7 +498,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('thickness', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('thickness', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('thickness')"
+                                 (change)="toggleRowPrintable('thickness')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('thickness') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('thickness').length > 0"
@@ -501,7 +520,7 @@
 
                     <!-- Width -->
                     <tr *ngIf="isTensileRowShown('width')">
-                      <td class="fw-semibold text-start"><span>{{ tensileLabel(s, 'width', 'Width (W)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><span>{{ tensileLabel(s, 'width', 'Width (W)') }}</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
                         <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
@@ -517,7 +536,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('width', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('width', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('width')"
+                                 (change)="toggleRowPrintable('width')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('width') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('width').length > 0"
@@ -530,7 +558,7 @@
 
                     <!-- Gauge Length -->
                     <tr *ngIf="isTensileRowShown('gaugeLength')">
-                      <td class="fw-semibold text-start"><span>{{ tensileLabel(s, 'gaugeLength', 'Gauge Length (L₀)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><span>{{ tensileLabel(s, 'gaugeLength', 'Gauge Length (L₀)') }}</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
                         <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
@@ -546,7 +574,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('gaugeLength', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('gaugeLength', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('gaugeLength')"
+                                 (change)="toggleRowPrintable('gaugeLength')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('gaugeLength') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('gaugeLength').length > 0"
@@ -559,7 +596,7 @@
 
                     <!-- Area (Calculated) -->
                     <tr *ngIf="isTensileRowShown('area')">
-                      <td class="fw-semibold text-start"><i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i><span>{{ tensileLabel(s, 'area', 'Cross Section Area (S₀)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i><span>{{ tensileLabel(s, 'area', 'Cross Section Area (S₀)') }}</span></td>
                       <td class="text-center text-muted small">mm²</td>
                       <td *ngFor="let spm of specimens" class="text-center font-monospace fw-semibold text-primary">
                         {{ spm.area != null ? spm.area : '-' }}
@@ -570,7 +607,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('area', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('area', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">Formula: T &times; W</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('area')"
+                                 (change)="toggleRowPrintable('area')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('area') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('area').length > 0"
@@ -583,7 +629,7 @@
 
                     <!-- Measured Force Inputs -->
                     <tr *ngIf="isTensileRowShown('yieldLoad')">
-                      <td class="fw-semibold text-start"><span>{{ tensileLabel(s, 'yieldLoad', '0.2% Yield Load (F_p0.2)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><span>{{ tensileLabel(s, 'yieldLoad', '0.2% Yield Load (F_p0.2)') }}</span></td>
                       <td class="text-center text-muted small">kN</td>
                       <td *ngFor="let spm of specimens">
                         <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
@@ -599,7 +645,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('yieldLoad', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('yieldLoad', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('yieldLoad')"
+                                 (change)="toggleRowPrintable('yieldLoad')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('yieldLoad') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('yieldLoad').length > 0"
@@ -611,7 +666,7 @@
                     </tr>
 
                     <tr *ngIf="isTensileRowShown('peakLoad')">
-                      <td class="fw-semibold text-start"><span>{{ tensileLabel(s, 'peakLoad', 'Maximum / Peak Load (F_m)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><span>{{ tensileLabel(s, 'peakLoad', 'Maximum / Peak Load (F_m)') }}</span></td>
                       <td class="text-center text-muted small">kN</td>
                       <td *ngFor="let spm of specimens">
                         <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
@@ -627,7 +682,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('peakLoad', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('peakLoad', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('peakLoad')"
+                                 (change)="toggleRowPrintable('peakLoad')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('peakLoad') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('peakLoad').length > 0"
@@ -639,7 +703,7 @@
                     </tr>
 
                     <tr *ngIf="isTensileRowShown('finalLength')">
-                      <td class="fw-semibold text-start"><span>{{ tensileLabel(s, 'finalLength', 'Final Length (L_u)') }}</span></td>
+                      <td class="fw-semibold text-start text-nowrap param-name-cell"><span>{{ tensileLabel(s, 'finalLength', 'Final Length (L_u)') }}</span></td>
                       <td class="text-center text-muted small">mm</td>
                       <td *ngFor="let spm of specimens">
                         <input type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
@@ -655,7 +719,16 @@
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('finalLength', 'min') }}</td>
                       <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getDimensionStat('finalLength', 'max') }}</td>
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-muted small">—</td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('finalLength')"
+                                 (change)="toggleRowPrintable('finalLength')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('finalLength') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="!isViewMode && !isLocked && canAddRemoveRows(s)" type="button" class="btn-lims-icon btn-lims-delete"
                                   [class.remove-blocked]="removalBlockers('finalLength').length > 0"
@@ -668,7 +741,7 @@
 
                     <!-- Calculated Mechanical Results (Real-Time Synchronized to Form) -->
                     <tr *ngIf="hasParameterRole('proofStress') && tensileRowOn(s, 'proofStress')">
-                      <td class="fw-bold text-start text-dark">
+                      <td class="fw-bold text-start text-dark text-nowrap param-name-cell">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ tensileLabel(s, 'proofStress', '0.2% Proof Stress / Yield Strength') }}</span>
                       </td>
@@ -684,7 +757,16 @@
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ getParamRequirementByName('proof stress') !== '—' ? getParamRequirementByName('proof stress') : (getParamRequirementByName('yield') !== '—' ? getParamRequirementByName('yield') : '—') }}
                       </td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('proofStress')"
+                                 (change)="toggleRowPrintable('proofStress')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('proofStress') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="roleParamIndex('proofStress') >= 0" type="button" class="btn-lims-icon" (click)="openRoleFormula('proofStress')" title="Formula Details">
                             <i class="bi bi-calculator"></i>
@@ -699,7 +781,7 @@
                     </tr>
 
                     <tr *ngIf="hasParameterRole('uts') && tensileRowOn(s, 'uts')">
-                      <td class="fw-bold text-start text-dark">
+                      <td class="fw-bold text-start text-dark text-nowrap param-name-cell">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ tensileLabel(s, 'uts', 'Ultimate Tensile Strength (UTS)') }}</span>
                       </td>
@@ -715,7 +797,16 @@
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ getParamRequirementByName('tensile') !== '—' ? getParamRequirementByName('tensile') : (getParamRequirementByName('uts') !== '—' ? getParamRequirementByName('uts') : '—') }}
                       </td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('uts')"
+                                 (change)="toggleRowPrintable('uts')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('uts') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="roleParamIndex('uts') >= 0" type="button" class="btn-lims-icon" (click)="openRoleFormula('uts')" title="Formula Details">
                             <i class="bi bi-calculator"></i>
@@ -730,7 +821,7 @@
                     </tr>
 
                     <tr *ngIf="hasParameterRole('elongation') && tensileRowOn(s, 'elongation')">
-                      <td class="fw-bold text-start text-dark">
+                      <td class="fw-bold text-start text-dark text-nowrap param-name-cell">
                         <i class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ tensileLabel(s, 'elongation', 'Percentage Elongation in 50mm / 4D') }}</span>
                       </td>
@@ -746,7 +837,16 @@
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ getParamRequirementByName('elongation') }}
                       </td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable('elongation')"
+                                 (change)="toggleRowPrintable('elongation')"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable('elongation') ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="roleParamIndex('elongation') >= 0" type="button" class="btn-lims-icon" (click)="openRoleFormula('elongation')" title="Formula Details">
                             <i class="bi bi-calculator"></i>
@@ -762,7 +862,7 @@
 
                     <!-- Other parameters of the test (not one of the fixed rows above): entered per specimen, removable -->
                     <tr *ngFor="let p of getExtraBaseParameterList(); trackBy: trackByBaseRow">
-                      <td class="fw-semibold text-start">
+                      <td class="fw-semibold text-start text-nowrap param-name-cell">
                         <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ p.name }}</span>
                       </td>
@@ -787,7 +887,16 @@
                       <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                         {{ p.requirement }}
                       </td>
-                                          <td class="text-center action-col">
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable(p.index)"
+                                 (change)="toggleRowPrintable(p.index)"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable(p.index) ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
+                      <td class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="p.isCalculated" type="button" class="btn-lims-icon" (click)="openRowFormula(p.index)" title="Formula Details">
                             <i class="bi bi-calculator"></i>
@@ -813,7 +922,7 @@
                 <table class="table lims-matrix-table align-middle mb-1" *ngIf="!isTensileTest() && !isTransposed(s)" [class.hide-unit-col]="!specimenShow(s, 'unit')">
                   <thead class="text-center">
                     <tr>
-                      <th class="text-start w-col-220">{{ columnLabel(s, 'param', 'Parameter / Property') }}</th>
+                      <th class="text-start text-nowrap param-name-col">{{ columnLabel(s, 'param', 'Parameter / Property') }}</th>
                       <th class="w-col-65">{{ columnLabel(s, 'unit', 'Unit') }}</th>
                       <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
                         <div class="d-flex align-items-center justify-content-center gap-1">
@@ -829,18 +938,19 @@
                       <th *ngIf="s.config?.showMinMax" class="w-col-85">{{ columnLabel(s, 'max', 'Max') }}</th>
                       <th *ngIf="specimenShow(s, 'requirement')" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
                       <th *ngIf="specimenShow(s, 'status')" class="w-col-90">{{ columnLabel(s, 'status', 'Status') }}</th>
+                      <th *ngIf="specimenShow(s, 'print')" class="w-col-65 text-center text-nowrap"><i class="bi bi-printer me-1 text-primary"></i>Print</th>
                       <th class="w-col-85 action-col">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     <ng-container *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow">
                     <tr *ngIf="p.isDivider" class="specimen-group-divider">
-                      <td [attr.colspan]="2 + specimens.length + (specimenShow(s, 'avg') ? 1 : 0) + (specimenShow(s, 'requirement') ? 1 : 0) + (specimenShow(s, 'status') ? 1 : 0) + (s.config?.showMinMax ? 2 : 0) + 1" class="text-start small fw-semibold text-muted">
+                      <td [attr.colspan]="2 + specimens.length + (specimenShow(s, 'avg') ? 1 : 0) + (specimenShow(s, 'requirement') ? 1 : 0) + (specimenShow(s, 'status') ? 1 : 0) + (s.config?.showMinMax ? 2 : 0) + (specimenShow(s, 'print') ? 1 : 0) + 1" class="text-start small fw-semibold text-muted">
                         Other parameters of this test (not part of the layout)
                       </td>
                     </tr>
                     <tr *ngIf="!p.isDivider">
-                      <td class="fw-semibold text-start">
+                      <td class="fw-semibold text-start text-nowrap param-name-cell">
                         <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ p.displayName }}</span>
                       </td>
@@ -871,6 +981,15 @@
                           {{ getBaseParamStatus(p.index) }}
                         </span>
                       </td>
+                      <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isRowPrintable(p.index)"
+                                 (change)="toggleRowPrintable(p.index)"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isRowPrintable(p.index) ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
+                      </td>
                       <td class="text-center action-col">
                         <button *ngIf="p.isCalculated && !p.isStatic" type="button" class="btn-lims-icon me-1" (click)="openRowFormula(p.index)" title="Formula Details">
                           <i class="bi bi-calculator"></i>
@@ -883,7 +1002,7 @@
                     </tr>
                     </ng-container>
                     <tr *ngIf="specimenParams(s).length === 0">
-                      <td [attr.colspan]="2 + specimens.length + (specimenShow(s, 'avg') ? 1 : 0) + (specimenShow(s, 'requirement') ? 1 : 0) + (specimenShow(s, 'status') ? 1 : 0) + (s.config?.showMinMax ? 2 : 0)" class="text-center py-2 text-muted">
+                      <td [attr.colspan]="2 + specimens.length + (specimenShow(s, 'avg') ? 1 : 0) + (specimenShow(s, 'requirement') ? 1 : 0) + (specimenShow(s, 'status') ? 1 : 0) + (s.config?.showMinMax ? 2 : 0) + (specimenShow(s, 'print') ? 1 : 0) + 1" class="text-center py-2 text-muted">
                         No parameters configured for this test.
                       </td>
                     </tr>
@@ -978,7 +1097,7 @@
               <table class="table lims-matrix-table align-middle mb-1" [class.hide-unit-col]="!specimenShow(s, 'unit')">
                 <thead class="text-center">
                   <tr>
-                    <th class="text-start w-col-220">{{ columnLabel(s, 'param', 'Parameter / Property') }}</th>
+                    <th class="text-start text-nowrap param-name-col">{{ columnLabel(s, 'param', 'Parameter / Property') }}</th>
                     <th class="w-col-65">{{ columnLabel(s, 'unit', 'Unit') }}</th>
                     <th *ngFor="let spm of specimens; let spmIdx = index" class="w-col-110 spm-col-header">
                       <div class="d-flex align-items-center justify-content-center gap-1">
@@ -994,13 +1113,14 @@
                     <th *ngIf="s.config?.showMinMax" class="w-col-85">{{ columnLabel(s, 'max', 'Max') }}</th>
                     <th *ngIf="specimenShow(s, 'requirement')" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
                     <th *ngIf="specimenShow(s, 'status')" class="w-col-90">{{ columnLabel(s, 'status', 'Status') }}</th>
+                    <th *ngIf="specimenShow(s, 'print')" class="w-col-65 text-center text-nowrap"><i class="bi bi-printer me-1 text-primary"></i>Print</th>
                     <th class="w-col-85 action-col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   <ng-container *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow">
                   <tr *ngIf="!p.isDivider">
-                    <td class="fw-semibold text-start">
+                    <td class="fw-semibold text-start text-nowrap param-name-cell">
                       <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                       <span>{{ p.displayName }}</span>
                     </td>
@@ -1031,6 +1151,15 @@
                         {{ getBaseParamStatus(p.index) }}
                       </span>
                     </td>
+                    <td *ngIf="specimenShow(s, 'print')" class="text-center">
+                      <div class="form-check d-flex justify-content-center m-0">
+                        <input type="checkbox" class="form-check-input print-checkbox"
+                               [checked]="isRowPrintable(p.index)"
+                               (change)="toggleRowPrintable(p.index)"
+                               [disabled]="isViewMode || isLocked"
+                               [title]="isRowPrintable(p.index) ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                      </div>
+                    </td>
                     <td class="text-center action-col">
                       <button *ngIf="p.isCalculated && !p.isStatic" type="button" class="btn-lims-icon me-1" (click)="openRowFormula(p.index)" title="Formula Details">
                         <i class="bi bi-calculator"></i>
@@ -1054,7 +1183,7 @@
                     <th *ngIf="s.config?.columns?.requirement !== false" class="w-col-130">Requirement</th>
                     <th class="w-col-145">Result (Observed)</th>
                     <th *ngIf="s.config?.columns?.status !== false" class="w-col-90">Status</th>
-                    <th class="w-col-100 text-center">Reportable</th>
+                    <th class="w-col-65 text-center text-nowrap"><i class="bi bi-printer me-1 text-primary"></i>Print</th>
                     <th *ngIf="s.config?.columns?.method" class="w-col-160">Method / Standard</th>
                     <th *ngIf="s.config?.columns?.uncertainty" class="w-col-100">Uncertainty (±)</th>
                     <th *ngIf="s.config?.columns?.remarks" class="w-col-140">Remarks</th>
@@ -1178,16 +1307,15 @@
                         </span>
                       </td>
 
-                      <!-- Reportability Toggle Badge (Gap 10) -->
+                      <!-- Print Checkbox -->
                       <td class="text-center">
-                        <button type="button" class="btn btn-xs reportable-toggle-btn"
-                                [ngClass]="isParamReportable(r) ? 'btn-reportable-active' : 'btn-reportable-internal'"
-                                (click)="toggleParamReportable(r)"
-                                [disabled]="isViewMode || isLocked"
-                                [title]="isParamReportable(r) ? 'Reportable on Certificate (Click to switch to Internal)' : 'Internal Only (Click to switch to Reportable)'">
-                          <i class="bi" [ngClass]="isParamReportable(r) ? 'bi-printer-fill me-1' : 'bi-lock-fill me-1'"></i>
-                          <span>{{ isParamReportable(r) ? 'Reportable' : 'Internal' }}</span>
-                        </button>
+                        <div class="form-check d-flex justify-content-center m-0">
+                          <input type="checkbox" class="form-check-input print-checkbox"
+                                 [checked]="isParamReportable(r)"
+                                 (change)="toggleParamReportable(r)"
+                                 [disabled]="isViewMode || isLocked"
+                                 [title]="isParamReportable(r) ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
+                        </div>
                       </td>
 
                       <!-- Method / Standard -->

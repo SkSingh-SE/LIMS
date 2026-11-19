@@ -5829,6 +5829,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     let isCalculated = false;
     let formula = '';
     let formulaDisplay = '';
+    let masterId: number | string | null = null;
 
     if (this.selectedMasterParamItem) {
       const item = this.selectedMasterParamItem;
@@ -5840,6 +5841,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       isCalculated = !!addVals.IsCalculated || !!item.isCalculated;
       formula = addVals.Formula || item.formula || '';
       formulaDisplay = addVals.FormulaDisplay || item.formulaDisplay || '';
+      masterId = item.id ?? item.value ?? this.selectedMasterParamId ?? null;
     } else if (nameToAdd) {
       const matched = (this.currentDataset?.parameters || []).find(p => p.name === nameToAdd) ||
         this.availableParametersOptions.find(p => p.value === nameToAdd);
@@ -5847,6 +5849,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         unit = matched.unit || '';
         requirement = matched.requirement || 'Runtime';
         isCalculated = !!matched.isCalculated;
+        masterId = (matched as any).id ?? (matched as any).parameterID ?? null;
       }
     } else {
       this.toastService.show('Please search and select a parameter from the database', 'warning');
@@ -5872,6 +5875,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       rows[0].isCalculated = isCalculated;
       rows[0].formula = formula;
       rows[0].formulaDisplay = formulaDisplay;
+      rows[0].rowOrigin = 'db';
+      rows[0].dbMasterSource = 'parameter';
+      rows[0].dbMasterId = masterId;
+      rows[0].dbMasterName = nameToAdd!;
       sec.config.tableRows = [...rows];
       if (sec.config.subset) {
         sec.config.subset = [nameToAdd!];
@@ -5888,6 +5895,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       key: `param_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       label: nameToAdd!,
       bindingMode: sec.config.dataBindingMode || 'runtime',
+      rowOrigin: 'db',
+      dbMasterSource: 'parameter',
+      dbMasterId: masterId,
+      dbMasterName: nameToAdd!,
       unit: unit,
       requirement: requirement,
       isCalculated: isCalculated,
@@ -6054,6 +6065,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       key: `param_${idx}_${Date.now()}`,
       label: p.name,
       bindingMode: defaultMode,
+      rowOrigin: 'db',
+      dbMasterSource: 'parameter',
+      dbMasterId: (p as any).id ?? (p as any).parameterID ?? null,
+      dbMasterName: p.name,
       requirement: p.requirement || '',
       unit: p.unit || '',
       isCalculated: p.isCalculated,

@@ -2056,7 +2056,76 @@
       <!-- Flat Config Body -->
       <div class="config-body" *ngIf="selectedSection as s">
 
-        <!-- 1. OPTIMIZED PARAMETER CONFIGURATION (HERO CARD FOR PARAMETER SECTION) -->
+        <!-- 1. Section Identity & Layout Card (Universal — Always at Top) -->
+        <div class="config-card mb-2">
+          <div class="config-card-title d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-sliders me-1.5 text-danger"></i><span>Identity & Layout</span></span>
+            <span class="badge bg-danger-subtle text-danger font-monospace">{{ componentNames[s.type] }}</span>
+          </div>
+          <div class="mb-2">
+            <label class="form-label compact-label">Section Title</label>
+            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
+              (ngModelChange)="onSectionTitleChange(s)" [disabled]="isViewMode">
+          </div>
+          <div class="d-flex align-items-center justify-content-between bg-light border rounded px-2 py-1 mb-2 text-xxs"
+            title="Auto-generated unique key for QuestPDF & report data mapping (Non-editable)">
+            <span class="text-muted fw-semibold flex-shrink-0"><i class="bi bi-key-fill me-1"></i>Section Key:</span>
+            <span class="font-monospace text-danger text-truncate ms-1">{{ s.config.sectionKey }}</span>
+          </div>
+
+          <!-- Global Data Derivation Mode -->
+          <div class="mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label compact-label mb-0">Data Derivation Mode</label>
+              <span class="text-xxs text-muted">Section Data Source</span>
+            </div>
+            <div class="binding-mode-btn-group">
+              <button type="button" class="binding-source-btn"
+                [class.active-runtime]="s.config.sectionDataMode !== 'template'"
+                (click)="setSectionDataMode(s, 'runtime')"
+                title="Automatically load rows/data at runtime from the Sample's Test Plan">
+                <i class="bi bi-lightning-charge-fill"></i><span>Runtime Auto-Load</span>
+              </button>
+              <button type="button" class="binding-source-btn"
+                [class.active-static]="s.config.sectionDataMode === 'template'"
+                (click)="setSectionDataMode(s, 'template')"
+                title="Render the exact rows and fields configured in this template">
+                <i class="bi bi-file-earmark-ruled-fill"></i><span>Template Configured</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Width</label>
+              <app-custom-select [options]="selectOptions.width" [(ngModel)]="s.config.width" size="sm"
+                [searchable]="false" placeholder="Width">
+              </app-custom-select>
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Visibility</label>
+              <app-custom-select [options]="selectOptions.visibility" [(ngModel)]="s.config.visibility" size="sm"
+                [searchable]="false" placeholder="Visibility">
+              </app-custom-select>
+            </div>
+          </div>
+          <div class="config-checks-grid">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enabled">
+              <span class="form-check-label">Enable Section</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.reportable">
+              <span class="form-check-label">Reportable (PDF)</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.runtimeAdjust">
+              <span class="form-check-label">Allow Runtime Adjust</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. OPTIMIZED PARAMETER CONFIGURATION (HERO CARD FOR PARAMETER SECTION) -->
         <div class="config-card mb-2" *ngIf="s.type === 'parameter'">
           <div class="config-card-title d-flex align-items-center justify-content-between gap-1">
             <span class="d-flex align-items-center gap-1.5 min-w-0">
@@ -2461,75 +2530,6 @@
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- 2. Section Identity & Layout Card (Universal) -->
-        <div class="config-card mb-2">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-sliders me-1.5 text-danger"></i><span>Identity & Layout</span></span>
-            <span class="badge bg-danger-subtle text-danger font-monospace">{{ componentNames[s.type] }}</span>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Section Title</label>
-            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
-              (ngModelChange)="onSectionTitleChange(s)" [disabled]="isViewMode">
-          </div>
-          <div class="d-flex align-items-center justify-content-between bg-light border rounded px-2 py-1 mb-2 text-xxs"
-            title="Auto-generated unique key for QuestPDF & report data mapping (Non-editable)">
-            <span class="text-muted fw-semibold flex-shrink-0"><i class="bi bi-key-fill me-1"></i>Section Key:</span>
-            <span class="font-monospace text-danger text-truncate ms-1">{{ s.config.sectionKey }}</span>
-          </div>
-
-          <!-- Global Data Derivation Mode -->
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label compact-label mb-0">Data Derivation Mode</label>
-              <span class="text-xxs text-muted">Section Data Source</span>
-            </div>
-            <div class="binding-mode-btn-group">
-              <button type="button" class="binding-source-btn"
-                [class.active-runtime]="s.config.sectionDataMode !== 'template'"
-                (click)="setSectionDataMode(s, 'runtime')"
-                title="Automatically load rows/data at runtime from the Sample's Test Plan">
-                <i class="bi bi-lightning-charge-fill"></i><span>Runtime Auto-Load</span>
-              </button>
-              <button type="button" class="binding-source-btn"
-                [class.active-static]="s.config.sectionDataMode === 'template'"
-                (click)="setSectionDataMode(s, 'template')"
-                title="Render the exact rows and fields configured in this template">
-                <i class="bi bi-file-earmark-ruled-fill"></i><span>Template Configured</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Width</label>
-              <app-custom-select [options]="selectOptions.width" [(ngModel)]="s.config.width" size="sm"
-                [searchable]="false" placeholder="Width">
-              </app-custom-select>
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Visibility</label>
-              <app-custom-select [options]="selectOptions.visibility" [(ngModel)]="s.config.visibility" size="sm"
-                [searchable]="false" placeholder="Visibility">
-              </app-custom-select>
-            </div>
-          </div>
-          <div class="config-checks-grid">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enabled">
-              <span class="form-check-label">Enable Section</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.reportable">
-              <span class="form-check-label">Reportable (PDF)</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.runtimeAdjust">
-              <span class="form-check-label">Allow Runtime Adjust</span>
-            </label>
           </div>
         </div>
 

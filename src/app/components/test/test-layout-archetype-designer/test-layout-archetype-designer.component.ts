@@ -144,6 +144,9 @@ export interface SectionConfig {
   subset?: string[];
   columns?: SectionColumnsConfig;
   headerMerge?: HeaderMergeConfig;
+  enableMultiSpecimen?: boolean;
+  specimenCount?: number;
+  specimenPrefix?: string;
 
   // Specimen
   specimenSource?: string;
@@ -356,7 +359,7 @@ export interface SectionConfig {
 
 export type DataBindingMode = 'runtime' | 'static' | 'manual';
 export type DataOriginType = 'entry' | 'db' | 'calc' | 'fixed';
-export type DbMasterSourceType = 'parameter' | 'dimensional_factor' | 'heat_treatment' | 'product_condition' | 'specimen_orientation';
+export type DbMasterSourceType = 'parameter' | 'equipment' | 'dimensional_factor' | 'heat_treatment' | 'product_condition' | 'specimen_orientation';
 
 export interface CustomTableCell {
   id: string;
@@ -778,6 +781,36 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   fetchEquipmentDropdown = (term: string, page: number, pageSize: number): Observable<any[]> => {
     return this.equipmentService.getEquipmentDropdown(term, page, pageSize);
   };
+
+  getMasterFetchFn(source?: string): (term: string, page: number, pageSize: number) => Observable<any[]> {
+    switch (source) {
+      case 'equipment':
+        return this.fetchEquipmentDropdown;
+      case 'product_condition':
+        return this.fetchProductConditionDropdown;
+      case 'heat_treatment':
+        return this.fetchHeatTreatmentDropdown;
+      case 'specimen_orientation':
+        return this.fetchSpecimenOrientationDropdown;
+      case 'dimensional_factor':
+        return this.fetchDimensionalFactorDropdown;
+      case 'parameter':
+      default:
+        return this.fetchMasterParameterDropdown;
+    }
+  }
+
+  getMasterSourceLabel(source?: string): string {
+    switch (source) {
+      case 'equipment': return 'Equipment';
+      case 'product_condition': return 'Condition';
+      case 'heat_treatment': return 'Heat Treat';
+      case 'specimen_orientation': return 'Orientation';
+      case 'dimensional_factor': return 'Dim Factor';
+      case 'parameter':
+      default: return 'Parameter';
+    }
+  }
 
   databaseSourceOptions: Array<{ value: string; label: string }> = [
     { value: 'parameter', label: 'Parameter / Chemical Reagent' },
@@ -5775,6 +5808,127 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     this.toastService.show(`Row ${rIdx + 1} updated to "${paramName}"`, 'success');
   }
 
+  toggleRowOrigin(sec: ExecutionSection, rIdx: number): void {
+    const rows = this.ensureTableRows(sec);
+    const row = rows[rIdx];
+    if (!row) return;
+    if (row.rowOrigin === 'db') {
+      row.rowOrigin = 'manual';
+      this.toastService.show(`Row ${rIdx + 1} switched to Custom Text`, 'info');
+    } else {
+      row.rowOrigin = 'db';
+      if (!row.dbMasterSource) {
+        row.dbMasterSource = sec.type === 'traceability' ? 'equipment' : 'parameter';
+      }
+      this.toastService.show(`Row ${rIdx + 1} switched to Master Link (${this.getMasterSourceLabel(row.dbMasterSource)})`, 'info');
+    }
+    sec.config.tableRows = [...rows];
+  }
+
+  onRowMasterSourceChange(sec: ExecutionSection, rIdx: number, source: DbMasterSourceType): void {
+    const rows = this.ensureTableRows(sec);
+    const row = rows[rIdx];
+    if (!row) return;
+    row.dbMasterSource = source;
+    row.dbMasterId = undefined;
+    sec.config.tableRows = [...rows];
+  }
+
+  onRowMasterItemSelected(sec: ExecutionSection, rIdx: number, item: any): void {
+    const rows = this.ensureTableRows(sec);
+    const row = rows[rIdx];
+    if (!row || !item) return;
+
+    const addVals = item.additionalValues || {};
+    const rawName = item.name || item.displayText || '';
+    const pureName = (addVals.PureName || (rawName.includes(' - ') ? rawName.split(' - ')[0] : rawName)).trim();
+
+    row.rowOrigin = 'db';
+    row.dbMasterId = item.id;
+    row.label = pureName || row.label;
+
+    if ((row.dbMasterSource || 'parameter') === 'parameter') {
+      if (addVals.Unit || item.unit) row.unit = addVals.Unit || item.unit;
+      if (addVals.Requirement || item.requirement) row.requirement = addVals.Requirement || item.requirement;
+      row.isCalculated = !!addVals.IsCalculated || !!item.isCalculated;
+      if (addVals.Formula || item.formula) row.formula = addVals.Formula || item.formula;
+      if (addVals.FormulaDisplay || item.formulaDisplay) row.formulaDisplay = addVals.FormulaDisplay || item.formulaDisplay;
+    }
+
+    sec.config.tableRows = [...rows];
+    this.toastService.show(`Row ${rIdx + 1} linked to ${this.getMasterSourceLabel(row.dbMasterSource)}: "${pureName}"`, 'success');
+  }
+
+  selectedUniversalMasterSource: DbMasterSourceType = 'parameter';
+  selectedUniversalMasterItem: any = null;
+  selectedUniversalMasterId: number | string | null = null;
+  universalMasterReloadKey: number = Date.now();
+
+  onUniversalMasterItemPicked(item: any): void {
+    this.selectedUniversalMasterItem = item || null;
+    this.selectedUniversalMasterId = item?.id ?? null;
+  }
+
+  addMasterRowToSection(sec: ExecutionSection): void {
+    if (!this.selectedUniversalMasterItem) {
+      this.toastService.show('Please select an item from Master Data first', 'warning');
+      return;
+    }
+    const item = this.selectedUniversalMasterItem;
+    const addVals = item.additionalValues || {};
+    const rawName = item.name || item.displayText || '';
+    const pureName = (addVals.PureName || (rawName.includes(' - ') ? rawName.split(' - ')[0] : rawName)).trim();
+
+    const rows = this.ensureTableRows(sec);
+    rows.push({
+      key: `master_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      label: pureName,
+      bindingMode: sec.config.dataBindingMode || 'runtime',
+      rowOrigin: 'db',
+      dbMasterSource: this.selectedUniversalMasterSource,
+      dbMasterId: item.id,
+      unit: addVals.Unit || item.unit || '',
+      requirement: addVals.Requirement || item.requirement || '',
+      isCalculated: !!addVals.IsCalculated || !!item.isCalculated,
+      formula: addVals.Formula || item.formula || '',
+      formulaDisplay: addVals.FormulaDisplay || item.formulaDisplay || '',
+      visible: true,
+      removable: true
+    });
+    sec.config.tableRows = [...rows];
+    this.selectedUniversalMasterItem = null;
+    this.selectedUniversalMasterId = null;
+    this.universalMasterReloadKey = Date.now();
+    this.toastService.show(`Added ${this.getMasterSourceLabel(this.selectedUniversalMasterSource)}: "${pureName}"`, 'success');
+  }
+
+  onParameterMultiSpecimenChange(sec: ExecutionSection): void {
+    if (!sec || sec.type !== 'parameter') return;
+    if (sec.config.enableMultiSpecimen) {
+      if (!sec.config.specimenCount || sec.config.specimenCount < 2) sec.config.specimenCount = 3;
+      if (!sec.config.specimenPrefix) sec.config.specimenPrefix = 'S';
+      if (sec.config.showAverage === undefined) sec.config.showAverage = true;
+    }
+    delete sec.config.tableColumns;
+    this.ensureTableColumns(sec);
+    this.toastService.show(
+      sec.config.enableMultiSpecimen
+        ? `Multi-Specimen enabled (${sec.config.specimenCount} specimens)`
+        : 'Switched back to single Observed Result column',
+      'info'
+    );
+  }
+
+  getParameterSpecimenLabels(sec: ExecutionSection): string[] {
+    if (sec.config.specimenNames && sec.config.specimenNames.trim()) {
+      const parsed = sec.config.specimenNames.split(',').map(x => x.trim()).filter(Boolean);
+      if (parsed.length > 0) return parsed;
+    }
+    const count = Math.max(2, Math.min(10, Number(sec.config.specimenCount) || 3));
+    const prefix = sec.config.specimenPrefix || 'S';
+    return Array.from({ length: count }, (_, i) => `${prefix}${i + 1}`);
+  }
+
   populateAllMasterParameters(sec: ExecutionSection): void {
     const params = (this.currentDataset?.parameters || []).filter(p => p.name !== 'Runtime Parameter (Auto-bound)');
     if (params.length === 0) {
@@ -6409,13 +6563,33 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       cols.push({ key: 'param', label: 'Parameter Description', bindingMode: 'runtime', visible: true, width: '38%' });
       if (sec.config.columns?.unit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '10%' });
       if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true, width: '20%' });
-      cols.push({
-        key: 'result',
-        label: sec.config.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result',
-        bindingMode: defaultMode,
-        visible: true,
-        width: '20%'
-      });
+      if (sec.config.enableMultiSpecimen) {
+        const specLabels = this.getParameterSpecimenLabels(sec);
+        specLabels.forEach((lbl, idx) => {
+          cols.push({
+            key: `spec_${idx + 1}`,
+            label: lbl,
+            bindingMode: defaultMode,
+            visible: true,
+            removable: true
+          });
+        });
+        if (sec.config.showAverage !== false) {
+          cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
+        }
+        if (sec.config.showMinMax) {
+          cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', visible: true });
+          cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', visible: true });
+        }
+      } else {
+        cols.push({
+          key: 'result',
+          label: sec.config.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result',
+          bindingMode: defaultMode,
+          visible: true,
+          width: '20%'
+        });
+      }
       if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '12%' });
       if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', visible: true, width: '12%' });
       if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', visible: true, width: '12%' });
@@ -7919,10 +8093,20 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       return this.demoMode ? (24.5 - rowIdx * 0.5).toFixed(1) : '—';
     }
 
-    // Reading Matrix Specialized Spot Keys
+    // Reading & Multi-Specimen Parameter Keys
     if (col.key.startsWith('spot_') || col.key.startsWith('reading_')) {
       const sNum = parseInt(col.key.replace(/\D/g, ''), 10) || 1;
       return this.demoMode ? (30.5 + (rowIdx * 0.7) + (sNum * 0.2)).toFixed(1) : '—';
+    }
+    if (col.key.startsWith('spec_') && sec.type === 'parameter') {
+      const sNum = parseInt(col.key.replace(/\D/g, ''), 10) || 1;
+      return this.demoMode ? (445 + (rowIdx * 10) + (sNum * 3)).toString() : '—';
+    }
+    if (col.key === 'min') {
+      return this.demoMode ? (442 + rowIdx * 10).toString() : '—';
+    }
+    if (col.key === 'max') {
+      return this.demoMode ? (458 + rowIdx * 10).toString() : '—';
     }
     if (col.key === 'agg') {
       return this.demoMode ? (31.13 + rowIdx * 0.45).toFixed(2) : '—';

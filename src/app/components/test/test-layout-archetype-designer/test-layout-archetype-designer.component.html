@@ -502,7 +502,7 @@
                 <!-- 1. Parameter Table -->
                 <ng-container *ngIf="s.type === 'parameter'">
                   <div class="table-responsive">
-                    <table class="table-exec">
+                    <table class="table-exec" [class.table-wide]="getVisibleTableColumns(s).length > 7">
                       <thead>
                         <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE (2-Tier Header) -->
                         <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
@@ -677,7 +677,7 @@
 
                   <!-- Specimen Matrix Table -->
                   <div class="table-responsive">
-                    <table class="table-exec">
+                    <table class="table-exec" [class.table-wide]="getVisibleTableColumns(s).length > 7">
                       <thead>
                         <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE (2-Tier Header) -->
                         <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
@@ -2112,6 +2112,48 @@
                 </div>
               </div>
             </div>
+
+            <!-- Multi-Specimen Result Columns Support -->
+            <div class="border-top pt-2 mt-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label class="form-check compact-check mb-0">
+                  <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enableMultiSpecimen"
+                    (ngModelChange)="onParameterMultiSpecimenChange(s)">
+                  <span class="form-check-label fw-semibold">Multi-Specimen Columns (S1, S2, S3...)</span>
+                </label>
+                <span class="badge bg-danger-subtle text-danger font-monospace text-xxs"
+                  *ngIf="s.config.enableMultiSpecimen">
+                  {{ getParameterSpecimenLabels(s).length }} Specs
+                </span>
+              </div>
+              <div class="row g-1.5 mt-1" *ngIf="s.config.enableMultiSpecimen">
+                <div class="col-4">
+                  <label class="form-label compact-label">Count</label>
+                  <input type="number" min="2" max="10" class="form-control form-control-sm compact-input"
+                    [(ngModel)]="s.config.specimenCount" (ngModelChange)="onParameterMultiSpecimenChange(s)">
+                </div>
+                <div class="col-8">
+                  <label class="form-label compact-label">Labels (comma sep.)</label>
+                  <input type="text" class="form-control form-control-sm compact-input"
+                    [(ngModel)]="s.config.specimenNames" (ngModelChange)="onParameterMultiSpecimenChange(s)"
+                    placeholder="S1, S2, S3">
+                </div>
+                <div class="col-6">
+                  <label class="form-check compact-check mb-0">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage"
+                      (ngModelChange)="onParameterMultiSpecimenChange(s)">
+                    <span class="form-check-label">Show Average</span>
+                  </label>
+                </div>
+                <div class="col-6">
+                  <label class="form-check compact-check mb-0">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMinMax"
+                      (ngModelChange)="onParameterMultiSpecimenChange(s)">
+                    <span class="form-check-label">Show Min / Max</span>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Subcard B: Data Binding & Table Structure (Unified Table Hub with 3 Tabs: Rows, Columns, Header Merge) -->
@@ -2195,69 +2237,102 @@
 
               <div class="row-items-list-container">
                 <div *ngFor="let r of getTableRows(s); let rIdx = index; trackBy: trackByIndex"
-                  class="row-item-card d-flex align-items-center justify-content-between gap-1"
+                  class="row-item-card d-flex flex-column gap-1"
                   [class.opacity-50]="r.visible === false">
-                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
-                    <span class="row-index-badge">{{ rIdx + 1 }}</span>
-                    <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
-                      [title]="r.visible !== false ? 'Hide row' : 'Show row'">
-                      <i class="bi"
-                        [ngClass]="r.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
-                    </button>
-                    <input type="text" class="form-control row-label-input flex-grow-1" [ngModel]="r.label"
-                      (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Row label...">
-                    <span class="badge bg-indigo-subtle text-indigo font-monospace text-xxs flex-shrink-0"
-                      *ngIf="r.isCalculated" title="Calculated formula parameter">ƒx</span>
-                    <span class="badge bg-light text-secondary font-monospace text-xxs flex-shrink-0"
-                      *ngIf="r.unit">{{ r.unit }}</span>
-                  </div>
-
-                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                    <div class="d-inline-flex binding-select-wrap">
-                      <app-custom-select [options]="bindingModeSelectOptions"
-                        [ngModel]="r.bindingMode || s.config.dataBindingMode || 'runtime'"
-                        (ngModelChange)="updateTableRowBindingMode(s, rIdx, $event)" size="xs" variant="pill"
-                        [searchable]="false" panelWidth="130px">
-                      </app-custom-select>
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
+                      <span class="row-index-badge">{{ rIdx + 1 }}</span>
+                      <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
+                        [title]="r.visible !== false ? 'Hide row' : 'Show row'">
+                        <i class="bi"
+                          [ngClass]="r.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
+                      </button>
+                      <button type="button" class="btn-vis-toggle" (click)="toggleRowOrigin(s, rIdx)"
+                        [title]="r.rowOrigin === 'db' ? 'Linked to Master Data (Click for Custom Text)' : 'Custom Text (Click to Link Master Data)'">
+                        <i class="bi"
+                          [ngClass]="r.rowOrigin === 'db' ? 'bi-database-fill-check text-danger' : 'bi-fonts text-secondary'"></i>
+                      </button>
+                      <input type="text" class="form-control row-label-input flex-grow-1" spellcheck="false"
+                        [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
+                        placeholder="Custom row label...">
+                      <span class="badge bg-indigo-subtle text-indigo font-monospace text-xxs flex-shrink-0"
+                        *ngIf="r.isCalculated" title="Calculated formula parameter">ƒx</span>
+                      <span class="badge bg-light text-secondary font-monospace text-xxs flex-shrink-0"
+                        *ngIf="r.unit">{{ r.unit }}</span>
                     </div>
 
-                    <input type="text" class="form-control form-control-xs static-val-input"
-                      *ngIf="r.bindingMode === 'static' || (!r.bindingMode && s.config.dataBindingMode === 'static')"
-                      [ngModel]="r.staticValue" (ngModelChange)="updateTableRowStaticValue(s, rIdx, $event)"
-                      placeholder="Fixed val" title="Fixed Static Value">
+                    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                      <div class="d-inline-flex binding-select-wrap">
+                        <app-custom-select [options]="bindingModeSelectOptions"
+                          [ngModel]="r.bindingMode || s.config.dataBindingMode || 'runtime'"
+                          (ngModelChange)="updateTableRowBindingMode(s, rIdx, $event)" size="xs" variant="pill"
+                          [searchable]="false" panelWidth="130px">
+                        </app-custom-select>
+                      </div>
 
-                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
-                      [disabled]="rIdx === 0" title="Move Up">
-                      <i class="bi bi-chevron-up"></i>
-                    </button>
-                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
-                      [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
-                      <i class="bi bi-chevron-down"></i>
-                    </button>
-                    <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
-                      [disabled]="getTableRows(s).length <= 1" title="Delete Row">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                      <input type="text" class="form-control form-control-xs static-val-input"
+                        *ngIf="r.bindingMode === 'static' || (!r.bindingMode && s.config.dataBindingMode === 'static')"
+                        [ngModel]="r.staticValue" (ngModelChange)="updateTableRowStaticValue(s, rIdx, $event)"
+                        placeholder="Fixed val" title="Fixed Static Value">
+
+                      <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
+                        [disabled]="rIdx === 0" title="Move Up">
+                        <i class="bi bi-chevron-up"></i>
+                      </button>
+                      <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
+                        [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
+                        <i class="bi bi-chevron-down"></i>
+                      </button>
+                      <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
+                        [disabled]="getTableRows(s).length <= 1" title="Delete Row">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Inline Master Link Picker (when Row Origin = Master Link) -->
+                  <div class="d-flex align-items-center gap-1 ps-4" *ngIf="r.rowOrigin === 'db'">
+                    <select class="form-select form-select-sm compact-input flex-shrink-0 master-source-mini-select"
+                      [ngModel]="r.dbMasterSource || 'parameter'"
+                      (ngModelChange)="onRowMasterSourceChange(s, rIdx, $event)">
+                      <option *ngFor="let src of databaseSourceOptions" [value]="src.value">
+                        {{ getMasterSourceLabel(src.value) }}
+                      </option>
+                    </select>
+                    <div class="flex-grow-1 min-w-0">
+                      <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                        [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
+                        [placeholder]="'Link ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
+                        [selectedItem]="r.dbMasterId"
+                        (itemSelected)="onRowMasterItemSelected(s, rIdx, $event)">
+                      </app-searchable-dropdown>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Add Parameter from Database -->
+              <!-- Add Parameter from Database (Live ParameterMaster Search) -->
               <div class="p-1.5 border rounded bg-light-subtle mb-2">
                 <div class="d-flex align-items-center justify-content-between mb-1">
                   <span class="text-xxs fw-semibold text-secondary">
-                    <i class="bi bi-database me-1 text-danger"></i>Add Parameter from Database
+                    <i class="bi bi-database me-1 text-danger"></i>Add Parameter from Master DB
                   </span>
                   <span class="badge bg-white text-muted border text-xxs font-monospace">
-                    {{ availableParametersOptions.length }} available
+                    ParameterMaster
                   </span>
                 </div>
                 <div class="d-flex align-items-center gap-1">
-                  <app-custom-select [options]="availableParametersOptions" [(ngModel)]="selectedMasterParamToAdd"
-                    size="sm" class="flex-grow-1" [searchable]="true" placeholder="-- Select DB Parameter --">
-                  </app-custom-select>
+                  <div class="flex-grow-1 min-w-0">
+                    <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                      [fetchDataFn]="fetchMasterParameterDropdown"
+                      placeholder="-- Search Parameter Master DB --"
+                      [selectedItem]="selectedMasterParamId"
+                      [reloadKey]="masterParamReloadKey"
+                      (itemSelected)="onMasterParamSelected($event)">
+                    </app-searchable-dropdown>
+                  </div>
                   <button type="button" class="btn-lims btn-lims-save btn-compact flex-shrink-0"
-                    (click)="addParameterFromMaster(s)" [disabled]="!selectedMasterParamToAdd" title="Add to table">
+                    (click)="addParameterFromMaster(s)" [disabled]="!selectedMasterParamItem" title="Add to table">
                     <i class="bi bi-plus-circle me-1"></i><span>Add</span>
                   </button>
                 </div>
@@ -2606,57 +2681,115 @@
 
             <div class="row-items-list-container">
               <div *ngFor="let r of getTableRows(s); let rIdx = index; trackBy: trackByIndex"
-                class="row-item-card d-flex align-items-center justify-content-between gap-1"
+                class="row-item-card d-flex flex-column gap-1"
                 [class.opacity-50]="r.visible === false">
-                <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
-                  <span class="row-index-badge">{{ rIdx + 1 }}</span>
-                  <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
-                    [title]="r.visible !== false ? 'Hide row' : 'Show row'">
-                    <i class="bi"
-                      [ngClass]="r.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
-                  </button>
-                  <input type="text" class="form-control row-label-input flex-grow-1" [ngModel]="r.label"
-                    (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Row label...">
-                </div>
-
-                <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                  <!-- Custom Select Component for Binding Mode -->
-                  <div class="d-inline-flex binding-select-wrap">
-                    <app-custom-select [options]="bindingModeSelectOptions"
-                      [ngModel]="r.bindingMode || s.config.dataBindingMode || 'runtime'"
-                      (ngModelChange)="updateTableRowBindingMode(s, rIdx, $event)" size="xs" variant="pill"
-                      [searchable]="false" panelWidth="130px">
-                    </app-custom-select>
+                <div class="d-flex align-items-center justify-content-between gap-1">
+                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
+                    <span class="row-index-badge">{{ rIdx + 1 }}</span>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
+                      [title]="r.visible !== false ? 'Hide row' : 'Show row'">
+                      <i class="bi"
+                        [ngClass]="r.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
+                    </button>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleRowOrigin(s, rIdx)"
+                      [title]="r.rowOrigin === 'db' ? 'Linked to Master Data (Click for Custom Text)' : 'Custom Text (Click to Link Master Data)'">
+                      <i class="bi"
+                        [ngClass]="r.rowOrigin === 'db' ? 'bi-database-fill-check text-danger' : 'bi-fonts text-secondary'"></i>
+                    </button>
+                    <input type="text" class="form-control row-label-input flex-grow-1" spellcheck="false"
+                      [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
+                      placeholder="Custom row label...">
                   </div>
 
-                  <!-- Static Fixed Value Input if static -->
-                  <input type="text" class="form-control form-control-xs static-val-input"
-                    *ngIf="r.bindingMode === 'static' || (!r.bindingMode && s.config.dataBindingMode === 'static')"
-                    [ngModel]="r.staticValue" (ngModelChange)="updateTableRowStaticValue(s, rIdx, $event)"
-                    placeholder="Fixed val" title="Fixed Static Value">
+                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <!-- Custom Select Component for Binding Mode -->
+                    <div class="d-inline-flex binding-select-wrap">
+                      <app-custom-select [options]="bindingModeSelectOptions"
+                        [ngModel]="r.bindingMode || s.config.dataBindingMode || 'runtime'"
+                        (ngModelChange)="updateTableRowBindingMode(s, rIdx, $event)" size="xs" variant="pill"
+                        [searchable]="false" panelWidth="130px">
+                      </app-custom-select>
+                    </div>
 
-                  <!-- Move Up / Down -->
-                  <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
-                    [disabled]="rIdx === 0" title="Move Up">
-                    <i class="bi bi-chevron-up"></i>
-                  </button>
-                  <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
-                    [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
-                    <i class="bi bi-chevron-down"></i>
-                  </button>
+                    <!-- Static Fixed Value Input if static -->
+                    <input type="text" class="form-control form-control-xs static-val-input"
+                      *ngIf="r.bindingMode === 'static' || (!r.bindingMode && s.config.dataBindingMode === 'static')"
+                      [ngModel]="r.staticValue" (ngModelChange)="updateTableRowStaticValue(s, rIdx, $event)"
+                      placeholder="Fixed val" title="Fixed Static Value">
 
-                  <!-- Delete -->
-                  <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
-                    [disabled]="getTableRows(s).length <= 1" title="Delete Row">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                    <!-- Move Up / Down -->
+                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
+                      [disabled]="rIdx === 0" title="Move Up">
+                      <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
+                      [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+
+                    <!-- Delete -->
+                    <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
+                      [disabled]="getTableRows(s).length <= 1" title="Delete Row">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
                 </div>
+
+                <!-- Inline Master Link Picker (when Row Origin = Master Link) -->
+                <div class="d-flex align-items-center gap-1 ps-4" *ngIf="r.rowOrigin === 'db'">
+                  <select class="form-select form-select-sm compact-input flex-shrink-0 master-source-mini-select"
+                    [ngModel]="r.dbMasterSource || 'parameter'"
+                    (ngModelChange)="onRowMasterSourceChange(s, rIdx, $event)">
+                    <option *ngFor="let src of databaseSourceOptions" [value]="src.value">
+                      {{ getMasterSourceLabel(src.value) }}
+                    </option>
+                  </select>
+                  <div class="flex-grow-1 min-w-0">
+                    <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                      [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
+                      [placeholder]="'Link ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
+                      [selectedItem]="r.dbMasterId"
+                      (itemSelected)="onRowMasterItemSelected(s, rIdx, $event)">
+                    </app-searchable-dropdown>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add Row from Master Data Source -->
+            <div class="p-1.5 border rounded bg-light-subtle mb-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="text-xxs fw-semibold text-secondary">
+                  <i class="bi bi-database me-1 text-danger"></i>Link Row from Master Data
+                </span>
+                <select class="form-select form-select-sm compact-input master-source-mini-select"
+                  [(ngModel)]="selectedUniversalMasterSource"
+                  (ngModelChange)="universalMasterReloadKey = $any(selectedUniversalMasterSource)">
+                  <option *ngFor="let src of databaseSourceOptions" [value]="src.value">
+                    {{ src.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <div class="flex-grow-1 min-w-0">
+                  <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                    [fetchDataFn]="getMasterFetchFn(selectedUniversalMasterSource)"
+                    [placeholder]="'Search ' + getMasterSourceLabel(selectedUniversalMasterSource) + ' Master...'"
+                    [selectedItem]="selectedUniversalMasterId"
+                    [reloadKey]="universalMasterReloadKey"
+                    (itemSelected)="onUniversalMasterItemPicked($event)">
+                  </app-searchable-dropdown>
+                </div>
+                <button type="button" class="btn-lims btn-lims-save btn-compact flex-shrink-0"
+                  (click)="addMasterRowToSection(s)" [disabled]="!selectedUniversalMasterItem" title="Add Master Row">
+                  <i class="bi bi-plus-circle me-1"></i><span>Add</span>
+                </button>
               </div>
             </div>
 
             <!-- Add Row Button using the approved global button style! -->
             <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableRow(s)">
-              <i class="bi bi-plus-circle me-1.5"></i><span>Add New Row</span>
+              <i class="bi bi-plus-circle me-1.5"></i><span>Add Custom Text Row</span>
             </button>
           </div>
 

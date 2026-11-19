@@ -1161,6 +1161,31 @@ select.form-select:focus {
   font-size: 0.72rem;
 }
 
+.table-exec.table-wide {
+  table-layout: auto;
+  min-width: 100%;
+  width: max-content;
+}
+
+.table-exec.table-wide th,
+.table-exec.table-wide td {
+  white-space: nowrap;
+  min-width: 78px;
+}
+
+.table-exec.table-wide th:first-child,
+.table-exec.table-wide td:first-child {
+  min-width: 170px;
+}
+
+.master-source-mini-select {
+  width: 105px !important;
+  font-size: 0.68rem !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 1px 1.4rem 1px 6px !important;
+}
+
 .table-exec th,
 .table-exec td {
   border: 1px solid #e2e8f0;

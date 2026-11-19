@@ -83,34 +83,25 @@
     <aside class="studio-panel studio-panel-left" [class.is-collapsed]="leftPanelCollapsed">
       <div class="panel-header">
         <span class="panel-header-title">
-          <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Layout Components</span>
+          <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Components</span>
         </span>
-        <span class="badge bg-secondary ms-auto me-1.5">{{ sections.length }}</span>
-        <button type="button" class="btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-      </div>
-
-      <!-- Quick Width Adjuster Presets Bar -->
-      <div class="panel-width-bar">
-        <span class="width-indicator" title="Current panel width">
-          <i class="bi bi-arrows-expand-vertical me-1.5 rotate-90"></i><span>{{ leftPanelWidth }}px</span>
-        </span>
-        <div class="btn-group btn-group-xs ms-auto">
+        <span class="badge bg-secondary ms-1">{{ sections.length }}</span>
+        <div class="btn-group btn-group-xs ms-auto me-1">
           <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 220" (click)="setLeftPreset(220)"
             title="Compact width (220px)">S</button>
           <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 270" (click)="setLeftPreset(270)"
             title="Default width (270px)">M</button>
           <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 340" (click)="setLeftPreset(340)"
             title="Wide width (340px)">L</button>
-          <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to screen default width"><i
-              class="bi bi-arrow-counterclockwise"></i></button>
         </div>
+        <button type="button" class="btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
+          <i class="bi bi-chevron-left"></i>
+        </button>
       </div>
 
       <!-- Mandatory Context Section: Actual Laboratory Test -->
       <div class="panel-section">
-        <div class="d-flex align-items-center justify-content-between mb-1.5">
+        <div class="d-flex align-items-center justify-content-between mb-1">
           <h6 class="panel-section-title mb-0">Mandatory Context</h6>
           <span class="badge bg-danger-subtle text-danger font-monospace small" *ngIf="!isGlobalDefault">TARGET
             TEST</span>
@@ -119,15 +110,13 @@
         </div>
 
         <!-- Without Test Global Fallback Toggle -->
-        <div class="form-check form-switch compact-switch mb-2 p-2 bg-light rounded border">
+        <div class="form-check form-switch compact-switch mb-1.5 py-1 px-2 bg-light rounded border"
+          title="If enabled, this format will load as default for ALL tests without a custom layout.">
           <input class="form-check-input" type="checkbox" id="chkGlobalDefault" [(ngModel)]="isGlobalDefault"
             (ngModelChange)="onGlobalDefaultToggle()" [disabled]="isViewMode">
           <label class="form-check-label fw-semibold text-dark small cursor-pointer" for="chkGlobalDefault">
             <i class="bi bi-globe me-1.5 text-primary"></i><span>Global Default Layout</span>
           </label>
-          <div class="text-muted text-xxs mt-0.5">
-            If enabled, this format will load as default for <strong>ALL tests</strong> without a custom layout.
-          </div>
         </div>
 
         <!-- Single Unified Searchable Dropdown (Resolves Group, SubGroup & Leaf Node) -->
@@ -207,13 +196,9 @@
           </div>
         </div>
 
-        <div class="mb-2">
-          <label class="form-label compact-label">Leaf Node Path</label>
-          <input type="text" class="form-control form-control-sm compact-input" [value]="leafNode" readonly>
-        </div>
-        <div class="mb-2">
-          <label class="form-label compact-label">Data Source</label>
-          <input type="text" class="form-control form-control-sm compact-input" [value]="dataSourceLabel" readonly>
+        <div class="d-flex align-items-center justify-content-between text-xxs text-muted bg-light border rounded px-2 py-1" *ngIf="!resolvedHierarchy">
+          <span class="fw-semibold">Scope:</span>
+          <span class="font-monospace text-dark text-truncate ms-1">{{ leafNode || 'Global / All Tests' }}</span>
         </div>
       </div>
 
@@ -430,34 +415,20 @@
       <!-- Canvas Scroll Area -->
       <div class="canvas-scroll-container">
         <div class="canvas-paper" [ngStyle]="{ 'transform': 'scale(' + zoomLevel + ')' }">
-          <!-- Authentic ISO 17025 Accredited Laboratory Letterhead -->
+          <!-- Ultra-Compact 1-Row Worksheet Context Header -->
           <div class="paper-header">
-            <div class="paper-accreditation-seal">
-              <div class="seal-emblem">
-                <i class="bi bi-shield-check"></i>
-              </div>
-              <div class="seal-meta">
-                <span class="seal-nabl">NABL ACCREDITED</span>
-                <span class="seal-iso">ISO/IEC 17025:2017</span>
-                <span class="seal-tc">Cert: TC-8492</span>
-              </div>
+            <div class="paper-header-left">
+              <span class="paper-iso-pill">
+                <i class="bi bi-shield-check me-1"></i>ISO/IEC 17025
+              </span>
+              <span class="paper-main-title">{{ (layoutName || currentLabTestName || 'Universal Execution Layout') }}</span>
+              <span class="paper-sub-title" *ngIf="selectedTestMethodName || leafNode">
+                • {{ selectedTestMethodName || leafNode }}
+              </span>
             </div>
-            <div class="paper-title-area">
-              <div class="paper-lab-name">NATIONAL TESTING & MATERIAL RESEARCH LABORATORY</div>
-              <h4 class="paper-main-title">TEST CERTIFICATE & WORKSHEET</h4>
-              <div class="paper-test-name">{{ (layoutName || currentLabTestName || 'Universal Execution Layout').toUpperCase() }}</div>
-              <div class="paper-sub-title">
-                <span>Method: <strong>{{ selectedTestMethodName || 'Per Applicable Standard' }}</strong></span>
-                <span class="meta-sep">•</span>
-                <span>Equipment: <strong>{{ currentLabTest?.code || 'Calibrated Analyzer / UTM' }}</strong></span>
-                <span class="meta-sep">•</span>
-                <span>Discipline: <strong>{{ leafNode }}</strong></span>
-              </div>
-            </div>
-            <div class="paper-meta-box">
-              <div class="paper-meta-item"><span class="meta-label">Case No:</span> <span class="meta-val">DEMO-00024</span></div>
-              <div class="paper-meta-item"><span class="meta-label">Worksheet:</span> <span class="badge bg-success-subtle text-success border border-success-subtle py-0 px-1 font-monospace">VERIFIED</span></div>
-              <div class="paper-meta-item"><span class="meta-label">Layout Rev:</span> <span class="meta-val font-monospace">v{{ layoutRev }}</span></div>
+            <div class="paper-header-right">
+              <span class="paper-meta-tag">Rev v{{ layoutRev }}</span>
+              <span class="paper-status-tag">VERIFIED</span>
             </div>
           </div>
 
@@ -1962,40 +1933,22 @@
           <span class="config-dot"></span>
           <strong class="config-title" [title]="selectedSection ? selectedSection.title : 'Section Configuration'">{{
             selectedSection ? selectedSection.title : 'Section Configuration' }}</strong>
-          <span class="badge bg-danger-subtle text-danger font-monospace text-xxs ms-auto flex-shrink-0"
-            *ngIf="selectedSection">
-            {{ componentNames[selectedSection.type] }}
-          </span>
-          <small class="config-type-tag text-muted ms-auto" *ngIf="!selectedSection">None selected</small>
         </div>
-        <button type="button" class="btn-panel-action ms-1.5" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])">
-          <i class="bi bi-chevron-right"></i>
-        </button>
-      </div>
-
-      <!-- Quick Width Adjuster Presets Bar -->
-      <div class="panel-width-bar">
-        <span class="width-indicator" title="Current inspector width">
-          <i class="bi bi-arrows-expand-vertical me-1.5 rotate-90"></i><span>{{ rightPanelWidth }}px</span>
-        </span>
-        <div class="btn-group btn-group-xs ms-auto">
+        <div class="btn-group btn-group-xs ms-auto me-1 flex-shrink-0">
           <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 320" (click)="setRightPreset(320)"
             title="Compact width (320px)">S</button>
           <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 380" (click)="setRightPreset(380)"
             title="Standard width (380px)">M</button>
           <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 460" (click)="setRightPreset(460)"
             title="Wide width (460px)">L</button>
-          <button type="button" class="btn-preset" (click)="resetRightWidth()" title="Reset to default width"><i
-              class="bi bi-arrow-counterclockwise"></i></button>
         </div>
+        <button type="button" class="btn-panel-action" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])">
+          <i class="bi bi-chevron-right"></i>
+        </button>
       </div>
 
       <!-- Flat Config Body -->
       <div class="config-body" *ngIf="selectedSection as s">
-        <div class="config-note mb-2">
-          <strong>{{ componentNames[s.type] }}</strong> configuration. These settings belong only to the selected
-          section. Changes reflect immediately in the canvas.
-        </div>
 
         <!-- 1. ENHANCED & CLUBBED PARAMETER CONFIGURATION (HERO CARD FOR PARAMETER SECTION) -->
         <div class="config-card mb-2" *ngIf="s.type === 'parameter'">
@@ -2370,22 +2323,10 @@
             <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
               (ngModelChange)="onSectionTitleChange(s)" [disabled]="isViewMode">
           </div>
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-0.5">
-              <label class="form-label compact-label mb-0">Stable Section Key *</label>
-              <span
-                class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-monospace text-xxs">
-                <i class="bi bi-lock-fill me-1.5"></i><span>AUTO-GENERATED</span>
-              </span>
-            </div>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text bg-light text-muted font-monospace"><i class="bi bi-key-fill"></i></span>
-              <input type="text" class="form-control form-control-sm compact-input font-monospace text-danger bg-light"
-                [value]="s.config.sectionKey" readonly
-                title="Auto-generated stable key used by Report Engine. Cannot be manually edited.">
-            </div>
-            <div class="text-muted text-xxs mt-0.5">Auto-generated unique key for QuestPDF & report data mapping.
-              Non-editable.</div>
+          <div class="d-flex align-items-center justify-content-between bg-light border rounded px-2 py-1 mb-2 text-xxs"
+            title="Auto-generated unique key for QuestPDF & report data mapping (Non-editable)">
+            <span class="text-muted fw-semibold flex-shrink-0"><i class="bi bi-key-fill me-1"></i>Section Key:</span>
+            <span class="font-monospace text-danger text-truncate ms-1">{{ s.config.sectionKey }}</span>
           </div>
           <div class="row g-2 mb-2">
             <div class="col-6">

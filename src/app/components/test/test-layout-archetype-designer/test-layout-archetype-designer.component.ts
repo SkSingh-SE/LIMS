@@ -6523,6 +6523,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     // Recreate any column that has been enabled via config.columns if not present in tableColumns
     Object.keys(this.standardParamColDefinitions).forEach(key => {
       if (key === 'param') return;
+      if (key === 'result' && sec.config.enableMultiSpecimen) return;
       if (cfgCols[key] === true && !cols.some(c => c.key === key)) {
         const def = this.standardParamColDefinitions[key];
         const newCol: LayoutColumnItem = {

@@ -1170,12 +1170,14 @@ select.form-select:focus {
 .table-exec.table-wide th,
 .table-exec.table-wide td {
   white-space: nowrap;
-  min-width: 78px;
+  min-width: 62px;
 }
 
 .table-exec.table-wide th:first-child,
 .table-exec.table-wide td:first-child {
-  min-width: 170px;
+  min-width: 160px;
+  max-width: 210px;
+  width: 185px;
 }
 
 .master-source-mini-select {

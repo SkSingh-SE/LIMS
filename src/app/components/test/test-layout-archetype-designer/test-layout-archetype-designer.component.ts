@@ -1175,6 +1175,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     { key: 'case_depth_hardness', label: 'Effective Case Depth Structure (Depth Traverse & Curve)', icon: '↗' },
     { key: 'case_depth_micro', label: 'Case Depth Microscopic Structure (Compound Layer + Micrograph)', icon: '↗' },
     { key: 'oes', label: 'Spectro OES Composition Structure (%wt Elements + Carbon Eq)', icon: '▦' },
+    { key: 'cu_spectro', label: 'Cu-Spectro Structure (Copper Base OES %wt Elements)', icon: '▦' },
     { key: 'metallography', label: 'Microstructure Structure (Matrix Phase Rating + Photo Plate)', icon: '▧' },
     { key: 'grain_size', label: 'Grain Size Analysis Structure (Field Readings + ASTM Chart)', icon: '◫' },
     { key: 'ferrite_content', label: 'Ferrite Phase Analysis Structure (5-Field Matrix + 95% CI)', icon: '◫' },
@@ -1415,6 +1416,24 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         { name: 'Carbon Equivalent', unit: '%', requirement: '≤ 0.45', isCalculated: true, formula: 'CE = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15', formulaDisplay: '%C + %Mn / 6 + (%Cr + %Mo + %V) / 5 + (%Ni + %Cu) / 15' }
       ],
       demo: ['0.18', '0.28', '0.92', '0.021', '0.015', '17.2', '12.1', '2.4', '0.38']
+    },
+    cu_spectro: {
+      key: 'cu_spectro',
+      label: 'Cu-Spectro Chemical Analysis',
+      leaf: 'Chemical / Spectro (OES) / Cu-Spectro (OES)',
+      sub: 'Cu-Spectro • IS 4412 / ASTM E478',
+      dbTestId: 101,
+      isChemical: true,
+      params: [
+        { name: 'Copper (Cu)', unit: '%', requirement: '≥ 99.50' },
+        { name: 'Tin (Sn)', unit: '%', requirement: '≤ 0.05' },
+        { name: 'Lead (Pb)', unit: '%', requirement: '≤ 0.02' },
+        { name: 'Zinc (Zn)', unit: '%', requirement: '≤ 0.10' },
+        { name: 'Iron (Fe)', unit: '%', requirement: '≤ 0.05' },
+        { name: 'Nickel (Ni)', unit: '%', requirement: '≤ 0.05' },
+        { name: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.015' }
+      ],
+      demo: ['99.72', '0.012', '0.005', '0.038', '0.018', '0.022', '0.004']
     },
     metallography: {
       key: 'metallography',
@@ -1863,9 +1882,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           requirement: true,
           result: true,
           status: true,
-          method: true,
-          remarks: true,
-          uncertainty: true,
+          method: false,
+          remarks: false,
+          uncertainty: false,
           dl: false,
           scope: false
         };
@@ -2321,8 +2340,18 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
       case 'oes': {
         const cond = this.createSectionObject('condition', 'Spectrometer Operating Environment');
-        cond.config.fields = ['Instrument ID', 'Argon Purity (99.999%)', 'Flush Pressure', 'Electrode Gap'];
+        cond.config.fields = ['Spectrometer Instrument ID', 'Argon Gas Purity (99.999%)', 'Flush Time (5s)', 'Ambient Temp (23 ± 2 °C)'];
         const param = this.createSectionObject('parameter', 'Chemical Composition (% by Weight)');
+        param.config.tableRows = [
+          { key: 'param_c', label: 'Carbon (C)', unit: '%', requirement: '0.05–0.25', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_si', label: 'Silicon (Si)', unit: '%', requirement: '0.15–0.35', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_mn', label: 'Manganese (Mn)', unit: '%', requirement: '0.60–1.20', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_s', label: 'Sulphur (S)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_cr', label: 'Chromium (Cr)', unit: '%', requirement: '16.0–18.0', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '10.0–14.0', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_mo', label: 'Molybdenum (Mo)', unit: '%', requirement: '2.0–3.0', bindingMode: 'runtime', visible: true, removable: true }
+        ];
         const spec = this.createSectionObject('specimen', 'Multi-Spark Results (Burn 1 / Burn 2 / Burn 3 / Mean)');
         spec.config.count = 3;
         spec.config.prefix = 'Burn';
@@ -2337,6 +2366,28 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         const narr = this.createSectionObject('narrative', 'Chemical Analysis Certification Statement');
         narr.config.label = 'Compliance with Material Specification';
         return [cond, param, spec, form, rule, narr];
+      }
+
+      case 'cu_spectro': {
+        const cond = this.createSectionObject('condition', 'Spectrometer Environmental & Operating Conditions');
+        cond.config.fields = ['Spectrometer Instrument ID', 'Argon Gas Purity (99.999%)', 'Flush Time (5s)', 'Ambient Temp (23 ± 2 °C)'];
+        const param = this.createSectionObject('parameter', 'Copper Base Chemical Composition (% by Weight)');
+        param.config.tableRows = [
+          { key: 'param_cu', label: 'Copper (Cu)', unit: '%', requirement: '≥ 99.50', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_sn', label: 'Tin (Sn)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_pb', label: 'Lead (Pb)', unit: '%', requirement: '≤ 0.02', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_zn', label: 'Zinc (Zn)', unit: '%', requirement: '≤ 0.10', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_fe', label: 'Iron (Fe)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+          { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.015', bindingMode: 'runtime', visible: true, removable: true }
+        ];
+        const spec = this.createSectionObject('specimen', 'Multi-Spark Discharge Readings (Burn 1 / Burn 2 / Burn 3 / Average)');
+        spec.config.count = 3;
+        spec.config.prefix = 'Burn';
+        spec.config.showAverage = true;
+        const narr = this.createSectionObject('narrative', 'Chemical Conformance Statement');
+        narr.config.label = 'Compliance with Material Specification';
+        return [cond, param, spec, narr];
       }
 
       case 'metallography': {
@@ -2550,6 +2601,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (raw.includes('effective case depth') || raw.includes('case depth (hardness)')) return 'case_depth_hardness';
     if (raw.includes('case depth') && raw.includes('micro')) return 'case_depth_micro';
     if (raw.includes('rockwell') || raw.includes('hardness')) return 'rockwell';
+    if (raw.includes('cu-spectro') || raw.includes('cu spectro') || raw.includes('copper')) return 'cu_spectro';
     if (raw.includes('oes') || raw.includes('spectro') || isChem) return 'oes';
     if (raw.includes('grain size')) return 'grain_size';
     if (raw.includes('ferrite')) return 'ferrite_content';
@@ -2749,6 +2801,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (n.includes('effective case depth') || n.includes('case depth (hardness)')) return 'case_depth_hardness';
     if (n.includes('case depth') && n.includes('micro')) return 'case_depth_micro';
     if (n.includes('rockwell') || n.includes('hardness')) return 'rockwell';
+    if (n.includes('cu-spectro') || n.includes('cu spectro') || n.includes('copper')) return 'cu_spectro';
     if (n.includes('oes') || n.includes('spectro') || labTest.isChemicalTest) return 'oes';
     if (n.includes('grain size')) return 'grain_size';
     if (n.includes('ferrite')) return 'ferrite_content';
@@ -3839,9 +3892,57 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         .replace(/\u00C2/g, '');
     };
 
+    const isChem = (this.leafNode || '').toLowerCase().includes('chemical') ||
+                   (this.leafNode || '').toLowerCase().includes('spectro') ||
+                   (this.currentLabTestName || '').toLowerCase().includes('spectro') ||
+                   (this.layoutName || '').toLowerCase().includes('spectro') ||
+                   this.selectedArchetypeKey === 'oes' ||
+                   this.selectedArchetypeKey === 'cu_spectro';
+
     this.sections.forEach(s => {
       if (s.title) s.title = cleanText(s.title);
       if ((s as any).subtitle) (s as any).subtitle = cleanText((s as any).subtitle);
+
+      // Cleanse misaligned mechanical parameters/conditions for chemical & spectro tests
+      if (isChem) {
+        if (s.type === 'condition' && s.config && Array.isArray(s.config.fields)) {
+          if (s.config.fields.some((f: string) => f.includes('Speed') || f.includes('Load Rate'))) {
+            s.title = 'Test Conditions & Environment';
+            s.config.fields = ['Spectrometer Instrument ID', 'Argon Gas Purity (99.999%)', 'Flush Time (5s)', 'Ambient Temp (23 ± 2 °C)'];
+          }
+        }
+        if (s.type === 'parameter' && s.config) {
+          const rows = s.config.tableRows;
+          if (rows && Array.isArray(rows) && rows.some((r: any) => (r.label || '').toLowerCase().includes('yield') || (r.label || '').toLowerCase().includes('tensile') || (r.label || '').toLowerCase().includes('elongation'))) {
+            const isCu = (this.currentLabTestName || '').toLowerCase().includes('cu') || (this.leafNode || '').toLowerCase().includes('cu') || (this.layoutName || '').toLowerCase().includes('cu') || this.selectedArchetypeKey === 'cu_spectro';
+            if (isCu) {
+              s.title = 'Copper Base Chemical Composition (% by Weight)';
+              s.config.tableRows = [
+                { key: 'param_cu', label: 'Copper (Cu)', unit: '%', requirement: '≥ 99.50', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_sn', label: 'Tin (Sn)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_pb', label: 'Lead (Pb)', unit: '%', requirement: '≤ 0.02', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_zn', label: 'Zinc (Zn)', unit: '%', requirement: '≤ 0.10', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_fe', label: 'Iron (Fe)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.015', bindingMode: 'runtime', visible: true, removable: true }
+              ];
+            } else {
+              s.title = 'Chemical Composition (% by Weight)';
+              s.config.tableRows = [
+                { key: 'param_c', label: 'Carbon (C)', unit: '%', requirement: '0.05–0.25', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_si', label: 'Silicon (Si)', unit: '%', requirement: '0.15–0.35', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_mn', label: 'Manganese (Mn)', unit: '%', requirement: '0.60–1.20', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_s', label: 'Sulphur (S)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_cr', label: 'Chromium (Cr)', unit: '%', requirement: '16.0–18.0', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '10.0–14.0', bindingMode: 'runtime', visible: true, removable: true },
+                { key: 'param_mo', label: 'Molybdenum (Mo)', unit: '%', requirement: '2.0–3.0', bindingMode: 'runtime', visible: true, removable: true }
+              ];
+            }
+          }
+        }
+      }
+
       if (s.config) {
         if (s.config.tableRows && Array.isArray(s.config.tableRows)) {
           s.config.tableRows.forEach((r: any) => {
@@ -6191,22 +6292,22 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const cols: LayoutColumnItem[] = [];
 
     if (sec.type === 'parameter') {
-      cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '28%' });
-      if (sec.config.columns?.unit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '12%' });
-      if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true, width: '20%' });
+      cols.push({ key: 'param', label: 'Parameter Description', bindingMode: 'runtime', visible: true, width: '42%' });
+      if (sec.config.columns?.unit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '10%' });
+      if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Specified Requirement', bindingMode: 'runtime', visible: true, width: '22%' });
       cols.push({
         key: 'result',
         label: sec.config.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result',
         bindingMode: defaultMode,
         visible: true,
-        width: '24%'
+        width: '16%'
       });
-      if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '16%' });
-      if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', visible: true, width: '18%' });
-      if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', visible: true, width: '18%' });
-      if (sec.config.columns?.uncertainty) cols.push({ key: 'uncertainty', label: 'Uncertainty (±)', bindingMode: 'runtime', visible: true, width: '14%' });
-      if (sec.config.columns?.dl) cols.push({ key: 'dl', label: 'Detection Limit', bindingMode: 'runtime', visible: true, width: '14%' });
-      if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', visible: true, width: '12%' });
+      if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '10%' });
+      if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', visible: true, width: '12%' });
+      if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', visible: true, width: '12%' });
+      if (sec.config.columns?.uncertainty) cols.push({ key: 'uncertainty', label: 'Uncertainty (±)', bindingMode: 'runtime', visible: true, width: '10%' });
+      if (sec.config.columns?.dl) cols.push({ key: 'dl', label: 'Detection Limit', bindingMode: 'runtime', visible: true, width: '10%' });
+      if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', visible: true, width: '8%' });
     } else if (sec.type === 'specimen') {
       if (sec.config.orientation === 'Specimens × Parameters') {
         cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen ID', bindingMode: 'static', visible: true, width: '18%' });
@@ -6683,10 +6784,30 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   getColumnWidth(sec: ExecutionSection, c: any, cIdx: number): string | null {
+    const totalCols = this.getVisibleTableColumns(sec).length;
+
+    // For Parameter Tables: ensure the Parameter Description gets at least 38% - 48%
+    if (sec.type === 'parameter' || c?.key === 'param') {
+      if (cIdx === 0 || c?.key === 'param') {
+        if (totalCols <= 4) return '48%';
+        if (totalCols <= 5) return '42%';
+        if (totalCols <= 6) return '36%';
+        return '30%';
+      }
+      if (c?.key === 'unit') return totalCols >= 7 ? '70px' : '8%';
+      if (c?.key === 'requirement') return totalCols >= 7 ? '130px' : '18%';
+      if (c?.key === 'result') return totalCols >= 7 ? '120px' : '16%';
+      if (c?.key === 'status') return totalCols >= 7 ? '75px' : '10%';
+      if (c?.key === 'method') return totalCols >= 7 ? '95px' : '12%';
+      if (c?.key === 'remarks') return totalCols >= 7 ? '90px' : '12%';
+      if (c?.key === 'uncertainty') return totalCols >= 7 ? '85px' : '10%';
+      if (c?.key === 'dl') return totalCols >= 7 ? '75px' : '8%';
+      if (c?.key === 'scope') return totalCols >= 7 ? '75px' : '8%';
+    }
+
     if (c && c.width) {
       return typeof c.width === 'number' ? `${c.width}%` : c.width;
     }
-    const totalCols = this.getVisibleTableColumns(sec).length;
     if (totalCols === 3) {
       return cIdx === 0 ? '50%' : '25%';
     }

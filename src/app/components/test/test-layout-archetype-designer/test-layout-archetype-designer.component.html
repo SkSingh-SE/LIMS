@@ -397,29 +397,26 @@
           <i class="bi bi-layout-sidebar-inset me-1.5 text-danger"></i>
           <span>Components</span>
         </button>
-        <!-- Layout Structure Archetype Selector (Indirect Load) -->
-        <div class="layout-structure-picker">
-          <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs text-nowrap">
-            <i class="bi bi-diagram-3 me-1.5"></i><span>STRUCTURE</span>
+        <!-- Layout Structure Preset Selector (Clean & Enterprise Data-First) -->
+        <div class="layout-preset-selector">
+          <span class="preset-selector-label">
+            <i class="bi bi-file-earmark-ruled me-1 text-danger"></i>Preset:
           </span>
           <app-custom-select [options]="layoutArchetypeList" [(ngModel)]="selectedPresetToLoad" valueField="key"
-            labelField="label" size="sm" [searchable]="true" placeholder="-- Load Structure Preset --"
-            panelWidth="340px">
+            labelField="label" size="sm" [searchable]="true" placeholder="Select Layout Archetype Preset..."
+            panelWidth="360px">
           </app-custom-select>
           <button type="button"
-            class="btn btn-sm btn-outline-danger py-0 px-2 btn-load-structure text-nowrap d-flex align-items-center gap-1"
+            class="btn-lims btn-lims-primary btn-sm py-0 px-2.5 text-nowrap d-flex align-items-center gap-1"
             [disabled]="!selectedPresetToLoad" (click)="loadSelectedStructurePreset()"
-            title="Click to load configured structure data for the selected preset">
+            title="Load layout structure for the selected preset">
             <i class="bi bi-box-arrow-in-down"></i>
-            <span>Load</span>
+            <span>Apply</span>
           </button>
         </div>
 
-        <span class="badge badge-mapped" title="Mapped to: {{ currentLabTestName }}">
-          <i class="bi bi-link-45deg me-1.5"></i><span>{{ currentLabTestName }}</span>
-        </span>
-        <span class="badge badge-structure d-none d-xxl-inline" title="Layout captures structure only">
-          Structure Only
+        <span class="badge badge-mapped" *ngIf="currentLabTestName && currentLabTestName !== 'No Test Selected'" title="Mapped to: {{ currentLabTestName }}">
+          <i class="bi bi-link-45deg me-1"></i><span>{{ currentLabTestName }}</span>
         </span>
         <div class="zoom-controls ms-auto d-flex align-items-center gap-1">
           <button type="button" class="btn-zoom" (click)="zoom(-1)" title="Zoom out">−</button>
@@ -436,24 +433,34 @@
       <!-- Canvas Scroll Area -->
       <div class="canvas-scroll-container">
         <div class="canvas-paper" [ngStyle]="{ 'transform': 'scale(' + zoomLevel + ')' }">
-          <!-- Paper Header Simulation -->
+          <!-- Authentic ISO 17025 Accredited Laboratory Letterhead -->
           <div class="paper-header">
-            <div class="paper-logo-box">
-              <i class="bi bi-shield-check text-danger paper-logo-icon"></i>
-              <span>LAB LOGO</span>
+            <div class="paper-accreditation-seal">
+              <div class="seal-emblem">
+                <i class="bi bi-shield-check"></i>
+              </div>
+              <div class="seal-meta">
+                <span class="seal-nabl">NABL ACCREDITED</span>
+                <span class="seal-iso">ISO/IEC 17025:2017</span>
+                <span class="seal-tc">Cert: TC-8492</span>
+              </div>
             </div>
             <div class="paper-title-area">
-              <h4 class="paper-main-title">TEST CERTIFICATE – {{ (layoutName || 'Universal Execution
-                Layout').toUpperCase() }}</h4>
+              <div class="paper-lab-name">NATIONAL TESTING & MATERIAL RESEARCH LABORATORY</div>
+              <h4 class="paper-main-title">TEST CERTIFICATE & WORKSHEET</h4>
+              <div class="paper-test-name">{{ (layoutName || currentLabTestName || 'Universal Execution Layout').toUpperCase() }}</div>
               <div class="paper-sub-title">
-                Method: <strong>{{ selectedTestMethodName || 'Standard / Per Spec' }}</strong> • Equipment: {{
-                currentLabTest?.code || 'Calibrated UTM / Analyzer' }} • Leaf: {{ leafNode }}
+                <span>Method: <strong>{{ selectedTestMethodName || 'Per Applicable Standard' }}</strong></span>
+                <span class="meta-sep">•</span>
+                <span>Equipment: <strong>{{ currentLabTest?.code || 'Calibrated Analyzer / UTM' }}</strong></span>
+                <span class="meta-sep">•</span>
+                <span>Discipline: <strong>{{ leafNode }}</strong></span>
               </div>
             </div>
             <div class="paper-meta-box">
-              <div><strong>Case:</strong> DEMO-00024</div>
-              <div><strong>Status:</strong> In Execution</div>
-              <div><strong>Version:</strong> Draft {{ layoutRev }}</div>
+              <div class="paper-meta-item"><span class="meta-label">Case No:</span> <span class="meta-val">DEMO-00024</span></div>
+              <div class="paper-meta-item"><span class="meta-label">Worksheet:</span> <span class="badge bg-success-subtle text-success border border-success-subtle py-0 px-1 font-monospace">VERIFIED</span></div>
+              <div class="paper-meta-item"><span class="meta-label">Layout Rev:</span> <span class="meta-val font-monospace">v{{ layoutRev }}</span></div>
             </div>
           </div>
 
@@ -471,16 +478,12 @@
               <div class="exec-sec-header" (click)="selectSection(s.id)">
                 <i class="bi bi-grip-vertical text-muted me-1.5 sec-drag-handle" title="Section handle"></i>
                 <span class="sec-number-title">{{ i + 1 }}. {{ s.title }}</span>
-                <span class="sec-type-badge"
-                  *ngIf="(componentNames[s.type] || '').trim().toUpperCase() !== (s.title || '').trim().toUpperCase()">{{
-                  componentNames[s.type] }}</span>
-                <span *ngIf="s.config.width === 'Half Width'" class="badge bg-light text-dark ms-1">Half Width</span>
                 <span *ngIf="s.config.visibility && s.config.visibility !== 'Always'"
                   class="badge bg-warning-subtle text-warning ms-1">{{ s.config.visibility }}</span>
                 <span *ngIf="s.config.enabled === false" class="badge bg-secondary ms-1">Disabled</span>
 
                 <!-- Reportable Pill Toggle -->
-                <span class="badge ms-1 cursor-pointer"
+                <span class="badge ms-2 cursor-pointer"
                   [ngClass]="s.config.reportable !== false ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle'"
                   (click)="$event.stopPropagation(); s.config.reportable = (s.config.reportable === false ? true : false)"
                   title="Click to toggle Reportable status (Include in customer PDF report)">
@@ -564,13 +567,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                             </div>
@@ -580,20 +576,13 @@
                       <tbody>
                         <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex"
                           class="location-canvas-row">
-                          <!-- First Cell: Row Label + Index + Inline Edit + Binding Badge + Delete -->
+                          <!-- First Cell: Row Label + Index + Inline Edit + Delete -->
                           <td class="fw-semibold text-start location-row-cell">
                             <div class="d-flex align-items-center gap-1.5">
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
                                 placeholder="Row Label">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -675,12 +664,6 @@
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows
                                 </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
-                                </span>
                               </div>
                             </div>
                           </td>
@@ -759,10 +742,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode) + ' ' + (c.bindingMode === 'static' ? 'text-warning-emphasis' : (c.bindingMode === 'manual' ? 'text-success' : 'text-theme header-binding-icon-runtime'))"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="table-cell-inline-input text-center specimen-th-input"
                                 [ngModel]="c.label" (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)"
                                 placeholder="Col Header">
@@ -777,17 +756,13 @@
                       <tbody>
                         <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex"
                           class="location-canvas-row">
-                          <!-- First Cell: Row Label + Index + Inline Edit + Binding Badge + Delete -->
+                          <!-- First Cell: Row Label + Index + Inline Edit + Delete -->
                           <td class="fw-semibold text-start location-row-cell">
                             <div class="d-flex align-items-center gap-1.5">
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
                                 placeholder="Row Label">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode || s.config.dataBindingMode) + ' ' + (r.bindingMode === 'static' ? 'text-warning-emphasis' : (r.bindingMode === 'manual' ? 'text-success' : 'text-theme'))"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -843,12 +818,6 @@
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
-                                </span>
                               </div>
                             </div>
                           </td>
@@ -892,13 +861,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -916,13 +878,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Row Label">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -972,12 +927,6 @@
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
                                 </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
-                                </span>
                               </div>
                             </div>
                           </td>
@@ -1021,13 +970,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -1045,13 +987,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Row Label">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -1093,12 +1028,6 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
-                                </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>
@@ -1149,13 +1078,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -1173,13 +1095,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Variable">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -1217,12 +1132,6 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
-                                </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>
@@ -1267,13 +1176,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -1291,13 +1193,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Rule Parameter">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -1340,12 +1235,6 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
-                                </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>
@@ -1396,13 +1285,6 @@
                                 <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                                  <i class="bi"
-                                    [ngClass]="getBindingIcon(c.bindingMode)"
-                                    [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                    [class.text-success]="c.bindingMode === 'manual'"
-                                    [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                    [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                                  </i>
                                   <input type="text" class="th-inline-input" [ngModel]="c.label"
                                     (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                                   <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -1420,13 +1302,6 @@
                                   <span class="location-row-idx">{{ rIdx + 1 }}</span>
                                   <input type="text" class="form-control form-control-sm table-cell-inline-input font-monospace"
                                     [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Depth mm">
-                                  <i class="bi"
-                                    [ngClass]="getBindingIcon(r.bindingMode)"
-                                    [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                    [class.text-success]="r.bindingMode === 'manual'"
-                                    [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                    [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                                  </i>
                                   <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                     *ngIf="getVisibleTableRows(s).length > 1" title="Remove this step">
                                     <i class="bi bi-x"></i>
@@ -1583,13 +1458,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -1607,13 +1475,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Classification Row">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -1651,12 +1512,6 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
-                                </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>
@@ -1696,13 +1551,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -1720,13 +1568,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Custom Row">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -1764,12 +1605,6 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
-                                </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>
@@ -1877,13 +1712,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -1901,13 +1729,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Inspection Point">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -1950,12 +1771,6 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
-                                </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>
@@ -2005,13 +1820,6 @@
                             <div class="d-flex align-items-center gap-1"
                               [class.justify-content-start]="cIdx === 0"
                               [class.justify-content-center]="cIdx > 0">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(c.bindingMode)"
-                                [class.text-warning-emphasis]="c.bindingMode === 'static'"
-                                [class.text-success]="c.bindingMode === 'manual'"
-                                [class.text-theme]="c.bindingMode === 'runtime' || !c.bindingMode"
-                                [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
-                              </i>
                               <input type="text" class="th-inline-input" [ngModel]="c.label"
                                 (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
                               <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
@@ -2029,13 +1837,6 @@
                               <span class="location-row-idx">{{ rIdx + 1 }}</span>
                               <input type="text" class="form-control form-control-sm table-cell-inline-input"
                                 [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)" placeholder="Standard / Equipment">
-                              <i class="bi"
-                                [ngClass]="getBindingIcon(r.bindingMode)"
-                                [class.text-warning-emphasis]="r.bindingMode === 'static'"
-                                [class.text-success]="r.bindingMode === 'manual'"
-                                [class.text-theme]="r.bindingMode === 'runtime' || !r.bindingMode"
-                                [title]="'Row Binding: ' + (r.bindingMode || 'runtime')">
-                              </i>
                               <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
                                 *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
                                 <i class="bi bi-x"></i>
@@ -2078,12 +1879,6 @@
                               <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-white text-dark border font-monospace text-xxs">
                                   {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
-                                </span>
-                                <span class="badge font-monospace text-xxs border"
-                                  [ngClass]="s.config.dataBindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis border-warning-subtle' : (s.config.dataBindingMode === 'manual' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-theme-subtle text-theme border-theme-subtle')">
-                                  <i class="bi"
-                                    [ngClass]="s.config.dataBindingMode === 'static' ? 'bi-pin-angle' : (s.config.dataBindingMode === 'manual' ? 'bi-pencil-square' : 'bi-lightning-charge')"></i>
-                                  {{ (s.config.dataBindingMode || 'runtime') | uppercase }} BINDING
                                 </span>
                               </div>
                             </div>

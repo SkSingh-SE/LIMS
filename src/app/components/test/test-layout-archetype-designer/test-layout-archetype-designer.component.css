@@ -3136,3 +3136,12 @@ th:hover .header-binding-icon-runtime {
   background-color: rgba(218, 38, 28, 0.035);
 }
 
+.col-input-type-select {
+  width: 96px;
+}
+
+.col-precision-input {
+  width: 46px;
+}
+
+

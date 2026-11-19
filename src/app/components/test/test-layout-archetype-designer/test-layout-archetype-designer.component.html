@@ -600,25 +600,47 @@
                                 <span class="text-muted">{{ demoMode ? 'NABL Scope' : '—' }}</span>
                               </ng-container>
 
-                              <!-- 2. Measurement / Result / Data Columns: React to Static, Manual, and Runtime binding modes -->
+                              <!-- 2. Measurement / Result / Semantic Role Columns -->
                               <ng-container *ngIf="c.key !== 'unit' && c.key !== 'requirement' && c.key !== 'status' && c.key !== 'method' && c.key !== 'remarks' && c.key !== 'uncertainty' && c.key !== 'dl' && c.key !== 'scope'">
-                                <!-- Static Value Mode -->
-                                <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                  class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
-                                  [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
-                                  {{ r.staticValue || c.staticValue || (demoMode ? 'Static 420' : 'Static') }}
+                                <!-- Formula-Driven Parameter: strictly Auto-Calc (read-only) -->
+                                <span *ngIf="isRowFormulaDriven(r) && (getEffectiveColumnRole(c) === 'observation_value' || c.key === 'result' || c.key.startsWith('spec_'))"
+                                  class="badge bg-indigo-subtle text-indigo border border-indigo-subtle font-monospace px-1.5"
+                                  [title]="'Auto-calculated from dependent parameters (Read-Only): ' + (r.formula || 'Formula')">
+                                  <i class="bi bi-calculator me-1"></i>{{ demoMode ? ('ƒx ' + (450 + rIdx * 10)) : 'ƒx Auto' }}
                                 </span>
 
-                                <!-- Manual Entry Mode -->
-                                <ng-container *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                                <!-- Static Text Column or Static Row -->
+                                <span *ngIf="!(isRowFormulaDriven(r) && (getEffectiveColumnRole(c) === 'observation_value' || c.key === 'result' || c.key.startsWith('spec_'))) && (getEffectiveColumnRole(c) === 'static_text' || r.bindingMode === 'static' || c.bindingMode === 'static')"
+                                  class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
+                                  [title]="'Static Value: ' + (c.staticValue || r.staticValue || 'Static')">
+                                  {{ c.staticValue || r.staticValue || 'Static' }}
+                                </span>
+
+                                <!-- Spec Min / Spec Max / Reportable / Aggregates -->
+                                <span *ngIf="getEffectiveColumnRole(c) === 'spec_min'" class="text-muted font-monospace">
+                                  {{ demoMode ? '420' : 'Min' }}
+                                </span>
+                                <span *ngIf="getEffectiveColumnRole(c) === 'spec_max'" class="text-muted font-monospace">
+                                  {{ demoMode ? '580' : 'Max' }}
+                                </span>
+                                <span *ngIf="getEffectiveColumnRole(c) === 'reportable_toggle'" class="badge bg-success-subtle text-success font-monospace">
+                                  Reportable
+                                </span>
+                                <span *ngIf="getEffectiveColumnRole(c) === 'agg_average' || getEffectiveColumnRole(c) === 'agg_min' || getEffectiveColumnRole(c) === 'agg_max'"
+                                  class="fw-semibold text-primary font-monospace">
+                                  {{ demoMode ? (455 + rIdx * 5) : 'Auto' }}
+                                </span>
+
+                                <!-- Manual / Custom Entry Mode (non-formula) -->
+                                <ng-container *ngIf="!isRowFormulaDriven(r) && getEffectiveColumnRole(c) !== 'static_text' && getEffectiveColumnRole(c) !== 'spec_min' && getEffectiveColumnRole(c) !== 'spec_max' && getEffectiveColumnRole(c) !== 'reportable_toggle' && getEffectiveColumnRole(c) !== 'agg_average' && getEffectiveColumnRole(c) !== 'agg_min' && getEffectiveColumnRole(c) !== 'agg_max' && (r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'">
                                   <span *ngIf="demoMode" class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">Manual Entry</span>
                                   <span *ngIf="!demoMode" class="text-muted">—</span>
                                 </ng-container>
 
-                                <!-- Runtime Mode -->
-                                <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
-                                  <span *ngIf="c.key === 'result'">{{ demoMode ? (450 + rIdx * 10) : '—' }}</span>
-                                  <span *ngIf="c.key !== 'result'" class="text-muted">{{ getCellDisplayValue(s, r, c, cIdx, rIdx) }}</span>
+                                <!-- Runtime Mode (non-formula) -->
+                                <ng-container *ngIf="!(isRowFormulaDriven(r) && (getEffectiveColumnRole(c) === 'observation_value' || c.key === 'result' || c.key.startsWith('spec_'))) && getEffectiveColumnRole(c) !== 'static_text' && getEffectiveColumnRole(c) !== 'spec_min' && getEffectiveColumnRole(c) !== 'spec_max' && getEffectiveColumnRole(c) !== 'reportable_toggle' && getEffectiveColumnRole(c) !== 'agg_average' && getEffectiveColumnRole(c) !== 'agg_min' && getEffectiveColumnRole(c) !== 'agg_max' && r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
+                                  <span *ngIf="c.key === 'result' || getEffectiveColumnRole(c) === 'observation_value'">{{ demoMode ? (450 + rIdx * 10) : '—' }}</span>
+                                  <span *ngIf="c.key !== 'result' && getEffectiveColumnRole(c) !== 'observation_value'" class="text-muted">{{ getCellDisplayValue(s, r, c, cIdx, rIdx) }}</span>
                                 </ng-container>
                               </ng-container>
                             </td>
@@ -2034,7 +2056,7 @@
       <!-- Flat Config Body -->
       <div class="config-body" *ngIf="selectedSection as s">
 
-        <!-- 1. ENHANCED & CLUBBED PARAMETER CONFIGURATION (HERO CARD FOR PARAMETER SECTION) -->
+        <!-- 1. OPTIMIZED PARAMETER CONFIGURATION (HERO CARD FOR PARAMETER SECTION) -->
         <div class="config-card mb-2" *ngIf="s.type === 'parameter'">
           <div class="config-card-title d-flex align-items-center justify-content-between gap-1">
             <span class="d-flex align-items-center gap-1.5 min-w-0">
@@ -2042,158 +2064,68 @@
               <span class="text-truncate">Parameter Configuration</span>
             </span>
             <div class="d-flex align-items-center gap-1 flex-shrink-0">
-              <span class="badge bg-primary-subtle text-primary font-monospace text-xxs">
-                {{ currentDataset.parameters.length }} Avail
-              </span>
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
-                {{ getSelectedParametersCount(s) }} Active
-              </span>
-            </div>
-          </div>
-
-          <!-- Subcard A: Parameter Selection & Inclusion (Enhanced!) -->
-          <div class="config-subcard">
-            <div class="config-subcard-header">
-              <span class="config-subcard-title">
-                <i class="bi bi-funnel text-danger"></i>
-                <span>Parameter Selection</span>
-              </span>
-              <span class="text-xxs text-muted font-monospace">Dataset Mapping</span>
-            </div>
-
-            <div class="mb-2">
-              <label class="form-label compact-label">Parameter Mode</label>
-              <app-custom-select [options]="selectOptions.parameterMode" [(ngModel)]="s.config.parameterMode" size="sm"
-                [searchable]="false" placeholder="Parameter Mode">
-              </app-custom-select>
-            </div>
-
-            <!-- Interactive Parameter Subset Selector with Live Filter -->
-            <div *ngIf="s.config.parameterMode === 'Configured parameter subset'">
-              <!-- Search Input & Quick Action Chips -->
-              <div class="d-flex align-items-center gap-1.5 mb-1.5">
-                <div class="position-relative flex-grow-1">
-                  <input type="text" class="form-control form-control-sm compact-input param-search-input pe-4"
-                    [(ngModel)]="parameterFilterQuery" placeholder="Filter parameters (name, unit, req)...">
-                  <i class="bi bi-search position-absolute text-muted"
-                    style="right: 7px; top: 5px; font-size: 0.7rem;"></i>
-                </div>
-                <div class="d-flex gap-1 flex-shrink-0">
-                  <button type="button" class="param-action-chip" (click)="selectAllParameters(s)"
-                    title="Select all dataset parameters">All</button>
-                  <button type="button" class="param-action-chip text-danger" (click)="deselectAllParameters(s)"
-                    title="Keep only first parameter">Clear</button>
-                  <button type="button" class="param-action-chip chip-primary" (click)="selectCalculatedOnly(s)"
-                    title="Select only calculated formula parameters">ƒx Only</button>
-                </div>
-              </div>
-
-              <!-- Parameter List -->
-              <div class="dataset-checks-list" style="max-height: 170px; overflow-y: auto;">
-                <label *ngFor="let p of getFilteredParameters(s); trackBy: trackByField"
-                  class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom"
-                  [class.is-selected]="isParameterInSubset(s, p.name)">
-                  <div class="d-flex align-items-center min-w-0 flex-grow-1 gap-2">
-                    <input class="form-check-input my-0 me-2 flex-shrink-0" type="checkbox"
-                      [checked]="isParameterInSubset(s, p.name)" (change)="toggleParameterInSubset(s, p.name)">
-                    <span class="dataset-check-label fw-medium text-truncate" [title]="p.name">{{ p.name }}</span>
-                    <span class="badge bg-indigo-subtle text-indigo ms-1.5 font-monospace text-xxs flex-shrink-0"
-                      *ngIf="p.isCalculated" [title]="p.formulaDisplay || formatFormula(p.formula)">
-                      <i class="bi bi-calculator me-1"></i>ƒx
-                    </span>
-                  </div>
-                  <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-1">
-                    <span class="badge bg-light text-secondary font-monospace" *ngIf="p.unit">{{ p.unit }}</span>
-                    <span class="text-muted text-xxs font-monospace" *ngIf="p.requirement">{{ p.requirement }}</span>
-                  </div>
-                </label>
-                <div class="text-center text-muted text-xxs py-2" *ngIf="getFilteredParameters(s).length === 0">
-                  <i class="bi bi-search me-1"></i>No parameters matching "{{ parameterFilterQuery }}"
-                </div>
-              </div>
-            </div>
-
-            <!-- Multi-Specimen Result Columns Support -->
-            <div class="border-top pt-2 mt-2">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <label class="form-check compact-check mb-0">
-                  <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enableMultiSpecimen"
-                    (ngModelChange)="onParameterMultiSpecimenChange(s)">
-                  <span class="form-check-label fw-semibold">Multi-Specimen Columns (S1, S2, S3...)</span>
-                </label>
-                <span class="badge bg-danger-subtle text-danger font-monospace text-xxs"
-                  *ngIf="s.config.enableMultiSpecimen">
-                  {{ getParameterSpecimenLabels(s).length }} Specs
-                </span>
-              </div>
-              <div class="row g-1.5 mt-1" *ngIf="s.config.enableMultiSpecimen">
-                <div class="col-4">
-                  <label class="form-label compact-label">Count</label>
-                  <input type="number" min="2" max="10" class="form-control form-control-sm compact-input"
-                    [(ngModel)]="s.config.specimenCount" (ngModelChange)="onParameterMultiSpecimenChange(s)">
-                </div>
-                <div class="col-8">
-                  <label class="form-label compact-label">Labels (comma sep.)</label>
-                  <input type="text" class="form-control form-control-sm compact-input"
-                    [(ngModel)]="s.config.specimenNames" (ngModelChange)="onParameterMultiSpecimenChange(s)"
-                    placeholder="S1, S2, S3">
-                </div>
-                <div class="col-6">
-                  <label class="form-check compact-check mb-0">
-                    <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage"
-                      (ngModelChange)="onParameterMultiSpecimenChange(s)">
-                    <span class="form-check-label">Show Average</span>
-                  </label>
-                </div>
-                <div class="col-6">
-                  <label class="form-check compact-check mb-0">
-                    <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMinMax"
-                      (ngModelChange)="onParameterMultiSpecimenChange(s)">
-                    <span class="form-check-label">Show Min / Max</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Subcard B: Data Binding & Table Structure (Unified Table Hub with 3 Tabs: Rows, Columns, Header Merge) -->
-          <div class="config-subcard mb-0">
-            <div class="config-subcard-header">
-              <span class="config-subcard-title">
-                <i class="bi bi-sliders2-vertical text-danger"></i>
-                <span>Data Binding & Structure</span>
+              <span class="badge font-monospace text-xxs"
+                [ngClass]="s.config.sectionDataMode === 'template' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-primary-subtle text-primary'">
+                {{ s.config.sectionDataMode === 'template' ? 'Template Mode' : 'Runtime Auto' }}
               </span>
               <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
                 {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
               </span>
             </div>
+          </div>
 
-            <!-- Section Default Binding Mode -->
-            <div class="mb-2">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="form-label compact-label mb-0">Default Binding Source</label>
-                <span class="text-xxs text-muted">Data Origin</span>
+          <!-- Subcard A: Multi-Specimen Columns (S1, S2, S3...) -->
+          <div class="config-subcard">
+            <div class="d-flex align-items-center justify-content-between">
+              <label class="form-check compact-check mb-0">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enableMultiSpecimen"
+                  (ngModelChange)="onParameterMultiSpecimenChange(s)">
+                <span class="form-check-label fw-semibold">Multi-Specimen Columns (S1, S2, S3...)</span>
+              </label>
+              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs"
+                *ngIf="s.config.enableMultiSpecimen">
+                {{ getParameterSpecimenLabels(s).length }} Specs
+              </span>
+            </div>
+            <div class="row g-1.5 mt-1" *ngIf="s.config.enableMultiSpecimen">
+              <div class="col-4">
+                <label class="form-label compact-label">Count</label>
+                <input type="number" min="2" max="10" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="s.config.specimenCount" (ngModelChange)="onParameterMultiSpecimenChange(s)">
               </div>
-              <div class="binding-mode-btn-group">
-                <button type="button" class="binding-source-btn"
-                  [class.active-runtime]="s.config.dataBindingMode === 'runtime' || !s.config.dataBindingMode"
-                  (click)="setSectionDefaultBinding(s, 'runtime', true)"
-                  title="Automatically fetch live values from laboratory test transactions / LIMS DB">
-                  <i class="bi bi-lightning-charge-fill"></i><span>Runtime</span>
-                </button>
-                <button type="button" class="binding-source-btn"
-                  [class.active-static]="s.config.dataBindingMode === 'static'"
-                  (click)="setSectionDefaultBinding(s, 'static', true)"
-                  title="Fixed layout values - rendered verbatim without runtime override">
-                  <i class="bi bi-pin-angle-fill"></i><span>Static</span>
-                </button>
-                <button type="button" class="binding-source-btn"
-                  [class.active-manual]="s.config.dataBindingMode === 'manual'"
-                  (click)="setSectionDefaultBinding(s, 'manual', true)"
-                  title="Manual entry field for analyst input during execution">
-                  <i class="bi bi-pencil-square"></i><span>Manual</span>
-                </button>
+              <div class="col-8">
+                <label class="form-label compact-label">Labels (comma sep.)</label>
+                <input type="text" class="form-control form-control-sm compact-input"
+                  [(ngModel)]="s.config.specimenNames" (ngModelChange)="onParameterMultiSpecimenChange(s)"
+                  placeholder="S1, S2, S3">
               </div>
+              <div class="col-6">
+                <label class="form-check compact-check mb-0">
+                  <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage"
+                    (ngModelChange)="onParameterMultiSpecimenChange(s)">
+                  <span class="form-check-label">Show Average</span>
+                </label>
+              </div>
+              <div class="col-6">
+                <label class="form-check compact-check mb-0">
+                  <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMinMax"
+                    (ngModelChange)="onParameterMultiSpecimenChange(s)">
+                  <span class="form-check-label">Show Min / Max</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subcard B: Table Rows, Semantic Columns & Header Merge -->
+          <div class="config-subcard mb-0">
+            <div class="config-subcard-header">
+              <span class="config-subcard-title">
+                <i class="bi bi-sliders2-vertical text-danger"></i>
+                <span>Rows, Semantic Columns & Merge</span>
+              </span>
+              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
+                {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+              </span>
             </div>
 
             <!-- Sub-Tab Switcher: Rows vs Columns vs Header Merging -->
@@ -2221,16 +2153,18 @@
 
             <!-- ROWS TAB CONTENT -->
             <div *ngIf="s.config.activeBindingTab === 'rows' || !s.config.activeBindingTab">
+              <div class="alert alert-info py-1 px-2 mb-1.5 text-xxs d-flex align-items-start gap-1.5"
+                *ngIf="s.config.sectionDataMode !== 'template'">
+                <i class="bi bi-lightning-charge-fill text-primary flex-shrink-0 mt-0.5"></i>
+                <span><strong>Runtime Auto-Load:</strong> Test parameters load automatically from the Sample's Test Plan. Rows below serve as preview / optional extra rows.</span>
+              </div>
+
               <div class="d-flex align-items-center justify-content-between mb-1.5">
                 <span class="text-xxs text-muted">{{ getVisibleTableRows(s).length }} of {{ getTableRows(s).length }} rows visible</span>
                 <div class="d-flex align-items-center gap-1.5">
                   <button type="button" class="btn-xs-action text-theme"
-                    (click)="populateAllMasterParameters(s)" title="Load all standard parameters into table">
+                    (click)="populateAllMasterParameters(s)" title="Load all dataset parameters into table">
                     <i class="bi bi-arrow-down-circle"></i><span>Load All</span>
-                  </button>
-                  <button type="button" class="btn-xs-action text-secondary"
-                    (click)="syncRowsWithParameterSubset(s)" title="Re-sync rows with Dataset Parameter Selection">
-                    <i class="bi bi-arrow-repeat"></i><span>Sync Selection</span>
                   </button>
                 </div>
               </div>
@@ -2256,22 +2190,33 @@
                         [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
                         placeholder="Custom row label...">
                       <span class="badge bg-indigo-subtle text-indigo font-monospace text-xxs flex-shrink-0"
-                        *ngIf="r.isCalculated" title="Calculated formula parameter">ƒx</span>
+                        *ngIf="isRowFormulaDriven(r)"
+                        [title]="'Formula-driven (auto-calculated, read-only): ' + (r.formula || 'Formula')">
+                        <i class="bi bi-calculator me-1"></i>ƒx
+                      </span>
                       <span class="badge bg-light text-secondary font-monospace text-xxs flex-shrink-0"
                         *ngIf="r.unit">{{ r.unit }}</span>
                     </div>
 
                     <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                      <div class="d-inline-flex binding-select-wrap">
+                      <!-- Formula-driven rows are strictly Auto-Calc (read-only) -->
+                      <span *ngIf="isRowFormulaDriven(r)"
+                        class="badge bg-indigo-subtle text-indigo border border-indigo-subtle font-monospace text-xxs px-1.5 py-1"
+                        title="Formula-driven parameter: auto-calculated from dependent parameters (manual entry disabled)">
+                        <i class="bi bi-lock-fill me-1"></i>Auto-Calc
+                      </span>
+
+                      <!-- Non-formula rows allow Runtime / Static / Manual -->
+                      <div class="d-inline-flex binding-select-wrap" *ngIf="!isRowFormulaDriven(r)">
                         <app-custom-select [options]="bindingModeSelectOptions"
-                          [ngModel]="r.bindingMode || s.config.dataBindingMode || 'runtime'"
+                          [ngModel]="r.bindingMode || 'runtime'"
                           (ngModelChange)="updateTableRowBindingMode(s, rIdx, $event)" size="xs" variant="pill"
                           [searchable]="false" panelWidth="130px">
                         </app-custom-select>
                       </div>
 
                       <input type="text" class="form-control form-control-xs static-val-input"
-                        *ngIf="r.bindingMode === 'static' || (!r.bindingMode && s.config.dataBindingMode === 'static')"
+                        *ngIf="!isRowFormulaDriven(r) && r.bindingMode === 'static'"
                         [ngModel]="r.staticValue" (ngModelChange)="updateTableRowStaticValue(s, rIdx, $event)"
                         placeholder="Fixed val" title="Fixed Static Value">
 
@@ -2338,60 +2283,108 @@
                 </div>
               </div>
 
-              <!-- Add Blank Row Button using the approved global button style! -->
+              <!-- Add Blank Row Button -->
               <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableRow(s)">
-                <i class="bi bi-plus-circle me-1.5"></i><span>Add Blank Row</span>
+                <i class="bi bi-plus-circle me-1.5"></i><span>Add Custom Text Row</span>
               </button>
             </div>
 
-            <!-- COLUMNS TAB CONTENT -->
+            <!-- COLUMNS TAB CONTENT (Semantic Column Roles + Input Types) -->
             <div *ngIf="s.config.activeBindingTab === 'columns'">
               <div class="d-flex align-items-center justify-content-between mb-1">
                 <span class="text-xxs text-muted">{{ getVisibleTableColumns(s).length }} of {{ getTableColumns(s).length }} columns visible</span>
-                <span class="text-xxs text-muted">Use eye icon to toggle visibility</span>
+                <span class="text-xxs text-muted">Assign Role Flag per column</span>
               </div>
 
               <div class="row-items-list-container">
                 <div *ngFor="let c of getTableColumns(s); let cIdx = index; trackBy: trackByIndex"
-                  class="row-item-card d-flex align-items-center justify-content-between gap-1"
+                  class="row-item-card d-flex flex-column gap-1"
                   [class.opacity-50]="c.visible === false">
-                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
-                    <span class="row-index-badge">{{ cIdx + 1 }}</span>
-                    <button type="button" class="btn-vis-toggle" (click)="toggleTableColumnVisibility(s, cIdx)"
-                      [title]="c.visible !== false ? 'Hide column' : 'Show column'">
-                      <i class="bi"
-                        [ngClass]="c.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
-                    </button>
-                    <input type="text" class="form-control row-label-input flex-grow-1" [ngModel]="c.label"
-                      (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Column header...">
-                  </div>
-
-                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                    <div class="d-inline-flex binding-select-wrap">
-                      <app-custom-select [options]="bindingModeSelectOptions"
-                        [ngModel]="c.bindingMode || s.config.dataBindingMode || 'runtime'"
-                        (ngModelChange)="updateTableColumnBindingMode(s, cIdx, $event)" size="xs" variant="pill"
-                        [searchable]="false" panelWidth="130px">
-                      </app-custom-select>
+                  <!-- Row 1: Index, Visibility, Header Label, Order/Delete -->
+                  <div class="d-flex align-items-center justify-content-between gap-1">
+                    <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
+                      <span class="row-index-badge">{{ cIdx + 1 }}</span>
+                      <button type="button" class="btn-vis-toggle" (click)="toggleTableColumnVisibility(s, cIdx)"
+                        [title]="c.visible !== false ? 'Hide column' : 'Show column'">
+                        <i class="bi"
+                          [ngClass]="c.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
+                      </button>
+                      <input type="text" class="form-control row-label-input flex-grow-1" [ngModel]="c.label"
+                        (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Column header...">
                     </div>
 
-                    <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'up')"
-                      [disabled]="cIdx === 0" title="Move Left/Up">
-                      <i class="bi bi-chevron-up"></i>
-                    </button>
-                    <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'down')"
-                      [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down">
-                      <i class="bi bi-chevron-down"></i>
-                    </button>
-                    <button type="button" class="btn-item-del" (click)="removeTableColumn(s, cIdx)"
-                      [disabled]="getTableColumns(s).length <= 1" title="Delete Column">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                      <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'up')"
+                        [disabled]="cIdx === 0" title="Move Left/Up">
+                        <i class="bi bi-chevron-up"></i>
+                      </button>
+                      <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'down')"
+                        [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down">
+                        <i class="bi bi-chevron-down"></i>
+                      </button>
+                      <button type="button" class="btn-item-del" (click)="removeTableColumn(s, cIdx)"
+                        [disabled]="getTableColumns(s).length <= 1" title="Delete Column">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Row 2: Semantic Column Role + Conditional Input Type / Static / Master Source -->
+                  <div class="d-flex align-items-center gap-1 ps-4 flex-wrap">
+                    <select class="form-select form-select-sm compact-input flex-grow-1"
+                      [ngModel]="getEffectiveColumnRole(c)"
+                      (ngModelChange)="onColumnRoleChange(s, cIdx, $event)"
+                      title="Semantic Column Role (determines live Result Entry binding)">
+                      <option *ngFor="let roleOpt of columnRoleOptions" [value]="roleOpt.value">
+                        {{ roleOpt.label }}
+                      </option>
+                    </select>
+
+                    <!-- Input Type Selector (for Observation Value & Custom Data columns) -->
+                    <select class="form-select form-select-sm compact-input flex-shrink-0 col-input-type-select"
+                      *ngIf="getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data'"
+                      [(ngModel)]="c.inputType"
+                      title="Cell Input Control Type">
+                      <option *ngFor="let it of cellInputTypeOptions" [value]="it.value">
+                        {{ it.label }}
+                      </option>
+                    </select>
+
+                    <!-- Decimal Precision (when inputType === 'decimal') -->
+                    <input type="number" min="0" max="6"
+                      class="form-control form-control-sm compact-input text-center flex-shrink-0 col-precision-input"
+                      *ngIf="(getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data') && (!c.inputType || c.inputType === 'decimal')"
+                      [(ngModel)]="c.decimalPrecision"
+                      placeholder="2" title="Decimal Places (0-6)">
+
+                    <!-- Dropdown Options (when inputType === 'dropdown') -->
+                    <input type="text"
+                      class="form-control form-control-sm compact-input w-100 mt-1"
+                      *ngIf="(getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data') && c.inputType === 'dropdown'"
+                      [(ngModel)]="c.dropdownOptions"
+                      placeholder="Comma-separated options (e.g. Smooth, Rough, Cracked)">
+
+                    <!-- Static Text Fixed Value (when role === 'static_text') -->
+                    <input type="text"
+                      class="form-control form-control-sm compact-input w-100 mt-1"
+                      *ngIf="getEffectiveColumnRole(c) === 'static_text'"
+                      [(ngModel)]="c.staticValue"
+                      placeholder="Fixed constant text for this column...">
+
+                    <!-- Master Source Selector (when role === 'master_link') -->
+                    <select class="form-select form-select-sm compact-input flex-shrink-0 master-source-mini-select"
+                      *ngIf="getEffectiveColumnRole(c) === 'master_link'"
+                      [(ngModel)]="c.dbMasterSource"
+                      title="Master Data Source">
+                      <option *ngFor="let src of databaseSourceOptions" [value]="src.value">
+                        {{ getMasterSourceLabel(src.value) }}
+                      </option>
+                    </select>
                   </div>
                 </div>
               </div>
 
-              <!-- Add Column Button using the approved global button style! -->
+              <!-- Add Column Button -->
               <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableColumn(s)">
                 <i class="bi bi-plus-circle me-1.5"></i><span>Add New Column</span>
               </button>
@@ -2487,6 +2480,29 @@
             <span class="text-muted fw-semibold flex-shrink-0"><i class="bi bi-key-fill me-1"></i>Section Key:</span>
             <span class="font-monospace text-danger text-truncate ms-1">{{ s.config.sectionKey }}</span>
           </div>
+
+          <!-- Global Data Derivation Mode -->
+          <div class="mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label compact-label mb-0">Data Derivation Mode</label>
+              <span class="text-xxs text-muted">Section Data Source</span>
+            </div>
+            <div class="binding-mode-btn-group">
+              <button type="button" class="binding-source-btn"
+                [class.active-runtime]="s.config.sectionDataMode !== 'template'"
+                (click)="setSectionDataMode(s, 'runtime')"
+                title="Automatically load rows/data at runtime from the Sample's Test Plan">
+                <i class="bi bi-lightning-charge-fill"></i><span>Runtime Auto-Load</span>
+              </button>
+              <button type="button" class="binding-source-btn"
+                [class.active-static]="s.config.sectionDataMode === 'template'"
+                (click)="setSectionDataMode(s, 'template')"
+                title="Render the exact rows and fields configured in this template">
+                <i class="bi bi-file-earmark-ruled-fill"></i><span>Template Configured</span>
+              </button>
+            </div>
+          </div>
+
           <div class="row g-2 mb-2">
             <div class="col-6">
               <label class="form-label compact-label">Width</label>
@@ -3772,57 +3788,102 @@
             </div>
 
             <div class="card-body p-3">
-              <!-- Parameter live entry -->
+              <!-- Parameter live entry (Dynamic Semantic Columns + Formula Auto-Calc Read-Only) -->
               <ng-container *ngIf="s.type === 'parameter'">
-                <table class="table-exec">
-                  <thead>
-                    <tr>
-                      <th>Parameter</th>
-                      <th>Unit</th>
-                      <th>Requirement</th>
-                      <th>Entry / Value</th>
-                      <th>Source Mode</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex">
-                      <td class="fw-semibold text-start">{{ r.label }}</td>
-                      <td>{{ r.unit || '—' }}</td>
-                      <td class="text-muted">{{ r.requirement || '—' }}</td>
-                      <td>
-                        <!-- Static Mode: Fixed Value -->
-                        <span *ngIf="r.bindingMode === 'static' || s.config.dataBindingMode === 'static'"
-                          class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-2 py-1">
-                          <i class="bi bi-pin-angle me-1 text-warning-emphasis"></i>{{ r.staticValue || 'Static Fixed'
-                          }}
-                        </span>
+                <div class="table-responsive">
+                  <table class="table-exec" [class.table-wide]="getVisibleTableColumns(s).length > 7">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let c of getVisibleTableColumns(s)" class="text-center">
+                          {{ c.label }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex">
+                        <td *ngFor="let c of getVisibleTableColumns(s); let cIdx = index"
+                          [class.text-start]="cIdx === 0" [class.fw-semibold]="cIdx === 0">
+                          <ng-container [ngSwitch]="getEffectiveColumnRole(c)">
+                            <!-- Row Label -->
+                            <ng-container *ngSwitchCase="'row_label'">
+                              <span>{{ r.label }}</span>
+                              <span *ngIf="isRowFormulaDriven(r)"
+                                class="badge bg-indigo-subtle text-indigo font-monospace text-xxs ms-1"
+                                [title]="'Formula-driven (auto-calculated, read-only): ' + (r.formula || 'Formula')">
+                                <i class="bi bi-calculator me-1"></i>ƒx
+                              </span>
+                            </ng-container>
 
-                        <!-- Manual or Runtime Mode: Interactive Input -->
-                        <input *ngIf="r.bindingMode !== 'static' && s.config.dataBindingMode !== 'static'" type="text"
-                          class="form-control form-control-sm text-center entry-input"
-                          [placeholder]="r.bindingMode === 'manual' ? 'Enter observation' : 'Runtime value'"
-                          [ngModel]="previewEntries['param_' + rIdx] || ''"
-                          (ngModelChange)="onPreviewEntryChange('param_' + rIdx, $event, r.requirement)">
-                      </td>
-                      <td>
-                        <span class="badge font-monospace text-xxs d-inline-flex align-items-center gap-1"
-                          [ngClass]="r.bindingMode === 'static' ? 'bg-warning-subtle text-warning-emphasis' : (r.bindingMode === 'manual' ? 'bg-success-subtle text-success' : 'bg-primary-subtle text-primary')">
-                          <i class="bi" [ngClass]="getBindingIcon(r.bindingMode)"></i>
-                          <span>{{ r.bindingMode === 'static' ? 'Static' : (r.bindingMode === 'manual' ? 'Manual' :
-                            'Runtime') }}</span>
-                        </span>
-                      </td>
-                      <td>
-                        <span *ngIf="previewStatus['param_' + rIdx] === true" class="badge-status-pass">PASS</span>
-                        <span *ngIf="previewStatus['param_' + rIdx] === false" class="badge-status-fail">FAIL</span>
-                        <span
-                          *ngIf="previewStatus['param_' + rIdx] === undefined || previewStatus['param_' + rIdx] === null"
-                          class="text-muted">—</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                            <!-- Unit -->
+                            <span *ngSwitchCase="'unit'" class="text-muted font-monospace">{{ r.unit || '—' }}</span>
+
+                            <!-- Spec Requirement / Min / Max -->
+                            <span *ngSwitchCase="'spec_requirement'" class="text-muted font-monospace">{{ r.requirement || '—' }}</span>
+                            <span *ngSwitchCase="'spec_min'" class="text-muted font-monospace">{{ r.requirement || 'Min' }}</span>
+                            <span *ngSwitchCase="'spec_max'" class="text-muted font-monospace">—</span>
+
+                            <!-- Uncertainty / NABL / DL / Method -->
+                            <span *ngSwitchCase="'uncertainty'" class="text-muted font-monospace">± 2.5%</span>
+                            <span *ngSwitchCase="'nabl_scope'" class="badge bg-info-subtle text-info font-monospace">NABL Scope</span>
+                            <span *ngSwitchCase="'detection_limit'" class="text-muted font-monospace">0.01</span>
+                            <span *ngSwitchCase="'test_method'" class="text-muted">IS 1608 : 2022</span>
+
+                            <!-- Aggregates -->
+                            <span *ngSwitchCase="'agg_average'" class="fw-bold text-primary font-monospace">Auto</span>
+                            <span *ngSwitchCase="'agg_min'" class="text-muted font-monospace">Auto</span>
+                            <span *ngSwitchCase="'agg_max'" class="text-muted font-monospace">Auto</span>
+
+                            <!-- Reportable Toggle -->
+                            <span *ngSwitchCase="'reportable_toggle'" class="badge bg-success-subtle text-success font-monospace">Reportable</span>
+
+                            <!-- Status Verdict -->
+                            <ng-container *ngSwitchCase="'status_verdict'">
+                              <span *ngIf="previewStatus['param_' + rIdx] === true" class="badge-status-pass">PASS</span>
+                              <span *ngIf="previewStatus['param_' + rIdx] === false" class="badge-status-fail">FAIL</span>
+                              <span *ngIf="previewStatus['param_' + rIdx] === undefined || previewStatus['param_' + rIdx] === null" class="text-muted">—</span>
+                            </ng-container>
+
+                            <!-- Static Text -->
+                            <span *ngSwitchCase="'static_text'"
+                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-2 py-1">
+                              <i class="bi bi-pin-angle me-1 text-warning-emphasis"></i>{{ c.staticValue || r.staticValue || 'Static' }}
+                            </span>
+
+                            <!-- Observation Value: Formula-driven rows are strictly READ-ONLY -->
+                            <ng-container *ngSwitchCase="'observation_value'">
+                              <ng-container *ngIf="isRowFormulaDriven(r)">
+                                <input type="text"
+                                  class="form-control form-control-sm text-center font-monospace bg-light text-primary fw-semibold"
+                                  [value]="previewEntries['param_' + rIdx + '_' + c.key] || 'Auto-Calc'"
+                                  readonly disabled
+                                  [title]="'Formula-driven parameter: auto-calculated from dependent parameters (manual entry disabled)'">
+                              </ng-container>
+                              <ng-container *ngIf="!isRowFormulaDriven(r)">
+                                <span *ngIf="r.bindingMode === 'static'"
+                                  class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-2 py-1">
+                                  <i class="bi bi-pin-angle me-1 text-warning-emphasis"></i>{{ r.staticValue || 'Static Fixed' }}
+                                </span>
+                                <input *ngIf="r.bindingMode !== 'static'" type="text"
+                                  class="form-control form-control-sm text-center entry-input"
+                                  [placeholder]="c.label || 'Enter value'"
+                                  [ngModel]="previewEntries['param_' + rIdx + '_' + c.key] || ''"
+                                  (ngModelChange)="previewEntries['param_' + rIdx + '_' + c.key] = $event; onPreviewEntryChange('param_' + rIdx, $event, r.requirement)">
+                              </ng-container>
+                            </ng-container>
+
+                            <!-- Custom Data / Default -->
+                            <ng-container *ngSwitchDefault>
+                              <input type="text"
+                                class="form-control form-control-sm text-center entry-input"
+                                [placeholder]="c.label || 'Enter...'"
+                                [(ngModel)]="previewEntries['param_' + rIdx + '_' + c.key]">
+                            </ng-container>
+                          </ng-container>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </ng-container>
 
               <!-- Specimen live entry -->

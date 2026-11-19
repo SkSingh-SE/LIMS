@@ -135,6 +135,7 @@ export interface SectionConfig {
   reportLabel?: string;
 
   // Parameter
+  sectionDataMode?: 'runtime' | 'template';
   dataSource?: string;
   parameterMode?: string;
   resultMode?: string;
@@ -360,6 +361,26 @@ export interface SectionConfig {
 export type DataBindingMode = 'runtime' | 'static' | 'manual';
 export type DataOriginType = 'entry' | 'db' | 'calc' | 'fixed';
 export type DbMasterSourceType = 'parameter' | 'equipment' | 'dimensional_factor' | 'heat_treatment' | 'product_condition' | 'specimen_orientation';
+export type ColumnRoleType =
+  | 'row_label'
+  | 'unit'
+  | 'spec_requirement'
+  | 'spec_min'
+  | 'spec_max'
+  | 'observation_value'
+  | 'uncertainty'
+  | 'nabl_scope'
+  | 'detection_limit'
+  | 'test_method'
+  | 'agg_average'
+  | 'agg_min'
+  | 'agg_max'
+  | 'status_verdict'
+  | 'reportable_toggle'
+  | 'master_link'
+  | 'custom_data'
+  | 'static_text';
+export type CellInputType = 'decimal' | 'number' | 'text' | 'dropdown' | 'boolean' | 'date';
 
 export interface CustomTableCell {
   id: string;
@@ -389,6 +410,9 @@ export interface LayoutColumnItem {
   key: string;
   label: string;
   bindingMode: DataBindingMode;
+  columnRole?: ColumnRoleType;
+  inputType?: CellInputType;
+  dropdownOptions?: string;
   origin?: DataOriginType;
   dbMasterSource?: DbMasterSourceType;
   dbMasterId?: number | string;
@@ -820,6 +844,96 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     { value: 'specimen_orientation', label: 'Specimen Orientation Master' },
     { value: 'dimensional_factor', label: 'Dimensional Factor Master' }
   ];
+
+  columnRoleOptions: Array<{ value: ColumnRoleType; label: string }> = [
+    { value: 'row_label', label: 'Row / Parameter Label' },
+    { value: 'unit', label: 'Engineering Unit' },
+    { value: 'spec_requirement', label: 'Grade Requirement (Spec)' },
+    { value: 'spec_min', label: 'Spec Min Limit' },
+    { value: 'spec_max', label: 'Spec Max Limit' },
+    { value: 'observation_value', label: 'Observed Result Input' },
+    { value: 'uncertainty', label: 'Uncertainty (± MU)' },
+    { value: 'nabl_scope', label: 'NABL Scope Mark' },
+    { value: 'detection_limit', label: 'Detection Limit (DL)' },
+    { value: 'test_method', label: 'Test Method / Standard' },
+    { value: 'agg_average', label: 'Auto Average (Mean)' },
+    { value: 'agg_min', label: 'Auto Minimum' },
+    { value: 'agg_max', label: 'Auto Maximum' },
+    { value: 'status_verdict', label: 'Status (PASS / FAIL)' },
+    { value: 'reportable_toggle', label: 'Reportable Toggle' },
+    { value: 'master_link', label: 'Master Data Link' },
+    { value: 'custom_data', label: 'Custom Free Input' },
+    { value: 'static_text', label: 'Static Fixed Text' }
+  ];
+
+  cellInputTypeOptions: Array<{ value: CellInputType; label: string }> = [
+    { value: 'decimal', label: 'Decimal' },
+    { value: 'number', label: 'Integer' },
+    { value: 'text', label: 'Free Text' },
+    { value: 'dropdown', label: 'Dropdown' },
+    { value: 'boolean', label: 'Pass / Fail / NA' },
+    { value: 'date', label: 'Date' }
+  ];
+
+  inferColumnRole(colKey: string): ColumnRoleType {
+    const k = (colKey || '').toLowerCase();
+    if (k === 'param' || k === 'specimen' || k === 'loc') return 'row_label';
+    if (k === 'unit') return 'unit';
+    if (k === 'requirement' || k === 'limit') return 'spec_requirement';
+    if (k === 'spec_min') return 'spec_min';
+    if (k === 'spec_max') return 'spec_max';
+    if (k === 'result' || k.startsWith('spec_') || k.startsWith('spot_') || k.startsWith('reading_')) return 'observation_value';
+    if (k === 'uncertainty') return 'uncertainty';
+    if (k === 'scope') return 'nabl_scope';
+    if (k === 'dl') return 'detection_limit';
+    if (k === 'method') return 'test_method';
+    if (k === 'avg' || k === 'agg') return 'agg_average';
+    if (k === 'min') return 'agg_min';
+    if (k === 'max') return 'agg_max';
+    if (k === 'status' || k === 'decision') return 'status_verdict';
+    if (k === 'reportable') return 'reportable_toggle';
+    if (k === 'remarks') return 'custom_data';
+    return 'custom_data';
+  }
+
+  onColumnRoleChange(sec: ExecutionSection, cIdx: number, role: ColumnRoleType): void {
+    const cols = this.ensureTableColumns(sec);
+    const col = cols[cIdx];
+    if (!col) return;
+    col.columnRole = role;
+    if (role === 'observation_value') {
+      col.inputType = col.inputType || 'decimal';
+      col.decimalPrecision = col.decimalPrecision ?? 2;
+      col.bindingMode = 'runtime';
+    } else if (role === 'custom_data') {
+      col.inputType = col.inputType || 'text';
+      col.bindingMode = 'manual';
+    } else if (role === 'static_text') {
+      col.bindingMode = 'static';
+    } else {
+      col.bindingMode = 'runtime';
+    }
+    sec.config.tableColumns = [...cols];
+  }
+
+  setSectionDataMode(sec: ExecutionSection, mode: 'runtime' | 'template'): void {
+    sec.config.sectionDataMode = mode;
+    if (sec.type === 'parameter') {
+      sec.config.parameterMode = mode === 'template' ? 'Configured parameter subset' : 'Dynamic from Test';
+    }
+  }
+
+  isRowFormulaDriven(row: any): boolean {
+    return !!(row && (row.isCalculated || (row.formula && String(row.formula).trim().length > 0)));
+  }
+
+  getEffectiveColumnRole(col: LayoutColumnItem): ColumnRoleType {
+    return col?.columnRole || this.inferColumnRole(col?.key || '');
+  }
+
+  getColumnRoleLabel(role: ColumnRoleType): string {
+    return this.columnRoleOptions.find(o => o.value === role)?.label || role;
+  }
 
   getFetchFnForSource = (source: string = 'parameter') => {
     switch (source) {
@@ -6555,15 +6669,21 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (sec.type === 'parameter' && sec.config.columns) {
         this.syncParameterColumnsState(sec);
       }
+      sec.config.tableColumns.forEach(c => {
+        if (!c.columnRole) c.columnRole = this.inferColumnRole(c.key);
+        if ((c.columnRole === 'observation_value' || c.columnRole === 'custom_data') && !c.inputType) {
+          c.inputType = c.columnRole === 'observation_value' ? 'decimal' : 'text';
+        }
+      });
       return sec.config.tableColumns;
     }
     const defaultMode: DataBindingMode = sec.config.dataBindingMode || 'runtime';
     const cols: LayoutColumnItem[] = [];
 
     if (sec.type === 'parameter') {
-      cols.push({ key: 'param', label: 'Parameter Description', bindingMode: 'runtime', visible: true, width: '38%' });
-      if (sec.config.columns?.unit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '10%' });
-      if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true, width: '20%' });
+      cols.push({ key: 'param', label: 'Parameter Description', bindingMode: 'runtime', columnRole: 'row_label', visible: true, width: '38%' });
+      if (sec.config.columns?.unit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', columnRole: 'unit', visible: true, width: '10%' });
+      if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', columnRole: 'spec_requirement', visible: true, width: '20%' });
       if (sec.config.enableMultiSpecimen) {
         const specLabels = this.getParameterSpecimenLabels(sec);
         specLabels.forEach((lbl, idx) => {
@@ -6571,32 +6691,38 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             key: `spec_${idx + 1}`,
             label: lbl,
             bindingMode: defaultMode,
+            columnRole: 'observation_value',
+            inputType: 'decimal',
+            decimalPrecision: 2,
             visible: true,
             removable: true
           });
         });
         if (sec.config.showAverage !== false) {
-          cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
+          cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', columnRole: 'agg_average', visible: true });
         }
         if (sec.config.showMinMax) {
-          cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', visible: true });
-          cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', visible: true });
+          cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', columnRole: 'agg_min', visible: true });
+          cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', columnRole: 'agg_max', visible: true });
         }
       } else {
         cols.push({
           key: 'result',
           label: sec.config.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result',
           bindingMode: defaultMode,
+          columnRole: 'observation_value',
+          inputType: 'decimal',
+          decimalPrecision: 2,
           visible: true,
           width: '20%'
         });
       }
-      if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '12%' });
-      if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', visible: true, width: '12%' });
-      if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', visible: true, width: '12%' });
-      if (sec.config.columns?.uncertainty) cols.push({ key: 'uncertainty', label: 'Uncertainty (±)', bindingMode: 'runtime', visible: true, width: '10%' });
-      if (sec.config.columns?.dl) cols.push({ key: 'dl', label: 'Detection Limit', bindingMode: 'runtime', visible: true, width: '10%' });
-      if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', visible: true, width: '8%' });
+      if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, width: '12%' });
+      if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', columnRole: 'test_method', visible: true, width: '12%' });
+      if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', columnRole: 'custom_data', inputType: 'text', visible: true, width: '12%' });
+      if (sec.config.columns?.uncertainty) cols.push({ key: 'uncertainty', label: 'Uncertainty (±)', bindingMode: 'runtime', columnRole: 'uncertainty', visible: true, width: '10%' });
+      if (sec.config.columns?.dl) cols.push({ key: 'dl', label: 'Detection Limit', bindingMode: 'runtime', columnRole: 'detection_limit', visible: true, width: '10%' });
+      if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', columnRole: 'nabl_scope', visible: true, width: '8%' });
     } else if (sec.type === 'specimen') {
       if (sec.config.orientation === 'Specimens × Parameters') {
         cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen ID', bindingMode: 'static', visible: true, width: '18%' });

@@ -995,7 +995,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                   isBillable: param.isBillable ?? true,
                   isReportable: param.isReportable !== false,
                   inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
-                  dropdownOptions: param.dropdownOptions || []
+                  dropdownOptions: param.dropdownOptions || [],
+                  expandedUncertainty: param.expandedUncertainty ?? null,
+                  coverageFactor: param.coverageFactor ?? null,
+                  isWithinNablScope: param.isWithinNablScope ?? null,
+                  nablScopeStatus: param.nablScopeStatus || ''
                 }));
               })()
             }
@@ -1091,7 +1095,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
                 isBillable: param.isBillable ?? true,
                 isReportable: param.isReportable !== false,
                 inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
-                dropdownOptions: param.dropdownOptions || []
+                dropdownOptions: param.dropdownOptions || [],
+                expandedUncertainty: param.expandedUncertainty ?? null,
+                coverageFactor: param.coverageFactor ?? null,
+                isWithinNablScope: param.isWithinNablScope ?? null,
+                nablScopeStatus: param.nablScopeStatus || ''
               }))
             }
           ]
@@ -1328,7 +1336,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
       selectedUnit: [p.selectedUnit || p.unit || ''],
       unitOptions: [p.unitOptions || []],
       isBillable: [p.isBillable ?? true],
-      isReportable: [p.isReportable !== false]
+      isReportable: [p.isReportable !== false],
+      expandedUncertainty: [p.expandedUncertainty ?? null],
+      coverageFactor: [p.coverageFactor ?? null],
+      isWithinNablScope: [p.isWithinNablScope ?? null],
+      nablScopeStatus: [p.nablScopeStatus || '']
     });
   }
 

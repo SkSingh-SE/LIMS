@@ -188,6 +188,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Custom condition values
   conditionValues: Record<string, any> = {};
 
+  // Dynamic custom cell values for Parameter Table custom columns/rows (persisted in ExecutionExtraJson)
+  customCellValues: Record<string, Record<string, Record<string, any>>> = {};
+
   // Hybrid Relational Collections & Extra state
   locations: LocationData[] = [];
   observations: ObservationData[] = [];
@@ -551,6 +554,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         }
         if (extra?.conditionValues) {
           this.conditionValues = { ...this.conditionValues, ...extra.conditionValues };
+        }
+        if (extra?.customCellValues) {
+          this.customCellValues = { ...this.customCellValues, ...extra.customCellValues };
         }
         if (extra?.opinionData) {
           this.opinionData = { ...this.opinionData, ...extra.opinionData };
@@ -1776,7 +1782,289 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   isParameterCalculated(param: any): boolean {
-    return param?.isCalculated || !!param?.formulaExpression;
+    return !!(
+      param?.isCalculated ||
+      (param?.formulaExpression && String(param.formulaExpression).trim().length > 0) ||
+      (param?.formula && String(param.formula).trim().length > 0)
+    );
+  }
+
+  // =========================================================================
+  // Dynamic Parameter Table Renderer (Semantic Column Roles + Data Derivation Mode)
+  // =========================================================================
+  hasConfiguredParameterTable(s: any): boolean {
+    return Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0;
+  }
+
+  inferParamColumnRole(col: any): string {
+    if (col?.columnRole) return col.columnRole;
+    const k = String(col?.key || '').toLowerCase();
+    if (k === 'parameter' || k === 'label' || k === 'name') return 'row_label';
+    if (k === 'unit') return 'unit';
+    if (k === 'requirement' || k === 'spec') return 'spec_requirement';
+    if (k === 'spec_min' || k === 'min_limit') return 'spec_min';
+    if (k === 'spec_max' || k === 'max_limit') return 'spec_max';
+    if (k === 'result' || k === 'value' || k.startsWith('spec_')) return 'observation_value';
+    if (k === 'uncertainty') return 'uncertainty';
+    if (k === 'scope' || k === 'nabl') return 'nabl_scope';
+    if (k === 'dl' || k === 'detection_limit') return 'detection_limit';
+    if (k === 'method') return 'test_method';
+    if (k === 'avg' || k === 'mean') return 'agg_average';
+    if (k === 'min') return 'agg_min';
+    if (k === 'max') return 'agg_max';
+    if (k === 'status' || k === 'verdict') return 'status_verdict';
+    if (k === 'reportable') return 'reportable_toggle';
+    if (k === 'remarks') return 'custom_data';
+    return 'custom_data';
+  }
+
+  getParamTableColumns(s: any): any[] {
+    const cols = Array.isArray(s?.config?.tableColumns) ? s.config.tableColumns : [];
+    return cols
+      .filter((c: any) => c && c.visible !== false)
+      .map((c: any) => ({
+        ...c,
+        resolvedRole: this.inferParamColumnRole(c),
+        specimenIndex: this.extractSpecimenIndexFromColKey(c.key)
+      }));
+  }
+
+  private extractSpecimenIndexFromColKey(key: string): number | null {
+    const m = /^spec_(\d+)$/i.exec(String(key || ''));
+    return m ? Math.max(0, parseInt(m[1], 10) - 1) : null;
+  }
+
+  getParamTableRows(s: any): {
+    rowKey: string;
+    label: string;
+    unit?: string;
+    requirement?: string;
+    bindingMode?: string;
+    staticValue?: string;
+    isCustomRow: boolean;
+    paramIdx: number | null;
+    specimenIndices: number[];
+    templateRow?: any;
+  }[] {
+    const mode = s?.config?.sectionDataMode === 'template' ? 'template' : 'runtime';
+    const isMultiSpec = !!s?.config?.enableMultiSpecimen;
+    const totalParams = this.parametersFormArray?.length || 0;
+    const baseCount = this.getBaseParameterCount() || totalParams;
+    const templateRows: any[] = Array.isArray(s?.config?.tableRows)
+      ? s.config.tableRows.filter((r: any) => r && r.visible !== false)
+      : [];
+
+    const buildSpecimenIndices = (baseIdx: number): number[] => {
+      if (baseIdx < 0 || baseIdx >= totalParams) return [];
+      if (!isMultiSpec || baseCount <= 0) return [baseIdx];
+      const indices: number[] = [];
+      for (let i = baseIdx; i < totalParams; i += baseCount) {
+        indices.push(i);
+      }
+      return indices;
+    };
+
+    const findMatchingParamIndex = (row: any): number | null => {
+      if (!this.parametersFormArray || totalParams === 0) return null;
+      const searchLimit = isMultiSpec ? Math.min(baseCount, totalParams) : totalParams;
+      if (row?.dbMasterId != null) {
+        const targetId = Number(row.dbMasterId);
+        for (let i = 0; i < searchLimit; i++) {
+          const val = this.parametersFormArray.at(i)?.value;
+          if (Number(val?.parameterID) === targetId) return i;
+        }
+      }
+      const targetLabel = String(row?.label || '').trim().toLowerCase();
+      if (targetLabel) {
+        for (let i = 0; i < searchLimit; i++) {
+          const val = this.parametersFormArray.at(i)?.value;
+          if (String(val?.parameterName || '').trim().toLowerCase() === targetLabel) return i;
+        }
+      }
+      return null;
+    };
+
+    if (mode === 'template' && templateRows.length > 0) {
+      return templateRows.map((tr: any, idx: number) => {
+        const matchedIdx = findMatchingParamIndex(tr);
+        if (matchedIdx !== null) {
+          const ctrlVal = this.parametersFormArray.at(matchedIdx).value;
+          return {
+            rowKey: tr.key || `tpl_${idx}`,
+            label: tr.label || ctrlVal.parameterName || `Row ${idx + 1}`,
+            unit: ctrlVal.unit || tr.unit || '',
+            requirement: this.formatRequirement(ctrlVal),
+            bindingMode: tr.bindingMode || 'runtime',
+            staticValue: tr.staticValue || '',
+            isCustomRow: false,
+            paramIdx: matchedIdx,
+            specimenIndices: buildSpecimenIndices(matchedIdx),
+            templateRow: tr
+          };
+        }
+        return {
+          rowKey: tr.key || `custom_${idx}`,
+          label: tr.label || `Custom Row ${idx + 1}`,
+          unit: tr.unit || '',
+          requirement: tr.requirement || '—',
+          bindingMode: tr.bindingMode || 'manual',
+          staticValue: tr.staticValue || '',
+          isCustomRow: true,
+          paramIdx: null,
+          specimenIndices: [],
+          templateRow: tr
+        };
+      });
+    }
+
+    // Runtime Auto-Load Mode
+    const rows: any[] = [];
+    if (isMultiSpec && baseCount > 0) {
+      for (let b = 0; b < Math.min(baseCount, totalParams); b++) {
+        const ctrlVal = this.parametersFormArray.at(b).value;
+        rows.push({
+          rowKey: `rt_${ctrlVal.parameterID || b}`,
+          label: ctrlVal.parameterName || `Parameter ${b + 1}`,
+          unit: ctrlVal.unit || '',
+          requirement: this.formatRequirement(ctrlVal),
+          bindingMode: 'runtime',
+          staticValue: '',
+          isCustomRow: false,
+          paramIdx: b,
+          specimenIndices: buildSpecimenIndices(b)
+        });
+      }
+    } else {
+      const indices = this.getFilteredParamIndices();
+      indices.forEach((rIdx) => {
+        const ctrlVal = this.parametersFormArray.at(rIdx)?.value;
+        if (!ctrlVal) return;
+        rows.push({
+          rowKey: `rt_${rIdx}`,
+          label: ctrlVal.parameterName || `Parameter ${rIdx + 1}`,
+          unit: ctrlVal.unit || '',
+          requirement: this.formatRequirement(ctrlVal),
+          bindingMode: 'runtime',
+          staticValue: '',
+          isCustomRow: false,
+          paramIdx: rIdx,
+          specimenIndices: [rIdx]
+        });
+      });
+    }
+
+    // Append any explicit custom-text template rows (not linked to DB master)
+    templateRows
+      .filter((tr: any) => tr.rowOrigin === 'custom' && !tr.dbMasterId && findMatchingParamIndex(tr) === null)
+      .forEach((tr: any, idx: number) => {
+        rows.push({
+          rowKey: tr.key || `extra_custom_${idx}`,
+          label: tr.label || `Custom Row ${idx + 1}`,
+          unit: tr.unit || '',
+          requirement: tr.requirement || '—',
+          bindingMode: tr.bindingMode || 'manual',
+          staticValue: tr.staticValue || '',
+          isCustomRow: true,
+          paramIdx: null,
+          specimenIndices: [],
+          templateRow: tr
+        });
+      });
+
+    return rows;
+  }
+
+  getTargetParamIndexForCell(row: any, col: any): number | null {
+    if (row.isCustomRow) return null;
+    if (col?.specimenIndex != null) {
+      return row.specimenIndices?.[col.specimenIndex] ?? null;
+    }
+    return row.paramIdx;
+  }
+
+  getParamControlByIdx(idx: number | null): FormGroup | null {
+    if (idx === null || idx === undefined || !this.parametersFormArray) return null;
+    return (this.parametersFormArray.at(idx) as FormGroup) || null;
+  }
+
+  getEffectiveInputType(col: any, param: any): string {
+    if (col?.inputType) return String(col.inputType).toLowerCase();
+    const pType = String(param?.inputType || 'Decimal').toLowerCase();
+    if (pType === 'boolean') return 'boolean';
+    if (pType === 'dropdown') return 'dropdown';
+    if (pType === 'text') return 'text';
+    if (pType === 'integer' || pType === 'number') return 'number';
+    if (pType === 'date') return 'date';
+    return 'decimal';
+  }
+
+  getStepForPrecision(precision: any): string {
+    const p = Number(precision);
+    if (isNaN(p) || p <= 0) return '1';
+    return (1 / Math.pow(10, Math.min(6, p))).toString();
+  }
+
+  getDropdownOptionsForCell(col: any, param: any): { label: string; value: string }[] {
+    if (col?.dropdownOptions && String(col.dropdownOptions).trim().length > 0) {
+      return String(col.dropdownOptions)
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0)
+        .map((s: string) => ({ label: s, value: s }));
+    }
+    if (Array.isArray(param?.dropdownOptions) && param.dropdownOptions.length > 0) {
+      return param.dropdownOptions.map((o: any) => ({
+        label: o.displayText || o.value,
+        value: o.value || o.displayText
+      }));
+    }
+    return [];
+  }
+
+  formatUncertainty(param: any): string {
+    if (!param) return '—';
+    const u = param.expandedUncertainty;
+    if (u === null || u === undefined || u === '') return '—';
+    return `± ${u}`;
+  }
+
+  computeRowAggregate(row: any, agg: 'avg' | 'min' | 'max'): string {
+    const indices: number[] = row?.specimenIndices || [];
+    if (indices.length === 0 || !this.parametersFormArray) return '—';
+    const nums: number[] = [];
+    indices.forEach((idx) => {
+      const raw = this.parametersFormArray.at(idx)?.get('value')?.value;
+      const n = parseFloat(raw);
+      if (!isNaN(n)) nums.push(n);
+    });
+    if (nums.length === 0) return '—';
+    let res = 0;
+    if (agg === 'avg') res = nums.reduce((a, b) => a + b, 0) / nums.length;
+    else if (agg === 'min') res = Math.min(...nums);
+    else res = Math.max(...nums);
+    const prec = this.parametersFormArray.at(indices[0])?.value?.decimalPrecision ?? 2;
+    return res.toFixed(Math.min(4, Math.max(0, Number(prec) || 2)));
+  }
+
+  getCustomCellValue(sectionKey: string, rowKey: string, colKey: string): any {
+    const sKey = sectionKey || 'param_section';
+    return this.customCellValues?.[sKey]?.[rowKey]?.[colKey] ?? '';
+  }
+
+  setCustomCellValue(sectionKey: string, rowKey: string, colKey: string, value: any): void {
+    const sKey = sectionKey || 'param_section';
+    if (!this.customCellValues[sKey]) this.customCellValues[sKey] = {};
+    if (!this.customCellValues[sKey][rowKey]) this.customCellValues[sKey][rowKey] = {};
+    this.customCellValues[sKey][rowKey][colKey] = value;
+  }
+
+  onDynamicParamValueChange(paramIdx: number, newVal: any): void {
+    const ctrl = this.getParamControlByIdx(paramIdx);
+    if (!ctrl) return;
+    // Guard: never allow manual mutation of formula-driven parameter
+    if (this.isParameterCalculated(ctrl.value)) return;
+    ctrl.get('value')?.setValue(newVal);
+    this.onParameterInputChange(paramIdx);
   }
 
   getFormulaDisplay(param: any): string {
@@ -2103,6 +2391,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       classification: this.classification,
       custom: this.customAttributes,
       conditionValues: this.conditionValues,
+      customCellValues: this.customCellValues,
       opinionData: this.opinionData
     };
     return JSON.stringify(extra);

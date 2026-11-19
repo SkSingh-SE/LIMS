@@ -2581,36 +2581,6 @@
             </div>
           </div>
         </div>
-        <!-- 3. Section Data Binding & Pool Summary Card -->
-        <div class="config-card mb-2">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-link-45deg me-1.5 text-danger"></i><span>Data Binding Pool</span></span>
-            <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">{{ componentNames[s.type] }}</span>
-          </div>
-          <div class="binding-status-pill mb-1.5">
-            <i class="bi bi-database-check me-1.5 text-danger"></i>
-            <strong class="text-truncate">{{ getSectionBindingSummary(s) }}</strong>
-          </div>
-          <div class="dataset-meta-grid mb-1">
-            <div class="dataset-meta-item">
-              <span class="dataset-meta-num">{{ currentDataset.parameters.length }}</span>
-              <span class="dataset-meta-lbl" title="Parameters">Params</span>
-            </div>
-            <div class="dataset-meta-item">
-              <span class="dataset-meta-num">{{ activeConditionsCount }}/{{ currentDataset.conditions.length }}</span>
-              <span class="dataset-meta-lbl" title="Conditions">Conds</span>
-            </div>
-            <div class="dataset-meta-item">
-              <span class="dataset-meta-num">{{ activeDimensionsCount }}/{{ currentDataset.dimensions.length }}</span>
-              <span class="dataset-meta-lbl" title="Dimensions">Dims</span>
-            </div>
-            <div class="dataset-meta-item">
-              <span class="dataset-meta-num">{{ currentDataset.calculations.length }}</span>
-              <span class="dataset-meta-lbl" title="Calculated">Calcs</span>
-            </div>
-          </div>
-        </div>
-
         <!-- 3B. Universal Data Binding & Structure Manager Card -->
         <div class="config-card mb-2"
           *ngIf="s.type !== 'parameter' && (isTableSection(s) || s.type === 'condition' || s.type === 'checklist')">

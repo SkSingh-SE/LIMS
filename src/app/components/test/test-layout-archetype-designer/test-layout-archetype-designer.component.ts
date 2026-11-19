@@ -2169,6 +2169,79 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         return [];
       }
 
+      case 'all_sections': {
+        const s1 = this.createSectionObject('condition', 'Test Conditions & Operating Environment');
+        s1.config.fields = ['Ambient Temperature', 'Relative Humidity', 'Test Speed', 'Load Rate'];
+
+        const s2 = this.createSectionObject('traceability', 'Equipment Traceability & Calibration Record');
+
+        const s3 = this.createSectionObject('parameter', 'Primary Parameters & Specification Limits');
+        s3.config.dataSource = 'Runtime Laboratory Test → Parameters';
+        s3.config.parameterMode = 'All runtime parameters';
+        s3.config.requirement = 'Runtime Requirement';
+        s3.config.status = 'Runtime PASS / FAIL';
+
+        const s4 = this.createSectionObject('specimen', 'Multi-Specimen Result Matrix (S1 / S2 / S3)');
+        s4.config.count = 3;
+        s4.config.prefix = 'S';
+        s4.config.showAverage = true;
+        s4.config.showMinMax = true;
+
+        const s5 = this.createSectionObject('reading', 'Multi-Reading Indentation Grid (5 Spots + Statistics)');
+        s5.config.count = 5;
+        s5.config.spotCount = 5;
+        s5.config.showStatistics = true;
+
+        const s6 = this.createSectionObject('location', 'Multi-Location Zone Survey (WM / HAZ / BM)');
+        s6.config.locationNames = 'Weld Metal, HAZ, Base Metal';
+        s6.config.count = 3;
+
+        const s7 = this.createSectionObject('traverse', 'Depth Traverse Sequence & Cutoff Profile');
+        s7.config.xField = 'Depth from Surface';
+        s7.config.xUnit = 'mm';
+        s7.config.yField = 'Microhardness';
+        s7.config.yUnit = 'HV 0.5';
+        s7.config.stepValue = '0.1';
+        s7.config.showTable = true;
+        s7.config.showCurve = true;
+
+        const s8 = this.createSectionObject('chart', 'Engineering Curve & Traverse Plot');
+        s8.config.xLabel = 'Strain / Distance (mm)';
+        s8.config.yLabel = 'Stress / Response (MPa)';
+        s8.config.showLimit = true;
+
+        const s9 = this.createSectionObject('formula', 'Derived Formula & Calculation Block');
+        s9.config.inputs = 'Original Gauge Length, Final Length, Cross-Section Area, Yield Load, Peak Load';
+        s9.config.resultLabel = 'Calculated UTS & Elongation';
+
+        const s10 = this.createSectionObject('rule', 'Parameter Acceptance & Decision Rule');
+        s10.config.parameter = 'Impact Energy / Hardness';
+        s10.config.operator = '≥';
+        s10.config.valueSource = 'Specification Limit';
+
+        const s11 = this.createSectionObject('classification', 'Microstructure & ASTM Standard Classification');
+        s11.config.ratingSystem = 'ASTM E112 / E45 Standard Rating';
+
+        const s12 = this.createSectionObject('photo', 'Metallographic Photo Plates & Micrographs');
+        s12.config.count = 2;
+        s12.config.showMagnification = true;
+        s12.config.showScale = true;
+        s12.config.showEtchant = true;
+
+        const s13 = this.createSectionObject('checklist', 'Technical Verification & Inspection Checklist');
+        s13.config.items = 'Visual condition verified, Dimensions checked, Equipment calibrated, Guard band verified';
+        s13.config.responseType = 'Pass / Fail / NA';
+
+        const s14 = this.createSectionObject('custom', 'Custom Data Matrix & Observation Grid');
+
+        const s15 = this.createSectionObject('narrative', 'Technical Observations & Conformance Remarks');
+        s15.config.label = 'Remarks / Conformity Statement';
+
+        const s16 = this.createSectionObject('opinion', 'Opinion & Technical Interpretation (ISO 17025 Cl. 7.8.7)');
+
+        return [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16];
+      }
+
       case 'generic':
       case 'standard': {
         const cond = this.createSectionObject('condition', 'Test Conditions & Environment');
@@ -2748,15 +2821,15 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
     // Mount visual layout sections of the chosen structural archetype
     this.sections = this.getDefaultSectionsForTest(presetKey);
+    this.ensureSectionKeys();
     this.isMapped = true;
     if (this.sections.length > 0) {
       this.selectedSectionId = this.sections[0].id;
     }
     this.syncLiveParametersForTest(presetKey);
 
-    this.toastService.show(`Layout Structure: "${archLabel}" loaded into canvas`, 'success');
-    // Reset dropdown selection back to empty so nothing stays selected (protects against accidental re-selection)
-    this.selectedPresetToLoad = '';
+    this.toastService.show(`Layout Structure: "${archLabel}" (${this.sections.length} sections) loaded into canvas`, 'success');
+    this.selectedPresetToLoad = presetKey;
   }
 
   onLayoutArchetypeChange(archetypeKey: string): void {
@@ -3892,18 +3965,25 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         .replace(/\u00C2/g, '');
     };
 
-    const isChem = (this.leafNode || '').toLowerCase().includes('chemical') ||
+    const isExplicitNonChemPreset = Boolean(
+      this.selectedArchetypeKey &&
+      !['generic', 'standard', 'oes', 'cu_spectro'].includes(this.selectedArchetypeKey)
+    );
+
+    const isChem = !isExplicitNonChemPreset && (
+                   (this.leafNode || '').toLowerCase().includes('chemical') ||
                    (this.leafNode || '').toLowerCase().includes('spectro') ||
                    (this.currentLabTestName || '').toLowerCase().includes('spectro') ||
                    (this.layoutName || '').toLowerCase().includes('spectro') ||
                    this.selectedArchetypeKey === 'oes' ||
-                   this.selectedArchetypeKey === 'cu_spectro';
+                   this.selectedArchetypeKey === 'cu_spectro');
 
-    const isCu = (this.currentLabTestName || '').toLowerCase().includes('cu-') ||
+    const isCu = !isExplicitNonChemPreset && (
+                 (this.currentLabTestName || '').toLowerCase().includes('cu-') ||
                  (this.leafNode || '').toLowerCase().includes('cu-') ||
                  (this.layoutName || '').toLowerCase().includes('cu-') ||
                  this.selectedArchetypeKey === 'cu_spectro' ||
-                 this.selectedTestKey === 'cu_spectro';
+                 this.selectedTestKey === 'cu_spectro');
 
     if (isCu) {
       this.selectedArchetypeKey = 'cu_spectro';
@@ -5051,23 +5131,19 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       calculations: []
     };
 
-    // Map test params dynamically from active test definition (only when a laboratory test is selected)
-    if (this.hasSelectedTest) {
-      pool.parameters = (test.params || []).map((p, idx) => ({
-        id: p.id || (idx + 1),
-        name: p.name,
-        symbol: p.name.split(' ')[0],
-        unit: p.unit,
-        requirement: p.requirement,
-        demoValue: test.demo && test.demo[idx] ? test.demo[idx] : '100',
-        type: p.unit === 'Rating' || p.unit === 'Phase' ? 'rating' : (isNaN(Number(p.requirement?.replace(/[^\d.]/g, ''))) ? 'text' : 'numeric'),
-        isCalculated: !!p.isCalculated,
-        formula: p.formula,
-        formulaDisplay: p.formulaDisplay
-      }));
-    } else {
-      pool.parameters = [];
-    }
+    // Map test params dynamically from active test definition or selected preset
+    pool.parameters = (test.params || []).map((p, idx) => ({
+      id: p.id || (idx + 1),
+      name: p.name,
+      symbol: p.name.split(' ')[0],
+      unit: p.unit,
+      requirement: p.requirement,
+      demoValue: test.demo && test.demo[idx] ? test.demo[idx] : '100',
+      type: p.unit === 'Rating' || p.unit === 'Phase' ? 'rating' : (isNaN(Number(p.requirement?.replace(/[^\d.]/g, ''))) ? 'text' : 'numeric'),
+      isCalculated: !!p.isCalculated,
+      formula: p.formula,
+      formulaDisplay: p.formulaDisplay
+    }));
 
     // Rich domain datasets tailored per test
     switch (testKey) {
@@ -5088,6 +5164,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         pool.calculations = [];
         break;
 
+      case 'all_sections':
       case 'tensile':
         pool.conditions = [
           { field: 'Temperature', label: 'Test Temperature', unit: '°C', demoValue: '23.0 °C' },
@@ -6528,23 +6605,21 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const rows: LayoutRowItem[] = [];
 
     if (sec.type === 'parameter') {
-      if (this.hasSelectedTest) {
-        const params = this.currentDataset?.parameters?.length ? this.currentDataset.parameters : this.currentTest.params;
-        (params || []).forEach((p, idx) => {
-          rows.push({
-            key: `param_${idx}`,
-            label: p.name,
-            bindingMode: defaultMode,
-            requirement: p.requirement || '',
-            unit: p.unit || '',
-            isCalculated: p.isCalculated,
-            formula: p.formula,
-            formulaDisplay: p.formulaDisplay,
-            visible: true,
-            removable: true
-          });
+      const params = this.currentDataset?.parameters?.length ? this.currentDataset.parameters : this.currentTest.params;
+      (params || []).forEach((p, idx) => {
+        rows.push({
+          key: `param_${idx}`,
+          label: p.name,
+          bindingMode: defaultMode,
+          requirement: p.requirement || '',
+          unit: p.unit || '',
+          isCalculated: p.isCalculated,
+          formula: p.formula,
+          formulaDisplay: p.formulaDisplay,
+          visible: true,
+          removable: true
         });
-      }
+      });
     } else if (sec.type === 'specimen') {
       if (sec.config.orientation === 'Specimens × Parameters') {
         const specList = this.getSpecimenList(sec);

@@ -205,7 +205,7 @@
       <!-- Component Palette Section -->
       <div class="panel-section">
         <div class="d-flex align-items-center justify-content-between mb-2">
-          <h6 class="panel-section-title mb-0">Component Palette (15 Elements)</h6>
+          <h6 class="panel-section-title mb-0">Component Palette (16 Elements)</h6>
         </div>
         <div class="palette-grid">
           <button type="button" class="palette-btn" (click)="addSection('parameter')" title="Add Parameter Table">
@@ -272,6 +272,11 @@
             title="Add Technical Traceability Record">
             <span class="palette-icon"><i class="bi bi-clipboard2-pulse"></i></span>
             <span class="palette-label">Traceability Record</span>
+          </button>
+          <button type="button" class="palette-btn" (click)="addSection('opinion')"
+            title="Add Opinion & Technical Interpretation (ISO 17025 Cl. 7.8.7)">
+            <span class="palette-icon"><i class="bi bi-patch-check"></i></span>
+            <span class="palette-label">Opinion & Interp.</span>
           </button>
         </div>
       </div>
@@ -1857,6 +1862,85 @@
                   </div>
                 </ng-container>
 
+                <!-- 16. OPINION & INTERPRETATION (ISO/IEC 17025 Cl. 7.8.7) -->
+                <ng-container *ngIf="s.type === 'opinion'">
+                  <div class="table-responsive" *ngIf="s.config.layout !== 'Hide'">
+                    <table class="table-exec" [class.table-compact]="s.config.density === 'Compact'">
+                      <thead *ngIf="s.config.showHeader !== false">
+                        <tr>
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex"
+                            class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
+                              <input type="text" class="th-inline-input" [ngModel]="c.label"
+                                (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Col Header">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableColumn(s, cIdx)"
+                                *ngIf="getVisibleTableColumns(s).length > 1 && cIdx > 0" title="Remove column">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex" class="location-canvas-row">
+                          <td class="fw-semibold text-start location-row-cell">
+                            <div class="d-flex align-items-center gap-1.5">
+                              <span class="location-row-idx">{{ rIdx + 1 }}</span>
+                              <input type="text" class="form-control form-control-sm table-cell-inline-input"
+                                [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
+                                placeholder="Derived Parameter / Evaluation Topic">
+                              <button type="button" class="btn-cell-row-del" (click)="removeTableRow(s, rIdx)"
+                                *ngIf="getVisibleTableRows(s).length > 1" title="Remove this row">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
+                            <td class="text-center font-monospace">
+                              <span *ngIf="c.key === 'observed'">
+                                {{ demoMode ? (r.staticValue || '555.00 N/mm² (Ductile)') : 'Derived / Runtime' }}
+                              </span>
+                              <span *ngIf="c.key === 'requirement'">
+                                {{ r.requirement || 'Per Specification' }}
+                              </span>
+                              <span *ngIf="c.key !== 'observed' && c.key !== 'requirement'" class="text-muted">
+                                {{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}
+                              </span>
+                            </td>
+                          </ng-container>
+                        </tr>
+                        <tr class="table-add-row-tr">
+                          <td [attr.colspan]="getVisibleTableColumns(s).length" class="text-start py-1.5 px-2 bg-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center gap-1.5">
+                                <button type="button" class="btn-table-inline-add" (click)="addTableRow(s)">
+                                  <i class="bi bi-plus-circle me-1.5"></i><span>Add Evaluation Row</span>
+                                </button>
+                                <button type="button" class="btn-table-inline-add" (click)="addTableColumn(s)">
+                                  <i class="bi bi-plus-square me-1.5"></i><span>Add Column</span>
+                                </button>
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white text-dark border font-monospace text-xxs">
+                                  {{ getVisibleTableRows(s).length }} rows × {{ getVisibleTableColumns(s).length }} cols
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="narrative-box mt-2" *ngIf="s.config.showOverallStatement !== false">
+                    <div class="narrative-label">OVERALL TECHNICAL OPINION & INTERPRETATION (ISO/IEC 17025 CL. 7.8.7)</div>
+                    <div class="narrative-text" [class.text-muted]="!demoMode">
+                      {{ s.config.overallStatement || 'Based on the above test results, the material complies with specified standard requirements.' }}
+                    </div>
+                  </div>
+                </ng-container>
+
                 <!-- Bottom Corner Annotations Bar -->
                 <div
                   class="corner-annotations-bar d-flex justify-content-between align-items-center mt-1.5 text-muted text-xxs font-monospace"
@@ -3403,8 +3487,8 @@
           </div>
         </div>
 
-        <!-- 16. Remarks / Narrative (Type: Note) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'note'">
+        <!-- 16. Remarks / Narrative (Type: Narrative / Note) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'narrative' || s.type === 'note'">
           <div class="config-card-title d-flex align-items-center justify-content-between">
             <span><i class="bi bi-chat-left-dots me-1.5 text-danger"></i><span>Remarks / Analyst Statement</span></span>
           </div>
@@ -3496,6 +3580,39 @@
               (click)="applyTraceabilityPreset(s)">
               <i class="bi bi-shield-check me-1.5"></i><span>Load Equipment Calibration Traceability</span>
             </button>
+          </div>
+        </div>
+
+        <!-- 19. Opinion & Interpretation (Type: Opinion) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'opinion'">
+          <div class="config-card-title d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-patch-check me-1.5 text-danger"></i><span>Opinion & Interpretation (ISO 17025 Cl. 7.8.7)</span></span>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Section Status</label>
+              <select class="form-select form-select-sm compact-input" [(ngModel)]="s.config.sectionStatus">
+                <option value="Optional">Optional</option>
+                <option value="Mandatory">Mandatory</option>
+              </select>
+            </div>
+            <div class="col-6 d-flex align-items-end">
+              <label class="form-check compact-check mb-1">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.derivedOnly">
+                <span class="form-check-label">Derived Parameters Only</span>
+              </label>
+            </div>
+          </div>
+          <div class="config-checks-grid mb-2">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showOverallStatement">
+              <span class="form-check-label">Show Overall Technical Interpretation Box</span>
+            </label>
+          </div>
+          <div class="mb-1" *ngIf="s.config.showOverallStatement !== false">
+            <label class="form-label compact-label">Default Overall Interpretation Statement</label>
+            <textarea class="form-control form-control-sm compact-input" [(ngModel)]="s.config.overallStatement" rows="3"
+              placeholder="Enter default ISO/IEC 17025 Cl. 7.8.7 opinion & interpretation statement..."></textarea>
           </div>
         </div>
 
@@ -4134,6 +4251,41 @@
                       </tr>
                     </tbody>
                   </table>
+                </div>
+              </ng-container>
+
+              <!-- Opinion & Interpretation live entry -->
+              <ng-container *ngIf="s.type === 'opinion'">
+                <div class="table-responsive">
+                  <table class="table-exec">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let col of getVisibleTableColumns(s); let cIdx = index"
+                          [class.text-start]="cIdx === 0" [class.text-center]="cIdx > 0">
+                          {{ col.label }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                        <td class="fw-semibold text-start">{{ r.label }}</td>
+                        <td class="text-center">
+                          <input type="text" class="form-control form-control-sm text-center entry-input font-monospace"
+                            [placeholder]="r.staticValue || 'Derived Value'"
+                            [(ngModel)]="previewEntries['opinion_obs_' + s.id + '_' + rIdx]">
+                        </td>
+                        <td class="text-center font-monospace text-muted">
+                          {{ r.requirement || 'Per Spec' }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="mt-2" *ngIf="s.config.showOverallStatement !== false">
+                  <label class="form-label compact-label">Overall Technical Opinion & Interpretation</label>
+                  <textarea class="form-control form-control-sm compact-input" rows="2"
+                    [placeholder]="s.config.overallStatement || 'Enter technical interpretation...'"
+                    [(ngModel)]="previewEntries['opinion_stmt_' + s.id]"></textarea>
                 </div>
               </ng-container>
             </div>

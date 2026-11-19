@@ -210,6 +210,17 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     { key: 'Calibration Due', value: '2027-03-31' }
   ];
 
+  // Opinion & Interpretation state
+  opinionData: {
+    items: { label: string; formulaDisplay?: string; unit?: string; requirement?: string; value: string; status?: string }[];
+    overallStatement: string;
+    isOptional: boolean;
+  } = {
+    items: [],
+    overallStatement: '',
+    isOptional: true
+  };
+
   // Active section mapping name
   componentNames: Record<string, string> = {
     parameter: 'Parameters Table',
@@ -238,7 +249,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     classification: 'Material Classification',
     class: 'Material Classification',
     custom: 'Custom Attributes',
-    attrs: 'Custom Attributes'
+    attrs: 'Custom Attributes',
+    opinion: 'Opinion & Interpretation'
   };
 
   constructor(
@@ -379,6 +391,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       case 'custom':
       case 'attrs':
         return 'bi bi-sliders2 text-danger';
+      case 'opinion':
+        return 'bi bi-chat-square-quote text-danger';
       default:
         return 'bi bi-sliders text-danger';
     }
@@ -424,6 +438,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     // Initialize Observations
     this.initObservations();
+
+    // Initialize Opinion & Interpretation
+    this.initOpinion();
 
     // Initialize Execution Extra
     this.initExecutionExtra();
@@ -500,6 +517,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
   }
 
+  private initOpinion(): void {
+    const opSec = this.sections.find(s => s.type === 'opinion');
+    if (!opSec) return;
+    if (this.opinionData.items.length === 0 && opSec.config?.tableRows && Array.isArray(opSec.config.tableRows)) {
+      this.opinionData.items = opSec.config.tableRows.map((r: any) => ({
+        label: r.label,
+        formulaDisplay: r.formulaDisplay || r.formula || '',
+        unit: r.unit || '',
+        requirement: r.requirement || '',
+        value: r.staticValue || '',
+        status: 'Pass'
+      }));
+      this.opinionData.overallStatement = opSec.config.overallStatement || '';
+      this.opinionData.isOptional = opSec.config.isOptional !== false;
+    }
+  }
+
   private initExecutionExtra(): void {
     if (this.test?.executionExtraJson) {
       try {
@@ -517,6 +551,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         }
         if (extra?.conditionValues) {
           this.conditionValues = { ...this.conditionValues, ...extra.conditionValues };
+        }
+        if (extra?.opinionData) {
+          this.opinionData = { ...this.opinionData, ...extra.opinionData };
         }
       } catch (e) {
         console.warn('Could not parse test.executionExtraJson', e);
@@ -2065,7 +2102,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       decisionRule: this.decisionRule,
       classification: this.classification,
       custom: this.customAttributes,
-      conditionValues: this.conditionValues
+      conditionValues: this.conditionValues,
+      opinionData: this.opinionData
     };
     return JSON.stringify(extra);
   }

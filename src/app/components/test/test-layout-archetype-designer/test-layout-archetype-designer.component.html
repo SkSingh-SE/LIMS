@@ -560,8 +560,10 @@
                         <!-- Mode 3: Normal Flat Single Header (When NOT Merged) -->
                         <tr *ngIf="!hasMergedHeader(s)">
                           <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex"
-                            class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                            class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -753,8 +755,10 @@
                         <!-- Mode 3: Normal Flat Single Header (When NOT Merged) -->
                         <tr *ngIf="!hasMergedHeader(s)">
                           <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex"
-                            class="align-middle specimen-th-cell">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                            class="align-middle specimen-th-cell" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode) + ' ' + (c.bindingMode === 'static' ? 'text-warning-emphasis' : (c.bindingMode === 'manual' ? 'text-success' : 'text-theme header-binding-icon-runtime'))"
                                 [title]="'Column Binding: ' + (c.bindingMode || 'runtime')">
@@ -884,8 +888,10 @@
 
                         <!-- Mode 3: Normal Flat Single Header (When NOT Merged) -->
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1011,8 +1017,10 @@
 
                         <!-- Mode 3: Normal Flat Single Header -->
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1137,8 +1145,10 @@
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
                         </tr>
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1253,8 +1263,10 @@
 
                         <!-- Mode 3: Normal Flat Single Header -->
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1380,8 +1392,10 @@
 
                             <!-- Mode 3: Normal Flat Single Header -->
                             <tr *ngIf="!hasMergedHeader(s)">
-                              <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                                <div class="d-flex align-items-center justify-content-center gap-1">
+                              <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                                <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                                   <i class="bi"
                                     [ngClass]="getBindingIcon(c.bindingMode)"
                                     [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1565,8 +1579,10 @@
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
                         </tr>
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1676,8 +1692,10 @@
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
                         </tr>
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1855,8 +1873,10 @@
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
                         </tr>
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"
@@ -1981,8 +2001,10 @@
                           <th *ngFor="let c of getPostMergedColumns(s)">{{ c.label }}</th>
                         </tr>
                         <tr *ngIf="!hasMergedHeader(s)">
-                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                          <th *ngFor="let c of getVisibleTableColumns(s); let cIdx = index; trackBy: trackByIndex" class="align-middle" [style.width]="getColumnWidth(s, c, cIdx)">
+                            <div class="d-flex align-items-center gap-1"
+                              [class.justify-content-start]="cIdx === 0"
+                              [class.justify-content-center]="cIdx > 0">
                               <i class="bi"
                                 [ngClass]="getBindingIcon(c.bindingMode)"
                                 [class.text-warning-emphasis]="c.bindingMode === 'static'"

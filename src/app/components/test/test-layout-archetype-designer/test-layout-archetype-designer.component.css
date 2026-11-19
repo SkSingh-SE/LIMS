@@ -1112,6 +1112,7 @@ select.form-select:focus {
 /* Tables inside sections */
 .table-exec {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.72rem;
 }
@@ -2271,7 +2272,8 @@ select.form-select:focus {
   background: transparent;
   transition: all 0.15s ease;
   width: 100%;
-  min-width: 140px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .location-canvas-row:hover .table-cell-inline-input,
@@ -2897,8 +2899,11 @@ th:hover .header-binding-icon-runtime {
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  width: 85px;
-  text-align: center;
+  width: auto;
+  max-width: 100%;
+  min-width: 60px;
+  flex: 1 1 auto;
+  text-align: inherit;
   transition: all 0.15s ease;
 }
 

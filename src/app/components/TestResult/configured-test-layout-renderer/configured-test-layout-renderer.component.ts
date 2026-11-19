@@ -2035,6 +2035,104 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return hasPass ? true : null;
   }
 
+  // =========================================================================
+  // Dynamic Specimen Matrix Renderer (Semantic Columns + Runtime/Template Mode + Orientation)
+  // =========================================================================
+  hasConfiguredSpecimenTable(s: any): boolean {
+    if (!Array.isArray(s?.config?.tableColumns) || s.config.tableColumns.length === 0) return false;
+    // Preserve dedicated Tensile dimensional physics matrix unless explicitly in Template Configured mode
+    if (this.isTensileTest() && s?.config?.sectionDataMode !== 'template') return false;
+    return true;
+  }
+
+  isSpecimenTransposed(s: any): boolean {
+    return s?.config?.orientation === 'Specimens × Parameters';
+  }
+
+  getSpecimenMatrixColumns(s: any): any[] {
+    const baseCols = this.getParamTableColumns(s);
+    if (this.isSpecimenTransposed(s) || s?.config?.sectionDataMode === 'template') {
+      return baseCols;
+    }
+    // In Runtime Auto-Load (Parameters × Specimens), dynamically match live specimen count
+    const liveSpecCount = this.specimens?.length || 0;
+    if (liveSpecCount <= 0) return baseCols;
+
+    const firstSpecPos = baseCols.findIndex((c: any) => c.specimenIndex != null);
+    if (firstSpecPos < 0) return baseCols;
+
+    const nonSpecBefore = baseCols.slice(0, firstSpecPos);
+    const nonSpecAfter = baseCols.slice(firstSpecPos).filter((c: any) => c.specimenIndex == null);
+    const specTemplateCol = baseCols[firstSpecPos];
+
+    const dynamicSpecCols = this.specimens.map((spm, idx) => {
+      const existing = baseCols.find((c: any) => c.specimenIndex === idx);
+      return {
+        ...(existing || specTemplateCol),
+        key: `spec_${idx + 1}`,
+        label: existing?.label || spm.id || `S${idx + 1}`,
+        resolvedRole: existing?.resolvedRole || 'observation_value',
+        specimenIndex: idx,
+        liveSpecimenId: spm.id
+      };
+    });
+
+    return [...nonSpecBefore, ...dynamicSpecCols, ...nonSpecAfter];
+  }
+
+  getSpecimenMatrixRows(s: any): any[] {
+    if (this.isSpecimenTransposed(s)) {
+      const mode = s?.config?.sectionDataMode === 'template' ? 'template' : 'runtime';
+      const templateRows: any[] = Array.isArray(s?.config?.tableRows)
+        ? s.config.tableRows.filter((r: any) => r && r.visible !== false && r.nature !== 'summary')
+        : [];
+      if (mode === 'template' && templateRows.length > 0) {
+        return templateRows.map((tr: any, idx: number) => ({
+          rowKey: tr.key || `spm_tr_${idx}`,
+          label: tr.label || `S${idx + 1}`,
+          specimenIdx: idx,
+          isCustomRow: idx >= (this.specimens?.length || 0),
+          paramIdx: null,
+          specimenIndices: []
+        }));
+      }
+      return (this.specimens || []).map((spm, idx) => ({
+        rowKey: `spm_live_${idx}`,
+        label: spm.id || `S${idx + 1}`,
+        specimenIdx: idx,
+        isCustomRow: false,
+        paramIdx: null,
+        specimenIndices: []
+      }));
+    }
+
+    // Parameters × Specimens orientation: reuse multi-specimen parameter grouping!
+    const virtualSection = {
+      ...s,
+      config: {
+        ...s?.config,
+        enableMultiSpecimen: true
+      }
+    };
+    return this.getParamTableRows(virtualSection);
+  }
+
+  getTransposedParamIdx(specimenIdx: number, col: any): number | null {
+    if (!this.parametersFormArray || specimenIdx < 0) return null;
+    const baseCount = this.getBaseParameterCount() || this.parametersFormArray.length;
+    if (baseCount <= 0) return null;
+    const colLabel = String(col?.label || '').trim().toLowerCase();
+    const colKey = String(col?.key || '').trim().toLowerCase();
+    for (let b = 0; b < Math.min(baseCount, this.parametersFormArray.length); b++) {
+      const pName = String(this.parametersFormArray.at(b)?.value?.parameterName || '').trim().toLowerCase();
+      if (pName === colLabel || (colKey && pName.includes(colKey))) {
+        const target = specimenIdx * baseCount + b;
+        return target < this.parametersFormArray.length ? target : null;
+      }
+    }
+    return null;
+  }
+
   getTargetParamIndexForCell(row: any, col: any): number | null {
     if (row.isCustomRow) return null;
     if (col?.specimenIndex != null) {

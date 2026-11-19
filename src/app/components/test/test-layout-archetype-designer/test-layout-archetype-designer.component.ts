@@ -3198,11 +3198,43 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     s.config.orientation = s.config.orientation === 'Specimens × Parameters'
       ? 'Parameters × Specimens'
       : 'Specimens × Parameters';
-    delete s.config.tableColumns;
-    delete s.config.tableRows;
-    this.ensureTableColumns(s);
-    this.ensureTableRows(s);
+    this.onSpecimenOrientationChange(s);
     this.toastService.show(`Matrix orientation: ${s.config.orientation}`, 'info');
+  }
+
+  onSpecimenOrientationChange(sec: ExecutionSection): void {
+    if (!sec) return;
+    delete sec.config.tableColumns;
+    delete sec.config.tableRows;
+    this.ensureTableColumns(sec);
+    this.ensureTableRows(sec);
+  }
+
+  onSpecimenDisplayOptionChange(sec: ExecutionSection): void {
+    if (!sec || sec.type !== 'specimen') return;
+    const cols = this.ensureTableColumns(sec);
+    const toggleSpecialCol = (key: string, label: string, role: ColumnRoleType, enabled: boolean) => {
+      const existing = cols.find(c => c.key === key);
+      if (enabled) {
+        if (existing) {
+          existing.visible = true;
+          existing.columnRole = existing.columnRole || role;
+        } else {
+          const statusIdx = cols.findIndex(c => c.key === 'status' || c.columnRole === 'status_verdict');
+          const newCol: LayoutColumnItem = { key, label, bindingMode: 'runtime', columnRole: role, visible: true };
+          if (statusIdx >= 0) cols.splice(statusIdx, 0, newCol);
+          else cols.push(newCol);
+        }
+      } else if (existing) {
+        existing.visible = false;
+      }
+    };
+
+    toggleSpecialCol('avg', 'Average', 'agg_average', sec.config.showAverage !== false);
+    toggleSpecialCol('min', 'Min', 'agg_min', !!sec.config.showMinMax);
+    toggleSpecialCol('max', 'Max', 'agg_max', !!sec.config.showMinMax);
+    toggleSpecialCol('requirement', 'Requirement', 'spec_requirement', sec.config.showRequirement !== false);
+    sec.config.tableColumns = [...cols];
   }
 
   moveSection(dir: number, id?: number): void {
@@ -6806,13 +6838,15 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       if (sec.config.columns?.scope) cols.push({ key: 'scope', label: 'Scope Mark', bindingMode: 'runtime', columnRole: 'nabl_scope', visible: true, width: '8%' });
     } else if (sec.type === 'specimen') {
       if (sec.config.orientation === 'Specimens × Parameters') {
-        cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen ID', bindingMode: 'static', visible: true, width: '18%' });
+        cols.push({ key: 'specimen', label: sec.config.specimenColHeader || 'Specimen ID', bindingMode: 'static', columnRole: 'row_label', visible: true, width: '18%' });
 
         if (sec.config.showOrientationColumn !== false) {
           cols.push({
             key: 'orientation',
             label: 'Orientation (ASTM E399)',
             bindingMode: 'static',
+            columnRole: 'master_link',
+            dbMasterSource: 'specimen_orientation',
             visible: true,
             width: '15%'
           });
@@ -6820,13 +6854,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
         if (sec.config.showDimensions !== false) {
           if (sec.config.specimenShape === 'round') {
-            cols.push({ key: 'd0', label: 'Diameter D0 (mm)', bindingMode: 'manual', visible: true, width: '12%' });
+            cols.push({ key: 'd0', label: 'Diameter D0 (mm)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '12%' });
           } else if (sec.config.specimenShape === 'tubular') {
-            cols.push({ key: 'd0', label: 'OD D0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
-            cols.push({ key: 't0', label: 'WT T0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+            cols.push({ key: 'd0', label: 'OD D0 (mm)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '10%' });
+            cols.push({ key: 't0', label: 'WT T0 (mm)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '10%' });
           } else {
-            cols.push({ key: 'w0', label: 'Width W0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
-            cols.push({ key: 't0', label: 'Thick T0 (mm)', bindingMode: 'manual', visible: true, width: '10%' });
+            cols.push({ key: 'w0', label: 'Width W0 (mm)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '10%' });
+            cols.push({ key: 't0', label: 'Thick T0 (mm)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '10%' });
           }
         }
 
@@ -6837,28 +6871,39 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             isCalculated: true,
             formulaDisplay: sec.config.specimenShape === 'round' ? '(π/4) × D0²' : (sec.config.specimenShape === 'tubular' ? 'π × T0 × (D0 - T0)' : 'W0 × T0'),
             bindingMode: 'runtime',
+            columnRole: 'observation_value',
+            inputType: 'decimal',
+            decimalPrecision: 2,
             visible: true,
             width: '14%'
           });
         }
 
-        cols.push({ key: 'fm', label: 'Peak Load Fm (kN)', bindingMode: 'manual', visible: true, width: '12%' });
-        cols.push({ key: 'rm', label: 'Tensile Rm (MPa)', isCalculated: true, formulaDisplay: 'Fm × 1000 / S0', bindingMode: 'runtime', visible: true, width: '13%' });
-        cols.push({ key: 'reh', label: 'Yield ReH (MPa)', bindingMode: 'manual', visible: true, width: '12%' });
-        cols.push({ key: 'a', label: 'Elongation A (%)', bindingMode: 'manual', visible: true, width: '11%' });
+        cols.push({ key: 'fm', label: 'Peak Load Fm (kN)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '12%' });
+        cols.push({ key: 'rm', label: 'Tensile Rm (MPa)', isCalculated: true, formulaDisplay: 'Fm × 1000 / S0', bindingMode: 'runtime', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '13%' });
+        cols.push({ key: 'reh', label: 'Yield ReH (MPa)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '12%' });
+        cols.push({ key: 'a', label: 'Elongation A (%)', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 1, visible: true, width: '11%' });
 
-        if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
-        if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
+        if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', columnRole: 'agg_average', visible: true });
+        if (sec.config.showMinMax) {
+          cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', columnRole: 'agg_min', visible: true });
+          cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', columnRole: 'agg_max', visible: true });
+        }
+        if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', columnRole: 'spec_requirement', visible: true });
       } else {
-        cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '28%' });
-        if (sec.config.showUnit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '12%' });
+        cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', columnRole: 'row_label', visible: true, width: '28%' });
+        if (sec.config.showUnit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', columnRole: 'unit', visible: true, width: '10%' });
         const specList = this.getSpecimenList(sec);
         specList.forEach((specName, idx) => {
-          cols.push({ key: `spec_${idx + 1}`, label: specName, bindingMode: defaultMode, visible: true, removable: true });
+          cols.push({ key: `spec_${idx + 1}`, label: specName, bindingMode: defaultMode, columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, removable: true });
         });
-        if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', visible: true });
-        if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
-        if (sec.config.showStatus !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
+        if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Average', bindingMode: 'runtime', columnRole: 'agg_average', visible: true });
+        if (sec.config.showMinMax) {
+          cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', columnRole: 'agg_min', visible: true });
+          cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', columnRole: 'agg_max', visible: true });
+        }
+        if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', columnRole: 'spec_requirement', visible: true });
+        if (sec.config.showStatus !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true });
       }
     } else if (sec.type === 'reading') {
       const targetUnit = sec.config.targetUnit || 'HRC';
@@ -7042,8 +7087,15 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
             key: `param_${idx}`,
             label: p.name,
             bindingMode: defaultMode,
+            rowOrigin: 'db',
+            dbMasterSource: 'parameter',
+            dbMasterId: (p as any).id ?? (p as any).parameterID ?? null,
+            dbMasterName: p.name,
             requirement: p.requirement,
             unit: p.unit,
+            isCalculated: p.isCalculated,
+            formula: p.formula,
+            formulaDisplay: p.formulaDisplay,
             visible: true,
             removable: true
           });

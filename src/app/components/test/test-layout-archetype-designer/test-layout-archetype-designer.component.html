@@ -765,32 +765,34 @@
                             </div>
                           </td>
 
-                          <!-- Additional Columns -->
+                          <!-- Additional Columns (Semantic Role + Formula Auto-Calc Read-Only) -->
                           <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                             <td class="text-center font-monospace">
-                              <!-- Static Mode -->
-                              <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                                class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
-                                [title]="'Static Value: ' + (r.staticValue || c.staticValue || 'Static')">
-                                {{ r.staticValue || c.staticValue || (demoMode ? 'Static 420' : 'Static') }}
-                              </span>
-                              <!-- Manual Mode -->
-                              <span
-                                *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
-                                {{ demoMode ? 'Manual Entry' : '—' }}
-                              </span>
-                              <!-- Runtime Mode -->
-                              <ng-container
-                                *ngIf="(r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual')">
-                                <span *ngIf="c.key === 'unit'" class="text-muted">{{ r.unit || '—' }}</span>
-                                <span *ngIf="c.key === 'requirement'" class="text-muted">{{ r.requirement || (demoMode ?
-                                  '≥ 420' : 'Runtime') }}</span>
-                                <span *ngIf="c.key === 'avg'" class="fw-bold text-theme font-monospace">{{ demoMode ?
-                                  (424 + rIdx * 4) : '—' }}</span>
-                                <span *ngIf="c.key !== 'unit' && c.key !== 'requirement' && c.key !== 'avg'">
-                                  {{ demoMode ? (420 + rIdx * 5 + (cIdx + 1) * 2) : '—' }}
-                                </span>
+                              <ng-container [ngSwitch]="getEffectiveColumnRole(c)">
+                                <span *ngSwitchCase="'unit'" class="text-muted">{{ r.unit || '—' }}</span>
+                                <span *ngSwitchCase="'spec_requirement'" class="text-muted">{{ r.requirement || (demoMode ? '≥ 420' : 'Runtime') }}</span>
+                                <span *ngSwitchCase="'spec_min'" class="text-muted">{{ demoMode ? '420' : 'Min' }}</span>
+                                <span *ngSwitchCase="'spec_max'" class="text-muted">{{ demoMode ? '580' : 'Max' }}</span>
+                                <span *ngSwitchCase="'agg_average'" class="fw-bold text-theme">{{ demoMode ? (424 + rIdx * 4) : 'Auto' }}</span>
+                                <span *ngSwitchCase="'agg_min'" class="text-muted">{{ demoMode ? (420 + rIdx * 4) : 'Auto' }}</span>
+                                <span *ngSwitchCase="'agg_max'" class="text-muted">{{ demoMode ? (430 + rIdx * 4) : 'Auto' }}</span>
+                                <span *ngSwitchCase="'uncertainty'" class="text-muted">{{ demoMode ? '± 2.5%' : '—' }}</span>
+                                <span *ngSwitchCase="'nabl_scope'" class="text-muted">{{ demoMode ? 'NABL' : '—' }}</span>
+                                <span *ngSwitchCase="'test_method'" class="text-muted">{{ demoMode ? 'IS 1608' : '—' }}</span>
+                                <span *ngSwitchCase="'status_verdict'" [class.badge-status-pass]="demoMode" [class.text-muted]="!demoMode">{{ demoMode ? 'PASS' : '—' }}</span>
+                                <span *ngSwitchCase="'reportable_toggle'" class="text-muted">Reportable</span>
+                                <span *ngSwitchCase="'static_text'" class="text-dark">{{ c.staticValue || r.staticValue || 'Static' }}</span>
+                                <ng-container *ngSwitchCase="'observation_value'">
+                                  <span *ngIf="isRowFormulaDriven(r) || c.isCalculated"
+                                    class="badge bg-light text-dark border font-monospace"
+                                    [title]="'Auto-calculated from dependent parameters (Read-Only): ' + (r.formula || c.formulaDisplay || 'Formula')">
+                                    {{ demoMode ? ('ƒx ' + (420 + rIdx * 5 + (cIdx + 1) * 2)) : 'ƒx Auto' }}
+                                  </span>
+                                  <span *ngIf="!isRowFormulaDriven(r) && !c.isCalculated">
+                                    {{ demoMode ? (420 + rIdx * 5 + (cIdx + 1) * 2) : '—' }}
+                                  </span>
+                                </ng-container>
+                                <span *ngSwitchDefault class="text-muted">{{ getCellDisplayValue(s, r, c, cIdx + 1, rIdx) }}</span>
                               </ng-container>
                             </td>
                           </ng-container>
@@ -2468,6 +2470,361 @@
           </div>
         </div>
 
+        <!-- GROUP 2: SPECIMEN MATRIX CONFIGURATION (Unified Clean Enterprise Card) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'specimen'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Specimen Matrix</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+            </span>
+          </div>
+
+          <!-- Orientation & Transpose -->
+          <div class="d-flex align-items-end gap-2 mb-2">
+            <div class="flex-grow-1 min-w-0">
+              <label class="form-label compact-label">Matrix Orientation</label>
+              <app-custom-select [options]="selectOptions.orientation" [(ngModel)]="s.config.orientation"
+                (ngModelChange)="onSpecimenOrientationChange(s)" size="sm" [searchable]="false"
+                placeholder="Orientation">
+              </app-custom-select>
+            </div>
+            <button type="button" class="btn-lims btn-lims-cancel btn-compact flex-shrink-0"
+              (click)="toggleOrientation(s)" title="Swap Rows & Columns">
+              Transpose
+            </button>
+          </div>
+
+          <!-- Quick Specimen Presets -->
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Quick Specimen Presets</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 's1-3')">S1–S3</button>
+              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 's1-5')">S1–S5</button>
+              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'specimens')">Specimen 1–3</button>
+              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'samples')">Sample A–C</button>
+              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'trans-long')">Trans / Long</button>
+              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'bend')">Weld Bend</button>
+              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'notches')">Charpy Notches</button>
+            </div>
+          </div>
+
+          <!-- Display Options -->
+          <div class="config-checks-grid pb-2 mb-2 border-bottom">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage"
+                (ngModelChange)="onSpecimenDisplayOptionChange(s)">
+              <span class="form-check-label">Show Average</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMinMax"
+                (ngModelChange)="onSpecimenDisplayOptionChange(s)">
+              <span class="form-check-label">Show Min / Max</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showRequirement"
+                (ngModelChange)="onSpecimenDisplayOptionChange(s)">
+              <span class="form-check-label">Show Requirement</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showIdentity">
+              <span class="form-check-label">Identification Table</span>
+            </label>
+          </div>
+
+          <!-- Table Structure Tabs: Rows | Columns | Header Merge -->
+          <div class="binding-tab-header d-flex border-bottom mb-2">
+            <button type="button" class="binding-tab-btn"
+              [class.active]="s.config.activeBindingTab === 'rows' || !s.config.activeBindingTab"
+              (click)="s.config.activeBindingTab = 'rows'">
+              Rows ({{ getTableRows(s).length }})
+            </button>
+            <button type="button" class="binding-tab-btn"
+              [class.active]="s.config.activeBindingTab === 'columns'"
+              (click)="s.config.activeBindingTab = 'columns'">
+              Columns ({{ getTableColumns(s).length }})
+            </button>
+            <button type="button" class="binding-tab-btn"
+              [class.active]="s.config.activeBindingTab === 'merge'"
+              (click)="s.config.activeBindingTab = 'merge'">
+              Header Merge
+              <span class="ms-1 text-xxs" [class.text-success]="hasMergedHeader(s)" [class.text-muted]="!hasMergedHeader(s)">
+                ({{ hasMergedHeader(s) ? 'On' : 'Off' }})
+              </span>
+            </button>
+          </div>
+
+          <!-- ROWS TAB CONTENT -->
+          <div *ngIf="s.config.activeBindingTab === 'rows' || !s.config.activeBindingTab">
+            <div class="text-xxs text-muted mb-2" *ngIf="s.config.sectionDataMode !== 'template'">
+              Runtime Auto-Load is active — specimens & parameters load automatically from the Test Plan.
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="text-xxs text-muted">{{ getVisibleTableRows(s).length }} of {{ getTableRows(s).length }} visible</span>
+              <button type="button" class="btn-xs-action text-theme"
+                *ngIf="s.config.orientation !== 'Specimens × Parameters'"
+                (click)="populateAllMasterParameters(s)" title="Load all dataset parameters into matrix">
+                Load All
+              </button>
+            </div>
+
+            <div class="row-items-list-container">
+              <div *ngFor="let r of getTableRows(s); let rIdx = index; trackBy: trackByIndex"
+                class="row-item-card d-flex flex-column gap-1"
+                [class.opacity-50]="r.visible === false">
+                <div class="d-flex align-items-center justify-content-between gap-1">
+                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
+                    <span class="row-index-badge">{{ rIdx + 1 }}</span>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
+                      [title]="r.visible !== false ? 'Hide row' : 'Show row'">
+                      <i class="bi"
+                        [ngClass]="r.visible !== false ? 'bi-eye text-dark' : 'bi-eye-slash text-muted'"></i>
+                    </button>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleRowOrigin(s, rIdx)"
+                      [title]="r.rowOrigin === 'db' ? 'Master Data Linked (Click for Custom Text)' : 'Custom Text (Click to Link Master Data)'">
+                      <i class="bi"
+                        [ngClass]="r.rowOrigin === 'db' ? 'bi-database text-danger' : 'bi-fonts text-secondary'"></i>
+                    </button>
+                    <input type="text" class="form-control row-label-input flex-grow-1" spellcheck="false"
+                      [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
+                      placeholder="Row label...">
+                    <span class="badge bg-light text-dark border font-monospace text-xxs flex-shrink-0"
+                      *ngIf="isRowFormulaDriven(r)"
+                      [title]="'Formula-driven (auto-calculated, read-only): ' + (r.formula || 'Formula')">
+                      ƒx
+                    </span>
+                    <span class="text-xxs text-muted font-monospace flex-shrink-0"
+                      *ngIf="r.unit">{{ r.unit }}</span>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
+                      [disabled]="rIdx === 0" title="Move Up">
+                      <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
+                      [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
+                      [disabled]="getTableRows(s).length <= 1" title="Delete Row">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Inline Master Link Picker -->
+                <div class="d-flex align-items-center gap-1 ps-4" *ngIf="r.rowOrigin === 'db'">
+                  <div class="flex-shrink-0 master-source-mini-select">
+                    <app-custom-select [options]="masterSourceMiniOptions"
+                      [ngModel]="r.dbMasterSource || 'parameter'"
+                      (ngModelChange)="onRowMasterSourceChange(s, rIdx, $event)"
+                      size="xs" [searchable]="false" placeholder="Source">
+                    </app-custom-select>
+                  </div>
+                  <div class="flex-grow-1 min-w-0">
+                    <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                      [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
+                      [placeholder]="'Link ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
+                      [selectedItem]="r.dbMasterId"
+                      (itemSelected)="onRowMasterItemSelected(s, rIdx, $event)">
+                    </app-searchable-dropdown>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add Row from Master Data -->
+            <div class="border-top pt-2 mt-2 mb-2">
+              <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                <label class="form-label compact-label mb-0">Add from Master Data</label>
+                <div class="master-source-mini-select">
+                  <app-custom-select [options]="masterSourceMiniOptions"
+                    [(ngModel)]="selectedUniversalMasterSource"
+                    (ngModelChange)="universalMasterReloadKey = $any(selectedUniversalMasterSource)"
+                    size="xs" [searchable]="false" placeholder="Source">
+                  </app-custom-select>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <div class="flex-grow-1 min-w-0">
+                  <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                    [fetchDataFn]="getMasterFetchFn(selectedUniversalMasterSource)"
+                    [placeholder]="'Search ' + getMasterSourceLabel(selectedUniversalMasterSource) + '...'"
+                    [selectedItem]="selectedUniversalMasterId"
+                    [reloadKey]="universalMasterReloadKey"
+                    (itemSelected)="onUniversalMasterItemPicked($event)">
+                  </app-searchable-dropdown>
+                </div>
+                <button type="button" class="btn-lims btn-lims-save btn-compact flex-shrink-0"
+                  (click)="addMasterRowToSection(s)" [disabled]="!selectedUniversalMasterItem" title="Add Master Row">
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableRow(s)">
+              <i class="bi bi-plus me-1"></i><span>Add Custom Row</span>
+            </button>
+          </div>
+
+          <!-- COLUMNS TAB CONTENT -->
+          <div *ngIf="s.config.activeBindingTab === 'columns'">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="text-xxs text-muted">{{ getVisibleTableColumns(s).length }} of {{ getTableColumns(s).length }} visible</span>
+              <span class="text-xxs text-muted">Role & Input Type</span>
+            </div>
+
+            <div class="row-items-list-container">
+              <div *ngFor="let c of getTableColumns(s); let cIdx = index; trackBy: trackByIndex"
+                class="row-item-card d-flex flex-column gap-1"
+                [class.opacity-50]="c.visible === false">
+                <div class="d-flex align-items-center justify-content-between gap-1">
+                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
+                    <span class="row-index-badge">{{ cIdx + 1 }}</span>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleTableColumnVisibility(s, cIdx)"
+                      [title]="c.visible !== false ? 'Hide column' : 'Show column'">
+                      <i class="bi"
+                        [ngClass]="c.visible !== false ? 'bi-eye text-dark' : 'bi-eye-slash text-muted'"></i>
+                    </button>
+                    <input type="text" class="form-control row-label-input flex-grow-1" [ngModel]="c.label"
+                      (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Column header...">
+                  </div>
+
+                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'up')"
+                      [disabled]="cIdx === 0" title="Move Left/Up">
+                      <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'down')"
+                      [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down">
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <button type="button" class="btn-item-del" (click)="removeTableColumn(s, cIdx)"
+                      [disabled]="getTableColumns(s).length <= 1" title="Delete Column">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Semantic Column Role + Conditional Input Type -->
+                <div class="d-flex align-items-center gap-1 ps-4 flex-wrap">
+                  <div class="flex-grow-1 min-w-0">
+                    <app-custom-select [options]="columnRoleOptions"
+                      [ngModel]="getEffectiveColumnRole(c)"
+                      (ngModelChange)="onColumnRoleChange(s, cIdx, $event)"
+                      size="xs" [searchable]="true" placeholder="Column Role">
+                    </app-custom-select>
+                  </div>
+
+                  <div class="flex-shrink-0 col-input-type-select"
+                    *ngIf="getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data'">
+                    <app-custom-select [options]="cellInputTypeOptions"
+                      [(ngModel)]="c.inputType"
+                      size="xs" [searchable]="false" placeholder="Type">
+                    </app-custom-select>
+                  </div>
+
+                  <input type="number" min="0" max="6"
+                    class="form-control form-control-sm compact-input text-center flex-shrink-0 col-precision-input"
+                    *ngIf="(getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data') && (!c.inputType || c.inputType === 'decimal')"
+                    [(ngModel)]="c.decimalPrecision"
+                    placeholder="2" title="Decimal Places (0-6)">
+
+                  <input type="text"
+                    class="form-control form-control-sm compact-input w-100 mt-1"
+                    *ngIf="(getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data') && c.inputType === 'dropdown'"
+                    [(ngModel)]="c.dropdownOptions"
+                    placeholder="Options (comma sep., e.g. Smooth, Rough, Cracked)">
+
+                  <input type="text"
+                    class="form-control form-control-sm compact-input w-100 mt-1"
+                    *ngIf="getEffectiveColumnRole(c) === 'static_text'"
+                    [(ngModel)]="c.staticValue"
+                    placeholder="Fixed text value...">
+
+                  <div class="flex-shrink-0 master-source-mini-select"
+                    *ngIf="getEffectiveColumnRole(c) === 'master_link'">
+                    <app-custom-select [options]="masterSourceMiniOptions"
+                      [(ngModel)]="c.dbMasterSource"
+                      size="xs" [searchable]="false" placeholder="Master">
+                    </app-custom-select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableColumn(s)">
+              <i class="bi bi-plus me-1"></i><span>Add Column</span>
+            </button>
+          </div>
+
+          <!-- HEADER MERGE TAB CONTENT -->
+          <div *ngIf="s.config.activeBindingTab === 'merge'" class="pt-1">
+            <div class="mb-2">
+              <label class="form-label compact-label">Group Header Title <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm compact-input"
+                [(ngModel)]="ensureHeaderMergeState(s).title"
+                placeholder="e.g. Specimen Observations (S1–S3)">
+            </div>
+
+            <div class="row g-2 mb-2">
+              <div class="col-7">
+                <label class="form-label compact-label">Start Column</label>
+                <app-custom-select [options]="getVisibleColumnsForSection(s)"
+                  [(ngModel)]="ensureHeaderMergeState(s).startCol" valueField="key" labelField="label" size="sm"
+                  [searchable]="true" placeholder="Select Start Column">
+                </app-custom-select>
+              </div>
+              <div class="col-5">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label compact-label mb-0">Colspan</label>
+                  <span class="text-xxs text-muted">max {{ getVisibleColumnsForSection(s).length }}</span>
+                </div>
+                <input type="number" class="form-control form-control-sm compact-input text-center fw-semibold"
+                  [(ngModel)]="ensureHeaderMergeState(s).colspan" min="2"
+                  [max]="getVisibleColumnsForSection(s).length" placeholder="2">
+              </div>
+            </div>
+
+            <div class="merge-preview-container mb-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="merge-preview-title">Covered Columns ({{ getMergedColumnsList(s).length }})</span>
+                <span class="text-xxs text-muted font-monospace">Span {{ ensureHeaderMergeState(s).colspan || 2 }}</span>
+              </div>
+              <div class="d-flex flex-wrap gap-1">
+                <span *ngFor="let col of getMergedColumnsList(s); let cIdx = index" class="merge-chip">
+                  <span class="merge-chip-num">{{ cIdx + 1 }}</span>
+                  <span class="merge-chip-label">{{ col.label }}</span>
+                </span>
+                <span *ngIf="getMergedColumnsList(s).length === 0" class="text-xxs text-muted fst-italic">
+                  No visible columns in selected span
+                </span>
+              </div>
+            </div>
+
+            <div class="form-check form-switch compact-check mb-2">
+              <input class="form-check-input" type="checkbox" id="showChildLabelsSwitchSpecimen"
+                [(ngModel)]="ensureHeaderMergeState(s).showSubLabels">
+              <label class="form-check-label text-xs fw-medium text-dark cursor-pointer"
+                for="showChildLabelsSwitchSpecimen">
+                Show Child Column Labels (Sub-headers)
+              </label>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn-lims btn-lims-save btn-compact flex-grow-1"
+                (click)="applyHeaderMerge(s)">
+                {{ hasMergedHeader(s) ? 'Update Merge' : 'Apply Merge' }}
+              </button>
+              <button type="button" class="btn-lims btn-lims-cancel btn-compact" (click)="resetHeaderMerge(s)"
+                *ngIf="hasMergedHeader(s)">
+                Unmerge
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- GROUP 3: CORNER TECHNICAL ANNOTATIONS & CALLOUTS (Collapsible) -->
         <div class="config-card mb-2">
           <div class="config-card-title d-flex align-items-center justify-content-between collapsible-trigger-bar"
@@ -2534,7 +2891,7 @@
         </div>
         <!-- 3B. Universal Data Binding & Structure Manager Card -->
         <div class="config-card mb-2"
-          *ngIf="s.type !== 'parameter' && (isTableSection(s) || s.type === 'condition' || s.type === 'checklist')">
+          *ngIf="s.type !== 'parameter' && s.type !== 'specimen' && (isTableSection(s) || s.type === 'condition' || s.type === 'checklist')">
           <div class="config-card-title d-flex align-items-center justify-content-between mb-2">
             <span><i class="bi bi-sliders2-vertical me-1.5 text-danger"></i><span>Data Binding & Structure</span></span>
             <div class="d-flex align-items-center gap-1">
@@ -2844,189 +3201,6 @@
             </div>
           </div>
 
-        </div>
-
-        <!-- 5. Specimen Matrix Settings (Type: Specimen) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'specimen'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span class="d-flex align-items-center gap-1.5">
-              <i class="bi bi-grid-3x3 text-danger"></i>
-              <span>Specimen Matrix Settings & Manager</span>
-            </span>
-            <div class="d-flex align-items-center gap-1.5">
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
-                {{ getSpecimenList(s).length }} Specimens
-              </span>
-              <button type="button" class="btn-xs-action text-danger fw-semibold" (click)="toggleOrientation(s)"
-                title="Transpose Matrix Orientation">
-                <i class="bi bi-arrow-repeat me-1.5"></i><span>Transpose</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Matrix Orientation</label>
-              <app-custom-select [options]="selectOptions.orientation" [(ngModel)]="s.config.orientation" size="sm"
-                [searchable]="false" placeholder="Orientation">
-              </app-custom-select>
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Specimen Source</label>
-              <app-custom-select [options]="selectOptions.specimenSource" [(ngModel)]="s.config.specimenSource"
-                size="sm" [searchable]="false" placeholder="Specimen Source">
-              </app-custom-select>
-            </div>
-          </div>
-
-          <!-- Column Header Title Setting (when Transposed) -->
-          <div class="mb-2" *ngIf="s.config.orientation === 'Specimens × Parameters'">
-            <div class="d-flex justify-content-between align-items-center mb-0.5">
-              <label class="form-label compact-label mb-0 fw-semibold text-dark">
-                First Column Header Label
-              </label>
-              <span class="text-xxs text-muted font-monospace">Table Th</span>
-            </div>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text bg-light text-danger"><i class="bi bi-fonts"></i></span>
-              <input type="text" class="form-control form-control-sm compact-input"
-                [(ngModel)]="s.config.specimenColHeader" placeholder="e.g. Specimen ID, Sample ID, Coupon">
-            </div>
-          </div>
-
-          <!-- Quick Specimen Presets -->
-          <div class="mb-2">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <label class="form-label compact-label mb-0">Quick Specimen Presets</label>
-              <span class="text-xxs text-muted font-monospace">Auto-Fill</span>
-            </div>
-            <div class="d-flex flex-wrap gap-1">
-              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 's1-3')" title="S1, S2, S3">
-                S1–S3
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 's1-5')"
-                title="S1, S2, S3, S4, S5">
-                S1–S5
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'specimens')"
-                title="Specimen 1, Specimen 2, Specimen 3">
-                Specimen 1–3
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'samples')"
-                title="Sample A, Sample B, Sample C">
-                Sample A–C
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'trans-long')"
-                title="Transverse (T), Longitudinal (L)">
-                Trans / Long
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'bend')"
-                title="Root Bend, Face Bend, Side Bend">
-                Weld Bend
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applySpecimenPreset(s, 'notches')"
-                title="Notch 1, Notch 2, Notch 3">
-                Charpy Notches
-              </button>
-            </div>
-          </div>
-
-          <!-- Dynamic Specimen Labels List -->
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label compact-label mb-0 fw-semibold text-dark">
-                Editable Specimen Labels
-              </label>
-              <span class="text-xxs text-muted font-monospace">Reorder / Rename</span>
-            </div>
-
-            <div class="location-rows-editor-list">
-              <div *ngFor="let spec of getSpecimenList(s); let spIdx = index; trackBy: trackByIndex"
-                class="location-row-edit-item d-flex align-items-center gap-1.5 mb-1">
-                <span class="location-edit-idx">{{ spIdx + 1 }}</span>
-                <input type="text" class="form-control form-control-sm compact-input flex-grow-1"
-                  [ngModel]="s.config.specimenRows ? s.config.specimenRows[spIdx] : spec"
-                  (ngModelChange)="updateSpecimenRow(s, spIdx, $event)" placeholder="Specimen label...">
-                <div class="btn-group btn-group-sm flex-shrink-0">
-                  <button type="button" class="btn-icon-subtle" (click)="moveSpecimenRow(s, spIdx, 'up')"
-                    [disabled]="spIdx === 0" title="Move Up">
-                    <i class="bi bi-chevron-up"></i>
-                  </button>
-                  <button type="button" class="btn-icon-subtle" (click)="moveSpecimenRow(s, spIdx, 'down')"
-                    [disabled]="spIdx === getSpecimenList(s).length - 1" title="Move Down">
-                    <i class="bi bi-chevron-down"></i>
-                  </button>
-                  <button type="button" class="btn-icon-subtle text-danger" (click)="removeSpecimenRow(s, spIdx)"
-                    [disabled]="getSpecimenList(s).length <= 1" title="Delete Specimen">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Add Specimen Action Button -->
-            <button type="button" class="btn-lims btn-lims-add w-100 py-1 mt-1.5 justify-content-center"
-              (click)="addSpecimenRow(s)">
-              <i class="bi bi-plus-circle me-1.5"></i>Add Specimen
-            </button>
-          </div>
-
-          <!-- Allow Dynamic Runtime Addition Option -->
-          <div class="config-runtime-add-card mb-2">
-            <label class="form-check d-flex align-items-start gap-2 mb-0">
-              <input class="form-check-input flex-shrink-0 mt-0.5" type="checkbox" id="allowRuntimeAddSpec"
-                [(ngModel)]="s.config.allowRuntimeAdd">
-              <div>
-                <span class="fw-semibold text-dark text-xs">Allow Dynamic Runtime Addition</span>
-                <div class="text-xxs text-muted mt-0.5">
-                  Allows technicians to add, delete, or rename specimens on the fly during live test execution.
-                </div>
-              </div>
-            </label>
-          </div>
-
-          <div class="config-checks-grid mb-2 pt-1 border-top">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage">
-              <span class="form-check-label">Show Average</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMinMax">
-              <span class="form-check-label">Show Min / Max</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showRequirement">
-              <span class="form-check-label">Show Requirement</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showIdentity">
-              <span class="form-check-label">Identification Table</span>
-            </label>
-          </div>
-
-          <!-- Specimen Parameter Columns Selector -->
-          <div class="mt-2 pt-2 border-top">
-            <div class="d-flex align-items-center justify-content-between mb-1.5">
-              <span class="fw-bold small text-dark"><i class="bi bi-table me-1 text-danger"></i><span>Specimen
-                  Parameters:</span></span>
-              <div class="d-flex gap-1">
-                <button type="button" class="btn-xs-action" (click)="selectAllSpecimenParams(s)">All</button>
-                <button type="button" class="btn-xs-action text-secondary"
-                  (click)="resetSpecimenParams(s)">Reset</button>
-              </div>
-            </div>
-            <div class="dataset-checks-list">
-              <label *ngFor="let p of currentDataset.parameters; trackBy: trackByField"
-                class="dataset-check-row d-flex align-items-center justify-content-between py-1 border-bottom">
-                <div class="d-flex align-items-center">
-                  <input class="form-check-input my-0 me-2" type="checkbox"
-                    [checked]="isSpecimenParamSelected(s, p.name)" (change)="toggleSpecimenParam(s, p.name)">
-                  <span class="dataset-check-label fw-medium">{{ p.name }}</span>
-                </div>
-                <span class="badge bg-light text-secondary font-monospace">{{ p.unit }}</span>
-              </label>
-            </div>
-          </div>
         </div>
 
         <!-- 6. Environmental Conditions Settings (Type: Condition) -->
@@ -3818,10 +3992,10 @@
                 </div>
               </ng-container>
 
-              <!-- Specimen live entry -->
+              <!-- Specimen live entry (Semantic Columns + Formula Auto-Calc Read-Only) -->
               <ng-container *ngIf="s.type === 'specimen'">
                 <div class="table-responsive">
-                  <table class="table-exec">
+                  <table class="table-exec" [class.table-wide]="getVisibleTableColumns(s).length > 7">
                     <thead>
                       <tr>
                         <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
@@ -3830,44 +4004,45 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
-                        <td class="fw-semibold text-start">{{ r.label }}</td>
-                        <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
-                          <td class="text-center font-monospace">
-                            <!-- 1. STATIC BINDING: Fixed value rendered verbatim -->
-                            <span *ngIf="r.bindingMode === 'static' || c.bindingMode === 'static'"
-                              class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-1.5"
-                              [title]="'Static Blueprint: ' + (r.staticValue || c.staticValue || 'Static')">
-                              <i class="bi bi-pin-angle me-1.5"></i>{{ r.staticValue || c.staticValue || '420' }}
-                            </span>
-
-                            <!-- 2. MANUAL BINDING: Active interactive entry field for technician -->
-                            <ng-container
-                              *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'">
-                              <input type="number" class="form-control form-control-sm text-center entry-input"
-                                placeholder="Enter value"
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex">
+                        <td *ngFor="let c of getVisibleTableColumns(s); let cIdx = index"
+                          [class.text-start]="cIdx === 0" [class.fw-semibold]="cIdx === 0"
+                          [class.text-center]="cIdx > 0">
+                          <ng-container [ngSwitch]="getEffectiveColumnRole(c)">
+                            <ng-container *ngSwitchCase="'row_label'">
+                              <span>{{ r.label }}</span>
+                              <span *ngIf="isRowFormulaDriven(r)"
+                                class="badge bg-light text-dark border font-monospace text-xxs ms-1"
+                                [title]="'Auto-calculated from dependent parameters (Read-Only): ' + (r.formula || 'Formula')">ƒx</span>
+                            </ng-container>
+                            <span *ngSwitchCase="'unit'" class="text-muted font-monospace">{{ r.unit || '—' }}</span>
+                            <span *ngSwitchCase="'spec_requirement'" class="text-muted font-monospace">{{ r.requirement || '≥ 420' }}</span>
+                            <span *ngSwitchCase="'spec_min'" class="text-muted font-monospace">420</span>
+                            <span *ngSwitchCase="'spec_max'" class="text-muted font-monospace">580</span>
+                            <span *ngSwitchCase="'agg_average'" class="fw-bold text-primary font-monospace">Auto</span>
+                            <span *ngSwitchCase="'agg_min'" class="text-muted font-monospace">Auto</span>
+                            <span *ngSwitchCase="'agg_max'" class="text-muted font-monospace">Auto</span>
+                            <span *ngSwitchCase="'uncertainty'" class="text-muted font-monospace">± 2.5%</span>
+                            <span *ngSwitchCase="'nabl_scope'" class="text-muted font-monospace">NABL</span>
+                            <span *ngSwitchCase="'test_method'" class="text-muted">IS 1608</span>
+                            <span *ngSwitchCase="'status_verdict'" class="text-muted">—</span>
+                            <span *ngSwitchCase="'static_text'" class="text-dark font-monospace">{{ c.staticValue || r.staticValue || 'Static' }}</span>
+                            <ng-container *ngSwitchCase="'observation_value'">
+                              <input *ngIf="isRowFormulaDriven(r) || c.isCalculated" type="text"
+                                class="form-control form-control-sm text-center font-monospace bg-light text-primary fw-semibold"
+                                value="Auto-Calc" readonly disabled
+                                title="Formula-driven parameter: auto-calculated (manual entry disabled)">
+                              <input *ngIf="!isRowFormulaDriven(r) && !c.isCalculated" type="number"
+                                class="form-control form-control-sm text-center entry-input"
+                                [placeholder]="c.label || 'Enter'"
                                 [(ngModel)]="previewEntries['spec_' + s.id + '_' + rIdx + '_' + cIdx]">
                             </ng-container>
-
-                            <!-- 3. RUNTIME BINDING: Auto-bound from transaction / test evaluation -->
-                            <ng-container
-                              *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">
-                              <span *ngIf="c.key === 'avg'" class="fw-bold text-primary font-monospace">
-                                {{ previewEntries['spec_' + s.id + '_' + rIdx + '_0'] ? previewEntries['spec_' + s.id +
-                                '_' + rIdx + '_0'] : '428' }}
-                              </span>
-                              <span *ngIf="c.key === 'requirement'" class="text-muted">{{ r.requirement || '≥ 420'
-                                }}</span>
-                              <span *ngIf="c.key === 'unit'" class="text-muted">{{ r.unit || 'MPa' }}</span>
-                              <span *ngIf="c.key !== 'avg' && c.key !== 'requirement' && c.key !== 'unit'">
-                                <input type="number" class="form-control form-control-sm text-center entry-input"
-                                  placeholder="Auto / Live"
-                                  [ngModel]="previewEntries['spec_' + s.id + '_' + rIdx + '_' + cIdx] || (425 + rIdx * 5 + cIdx * 3)"
-                                  (ngModelChange)="previewEntries['spec_' + s.id + '_' + rIdx + '_' + cIdx] = $event">
-                              </span>
-                            </ng-container>
-                          </td>
-                        </ng-container>
+                            <input *ngSwitchDefault type="text"
+                              class="form-control form-control-sm text-center entry-input"
+                              [placeholder]="c.label || 'Enter...'"
+                              [(ngModel)]="previewEntries['spec_' + s.id + '_' + rIdx + '_' + cIdx]">
+                          </ng-container>
+                        </td>
                       </tr>
                     </tbody>
                   </table>

@@ -2056,86 +2056,111 @@
       <!-- Flat Config Body -->
       <div class="config-body" *ngIf="selectedSection as s">
 
-        <!-- 1. Section Identity & Layout Card (Universal — Always at Top) -->
+        <!-- GROUP 1: IDENTITY & LAYOUT (Universal — Always at Top) -->
         <div class="config-card mb-2">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-sliders me-1.5 text-danger"></i><span>Identity & Layout</span></span>
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="d-flex align-items-center gap-1">
+              <i class="bi bi-sliders text-danger"></i>
+              <span>Identity & Layout</span>
+            </span>
             <span class="badge bg-danger-subtle text-danger font-monospace">{{ componentNames[s.type] }}</span>
           </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Section Title</label>
-            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
-              (ngModelChange)="onSectionTitleChange(s)" [disabled]="isViewMode">
-          </div>
-          <div class="d-flex align-items-center justify-content-between bg-light border rounded px-2 py-1 mb-2 text-xxs"
-            title="Auto-generated unique key for QuestPDF & report data mapping (Non-editable)">
-            <span class="text-muted fw-semibold flex-shrink-0"><i class="bi bi-key-fill me-1"></i>Section Key:</span>
-            <span class="font-monospace text-danger text-truncate ms-1">{{ s.config.sectionKey }}</span>
+
+          <!-- Sub-group 1A: Section Identity & Data Source -->
+          <div class="config-subcard mb-2">
+            <div class="config-subcard-header">
+              <span class="config-subcard-title">
+                <i class="bi bi-tag text-danger"></i>
+                <span>Section Identity & Data Source</span>
+              </span>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label compact-label">Section Title</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.title"
+                (ngModelChange)="onSectionTitleChange(s)" [disabled]="isViewMode">
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between bg-light border rounded px-2 py-1 mb-2 text-xxs"
+              title="Auto-generated unique key for QuestPDF & report data mapping (Non-editable)">
+              <span class="text-muted fw-semibold flex-shrink-0"><i class="bi bi-key-fill me-1"></i>Section Key:</span>
+              <span class="font-monospace text-danger text-truncate ms-1">{{ s.config.sectionKey }}</span>
+            </div>
+
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label compact-label mb-0">Data Derivation Mode</label>
+                <span class="text-xxs text-muted">Section Data Source</span>
+              </div>
+              <div class="binding-mode-btn-group">
+                <button type="button" class="binding-source-btn"
+                  [class.active-runtime]="s.config.sectionDataMode !== 'template'"
+                  (click)="setSectionDataMode(s, 'runtime')"
+                  title="Automatically load rows/data at runtime from the Sample's Test Plan">
+                  <i class="bi bi-lightning-charge-fill"></i><span>Runtime Auto-Load</span>
+                </button>
+                <button type="button" class="binding-source-btn"
+                  [class.active-static]="s.config.sectionDataMode === 'template'"
+                  (click)="setSectionDataMode(s, 'template')"
+                  title="Render the exact rows and fields configured in this template">
+                  <i class="bi bi-file-earmark-ruled-fill"></i><span>Template Configured</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- Global Data Derivation Mode -->
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label compact-label mb-0">Data Derivation Mode</label>
-              <span class="text-xxs text-muted">Section Data Source</span>
+          <!-- Sub-group 1B: Display & Behavior -->
+          <div class="config-subcard mb-0">
+            <div class="config-subcard-header">
+              <span class="config-subcard-title">
+                <i class="bi bi-layout-wtf text-danger"></i>
+                <span>Display & Behavior</span>
+              </span>
             </div>
-            <div class="binding-mode-btn-group">
-              <button type="button" class="binding-source-btn"
-                [class.active-runtime]="s.config.sectionDataMode !== 'template'"
-                (click)="setSectionDataMode(s, 'runtime')"
-                title="Automatically load rows/data at runtime from the Sample's Test Plan">
-                <i class="bi bi-lightning-charge-fill"></i><span>Runtime Auto-Load</span>
-              </button>
-              <button type="button" class="binding-source-btn"
-                [class.active-static]="s.config.sectionDataMode === 'template'"
-                (click)="setSectionDataMode(s, 'template')"
-                title="Render the exact rows and fields configured in this template">
-                <i class="bi bi-file-earmark-ruled-fill"></i><span>Template Configured</span>
-              </button>
-            </div>
-          </div>
 
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Width</label>
-              <app-custom-select [options]="selectOptions.width" [(ngModel)]="s.config.width" size="sm"
-                [searchable]="false" placeholder="Width">
-              </app-custom-select>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label compact-label">Width</label>
+                <app-custom-select [options]="selectOptions.width" [(ngModel)]="s.config.width" size="sm"
+                  [searchable]="false" placeholder="Width">
+                </app-custom-select>
+              </div>
+              <div class="col-6">
+                <label class="form-label compact-label">Visibility</label>
+                <app-custom-select [options]="selectOptions.visibility" [(ngModel)]="s.config.visibility" size="sm"
+                  [searchable]="false" placeholder="Visibility">
+                </app-custom-select>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Visibility</label>
-              <app-custom-select [options]="selectOptions.visibility" [(ngModel)]="s.config.visibility" size="sm"
-                [searchable]="false" placeholder="Visibility">
-              </app-custom-select>
+
+            <div class="config-checks-grid">
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enabled">
+                <span class="form-check-label">Enable Section</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.reportable">
+                <span class="form-check-label">Reportable (PDF)</span>
+              </label>
+              <label class="form-check compact-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.runtimeAdjust">
+                <span class="form-check-label">Allow Runtime Adjust</span>
+              </label>
             </div>
-          </div>
-          <div class="config-checks-grid">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enabled">
-              <span class="form-check-label">Enable Section</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.reportable">
-              <span class="form-check-label">Reportable (PDF)</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.runtimeAdjust">
-              <span class="form-check-label">Allow Runtime Adjust</span>
-            </label>
           </div>
         </div>
 
-        <!-- 2. OPTIMIZED PARAMETER CONFIGURATION (HERO CARD FOR PARAMETER SECTION) -->
+        <!-- GROUP 2: PARAMETER TABLE CONFIGURATION -->
         <div class="config-card mb-2" *ngIf="s.type === 'parameter'">
-          <div class="config-card-title d-flex align-items-center justify-content-between gap-1">
-            <span class="d-flex align-items-center gap-1.5 min-w-0">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="d-flex align-items-center gap-1 min-w-0">
               <i class="bi bi-table text-danger flex-shrink-0"></i>
-              <span class="text-truncate">Parameter Configuration</span>
+              <span class="text-truncate">Parameter Table Configuration</span>
             </span>
             <div class="d-flex align-items-center gap-1 flex-shrink-0">
               <span class="badge font-monospace text-xxs"
                 [ngClass]="s.config.sectionDataMode === 'template' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-primary-subtle text-primary'">
-                {{ s.config.sectionDataMode === 'template' ? 'Template Mode' : 'Runtime Auto' }}
+                {{ s.config.sectionDataMode === 'template' ? 'Template' : 'Runtime Auto' }}
               </span>
               <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
                 {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
@@ -2143,9 +2168,9 @@
             </div>
           </div>
 
-          <!-- Subcard A: Multi-Specimen Columns (S1, S2, S3...) -->
-          <div class="config-subcard">
-            <div class="d-flex align-items-center justify-content-between">
+          <!-- Sub-group 2A: Multi-Specimen Layout -->
+          <div class="config-subcard mb-2">
+            <div class="d-flex align-items-center justify-content-between gap-2">
               <label class="form-check compact-check mb-0">
                 <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.enableMultiSpecimen"
                   (ngModelChange)="onParameterMultiSpecimenChange(s)">
@@ -2156,7 +2181,7 @@
                 {{ getParameterSpecimenLabels(s).length }} Specs
               </span>
             </div>
-            <div class="row g-1.5 mt-1" *ngIf="s.config.enableMultiSpecimen">
+            <div class="row g-2 mt-1" *ngIf="s.config.enableMultiSpecimen">
               <div class="col-4">
                 <label class="form-label compact-label">Count</label>
                 <input type="number" min="2" max="10" class="form-control form-control-sm compact-input"
@@ -2185,57 +2210,55 @@
             </div>
           </div>
 
-          <!-- Subcard B: Table Rows, Semantic Columns & Header Merge -->
+          <!-- Sub-group 2B: Table Structure (Rows, Semantic Columns & Header Merge) -->
           <div class="config-subcard mb-0">
             <div class="config-subcard-header">
               <span class="config-subcard-title">
                 <i class="bi bi-sliders2-vertical text-danger"></i>
-                <span>Rows, Semantic Columns & Merge</span>
+                <span>Table Structure</span>
               </span>
               <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
                 {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
               </span>
             </div>
 
-            <!-- Sub-Tab Switcher: Rows vs Columns vs Header Merging -->
+            <!-- Sub-Tab Switcher: Rows vs Columns vs Header Merge -->
             <div class="binding-tab-header d-flex border-bottom mb-2">
               <button type="button" class="binding-tab-btn"
                 [class.active]="s.config.activeBindingTab === 'rows' || !s.config.activeBindingTab"
                 (click)="s.config.activeBindingTab = 'rows'">
-                <i class="bi bi-list-task me-1.5"></i>Rows ({{ getTableRows(s).length }})
+                <i class="bi bi-list-task me-1"></i>Rows ({{ getTableRows(s).length }})
               </button>
               <button type="button" class="binding-tab-btn"
                 [class.active]="s.config.activeBindingTab === 'columns'"
                 (click)="s.config.activeBindingTab = 'columns'">
-                <i class="bi bi-layout-three-columns me-1.5"></i>Columns ({{ getTableColumns(s).length }})
+                <i class="bi bi-layout-three-columns me-1"></i>Columns ({{ getTableColumns(s).length }})
               </button>
               <button type="button" class="binding-tab-btn"
                 [class.active]="s.config.activeBindingTab === 'merge'"
                 (click)="s.config.activeBindingTab = 'merge'">
-                <i class="bi bi-intersect me-1.5"></i>Header Merge
+                <i class="bi bi-intersect me-1"></i>Merge
                 <span class="badge ms-1 font-monospace text-xxs"
                   [ngClass]="hasMergedHeader(s) ? 'bg-success text-white' : 'bg-secondary-subtle text-secondary'">
-                  {{ hasMergedHeader(s) ? 'Active' : 'Off' }}
+                  {{ hasMergedHeader(s) ? 'On' : 'Off' }}
                 </span>
               </button>
             </div>
 
             <!-- ROWS TAB CONTENT -->
             <div *ngIf="s.config.activeBindingTab === 'rows' || !s.config.activeBindingTab">
-              <div class="alert alert-info py-1 px-2 mb-1.5 text-xxs d-flex align-items-start gap-1.5"
+              <div class="alert alert-info py-1 px-2 mb-2 text-xxs d-flex align-items-start gap-2"
                 *ngIf="s.config.sectionDataMode !== 'template'">
-                <i class="bi bi-lightning-charge-fill text-primary flex-shrink-0 mt-0.5"></i>
-                <span><strong>Runtime Auto-Load:</strong> Test parameters load automatically from the Sample's Test Plan. Rows below serve as preview / optional extra rows.</span>
+                <i class="bi bi-lightning-charge-fill text-primary flex-shrink-0"></i>
+                <span><strong>Runtime Auto-Load:</strong> Parameters load automatically from the Sample's Test Plan. Rows below act as preview or optional custom rows.</span>
               </div>
 
-              <div class="d-flex align-items-center justify-content-between mb-1.5">
+              <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="text-xxs text-muted">{{ getVisibleTableRows(s).length }} of {{ getTableRows(s).length }} rows visible</span>
-                <div class="d-flex align-items-center gap-1.5">
-                  <button type="button" class="btn-xs-action text-theme"
-                    (click)="populateAllMasterParameters(s)" title="Load all dataset parameters into table">
-                    <i class="bi bi-arrow-down-circle"></i><span>Load All</span>
-                  </button>
-                </div>
+                <button type="button" class="btn-xs-action text-theme"
+                  (click)="populateAllMasterParameters(s)" title="Load all dataset parameters into table">
+                  <i class="bi bi-arrow-down-circle"></i><span>Load All</span>
+                </button>
               </div>
 
               <div class="row-items-list-container">
@@ -2257,38 +2280,17 @@
                       </button>
                       <input type="text" class="form-control row-label-input flex-grow-1" spellcheck="false"
                         [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
-                        placeholder="Custom row label...">
-                      <span class="badge bg-indigo-subtle text-indigo font-monospace text-xxs flex-shrink-0"
+                        placeholder="Row / parameter label...">
+                      <span class="badge bg-indigo-subtle text-indigo border border-indigo-subtle font-monospace text-xxs flex-shrink-0"
                         *ngIf="isRowFormulaDriven(r)"
                         [title]="'Formula-driven (auto-calculated, read-only): ' + (r.formula || 'Formula')">
-                        <i class="bi bi-calculator me-1"></i>ƒx
+                        <i class="bi bi-lock-fill me-1"></i>ƒx Auto
                       </span>
                       <span class="badge bg-light text-secondary font-monospace text-xxs flex-shrink-0"
                         *ngIf="r.unit">{{ r.unit }}</span>
                     </div>
 
                     <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                      <!-- Formula-driven rows are strictly Auto-Calc (read-only) -->
-                      <span *ngIf="isRowFormulaDriven(r)"
-                        class="badge bg-indigo-subtle text-indigo border border-indigo-subtle font-monospace text-xxs px-1.5 py-1"
-                        title="Formula-driven parameter: auto-calculated from dependent parameters (manual entry disabled)">
-                        <i class="bi bi-lock-fill me-1"></i>Auto-Calc
-                      </span>
-
-                      <!-- Non-formula rows allow Runtime / Static / Manual -->
-                      <div class="d-inline-flex binding-select-wrap" *ngIf="!isRowFormulaDriven(r)">
-                        <app-custom-select [options]="bindingModeSelectOptions"
-                          [ngModel]="r.bindingMode || 'runtime'"
-                          (ngModelChange)="updateTableRowBindingMode(s, rIdx, $event)" size="xs" variant="pill"
-                          [searchable]="false" panelWidth="130px">
-                        </app-custom-select>
-                      </div>
-
-                      <input type="text" class="form-control form-control-xs static-val-input"
-                        *ngIf="!isRowFormulaDriven(r) && r.bindingMode === 'static'"
-                        [ngModel]="r.staticValue" (ngModelChange)="updateTableRowStaticValue(s, rIdx, $event)"
-                        placeholder="Fixed val" title="Fixed Static Value">
-
                       <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
                         [disabled]="rIdx === 0" title="Move Up">
                         <i class="bi bi-chevron-up"></i>
@@ -2326,7 +2328,7 @@
               </div>
 
               <!-- Add Parameter from Database (Live ParameterMaster Search) -->
-              <div class="p-1.5 border rounded bg-light-subtle mb-2">
+              <div class="p-2 border rounded bg-light-subtle mb-2">
                 <div class="d-flex align-items-center justify-content-between mb-1">
                   <span class="text-xxs fw-semibold text-secondary">
                     <i class="bi bi-database me-1 text-danger"></i>Add Parameter from Master DB
@@ -2352,17 +2354,17 @@
                 </div>
               </div>
 
-              <!-- Add Blank Row Button -->
+              <!-- Add Custom Text Row Button -->
               <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableRow(s)">
-                <i class="bi bi-plus-circle me-1.5"></i><span>Add Custom Text Row</span>
+                <i class="bi bi-plus-circle me-1"></i><span>Add Custom Text Row</span>
               </button>
             </div>
 
-            <!-- COLUMNS TAB CONTENT (Semantic Column Roles + Input Types) -->
+            <!-- COLUMNS TAB CONTENT (Grouped Semantic Column Roles + Input Types) -->
             <div *ngIf="s.config.activeBindingTab === 'columns'">
-              <div class="d-flex align-items-center justify-content-between mb-1">
+              <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="text-xxs text-muted">{{ getVisibleTableColumns(s).length }} of {{ getTableColumns(s).length }} columns visible</span>
-                <span class="text-xxs text-muted">Assign Role Flag per column</span>
+                <span class="text-xxs text-muted">Role Flag + Input Type</span>
               </div>
 
               <div class="row-items-list-container">
@@ -2398,15 +2400,17 @@
                     </div>
                   </div>
 
-                  <!-- Row 2: Semantic Column Role + Conditional Input Type / Static / Master Source -->
+                  <!-- Row 2: Grouped Semantic Column Role + Conditional Input Type / Static / Master Source -->
                   <div class="d-flex align-items-center gap-1 ps-4 flex-wrap">
                     <select class="form-select form-select-sm compact-input flex-grow-1"
                       [ngModel]="getEffectiveColumnRole(c)"
                       (ngModelChange)="onColumnRoleChange(s, cIdx, $event)"
                       title="Semantic Column Role (determines live Result Entry binding)">
-                      <option *ngFor="let roleOpt of columnRoleOptions" [value]="roleOpt.value">
-                        {{ roleOpt.label }}
-                      </option>
+                      <optgroup *ngFor="let grp of columnRoleGroups" [label]="grp.group">
+                        <option *ngFor="let roleOpt of grp.options" [value]="roleOpt.value">
+                          {{ roleOpt.label }}
+                        </option>
+                      </optgroup>
                     </select>
 
                     <!-- Input Type Selector (for Observation Value & Custom Data columns) -->
@@ -2455,7 +2459,7 @@
 
               <!-- Add Column Button -->
               <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableColumn(s)">
-                <i class="bi bi-plus-circle me-1.5"></i><span>Add New Column</span>
+                <i class="bi bi-plus-circle me-1"></i><span>Add New Column</span>
               </button>
             </div>
 
@@ -2477,7 +2481,7 @@
                   </app-custom-select>
                 </div>
                 <div class="col-5">
-                  <div class="d-flex justify-content-between align-items-center mb-0.5">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
                     <label class="form-label compact-label mb-0">Colspan</label>
                     <span class="text-xxs text-muted">max {{ getVisibleColumnsForSection(s).length }}</span>
                   </div>
@@ -2516,7 +2520,7 @@
                 </label>
               </div>
 
-              <div class="d-flex align-items-center gap-1.5">
+              <div class="d-flex align-items-center gap-2">
                 <button type="button" class="btn-lims btn-lims-save btn-compact flex-grow-1"
                   (click)="applyHeaderMerge(s)"
                   [title]="hasMergedHeader(s) ? 'Update column header grouping' : 'Apply column header grouping'">
@@ -2533,15 +2537,15 @@
           </div>
         </div>
 
-        <!-- 3. Corner Technical Annotations & Callouts Card (Collapsible) -->
+        <!-- GROUP 3: CORNER TECHNICAL ANNOTATIONS & CALLOUTS (Collapsible) -->
         <div class="config-card mb-2">
           <div class="config-card-title d-flex align-items-center justify-content-between collapsible-trigger-bar"
             (click)="toggleAnnotations()" title="Click to expand/collapse corner annotations">
-            <span class="d-flex align-items-center gap-1.5">
+            <span class="d-flex align-items-center gap-1">
               <i class="bi bi-chat-square-text text-danger"></i>
               <span>Corner Annotations</span>
             </span>
-            <div class="d-flex align-items-center gap-1.5">
+            <div class="d-flex align-items-center gap-1">
               <span class="badge font-monospace text-xxs"
                 [ngClass]="getAnnotationsCount(s) > 0 ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-secondary-subtle text-secondary'">
                 {{ getAnnotationsCount(s) > 0 ? getAnnotationsCount(s) + ' active' : 'None' }}
@@ -2552,13 +2556,13 @@
           </div>
 
           <div *ngIf="isAnnotationsExpanded || getAnnotationsCount(s) > 0" class="pt-1">
-            <div class="text-muted text-xxs mb-1.5">
+            <div class="text-muted text-xxs mb-2">
               Place runtime caveats, method references, or notes directly at the 4 corners of this section:
             </div>
             <div class="corner-annotation-matrix p-2 bg-light border rounded mb-1">
               <div class="row g-2 mb-2">
                 <div class="col-6">
-                  <label class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1"
+                  <label class="form-label compact-label text-xxs mb-1 d-flex align-items-center gap-1"
                     title="Top-Left Note">
                     <i class="bi bi-arrow-up-left text-danger"></i><span>Top-Left</span>
                   </label>
@@ -2567,7 +2571,7 @@
                 </div>
                 <div class="col-6">
                   <label
-                    class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center justify-content-end gap-1"
+                    class="form-label compact-label text-xxs mb-1 d-flex align-items-center justify-content-end gap-1"
                     title="Top-Right Callout">
                     <span>Top-Right</span><i class="bi bi-arrow-up-right text-danger"></i>
                   </label>
@@ -2577,7 +2581,7 @@
               </div>
               <div class="row g-2">
                 <div class="col-6">
-                  <label class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center gap-1"
+                  <label class="form-label compact-label text-xxs mb-1 d-flex align-items-center gap-1"
                     title="Bottom-Left Note">
                     <i class="bi bi-arrow-down-left text-danger"></i><span>Bottom-Left</span>
                   </label>
@@ -2586,7 +2590,7 @@
                 </div>
                 <div class="col-6">
                   <label
-                    class="form-label compact-label text-xxs mb-0.5 d-flex align-items-center justify-content-end gap-1"
+                    class="form-label compact-label text-xxs mb-1 d-flex align-items-center justify-content-end gap-1"
                     title="Bottom-Right Caveat">
                     <span>Bottom-Right</span><i class="bi bi-arrow-down-right text-danger"></i>
                   </label>

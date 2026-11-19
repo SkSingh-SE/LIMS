@@ -448,7 +448,8 @@ export interface LayoutRowItem {
   nature?: 'data' | 'summary';
   rowOrigin?: 'manual' | 'pattern' | 'db';
   dbMasterSource?: DbMasterSourceType;
-  dbMasterId?: number | string;
+  dbMasterId?: number | string | null;
+  dbMasterName?: string;
   patternConfig?: { prefix: string; count: number; start: number; step: number };
   summaryFn?: 'avg' | 'sum' | 'min' | 'max' | 'range' | 'std_dev' | 'count' | 'formula';
   summaryScope?: 'all' | 'custom';
@@ -934,6 +935,57 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   getColumnRoleLabel(role: ColumnRoleType): string {
     return this.columnRoleOptions.find(o => o.value === role)?.label || role;
   }
+
+  readonly columnRoleGroups: { group: string; options: { value: ColumnRoleType; label: string }[] }[] = [
+    {
+      group: 'Identity & Metadata',
+      options: [
+        { value: 'row_label', label: 'Row Label / Parameter Name' },
+        { value: 'unit', label: 'Unit (MPa, %, mm)' },
+        { value: 'test_method', label: 'Test Method / Standard' }
+      ]
+    },
+    {
+      group: 'Specification & Limits',
+      options: [
+        { value: 'spec_requirement', label: 'Grade Requirement (Spec Line)' },
+        { value: 'spec_min', label: 'Spec Min Limit' },
+        { value: 'spec_max', label: 'Spec Max Limit' }
+      ]
+    },
+    {
+      group: 'Measurement & Entry',
+      options: [
+        { value: 'observation_value', label: 'Observation / Result Value' }
+      ]
+    },
+    {
+      group: 'Statistics & Verdict',
+      options: [
+        { value: 'agg_average', label: 'Auto Average (Mean)' },
+        { value: 'agg_min', label: 'Auto Min' },
+        { value: 'agg_max', label: 'Auto Max' },
+        { value: 'status_verdict', label: 'Pass / Fail Verdict' }
+      ]
+    },
+    {
+      group: 'NABL & Compliance',
+      options: [
+        { value: 'uncertainty', label: 'Uncertainty (± U)' },
+        { value: 'nabl_scope', label: 'NABL Scope Badge' },
+        { value: 'detection_limit', label: 'Detection Limit (DL)' },
+        { value: 'reportable_toggle', label: 'Reportable Toggle' }
+      ]
+    },
+    {
+      group: 'Custom & Static',
+      options: [
+        { value: 'custom_data', label: 'Custom Input / Remarks' },
+        { value: 'master_link', label: 'Master Data Link' },
+        { value: 'static_text', label: 'Static Fixed Text' }
+      ]
+    }
+  ];
 
   getFetchFnForSource = (source: string = 'parameter') => {
     switch (source) {

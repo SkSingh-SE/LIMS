@@ -1207,15 +1207,38 @@ select.form-select:focus {
   padding: 5px 8px;
   text-align: center;
   vertical-align: middle;
+  overflow: hidden;
 }
 
 .table-exec th {
+  position: relative;
   background: #f8fafc;
   font-weight: 700;
   color: #334155;
   font-size: 0.7rem;
   border-bottom: 2px solid #cbd5e1;
   white-space: nowrap;
+}
+
+.table-exec th .btn-cell-row-del {
+  display: none;
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  z-index: 2;
+}
+
+.table-exec th:hover .btn-cell-row-del {
+  display: inline-flex;
+}
+
+.table-exec th:first-child,
+.table-exec th:first-child .th-inline-input,
+.table-exec th:first-child .specimen-th-input {
+  text-align: left !important;
 }
 
 .table-merged-group-title {
@@ -2983,11 +3006,12 @@ th:hover .header-binding-icon-runtime {
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  width: auto;
+  width: 100%;
   max-width: 100%;
-  min-width: 60px;
+  min-width: 0;
   flex: 1 1 auto;
   text-align: inherit;
+  text-overflow: ellipsis;
   transition: all 0.15s ease;
 }
 

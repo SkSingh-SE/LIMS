@@ -415,9 +415,6 @@
           </button>
         </div>
 
-        <span class="badge badge-mapped" *ngIf="currentLabTestName && currentLabTestName !== 'No Test Selected'" title="Mapped to: {{ currentLabTestName }}">
-          <i class="bi bi-link-45deg me-1"></i><span>{{ currentLabTestName }}</span>
-        </span>
         <div class="zoom-controls ms-auto d-flex align-items-center gap-1">
           <button type="button" class="btn-zoom" (click)="zoom(-1)" title="Zoom out">−</button>
           <span class="zoom-text">{{ (zoomLevel * 100).toFixed(0) }}%</span>
@@ -637,10 +634,10 @@
                                 </span>
 
                                 <!-- Manual Entry Mode -->
-                                <span *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'"
-                                  class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">
-                                  {{ demoMode ? 'Manual Entry' : '—' }}
-                                </span>
+                                <ng-container *ngIf="(r.bindingMode === 'manual' || c.bindingMode === 'manual') && r.bindingMode !== 'static' && c.bindingMode !== 'static'">
+                                  <span *ngIf="demoMode" class="badge bg-success-subtle text-success border border-success-subtle font-monospace px-1.5">Manual Entry</span>
+                                  <span *ngIf="!demoMode" class="text-muted">—</span>
+                                </ng-container>
 
                                 <!-- Runtime Mode -->
                                 <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static' && r.bindingMode !== 'manual' && c.bindingMode !== 'manual'">

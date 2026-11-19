@@ -3717,7 +3717,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
               this.sections = config.sections;
             }
             if (config.archetypeKey) {
-              this.selectedArchetypeKey = config.archetypeKey;
+              this.selectedArchetypeKey = (this.selectedTestKey === 'cu_spectro' && config.archetypeKey === 'oes') ? 'cu_spectro' : config.archetypeKey;
             }
             const key = this.selectedTestKey;
             if (config.customConditions) this.customConditionsMap[key] = config.customConditions;
@@ -3815,7 +3815,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
               this.sections = config.sections;
             }
             if (config.archetypeKey) {
-              this.selectedArchetypeKey = config.archetypeKey;
+              this.selectedArchetypeKey = (this.selectedTestKey === 'cu_spectro' && config.archetypeKey === 'oes') ? 'cu_spectro' : config.archetypeKey;
             }
             const key = this.selectedTestKey;
             if (config.customConditions) this.customConditionsMap[key] = config.customConditions;
@@ -3899,45 +3899,79 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
                    this.selectedArchetypeKey === 'oes' ||
                    this.selectedArchetypeKey === 'cu_spectro';
 
+    const isCu = (this.currentLabTestName || '').toLowerCase().includes('cu-') ||
+                 (this.leafNode || '').toLowerCase().includes('cu-') ||
+                 (this.layoutName || '').toLowerCase().includes('cu-') ||
+                 this.selectedArchetypeKey === 'cu_spectro' ||
+                 this.selectedTestKey === 'cu_spectro';
+
+    if (isCu) {
+      this.selectedArchetypeKey = 'cu_spectro';
+      this.selectedTestKey = 'cu_spectro';
+    }
+
+    const cuRows: LayoutRowItem[] = [
+      { key: 'param_cu', label: 'Copper (Cu)', unit: '%', requirement: '≥ 99.50', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_sn', label: 'Tin (Sn)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_pb', label: 'Lead (Pb)', unit: '%', requirement: '≤ 0.02', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_zn', label: 'Zinc (Zn)', unit: '%', requirement: '≤ 0.10', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_fe', label: 'Iron (Fe)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.015', bindingMode: 'runtime', visible: true, removable: true }
+    ];
+
+    const oesRows: LayoutRowItem[] = [
+      { key: 'param_c', label: 'Carbon (C)', unit: '%', requirement: '0.05–0.25', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_si', label: 'Silicon (Si)', unit: '%', requirement: '0.15–0.35', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_mn', label: 'Manganese (Mn)', unit: '%', requirement: '0.60–1.20', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_s', label: 'Sulphur (S)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_cr', label: 'Chromium (Cr)', unit: '%', requirement: '16.0–18.0', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '10.0–14.0', bindingMode: 'runtime', visible: true, removable: true },
+      { key: 'param_mo', label: 'Molybdenum (Mo)', unit: '%', requirement: '2.0–3.0', bindingMode: 'runtime', visible: true, removable: true }
+    ];
+
     this.sections.forEach(s => {
       if (s.title) s.title = cleanText(s.title);
       if ((s as any).subtitle) (s as any).subtitle = cleanText((s as any).subtitle);
+
+      // Clean up legacy 8-column default overcrowding on parameter tables
+      if (s.type === 'parameter' && s.config?.columns) {
+        if (s.config.columns.method === true && s.config.columns.remarks === true && s.config.columns.uncertainty === true) {
+          s.config.columns.method = false;
+          s.config.columns.remarks = false;
+          s.config.columns.uncertainty = false;
+          delete s.config.tableColumns;
+        }
+      }
 
       // Cleanse misaligned mechanical parameters/conditions for chemical & spectro tests
       if (isChem) {
         if (s.type === 'condition' && s.config && Array.isArray(s.config.fields)) {
           if (s.config.fields.some((f: string) => f.includes('Speed') || f.includes('Load Rate'))) {
-            s.title = 'Test Conditions & Environment';
+            s.title = 'Spectrometer Environmental & Operating Conditions';
             s.config.fields = ['Spectrometer Instrument ID', 'Argon Gas Purity (99.999%)', 'Flush Time (5s)', 'Ambient Temp (23 ± 2 °C)'];
           }
         }
-        if (s.type === 'parameter' && s.config) {
+        if (s.type === 'specimen' && s.config) {
+          s.config.showIdentity = false;
+        }
+        if (isCu && s.type === 'formula' && s.config && (s.title || '').toLowerCase().includes('carbon equivalent')) {
+          s.title = 'Total Impurities & Remainder Copper Balance';
+          s.config.inputs = 'Sn, Pb, Zn, Fe, Ni, P';
+          s.config.resultLabel = 'Total Impurities = Σ(Sn + Pb + Zn + Fe + Ni + P) ≤ 0.50%';
+        }
+        if ((s.type === 'parameter' || s.type === 'specimen' || s.type === 'rule') && s.config) {
           const rows = s.config.tableRows;
-          if (rows && Array.isArray(rows) && rows.some((r: any) => (r.label || '').toLowerCase().includes('yield') || (r.label || '').toLowerCase().includes('tensile') || (r.label || '').toLowerCase().includes('elongation'))) {
-            const isCu = (this.currentLabTestName || '').toLowerCase().includes('cu') || (this.leafNode || '').toLowerCase().includes('cu') || (this.layoutName || '').toLowerCase().includes('cu') || this.selectedArchetypeKey === 'cu_spectro';
+          const hasMechRows = rows && Array.isArray(rows) && rows.some((r: any) => (r.label || '').toLowerCase().includes('yield') || (r.label || '').toLowerCase().includes('tensile') || (r.label || '').toLowerCase().includes('elongation'));
+          const hasSteelRowsOnCu = isCu && rows && Array.isArray(rows) && rows.some((r: any) => (r.label || '').toLowerCase().includes('carbon (c)') || (r.label || '').toLowerCase().includes('silicon'));
+          if (!rows || hasMechRows || hasSteelRowsOnCu) {
             if (isCu) {
-              s.title = 'Copper Base Chemical Composition (% by Weight)';
-              s.config.tableRows = [
-                { key: 'param_cu', label: 'Copper (Cu)', unit: '%', requirement: '≥ 99.50', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_sn', label: 'Tin (Sn)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_pb', label: 'Lead (Pb)', unit: '%', requirement: '≤ 0.02', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_zn', label: 'Zinc (Zn)', unit: '%', requirement: '≤ 0.10', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_fe', label: 'Iron (Fe)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '≤ 0.05', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.015', bindingMode: 'runtime', visible: true, removable: true }
-              ];
-            } else {
-              s.title = 'Chemical Composition (% by Weight)';
-              s.config.tableRows = [
-                { key: 'param_c', label: 'Carbon (C)', unit: '%', requirement: '0.05–0.25', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_si', label: 'Silicon (Si)', unit: '%', requirement: '0.15–0.35', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_mn', label: 'Manganese (Mn)', unit: '%', requirement: '0.60–1.20', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_p', label: 'Phosphorus (P)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_s', label: 'Sulphur (S)', unit: '%', requirement: '≤ 0.035', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_cr', label: 'Chromium (Cr)', unit: '%', requirement: '16.0–18.0', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_ni', label: 'Nickel (Ni)', unit: '%', requirement: '10.0–14.0', bindingMode: 'runtime', visible: true, removable: true },
-                { key: 'param_mo', label: 'Molybdenum (Mo)', unit: '%', requirement: '2.0–3.0', bindingMode: 'runtime', visible: true, removable: true }
-              ];
+              if (s.type === 'parameter') s.title = 'Copper Base Chemical Composition (% by Weight)';
+              s.config.tableRows = JSON.parse(JSON.stringify(s.type === 'rule' ? cuRows.slice(0, 3) : cuRows));
+            } else if (hasMechRows) {
+              if (s.type === 'parameter') s.title = 'Chemical Composition (% by Weight)';
+              s.config.tableRows = JSON.parse(JSON.stringify(s.type === 'rule' ? oesRows.slice(0, 3) : oesRows));
             }
           }
         }
@@ -3953,7 +3987,10 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         }
         if (s.config.tableColumns && Array.isArray(s.config.tableColumns)) {
           s.config.tableColumns.forEach((c: any) => {
-            if (c.label) c.label = cleanText(c.label);
+            if (c.label) {
+              c.label = cleanText(c.label);
+              if (c.label === 'Specified Requirement') c.label = 'Requirement';
+            }
           });
         }
         if (s.config.specimenRows && Array.isArray(s.config.specimenRows)) {
@@ -6292,17 +6329,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const cols: LayoutColumnItem[] = [];
 
     if (sec.type === 'parameter') {
-      cols.push({ key: 'param', label: 'Parameter Description', bindingMode: 'runtime', visible: true, width: '42%' });
+      cols.push({ key: 'param', label: 'Parameter Description', bindingMode: 'runtime', visible: true, width: '38%' });
       if (sec.config.columns?.unit !== false) cols.push({ key: 'unit', label: 'Unit', bindingMode: 'runtime', visible: true, width: '10%' });
-      if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Specified Requirement', bindingMode: 'runtime', visible: true, width: '22%' });
+      if (sec.config.columns?.requirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true, width: '20%' });
       cols.push({
         key: 'result',
         label: sec.config.resultMode === 'Calculated Result only' ? 'Calculated Result' : 'Observed Result',
         bindingMode: defaultMode,
         visible: true,
-        width: '16%'
+        width: '20%'
       });
-      if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '10%' });
+      if (sec.config.columns?.status !== false) cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '12%' });
       if (sec.config.columns?.method) cols.push({ key: 'method', label: 'Method / Standard', bindingMode: 'runtime', visible: true, width: '12%' });
       if (sec.config.columns?.remarks) cols.push({ key: 'remarks', label: 'Remarks', bindingMode: 'manual', visible: true, width: '12%' });
       if (sec.config.columns?.uncertainty) cols.push({ key: 'uncertainty', label: 'Uncertainty (±)', bindingMode: 'runtime', visible: true, width: '10%' });
@@ -6786,23 +6823,44 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   getColumnWidth(sec: ExecutionSection, c: any, cIdx: number): string | null {
     const totalCols = this.getVisibleTableColumns(sec).length;
 
-    // For Parameter Tables: ensure the Parameter Description gets at least 38% - 48%
-    if (sec.type === 'parameter' || c?.key === 'param') {
-      if (cIdx === 0 || c?.key === 'param') {
-        if (totalCols <= 4) return '48%';
-        if (totalCols <= 5) return '42%';
-        if (totalCols <= 6) return '36%';
-        return '30%';
+    // For Parameter Tables: use pure percentage widths summing to 100% so Parameter Description never collapses
+    if (sec.type === 'parameter') {
+      if (totalCols === 2) return cIdx === 0 ? '60%' : '40%';
+      if (totalCols === 3) return cIdx === 0 ? '48%' : '26%';
+      if (totalCols === 4) {
+        if (cIdx === 0) return '44%';
+        if (c?.key === 'unit') return '12%';
+        return '22%';
       }
-      if (c?.key === 'unit') return totalCols >= 7 ? '70px' : '8%';
-      if (c?.key === 'requirement') return totalCols >= 7 ? '130px' : '18%';
-      if (c?.key === 'result') return totalCols >= 7 ? '120px' : '16%';
-      if (c?.key === 'status') return totalCols >= 7 ? '75px' : '10%';
-      if (c?.key === 'method') return totalCols >= 7 ? '95px' : '12%';
-      if (c?.key === 'remarks') return totalCols >= 7 ? '90px' : '12%';
-      if (c?.key === 'uncertainty') return totalCols >= 7 ? '85px' : '10%';
-      if (c?.key === 'dl') return totalCols >= 7 ? '75px' : '8%';
-      if (c?.key === 'scope') return totalCols >= 7 ? '75px' : '8%';
+      if (totalCols === 5) {
+        if (cIdx === 0) return '38%';
+        if (c?.key === 'unit') return '10%';
+        if (c?.key === 'requirement') return '20%';
+        if (c?.key === 'result') return '20%';
+        return '12%';
+      }
+      if (totalCols === 6) {
+        if (cIdx === 0) return '34%';
+        if (c?.key === 'unit') return '8%';
+        if (c?.key === 'requirement') return '17%';
+        if (c?.key === 'result') return '15%';
+        if (c?.key === 'status') return '11%';
+        return '15%';
+      }
+      if (cIdx === 0) return '28%';
+      if (c?.key === 'unit') return '7%';
+      const rem = Math.max(1, totalCols - 2);
+      return `${Math.floor(65 / rem)}%`;
+    }
+
+    if (sec.type === 'specimen' && sec.config.orientation !== 'Specimens × Parameters') {
+      if (cIdx === 0) return '24%';
+      if (c?.key === 'unit') return '8%';
+      if (c?.key === 'requirement') return '15%';
+      if (c?.key === 'status') return '10%';
+      const fixedKeys = ['param', 'unit', 'requirement', 'status'];
+      const dynamicCount = Math.max(1, this.getVisibleTableColumns(sec).filter(col => !fixedKeys.includes(col.key)).length);
+      return `${Math.floor(43 / dynamicCount)}%`;
     }
 
     if (c && c.width) {

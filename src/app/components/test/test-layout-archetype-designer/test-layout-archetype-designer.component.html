@@ -2851,6 +2851,488 @@
           </div>
         </div>
 
+        <!-- SHARED REUSABLE TABLE STRUCTURE HUB (Rows | Semantic Columns + Live Master Picker | Header Merge) -->
+        <ng-template #unifiedTableHub let-sec="section" let-showLoadAll="showLoadAll" let-showCols="showCols" let-showMerge="showMerge" let-runtimeHint="runtimeHint">
+          <div class="binding-tab-header d-flex border-bottom mb-2">
+            <button type="button" class="binding-tab-btn"
+              [class.active]="sec.config.activeBindingTab === 'rows' || !sec.config.activeBindingTab"
+              (click)="sec.config.activeBindingTab = 'rows'">
+              Rows ({{ getTableRows(sec).length }})
+            </button>
+            <button type="button" class="binding-tab-btn" *ngIf="showCols !== false"
+              [class.active]="sec.config.activeBindingTab === 'columns'"
+              (click)="sec.config.activeBindingTab = 'columns'">
+              Columns ({{ getTableColumns(sec).length }})
+            </button>
+            <button type="button" class="binding-tab-btn" *ngIf="showCols !== false && showMerge !== false"
+              [class.active]="sec.config.activeBindingTab === 'merge'"
+              (click)="sec.config.activeBindingTab = 'merge'">
+              Header Merge
+              <span class="ms-1 text-xxs" [class.text-success]="hasMergedHeader(sec)" [class.text-muted]="!hasMergedHeader(sec)">
+                ({{ hasMergedHeader(sec) ? 'On' : 'Off' }})
+              </span>
+            </button>
+          </div>
+
+          <!-- ROWS TAB -->
+          <div *ngIf="sec.config.activeBindingTab === 'rows' || !sec.config.activeBindingTab">
+            <div class="text-xxs text-muted mb-2" *ngIf="runtimeHint && sec.config.sectionDataMode !== 'template'">
+              {{ runtimeHint }}
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="text-xxs text-muted">{{ getVisibleTableRows(sec).length }} of {{ getTableRows(sec).length }} visible</span>
+              <button type="button" class="btn-xs-action text-theme" *ngIf="showLoadAll"
+                (click)="populateAllMasterParameters(sec)" title="Load all dataset parameters into table">
+                Load All
+              </button>
+            </div>
+
+            <div class="row-items-list-container">
+              <div *ngFor="let r of getTableRows(sec); let rIdx = index; trackBy: trackByIndex"
+                class="row-item-card d-flex flex-column gap-1"
+                [class.opacity-50]="r.visible === false">
+                <div class="d-flex align-items-center justify-content-between gap-1">
+                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
+                    <span class="row-index-badge">{{ rIdx + 1 }}</span>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(sec, rIdx)"
+                      [title]="r.visible !== false ? 'Hide row' : 'Show row'">
+                      <i class="bi" [ngClass]="r.visible !== false ? 'bi-eye text-dark' : 'bi-eye-slash text-muted'"></i>
+                    </button>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleRowOrigin(sec, rIdx)"
+                      [title]="r.rowOrigin === 'db' ? 'Master Data Linked (Click for Custom Text)' : 'Custom Text (Click to Link Master Data)'">
+                      <i class="bi" [ngClass]="r.rowOrigin === 'db' ? 'bi-database text-danger' : 'bi-fonts text-secondary'"></i>
+                    </button>
+                    <input type="text" class="form-control row-label-input flex-grow-1" spellcheck="false"
+                      [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(sec, rIdx, $event)"
+                      placeholder="Row label...">
+                    <span class="badge bg-light text-dark border font-monospace text-xxs flex-shrink-0"
+                      *ngIf="isRowFormulaDriven(r)"
+                      [title]="'Formula-driven (auto-calculated, read-only): ' + (r.formula || 'Formula')">
+                      ƒx
+                    </span>
+                    <span class="text-xxs text-muted font-monospace flex-shrink-0" *ngIf="r.unit">{{ r.unit }}</span>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(sec, rIdx, 'up')"
+                      [disabled]="rIdx === 0" title="Move Up">
+                      <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(sec, rIdx, 'down')"
+                      [disabled]="rIdx === getTableRows(sec).length - 1" title="Move Down">
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <button type="button" class="btn-item-del" (click)="removeTableRow(sec, rIdx)"
+                      [disabled]="getTableRows(sec).length <= 1" title="Delete Row">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Inline Master Link Picker -->
+                <div class="d-flex align-items-center gap-1 ps-4" *ngIf="r.rowOrigin === 'db'">
+                  <div class="flex-shrink-0 master-source-mini-select">
+                    <app-custom-select [options]="masterSourceMiniOptions"
+                      [ngModel]="r.dbMasterSource || 'parameter'"
+                      (ngModelChange)="onRowMasterSourceChange(sec, rIdx, $event)"
+                      size="xs" [searchable]="false" placeholder="Source">
+                    </app-custom-select>
+                  </div>
+                  <div class="flex-grow-1 min-w-0">
+                    <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                      [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
+                      [placeholder]="'Select ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
+                      [selectedItem]="r.dbMasterId"
+                      [reloadKey]="r.dbMasterSource || 'parameter'"
+                      (itemSelected)="onRowMasterItemSelected(sec, rIdx, $event)">
+                    </app-searchable-dropdown>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add Row from Master Data -->
+            <div class="border-top pt-2 mt-2 mb-2">
+              <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                <label class="form-label compact-label mb-0">Add from Master Data</label>
+                <div class="master-source-mini-select">
+                  <app-custom-select [options]="masterSourceMiniOptions"
+                    [(ngModel)]="selectedUniversalMasterSource"
+                    (ngModelChange)="universalMasterReloadKey = $any(selectedUniversalMasterSource)"
+                    size="xs" [searchable]="false" placeholder="Source">
+                  </app-custom-select>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <div class="flex-grow-1 min-w-0">
+                  <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                    [fetchDataFn]="getMasterFetchFn(selectedUniversalMasterSource)"
+                    [placeholder]="'Search ' + getMasterSourceLabel(selectedUniversalMasterSource) + '...'"
+                    [selectedItem]="selectedUniversalMasterId"
+                    [reloadKey]="universalMasterReloadKey"
+                    (itemSelected)="onUniversalMasterItemPicked($event)">
+                  </app-searchable-dropdown>
+                </div>
+                <button type="button" class="btn-lims btn-lims-save btn-compact flex-shrink-0"
+                  (click)="addMasterRowToSection(sec)" [disabled]="!selectedUniversalMasterItem" title="Add Master Row">
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableRow(sec)">
+              <i class="bi bi-plus me-1"></i><span>Add Custom Row</span>
+            </button>
+          </div>
+
+          <!-- COLUMNS TAB -->
+          <div *ngIf="showCols !== false && sec.config.activeBindingTab === 'columns'">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="text-xxs text-muted">{{ getVisibleTableColumns(sec).length }} of {{ getTableColumns(sec).length }} visible</span>
+              <span class="text-xxs text-muted">Role & Input Type</span>
+            </div>
+
+            <div class="row-items-list-container">
+              <div *ngFor="let c of getTableColumns(sec); let cIdx = index; trackBy: trackByIndex"
+                class="row-item-card d-flex flex-column gap-1"
+                [class.opacity-50]="c.visible === false">
+                <div class="d-flex align-items-center justify-content-between gap-1">
+                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
+                    <span class="row-index-badge">{{ cIdx + 1 }}</span>
+                    <button type="button" class="btn-vis-toggle" (click)="toggleTableColumnVisibility(sec, cIdx)"
+                      [title]="c.visible !== false ? 'Hide column' : 'Show column'">
+                      <i class="bi" [ngClass]="c.visible !== false ? 'bi-eye text-dark' : 'bi-eye-slash text-muted'"></i>
+                    </button>
+                    <input type="text" class="form-control row-label-input flex-grow-1" [ngModel]="c.label"
+                      (ngModelChange)="updateTableColumnLabel(sec, cIdx, $event)" placeholder="Column header...">
+                  </div>
+
+                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <button type="button" class="btn-item-arrow" (click)="moveTableColumn(sec, cIdx, 'up')"
+                      [disabled]="cIdx === 0" title="Move Left/Up">
+                      <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button type="button" class="btn-item-arrow" (click)="moveTableColumn(sec, cIdx, 'down')"
+                      [disabled]="cIdx === getTableColumns(sec).length - 1" title="Move Right/Down">
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <button type="button" class="btn-item-del" (click)="removeTableColumn(sec, cIdx)"
+                      [disabled]="getTableColumns(sec).length <= 1" title="Delete Column">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Semantic Column Role + Conditional Input Type / Live Master Picker -->
+                <div class="d-flex align-items-center gap-1 ps-4 flex-wrap">
+                  <div class="flex-grow-1 min-w-0">
+                    <app-custom-select [options]="columnRoleOptions"
+                      [ngModel]="getEffectiveColumnRole(c)"
+                      (ngModelChange)="onColumnRoleChange(sec, cIdx, $event)"
+                      size="xs" [searchable]="true" placeholder="Column Role">
+                    </app-custom-select>
+                  </div>
+
+                  <div class="flex-shrink-0 col-input-type-select"
+                    *ngIf="getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data'">
+                    <app-custom-select [options]="cellInputTypeOptions"
+                      [(ngModel)]="c.inputType"
+                      size="xs" [searchable]="false" placeholder="Type">
+                    </app-custom-select>
+                  </div>
+
+                  <input type="number" min="0" max="6"
+                    class="form-control form-control-sm compact-input text-center flex-shrink-0 col-precision-input"
+                    *ngIf="(getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data') && (!c.inputType || c.inputType === 'decimal')"
+                    [(ngModel)]="c.decimalPrecision"
+                    placeholder="2" title="Decimal Places (0-6)">
+
+                  <input type="text"
+                    class="form-control form-control-sm compact-input w-100 mt-1"
+                    *ngIf="(getEffectiveColumnRole(c) === 'observation_value' || getEffectiveColumnRole(c) === 'custom_data') && c.inputType === 'dropdown'"
+                    [(ngModel)]="c.dropdownOptions"
+                    placeholder="Options (comma sep., e.g. Smooth, Rough, Cracked)">
+
+                  <input type="text"
+                    class="form-control form-control-sm compact-input w-100 mt-1"
+                    *ngIf="getEffectiveColumnRole(c) === 'static_text'"
+                    [(ngModel)]="c.staticValue"
+                    placeholder="Fixed text value...">
+
+                  <!-- Master Source + Live Searchable Master Record Picker -->
+                  <div class="d-flex align-items-center gap-1 w-100 mt-1"
+                    *ngIf="getEffectiveColumnRole(c) === 'master_link'">
+                    <div class="flex-shrink-0 master-source-mini-select">
+                      <app-custom-select [options]="masterSourceMiniOptions"
+                        [ngModel]="c.dbMasterSource || 'parameter'"
+                        (ngModelChange)="onColumnMasterSourceChange(sec, cIdx, $event)"
+                        size="xs" [searchable]="false" placeholder="Master">
+                      </app-custom-select>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                      <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                        [fetchDataFn]="getMasterFetchFn(c.dbMasterSource || 'parameter')"
+                        [placeholder]="'Select ' + getMasterSourceLabel(c.dbMasterSource || 'parameter') + '...'"
+                        [selectedItem]="c.dbMasterId"
+                        [reloadKey]="c.dbMasterSource || 'parameter'"
+                        (itemSelected)="onColumnMasterItemSelected(sec, cIdx, $event)">
+                      </app-searchable-dropdown>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableColumn(sec)">
+              <i class="bi bi-plus me-1"></i><span>Add Column</span>
+            </button>
+          </div>
+
+          <!-- HEADER MERGE TAB -->
+          <div *ngIf="showCols !== false && showMerge !== false && sec.config.activeBindingTab === 'merge'" class="pt-1">
+            <div class="mb-2">
+              <label class="form-label compact-label">Group Header Title <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm compact-input"
+                [(ngModel)]="ensureHeaderMergeState(sec).title"
+                placeholder="e.g. Grouped Observations">
+            </div>
+
+            <div class="row g-2 mb-2">
+              <div class="col-7">
+                <label class="form-label compact-label">Start Column</label>
+                <app-custom-select [options]="getVisibleColumnsForSection(sec)"
+                  [(ngModel)]="ensureHeaderMergeState(sec).startCol" valueField="key" labelField="label" size="sm"
+                  [searchable]="true" placeholder="Select Start Column">
+                </app-custom-select>
+              </div>
+              <div class="col-5">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label compact-label mb-0">Colspan</label>
+                  <span class="text-xxs text-muted">max {{ getVisibleColumnsForSection(sec).length }}</span>
+                </div>
+                <input type="number" class="form-control form-control-sm compact-input text-center fw-semibold"
+                  [(ngModel)]="ensureHeaderMergeState(sec).colspan" min="2"
+                  [max]="getVisibleColumnsForSection(sec).length" placeholder="2">
+              </div>
+            </div>
+
+            <div class="merge-preview-container mb-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="merge-preview-title">Covered Columns ({{ getMergedColumnsList(sec).length }})</span>
+                <span class="text-xxs text-muted font-monospace">Span {{ ensureHeaderMergeState(sec).colspan || 2 }}</span>
+              </div>
+              <div class="d-flex flex-wrap gap-1">
+                <span *ngFor="let col of getMergedColumnsList(sec); let cIdx = index" class="merge-chip">
+                  <span class="merge-chip-num">{{ cIdx + 1 }}</span>
+                  <span class="merge-chip-label">{{ col.label }}</span>
+                </span>
+                <span *ngIf="getMergedColumnsList(sec).length === 0" class="text-xxs text-muted fst-italic">
+                  No visible columns in selected span
+                </span>
+              </div>
+            </div>
+
+            <div class="form-check form-switch compact-check mb-2">
+              <input class="form-check-input" type="checkbox" [id]="'showChildLabelsSwitch_' + sec.id"
+                [(ngModel)]="ensureHeaderMergeState(sec).showSubLabels">
+              <label class="form-check-label text-xs fw-medium text-dark cursor-pointer"
+                [for]="'showChildLabelsSwitch_' + sec.id">
+                Show Child Column Labels (Sub-headers)
+              </label>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn-lims btn-lims-save btn-compact flex-grow-1"
+                (click)="applyHeaderMerge(sec)">
+                {{ hasMergedHeader(sec) ? 'Update Merge' : 'Apply Merge' }}
+              </button>
+              <button type="button" class="btn-lims btn-lims-cancel btn-compact" (click)="resetHeaderMerge(sec)"
+                *ngIf="hasMergedHeader(sec)">
+                Unmerge
+              </button>
+            </div>
+          </div>
+        </ng-template>
+
+        <!-- GROUP 2: MULTI-READING MATRIX CONFIGURATION (Section 2: reading) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'reading'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Multi-Reading Matrix</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+            </span>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-5">
+              <label class="form-label compact-label">Reading Count</label>
+              <input type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
+                (ngModelChange)="onReadingCountOrPrefixChange(s)" min="1" max="20">
+            </div>
+            <div class="col-7">
+              <label class="form-label compact-label">Aggregation</label>
+              <app-custom-select [options]="selectOptions.aggregation" [(ngModel)]="s.config.aggregation" size="sm"
+                [searchable]="false" placeholder="Aggregation">
+              </app-custom-select>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-end gap-1 mb-2">
+            <div class="flex-grow-1 min-w-0">
+              <label class="form-label compact-label">Reading Column Prefix</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.readingLabel"
+                (ngModelChange)="onReadingCountOrPrefixChange(s)" placeholder="e.g. Reading, Spot, Notch">
+            </div>
+            <button type="button" class="btn-lims btn-lims-cancel btn-compact flex-shrink-0"
+              (click)="adjustReadingSpots(s, 1)" title="Add Spot Column">+ Spot</button>
+            <button type="button" class="btn-lims btn-lims-cancel btn-compact flex-shrink-0"
+              (click)="adjustReadingSpots(s, -1)" [disabled]="getVisibleTableColumns(s).length <= 2"
+              title="Remove Last Spot Column">- Spot</button>
+          </div>
+
+          <div class="config-checks-grid pb-2 mb-2 border-bottom">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showIndividual">
+              <span class="form-check-label">Show Individual Readings</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showStatistics"
+                (ngModelChange)="onReadingDisplayOptionChange(s)">
+              <span class="form-check-label">Show Statistics (Avg/Min/Max)</span>
+            </label>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: true,
+            showCols: true,
+            showMerge: true,
+            runtimeHint: 'Runtime Auto-Load is active — target parameters load automatically from the Test Plan.'
+          }"></ng-container>
+        </div>
+
+        <!-- GROUP 2: LOCATION / ZONE SURVEY CONFIGURATION (Section 3: location) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'location'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Location / Zone Survey</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+            </span>
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Quick Zone Presets</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'weld')">Weld Survey</button>
+              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'zones')">Zone 1–4</button>
+              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'samples')">Sample A–C</button>
+              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'levels')">Depth Levels</button>
+            </div>
+          </div>
+
+          <div class="config-checks-grid pb-2 mb-2 border-bottom">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage"
+                (ngModelChange)="onLocationDisplayOptionChange(s)">
+              <span class="form-check-label">Show Average Column</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showRequirement"
+                (ngModelChange)="onLocationDisplayOptionChange(s)">
+              <span class="form-check-label">Show Requirement Column</span>
+            </label>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: false,
+            showCols: true,
+            showMerge: true,
+            runtimeHint: 'Runtime Auto-Load uses live sampling zones; Template Configured uses exact rows below.'
+          }"></ng-container>
+        </div>
+
+        <!-- GROUP 2: HARDNESS TRAVERSE CONFIGURATION (Section 4: traverse) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'traverse'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Hardness Traverse / Depth</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+            </span>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Distance / X-Axis</label>
+              <app-custom-select [options]="traverseXSelectOptions" [(ngModel)]="s.config.xField"
+                (ngModelChange)="onTraverseAxisChange(s)" size="sm" [searchable]="true" placeholder="Select X-Axis">
+              </app-custom-select>
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Hardness / Y-Axis</label>
+              <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
+                (ngModelChange)="onTraverseAxisChange(s)" size="sm" [searchable]="true" placeholder="Select Y-Axis">
+              </app-custom-select>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Cut-off Hardness Limit</label>
+              <input type="text" class="form-control form-control-sm compact-input"
+                [(ngModel)]="s.config.cutoffHardness" placeholder="e.g. 550 or 250">
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Step Pitch</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.stepValue"
+                placeholder="0.05 mm">
+            </div>
+          </div>
+
+          <div class="config-checks-grid pb-2 mb-2 border-bottom">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showTable">
+              <span class="form-check-label">Show Table</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showCurve">
+              <span class="form-check-label">Show Depth Curve</span>
+            </label>
+          </div>
+
+          <!-- Auto-Step Generator -->
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Auto-Step Generator</label>
+            <div class="row g-1 mb-2">
+              <div class="col-4">
+                <label class="form-label compact-label">Start (mm)</label>
+                <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepStart">
+              </div>
+              <div class="col-4">
+                <label class="form-label compact-label">Pitch (mm)</label>
+                <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepIncrement">
+              </div>
+              <div class="col-4">
+                <label class="form-label compact-label">Points</label>
+                <input type="number" min="1" max="50" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepPoints">
+              </div>
+            </div>
+            <button type="button" class="btn-lims btn-lims-save btn-compact w-100 py-1"
+              (click)="generateTraverseAutoStep(s)">
+              Generate {{ autoStepPoints }} Stepped Points
+            </button>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: false,
+            showCols: true,
+            showMerge: true,
+            runtimeHint: ''
+          }"></ng-container>
+        </div>
+
         <!-- GROUP 3: CORNER TECHNICAL ANNOTATIONS & CALLOUTS (Collapsible) -->
         <div class="config-card mb-2">
           <div class="config-card-title d-flex align-items-center justify-content-between collapsible-trigger-bar"
@@ -2917,7 +3399,7 @@
         </div>
         <!-- 3B. Universal Data Binding & Structure Manager Card -->
         <div class="config-card mb-2"
-          *ngIf="s.type !== 'parameter' && s.type !== 'specimen' && (isTableSection(s) || s.type === 'condition' || s.type === 'checklist')">
+          *ngIf="s.type !== 'parameter' && s.type !== 'specimen' && s.type !== 'reading' && s.type !== 'location' && s.type !== 'traverse' && (isTableSection(s) || s.type === 'condition' || s.type === 'checklist')">
           <div class="config-card-title d-flex align-items-center justify-content-between mb-2">
             <span><i class="bi bi-sliders2-vertical me-1.5 text-danger"></i><span>Data Binding & Structure</span></span>
             <div class="d-flex align-items-center gap-1">
@@ -3289,236 +3771,6 @@
               <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs flex-shrink-0"
                 *ngIf="!isConditionFieldChecked(s, c)">Inactive</span>
             </label>
-          </div>
-        </div>
-
-        <!-- 7. Multi-Reading Settings (Type: Reading) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'reading'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-123 me-1.5 text-danger"></i><span>Multi-Reading Settings</span></span>
-            <div class="d-flex align-items-center gap-1">
-              <button type="button" class="btn-xs-action text-theme fw-semibold" (click)="adjustReadingSpots(s, 1)" title="Add Spot Column">+ Spot</button>
-              <button type="button" class="btn-xs-action text-secondary" (click)="adjustReadingSpots(s, -1)" title="Remove Last Spot Column" [disabled]="getVisibleTableColumns(s).length <= 2">- Spot</button>
-              <span class="badge bg-secondary font-monospace ms-1">{{ getVisibleTableColumns(s).length }} Cols</span>
-            </div>
-          </div>
-
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Reading Count</label>
-              <input type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
-                min="1" max="20">
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Aggregation</label>
-              <app-custom-select [options]="selectOptions.aggregation" [(ngModel)]="s.config.aggregation" size="sm"
-                [searchable]="false" placeholder="Aggregation">
-              </app-custom-select>
-            </div>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Reading Column Label Prefix</label>
-            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.readingLabel"
-              placeholder="e.g. Reading, Spot, Notch">
-          </div>
-          <div class="config-checks-grid">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showIndividual">
-              <span class="form-check-label">Show Individual Readings</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showStatistics">
-              <span class="form-check-label">Show Statistics (Avg/Min/Max)</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 8. Location / Zone Settings (Type: Location) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'location'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span class="d-flex align-items-center gap-1.5">
-              <i class="bi bi-geo-alt text-danger"></i>
-              <span>Location / Zone Row Manager</span>
-            </span>
-            <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
-              {{ getLocationList(s).length }} Rows
-            </span>
-          </div>
-
-          <!-- Column Header Title Setting -->
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-0.5">
-              <label class="form-label compact-label mb-0 fw-semibold text-dark">
-                First Column Header Label
-              </label>
-              <span class="text-xxs text-muted font-monospace">Table Th</span>
-            </div>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text bg-light text-danger"><i class="bi bi-fonts"></i></span>
-              <input type="text" class="form-control form-control-sm compact-input"
-                [(ngModel)]="s.config.locationColHeader" placeholder="e.g. Zone / Location, Sample ID / Location">
-            </div>
-          </div>
-
-          <!-- Quick Presets -->
-          <div class="mb-2">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <label class="form-label compact-label mb-0">Quick Row Presets</label>
-              <span class="text-xxs text-muted font-monospace">Auto-Fill</span>
-            </div>
-            <div class="d-flex flex-wrap gap-1">
-              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'weld')"
-                title="Base Metal (BM), Heat Affected Zone (HAZ), Weld Metal (WM)">
-                Weld Survey
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'zones')"
-                title="Zone 1, Zone 2, Zone 3, Zone 4">
-                Zone 1–4
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'samples')"
-                title="Sample A, Sample B, Sample C">
-                Sample A–C
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyLocationPreset(s, 'levels')"
-                title="Top Level, Mid Depth, Root / Bottom">
-                Depth Levels
-              </button>
-            </div>
-          </div>
-
-          <!-- Dynamic Row Labels List -->
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label compact-label mb-0 fw-semibold text-dark">
-                Editable Row Labels
-              </label>
-              <span class="text-xxs text-muted font-monospace">Reorder / Rename</span>
-            </div>
-
-            <div class="location-rows-editor-list">
-              <div *ngFor="let row of getLocationList(s); let rIdx = index; trackBy: trackByIndex"
-                class="location-row-edit-item d-flex align-items-center gap-1.5 mb-1">
-                <span class="location-edit-idx">{{ rIdx + 1 }}</span>
-                <input type="text" class="form-control form-control-sm compact-input flex-grow-1"
-                  [ngModel]="s.config.locationRows ? s.config.locationRows[rIdx] : row"
-                  (ngModelChange)="updateLocationRow(s, rIdx, $event)" placeholder="Row label...">
-                <div class="btn-group btn-group-sm flex-shrink-0">
-                  <button type="button" class="btn-icon-subtle" (click)="moveLocationRow(s, rIdx, 'up')"
-                    [disabled]="rIdx === 0" title="Move Up">
-                    <i class="bi bi-chevron-up"></i>
-                  </button>
-                  <button type="button" class="btn-icon-subtle" (click)="moveLocationRow(s, rIdx, 'down')"
-                    [disabled]="rIdx === getLocationList(s).length - 1" title="Move Down">
-                    <i class="bi bi-chevron-down"></i>
-                  </button>
-                  <button type="button" class="btn-icon-subtle text-danger" (click)="removeLocationRow(s, rIdx)"
-                    [disabled]="getLocationList(s).length <= 1" title="Delete Row">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Add Row Action Button -->
-            <button type="button" class="btn-lims btn-lims-add w-100 py-1 mt-1.5 justify-content-center"
-              (click)="addLocationRow(s)">
-              <i class="bi bi-plus-circle me-1.5"></i>Add Location Row
-            </button>
-          </div>
-
-          <!-- Runtime Dynamic Addition Setting -->
-          <div class="mb-2 p-2 rounded border bg-light-subtle">
-            <label class="form-check compact-check mb-0 d-flex align-items-start gap-2 cursor-pointer">
-              <input class="form-check-input my-0 flex-shrink-0" type="checkbox" [(ngModel)]="s.config.allowRuntimeAdd">
-              <div>
-                <div class="form-check-label fw-semibold text-dark">Allow Dynamic Runtime Addition</div>
-                <div class="text-xxs text-muted mt-0.5">
-                  Allows technicians to add, delete, or rename rows on the fly during live test execution.
-                </div>
-              </div>
-            </label>
-          </div>
-
-          <!-- Display Columns Options -->
-          <div class="config-checks-grid pt-1 border-top">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showAverage">
-              <span class="form-check-label">Show Average Column</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showRequirement">
-              <span class="form-check-label">Show Requirement Column</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 9. Traverse / Depth Settings (Type: Traverse) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'traverse'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-graph-up-arrow me-1.5 text-danger"></i><span>Hardness Traverse / Depth
-                Settings</span></span>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Distance / X-Axis</label>
-              <app-custom-select [options]="traverseXSelectOptions" [(ngModel)]="s.config.xField"
-                (ngModelChange)="onTraverseAxisChange(s)" size="sm" [searchable]="true" placeholder="Select X-Axis">
-              </app-custom-select>
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Hardness / Y-Axis</label>
-              <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
-                (ngModelChange)="onTraverseAxisChange(s)" size="sm" [searchable]="true" placeholder="Select Y-Axis">
-              </app-custom-select>
-            </div>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Cut-off Hardness Limit</label>
-              <input type="text" class="form-control form-control-sm compact-input"
-                [(ngModel)]="s.config.cutoffHardness" placeholder="e.g. 550 or 250">
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Step Pitch</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.stepValue"
-                placeholder="0.05 mm">
-            </div>
-          </div>
-          <div class="config-checks-grid mb-2">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showTable">
-              <span class="form-check-label">Show Table</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showCurve">
-              <span class="form-check-label">Show Curve</span>
-            </label>
-          </div>
-
-          <!-- Auto Step Generator Tool -->
-          <div class="border-top pt-2 mt-2">
-            <div class="fw-semibold small text-dark d-flex align-items-center gap-1.5 mb-1.5">
-              <i class="bi bi-magic text-danger"></i>
-              <span>Traverse Auto-Step Generator</span>
-            </div>
-            <div class="row g-1 mb-1.5">
-              <div class="col-4">
-                <label class="form-label compact-label">Start (mm)</label>
-                <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepStart">
-              </div>
-              <div class="col-4">
-                <label class="form-label compact-label">Pitch (mm)</label>
-                <input type="number" step="0.01" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepIncrement">
-              </div>
-              <div class="col-4">
-                <label class="form-label compact-label">Points</label>
-                <input type="number" min="1" max="50" class="form-control form-control-sm compact-input" [(ngModel)]="autoStepPoints">
-              </div>
-            </div>
-            <button type="button" class="btn-lims btn-lims-save btn-sm w-100 py-1"
-              (click)="generateTraverseAutoStep(s)">
-              <i class="bi bi-play-circle-fill me-1.5"></i><span>Generate {{ autoStepPoints }} Stepped Points</span>
-            </button>
           </div>
         </div>
 

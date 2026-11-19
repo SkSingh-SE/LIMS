@@ -893,20 +893,20 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   inferColumnRole(colKey: string): ColumnRoleType {
     const k = (colKey || '').toLowerCase();
-    if (k === 'param' || k === 'specimen' || k === 'loc') return 'row_label';
+    if (k === 'param' || k === 'specimen' || k === 'loc' || k === 'x') return 'row_label';
     if (k === 'unit') return 'unit';
     if (k === 'requirement' || k === 'limit') return 'spec_requirement';
     if (k === 'spec_min') return 'spec_min';
     if (k === 'spec_max') return 'spec_max';
-    if (k === 'result' || k.startsWith('spec_') || k.startsWith('spot_') || k.startsWith('reading_')) return 'observation_value';
+    if (k === 'result' || k === 'y' || k === 'y2' || k.startsWith('spec_') || k.startsWith('spot_') || k.startsWith('reading_') || k.startsWith('param_')) return 'observation_value';
     if (k === 'uncertainty') return 'uncertainty';
     if (k === 'scope') return 'nabl_scope';
     if (k === 'dl') return 'detection_limit';
     if (k === 'method') return 'test_method';
-    if (k === 'avg' || k === 'agg') return 'agg_average';
+    if (k === 'avg' || k === 'agg' || k === 'mean') return 'agg_average';
     if (k === 'min') return 'agg_min';
     if (k === 'max') return 'agg_max';
-    if (k === 'status' || k === 'decision') return 'status_verdict';
+    if (k === 'status' || k === 'decision' || k === 'eval') return 'status_verdict';
     if (k === 'reportable') return 'reportable_toggle';
     if (k === 'remarks') return 'custom_data';
     return 'custom_data';
@@ -3238,6 +3238,83 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     toggleSpecialCol('min', 'Min', 'agg_min', !!sec.config.showMinMax);
     toggleSpecialCol('max', 'Max', 'agg_max', !!sec.config.showMinMax);
     toggleSpecialCol('requirement', 'Requirement', 'spec_requirement', sec.config.showRequirement !== false);
+    sec.config.tableColumns = [...cols];
+  }
+
+  onReadingCountOrPrefixChange(sec: ExecutionSection): void {
+    if (!sec || sec.type !== 'reading') return;
+    const count = Math.max(1, Math.min(20, Number(sec.config.count) || 3));
+    sec.config.count = count;
+    sec.config.spotCount = count;
+    const prefix = (sec.config.readingLabel || 'Spot').trim();
+    const cols = this.ensureTableColumns(sec);
+
+    const firstSpotIdx = cols.findIndex(c => c.key.startsWith('spot_') || c.key.startsWith('reading_'));
+    const insertAt = firstSpotIdx >= 0 ? firstSpotIdx : 1;
+    const nonSpotCols = cols.filter(c => !c.key.startsWith('spot_') && !c.key.startsWith('reading_'));
+    const spotCols: LayoutColumnItem[] = [];
+    for (let i = 1; i <= count; i++) {
+      spotCols.push({
+        key: `spot_${i}`,
+        label: `${prefix} #${i}`,
+        bindingMode: 'manual',
+        columnRole: 'observation_value',
+        inputType: 'decimal',
+        decimalPrecision: 2,
+        visible: true,
+        removable: true
+      });
+    }
+    const safePos = Math.min(insertAt, nonSpotCols.length);
+    nonSpotCols.splice(safePos, 0, ...spotCols);
+    sec.config.tableColumns = [...nonSpotCols];
+  }
+
+  onReadingDisplayOptionChange(sec: ExecutionSection): void {
+    if (!sec || sec.type !== 'reading') return;
+    const cols = this.ensureTableColumns(sec);
+    const showStats = sec.config.showStatistics !== false;
+    const toggleCol = (key: string, label: string, role: ColumnRoleType, enabled: boolean) => {
+      const existing = cols.find(c => c.key === key);
+      if (enabled) {
+        if (existing) {
+          existing.visible = true;
+        } else {
+          const reqIdx = cols.findIndex(c => c.key === 'requirement' || c.columnRole === 'spec_requirement');
+          const newCol: LayoutColumnItem = { key, label, bindingMode: 'runtime', columnRole: role, visible: true };
+          if (reqIdx >= 0) cols.splice(reqIdx, 0, newCol);
+          else cols.push(newCol);
+        }
+      } else if (existing) {
+        existing.visible = false;
+      }
+    };
+    toggleCol('agg', 'Average', 'agg_average', showStats);
+    toggleCol('min', 'Min', 'agg_min', showStats);
+    toggleCol('max', 'Max', 'agg_max', showStats);
+    sec.config.tableColumns = [...cols];
+  }
+
+  onLocationDisplayOptionChange(sec: ExecutionSection): void {
+    if (!sec || sec.type !== 'location') return;
+    const cols = this.ensureTableColumns(sec);
+    const toggleCol = (key: string, label: string, role: ColumnRoleType, enabled: boolean) => {
+      const existing = cols.find(c => c.key === key);
+      if (enabled) {
+        if (existing) {
+          existing.visible = true;
+        } else {
+          const statusIdx = cols.findIndex(c => c.key === 'status' || c.columnRole === 'status_verdict');
+          const newCol: LayoutColumnItem = { key, label, bindingMode: 'runtime', columnRole: role, visible: true };
+          if (statusIdx >= 0) cols.splice(statusIdx, 0, newCol);
+          else cols.push(newCol);
+        }
+      } else if (existing) {
+        existing.visible = false;
+      }
+    };
+    toggleCol('avg', 'Zone Average', 'agg_average', sec.config.showAverage !== false);
+    toggleCol('requirement', 'Requirement', 'spec_requirement', sec.config.showRequirement !== false);
     sec.config.tableColumns = [...cols];
   }
 
@@ -6949,21 +7026,26 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     } else if (sec.type === 'reading') {
       const targetUnit = sec.config.targetUnit || 'HRC';
       const targetReq = sec.config.targetRequirement || '28 – 34 HRC';
+      const prefix = (sec.config.readingLabel || 'Spot').trim();
 
       cols.push({
         key: 'specimen',
-        label: sec.config.readingLabel || 'Specimen / Test Point',
-        bindingMode: 'static',
+        label: 'Target Parameter / Point',
+        bindingMode: 'runtime',
+        columnRole: 'row_label',
         visible: true,
         width: '22%'
       });
 
-      const spotN = sec.config.spotCount || 5;
+      const spotN = Number(sec.config.count || sec.config.spotCount || 5);
       for (let sIdx = 1; sIdx <= spotN; sIdx++) {
         cols.push({
           key: `spot_${sIdx}`,
-          label: `Spot #${sIdx}`,
+          label: `${prefix} #${sIdx}`,
           bindingMode: 'manual',
+          columnRole: 'observation_value',
+          inputType: 'decimal',
+          decimalPrecision: 2,
           visible: true,
           removable: true,
           width: `${Math.floor(38 / spotN)}%`
@@ -6974,19 +7056,20 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         key: 'agg',
         label: `Average (${targetUnit})`,
         bindingMode: 'runtime',
-        visible: true,
+        columnRole: 'agg_average',
+        visible: sec.config.showStatistics !== false,
         width: '14%'
       });
 
-      if (sec.config.showMinMax) {
-        cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', visible: true });
-        cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', visible: true });
+      if (sec.config.showStatistics !== false || sec.config.showMinMax) {
+        cols.push({ key: 'min', label: 'Min', bindingMode: 'runtime', columnRole: 'agg_min', visible: true });
+        cols.push({ key: 'max', label: 'Max', bindingMode: 'runtime', columnRole: 'agg_max', visible: true });
       }
 
-      cols.push({ key: 'requirement', label: 'Requirement', requirement: targetReq, bindingMode: 'static', visible: true, width: '14%' });
-      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '10%' });
+      cols.push({ key: 'requirement', label: 'Requirement', requirement: targetReq, bindingMode: 'runtime', columnRole: 'spec_requirement', visible: true, width: '14%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, width: '10%' });
     } else if (sec.type === 'location') {
-      cols.push({ key: 'loc', label: sec.config.locationColHeader || 'Location / Sampling Zone', bindingMode: 'static', visible: true, width: '28%' });
+      cols.push({ key: 'loc', label: sec.config.locationColHeader || 'Location / Sampling Zone', bindingMode: 'static', columnRole: 'row_label', visible: true, width: '28%' });
       const testParams = this.currentTest.params?.length ? this.currentTest.params.slice(0, 3) : [{ name: 'Hardness (HRC)', unit: 'HRC', req: '28 – 34' }, { name: 'Equivalent Tensile (MPa)', unit: 'MPa', req: '850 – 950' }];
       testParams.forEach((p: any, idx) => {
         cols.push({
@@ -6996,19 +7079,22 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
           unit: p.unit || '',
           requirement: p.requirement || p.req || '',
           bindingMode: defaultMode,
+          columnRole: 'observation_value',
+          inputType: 'decimal',
+          decimalPrecision: 2,
           visible: true,
           removable: true
         });
       });
-      if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Zone Average', bindingMode: 'runtime', visible: true });
-      if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', visible: true });
-      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true });
+      if (sec.config.showAverage !== false) cols.push({ key: 'avg', label: 'Zone Average', bindingMode: 'runtime', columnRole: 'agg_average', visible: true });
+      if (sec.config.showRequirement !== false) cols.push({ key: 'requirement', label: 'Requirement', bindingMode: 'runtime', columnRole: 'spec_requirement', visible: true });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true });
     } else if (sec.type === 'traverse') {
-      cols.push({ key: 'x', label: sec.config.xField || 'Depth / Distance (mm)', bindingMode: 'static', visible: true, width: '25%' });
-      cols.push({ key: 'y', label: sec.config.yField || 'Hardness (HV)', bindingMode: defaultMode, visible: true, width: '25%' });
-      cols.push({ key: 'y2', label: 'Hardness (HRC)', bindingMode: 'runtime', visible: true, width: '18%' });
-      cols.push({ key: 'requirement', label: 'Cutoff / Requirement', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '14%' });
+      cols.push({ key: 'x', label: sec.config.xField || 'Depth / Distance (mm)', bindingMode: 'static', columnRole: 'row_label', visible: true, width: '25%' });
+      cols.push({ key: 'y', label: sec.config.yField || 'Hardness (HV)', bindingMode: defaultMode, columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 1, visible: true, width: '25%' });
+      cols.push({ key: 'y2', label: 'Hardness (HRC)', bindingMode: 'runtime', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 1, visible: true, width: '18%' });
+      cols.push({ key: 'requirement', label: 'Cutoff / Requirement', bindingMode: 'static', columnRole: 'spec_requirement', visible: true, width: '18%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, width: '14%' });
     } else if (sec.type === 'classification') {
       cols.push({ key: 'grade', label: 'Inclusion / Structure Class', bindingMode: 'static', visible: true, width: '26%' });
       cols.push({ key: 'system', label: 'Standard / System', bindingMode: 'static', visible: true, width: '18%' });

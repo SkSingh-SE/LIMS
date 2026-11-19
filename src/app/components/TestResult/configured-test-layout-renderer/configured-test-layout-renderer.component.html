@@ -1613,7 +1613,112 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'reading'">
             <div class="reading-matrix-section">
-              <div class="table-responsive">
+              <!-- Dynamic Semantic Multi-Reading Matrix (When Studio tableColumns configured) -->
+              <div class="table-responsive" *ngIf="hasConfiguredReadingTable(s)">
+                <table class="table table-sm table-bordered align-middle result-table mb-1">
+                  <thead class="result-table-head text-center">
+                    <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
+                      <tr>
+                        <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                            [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                        <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
+                        <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                            [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      </tr>
+                      <tr>
+                        <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                      </tr>
+                    </ng-container>
+                    <tr *ngIf="hasParamMergedHeader(s) && !isParamSubLabelsVisible(s)">
+                      <th *ngFor="let col of getParamPreMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
+                      <th *ngFor="let col of getParamPostMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                    </tr>
+                    <tr *ngIf="!hasParamMergedHeader(s)">
+                      <th *ngFor="let col of getReadingMatrixColumns(s)"
+                          [class.text-start]="col.resolvedRole === 'row_label'"
+                          [class.bg-primary-subtle]="col.resolvedRole === 'agg_average'"
+                          [class.text-primary]="col.resolvedRole === 'agg_average'">
+                        {{ col.label }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of getReadingMatrixRows(s)" [ngClass]="getReadingRowClass(row.targetParam)">
+                      <td *ngFor="let col of getReadingMatrixColumns(s)"
+                          [class.text-start]="col.resolvedRole === 'row_label'"
+                          [class.text-center]="col.resolvedRole !== 'row_label'">
+                        <ng-container [ngSwitch]="col.resolvedRole">
+                          <ng-container *ngSwitchCase="'row_label'">
+                            <span class="fw-semibold text-dark">{{ row.label }}</span>
+                          </ng-container>
+                          <span *ngSwitchCase="'unit'" class="font-monospace text-muted small">
+                            {{ getParamControl(row.targetParam)?.get('unit')?.value || '—' }}
+                          </span>
+                          <ng-container *ngSwitchCase="'observation_value'">
+                            <ng-container *ngIf="col.spotIndex != null; else customReadingObs">
+                              <input type="number" [attr.step]="getStepForPrecision(col.decimalPrecision ?? 2)"
+                                     class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getReadingVal(row.targetParam, col.spotIndex)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="onReadingChange(row.targetParam, col.spotIndex, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="—" />
+                            </ng-container>
+                            <ng-template #customReadingObs>
+                              <input type="text" class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="—" />
+                            </ng-template>
+                          </ng-container>
+                          <span *ngSwitchCase="'agg_average'" class="font-monospace fw-bold text-danger">
+                            {{ getReadingStat(row.targetParam, 'avg') || '—' }}
+                          </span>
+                          <span *ngSwitchCase="'agg_min'" class="font-monospace text-muted">
+                            {{ getReadingStat(row.targetParam, 'min') || '—' }}
+                          </span>
+                          <span *ngSwitchCase="'agg_max'" class="font-monospace text-muted">
+                            {{ getReadingStat(row.targetParam, 'max') || '—' }}
+                          </span>
+                          <span *ngSwitchCase="'spec_requirement'" class="small font-monospace">
+                            {{ formatSpecRange(getParamControl(row.targetParam)?.value) }}
+                          </span>
+                          <span *ngSwitchCase="'uncertainty'" class="text-muted small font-monospace">
+                            {{ formatUncertainty(getParamControl(row.targetParam)?.value) }}
+                          </span>
+                          <span *ngSwitchCase="'test_method'" class="text-muted small">
+                            {{ getCleanTestMethod(getParamControl(row.targetParam)?.value) }}
+                          </span>
+                          <ng-container *ngSwitchCase="'status_verdict'">
+                            <span class="badge text-xxs" [ngClass]="getParamStatusBadgeClass(row.targetParam)">
+                              {{ getParamStatusLabel(row.targetParam) }}
+                            </span>
+                          </ng-container>
+                          <span *ngSwitchCase="'static_text'" class="text-dark small font-monospace">{{ col.staticValue || '—' }}</span>
+                          <ng-container *ngSwitchCase="'master_link'">
+                            <input type="text" class="form-control form-control-xs text-center"
+                                   [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key) || col.dbMasterName || ''"
+                                   [ngModelOptions]="{ standalone: true }"
+                                   (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                   [readOnly]="isViewMode || isLocked" [placeholder]="col.dbMasterName || col.label || 'Enter...'" />
+                          </ng-container>
+                          <ng-container *ngSwitchDefault>
+                            <input type="text" class="form-control form-control-xs text-center"
+                                   [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                   [ngModelOptions]="{ standalone: true }"
+                                   (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                   [readOnly]="isViewMode || isLocked" [placeholder]="col.label || 'Enter...'" />
+                          </ng-container>
+                        </ng-container>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Legacy Fallback Multi-Reading Matrix -->
+              <div class="table-responsive" *ngIf="!hasConfiguredReadingTable(s)">
                 <table class="table table-sm table-bordered align-middle result-table mb-1">
                   <thead class="result-table-head text-center">
                     <tr>
@@ -1694,30 +1799,52 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'traverse'">
             <div class="row g-2">
-              <div class="col-md-7">
-                <table class="table table-sm table-bordered align-middle result-table mb-1">
-                  <thead class="result-table-head text-center">
-                    <tr>
-                      <th>Distance from Surface (mm)</th>
-                      <th *ngFor="let pt of traversePoints">{{ pt.distance }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td class="fw-semibold text-start">Hardness Value (HV)</td>
-                      <td *ngFor="let pt of traversePoints; let ptIdx = index">
-                        <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
-                               [(ngModel)]="pt.hardness"
-                               [ngModelOptions]="{ standalone: true }"
-                               (ngModelChange)="onTraverseChange(ptIdx, $event)"
-                               [readOnly]="isViewMode || isLocked"
-                               placeholder="HV..." />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div [ngClass]="s.config?.showCurve !== false ? 'col-md-7' : 'col-12'" *ngIf="s.config?.showTable !== false">
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered align-middle result-table mb-1">
+                    <thead class="result-table-head text-center">
+                      <tr>
+                        <th class="text-start">{{ s.config?.xField || 'Distance from Surface (mm)' }}</th>
+                        <th *ngFor="let pt of traversePoints">{{ pt.distance }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-semibold text-start">{{ s.config?.yField || 'Hardness Value (HV)' }}</td>
+                        <td *ngFor="let pt of traversePoints; let ptIdx = index">
+                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                                 [(ngModel)]="pt.hardness"
+                                 [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="onTraverseChange(ptIdx, $event)"
+                                 [readOnly]="isViewMode || isLocked"
+                                 placeholder="HV..." />
+                        </td>
+                      </tr>
+                      <!-- Extra configured semantic columns rendered cleanly as additional rows -->
+                      <tr *ngFor="let extraCol of getTraverseExtraColumns(s)">
+                        <td class="text-start text-muted small fw-semibold">{{ extraCol.label }}</td>
+                        <td *ngFor="let pt of traversePoints; let ptIdx = index" class="text-center">
+                          <ng-container [ngSwitch]="extraCol.resolvedRole">
+                            <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-muted">≥ {{ cutoffLimit }}</span>
+                            <ng-container *ngSwitchCase="'status_verdict'">
+                              <span *ngIf="pt.hardness != null && pt.hardness >= cutoffLimit" class="status-pill-lims status-pill-pass">PASS</span>
+                              <span *ngIf="pt.hardness != null && pt.hardness < cutoffLimit" class="status-pill-lims status-pill-fail">BELOW</span>
+                              <span *ngIf="pt.hardness == null" class="text-muted small">—</span>
+                            </ng-container>
+                            <span *ngSwitchCase="'static_text'" class="font-monospace small text-dark">{{ extraCol.staticValue || '—' }}</span>
+                            <input *ngSwitchDefault type="text" class="form-control form-control-xs text-center font-monospace"
+                                   [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'pt_' + ptIdx, extraCol.key) || extraCol.dbMasterName || ''"
+                                   [ngModelOptions]="{ standalone: true }"
+                                   (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'pt_' + ptIdx, extraCol.key, $event)"
+                                   [readOnly]="isViewMode || isLocked" placeholder="—" />
+                          </ng-container>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div class="col-md-5">
+              <div [ngClass]="s.config?.showTable !== false ? 'col-md-5' : 'col-12'" *ngIf="s.config?.showCurve !== false">
                 <div class="border rounded p-2 bg-light text-center h-100 d-flex flex-column justify-content-between">
                   <span class="text-xxs fw-semibold text-muted mb-1 d-block">Traverse Hardness Profile vs Distance</span>
                   <svg viewBox="0 0 400 120" class="svg-traverse-curve">
@@ -2076,7 +2203,137 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'location' || s.type === 'loc'">
             <div class="location-zone-section">
-              <div class="table-responsive mb-1">
+              <!-- Dynamic Semantic Location / Zone Table (When Studio tableColumns configured) -->
+              <div class="table-responsive mb-1" *ngIf="hasConfiguredLocationTable(s)">
+                <table class="table table-sm table-bordered align-middle result-table mb-1">
+                  <thead class="result-table-head text-center">
+                    <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
+                      <tr>
+                        <th rowspan="2" class="w-col-35 align-middle">#</th>
+                        <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                            [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                        <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
+                        <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                            [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                        <th rowspan="2" class="w-col-65 align-middle" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
+                      </tr>
+                      <tr>
+                        <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                      </tr>
+                    </ng-container>
+                    <tr *ngIf="hasParamMergedHeader(s) && !isParamSubLabelsVisible(s)">
+                      <th class="w-col-35">#</th>
+                      <th *ngFor="let col of getParamPreMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
+                      <th *ngFor="let col of getParamPostMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      <th class="w-col-65" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
+                    </tr>
+                    <tr *ngIf="!hasParamMergedHeader(s)">
+                      <th class="w-col-35">#</th>
+                      <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                        {{ col.label }}
+                      </th>
+                      <th class="w-col-65" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let loc of locations; let lIdx = index">
+                      <td class="text-center text-muted small fw-semibold">{{ lIdx + 1 }}</td>
+                      <td *ngFor="let col of getParamTableColumns(s)"
+                          [class.text-start]="col.resolvedRole === 'row_label'"
+                          [class.text-center]="col.resolvedRole !== 'row_label'">
+                        <ng-container [ngSwitch]="col.resolvedRole">
+                          <input *ngSwitchCase="'row_label'" type="text" class="form-control form-control-xs fw-semibold"
+                                 [(ngModel)]="loc.locationName" [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="syncCollectionsToTest()"
+                                 [readOnly]="isViewMode || isLocked" placeholder="Zone / Location..." />
+                          <span *ngSwitchCase="'agg_average'" class="fw-bold text-primary font-monospace">
+                            {{ getLocationRowAggregate(s, lIdx, 'avg') }}
+                          </span>
+                          <span *ngSwitchCase="'agg_min'" class="text-muted font-monospace">
+                            {{ getLocationRowAggregate(s, lIdx, 'min') }}
+                          </span>
+                          <span *ngSwitchCase="'agg_max'" class="text-muted font-monospace">
+                            {{ getLocationRowAggregate(s, lIdx, 'max') }}
+                          </span>
+                          <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-muted">
+                            {{ col.requirement || '—' }}
+                          </span>
+                          <span *ngSwitchCase="'static_text'" class="font-monospace small text-dark">
+                            {{ col.staticValue || '—' }}
+                          </span>
+                          <ng-container *ngSwitchCase="'reportable_toggle'">
+                            <button type="button" class="btn btn-xs reportable-toggle-btn"
+                                    [ngClass]="loc.isReportable ? 'btn-reportable-active' : 'btn-reportable-internal'"
+                                    (click)="toggleLocationReportable(lIdx)" [disabled]="isViewMode || isLocked">
+                              <span>{{ loc.isReportable ? 'Reportable' : 'Internal' }}</span>
+                            </button>
+                          </ng-container>
+                          <ng-container *ngSwitchCase="'status_verdict'">
+                            <app-custom-select
+                              [options]="booleanSelectOptions"
+                              [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key)"
+                              [ngModelOptions]="{ standalone: true }"
+                              (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key, $event)"
+                              size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Status">
+                            </app-custom-select>
+                          </ng-container>
+                          <ng-container *ngSwitchCase="'master_link'">
+                            <input type="text" class="form-control form-control-xs text-center"
+                                   [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key) || col.dbMasterName || ''"
+                                   [ngModelOptions]="{ standalone: true }"
+                                   (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key, $event)"
+                                   [readOnly]="isViewMode || isLocked" [placeholder]="col.dbMasterName || col.label || 'Enter...'" />
+                          </ng-container>
+                          <ng-container *ngSwitchDefault>
+                            <ng-container [ngSwitch]="getEffectiveInputType(col, null)">
+                              <app-custom-select *ngSwitchCase="'boolean'"
+                                [options]="booleanSelectOptions"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key, $event)"
+                                size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
+                              <app-custom-select *ngSwitchCase="'dropdown'"
+                                [options]="getDropdownOptionsForCell(col, null)"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key, $event)"
+                                size="xs" [searchable]="true" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
+                              <input *ngSwitchCase="'number'" type="number" step="1" class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="0" />
+                              <input *ngSwitchCase="'decimal'" type="number" [attr.step]="getStepForPrecision(col.decimalPrecision)"
+                                     class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="0.00" />
+                              <input *ngSwitchDefault type="text" class="form-control form-control-xs text-center"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'loc_' + lIdx, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" [placeholder]="col.label || 'Enter...'" />
+                            </ng-container>
+                          </ng-container>
+                        </ng-container>
+                      </td>
+                      <td class="text-center" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">
+                        <button type="button" class="btn-lims-icon btn-lims-delete"
+                                (click)="removeLocation(lIdx)" [disabled]="locations.length <= 1" title="Remove location zone">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Legacy Fallback Location Table -->
+              <div class="table-responsive mb-1" *ngIf="!hasConfiguredLocationTable(s)">
                 <table class="table table-sm table-bordered align-middle result-table mb-1">
                   <thead class="result-table-head text-center">
                     <tr>

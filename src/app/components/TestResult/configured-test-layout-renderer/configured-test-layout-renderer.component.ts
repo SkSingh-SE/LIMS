@@ -480,17 +480,30 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   private initTraverse(): void {
     const travSec = this.sections.find(s => s.type === 'traverse');
+    if (travSec?.config?.cutoffHardness != null) {
+      const parsedCutoff = parseFloat(String(travSec.config.cutoffHardness));
+      if (!isNaN(parsedCutoff) && parsedCutoff > 0) {
+        this.cutoffLimit = parsedCutoff;
+      }
+    }
     if (this.test?.traversePoints && Array.isArray(this.test.traversePoints) && this.test.traversePoints.length > 0) {
       this.traversePoints = this.test.traversePoints.map((pt: any) => ({
-        distance: pt.distance != null ? pt.distance : pt.depth,
-        hardness: pt.hardness != null ? pt.hardness : pt.value
+        distance: pt.distance != null ? pt.distance : (pt.distanceMm != null ? pt.distanceMm : pt.depth),
+        hardness: pt.hardness != null ? pt.hardness : (pt.hardnessValue != null ? pt.hardnessValue : pt.value)
       }));
     } else if (travSec?.config?.tableRows && Array.isArray(travSec.config.tableRows) && travSec.config.tableRows.length > 0) {
-      this.traversePoints = travSec.config.tableRows.map((r: any) => ({
-        distance: parseFloat(r.label) || 0.1,
-        hardness: null
-      }));
+      const visibleRows = travSec.config.tableRows.filter((r: any) => r && r.visible !== false);
+      if (visibleRows.length > 0) {
+        this.traversePoints = visibleRows.map((r: any, idx: number) => {
+          const parsed = parseFloat(String(r.label || ''));
+          return {
+            distance: !isNaN(parsed) ? parsed : Number(((idx + 1) * 0.1).toFixed(2)),
+            hardness: null
+          };
+        });
+      }
     }
+    this.recalculateEffectiveCaseDepth();
   }
 
   private initChecklist(): void {
@@ -2143,6 +2156,114 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       }
     }
     return null;
+  }
+
+  // =========================================================================
+  // Batch 1 Dynamic Renderers: Multi-Reading (reading), Location (location), Traverse (traverse)
+  // =========================================================================
+  hasConfiguredReadingTable(s: any): boolean {
+    return Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0;
+  }
+
+  getReadingMatrixColumns(s: any): any[] {
+    let runningSpot = 0;
+    return this.getParamTableColumns(s).map((c: any) => {
+      const m = /^(?:spot|reading)_(\d+)$/i.exec(String(c.key || ''));
+      const spotIndex = m ? Math.max(0, parseInt(m[1], 10) - 1) : (c.resolvedRole === 'observation_value' ? runningSpot++ : null);
+      return { ...c, spotIndex };
+    });
+  }
+
+  getReadingMatrixRows(s: any): { rowKey: string; label: string; targetParam: string; isCustomRow: boolean }[] {
+    const mode = s?.config?.sectionDataMode === 'template' ? 'template' : 'runtime';
+    const templateRows: any[] = Array.isArray(s?.config?.tableRows)
+      ? s.config.tableRows.filter((r: any) => r && r.visible !== false)
+      : [];
+
+    if (mode === 'template' && templateRows.length > 0) {
+      return templateRows.map((tr: any, idx: number) => {
+        const matchedParam = this.findReadingTargetNameForRow(tr);
+        return {
+          rowKey: tr.key || `rd_tpl_${idx}`,
+          label: tr.label || matchedParam || `Row ${idx + 1}`,
+          targetParam: matchedParam || tr.label || `Row ${idx + 1}`,
+          isCustomRow: !matchedParam
+        };
+      });
+    }
+
+    const targets = this.getReadingTargetParameters(s);
+    const rows = targets.map((t, idx) => ({
+      rowKey: `rd_rt_${idx}_${t}`,
+      label: t,
+      targetParam: t,
+      isCustomRow: false
+    }));
+
+    templateRows
+      .filter((tr: any) => tr.rowOrigin !== 'db' && tr.dbMasterId == null && !this.findReadingTargetNameForRow(tr))
+      .forEach((tr: any, idx: number) => {
+        const lbl = String(tr.label || '').trim();
+        if (lbl && !rows.some(r => r.label.toLowerCase() === lbl.toLowerCase())) {
+          rows.push({
+            rowKey: tr.key || `rd_custom_${idx}`,
+            label: lbl,
+            targetParam: lbl,
+            isCustomRow: true
+          });
+        }
+      });
+
+    return rows;
+  }
+
+  private findReadingTargetNameForRow(row: any): string | null {
+    if (!this.parametersFormArray) return null;
+    if (row?.dbMasterId != null && row.dbMasterId !== '') {
+      const targetId = Number(row.dbMasterId);
+      for (let i = 0; i < this.parametersFormArray.length; i++) {
+        const v = this.parametersFormArray.at(i)?.value;
+        if (Number(v?.parameterID) === targetId) return v.parameterName;
+      }
+    }
+    const lbl = String(row?.dbMasterName || row?.label || '').trim().toLowerCase();
+    if (lbl) {
+      for (let i = 0; i < this.parametersFormArray.length; i++) {
+        const v = this.parametersFormArray.at(i)?.value;
+        if (String(v?.parameterName || '').trim().toLowerCase() === lbl) return v.parameterName;
+      }
+    }
+    return null;
+  }
+
+  hasConfiguredLocationTable(s: any): boolean {
+    return Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0;
+  }
+
+  getLocationRowAggregate(s: any, locIdx: number, agg: 'avg' | 'min' | 'max'): string {
+    const sKey = s?.config?.sectionKey || s?.id || 'location';
+    const rowKey = `loc_${locIdx}`;
+    const obsCols = this.getParamTableColumns(s).filter((c: any) => c.resolvedRole === 'observation_value');
+    const nums: number[] = [];
+    obsCols.forEach((c: any) => {
+      const raw = this.getCustomCellValue(sKey, rowKey, c.key);
+      const n = parseFloat(raw);
+      if (!isNaN(n)) nums.push(n);
+    });
+    if (nums.length === 0) return '—';
+    let res = 0;
+    if (agg === 'avg') res = nums.reduce((a, b) => a + b, 0) / nums.length;
+    else if (agg === 'min') res = Math.min(...nums);
+    else res = Math.max(...nums);
+    return res.toFixed(2);
+  }
+
+  getTraverseExtraColumns(s: any): any[] {
+    if (!Array.isArray(s?.config?.tableColumns)) return [];
+    return this.getParamTableColumns(s).filter((c: any) => {
+      const k = String(c.key || '').toLowerCase();
+      return k !== 'x' && k !== 'y' && c.resolvedRole !== 'row_label';
+    });
   }
 
   getTargetParamIndexForCell(row: any, col: any): number | null {

@@ -846,25 +846,39 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     { value: 'dimensional_factor', label: 'Dimensional Factor Master' }
   ];
 
-  columnRoleOptions: Array<{ value: ColumnRoleType; label: string }> = [
-    { value: 'row_label', label: 'Row / Parameter Label' },
-    { value: 'unit', label: 'Engineering Unit' },
-    { value: 'spec_requirement', label: 'Grade Requirement (Spec)' },
-    { value: 'spec_min', label: 'Spec Min Limit' },
-    { value: 'spec_max', label: 'Spec Max Limit' },
-    { value: 'observation_value', label: 'Observed Result Input' },
-    { value: 'uncertainty', label: 'Uncertainty (± MU)' },
-    { value: 'nabl_scope', label: 'NABL Scope Mark' },
-    { value: 'detection_limit', label: 'Detection Limit (DL)' },
-    { value: 'test_method', label: 'Test Method / Standard' },
-    { value: 'agg_average', label: 'Auto Average (Mean)' },
-    { value: 'agg_min', label: 'Auto Minimum' },
-    { value: 'agg_max', label: 'Auto Maximum' },
-    { value: 'status_verdict', label: 'Status (PASS / FAIL)' },
-    { value: 'reportable_toggle', label: 'Reportable Toggle' },
-    { value: 'master_link', label: 'Master Data Link' },
-    { value: 'custom_data', label: 'Custom Free Input' },
-    { value: 'static_text', label: 'Static Fixed Text' }
+  columnRoleOptions: Array<{ value: ColumnRoleType; label: string; badge?: string }> = [
+    { value: 'row_label', label: 'Row / Parameter Label', badge: 'Identity' },
+    { value: 'unit', label: 'Engineering Unit', badge: 'Identity' },
+    { value: 'test_method', label: 'Test Method / Standard', badge: 'Identity' },
+    { value: 'spec_requirement', label: 'Grade Requirement (Spec)', badge: 'Spec' },
+    { value: 'spec_min', label: 'Spec Min Limit', badge: 'Spec' },
+    { value: 'spec_max', label: 'Spec Max Limit', badge: 'Spec' },
+    { value: 'observation_value', label: 'Observed Result Input', badge: 'Entry' },
+    { value: 'agg_average', label: 'Auto Average (Mean)', badge: 'Calc' },
+    { value: 'agg_min', label: 'Auto Minimum', badge: 'Calc' },
+    { value: 'agg_max', label: 'Auto Maximum', badge: 'Calc' },
+    { value: 'status_verdict', label: 'Status (PASS / FAIL)', badge: 'Verdict' },
+    { value: 'uncertainty', label: 'Uncertainty (± MU)', badge: 'NABL' },
+    { value: 'nabl_scope', label: 'NABL Scope Mark', badge: 'NABL' },
+    { value: 'detection_limit', label: 'Detection Limit (DL)', badge: 'NABL' },
+    { value: 'reportable_toggle', label: 'Reportable Toggle', badge: 'NABL' },
+    { value: 'custom_data', label: 'Custom Free Input', badge: 'Custom' },
+    { value: 'master_link', label: 'Master Data Link', badge: 'Master' },
+    { value: 'static_text', label: 'Static Fixed Text', badge: 'Static' }
+  ];
+
+  masterSourceMiniOptions: Array<{ value: DbMasterSourceType; label: string }> = [
+    { value: 'parameter', label: 'Parameter' },
+    { value: 'equipment', label: 'Equipment' },
+    { value: 'product_condition', label: 'Condition' },
+    { value: 'heat_treatment', label: 'Heat Treat' },
+    { value: 'specimen_orientation', label: 'Orientation' },
+    { value: 'dimensional_factor', label: 'Dim Factor' }
+  ];
+
+  sectionStatusOptions: Array<{ value: string; label: string }> = [
+    { value: 'Optional', label: 'Optional' },
+    { value: 'Mandatory', label: 'Mandatory' }
   ];
 
   cellInputTypeOptions: Array<{ value: CellInputType; label: string }> = [
@@ -4170,19 +4184,19 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     );
 
     const isChem = !isExplicitNonChemPreset && (
-                   (this.leafNode || '').toLowerCase().includes('chemical') ||
-                   (this.leafNode || '').toLowerCase().includes('spectro') ||
-                   (this.currentLabTestName || '').toLowerCase().includes('spectro') ||
-                   (this.layoutName || '').toLowerCase().includes('spectro') ||
-                   this.selectedArchetypeKey === 'oes' ||
-                   this.selectedArchetypeKey === 'cu_spectro');
+      (this.leafNode || '').toLowerCase().includes('chemical') ||
+      (this.leafNode || '').toLowerCase().includes('spectro') ||
+      (this.currentLabTestName || '').toLowerCase().includes('spectro') ||
+      (this.layoutName || '').toLowerCase().includes('spectro') ||
+      this.selectedArchetypeKey === 'oes' ||
+      this.selectedArchetypeKey === 'cu_spectro');
 
     const isCu = !isExplicitNonChemPreset && (
-                 (this.currentLabTestName || '').toLowerCase().includes('cu-') ||
-                 (this.leafNode || '').toLowerCase().includes('cu-') ||
-                 (this.layoutName || '').toLowerCase().includes('cu-') ||
-                 this.selectedArchetypeKey === 'cu_spectro' ||
-                 this.selectedTestKey === 'cu_spectro');
+      (this.currentLabTestName || '').toLowerCase().includes('cu-') ||
+      (this.leafNode || '').toLowerCase().includes('cu-') ||
+      (this.layoutName || '').toLowerCase().includes('cu-') ||
+      this.selectedArchetypeKey === 'cu_spectro' ||
+      this.selectedTestKey === 'cu_spectro');
 
     if (isCu) {
       this.selectedArchetypeKey = 'cu_spectro';

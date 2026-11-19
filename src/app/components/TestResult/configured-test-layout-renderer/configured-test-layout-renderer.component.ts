@@ -2121,9 +2121,21 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!this.parametersFormArray || specimenIdx < 0) return null;
     const baseCount = this.getBaseParameterCount() || this.parametersFormArray.length;
     if (baseCount <= 0) return null;
-    const colLabel = String(col?.label || '').trim().toLowerCase();
+    const limit = Math.min(baseCount, this.parametersFormArray.length);
+    // 1. Exact DB Parameter ID match when column is Master-Linked
+    if (col?.dbMasterId != null && col.dbMasterId !== '' && (!col.dbMasterSource || col.dbMasterSource === 'parameter')) {
+      const targetId = Number(col.dbMasterId);
+      for (let b = 0; b < limit; b++) {
+        if (Number(this.parametersFormArray.at(b)?.value?.parameterID) === targetId) {
+          const target = specimenIdx * baseCount + b;
+          return target < this.parametersFormArray.length ? target : null;
+        }
+      }
+    }
+    // 2. Fallback to Master Name / Header Label / Key match
+    const colLabel = String(col?.dbMasterName || col?.label || '').trim().toLowerCase();
     const colKey = String(col?.key || '').trim().toLowerCase();
-    for (let b = 0; b < Math.min(baseCount, this.parametersFormArray.length); b++) {
+    for (let b = 0; b < limit; b++) {
       const pName = String(this.parametersFormArray.at(b)?.value?.parameterName || '').trim().toLowerCase();
       if (pName === colLabel || (colKey && pName.includes(colKey))) {
         const target = specimenIdx * baseCount + b;

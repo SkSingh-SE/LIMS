@@ -2273,6 +2273,7 @@
                       [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
                       [placeholder]="'Link ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
                       [selectedItem]="r.dbMasterId"
+                      [reloadKey]="r.dbMasterSource || 'parameter'"
                       (itemSelected)="onRowMasterItemSelected(s, rIdx, $event)">
                     </app-searchable-dropdown>
                   </div>
@@ -2386,13 +2387,25 @@
                     [(ngModel)]="c.staticValue"
                     placeholder="Fixed text value...">
 
-                  <!-- Master Source Selector (when role === 'master_link') -->
-                  <div class="flex-shrink-0 master-source-mini-select"
+                  <!-- Master Source Selector + Actual Master Record Dropdown (when role === 'master_link') -->
+                  <div class="d-flex align-items-center gap-1 w-100 mt-1"
                     *ngIf="getEffectiveColumnRole(c) === 'master_link'">
-                    <app-custom-select [options]="masterSourceMiniOptions"
-                      [(ngModel)]="c.dbMasterSource"
-                      size="xs" [searchable]="false" placeholder="Master">
-                    </app-custom-select>
+                    <div class="flex-shrink-0 master-source-mini-select">
+                      <app-custom-select [options]="masterSourceMiniOptions"
+                        [ngModel]="c.dbMasterSource || 'parameter'"
+                        (ngModelChange)="onColumnMasterSourceChange(s, cIdx, $event)"
+                        size="xs" [searchable]="false" placeholder="Master">
+                      </app-custom-select>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                      <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                        [fetchDataFn]="getMasterFetchFn(c.dbMasterSource || 'parameter')"
+                        [placeholder]="'Select ' + getMasterSourceLabel(c.dbMasterSource || 'parameter') + '...'"
+                        [selectedItem]="c.dbMasterId"
+                        [reloadKey]="c.dbMasterSource || 'parameter'"
+                        (itemSelected)="onColumnMasterItemSelected(s, cIdx, $event)">
+                      </app-searchable-dropdown>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2627,6 +2640,7 @@
                       [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
                       [placeholder]="'Link ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
                       [selectedItem]="r.dbMasterId"
+                      [reloadKey]="r.dbMasterSource || 'parameter'"
                       (itemSelected)="onRowMasterItemSelected(s, rIdx, $event)">
                     </app-searchable-dropdown>
                   </div>
@@ -2743,12 +2757,24 @@
                     [(ngModel)]="c.staticValue"
                     placeholder="Fixed text value...">
 
-                  <div class="flex-shrink-0 master-source-mini-select"
+                  <div class="d-flex align-items-center gap-1 w-100 mt-1"
                     *ngIf="getEffectiveColumnRole(c) === 'master_link'">
-                    <app-custom-select [options]="masterSourceMiniOptions"
-                      [(ngModel)]="c.dbMasterSource"
-                      size="xs" [searchable]="false" placeholder="Master">
-                    </app-custom-select>
+                    <div class="flex-shrink-0 master-source-mini-select">
+                      <app-custom-select [options]="masterSourceMiniOptions"
+                        [ngModel]="c.dbMasterSource || 'parameter'"
+                        (ngModelChange)="onColumnMasterSourceChange(s, cIdx, $event)"
+                        size="xs" [searchable]="false" placeholder="Master">
+                      </app-custom-select>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                      <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
+                        [fetchDataFn]="getMasterFetchFn(c.dbMasterSource || 'parameter')"
+                        [placeholder]="'Select ' + getMasterSourceLabel(c.dbMasterSource || 'parameter') + '...'"
+                        [selectedItem]="c.dbMasterId"
+                        [reloadKey]="c.dbMasterSource || 'parameter'"
+                        (itemSelected)="onColumnMasterItemSelected(s, cIdx, $event)">
+                      </app-searchable-dropdown>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3027,6 +3053,7 @@
                       [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
                       [placeholder]="'Link ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
                       [selectedItem]="r.dbMasterId"
+                      [reloadKey]="r.dbMasterSource || 'parameter'"
                       (itemSelected)="onRowMasterItemSelected(s, rIdx, $event)">
                     </app-searchable-dropdown>
                   </div>

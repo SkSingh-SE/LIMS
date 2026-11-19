@@ -560,6 +560,15 @@
                           <!-- Static Text -->
                           <span *ngSwitchCase="'static_text'" class="text-dark small font-monospace">{{ col.staticValue || '—' }}</span>
 
+                          <!-- Master Data Link -->
+                          <ng-container *ngSwitchCase="'master_link'">
+                            <input type="text" class="form-control form-control-xs text-center"
+                                   [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key) || col.dbMasterName || ''"
+                                   [ngModelOptions]="{ standalone: true }"
+                                   (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                   [readOnly]="isViewMode || isLocked" [placeholder]="col.dbMasterName || col.label || 'Select...'" />
+                          </ng-container>
+
                           <!-- Custom Data / Default -->
                           <ng-container *ngSwitchDefault>
                             <input type="text" class="form-control form-control-xs text-center"
@@ -582,6 +591,27 @@
                         <ng-container [ngSwitch]="col.resolvedRole">
                           <span *ngSwitchCase="'row_label'" class="fw-semibold text-dark">{{ row.label }}</span>
                           <span *ngSwitchCase="'static_text'" class="text-dark small font-monospace">{{ col.staticValue || '—' }}</span>
+                          <ng-container *ngSwitchCase="'master_link'">
+                            <ng-container *ngIf="(!col.dbMasterSource || col.dbMasterSource === 'parameter') && getTransposedParamIdx(row.specimenIdx, col) !== null && getParamControlByIdx(getTransposedParamIdx(row.specimenIdx, col)) as mCtrl; else nonParamMasterCell">
+                              <input *ngIf="isParameterCalculated(mCtrl.value) || col.isCalculated" type="text"
+                                     class="form-control form-control-xs text-center font-monospace bg-light fw-bold text-primary num-tabular"
+                                     [value]="mCtrl.get('value')?.value ?? ''" readonly disabled placeholder="Auto" />
+                              <input *ngIf="!isParameterCalculated(mCtrl.value) && !col.isCalculated" type="number"
+                                     [attr.step]="getStepForPrecision(col.decimalPrecision ?? mCtrl.value.decimalPrecision)"
+                                     class="form-control form-control-xs text-center font-monospace fw-semibold num-tabular"
+                                     [ngModel]="mCtrl.get('value')?.value"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="onDynamicParamValueChange(getTransposedParamIdx(row.specimenIdx, col)!, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="0.00" />
+                            </ng-container>
+                            <ng-template #nonParamMasterCell>
+                              <input type="text" class="form-control form-control-xs text-center"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key) || col.dbMasterName || ''"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" [placeholder]="col.dbMasterName || col.label || 'Enter...'" />
+                            </ng-template>
+                          </ng-container>
                           <ng-container *ngSwitchCase="'observation_value'">
                             <ng-container *ngIf="getTransposedParamIdx(row.specimenIdx, col) !== null && getParamControlByIdx(getTransposedParamIdx(row.specimenIdx, col)) as tCtrl; else customTransCell">
                               <input *ngIf="isParameterCalculated(tCtrl.value) || col.isCalculated" type="text"
@@ -1284,7 +1314,16 @@
                           </span>
                         </ng-container>
 
-                        <!-- 14. Custom Data / Master Link / Default -->
+                        <!-- 13b. Master Data Link -->
+                        <ng-container *ngSwitchCase="'master_link'">
+                          <input type="text" class="form-control form-control-xs text-center"
+                                 [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key) || col.dbMasterName || ''"
+                                 [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                 [readOnly]="isViewMode || isLocked" [placeholder]="col.dbMasterName || col.label || 'Select...'" />
+                        </ng-container>
+
+                        <!-- 14. Custom Data / Default -->
                         <ng-container *ngSwitchDefault>
                           <ng-container *ngIf="col.key === 'remarks' && !row.isCustomRow && getParamControlByIdx(row.paramIdx) as rCtrl; else genericCustomCell">
                             <input type="text" class="form-control form-control-xs"

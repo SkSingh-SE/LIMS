@@ -415,7 +415,8 @@ export interface LayoutColumnItem {
   dropdownOptions?: string;
   origin?: DataOriginType;
   dbMasterSource?: DbMasterSourceType;
-  dbMasterId?: number | string;
+  dbMasterId?: number | string | null;
+  dbMasterName?: string;
   staticValue?: string;
   paramKey?: string;
   unit?: string;
@@ -925,6 +926,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       col.bindingMode = 'manual';
     } else if (role === 'static_text') {
       col.bindingMode = 'static';
+    } else if (role === 'master_link') {
+      col.dbMasterSource = col.dbMasterSource || 'parameter';
+      col.bindingMode = 'runtime';
     } else {
       col.bindingMode = 'runtime';
     }
@@ -6080,6 +6084,43 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
     sec.config.tableRows = [...rows];
     this.toastService.show(`Row ${rIdx + 1} linked to ${this.getMasterSourceLabel(row.dbMasterSource)}: "${pureName}"`, 'success');
+  }
+
+  onColumnMasterSourceChange(sec: ExecutionSection, cIdx: number, source: DbMasterSourceType): void {
+    const cols = this.ensureTableColumns(sec);
+    const col = cols[cIdx];
+    if (!col) return;
+    col.dbMasterSource = source;
+    col.dbMasterId = undefined;
+    col.dbMasterName = undefined;
+    sec.config.tableColumns = [...cols];
+  }
+
+  onColumnMasterItemSelected(sec: ExecutionSection, cIdx: number, item: any): void {
+    const cols = this.ensureTableColumns(sec);
+    const col = cols[cIdx];
+    if (!col || !item) return;
+
+    const addVals = item.additionalValues || {};
+    const rawName = item.name || item.displayText || '';
+    const pureName = (addVals.PureName || (rawName.includes(' - ') ? rawName.split(' - ')[0] : rawName)).trim();
+
+    col.columnRole = 'master_link';
+    col.dbMasterSource = col.dbMasterSource || 'parameter';
+    col.dbMasterId = item.id ?? item.value ?? null;
+    col.dbMasterName = pureName || col.label;
+    col.label = pureName || col.label;
+
+    if (col.dbMasterSource === 'parameter') {
+      if (addVals.Unit || item.unit) col.unit = addVals.Unit || item.unit;
+      if (addVals.Requirement || item.requirement) col.requirement = addVals.Requirement || item.requirement;
+      col.isCalculated = !!addVals.IsCalculated || !!item.isCalculated;
+      if (addVals.Formula || item.formula) col.formula = addVals.Formula || item.formula;
+      if (addVals.FormulaDisplay || item.formulaDisplay) col.formulaDisplay = addVals.FormulaDisplay || item.formulaDisplay;
+    }
+
+    sec.config.tableColumns = [...cols];
+    this.toastService.show(`Column ${cIdx + 1} linked to ${this.getMasterSourceLabel(col.dbMasterSource)}: "${pureName}"`, 'success');
   }
 
   selectedUniversalMasterSource: DbMasterSourceType = 'parameter';

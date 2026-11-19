@@ -608,8 +608,9 @@
           <ng-container *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasSectionOfType('reading') && !hasSectionOfType('spm')">
 
             <!-- Specimen Filtering & Adjustment Toolbar -->
-            <div class="specimen-toolbar bg-light border rounded p-1 mb-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div class="d-flex align-items-center gap-1 flex-wrap">
+            <div class="specimen-toolbar bg-light border rounded p-1 mb-2 d-flex align-items-center justify-content-between flex-wrap gap-2"
+                 *ngIf="!s.config?.enableMultiSpecimen || (!isViewMode && !isLocked && s.config?.runtimeAdjust !== false)">
+              <div class="d-flex align-items-center gap-1 flex-wrap" *ngIf="!s.config?.enableMultiSpecimen">
                 <span class="text-muted text-xxs fw-semibold me-1">
                   <i class="bi bi-filter-circle me-1 text-danger"></i>Specimen View:
                 </span>
@@ -628,8 +629,14 @@
                 </button>
               </div>
 
+              <!-- Multi-Specimen Mode Summary -->
+              <div class="d-flex align-items-center gap-2 text-xxs text-muted" *ngIf="s.config?.enableMultiSpecimen">
+                <span class="fw-semibold text-dark">Multi-Specimen Matrix</span>
+                <span>({{ specimens.length || 1 }} Specimens)</span>
+              </div>
+
               <!-- Specimen & Parameter Quick Adjustment Buttons -->
-              <div class="d-flex align-items-center gap-1" *ngIf="!isViewMode && !isLocked">
+              <div class="d-flex align-items-center gap-1 ms-auto" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">
                 <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()" title="Add custom parameter">
                   <i class="bi bi-plus-square me-1"></i><span>+ Parameter</span>
                 </button>
@@ -640,7 +647,47 @@
             <div class="table-responsive" *ngIf="hasConfiguredParameterTable(s)">
               <table class="table lims-data-grid align-middle mb-1">
                 <thead class="text-center">
-                  <tr>
+                  <!-- Header Mode 1: Merged Header Active + Sub-Labels Visible -->
+                  <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
+                    <tr>
+                      <th rowspan="2" class="w-col-35 align-middle">#</th>
+                      <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                          [class.text-start]="col.resolvedRole === 'row_label'">
+                        {{ col.label }}
+                      </th>
+                      <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">
+                        {{ getParamMergedHeaderTitle(s) }}
+                      </th>
+                      <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                          [class.text-start]="col.resolvedRole === 'row_label'">
+                        {{ col.label }}
+                      </th>
+                      <th rowspan="2" class="w-col-75 align-middle">Actions</th>
+                    </tr>
+                    <tr>
+                      <th *ngFor="let col of getParamMergedCols(s)" class="text-center">
+                        {{ col.label }}
+                      </th>
+                    </tr>
+                  </ng-container>
+
+                  <!-- Header Mode 2: Merged Header Active + Sub-Labels Hidden -->
+                  <tr *ngIf="hasParamMergedHeader(s) && !isParamSubLabelsVisible(s)">
+                    <th class="w-col-35">#</th>
+                    <th *ngFor="let col of getParamPreMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      {{ col.label }}
+                    </th>
+                    <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">
+                      {{ getParamMergedHeaderTitle(s) }}
+                    </th>
+                    <th *ngFor="let col of getParamPostMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      {{ col.label }}
+                    </th>
+                    <th class="w-col-75">Actions</th>
+                  </tr>
+
+                  <!-- Header Mode 3: Standard Single Row -->
+                  <tr *ngIf="!hasParamMergedHeader(s)">
                     <th class="w-col-35">#</th>
                     <th *ngFor="let col of getParamTableColumns(s)"
                         [class.text-start]="col.resolvedRole === 'row_label'">
@@ -652,8 +699,8 @@
                 <tbody>
                   <tr *ngFor="let row of getParamTableRows(s); let rIdx = index"
                       [ngClass]="{
-                        'table-danger-subtle': !row.isCustomRow && getParamControlByIdx(row.paramIdx)?.value?.isWithinLimit === false,
-                        'table-success-subtle': !row.isCustomRow && getParamControlByIdx(row.paramIdx)?.value?.isWithinLimit === true
+                        'table-danger-subtle': getRowComplianceStatus(row) === false,
+                        'table-success-subtle': getRowComplianceStatus(row) === true
                       }">
                     <!-- Row Index -->
                     <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
@@ -667,7 +714,7 @@
 
                         <!-- 1. Row Label -->
                         <ng-container *ngSwitchCase="'row_label'">
-                          <div class="d-flex align-items-center gap-1.5">
+                          <div class="d-flex align-items-center gap-1">
                             <i *ngIf="!row.isCustomRow && isParameterCalculated(getParamControlByIdx(row.paramIdx)?.value)"
                                class="bi bi-calculator text-primary flex-shrink-0"
                                [title]="'Formula-driven (auto-calculated, read-only): ' + (getFormulaDisplay(getParamControlByIdx(row.paramIdx)?.value) || 'Formula')"></i>
@@ -680,13 +727,17 @@
                         <ng-container *ngSwitchCase="'unit'">
                           <ng-container *ngIf="!row.isCustomRow && getParamControlByIdx(row.paramIdx) as ctrl; else customUnitCell">
                             <ng-container *ngIf="ctrl.value.unitOptions?.length > 1; else plainDynUnit">
-                              <select class="form-select form-select-xs"
-                                      [ngModel]="ctrl.get('selectedUnit')?.value"
-                                      [ngModelOptions]="{ standalone: true }"
-                                      (ngModelChange)="ctrl.get('selectedUnit')?.setValue($event); onUnitSelect(row.paramIdx!)"
-                                      [disabled]="isViewMode || isLocked">
-                                <option *ngFor="let opt of ctrl.value.unitOptions" [value]="opt.unitName">{{ opt.unitName }}</option>
-                              </select>
+                              <app-custom-select
+                                [options]="ctrl.value.unitOptions"
+                                valueField="unitName"
+                                labelField="unitName"
+                                [ngModel]="ctrl.get('selectedUnit')?.value"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="ctrl.get('selectedUnit')?.setValue($event); onUnitSelect(row.paramIdx!)"
+                                size="xs"
+                                [searchable]="false"
+                                [disabled]="isViewMode || isLocked">
+                              </app-custom-select>
                             </ng-container>
                             <ng-template #plainDynUnit>
                               <span class="text-muted small font-monospace">{{ ctrl.value.unit || row.unit || '—' }}</span>
@@ -731,40 +782,32 @@
                               </div>
                             </ng-container>
 
-                            <!-- 5b. STATIC ROW -->
-                            <ng-container *ngIf="!isParameterCalculated(cellCtrl.value) && row.bindingMode === 'static'">
-                              <span class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-2 py-1">
-                                {{ row.staticValue || '—' }}
-                              </span>
-                            </ng-container>
-
-                            <!-- 5c. EDITABLE NON-FORMULA PARAMETER (Input Type Driven) -->
-                            <ng-container *ngIf="!isParameterCalculated(cellCtrl.value) && row.bindingMode !== 'static'"
+                            <!-- 5b. EDITABLE NON-FORMULA PARAMETER (Input Type Driven) -->
+                            <ng-container *ngIf="!isParameterCalculated(cellCtrl.value)"
                                           [ngSwitch]="getEffectiveInputType(col, cellCtrl.value)">
                               <!-- Boolean -->
-                              <select *ngSwitchCase="'boolean'" class="form-select form-select-xs fw-semibold text-center"
-                                      [ngModel]="cellCtrl.get('value')?.value"
-                                      [ngModelOptions]="{ standalone: true }"
-                                      (ngModelChange)="onDynamicParamValueChange(getTargetParamIndexForCell(row, col)!, $event)"
-                                      [disabled]="isViewMode || isLocked">
-                                <option [ngValue]="null">Select...</option>
-                                <option value="Pass">Pass</option>
-                                <option value="Fail">Fail</option>
-                                <option value="Satisfactory">Satisfactory</option>
-                                <option value="Not Satisfactory">Not Satisfactory</option>
-                              </select>
+                              <app-custom-select *ngSwitchCase="'boolean'"
+                                [options]="booleanSelectOptions"
+                                [ngModel]="cellCtrl.get('value')?.value"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="onDynamicParamValueChange(getTargetParamIndexForCell(row, col)!, $event)"
+                                size="xs"
+                                [searchable]="false"
+                                [disabled]="isViewMode || isLocked"
+                                placeholder="Select...">
+                              </app-custom-select>
 
                               <!-- Dropdown -->
-                              <select *ngSwitchCase="'dropdown'" class="form-select form-select-xs fw-semibold"
-                                      [ngModel]="cellCtrl.get('value')?.value"
-                                      [ngModelOptions]="{ standalone: true }"
-                                      (ngModelChange)="onDynamicParamValueChange(getTargetParamIndexForCell(row, col)!, $event)"
-                                      [disabled]="isViewMode || isLocked">
-                                <option [ngValue]="null">Select...</option>
-                                <option *ngFor="let opt of getDropdownOptionsForCell(col, cellCtrl.value)" [value]="opt.value">
-                                  {{ opt.label }}
-                                </option>
-                              </select>
+                              <app-custom-select *ngSwitchCase="'dropdown'"
+                                [options]="getDropdownOptionsForCell(col, cellCtrl.value)"
+                                [ngModel]="cellCtrl.get('value')?.value"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="onDynamicParamValueChange(getTargetParamIndexForCell(row, col)!, $event)"
+                                size="xs"
+                                [searchable]="true"
+                                [disabled]="isViewMode || isLocked"
+                                placeholder="Select...">
+                              </app-custom-select>
 
                               <!-- Date -->
                               <input *ngSwitchCase="'date'" type="date"
@@ -804,19 +847,45 @@
                             </ng-container>
                           </ng-container>
 
-                          <!-- Custom Row Observation Cell (persisted in ExecutionExtraJson) -->
+                          <!-- Custom Row Observation Cell (Input Type Driven, persisted in ExecutionExtraJson) -->
                           <ng-template #customObsCell>
-                            <span *ngIf="row.bindingMode === 'static'"
-                                  class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-2 py-1">
-                              {{ row.staticValue || '—' }}
-                            </span>
-                            <input *ngIf="row.bindingMode !== 'static'" type="text"
-                                   class="form-control form-control-xs text-center font-monospace"
-                                   [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
-                                   [ngModelOptions]="{ standalone: true }"
-                                   (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
-                                   [readOnly]="isViewMode || isLocked"
-                                   placeholder="Enter..." />
+                            <ng-container [ngSwitch]="getEffectiveInputType(col, null)">
+                              <app-custom-select *ngSwitchCase="'boolean'"
+                                [options]="booleanSelectOptions"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
+                              <app-custom-select *ngSwitchCase="'dropdown'"
+                                [options]="getDropdownOptionsForCell(col, null)"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                size="xs" [searchable]="true" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
+                              <input *ngSwitchCase="'date'" type="date" class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" />
+                              <input *ngSwitchCase="'number'" type="number" step="1" class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="0" />
+                              <input *ngSwitchCase="'decimal'" type="number" [attr.step]="getStepForPrecision(col.decimalPrecision)"
+                                     class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="0.00" />
+                              <input *ngSwitchDefault type="text" class="form-control form-control-xs text-center"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                     [readOnly]="isViewMode || isLocked" placeholder="Enter..." />
+                            </ng-container>
                           </ng-template>
                         </ng-container>
 
@@ -861,12 +930,12 @@
                           </span>
                         </ng-container>
 
-                        <!-- 11. Status Verdict -->
+                        <!-- 11. Status Verdict (Evaluates across all specimens in multi-specimen mode) -->
                         <ng-container *ngSwitchCase="'status_verdict'">
-                          <ng-container *ngIf="!row.isCustomRow && getParamControlByIdx(row.paramIdx)?.value as pv; else pendingCustomStatus">
-                            <span *ngIf="pv.isWithinLimit === true" class="status-pill-lims status-pill-pass">PASS</span>
-                            <span *ngIf="pv.isWithinLimit === false" class="status-pill-lims status-pill-fail">FAIL</span>
-                            <span *ngIf="pv.isWithinLimit == null" class="status-pill-lims status-pill-pending">PENDING</span>
+                          <ng-container *ngIf="!row.isCustomRow; else pendingCustomStatus">
+                            <span *ngIf="getRowComplianceStatus(row) === true" class="status-pill-lims status-pill-pass">PASS</span>
+                            <span *ngIf="getRowComplianceStatus(row) === false" class="status-pill-lims status-pill-fail">FAIL</span>
+                            <span *ngIf="getRowComplianceStatus(row) === null" class="status-pill-lims status-pill-pending">PENDING</span>
                           </ng-container>
                           <ng-template #pendingCustomStatus>
                             <span class="text-muted small">—</span>
@@ -888,8 +957,8 @@
 
                         <!-- 13. Static Text -->
                         <ng-container *ngSwitchCase="'static_text'">
-                          <span class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace px-2 py-1">
-                            {{ col.staticValue || row.staticValue || '—' }}
+                          <span class="text-dark small font-monospace">
+                            {{ col.staticValue || '—' }}
                           </span>
                         </ng-container>
 
@@ -905,25 +974,20 @@
                           </ng-container>
                           <ng-template #genericCustomCell>
                             <ng-container [ngSwitch]="getEffectiveInputType(col, null)">
-                              <select *ngSwitchCase="'boolean'" class="form-select form-select-xs text-center"
-                                      [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
-                                      [ngModelOptions]="{ standalone: true }"
-                                      (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
-                                      [disabled]="isViewMode || isLocked">
-                                <option value="">Select...</option>
-                                <option value="Pass">Pass</option>
-                                <option value="Fail">Fail</option>
-                              </select>
-                              <select *ngSwitchCase="'dropdown'" class="form-select form-select-xs"
-                                      [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
-                                      [ngModelOptions]="{ standalone: true }"
-                                      (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
-                                      [disabled]="isViewMode || isLocked">
-                                <option value="">Select...</option>
-                                <option *ngFor="let opt of getDropdownOptionsForCell(col, null)" [value]="opt.value">
-                                  {{ opt.label }}
-                                </option>
-                              </select>
+                              <app-custom-select *ngSwitchCase="'boolean'"
+                                [options]="booleanSelectOptions"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
+                              <app-custom-select *ngSwitchCase="'dropdown'"
+                                [options]="getDropdownOptionsForCell(col, null)"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                                size="xs" [searchable]="true" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
                               <input *ngSwitchCase="'date'" type="date" class="form-control form-control-xs text-center"
                                      [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
                                      [ngModelOptions]="{ standalone: true }"

@@ -6,6 +6,7 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { CustomSelectComponent } from '../../../utility/components/custom-select/custom-select.component';
 import { ParameterService } from '../../../services/parameter.service';
 
 export interface SpecimenData {
@@ -84,7 +85,8 @@ export interface CustomAttribute {
     RouterModule,
     DecimalOnlyDirective,
     TestStatusBadgeComponent,
-    SearchableDropdownComponent
+    SearchableDropdownComponent,
+    CustomSelectComponent
   ],
   templateUrl: './configured-test-layout-renderer.component.html',
   styleUrls: ['./configured-test-layout-renderer.component.css']
@@ -1789,6 +1791,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     );
   }
 
+  readonly booleanSelectOptions = [
+    { value: 'Pass', label: 'Pass' },
+    { value: 'Fail', label: 'Fail' },
+    { value: 'Satisfactory', label: 'Satisfactory' },
+    { value: 'Not Satisfactory', label: 'Not Satisfactory' },
+    { value: 'NA', label: 'N/A' }
+  ];
+
   // =========================================================================
   // Dynamic Parameter Table Renderer (Semantic Column Roles + Data Derivation Mode)
   // =========================================================================
@@ -1799,9 +1809,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   inferParamColumnRole(col: any): string {
     if (col?.columnRole) return col.columnRole;
     const k = String(col?.key || '').toLowerCase();
-    if (k === 'parameter' || k === 'label' || k === 'name') return 'row_label';
+    if (k === 'param' || k === 'parameter' || k === 'label' || k === 'name') return 'row_label';
     if (k === 'unit') return 'unit';
-    if (k === 'requirement' || k === 'spec') return 'spec_requirement';
+    if (k === 'requirement' || k === 'spec' || k === 'limit') return 'spec_requirement';
     if (k === 'spec_min' || k === 'min_limit') return 'spec_min';
     if (k === 'spec_max' || k === 'max_limit') return 'spec_max';
     if (k === 'result' || k === 'value' || k.startsWith('spec_')) return 'observation_value';
@@ -1829,6 +1839,49 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       }));
   }
 
+  // Header Merge Support for Parameter Table
+  hasParamMergedHeader(s: any): boolean {
+    const hm = s?.config?.headerMerge;
+    if (!hm || !hm.active || !hm.startCol) return false;
+    return this.getParamMergedCols(s).length >= 2;
+  }
+
+  isParamSubLabelsVisible(s: any): boolean {
+    return s?.config?.headerMerge?.showSubLabels !== false;
+  }
+
+  getParamMergedHeaderTitle(s: any): string {
+    return s?.config?.headerMerge?.title || 'Grouped Observations';
+  }
+
+  getParamPreMergedCols(s: any): any[] {
+    const cols = this.getParamTableColumns(s);
+    const hm = s?.config?.headerMerge;
+    if (!hm || !hm.active || !hm.startCol) return cols;
+    const startIdx = cols.findIndex((c: any) => c.key === hm.startCol);
+    return startIdx > 0 ? cols.slice(0, startIdx) : [];
+  }
+
+  getParamMergedCols(s: any): any[] {
+    const cols = this.getParamTableColumns(s);
+    const hm = s?.config?.headerMerge;
+    if (!hm || !hm.active || !hm.startCol) return [];
+    const startIdx = cols.findIndex((c: any) => c.key === hm.startCol);
+    if (startIdx < 0) return [];
+    const span = Math.max(2, Number(hm.colspan) || 2);
+    return cols.slice(startIdx, startIdx + span);
+  }
+
+  getParamPostMergedCols(s: any): any[] {
+    const cols = this.getParamTableColumns(s);
+    const hm = s?.config?.headerMerge;
+    if (!hm || !hm.active || !hm.startCol) return [];
+    const startIdx = cols.findIndex((c: any) => c.key === hm.startCol);
+    if (startIdx < 0) return [];
+    const span = Math.max(2, Number(hm.colspan) || 2);
+    return cols.slice(startIdx + span);
+  }
+
   private extractSpecimenIndexFromColKey(key: string): number | null {
     const m = /^spec_(\d+)$/i.exec(String(key || ''));
     return m ? Math.max(0, parseInt(m[1], 10) - 1) : null;
@@ -1839,14 +1892,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     label: string;
     unit?: string;
     requirement?: string;
-    bindingMode?: string;
-    staticValue?: string;
     isCustomRow: boolean;
     paramIdx: number | null;
     specimenIndices: number[];
     templateRow?: any;
   }[] {
-    const mode = s?.config?.sectionDataMode === 'template' ? 'template' : 'runtime';
+    const mode = s?.config?.sectionDataMode
+      ? (s.config.sectionDataMode === 'template' ? 'template' : 'runtime')
+      : (s?.config?.parameterMode === 'Configured parameter subset' ? 'template' : 'runtime');
     const isMultiSpec = !!s?.config?.enableMultiSpecimen;
     const totalParams = this.parametersFormArray?.length || 0;
     const baseCount = this.getBaseParameterCount() || totalParams;
@@ -1867,14 +1920,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const findMatchingParamIndex = (row: any): number | null => {
       if (!this.parametersFormArray || totalParams === 0) return null;
       const searchLimit = isMultiSpec ? Math.min(baseCount, totalParams) : totalParams;
-      if (row?.dbMasterId != null) {
+      if (row?.dbMasterId != null && row.dbMasterId !== '') {
         const targetId = Number(row.dbMasterId);
         for (let i = 0; i < searchLimit; i++) {
           const val = this.parametersFormArray.at(i)?.value;
           if (Number(val?.parameterID) === targetId) return i;
         }
       }
-      const targetLabel = String(row?.label || '').trim().toLowerCase();
+      const targetLabel = String(row?.dbMasterName || row?.label || '').trim().toLowerCase();
       if (targetLabel) {
         for (let i = 0; i < searchLimit; i++) {
           const val = this.parametersFormArray.at(i)?.value;
@@ -1894,8 +1947,6 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
             label: tr.label || ctrlVal.parameterName || `Row ${idx + 1}`,
             unit: ctrlVal.unit || tr.unit || '',
             requirement: this.formatRequirement(ctrlVal),
-            bindingMode: tr.bindingMode || 'runtime',
-            staticValue: tr.staticValue || '',
             isCustomRow: false,
             paramIdx: matchedIdx,
             specimenIndices: buildSpecimenIndices(matchedIdx),
@@ -1907,8 +1958,6 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           label: tr.label || `Custom Row ${idx + 1}`,
           unit: tr.unit || '',
           requirement: tr.requirement || '—',
-          bindingMode: tr.bindingMode || 'manual',
-          staticValue: tr.staticValue || '',
           isCustomRow: true,
           paramIdx: null,
           specimenIndices: [],
@@ -1927,8 +1976,6 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           label: ctrlVal.parameterName || `Parameter ${b + 1}`,
           unit: ctrlVal.unit || '',
           requirement: this.formatRequirement(ctrlVal),
-          bindingMode: 'runtime',
-          staticValue: '',
           isCustomRow: false,
           paramIdx: b,
           specimenIndices: buildSpecimenIndices(b)
@@ -1944,8 +1991,6 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           label: ctrlVal.parameterName || `Parameter ${rIdx + 1}`,
           unit: ctrlVal.unit || '',
           requirement: this.formatRequirement(ctrlVal),
-          bindingMode: 'runtime',
-          staticValue: '',
           isCustomRow: false,
           paramIdx: rIdx,
           specimenIndices: [rIdx]
@@ -1953,17 +1998,20 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       });
     }
 
-    // Append any explicit custom-text template rows (not linked to DB master)
+    // Append explicit custom-text template rows (not DB-linked and not dummy placeholders)
     templateRows
-      .filter((tr: any) => tr.rowOrigin === 'custom' && !tr.dbMasterId && findMatchingParamIndex(tr) === null)
+      .filter((tr: any) => {
+        if (tr.rowOrigin === 'db' || tr.dbMasterId != null) return false;
+        const lbl = String(tr.label || '').trim();
+        if (!lbl || lbl === 'Runtime Parameter (Auto-bound)' || lbl === 'Observation 1') return false;
+        return findMatchingParamIndex(tr) === null;
+      })
       .forEach((tr: any, idx: number) => {
         rows.push({
           rowKey: tr.key || `extra_custom_${idx}`,
           label: tr.label || `Custom Row ${idx + 1}`,
           unit: tr.unit || '',
           requirement: tr.requirement || '—',
-          bindingMode: tr.bindingMode || 'manual',
-          staticValue: tr.staticValue || '',
           isCustomRow: true,
           paramIdx: null,
           specimenIndices: [],
@@ -1972,6 +2020,19 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       });
 
     return rows;
+  }
+
+  getRowComplianceStatus(row: any): boolean | null {
+    if (row?.isCustomRow || !this.parametersFormArray) return null;
+    const indices: number[] = row?.specimenIndices?.length ? row.specimenIndices : (row?.paramIdx != null ? [row.paramIdx] : []);
+    if (indices.length === 0) return null;
+    let hasPass = false;
+    for (const idx of indices) {
+      const lim = this.parametersFormArray.at(idx)?.value?.isWithinLimit;
+      if (lim === false) return false;
+      if (lim === true) hasPass = true;
+    }
+    return hasPass ? true : null;
   }
 
   getTargetParamIndexForCell(row: any, col: any): number | null {

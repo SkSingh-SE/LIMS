@@ -58,7 +58,7 @@ export interface DecisionRuleData {
   ruleType: string;
   confidenceLevel: number;
   guardBandMultiplier: number;
-  acceptanceStatus: 'Pass' | 'Fail' | 'Inconclusive' | 'Conditional';
+  acceptanceStatus: 'Pending' | 'Pass' | 'Fail' | 'Inconclusive' | 'Conditional';
   statementText: string;
 }
 
@@ -167,25 +167,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   readingValues: Record<string, (number | null)[]> = {};
   readingStats: Record<string, { avg: number | null; min: number | null; max: number | null; stdev: number | null }> = {};
 
-  // Case depth traverse state
-  traversePoints: TraversePoint[] = [
-    { distance: 0.1, hardness: null },
-    { distance: 0.2, hardness: null },
-    { distance: 0.4, hardness: null },
-    { distance: 0.6, hardness: null },
-    { distance: 0.8, hardness: null },
-    { distance: 1.0, hardness: null }
-  ];
+  // Case depth traverse state (populated strictly from DB test.traversePoints or DB layout config)
+  traversePoints: TraversePoint[] = [];
   effectiveCaseDepth: number | null = null;
-  cutoffLimit: number = 550; // HV
+  cutoffLimit: number = 550; // HV (hydrated from DB layout config if configured)
 
-  // Checklist state
-  checklistItems: ChecklistItem[] = [
-    { id: 1, label: 'Specimen surface free from defects / machining marks', status: 'Pass' },
-    { id: 2, label: 'Physical dimensions verified within tolerance', status: 'Pass' },
-    { id: 3, label: 'Testing equipment calibration is valid', status: 'Pass' },
-    { id: 4, label: 'Standard testing SOP followed strictly', status: 'Pass' }
-  ];
+  // Checklist state (populated strictly from DB test.checklist or DB layout config)
+  checklistItems: ChecklistItem[] = [];
 
   // Custom condition values
   conditionValues: Record<string, any> = {};
@@ -193,27 +181,24 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Dynamic custom cell values for Parameter Table custom columns/rows (persisted in ExecutionExtraJson)
   customCellValues: Record<string, Record<string, Record<string, any>>> = {};
 
-  // Hybrid Relational Collections & Extra state
+  // Hybrid Relational Collections & Extra state (populated strictly from DB / ExecutionExtraJson / Layout config)
   locations: LocationData[] = [];
   observations: ObservationData[] = [];
   decisionRule: DecisionRuleData = {
     ruleType: 'Simple Acceptance',
     confidenceLevel: 95,
     guardBandMultiplier: 1.0,
-    acceptanceStatus: 'Pass',
-    statementText: 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).'
+    acceptanceStatus: 'Pending',
+    statementText: ''
   };
   classification: ClassificationData = {
-    classificationStandard: 'ASTM E45',
-    ratingType: 'Inclusion Rating',
-    selectedCategory: 'Type A (Sulfides)',
-    severity: 'Thin 1.0 / Heavy 0.5',
+    classificationStandard: '',
+    ratingType: '',
+    selectedCategory: '',
+    severity: '',
     remarks: ''
   };
-  customAttributes: CustomAttribute[] = [
-    { key: 'Machine Serial', value: 'UTM-500KN-02' },
-    { key: 'Calibration Due', value: '2027-03-31' }
-  ];
+  customAttributes: CustomAttribute[] = [];
 
   // Opinion & Interpretation state
   opinionData: {
@@ -470,11 +455,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         isReportable: true,
         remarks: ''
       }));
-    } else if (this.locations.length === 0) {
-      this.locations = [
-        { locationCode: 'SURF', locationName: 'Surface Zone', displayOrder: 1, isReportable: true, remarks: '0-2mm depth' },
-        { locationCode: 'CORE', locationName: 'Core / Mid-Radius', displayOrder: 2, isReportable: true, remarks: 'Center axis' }
-      ];
+    } else {
+      this.locations = [];
     }
   }
 
@@ -2385,20 +2367,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const k = String(field || '').toLowerCase();
     if (k.includes('sample') || k.includes('uid') || k.includes('lab ref')) return this.sample?.sampleNo || '—';
     if (k.includes('case') || k.includes('cert')) return this.inward?.caseNo || '—';
-    if (k.includes('batch') || k.includes('heat')) return this.sample?.batchNo || '—';
+    if (k.includes('batch') || k.includes('heat')) return this.sample?.batchNo || this.sample?.heatNo || '—';
     if (k.includes('material') || k.includes('grade')) return this.sample?.material || this.testPlan?.specification || '—';
     if (k.includes('method') || k.includes('std') || k.includes('standard')) return this.getCleanTestMethod();
     if (k.includes('equip') || k.includes('cal')) {
-      return this.selectedEquipment?.length ? (this.selectedEquipment[0]?.name || 'Calibrated Equipment') : 'General Testing Machine';
+      return this.selectedEquipment?.length ? (this.selectedEquipment.map((e: any) => e?.name).filter(Boolean).join(', ') || '—') : '—';
     }
-    if (k.includes('analyst') || k.includes('performer') || k.includes('tech')) return this.timingData?.performedByName || 'Laboratory Analyst';
+    if (k.includes('analyst') || k.includes('performer') || k.includes('tech')) return this.timingData?.performedByName || '—';
     if (k.includes('env') || k.includes('temp') || k.includes('humid')) {
       const t = this.environmentData?.roomTemperature ?? this.conditionValues['Temperature'];
       const h = this.environmentData?.roomHumidity ?? this.conditionValues['Relative Humidity'];
-      return (t != null || h != null) ? `${t ?? '—'} °C / ${h ?? '—'} %RH` : '23.0 °C / 50% RH';
+      return (t != null || h != null) ? `${t ?? '—'} °C / ${h ?? '—'} %RH` : '—';
     }
-    if (k.includes('date')) return this.timingData?.startTime ? new Date(this.timingData.startTime).toLocaleDateString() : new Date().toLocaleDateString();
-    if (k.includes('discipline')) return this.testPlan?.discipline || 'Mechanical / Metallurgical';
+    if (k.includes('date')) {
+      const dt = this.timingData?.testStartTime || this.timingData?.startTime;
+      return dt ? new Date(dt).toLocaleDateString() : '—';
+    }
+    if (k.includes('discipline')) return this.testPlan?.discipline || '—';
     return '—';
   }
 
@@ -2550,40 +2535,88 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   // =========================================================================
-  // Chart Helper (Dynamic Stress-Strain Curve Data & Markers)
+  // Live Decision Rule Conformity Evaluator (strictly from DB parameters)
+  // =========================================================================
+  getDecisionRuleVerdict(): { label: string; badgeClass: string; icon: string; detail: string } {
+    const controls = this.parametersFormArray?.controls || [];
+    let evaluated = 0;
+    let passed = 0;
+    let failed = 0;
+    for (const c of controls) {
+      const st = String(c.get('resultStatus')?.value || '').toLowerCase();
+      if (st === 'fail') {
+        failed++;
+        evaluated++;
+      } else if (st === 'pass' || st === 'satisfactory') {
+        passed++;
+        evaluated++;
+      }
+    }
+    if (failed > 0) {
+      return {
+        label: 'NON-CONFORMING (FAIL)',
+        badgeClass: 'bg-danger text-white',
+        icon: 'bi-x-circle',
+        detail: `${failed} of ${evaluated} evaluated parameter(s) failed acceptance criteria`
+      };
+    }
+    if (evaluated > 0 && passed === evaluated) {
+      return {
+        label: 'CONFORMING (PASS)',
+        badgeClass: 'bg-success text-white',
+        icon: 'bi-check-circle',
+        detail: `${passed} evaluated parameter(s) satisfy acceptance criteria`
+      };
+    }
+    return {
+      label: 'PENDING EVALUATION',
+      badgeClass: 'bg-secondary-subtle text-secondary border',
+      icon: 'bi-hourglass-split',
+      detail: 'Enter observed results to evaluate conformity against specification limits'
+    };
+  }
+
+  // =========================================================================
+  // Chart Helper (Dynamic Stress-Strain Curve Data — Strictly from DB/Entered Values)
   // =========================================================================
   getStressStrainChartData(): {
+    hasData: boolean;
     curvePath: string;
-    rp: number;
-    rm: number;
-    el: number;
-    ra: number;
+    rp: number | null;
+    rm: number | null;
+    el: number | null;
+    ra: number | null;
     yieldPt: { x: number; y: number };
     peakPt: { x: number; y: number };
     rupturePt: { x: number; y: number };
   } {
-    const rp = this.specimenAverages.proofStress || 325;
-    const rm = this.specimenAverages.uts || 540;
-    const el = this.specimenAverages.elongation || 28.4;
-    const ra = this.specimenAverages.reductionOfArea || 58.0;
+    const rp = this.specimenAverages.proofStress ?? null;
+    const rm = this.specimenAverages.uts ?? null;
+    const el = this.specimenAverages.elongation ?? null;
+    const ra = this.specimenAverages.reductionOfArea ?? null;
+    const hasData = rp != null || rm != null || el != null || ra != null;
+
+    const rpPlot = rp ?? 0;
+    const rmPlot = rm ?? rpPlot;
+    const elPlot = el ?? 0;
 
     // ViewBox: 0 0 760 210
-    // X axis: 65 to 720 (range 0% to 35% strain)
-    // Y axis: 175 (0 MPa) down to 25 (600 MPa)
     const x0 = 65; const y0 = 175;
     const xYield = 135;
-    const yYield = Math.max(25, Math.round(175 - (Math.min(600, rp) / 600) * 150));
+    const yYield = Math.max(25, Math.round(175 - (Math.min(600, rpPlot) / 600) * 150));
 
-    const xPeak = Math.min(670, Math.round(65 + (16.5 / 35) * 655)); // ~374
-    const yPeak = Math.max(20, Math.round(175 - (Math.min(600, rm) / 600) * 150));
+    const xPeak = Math.min(670, Math.round(65 + (16.5 / 35) * 655));
+    const yPeak = Math.max(20, Math.round(175 - (Math.min(600, rmPlot) / 600) * 150));
 
-    const xRupture = Math.min(725, Math.round(65 + (Math.min(35, el) / 35) * 655)); // ~596
+    const xRupture = Math.min(725, Math.round(65 + (Math.min(35, elPlot) / 35) * 655));
     const yRupture = Math.min(170, yPeak + 32);
 
-    // Smooth cubic & quadratic bezier path
-    const curvePath = `M ${x0},${y0} L 100,${Math.round((y0 + yYield) / 2)} Q 120,${yYield + 10} ${xYield},${yYield} Q 220,${yPeak + 25} ${xPeak},${yPeak} Q ${Math.round((xPeak + xRupture) / 2)},${yPeak + 12} ${xRupture},${yRupture}`;
+    const curvePath = hasData
+      ? `M ${x0},${y0} L 100,${Math.round((y0 + yYield) / 2)} Q 120,${yYield + 10} ${xYield},${yYield} Q 220,${yPeak + 25} ${xPeak},${yPeak} Q ${Math.round((xPeak + xRupture) / 2)},${yPeak + 12} ${xRupture},${yRupture}`
+      : '';
 
     return {
+      hasData,
       curvePath,
       rp,
       rm,
@@ -2599,7 +2632,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const points: string[] = [];
     const valid = this.traversePoints.filter(p => p.hardness != null);
     if (valid.length === 0) {
-      return "35,25 90,38 150,55 220,78 300,98 370,105";
+      return '';
     }
 
     valid.forEach(p => {

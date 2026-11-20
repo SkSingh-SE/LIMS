@@ -23,7 +23,7 @@
   <div class="materialbar flex-wrap gap-3">
     <span>Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
     <span *ngIf="inward?.poNo">PO / Ref: <strong>{{ inward.poNo }}</strong></span>
-    <span>Material: <strong>{{ sample?.material || sample?.productMasterName || 'Structural Steel' }}</strong></span>
+    <span>Material: <strong>{{ sample?.material || sample?.productMasterName || '—' }}</strong></span>
     <span>Class: <strong>{{ sample?.metalClassification || 'Not specified' }}</strong></span>
     <span>Size: <strong>{{ sample?.productSizeFormatted || 'Not specified' }}</strong></span>
     <span *ngIf="sample?.batchNo || sample?.heatNo">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
@@ -774,7 +774,7 @@
                           <div>
                             <span class="detail-label">Lab / Room</span>
                             <span class="detail-value fw-semibold text-dark">
-                              {{ environmentMap[plans[p].tests[t].headerId]?.labRoomName || 'General Laboratory' }}
+                              {{ environmentMap[plans[p].tests[t].headerId]?.labRoomName || 'Not Recorded' }}
                             </span>
                           </div>
                         </div>
@@ -817,7 +817,7 @@
                           <div>
                             <span class="detail-label">Performed By</span>
                             <span class="detail-value fw-semibold text-dark">
-                              {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || 'System User' }}
+                              {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || 'Not Assigned' }}
                             </span>
                           </div>
                         </div>
@@ -1098,7 +1098,7 @@
                         </td>
                         <td>
                           <span class="muted font-monospace">
-                            k = 2.0 (95.45% CL)
+                            {{ param.coverageFactor != null ? ('k = ' + param.coverageFactor) : '—' }}
                           </span>
                         </td>
                       </tr>

@@ -1952,66 +1952,73 @@
                 </text>
 
                 <!-- Optional Limit Reference Lines -->
-                <g *ngIf="s.config?.showLimit !== false">
+                <g *ngIf="chart.hasData && s.config?.showLimit !== false">
                   <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="65" [attr.y2]="chart.yieldPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
                   <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="chart.yieldPt.x" y2="175" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
                   <line [attr.x1]="chart.peakPt.x" [attr.y1]="chart.peakPt.y" [attr.x2]="65" [attr.y2]="chart.peakPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
                   <line [attr.x1]="chart.rupturePt.x" [attr.y1]="chart.rupturePt.y" [attr.x2]="chart.rupturePt.x" y2="175" stroke="#475569" stroke-dasharray="3 2" stroke-width="1.2" />
                 </g>
 
+                <!-- Empty State Text when no readings entered yet -->
+                <text *ngIf="!chart.hasData" x="400" y="102" font-size="11" text-anchor="middle" fill="#64748b">
+                  Enter observed test parameter values to plot live curve from database readings
+                </text>
+
                 <!-- Dynamic Stress vs Strain Polyline/Curve -->
-                <path [attr.d]="chart.curvePath" fill="none" stroke="#da261c" stroke-width="2.8" stroke-linejoin="round" />
+                <path *ngIf="chart.hasData" [attr.d]="chart.curvePath" fill="none" stroke="#da261c" stroke-width="2.8" stroke-linejoin="round" />
 
                 <!-- Markers & Value Callouts -->
-                <g *ngIf="s.config?.showPoints !== false">
-                  <circle [attr.cx]="chart.yieldPt.x" [attr.cy]="chart.yieldPt.y" r="4.5" fill="#da261c" stroke="#ffffff" stroke-width="1.5" />
-                  <rect [attr.x]="chart.yieldPt.x + 8" [attr.y]="chart.yieldPt.y - 18" width="105" height="18" rx="3" fill="#ffffff" stroke="#da261c" stroke-width="1" />
-                  <text [attr.x]="chart.yieldPt.x + 12" [attr.y]="chart.yieldPt.y - 5" font-size="9.5" fill="#da261c" font-weight="700">
-                    Rp0.2: {{ chart.rp }} MPa
-                  </text>
+                <g *ngIf="chart.hasData && s.config?.showPoints !== false">
+                  <ng-container *ngIf="chart.rp != null">
+                    <circle [attr.cx]="chart.yieldPt.x" [attr.cy]="chart.yieldPt.y" r="4.5" fill="#da261c" stroke="#ffffff" stroke-width="1.5" />
+                    <rect [attr.x]="chart.yieldPt.x + 8" [attr.y]="chart.yieldPt.y - 18" width="105" height="18" rx="3" fill="#ffffff" stroke="#da261c" stroke-width="1" />
+                    <text [attr.x]="chart.yieldPt.x + 12" [attr.y]="chart.yieldPt.y - 5" font-size="9.5" fill="#da261c" font-weight="700">
+                      Rp0.2: {{ chart.rp }} MPa
+                    </text>
+                  </ng-container>
 
-                  <circle [attr.cx]="chart.peakPt.x" [attr.cy]="chart.peakPt.y" r="5" fill="#b91c1c" stroke="#ffffff" stroke-width="1.5" />
-                  <rect [attr.x]="chart.peakPt.x - 55" [attr.y]="chart.peakPt.y - 22" width="115" height="18" rx="3" fill="#ffffff" stroke="#b91c1c" stroke-width="1" />
-                  <text [attr.x]="chart.peakPt.x + 2" [attr.y]="chart.peakPt.y - 9" font-size="9.5" fill="#b91c1c" font-weight="700" text-anchor="middle">
-                    Rm (Peak): {{ chart.rm }} MPa
-                  </text>
+                  <ng-container *ngIf="chart.rm != null">
+                    <circle [attr.cx]="chart.peakPt.x" [attr.cy]="chart.peakPt.y" r="5" fill="#b91c1c" stroke="#ffffff" stroke-width="1.5" />
+                    <rect [attr.x]="chart.peakPt.x - 55" [attr.y]="chart.peakPt.y - 22" width="115" height="18" rx="3" fill="#ffffff" stroke="#b91c1c" stroke-width="1" />
+                    <text [attr.x]="chart.peakPt.x + 2" [attr.y]="chart.peakPt.y - 9" font-size="9.5" fill="#b91c1c" font-weight="700" text-anchor="middle">
+                      Rm (Peak): {{ chart.rm }} MPa
+                    </text>
+                  </ng-container>
 
-                  <circle [attr.cx]="chart.rupturePt.x" [attr.cy]="chart.rupturePt.y" r="4.5" fill="#475569" stroke="#ffffff" stroke-width="1.5" />
-                  <rect [attr.x]="chart.rupturePt.x - 75" [attr.y]="chart.rupturePt.y - 20" width="75" height="18" rx="3" fill="#ffffff" stroke="#475569" stroke-width="1" />
-                  <text [attr.x]="chart.rupturePt.x - 38" [attr.y]="chart.rupturePt.y - 7" font-size="9.5" fill="#475569" font-weight="700" text-anchor="middle">
-                    A: {{ chart.el }}%
-                  </text>
+                  <ng-container *ngIf="chart.el != null">
+                    <circle [attr.cx]="chart.rupturePt.x" [attr.cy]="chart.rupturePt.y" r="4.5" fill="#475569" stroke="#ffffff" stroke-width="1.5" />
+                    <rect [attr.x]="chart.rupturePt.x - 75" [attr.y]="chart.rupturePt.y - 20" width="75" height="18" rx="3" fill="#ffffff" stroke="#475569" stroke-width="1" />
+                    <text [attr.x]="chart.rupturePt.x - 38" [attr.y]="chart.rupturePt.y - 7" font-size="9.5" fill="#475569" font-weight="700" text-anchor="middle">
+                      A: {{ chart.el }}%
+                    </text>
+                  </ng-container>
                 </g>
               </svg>
 
-              <!-- Live Key Metrics Ribbon -->
+              <!-- Live Key Metrics Ribbon (strictly from live readings) -->
               <div class="row g-2 mt-1 px-1" *ngIf="s.config?.showLegend !== false">
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">0.2% Proof Stress (Rp0.2)</span>
-                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rp }} MPa</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;250)</span>
+                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rp != null ? (chart.rp + ' MPa') : '—' }}</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Tensile Strength (Rm)</span>
-                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rm }} MPa</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (485–650)</span>
+                    <span class="fw-bold text-danger font-monospace fs-7">{{ chart.rm != null ? (chart.rm + ' MPa') : '—' }}</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Elongation (A%)</span>
-                    <span class="fw-bold text-primary font-monospace fs-7">{{ chart.el }} %</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;22.0)</span>
+                    <span class="fw-bold text-primary font-monospace fs-7">{{ chart.el != null ? (chart.el + ' %') : '—' }}</span>
                   </div>
                 </div>
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">Reduction of Area (Z%)</span>
-                    <span class="fw-bold text-success font-monospace fs-7">{{ chart.ra }} %</span>
-                    <span class="badge bg-success-subtle text-success text-xxs ms-1">PASS (&ge;30.0)</span>
+                    <span class="fw-bold text-success font-monospace fs-7">{{ chart.ra != null ? (chart.ra + ' %') : '—' }}</span>
                   </div>
                 </div>
               </div>
@@ -2239,8 +2246,8 @@
                 <div class="sign-box p-2 rounded border bg-light">
                   <span class="text-xxs text-muted d-block mb-1">Tested & Recorded By:</span>
                   <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-semibold small text-dark">{{ timingData?.performedByName || 'Laboratory Analyst' }}</span>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs">Completed</span>
+                    <span class="fw-semibold small text-dark">{{ timingData?.performedByName || 'Not Assigned' }}</span>
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle text-xxs">{{ test?.status || 'Pending' }}</span>
                   </div>
                 </div>
               </div>
@@ -2485,15 +2492,15 @@
                     <span class="text-xxs text-muted">&times;U</span>
                   </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-5" *ngIf="getDecisionRuleVerdict() as verdict">
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
                     <i class="bi bi-award text-success me-1"></i><span>Conformity Verdict</span>
                   </label>
                   <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-success text-white px-2 py-1 fs-7">
-                      <i class="bi bi-check-circle me-1"></i>CONFORMING (PASS)
+                    <span class="badge px-2 py-1 fs-7" [ngClass]="verdict.badgeClass">
+                      <i class="bi me-1" [ngClass]="verdict.icon"></i>{{ verdict.label }}
                     </span>
-                    <span class="text-xxs text-muted">All parameters satisfy guard-band acceptance criteria</span>
+                    <span class="text-xxs text-muted">{{ verdict.detail }}</span>
                   </div>
                 </div>
               </div>

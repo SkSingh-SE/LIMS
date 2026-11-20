@@ -1490,9 +1490,16 @@
                       <!-- Unit -->
                       <td *ngIf="s.config?.columns?.unit !== false" class="text-center">
                         <ng-container *ngIf="parametersFormArray.at(r).value.unitOptions?.length > 1; else plainUnit">
-                          <select class="form-select form-select-xs" formControlName="selectedUnit" (change)="onUnitSelect(r)">
-                            <option *ngFor="let opt of parametersFormArray.at(r).value.unitOptions" [value]="opt.unitName">{{ opt.unitName }}</option>
-                          </select>
+                          <app-custom-select
+                            [options]="parametersFormArray.at(r).value.unitOptions"
+                            valueField="unitName"
+                            labelField="unitName"
+                            formControlName="selectedUnit"
+                            (valueChange)="onUnitSelect(r)"
+                            size="xs"
+                            [searchable]="false"
+                            [disabled]="isViewMode || isLocked">
+                          </app-custom-select>
                         </ng-container>
                         <ng-template #plainUnit>
                           <span class="text-muted small">{{ parametersFormArray.at(r).value.unit || '—' }}</span>
@@ -1520,23 +1527,28 @@
 
                         <!-- 2. Boolean: Pass / Fail -->
                         <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType === 'Boolean'">
-                          <select class="form-select form-select-xs fw-semibold text-center" formControlName="value" (change)="onParameterInputChange(r)">
-                            <option [ngValue]="null">Select...</option>
-                            <option value="Pass">Pass</option>
-                            <option value="Fail">Fail</option>
-                            <option value="Satisfactory">Satisfactory</option>
-                            <option value="Not Satisfactory">Not Satisfactory</option>
-                          </select>
+                          <app-custom-select
+                            [options]="booleanSelectOptions"
+                            formControlName="value"
+                            (valueChange)="onParameterInputChange(r)"
+                            size="xs"
+                            [searchable]="false"
+                            [disabled]="isViewMode || isLocked"
+                            placeholder="Select...">
+                          </app-custom-select>
                         </ng-container>
 
                         <!-- 3. Dropdown Options -->
                         <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType === 'Dropdown' && (parametersFormArray.at(r).value.dropdownOptions?.length || 0) > 0">
-                          <select class="form-select form-select-xs fw-semibold" formControlName="value" (change)="onParameterInputChange(r)">
-                            <option [ngValue]="null">Select...</option>
-                            <option *ngFor="let opt of parametersFormArray.at(r).value.dropdownOptions" [value]="opt.value || opt.displayText">
-                              {{ opt.displayText || opt.value }}
-                            </option>
-                          </select>
+                          <app-custom-select
+                            [options]="getDropdownOptionsForCell(null, parametersFormArray.at(r).value)"
+                            formControlName="value"
+                            (valueChange)="onParameterInputChange(r)"
+                            size="xs"
+                            [searchable]="true"
+                            [disabled]="isViewMode || isLocked"
+                            placeholder="Select...">
+                          </app-custom-select>
                         </ng-container>
 
                         <!-- 4. Numeric / Decimal / Default Input -->
@@ -2964,12 +2976,13 @@
 
             <div class="col-md-3" *ngIf="newParamData.parameterName">
               <label class="form-label text-xxs fw-semibold text-muted mb-1">Input Type</label>
-              <select class="form-select form-select-sm" [(ngModel)]="newParamData.inputType">
-                <option value="Decimal">Decimal / Number</option>
-                <option value="Text">Text</option>
-                <option value="Boolean">Pass / Fail</option>
-                <option value="Dropdown">Dropdown</option>
-              </select>
+              <app-custom-select
+                [options]="newParamInputTypeOptions"
+                [(ngModel)]="newParamData.inputType"
+                size="sm"
+                [searchable]="false"
+                placeholder="Input Type">
+              </app-custom-select>
             </div>
 
             <div class="col-md-6" *ngIf="newParamData.parameterName">

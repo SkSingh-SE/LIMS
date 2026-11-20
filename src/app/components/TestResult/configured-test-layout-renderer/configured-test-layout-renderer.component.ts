@@ -2326,6 +2326,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     { value: 'Non-Conformance', label: 'Non-Conformance' }
   ];
 
+  readonly newParamInputTypeOptions = [
+    { value: 'Decimal', label: 'Decimal / Number' },
+    { value: 'Text', label: 'Text' },
+    { value: 'Boolean', label: 'Pass / Fail' },
+    { value: 'Dropdown', label: 'Dropdown' }
+  ];
+
   addGenericSectionRow(s: any): void {
     if (this.isViewMode || this.isLocked || !s?.config) return;
     if (!Array.isArray(s.config.tableRows)) s.config.tableRows = [];

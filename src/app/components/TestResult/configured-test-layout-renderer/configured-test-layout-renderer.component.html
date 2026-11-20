@@ -2029,7 +2029,7 @@
                   </div>
                   <code class="formula-expr-pill d-block mb-2 p-1 rounded font-monospace text-xxs bg-white border"
                         *ngIf="s.config?.showFormulaSteps !== false">
-                    {{ getFormulaDisplay(item.param) || s.config?.formula || 'Automated Calculation' }}
+                    {{ getFormulaDisplay(item.param) || s.config?.formulaExpression || s.config?.formula || 'Automated Calculation' }}
                   </code>
                   <div class="d-flex align-items-center justify-content-between">
                     <span class="text-muted text-xxs">Evaluated Result (Read-Only):</span>
@@ -2053,11 +2053,11 @@
                   <span>{{ s.config?.label || 'General Technical Remarks / Test Summary' }}</span>
                   <span class="text-danger ms-1" *ngIf="s.config?.required">*</span>
                 </label>
-                <input *ngIf="s.config?.inputType === 'Single Line'" type="text" class="form-control form-control-xs"
+                <input *ngIf="(s.config?.inputType || '').toLowerCase() === 'single line'" type="text" class="form-control form-control-xs"
                        formControlName="remarks"
                        [readOnly]="isViewMode || isLocked"
                        [placeholder]="s.config?.defaultText || s.config?.extraFields || 'Enter technical summary or conformance statement...'" />
-                <textarea *ngIf="s.config?.inputType !== 'Single Line'" class="form-control form-control-xs" rows="2"
+                <textarea *ngIf="(s.config?.inputType || '').toLowerCase() !== 'single line'" class="form-control form-control-xs" rows="2"
                           formControlName="remarks"
                           [readOnly]="isViewMode || isLocked"
                           [placeholder]="s.config?.defaultText || s.config?.extraFields || 'Enter technical summary, fracture appearance, or conformance statement...'"></textarea>

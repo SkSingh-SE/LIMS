@@ -1638,22 +1638,20 @@
                 <ng-container *ngIf="s.type === 'formula'">
                   <div class="condition-cards-grid">
                     <div class="condition-card">
-                      <span class="condition-label">Formula Source</span>
-                      <strong class="condition-val">{{ s.config.formulaSource }}</strong>
+                      <span class="condition-label">Target Output</span>
+                      <strong class="condition-val">{{ s.config.targetOutput || s.config.formulaSource || 'Auto-Derived Parameters' }}</strong>
                     </div>
-                    <div class="condition-card" *ngIf="s.config.showInputs">
-                      <span class="condition-label">Inputs</span>
-                      <strong class="condition-val">Mapped runtime parameters</strong>
+                    <div class="condition-card" *ngIf="s.config.showFormulaSteps !== false">
+                      <span class="condition-label">Formula Expression (ƒx)</span>
+                      <strong class="condition-val font-monospace">{{ s.config.formulaExpression || 'Auto from Parameter Master' }}</strong>
                     </div>
                     <div class="condition-card">
                       <span class="condition-label">{{ s.config.resultLabel || 'Calculated Result' }}</span>
-                      <strong class="condition-val text-primary font-monospace">{{ demoMode ? '0.9967' : 'Runtime'
-                        }}</strong>
+                      <strong class="condition-val text-primary font-monospace">{{ demoMode ? '540.0 MPa (Read-Only)' : 'Auto-Calc (Read-Only)' }}</strong>
                     </div>
-                    <div class="condition-card">
-                      <span class="condition-label">Precision / Rounding</span>
-                      <strong class="condition-val">{{ s.config.precision }} • {{ s.config.rounding || 'Half up'
-                        }}</strong>
+                    <div class="condition-card" *ngIf="s.config.showSubstitutedValues">
+                      <span class="condition-label">Substituted Values</span>
+                      <strong class="condition-val font-monospace text-muted">{{ demoMode ? '67.85 kN / 125.66 mm²' : 'Runtime Inputs' }}</strong>
                     </div>
                   </div>
                 </ng-container>
@@ -1662,14 +1660,12 @@
                 <ng-container *ngIf="s.type === 'narrative'">
                   <div class="narrative-box">
                     <div class="narrative-meta">
-                      <span class="badge bg-secondary me-1.5">{{ s.config.category || 'Remarks' }}</span>
-                      <span class="text-muted">Type: {{ s.config.inputType }}</span>
-                      <span *ngIf="s.config.required" class="badge bg-danger-subtle text-danger ms-1.5">Required</span>
+                      <span class="badge bg-secondary me-1">{{ s.config.label || s.config.category || 'Remarks' }}</span>
+                      <span class="text-muted">Type: {{ s.config.inputType || 'Multi-line' }}</span>
+                      <span *ngIf="s.config.required" class="badge bg-danger-subtle text-danger ms-1">Required</span>
                     </div>
                     <div class="narrative-text">
-                      {{ demoMode ? 'The test was carried out strictly as per standard test method. The specimen
-                      conforms to the specified acceptance criteria.' : 'Runtime analyst remarks or statements will be
-                      recorded here.' }}
+                      {{ s.config.defaultText || (demoMode ? 'The test was carried out strictly as per standard test method. The specimen conforms to the specified acceptance criteria.' : 'Runtime analyst remarks or statements will be recorded here.') }}
                     </div>
                   </div>
                 </ng-container>

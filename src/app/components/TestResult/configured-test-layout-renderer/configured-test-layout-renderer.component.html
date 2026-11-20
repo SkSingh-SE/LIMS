@@ -143,7 +143,7 @@
 
             <!-- Traverse Section Action -->
             <button *ngIf="(s.type === 'traverse') && !isViewMode && !isLocked"
-                    type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addTraversePoint()">
+                    type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addTraversePoint(s)">
               <i class="bi bi-plus-circle me-1"></i><span>Add Point</span>
             </button>
 
@@ -178,6 +178,13 @@
 
         <!-- Section Body -->
         <div class="section-card-body p-2">
+
+          <!-- Group 3: Top Corner Annotations (Top-Left / Top-Right) -->
+          <div *ngIf="s.config?.topLeft || s.config?.topRight"
+               class="d-flex justify-content-between align-items-center text-xxs text-muted pb-1 mb-1 border-bottom">
+            <span>{{ s.config?.topLeft }}</span>
+            <span class="text-end">{{ s.config?.topRight }}</span>
+          </div>
 
           <!-- ───────────────────────────────────────────────────────────── -->
           <!-- ARCHETYPE 1: CONTEXT HEADER & TRACEABILITY (hdr / traceability)-->
@@ -313,6 +320,34 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'spm' || s.type === 'specimen'">
             <div class="specimen-section">
+              <!-- Optional Specimen Identification Sub-Table (when Studio showIdentity is enabled) -->
+              <div class="table-responsive mb-2" *ngIf="s.config?.showIdentity && specimens.length > 0">
+                <table class="table table-sm table-bordered align-middle result-table mb-0">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="w-col-35">#</th>
+                      <th class="w-col-140">Specimen Code</th>
+                      <th class="text-start">Identification / Marking</th>
+                      <th class="w-col-140">Sample Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let spm of specimens; let spIdx = index">
+                      <td class="text-center text-muted small fw-semibold">{{ spIdx + 1 }}</td>
+                      <td class="text-center font-monospace fw-semibold">{{ spm.code }}</td>
+                      <td>
+                        <input type="text" class="form-control form-control-xs"
+                               [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'spm_id_' + spIdx, 'marking')"
+                               [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'spm_id_' + spIdx, 'marking', $event); syncCollectionsToTest()"
+                               [readOnly]="isViewMode || isLocked" placeholder="Specimen stamp / orientation / ID..." />
+                      </td>
+                      <td class="text-center font-monospace small text-muted">{{ sample?.sampleNo || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
               <div class="table-responsive">
                 <!-- 0. Dynamic Semantic Specimen Matrix (Configured in Studio) -->
                 <table class="table lims-matrix-table align-middle mb-1" *ngIf="hasConfiguredSpecimenTable(s)">
@@ -1694,8 +1729,9 @@
                                      [readOnly]="isViewMode || isLocked" placeholder="—" />
                             </ng-template>
                           </ng-container>
-                          <span *ngSwitchCase="'agg_average'" class="font-monospace fw-bold text-danger">
-                            {{ getReadingStat(row.targetParam, 'avg') || '—' }}
+                          <span *ngSwitchCase="'agg_average'" class="font-monospace fw-bold text-danger"
+                                [title]="'Aggregation: ' + (s.config?.aggregation || 'Average')">
+                            {{ getReadingAggregatedByConfig(row.targetParam, s) }}
                           </span>
                           <span *ngSwitchCase="'agg_min'" class="font-monospace text-muted">
                             {{ getReadingStat(row.targetParam, 'min') || '—' }}
@@ -2050,6 +2086,10 @@
                         *ngIf="s.config?.showFormulaSteps !== false">
                     {{ getFormulaDisplay(item.param) || s.config?.formulaExpression || s.config?.formula || 'Automated Calculation' }}
                   </code>
+                  <div class="text-xxs text-muted font-monospace mb-2"
+                       *ngIf="s.config?.showSubstitutedValues && getSubstitutedFormulaDisplay(item.param)">
+                    Substituted: {{ getSubstitutedFormulaDisplay(item.param) }}
+                  </div>
                   <div class="d-flex align-items-center justify-content-between">
                     <span class="text-muted text-xxs">Evaluated Result (Read-Only):</span>
                     <span class="fw-bold text-danger font-monospace fs-7">
@@ -2208,7 +2248,7 @@
                   <div class="photo-card border rounded p-2 bg-light">
                     <img [src]="img.url" class="img-fluid rounded mb-1 photo-thumbnail d-block mx-auto" [alt]="img.name || 'Test Image'" />
                     <span class="d-block text-xxs text-truncate text-muted text-center mb-1">{{ img.name || s.config?.caption || 'Microstructure' }}</span>
-                    <div class="row g-1 mt-1" *ngIf="s.config?.showMagnification || s.config?.showEtchant || s.config?.showLocation">
+                    <div class="row g-1 mt-1" *ngIf="s.config?.showMagnification || s.config?.showEtchant || s.config?.showScale || s.config?.showLocation">
                       <div class="col-6" *ngIf="s.config?.showMagnification">
                         <input type="text" class="form-control form-control-xs"
                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'magnification')"
@@ -2223,7 +2263,14 @@
                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'etchant', $event)"
                                [readOnly]="isViewMode || isLocked" placeholder="Etchant (2% Nital)" />
                       </div>
-                      <div class="col-12" *ngIf="s.config?.showLocation">
+                      <div class="col-6" *ngIf="s.config?.showScale">
+                        <input type="text" class="form-control form-control-xs"
+                               [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'scaleBar')"
+                               [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'scaleBar', $event)"
+                               [readOnly]="isViewMode || isLocked" placeholder="Scale Bar (100 µm)" />
+                      </div>
+                      <div [ngClass]="s.config?.showScale ? 'col-6' : 'col-12'" *ngIf="s.config?.showLocation">
                         <input type="text" class="form-control form-control-xs"
                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'location')"
                                [ngModelOptions]="{ standalone: true }"
@@ -2496,9 +2543,12 @@
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
                     <i class="bi bi-award text-success me-1"></i><span>Conformity Verdict</span>
                   </label>
-                  <div class="d-flex align-items-center gap-2">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="badge px-2 py-1 fs-7" [ngClass]="verdict.badgeClass">
                       <i class="bi me-1" [ngClass]="verdict.icon"></i>{{ verdict.label }}
+                    </span>
+                    <span *ngIf="s.config?.failAction" class="badge bg-light text-secondary border text-xxs">
+                      Fail Policy: {{ s.config.failAction }}
                     </span>
                     <span class="text-xxs text-muted">{{ verdict.detail }}</span>
                   </div>
@@ -2922,6 +2972,13 @@
               </div>
             </div>
           </ng-container>
+
+          <!-- Group 3: Bottom Corner Annotations (Bottom-Left / Bottom-Right) -->
+          <div *ngIf="s.config?.bottomLeft || s.config?.bottomRight"
+               class="d-flex justify-content-between align-items-center text-xxs text-muted pt-1 mt-1 border-top">
+            <span>{{ s.config?.bottomLeft }}</span>
+            <span class="text-end">{{ s.config?.bottomRight }}</span>
+          </div>
 
         </div>
       </div>

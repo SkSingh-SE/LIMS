@@ -310,7 +310,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   isSectionVisible(s: any): boolean {
-    if (!s) return false;
+    if (!s || s.config?.enabled === false) return false;
     const t = (s.type || '').toLowerCase();
     const isChemical = this.testPlan?.type === 'Chemical' ||
       this.test?.discipline === 'Chemical' ||
@@ -319,6 +319,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Chemical tests do not execute physical tensile specimen dimensions/loads or case-depth traverses
     if (isChemical && (t === 'spm' || t === 'specimen' || t === 'traverse' || t === 'case_depth' || t === 'reading')) {
       return false;
+    }
+
+    // Group 1 Visibility Condition (Always | Only when data exists | Only when PASS | Only when FAIL)
+    const vis = String(s.config?.visibility || 'Always');
+    if (vis === 'Only when PASS' || vis === 'Only when FAIL') {
+      const verdict = this.getDecisionRuleVerdict();
+      if (vis === 'Only when PASS' && !verdict.label.includes('CONFORMING')) return false;
+      if (vis === 'Only when FAIL' && !verdict.label.includes('NON-CONFORMING')) return false;
     }
 
     // In Execution tab or 'all' mode, all configured layout sections are rendered together in order
@@ -2178,11 +2186,60 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   getReadingMatrixColumns(s: any): any[] {
     let runningSpot = 0;
-    return this.getParamTableColumns(s).map((c: any) => {
-      const m = /^(?:spot|reading)_(\d+)$/i.exec(String(c.key || ''));
-      const spotIndex = m ? Math.max(0, parseInt(m[1], 10) - 1) : (c.resolvedRole === 'observation_value' ? runningSpot++ : null);
-      return { ...c, spotIndex };
+    const hideIndividual = s?.config?.showIndividual === false;
+    const hideStats = s?.config?.showStatistics === false;
+    return this.getParamTableColumns(s)
+      .filter((c: any) => {
+        if (hideIndividual && c.resolvedRole === 'observation_value') return false;
+        if (hideStats && (c.resolvedRole === 'agg_average' || c.resolvedRole === 'agg_min' || c.resolvedRole === 'agg_max')) return false;
+        return true;
+      })
+      .map((c: any) => {
+        const m = /^(?:spot|reading)_(\d+)$/i.exec(String(c.key || ''));
+        const spotIndex = m ? Math.max(0, parseInt(m[1], 10) - 1) : (c.resolvedRole === 'observation_value' ? runningSpot++ : null);
+        return { ...c, spotIndex };
+      });
+  }
+
+  getReadingAggregatedByConfig(targetParam: string, s: any): string {
+    const agg = String(s?.config?.aggregation || 'Average').toLowerCase();
+    const vals = (this.readingValues[targetParam] || []).filter((v): v is number => v !== null && v !== undefined && !isNaN(Number(v))).map(Number);
+    if (vals.length === 0) return '—';
+    if (agg.includes('min')) return Math.min(...vals).toFixed(2);
+    if (agg.includes('max')) return Math.max(...vals).toFixed(2);
+    if (agg.includes('median')) {
+      const sorted = [...vals].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const med = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      return med.toFixed(2);
+    }
+    if (agg.includes('std')) {
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const variance = vals.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / vals.length;
+      return Math.sqrt(variance).toFixed(3);
+    }
+    return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2);
+  }
+
+  getSubstitutedFormulaDisplay(param: any): string {
+    const expr = String(param?.formulaExpression || param?.formula || '').trim();
+    if (!expr) return '';
+    const controls = this.parametersFormArray?.controls || [];
+    let substituted = expr;
+    controls.forEach((c: any) => {
+      const id = c.get('parameterID')?.value;
+      const name = String(c.get('parameterName')?.value || '').trim();
+      const val = c.get('value')?.value;
+      const displayVal = (val !== null && val !== undefined && val !== '') ? String(val) : '?';
+      if (id != null) {
+        substituted = substituted.replace(new RegExp(`\\{?P${id}\\}?`, 'gi'), displayVal);
+      }
+      if (name) {
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        substituted = substituted.replace(new RegExp(`\\{${escaped}\\}`, 'gi'), displayVal);
+      }
     });
+    return substituted;
   }
 
   getReadingMatrixRows(s: any): { rowKey: string; label: string; targetParam: string; isCustomRow: boolean }[] {
@@ -2678,10 +2735,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
   // Traverse Point Operations (Gap 2)
   // =========================================================================
-  addTraversePoint(): void {
+  addTraversePoint(s?: any): void {
     if (this.isViewMode || this.isLocked) return;
+    const stepRaw = parseFloat(String(s?.config?.stepValue || ''));
+    const step = (!isNaN(stepRaw) && stepRaw > 0) ? stepRaw : 0.2;
     const lastDist = this.traversePoints.length > 0 ? this.traversePoints[this.traversePoints.length - 1].distance : 0.0;
-    const nextDist = Number((lastDist + 0.2).toFixed(2));
+    const nextDist = Number((lastDist + step).toFixed(3));
     this.traversePoints.push({ distance: nextDist, hardness: null });
     this.recalculateEffectiveCaseDepth();
     this.syncCollectionsToTest();

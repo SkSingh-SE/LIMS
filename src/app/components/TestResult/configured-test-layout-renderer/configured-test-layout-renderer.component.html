@@ -2555,8 +2555,8 @@
                 </div>
               </div>
 
-              <!-- Dynamic Rule Evaluation Table (When Studio tableColumns configured) -->
-              <div class="table-responsive mb-2" *ngIf="hasConfiguredGenericTable(s) && getGenericTableRows(s).length > 0">
+              <!-- Dynamic Auto-Synced Rule Evaluation Table (Shown ONLY when Studio showEvaluationTable is enabled) -->
+              <div class="table-responsive mb-2" *ngIf="s.config?.showEvaluationTable && hasConfiguredGenericTable(s)">
                 <table class="table table-sm table-bordered align-middle result-table mb-0 bg-white">
                   <thead class="result-table-head text-center">
                     <tr>
@@ -2567,28 +2567,30 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                    <tr *ngFor="let row of getRuleEvaluationRows(s); let rIdx = index">
                       <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
                       <td *ngFor="let col of getParamTableColumns(s)"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.text-center]="col.resolvedRole !== 'row_label'">
                         <ng-container [ngSwitch]="col.resolvedRole">
                           <span *ngSwitchCase="'row_label'" class="fw-semibold text-dark small">{{ row.label }}</span>
-                          <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-muted">{{ row.requirement || col.requirement || '—' }}</span>
+                          <span *ngSwitchCase="'unit'" class="font-monospace small text-muted">{{ row.unit || '—' }}</span>
+                          <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-dark">{{ row.requirement }}</span>
+                          <span *ngSwitchCase="'observation_value'" class="font-monospace fw-semibold text-primary">{{ row.observed }}</span>
+                          <span *ngSwitchCase="'uncertainty'" class="font-monospace small text-muted">{{ row.uncertainty }}</span>
                           <span *ngSwitchCase="'static_text'" class="font-monospace small text-dark">{{ col.staticValue || '—' }}</span>
-                          <app-custom-select *ngSwitchCase="'status_verdict'"
-                            [options]="booleanSelectOptions"
-                            [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
-                            [ngModelOptions]="{ standalone: true }"
-                            (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
-                            size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Verdict">
-                          </app-custom-select>
-                          <input *ngSwitchDefault type="text" class="form-control form-control-xs text-center font-monospace"
-                                 [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
-                                 [ngModelOptions]="{ standalone: true }"
-                                 (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
-                                 [readOnly]="isViewMode || isLocked" [placeholder]="col.label || '—'" />
+                          <ng-container *ngSwitchCase="'status_verdict'">
+                            <span *ngIf="row.verdict === 'Pass'" class="status-pill-lims status-pill-pass">PASS</span>
+                            <span *ngIf="row.verdict === 'Fail'" class="status-pill-lims status-pill-fail">FAIL</span>
+                            <span *ngIf="row.verdict === 'Pending'" class="text-muted small">Pending</span>
+                          </ng-container>
+                          <span *ngSwitchDefault class="font-monospace small text-muted">{{ row.observed }}</span>
                         </ng-container>
+                      </td>
+                    </tr>
+                    <tr *ngIf="getRuleEvaluationRows(s).length === 0">
+                      <td [attr.colspan]="getParamTableColumns(s).length + 1" class="text-center text-muted small py-2">
+                        No parameters available for decision rule evaluation yet.
                       </td>
                     </tr>
                   </tbody>

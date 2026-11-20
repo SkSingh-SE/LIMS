@@ -553,9 +553,17 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Hydrate section-configured defaults before applying saved ExecutionExtraJson overrides
     const ruleSec = this.sections.find(s => s.type === 'rule' || s.type === 'decision');
     if (ruleSec?.config) {
-      if (ruleSec.config.decisionRule) this.decisionRule.ruleType = ruleSec.config.decisionRule;
+      if (ruleSec.config.decisionRule) {
+        const dr = String(ruleSec.config.decisionRule).toLowerCase();
+        if (dr.includes('guard')) this.decisionRule.ruleType = 'Guard Banded (ILAC-G8)';
+        else if (dr.includes('customer') || dr.includes('non-binary')) this.decisionRule.ruleType = 'Non-Binary';
+        else this.decisionRule.ruleType = 'Simple Acceptance';
+      }
       if (ruleSec.config.confidenceLevel != null) this.decisionRule.confidenceLevel = Number(ruleSec.config.confidenceLevel) || 95;
-      if (ruleSec.config.guardBandMultiplier != null) this.decisionRule.guardBandMultiplier = Number(ruleSec.config.guardBandMultiplier) || 1.0;
+      if (ruleSec.config.guardBandMultiplier != null) this.decisionRule.guardBandMultiplier = Number(ruleSec.config.guardBandMultiplier);
+      if (ruleSec.config.defaultText && !this.decisionRule.statementText) {
+        this.decisionRule.statementText = ruleSec.config.defaultText;
+      }
     }
 
     const classSec = this.sections.find(s => s.type === 'classification' || s.type === 'class');
@@ -2589,6 +2597,90 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const expr = param.formulaExpression || param.formula || '';
     const lookup = [...(this.test?.parameters || []), ...(this.parametersFormArray?.value || [])];
     return formatFormulaDisplay(expr, lookup);
+  }
+
+  getRuleEvaluationRows(s: any): {
+    rowKey: string;
+    label: string;
+    unit: string;
+    requirement: string;
+    observed: string;
+    uncertainty: string;
+    verdict: 'Pass' | 'Fail' | 'Pending';
+  }[] {
+    const controls = this.parametersFormArray?.controls || [];
+    const total = controls.length;
+    const baseCount = Math.min(this.getBaseParameterCount() || total, total);
+    const mode = s?.config?.sectionDataMode === 'template' ? 'template' : 'runtime';
+
+    const buildRowFromBaseIdx = (baseIdx: number, fallbackLabel?: string, fallbackReq?: string, rowKey?: string) => {
+      const ctrlVal = controls[baseIdx]?.value;
+      const specVals: string[] = [];
+      let hasFail = false;
+      let hasPass = false;
+      if (baseCount > 0) {
+        for (let i = baseIdx; i < total; i += baseCount) {
+          const v = controls[i]?.get('value')?.value;
+          const st = String(controls[i]?.get('resultStatus')?.value || '').toLowerCase();
+          if (v !== null && v !== undefined && v !== '') specVals.push(String(v));
+          if (st === 'fail') hasFail = true;
+          else if (st === 'pass' || st === 'satisfactory') hasPass = true;
+        }
+      }
+      return {
+        rowKey: rowKey || `rule_param_${baseIdx}`,
+        label: fallbackLabel || ctrlVal?.parameterName || `Parameter ${baseIdx + 1}`,
+        unit: ctrlVal?.unit || '',
+        requirement: this.formatRequirement(ctrlVal) !== '—' ? this.formatRequirement(ctrlVal) : (fallbackReq || '—'),
+        observed: specVals.length > 0 ? specVals.join(' / ') : '—',
+        uncertainty: this.formatUncertainty(ctrlVal),
+        verdict: (hasFail ? 'Fail' : (hasPass ? 'Pass' : 'Pending')) as 'Pass' | 'Fail' | 'Pending'
+      };
+    };
+
+    if (mode === 'template') {
+      const tplRows = this.getGenericTableRows(s);
+      return tplRows.map((tr: any, idx: number) => {
+        let matchIdx = -1;
+        const dbId = tr.raw?.dbMasterId;
+        if (dbId != null && dbId !== '') {
+          for (let i = 0; i < baseCount; i++) {
+            if (Number(controls[i]?.value?.parameterID) === Number(dbId)) { matchIdx = i; break; }
+          }
+        }
+        if (matchIdx < 0) {
+          const lbl = String(tr.raw?.dbMasterName || tr.label || '').trim().toLowerCase();
+          for (let i = 0; i < baseCount; i++) {
+            if (String(controls[i]?.value?.parameterName || '').trim().toLowerCase() === lbl) { matchIdx = i; break; }
+          }
+        }
+        if (matchIdx >= 0) {
+          return buildRowFromBaseIdx(matchIdx, tr.label, tr.requirement, tr.rowKey);
+        }
+        return {
+          rowKey: tr.rowKey || `rule_tpl_${idx}`,
+          label: tr.label,
+          unit: tr.unit || '',
+          requirement: tr.requirement || '—',
+          observed: '—',
+          uncertainty: '—',
+          verdict: 'Pending' as const
+        };
+      });
+    }
+
+    // Runtime Auto-Load: prefer parameters with specification requirements; fall back to all base parameters
+    const withSpec: number[] = [];
+    const allBase: number[] = [];
+    for (let i = 0; i < baseCount; i++) {
+      allBase.push(i);
+      const val = controls[i]?.value;
+      if (val && (val.specMinValue != null || val.specMaxValue != null || val.minValue != null || val.maxValue != null || (val.acceptanceCriteria && String(val.acceptanceCriteria).trim()))) {
+        withSpec.push(i);
+      }
+    }
+    const targetIndices = withSpec.length > 0 ? withSpec : allBase;
+    return targetIndices.map(idx => buildRowFromBaseIdx(idx));
   }
 
   // =========================================================================

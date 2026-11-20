@@ -86,13 +86,13 @@
           <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Components</span>
         </span>
         <span class="badge bg-secondary ms-1">{{ sections.length }}</span>
-        <div class="btn-group btn-group-xs ms-auto me-1">
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 220" (click)="setLeftPreset(220)"
-            title="Compact width (220px)">S</button>
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 270" (click)="setLeftPreset(270)"
-            title="Default width (270px)">M</button>
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 340" (click)="setLeftPreset(340)"
-            title="Wide width (340px)">L</button>
+        <div class="btn-group btn-group-xs ms-auto me-1 flex-shrink-0">
+          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 320" (click)="setLeftPreset(320)"
+            title="Compact width (320px)">S</button>
+          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 380" (click)="setLeftPreset(380)"
+            title="Standard width (380px)">M</button>
+          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 460" (click)="setLeftPreset(460)"
+            title="Wide width (460px)">L</button>
         </div>
         <button type="button" class="btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
           <i class="bi bi-chevron-left"></i>
@@ -1141,7 +1141,7 @@
 
                 <!-- 6. Parameter Rule -->
                 <ng-container *ngIf="s.type === 'rule'">
-                  <div class="table-responsive">
+                  <div class="table-responsive" *ngIf="s.config.showEvaluationTable">
                     <table class="table-exec">
                       <thead>
                         <!-- Mode 1: Merged Header Active + Show Sub-Labels = TRUE -->
@@ -1240,9 +1240,16 @@
                       </tbody>
                     </table>
                   </div>
-                  <div *ngIf="s.config.showRule" class="rule-footer-note mt-1">
-                    <span><strong>Decision Rule:</strong> {{ s.config.decisionRule || 'Simple acceptance (no guard band)' }}</span>
-                    <span class="ms-2"><strong>Fail Action:</strong> {{ s.config.failAction || 'Mark parameter FAIL' }}</span>
+                  <div class="rule-footer-note mt-1 p-2 rounded border bg-light-subtle">
+                    <div class="mb-1">
+                      <strong>Statement of Conformity:</strong>
+                      <span class="ms-1 text-dark">{{ s.config.defaultText || 'Auto-evaluated against specification requirements at runtime' }}</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 text-muted">
+                      <span><strong>Decision Rule:</strong> {{ s.config.decisionRule || 'Simple acceptance (no guard band)' }}</span>
+                      <span><strong>Confidence:</strong> {{ s.config.confidenceLevel ?? 95 }}% (k = {{ s.config.guardBandMultiplier ?? 0 }})</span>
+                      <span><strong>Fail Action:</strong> {{ s.config.failAction || 'Mark Parameter FAIL' }}</span>
+                    </div>
                   </div>
                 </ng-container>
 
@@ -3362,7 +3369,7 @@
           <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
             <span class="text-truncate">Decision Rule (ISO 17025 Cl. 7.8.6)</span>
             <span class="text-xxs text-muted font-monospace flex-shrink-0">
-              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+              {{ s.config.showEvaluationTable ? (getVisibleTableRows(s).length + 'R × ' + getVisibleTableColumns(s).length + 'C') : 'Statement Only' }}
             </span>
           </div>
 
@@ -3382,24 +3389,39 @@
             <div class="col-6">
               <label class="form-label compact-label">Guard Band (k)</label>
               <input type="number" step="0.1" class="form-control form-control-sm compact-input"
-                [(ngModel)]="s.config.guardBandMultiplier" placeholder="1.0" min="0" max="3">
+                [(ngModel)]="s.config.guardBandMultiplier" placeholder="0" min="0" max="3">
             </div>
           </div>
 
-          <div class="pb-2 mb-2 border-bottom">
+          <div class="mb-2">
             <label class="form-label compact-label">Fail Action</label>
             <app-custom-select [options]="failActionOptions" [(ngModel)]="s.config.failAction" size="sm"
               [searchable]="false" placeholder="Fail Action">
             </app-custom-select>
           </div>
 
-          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
-            section: s,
-            showLoadAll: true,
-            showCols: true,
-            showMerge: true,
-            runtimeHint: 'Runtime Auto-Load evaluates all Test Plan parameters against this Decision Rule.'
-          }"></ng-container>
+          <div class="mb-2">
+            <label class="form-label compact-label">Default Statement of Conformity</label>
+            <textarea class="form-control form-control-sm compact-input" [(ngModel)]="s.config.defaultText" rows="2"
+              placeholder="e.g. The Result meets the Requirement of IS 2062:2011 Grade E250 BR"></textarea>
+          </div>
+
+          <div class="config-checks-grid" [class.pb-2]="s.config.showEvaluationTable" [class.mb-2]="s.config.showEvaluationTable" [class.border-bottom]="s.config.showEvaluationTable">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showEvaluationTable">
+              <span class="form-check-label">Show Parameter Evaluation Table (Guard-Band Breakdown)</span>
+            </label>
+          </div>
+
+          <ng-container *ngIf="s.config.showEvaluationTable">
+            <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+              section: s,
+              showLoadAll: true,
+              showCols: true,
+              showMerge: true,
+              runtimeHint: 'Runtime Auto-Load auto-pulls all Test Plan parameters & observed values from Parameter Table.'
+            }"></ng-container>
+          </ng-container>
         </div>
 
         <!-- GROUP 2: RATING & CLASSIFICATION (Section 7: classification) -->

@@ -138,6 +138,7 @@ export interface SectionConfig {
   sectionDataMode?: 'runtime' | 'template';
   confidenceLevel?: number;
   guardBandMultiplier?: number;
+  showEvaluationTable?: boolean;
   traceabilityDisplay?: string;
   showFormulaSteps?: boolean;
   showSubstitutedValues?: boolean;
@@ -1425,11 +1426,11 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   ];
 
   // Left Panel Dynamic Resizing & Responsive State
-  leftPanelWidth: number = 270;
+  leftPanelWidth: number = 380;
   leftPanelCollapsed: boolean = false;
   isResizingLeft: boolean = false;
   private startX: number = 0;
-  private startWidth: number = 270;
+  private startWidth: number = 380;
   private readonly STORAGE_KEY_LEFT_WIDTH = 'lims_studio_left_panel_width';
   private readonly STORAGE_KEY_LEFT_COLLAPSED = 'lims_studio_left_panel_collapsed';
 
@@ -1830,22 +1831,38 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     const savedWidth = localStorage.getItem(this.STORAGE_KEY_LEFT_WIDTH);
     if (savedWidth) {
       const parsed = parseInt(savedWidth, 10);
-      if (!isNaN(parsed) && parsed >= 190 && parsed <= 550) {
-        this.leftPanelWidth = parsed;
-        return;
+      if (!isNaN(parsed)) {
+        // Migrate legacy S/M/L presets (220/270/340) & old defaults (230/280/310) to symmetric widths
+        const legacyMap: Record<number, number> = {
+          220: 320,
+          230: 320,
+          270: 380,
+          280: 380,
+          310: 440,
+          340: 460
+        };
+        if (legacyMap[parsed]) {
+          this.leftPanelWidth = legacyMap[parsed];
+          localStorage.setItem(this.STORAGE_KEY_LEFT_WIDTH, this.leftPanelWidth.toString());
+          return;
+        }
+        if (parsed >= 260 && parsed <= 650) {
+          this.leftPanelWidth = parsed;
+          return;
+        }
       }
     }
 
-    // Adaptive default based on viewport width
+    // Adaptive default based on viewport width (matches Right Panel)
     const winWidth = window.innerWidth;
     if (winWidth >= 1800) {
-      this.leftPanelWidth = 310;
+      this.leftPanelWidth = 440;
     } else if (winWidth >= 1440) {
-      this.leftPanelWidth = 280;
+      this.leftPanelWidth = 380;
     } else if (winWidth <= 1200) {
-      this.leftPanelWidth = 230;
+      this.leftPanelWidth = 320;
     } else {
-      this.leftPanelWidth = 270;
+      this.leftPanelWidth = 360;
     }
   }
 
@@ -1861,9 +1878,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       const delta = moveEvent.clientX - this.startX;
       let newWidth = this.startWidth + delta;
 
-      // Smart limits: min 190px, max 45% of viewport width or 550px
-      const minWidth = 190;
-      const maxWidth = Math.min(550, Math.floor(window.innerWidth * 0.45));
+      // Smart limits: min 260px, max 55% of viewport width or 650px (matches Right Panel)
+      const minWidth = 260;
+      const maxWidth = Math.min(650, Math.floor(window.innerWidth * 0.55));
 
       if (newWidth < minWidth) newWidth = minWidth;
       if (newWidth > maxWidth) newWidth = maxWidth;
@@ -1895,13 +1912,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   resetLeftWidth(): void {
     const winWidth = window.innerWidth;
     if (winWidth >= 1800) {
-      this.leftPanelWidth = 310;
+      this.leftPanelWidth = 440;
     } else if (winWidth >= 1440) {
-      this.leftPanelWidth = 280;
+      this.leftPanelWidth = 380;
     } else if (winWidth <= 1200) {
-      this.leftPanelWidth = 230;
+      this.leftPanelWidth = 320;
     } else {
-      this.leftPanelWidth = 270;
+      this.leftPanelWidth = 360;
     }
     this.leftPanelCollapsed = false;
     localStorage.setItem(this.STORAGE_KEY_LEFT_WIDTH, this.leftPanelWidth.toString());
@@ -2017,8 +2034,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
 
   @HostListener('window:resize')
   onWindowResize(): void {
-    const maxAllowed = Math.min(550, Math.floor(window.innerWidth * 0.45));
-    if (this.leftPanelWidth > maxAllowed && maxAllowed >= 190) {
+    const maxAllowed = Math.min(650, Math.floor(window.innerWidth * 0.55));
+    if (this.leftPanelWidth > maxAllowed && maxAllowed >= 260) {
       this.leftPanelWidth = maxAllowed;
     }
     const maxAllowedRight = Math.min(650, Math.floor(window.innerWidth * 0.55));
@@ -2197,8 +2214,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         config.operator = '≥';
         config.valueSource = 'Runtime Requirement';
         config.evaluation = 'Runtime PASS / FAIL';
-        config.failAction = 'Mark parameter FAIL';
+        config.failAction = 'Mark Parameter FAIL';
         config.decisionRule = 'Simple acceptance (no guard band)';
+        config.confidenceLevel = 95;
+        config.guardBandMultiplier = 0;
+        config.showEvaluationTable = false;
+        config.defaultText = '';
         config.conformity = true;
         config.showRule = true;
         break;

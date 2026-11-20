@@ -136,6 +136,12 @@ export interface SectionConfig {
 
   // Parameter
   sectionDataMode?: 'runtime' | 'template';
+  confidenceLevel?: number;
+  guardBandMultiplier?: number;
+  traceabilityDisplay?: string;
+  showFormulaSteps?: boolean;
+  showSubstitutedValues?: boolean;
+  defaultText?: string;
   dataSource?: string;
   parameterMode?: string;
   resultMode?: string;
@@ -880,6 +886,24 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   sectionStatusOptions: Array<{ value: string; label: string }> = [
     { value: 'Optional', label: 'Optional' },
     { value: 'Mandatory', label: 'Mandatory' }
+  ];
+
+  traceabilityDisplayOptions: Array<{ value: string; label: string }> = [
+    { value: 'Compact Grid', label: 'Compact Grid' },
+    { value: 'Table', label: 'Table' }
+  ];
+
+  photoGridColumnsOptions: Array<{ value: string; label: string }> = [
+    { value: '1 Column', label: '1 Column (Full)' },
+    { value: '2 Columns (Pair)', label: '2 Columns (Pair)' },
+    { value: '3 Columns', label: '3 Columns' },
+    { value: '4 Columns', label: '4 Columns' }
+  ];
+
+  failActionOptions: Array<{ value: string; label: string }> = [
+    { value: 'Mark Parameter FAIL', label: 'Mark Parameter FAIL' },
+    { value: 'Flag Review Required', label: 'Flag Review Required' },
+    { value: 'Auto Non-Conformance', label: 'Auto Non-Conformance' }
   ];
 
   cellInputTypeOptions: Array<{ value: CellInputType; label: string }> = [
@@ -7096,48 +7120,49 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       cols.push({ key: 'requirement', label: 'Cutoff / Requirement', bindingMode: 'static', columnRole: 'spec_requirement', visible: true, width: '18%' });
       cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, width: '14%' });
     } else if (sec.type === 'classification') {
-      cols.push({ key: 'grade', label: 'Inclusion / Structure Class', bindingMode: 'static', visible: true, width: '26%' });
-      cols.push({ key: 'system', label: 'Standard / System', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'thin', label: 'Thin Series', bindingMode: 'manual', visible: true, width: '14%' });
-      cols.push({ key: 'heavy', label: 'Heavy Series', bindingMode: 'manual', visible: true, width: '14%' });
-      cols.push({ key: 'limit', label: 'Specified Limit', bindingMode: 'static', visible: true, width: '14%' });
-      cols.push({ key: 'result', label: 'Result', bindingMode: defaultMode, visible: true, width: '14%' });
+      cols.push({ key: 'grade', label: 'Inclusion / Structure Class', bindingMode: 'static', columnRole: 'row_label', visible: true, width: '26%' });
+      cols.push({ key: 'system', label: 'Standard / System', bindingMode: 'static', columnRole: 'test_method', visible: true, width: '18%' });
+      cols.push({ key: 'thin', label: 'Thin Series', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 1, visible: true, width: '14%' });
+      cols.push({ key: 'heavy', label: 'Heavy Series', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 1, visible: true, width: '14%' });
+      cols.push({ key: 'limit', label: 'Specified Limit', bindingMode: 'static', columnRole: 'spec_requirement', visible: true, width: '14%' });
+      cols.push({ key: 'result', label: 'Result', bindingMode: defaultMode, columnRole: 'status_verdict', visible: true, width: '14%' });
     } else if (sec.type === 'custom') {
       if (sec.config.customColumns && sec.config.customColumns.length > 0) {
         sec.config.customColumns.forEach((c, idx) => {
-          cols.push({ key: `col_${idx}`, label: c.label || `Col ${idx + 1}`, bindingMode: defaultMode, visible: true, removable: true });
+          cols.push({ key: `col_${idx}`, label: c.label || `Col ${idx + 1}`, bindingMode: defaultMode, columnRole: idx === 0 ? 'row_label' : 'custom_data', inputType: 'text', visible: true, removable: true });
         });
       } else {
-        ['Feature / Test Point', 'Specified Nominal', 'Observed Value', 'Evaluation Status'].forEach((c, idx) => {
-          cols.push({ key: `col_${idx}`, label: c, bindingMode: defaultMode, visible: true, removable: true });
-        });
+        cols.push({ key: 'col_0', label: 'Feature / Test Point', bindingMode: 'static', columnRole: 'row_label', visible: true, removable: false });
+        cols.push({ key: 'col_1', label: 'Specified Nominal', bindingMode: 'static', columnRole: 'spec_requirement', visible: true, removable: true });
+        cols.push({ key: 'col_2', label: 'Observed Value', bindingMode: 'manual', columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, removable: true });
+        cols.push({ key: 'col_3', label: 'Evaluation Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, removable: true });
       }
     } else if (sec.type === 'condition') {
-      cols.push({ key: 'field', label: 'Condition / Parameter', bindingMode: 'static', visible: true, width: '28%' });
-      cols.push({ key: 'setpoint', label: 'Specified Set Point', bindingMode: 'static', visible: true, width: '20%' });
-      cols.push({ key: 'tolerance', label: 'Tolerance Range', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'val', label: 'Observed Reading', bindingMode: defaultMode, visible: true, width: '18%' });
-      cols.push({ key: 'sensor', label: 'Sensor / Instrument ID', bindingMode: 'manual', visible: true, width: '16%' });
+      cols.push({ key: 'field', label: 'Condition / Parameter', bindingMode: 'static', columnRole: 'row_label', visible: true, width: '28%' });
+      cols.push({ key: 'setpoint', label: 'Specified Set Point', bindingMode: 'static', columnRole: 'static_text', staticValue: '23 ± 2 °C', visible: true, width: '20%' });
+      cols.push({ key: 'tolerance', label: 'Tolerance Range', bindingMode: 'static', columnRole: 'spec_requirement', visible: true, width: '18%' });
+      cols.push({ key: 'val', label: 'Observed Reading', bindingMode: defaultMode, columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 1, visible: true, width: '18%' });
+      cols.push({ key: 'sensor', label: 'Sensor / Instrument ID', bindingMode: 'manual', columnRole: 'master_link', dbMasterSource: 'equipment', visible: true, width: '16%' });
     } else if (sec.type === 'checklist') {
-      cols.push({ key: 'clause', label: 'Standard Clause', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'item', label: 'Inspection Point Description', bindingMode: 'static', visible: true, width: '38%' });
-      cols.push({ key: 'method', label: 'Verification Mode', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'resp', label: 'Compliance Response', bindingMode: 'manual', visible: true, width: '16%' });
-      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '10%' });
+      cols.push({ key: 'clause', label: 'Standard Clause', bindingMode: 'static', columnRole: 'static_text', visible: true, width: '18%' });
+      cols.push({ key: 'item', label: 'Inspection Point Description', bindingMode: 'static', columnRole: 'row_label', visible: true, width: '38%' });
+      cols.push({ key: 'method', label: 'Verification Mode', bindingMode: 'static', columnRole: 'test_method', visible: true, width: '18%' });
+      cols.push({ key: 'resp', label: 'Compliance Response', bindingMode: 'manual', columnRole: 'custom_data', inputType: 'boolean', visible: true, width: '16%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, width: '10%' });
     } else if (sec.type === 'rule') {
-      cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', visible: true, width: '25%' });
-      cols.push({ key: 'limit', label: 'Specification Limit', bindingMode: 'static', visible: true, width: '20%' });
-      cols.push({ key: 'operator', label: 'Operator', bindingMode: 'static', visible: true, width: '12%' });
-      cols.push({ key: 'uncertainty', label: 'Uncertainty (U)', bindingMode: 'static', visible: true, width: '15%' });
-      cols.push({ key: 'val', label: 'Observed Value', bindingMode: defaultMode, visible: true, width: '15%' });
-      cols.push({ key: 'decision', label: 'Conformance Decision', bindingMode: 'runtime', visible: true, width: '13%' });
+      cols.push({ key: 'param', label: 'Parameter', bindingMode: 'runtime', columnRole: 'row_label', visible: true, width: '25%' });
+      cols.push({ key: 'limit', label: 'Specification Limit', bindingMode: 'static', columnRole: 'spec_requirement', visible: true, width: '20%' });
+      cols.push({ key: 'operator', label: 'Operator', bindingMode: 'static', columnRole: 'static_text', staticValue: '≥', visible: true, width: '12%' });
+      cols.push({ key: 'uncertainty', label: 'Uncertainty (U)', bindingMode: 'runtime', columnRole: 'uncertainty', visible: true, width: '15%' });
+      cols.push({ key: 'val', label: 'Observed Value', bindingMode: defaultMode, columnRole: 'observation_value', inputType: 'decimal', decimalPrecision: 2, visible: true, width: '15%' });
+      cols.push({ key: 'decision', label: 'Conformance Decision', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, width: '13%' });
     } else if (sec.type === 'traceability') {
-      cols.push({ key: 'equip', label: 'Equipment Name', bindingMode: 'static', visible: true, width: '28%' });
-      cols.push({ key: 'tag', label: 'Asset Tag / ID', bindingMode: 'static', visible: true, width: '16%' });
-      cols.push({ key: 'cert', label: 'Cal Certificate No', bindingMode: 'static', visible: true, width: '18%' });
-      cols.push({ key: 'calDate', label: 'Cal Date', bindingMode: 'static', visible: true, width: '13%' });
-      cols.push({ key: 'dueDate', label: 'Due Date', bindingMode: 'static', visible: true, width: '13%' });
-      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', visible: true, width: '12%' });
+      cols.push({ key: 'equip', label: 'Equipment Name', bindingMode: 'static', columnRole: 'master_link', dbMasterSource: 'equipment', visible: true, width: '28%' });
+      cols.push({ key: 'tag', label: 'Asset Tag / ID', bindingMode: 'static', columnRole: 'row_label', visible: true, width: '16%' });
+      cols.push({ key: 'cert', label: 'Cal Certificate No', bindingMode: 'static', columnRole: 'custom_data', inputType: 'text', visible: true, width: '18%' });
+      cols.push({ key: 'calDate', label: 'Cal Date', bindingMode: 'static', columnRole: 'custom_data', inputType: 'date', visible: true, width: '13%' });
+      cols.push({ key: 'dueDate', label: 'Due Date', bindingMode: 'static', columnRole: 'custom_data', inputType: 'date', visible: true, width: '13%' });
+      cols.push({ key: 'status', label: 'Status', bindingMode: 'runtime', columnRole: 'status_verdict', visible: true, width: '12%' });
     } else if (sec.type === 'opinion') {
       cols.push({ key: 'param', label: 'Parameter / Evaluation Topic', bindingMode: 'runtime', visible: true, width: '40%' });
       cols.push({ key: 'observed', label: 'Observed Value', bindingMode: 'runtime', visible: true, width: '30%' });
@@ -8392,12 +8417,17 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
   }
 
   getPhotoGridClass(sec: ExecutionSection): string {
-    const cols = sec.config?.gridColumns || '2 Columns (Pair)';
+    const cols = String(sec.config?.gridColumns || '2 Columns (Pair)');
     if (cols.includes('1 Column')) return 'photos-grid photos-grid-1col';
     if (cols.includes('3 Columns')) return 'photos-grid photos-grid-3col';
     if (cols.includes('4 Columns')) return 'photos-grid photos-grid-4col';
     if (cols.includes('Comparison')) return 'photos-grid photos-grid-compare';
     return 'photos-grid photos-grid-2col';
+  }
+
+  getPhotoPreviewSlots(sec: ExecutionSection): number[] {
+    const count = Math.max(1, Math.min(8, Number(sec?.config?.count) || 2));
+    return Array.from({ length: count }, (_, idx) => idx + 1);
   }
 
   getPhotoAspectStyle(sec: ExecutionSection, slot?: PhotoSlotItem): string {

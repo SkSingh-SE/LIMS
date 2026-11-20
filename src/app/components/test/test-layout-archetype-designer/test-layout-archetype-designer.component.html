@@ -1614,26 +1614,20 @@
 
                 <!-- 11. Photo / Attachment -->
                 <ng-container *ngIf="s.type === 'photo'">
-                  <div class="photos-grid">
-                    <div class="photo-plate-card">
+                  <div [ngClass]="getPhotoGridClass(s)">
+                    <div class="photo-plate-card" *ngFor="let slotNum of getPhotoPreviewSlots(s)">
                       <div class="photo-placeholder-box">
-                        <i class="bi bi-camera me-1.5"></i>
-                        <span>Attachment 1</span>
+                        <i class="bi bi-camera me-1"></i>
+                        <span>Attachment {{ slotNum }}</span>
                       </div>
                       <div class="photo-caption-info">
                         <div>{{ s.config.caption || 'Runtime attachment caption' }}</div>
-                        <div class="text-muted small" *ngIf="s.config.showMagnification">Mag: 100X • Etchant: 2% Nital
-                        </div>
-                      </div>
-                    </div>
-                    <div class="photo-plate-card">
-                      <div class="photo-placeholder-box">
-                        <i class="bi bi-camera me-1.5"></i>
-                        <span>Attachment 2</span>
-                      </div>
-                      <div class="photo-caption-info">
-                        <div>{{ s.config.caption || 'Runtime attachment caption' }}</div>
-                        <div class="text-muted small" *ngIf="s.config.showMagnification">Mag: 500X • Etchant: 2% Nital
+                        <div class="text-muted small" *ngIf="s.config.showMagnification || s.config.showEtchant || s.config.showLocation">
+                          <span *ngIf="s.config.showMagnification">Mag: {{ slotNum === 1 ? '100X' : '500X' }}</span>
+                          <span *ngIf="s.config.showMagnification && s.config.showEtchant"> • </span>
+                          <span *ngIf="s.config.showEtchant">Etchant: 2% Nital</span>
+                          <span *ngIf="(s.config.showMagnification || s.config.showEtchant) && s.config.showLocation"> • </span>
+                          <span *ngIf="s.config.showLocation">Zone {{ slotNum }}</span>
                         </div>
                       </div>
                     </div>
@@ -3333,7 +3327,455 @@
           }"></ng-container>
         </div>
 
-        <!-- GROUP 3: CORNER TECHNICAL ANNOTATIONS & CALLOUTS (Collapsible) -->
+        <!-- GROUP 2: ENVIRONMENT CONDITIONS (Section 5: condition) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'condition'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Environment Conditions</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }} Fields
+            </span>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label compact-label">Display Layout</label>
+            <app-custom-select [options]="selectOptions.layout" [(ngModel)]="s.config.layout" size="sm"
+              [searchable]="false" placeholder="Layout">
+            </app-custom-select>
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Quick Presets</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'ambient')">Ambient (23°C / 50%RH)</button>
+              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'elevated')">Elevated (650°C)</button>
+              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'subzero')">Sub-Zero (-40°C)</button>
+            </div>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: false,
+            showCols: s.config.layout === 'Table',
+            showMerge: s.config.layout === 'Table',
+            runtimeHint: 'Runtime Auto-Load binds live Lab Room Temperature & Humidity; custom conditions persist per test.'
+          }"></ng-container>
+        </div>
+
+        <!-- GROUP 2: DECISION RULE EVALUATION (Section 6: rule) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'rule'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Decision Rule (ISO 17025 Cl. 7.8.6)</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+            </span>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label compact-label">Decision Rule Policy</label>
+            <app-custom-select [options]="selectOptions.decisionRule" [(ngModel)]="s.config.decisionRule" size="sm"
+              [searchable]="false" placeholder="Decision Rule">
+            </app-custom-select>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Confidence (%)</label>
+              <input type="number" class="form-control form-control-sm compact-input"
+                [(ngModel)]="s.config.confidenceLevel" placeholder="95" min="50" max="99.9">
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Guard Band (k)</label>
+              <input type="number" step="0.1" class="form-control form-control-sm compact-input"
+                [(ngModel)]="s.config.guardBandMultiplier" placeholder="1.0" min="0" max="3">
+            </div>
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Fail Action</label>
+            <app-custom-select [options]="failActionOptions" [(ngModel)]="s.config.failAction" size="sm"
+              [searchable]="false" placeholder="Fail Action">
+            </app-custom-select>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: true,
+            showCols: true,
+            showMerge: true,
+            runtimeHint: 'Runtime Auto-Load evaluates all Test Plan parameters against this Decision Rule.'
+          }"></ng-container>
+        </div>
+
+        <!-- GROUP 2: RATING & CLASSIFICATION (Section 7: classification) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'classification'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Rating & Classification</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+            </span>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Standard</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.ratingSystem"
+                placeholder="e.g. ASTM E112, ASTM E45">
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Rating Method</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.decision"
+                placeholder="Comparison, Planimetric">
+            </div>
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Standard Classification Scales</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_e45')">ASTM E45 (Inclusions)</button>
+              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_e112')">ASTM E112 (Grain Size)</button>
+              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_a247')">ASTM A247 (Graphite)</button>
+            </div>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: false,
+            showCols: true,
+            showMerge: true,
+            runtimeHint: ''
+          }"></ng-container>
+        </div>
+
+        <!-- GROUP 2: CUSTOM TABLE (Section 8: custom) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'custom'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Custom Table</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
+            </span>
+          </div>
+
+          <div class="config-checks-grid pb-2 mb-2 border-bottom">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showHeader">
+              <span class="form-check-label">Show Column Headers</span>
+            </label>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: false,
+            showCols: true,
+            showMerge: true,
+            runtimeHint: ''
+          }"></ng-container>
+        </div>
+
+        <!-- GROUP 2: INSPECTION CHECKLIST (Section 9: checklist) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'checklist'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Inspection Checklist</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ getVisibleTableRows(s).length }} Items
+            </span>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Response Type</label>
+              <app-custom-select [options]="selectOptions.responseType" [(ngModel)]="s.config.responseType" size="sm"
+                [searchable]="false" placeholder="Response Type">
+              </app-custom-select>
+            </div>
+            <div class="col-6 d-flex align-items-end">
+              <label class="form-check compact-check mb-1">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.requireAll">
+                <span class="form-check-label">Require All Answers</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Predefined Checklists (ISO 17025)</label>
+            <div class="d-flex flex-wrap gap-1">
+              <button type="button" class="btn-preset-chip" (click)="applyChecklistPreset(s, 'iso17025')">ISO 17025 Compliance</button>
+              <button type="button" class="btn-preset-chip" (click)="applyChecklistPreset(s, 'pretest')">Pre-Test Verification</button>
+            </div>
+          </div>
+
+          <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+            section: s,
+            showLoadAll: false,
+            showCols: true,
+            showMerge: false,
+            runtimeHint: ''
+          }"></ng-container>
+        </div>
+
+        <!-- GROUP 2: CONTEXT & TRACEABILITY (Section 10: traceability) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'traceability'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span class="text-truncate">Context & Traceability</span>
+            <span class="text-xxs text-muted font-monospace flex-shrink-0">
+              {{ s.config.fields?.length || 0 }} Fields
+            </span>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label compact-label">Display Style</label>
+            <app-custom-select [options]="traceabilityDisplayOptions" [(ngModel)]="s.config.traceabilityDisplay"
+              size="sm" [searchable]="false" placeholder="Compact Grid">
+            </app-custom-select>
+          </div>
+
+          <div class="config-checks-grid pb-2 mb-2 border-bottom">
+            <label *ngFor="let tf of traceMasterFields" class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [checked]="s.config.fields?.includes(tf)"
+                (change)="s.config.fields = toggleArrayItem(s.config.fields, tf)">
+              <span class="form-check-label">{{ tf }}</span>
+            </label>
+          </div>
+
+          <div class="mb-2">
+            <button type="button" class="btn-lims btn-lims-save btn-compact w-100 py-1"
+              (click)="applyTraceabilityPreset(s)">
+              Load Equipment Calibration Traceability
+            </button>
+          </div>
+
+          <div class="border-top pt-2 mt-2" *ngIf="s.config.traceabilityDisplay === 'Table'">
+            <ng-container *ngTemplateOutlet="unifiedTableHub; context: {
+              section: s,
+              showLoadAll: false,
+              showCols: true,
+              showMerge: true,
+              runtimeHint: ''
+            }"></ng-container>
+          </div>
+        </div>
+
+        <!-- GROUP 2: CURVE / CHART (Section 11: chart) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'chart'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span>Curve / Chart</span>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label compact-label">Chart Type</label>
+            <app-custom-select [options]="selectOptions.chartType" [(ngModel)]="s.config.chartType" size="sm"
+              [searchable]="false" placeholder="Chart Type">
+            </app-custom-select>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">X-Axis Source</label>
+              <app-custom-select [options]="chartXSelectOptions" [(ngModel)]="s.config.xField"
+                (ngModelChange)="onChartAxisChange(s, 'x')" size="sm" [searchable]="true" placeholder="Select X-Axis">
+              </app-custom-select>
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Y-Axis Source</label>
+              <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
+                (ngModelChange)="onChartAxisChange(s, 'y')" size="sm" [searchable]="true" placeholder="Select Y-Axis">
+              </app-custom-select>
+            </div>
+          </div>
+
+          <div class="row g-2 pb-2 mb-2 border-bottom">
+            <div class="col-6">
+              <label class="form-label compact-label">X-Axis Label</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xLabel"
+                placeholder="e.g. Strain (%)">
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Y-Axis Label</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yLabel"
+                placeholder="e.g. Stress (MPa)">
+            </div>
+          </div>
+
+          <div class="config-checks-grid">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showPoints">
+              <span class="form-check-label">Show Points</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showGrid">
+              <span class="form-check-label">Show Grid</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLimit">
+              <span class="form-check-label">Show Limit Line</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLegend">
+              <span class="form-check-label">Show Legend</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- GROUP 2: PHOTO PLATE / MICROGRAPH (Section 12: photo) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'photo'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span>Photo Plate / Micrograph</span>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-5">
+              <label class="form-label compact-label">Slot Count</label>
+              <input type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
+                min="1" max="8">
+            </div>
+            <div class="col-7">
+              <label class="form-label compact-label">Grid Columns</label>
+              <app-custom-select [options]="photoGridColumnsOptions" [(ngModel)]="s.config.gridColumns" size="sm"
+                [searchable]="false" placeholder="2 Columns">
+              </app-custom-select>
+            </div>
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Default Caption</label>
+            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.caption"
+              placeholder="e.g. Magnification: 100X, Etchant: 2% Nital">
+          </div>
+
+          <label class="form-label compact-label">Metadata Fields per Image</label>
+          <div class="config-checks-grid">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMagnification">
+              <span class="form-check-label">Magnification</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showEtchant">
+              <span class="form-check-label">Etchant</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showScale">
+              <span class="form-check-label">Scale Bar</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLocation">
+              <span class="form-check-label">Location</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- GROUP 2: DERIVED CALCULATIONS / FORMULA (Section 13: formula) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'formula'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span>Derived Calculations</span>
+            <span class="text-xxs text-muted font-monospace">Read-Only Auto-Calc</span>
+          </div>
+
+          <div class="text-xxs text-muted mb-2" *ngIf="s.config.sectionDataMode !== 'template'">
+            Runtime Auto-Load displays all formula-driven parameters automatically (non-editable).
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label compact-label">Target Output Parameter</label>
+            <app-custom-select [options]="formulaTargetSelectOptions" [(ngModel)]="s.config.targetOutput"
+              (ngModelChange)="onFormulaTargetChange(s)" size="sm" [searchable]="true"
+              placeholder="Select Target Output">
+            </app-custom-select>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label compact-label">Formula Expression</label>
+            <input type="text" class="form-control form-control-sm compact-input font-monospace"
+              [(ngModel)]="s.config.formulaExpression" placeholder="e.g. UTS = PeakLoad / Area">
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Result Display Label</label>
+            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.resultLabel"
+              placeholder="e.g. Tensile Strength">
+          </div>
+
+          <div class="config-checks-grid">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showFormulaSteps">
+              <span class="form-check-label">Show Formula Steps</span>
+            </label>
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showSubstitutedValues">
+              <span class="form-check-label">Show Substituted Values</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- GROUP 2: REMARKS & STATEMENTS (Section 14: narrative / note) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'narrative' || s.type === 'note'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span>Remarks & Statements</span>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Field Label</label>
+              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.label"
+                placeholder="e.g. Remarks, Conclusion">
+            </div>
+            <div class="col-6">
+              <label class="form-label compact-label">Input Type</label>
+              <app-custom-select [options]="selectOptions.inputType" [(ngModel)]="s.config.inputType" size="sm"
+                [searchable]="false" placeholder="Input Type">
+              </app-custom-select>
+            </div>
+          </div>
+
+          <div class="pb-2 mb-2 border-bottom">
+            <label class="form-label compact-label">Default Statement</label>
+            <textarea class="form-control form-control-sm compact-input" [(ngModel)]="s.config.defaultText" rows="2"
+              placeholder="e.g. The specimen conforms to specified acceptance criteria."></textarea>
+          </div>
+
+          <div class="config-checks-grid">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.required">
+              <span class="form-check-label">Required before submission</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- GROUP 2: OPINION & INTERPRETATION (Section 15: opinion) -->
+        <div class="config-card mb-2" *ngIf="s.type === 'opinion'">
+          <div class="config-card-title d-flex align-items-center justify-content-between gap-2">
+            <span>Opinion & Interpretation</span>
+            <span class="text-xxs text-muted font-monospace">ISO Cl. 7.8.7</span>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label compact-label">Section Status</label>
+              <app-custom-select [options]="sectionStatusOptions" [(ngModel)]="s.config.sectionStatus"
+                size="sm" [searchable]="false" placeholder="Status">
+              </app-custom-select>
+            </div>
+            <div class="col-6 d-flex align-items-end">
+              <label class="form-check compact-check mb-1">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.derivedOnly">
+                <span class="form-check-label">Derived Params Only</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="config-checks-grid pb-2 mb-2 border-bottom">
+            <label class="form-check compact-check">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showOverallStatement">
+              <span class="form-check-label">Show Overall Technical Interpretation Box</span>
+            </label>
+          </div>
+
+          <div *ngIf="s.config.showOverallStatement !== false">
+            <label class="form-label compact-label">Default Overall Interpretation Statement</label>
+            <textarea class="form-control form-control-sm compact-input" [(ngModel)]="s.config.overallStatement" rows="3"
+              placeholder="Enter default ISO/IEC 17025 Cl. 7.8.7 opinion & interpretation statement..."></textarea>
+          </div>
+        </div>
+
+        <!-- GROUP 3: CORNER TECHNICAL ANNOTATIONS & CALLOUTS (Collapsible — Always Last) -->
         <div class="config-card mb-2">
           <div class="config-card-title d-flex align-items-center justify-content-between collapsible-trigger-bar"
             (click)="toggleAnnotations()" title="Click to expand/collapse corner annotations">
@@ -3397,730 +3839,6 @@
             </div>
           </div>
         </div>
-        <!-- 3B. Universal Data Binding & Structure Manager Card -->
-        <div class="config-card mb-2"
-          *ngIf="s.type !== 'parameter' && s.type !== 'specimen' && s.type !== 'reading' && s.type !== 'location' && s.type !== 'traverse' && (isTableSection(s) || s.type === 'condition' || s.type === 'checklist')">
-          <div class="config-card-title d-flex align-items-center justify-content-between mb-2">
-            <span><i class="bi bi-sliders2-vertical me-1.5 text-danger"></i><span>Data Binding & Structure</span></span>
-            <div class="d-flex align-items-center gap-1">
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs">
-                {{ getVisibleTableRows(s).length }}R × {{ getVisibleTableColumns(s).length }}C
-              </span>
-            </div>
-          </div>
-
-          <!-- Section Default Binding Mode -->
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label compact-label mb-0">Default Binding Source</label>
-              <span class="text-xxs text-muted">Controls data origin</span>
-            </div>
-            <div class="binding-mode-btn-group">
-              <button type="button" class="binding-source-btn"
-                [class.active-runtime]="s.config.dataBindingMode === 'runtime' || !s.config.dataBindingMode"
-                (click)="setSectionDefaultBinding(s, 'runtime', true)"
-                title="Automatically fetch live values from laboratory test transactions / LIMS DB">
-                <i class="bi bi-lightning-charge-fill"></i><span>Runtime</span>
-              </button>
-              <button type="button" class="binding-source-btn"
-                [class.active-static]="s.config.dataBindingMode === 'static'"
-                (click)="setSectionDefaultBinding(s, 'static', true)"
-                title="Fixed layout values - rendered verbatim without runtime override">
-                <i class="bi bi-pin-angle-fill"></i><span>Static</span>
-              </button>
-              <button type="button" class="binding-source-btn"
-                [class.active-manual]="s.config.dataBindingMode === 'manual'"
-                (click)="setSectionDefaultBinding(s, 'manual', true)"
-                title="Manual entry field for analyst input during execution">
-                <i class="bi bi-pencil-square"></i><span>Manual</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Sub-Tab Switcher: Rows vs Columns vs Header Merge -->
-          <div class="binding-tab-header d-flex border-bottom mb-2">
-            <button type="button" class="binding-tab-btn"
-              [class.active]="s.config.activeBindingTab === 'rows' || !s.config.activeBindingTab"
-              (click)="s.config.activeBindingTab = 'rows'">
-              <i class="bi bi-list-task me-1.5"></i>Rows ({{ getTableRows(s).length }})
-            </button>
-            <button type="button" class="binding-tab-btn" [class.active]="s.config.activeBindingTab === 'columns'"
-              (click)="s.config.activeBindingTab = 'columns'">
-              <i class="bi bi-layout-three-columns me-1.5"></i>Columns ({{ getTableColumns(s).length }})
-            </button>
-            <button type="button" class="binding-tab-btn" *ngIf="isTableSection(s)"
-              [class.active]="s.config.activeBindingTab === 'merge'" (click)="s.config.activeBindingTab = 'merge'">
-              <i class="bi bi-intersect me-1.5"></i>Header Merge
-              <span class="badge ms-1 font-monospace text-xxs"
-                [ngClass]="hasMergedHeader(s) ? 'bg-success text-white' : 'bg-secondary-subtle text-secondary'">
-                {{ hasMergedHeader(s) ? 'Active' : 'Off' }}
-              </span>
-            </button>
-          </div>
-
-          <!-- ROWS TAB CONTENT -->
-          <div *ngIf="s.config.activeBindingTab === 'rows' || !s.config.activeBindingTab">
-            <div class="d-flex align-items-center justify-content-between mb-1.5">
-              <span class="text-xxs fw-semibold text-secondary">Row Labels & Binding Sources</span>
-              <span class="text-xxs text-muted">{{ getVisibleTableRows(s).length }} active</span>
-            </div>
-
-            <div class="row-items-list-container">
-              <div *ngFor="let r of getTableRows(s); let rIdx = index; trackBy: trackByIndex"
-                class="row-item-card d-flex flex-column gap-1"
-                [class.opacity-50]="r.visible === false">
-                <div class="d-flex align-items-center justify-content-between gap-1">
-                  <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
-                    <span class="row-index-badge">{{ rIdx + 1 }}</span>
-                    <button type="button" class="btn-vis-toggle" (click)="toggleTableRowVisibility(s, rIdx)"
-                      [title]="r.visible !== false ? 'Hide row' : 'Show row'">
-                      <i class="bi"
-                        [ngClass]="r.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
-                    </button>
-                    <button type="button" class="btn-vis-toggle" (click)="toggleRowOrigin(s, rIdx)"
-                      [title]="r.rowOrigin === 'db' ? 'Linked to Master Data (Click for Custom Text)' : 'Custom Text (Click to Link Master Data)'">
-                      <i class="bi"
-                        [ngClass]="r.rowOrigin === 'db' ? 'bi-database-fill-check text-danger' : 'bi-fonts text-secondary'"></i>
-                    </button>
-                    <input type="text" class="form-control row-label-input flex-grow-1" spellcheck="false"
-                      [ngModel]="r.label" (ngModelChange)="updateTableRowLabel(s, rIdx, $event)"
-                      placeholder="Custom row label...">
-                  </div>
-
-                  <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                    <!-- Custom Select Component for Binding Mode -->
-                    <div class="d-inline-flex binding-select-wrap">
-                      <app-custom-select [options]="bindingModeSelectOptions"
-                        [ngModel]="r.bindingMode || s.config.dataBindingMode || 'runtime'"
-                        (ngModelChange)="updateTableRowBindingMode(s, rIdx, $event)" size="xs" variant="pill"
-                        [searchable]="false" panelWidth="130px">
-                      </app-custom-select>
-                    </div>
-
-                    <!-- Static Fixed Value Input if static -->
-                    <input type="text" class="form-control form-control-xs static-val-input"
-                      *ngIf="r.bindingMode === 'static' || (!r.bindingMode && s.config.dataBindingMode === 'static')"
-                      [ngModel]="r.staticValue" (ngModelChange)="updateTableRowStaticValue(s, rIdx, $event)"
-                      placeholder="Fixed val" title="Fixed Static Value">
-
-                    <!-- Move Up / Down -->
-                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'up')"
-                      [disabled]="rIdx === 0" title="Move Up">
-                      <i class="bi bi-chevron-up"></i>
-                    </button>
-                    <button type="button" class="btn-item-arrow" (click)="moveTableRow(s, rIdx, 'down')"
-                      [disabled]="rIdx === getTableRows(s).length - 1" title="Move Down">
-                      <i class="bi bi-chevron-down"></i>
-                    </button>
-
-                    <!-- Delete -->
-                    <button type="button" class="btn-item-del" (click)="removeTableRow(s, rIdx)"
-                      [disabled]="getTableRows(s).length <= 1" title="Delete Row">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Inline Master Link Picker (when Row Origin = Master Link) -->
-                <div class="d-flex align-items-center gap-1 ps-4" *ngIf="r.rowOrigin === 'db'">
-                  <div class="flex-shrink-0 master-source-mini-select">
-                    <app-custom-select [options]="masterSourceMiniOptions"
-                      [ngModel]="r.dbMasterSource || 'parameter'"
-                      (ngModelChange)="onRowMasterSourceChange(s, rIdx, $event)"
-                      size="xs" [searchable]="false" placeholder="Source">
-                    </app-custom-select>
-                  </div>
-                  <div class="flex-grow-1 min-w-0">
-                    <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
-                      [fetchDataFn]="getMasterFetchFn(r.dbMasterSource || 'parameter')"
-                      [placeholder]="'Link ' + getMasterSourceLabel(r.dbMasterSource || 'parameter') + '...'"
-                      [selectedItem]="r.dbMasterId"
-                      [reloadKey]="r.dbMasterSource || 'parameter'"
-                      (itemSelected)="onRowMasterItemSelected(s, rIdx, $event)">
-                    </app-searchable-dropdown>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Add Row from Master Data Source -->
-            <div class="border-top pt-2 mt-2 mb-2">
-              <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-                <label class="form-label compact-label mb-0">Link from Master Data</label>
-                <div class="master-source-mini-select">
-                  <app-custom-select [options]="masterSourceMiniOptions"
-                    [(ngModel)]="selectedUniversalMasterSource"
-                    (ngModelChange)="universalMasterReloadKey = $any(selectedUniversalMasterSource)"
-                    size="xs" [searchable]="false" placeholder="Source">
-                  </app-custom-select>
-                </div>
-              </div>
-              <div class="d-flex align-items-center gap-1">
-                <div class="flex-grow-1 min-w-0">
-                  <app-searchable-dropdown [hideLabel]="true" [smallInput]="true"
-                    [fetchDataFn]="getMasterFetchFn(selectedUniversalMasterSource)"
-                    [placeholder]="'Search ' + getMasterSourceLabel(selectedUniversalMasterSource) + ' Master...'"
-                    [selectedItem]="selectedUniversalMasterId"
-                    [reloadKey]="universalMasterReloadKey"
-                    (itemSelected)="onUniversalMasterItemPicked($event)">
-                  </app-searchable-dropdown>
-                </div>
-                <button type="button" class="btn-lims btn-lims-save btn-compact flex-shrink-0"
-                  (click)="addMasterRowToSection(s)" [disabled]="!selectedUniversalMasterItem" title="Add Master Row">
-                  <i class="bi bi-plus-circle me-1"></i><span>Add</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Add Row Button using the approved global button style! -->
-            <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableRow(s)">
-              <i class="bi bi-plus-circle me-1.5"></i><span>Add Custom Text Row</span>
-            </button>
-          </div>
-
-          <!-- COLUMNS TAB CONTENT -->
-          <div *ngIf="s.config.activeBindingTab === 'columns'">
-            <div class="d-flex align-items-center justify-content-between mb-1.5">
-              <span class="text-xxs fw-semibold text-secondary">Column Headers & Binding Sources</span>
-              <span class="text-xxs text-muted">{{ getVisibleTableColumns(s).length }} active</span>
-            </div>
-
-            <div class="row-items-list-container">
-              <div *ngFor="let c of getTableColumns(s); let cIdx = index; trackBy: trackByIndex"
-                class="row-item-card d-flex align-items-center justify-content-between gap-1"
-                [class.opacity-50]="c.visible === false">
-                <div class="d-flex align-items-center gap-1 flex-grow-1 min-w-0">
-                  <span class="row-index-badge">{{ cIdx + 1 }}</span>
-                  <button type="button" class="btn-vis-toggle" (click)="toggleTableColumnVisibility(s, cIdx)"
-                    [title]="c.visible !== false ? 'Hide column' : 'Show column'">
-                    <i class="bi"
-                      [ngClass]="c.visible !== false ? 'bi-eye-fill text-primary' : 'bi-eye-slash text-muted'"></i>
-                  </button>
-                  <input type="text" class="form-control row-label-input flex-grow-1" [ngModel]="c.label"
-                    (ngModelChange)="updateTableColumnLabel(s, cIdx, $event)" placeholder="Column header...">
-                </div>
-
-                <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                  <!-- Custom Select Component for Binding Mode -->
-                  <div class="d-inline-flex binding-select-wrap">
-                    <app-custom-select [options]="bindingModeSelectOptions"
-                      [ngModel]="c.bindingMode || s.config.dataBindingMode || 'runtime'"
-                      (ngModelChange)="updateTableColumnBindingMode(s, cIdx, $event)" size="xs" variant="pill"
-                      [searchable]="false" panelWidth="130px">
-                    </app-custom-select>
-                  </div>
-
-                  <!-- Move Up / Down -->
-                  <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'up')"
-                    [disabled]="cIdx === 0" title="Move Left/Up">
-                    <i class="bi bi-chevron-up"></i>
-                  </button>
-                  <button type="button" class="btn-item-arrow" (click)="moveTableColumn(s, cIdx, 'down')"
-                    [disabled]="cIdx === getTableColumns(s).length - 1" title="Move Right/Down">
-                    <i class="bi bi-chevron-down"></i>
-                  </button>
-
-                  <!-- Delete -->
-                  <button type="button" class="btn-item-del" (click)="removeTableColumn(s, cIdx)"
-                    [disabled]="getTableColumns(s).length <= 1" title="Delete Column">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Add Column Button using the approved global button style! -->
-            <button type="button" class="btn-lims btn-lims-add w-100 py-1" (click)="addTableColumn(s)">
-              <i class="bi bi-plus-circle me-1.5"></i><span>Add New Column</span>
-            </button>
-          </div>
-
-          <!-- HEADER MERGE TAB CONTENT -->
-          <div *ngIf="s.config.activeBindingTab === 'merge' && isTableSection(s)" class="pt-1">
-            <!-- Group Header Title Field -->
-            <div class="mb-2">
-              <label class="form-label compact-label">Group Header Title <span class="text-danger">*</span></label>
-              <input type="text" class="form-control form-control-sm compact-input"
-                [(ngModel)]="ensureHeaderMergeState(s).title"
-                placeholder="e.g. Grouped Observations, Mechanical Properties">
-            </div>
-
-            <!-- Start Column & Colspan Row -->
-            <div class="row g-2 mb-2">
-              <div class="col-7">
-                <label class="form-label compact-label">Start Column</label>
-                <app-custom-select [options]="getVisibleColumnsForSection(s)"
-                  [(ngModel)]="ensureHeaderMergeState(s).startCol" valueField="key" labelField="label" size="sm"
-                  [searchable]="true" placeholder="Select Start Column">
-                </app-custom-select>
-              </div>
-              <div class="col-5">
-                <div class="d-flex justify-content-between align-items-center mb-0.5">
-                  <label class="form-label compact-label mb-0">Colspan</label>
-                  <span class="text-xxs text-muted">max {{ getVisibleColumnsForSection(s).length }}</span>
-                </div>
-                <input type="number" class="form-control form-control-sm compact-input text-center fw-semibold"
-                  [(ngModel)]="ensureHeaderMergeState(s).colspan" min="2" [max]="getVisibleColumnsForSection(s).length"
-                  placeholder="2">
-              </div>
-            </div>
-
-            <!-- Covered Columns Preview Box -->
-            <div class="merge-preview-container mb-2">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="merge-preview-title d-flex align-items-center gap-1">
-                  <i class="bi bi-eye text-theme"></i>
-                  <span>Covered Columns ({{ getMergedColumnsList(s).length }} cols):</span>
-                </span>
-                <span class="badge bg-light text-dark border font-monospace text-xxs">Span {{
-                  ensureHeaderMergeState(s).colspan || 2 }}</span>
-              </div>
-              <div class="d-flex flex-wrap gap-1">
-                <span *ngFor="let col of getMergedColumnsList(s); let cIdx = index" class="merge-chip">
-                  <span class="merge-chip-num">{{ cIdx + 1 }}</span>
-                  <span class="merge-chip-label">{{ col.label }}</span>
-                </span>
-                <span *ngIf="getMergedColumnsList(s).length === 0" class="text-xxs text-muted fst-italic">
-                  No visible columns in selected span
-                </span>
-              </div>
-            </div>
-
-            <!-- Sub-column labels show/hide toggle -->
-            <div class="form-check form-switch compact-check mb-2.5">
-              <input class="form-check-input" type="checkbox" id="showChildLabelsSwitch"
-                [(ngModel)]="ensureHeaderMergeState(s).showSubLabels">
-              <label class="form-check-label text-xs fw-medium text-dark cursor-pointer" for="showChildLabelsSwitch">
-                Show Child Column Labels (Sub-headers)
-              </label>
-            </div>
-
-            <!-- Actions -->
-            <div class="d-flex align-items-center gap-1.5">
-              <button type="button" class="btn-lims btn-lims-save btn-compact flex-grow-1" (click)="applyHeaderMerge(s)"
-                [title]="hasMergedHeader(s) ? 'Update column header grouping' : 'Apply column header grouping'">
-                <i class="bi" [ngClass]="hasMergedHeader(s) ? 'bi-check2-circle' : 'bi-intersect'"></i>
-                <span>{{ hasMergedHeader(s) ? 'Update Merge' : 'Apply Merge' }}</span>
-              </button>
-              <button type="button" class="btn-lims btn-lims-cancel btn-compact" (click)="resetHeaderMerge(s)"
-                *ngIf="hasMergedHeader(s)" title="Reset to flat single row">
-                <i class="bi bi-x-circle"></i>
-                <span>Unmerge</span>
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- 6. Environmental Conditions Settings (Type: Condition) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'condition'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-thermometer-half me-1.5 text-danger"></i><span>Environment Conditions</span></span>
-            <div class="d-flex gap-1">
-              <button type="button" class="btn-xs-action text-success" (click)="selectAllConditions()">All</button>
-              <button type="button" class="btn-xs-action text-secondary" (click)="deselectAllConditions()">None</button>
-              <button type="button" class="btn-xs-action text-danger fw-semibold" (click)="toggleAddConditionForm()">+
-                Add</button>
-            </div>
-          </div>
-
-          <!-- Quick Presets -->
-          <div class="mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label compact-label mb-0">Quick Presets</label>
-              <span class="text-xxs text-muted font-monospace">Auto-Fill</span>
-            </div>
-            <div class="d-flex flex-wrap gap-1">
-              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'ambient')" title="23°C / 50% RH Standard Lab">
-                <i class="bi bi-thermometer-sun me-1 text-danger"></i>Ambient (23°C/50%RH)
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'elevated')" title="650°C Furnace Test">
-                <i class="bi bi-fire me-1 text-danger"></i>Elevated (650°C)
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyConditionPreset(s, 'subzero')" title="-40°C Impact Bath">
-                <i class="bi bi-snow me-1 text-primary"></i>Sub-Zero (-40°C)
-              </button>
-            </div>
-          </div>
-
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Layout</label>
-              <app-custom-select [options]="selectOptions.layout" [(ngModel)]="s.config.layout" size="sm"
-                [searchable]="false" placeholder="Layout">
-              </app-custom-select>
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label" title="Extra Fields (comma separated)">Extra Fields</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.extraFields"
-                placeholder="e.g. Medium, Flow rate">
-            </div>
-          </div>
-
-          <div class="condition-items-list mt-2">
-            <label *ngFor="let c of currentDataset.conditions; trackBy: trackByField" class="condition-item-card"
-              [class.is-active]="isConditionFieldChecked(s, c)" [class.opacity-50]="!isConditionSelected(c.field)"
-              [title]="c.label">
-              <div class="condition-item-info">
-                <input class="form-check-input my-0 flex-shrink-0" type="checkbox"
-                  [checked]="isConditionFieldChecked(s, c)" (change)="toggleConditionField(s, c)">
-                <span class="condition-item-name">{{ c.label }}</span>
-              </div>
-              <span class="badge bg-danger-subtle text-danger font-monospace text-xxs flex-shrink-0"
-                *ngIf="isConditionFieldChecked(s, c)">Active</span>
-              <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs flex-shrink-0"
-                *ngIf="!isConditionFieldChecked(s, c)">Inactive</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 10. Curve / Chart Settings (Type: Chart) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'chart'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-bezier2 me-1.5 text-danger"></i><span>Curve / Chart Structure</span></span>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Chart Type</label>
-            <app-custom-select [options]="selectOptions.chartType" [(ngModel)]="s.config.chartType" size="sm"
-              [searchable]="false" placeholder="Chart Type">
-            </app-custom-select>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">X-Axis Data Source</label>
-              <app-custom-select [options]="chartXSelectOptions" [(ngModel)]="s.config.xField"
-                (ngModelChange)="onChartAxisChange(s, 'x')" size="sm" [searchable]="true" placeholder="Select X-Axis">
-              </app-custom-select>
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Y-Axis Data Source</label>
-              <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.yField"
-                (ngModelChange)="onChartAxisChange(s, 'y')" size="sm" [searchable]="true" placeholder="Select Y-Axis">
-              </app-custom-select>
-            </div>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">X-Axis Label</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.xLabel"
-                placeholder="e.g. Strain (%)">
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Y-Axis Label</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.yLabel"
-                placeholder="e.g. Stress (MPa)">
-            </div>
-          </div>
-          <div class="config-checks-grid">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showPoints">
-              <span class="form-check-label">Show Points</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showGrid">
-              <span class="form-check-label">Show Grid</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLimit">
-              <span class="form-check-label">Show Limit Line</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLegend">
-              <span class="form-check-label">Show Legend</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 11. Parameter Rule Evaluation (Type: Rule) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'rule'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-shield-check me-1.5 text-danger"></i><span>Decision Rule Evaluation</span></span>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Target Parameter from Dataset</label>
-            <app-custom-select [options]="datasetParameterSelectOptions" [(ngModel)]="s.config.parameter" size="sm"
-              [searchable]="true" placeholder="Select Target Parameter">
-            </app-custom-select>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Operator</label>
-              <app-custom-select [options]="selectOptions.operator" [(ngModel)]="s.config.operator" size="sm"
-                [searchable]="false" placeholder="Operator">
-              </app-custom-select>
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Value Source / Limit</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.valueSource"
-                placeholder="Runtime Requirement or limit">
-            </div>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Decision Rule (ISO 17025 cl. 7.8.6)</label>
-            <app-custom-select [options]="selectOptions.decisionRule" [(ngModel)]="s.config.decisionRule" size="sm"
-              [searchable]="false" placeholder="Decision Rule">
-            </app-custom-select>
-          </div>
-        </div>
-
-        <!-- 12. Rating & Classification (Type: Classification) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'classification'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-award me-1.5 text-danger"></i><span>Rating / Classification</span></span>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">What is Rated / Rows (comma separated)</label>
-            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
-              placeholder="e.g. Grain Size No., Microstructure, Inclusion Type">
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Standard</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.ratingSystem"
-                placeholder="e.g. ASTM E112, ASTM E45">
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Rating Method</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.decision"
-                placeholder="Comparison method, Planimetric">
-            </div>
-          </div>
-
-          <!-- Standard Classification Presets -->
-          <div class="border-top pt-2 mt-2">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <label class="form-label compact-label mb-0 fw-semibold text-dark">Standard Classification Scales</label>
-              <span class="text-xxs text-muted font-monospace">Auto-Configure</span>
-            </div>
-            <div class="d-flex flex-wrap gap-1">
-              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_e45')"
-                title="Load ASTM E45 Inclusion Rating (Type A, B, C, D)">
-                ASTM E45 (Inclusions)
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_e112')"
-                title="Load ASTM E112 Grain Size Number & Diameter">
-                ASTM E112 (Grain Size)
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyClassificationPreset(s, 'astm_a247')"
-                title="Load ASTM A247 Graphite Microstructure Classification">
-                ASTM A247 (Graphite)
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 13. Custom Table (Type: Custom) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'custom'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-layout-text-window me-1.5 text-danger"></i><span>Custom Table Settings</span></span>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Row Header / Row Names (comma separated)</label>
-            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.rows"
-              placeholder="Row 1, Row 2, Row 3">
-          </div>
-          <div class="config-checks-grid">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.allowRuntimeRows">
-              <span class="form-check-label">Technician can add rows at runtime</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showHeader">
-              <span class="form-check-label">Show Column Headers</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 14. Photo / Attachment (Type: Photo) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'photo'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-card-image me-1.5 text-danger"></i><span>Photo Plate / Attachment</span></span>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Attachment Count</label>
-              <input type="number" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.count"
-                min="1" max="8">
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Default Caption</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.caption"
-                placeholder="e.g. Magnification: 100X">
-            </div>
-          </div>
-          <div class="config-checks-grid">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showMagnification">
-              <span class="form-check-label">Show Magnification</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showEtchant">
-              <span class="form-check-label">Show Etchant</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showScale">
-              <span class="form-check-label">Show Scale Bar</span>
-            </label>
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showLocation">
-              <span class="form-check-label">Show Location</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 15. Formula / Calculation (Type: Formula) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'formula'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-calculator me-1.5 text-danger"></i><span>Formula Calculation Settings</span></span>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Target Output Parameter *</label>
-            <app-custom-select [options]="formulaTargetSelectOptions" [(ngModel)]="s.config.targetOutput"
-              (ngModelChange)="onFormulaTargetChange(s)" size="sm" [searchable]="true"
-              placeholder="Select Target Output">
-            </app-custom-select>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Formula Expression</label>
-            <input type="text" class="form-control form-control-sm compact-input font-monospace"
-              [(ngModel)]="s.config.formulaExpression" placeholder="e.g. UTS = PeakLoad / Area">
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Result Label</label>
-            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.resultLabel"
-              placeholder="e.g. Tensile Strength">
-          </div>
-        </div>
-
-        <!-- 16. Remarks / Narrative (Type: Narrative / Note) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'narrative' || s.type === 'note'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-chat-left-dots me-1.5 text-danger"></i><span>Remarks / Analyst Statement</span></span>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Box Label</label>
-              <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.label"
-                placeholder="e.g. Remarks, Conclusion">
-            </div>
-            <div class="col-6">
-              <label class="form-label compact-label">Input Type</label>
-              <app-custom-select [options]="selectOptions.inputType" [(ngModel)]="s.config.inputType" size="sm"
-                [searchable]="false" placeholder="Input Type">
-              </app-custom-select>
-            </div>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Sample Default Text</label>
-            <textarea class="form-control form-control-sm compact-input" [(ngModel)]="s.config.extraFields" rows="2"
-              placeholder="e.g. The specimen conforms to specified acceptance criteria."></textarea>
-          </div>
-          <div class="config-checks-grid">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.required">
-              <span class="form-check-label">Required before submission</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 17. Checklist (Type: Checklist) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'checklist'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-check2-square me-1.5 text-danger"></i><span>Inspection Checklist</span></span>
-          </div>
-          <div class="mb-2">
-            <label class="form-label compact-label">Checklist Items (comma separated)</label>
-            <input type="text" class="form-control form-control-sm compact-input" [(ngModel)]="s.config.items"
-              placeholder="Visual check, Calibration verified, Dimensions confirmed">
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Response Type</label>
-              <app-custom-select [options]="selectOptions.responseType" [(ngModel)]="s.config.responseType" size="sm"
-                [searchable]="false" placeholder="Response Type">
-              </app-custom-select>
-            </div>
-            <div class="col-6 d-flex align-items-end">
-              <label class="form-check compact-check mb-1">
-                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.requireAll">
-                <span class="form-check-label">Require All Answers</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Standard Checklist Presets -->
-          <div class="border-top pt-2 mt-2">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <label class="form-label compact-label mb-0 fw-semibold text-dark">Predefined Checklists</label>
-              <span class="text-xxs text-muted font-monospace">ISO 17025</span>
-            </div>
-            <div class="d-flex flex-wrap gap-1">
-              <button type="button" class="btn-preset-chip" (click)="applyChecklistPreset(s, 'iso17025')"
-                title="Load ISO 17025 Standard Quality & Technical Checkpoints">
-                ISO 17025 Compliance
-              </button>
-              <button type="button" class="btn-preset-chip" (click)="applyChecklistPreset(s, 'pretest')"
-                title="Load Pre-Test Equipment & Specimen Verification Checkpoints">
-                Pre-Test Verification
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 18. Traceability (Type: Traceability) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'traceability'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-award me-1.5 text-danger"></i><span>ISO 17025 Technical Record Fields</span></span>
-          </div>
-          <div class="config-checks-grid">
-            <label *ngFor="let tf of traceMasterFields" class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [checked]="s.config.fields?.includes(tf)"
-                (change)="s.config.fields = toggleArrayItem(s.config.fields, tf)">
-              <span class="form-check-label">{{ tf }}</span>
-            </label>
-          </div>
-
-          <div class="border-top pt-2 mt-2">
-            <button type="button" class="btn-lims btn-lims-save btn-sm w-100 py-1"
-              (click)="applyTraceabilityPreset(s)">
-              <i class="bi bi-shield-check me-1.5"></i><span>Load Equipment Calibration Traceability</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 19. Opinion & Interpretation (Type: Opinion) -->
-        <div class="config-card mb-2" *ngIf="s.type === 'opinion'">
-          <div class="config-card-title d-flex align-items-center justify-content-between">
-            <span><i class="bi bi-patch-check me-1.5 text-danger"></i><span>Opinion & Interpretation (ISO 17025 Cl. 7.8.7)</span></span>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label compact-label">Section Status</label>
-              <app-custom-select [options]="sectionStatusOptions" [(ngModel)]="s.config.sectionStatus"
-                size="sm" [searchable]="false" placeholder="Status">
-              </app-custom-select>
-            </div>
-            <div class="col-6 d-flex align-items-end">
-              <label class="form-check compact-check mb-1">
-                <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.derivedOnly">
-                <span class="form-check-label">Derived Parameters Only</span>
-              </label>
-            </div>
-          </div>
-          <div class="config-checks-grid mb-2">
-            <label class="form-check compact-check">
-              <input class="form-check-input" type="checkbox" [(ngModel)]="s.config.showOverallStatement">
-              <span class="form-check-label">Show Overall Technical Interpretation Box</span>
-            </label>
-          </div>
-          <div class="mb-1" *ngIf="s.config.showOverallStatement !== false">
-            <label class="form-label compact-label">Default Overall Interpretation Statement</label>
-            <textarea class="form-control form-control-sm compact-input" [(ngModel)]="s.config.overallStatement" rows="3"
-              placeholder="Enter default ISO/IEC 17025 Cl. 7.8.7 opinion & interpretation statement..."></textarea>
-          </div>
-        </div>
-
-
       </div>
 
       <div class="p-3 text-center text-muted" *ngIf="!selectedSection">

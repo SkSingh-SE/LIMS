@@ -183,53 +183,39 @@
           <!-- ARCHETYPE 1: CONTEXT HEADER & TRACEABILITY (hdr / traceability)-->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'hdr' || s.type === 'traceability'">
-            <div class="row g-2">
-              <div class="col-md-3 col-sm-6">
+            <!-- Table Display Style when configured -->
+            <div class="table-responsive" *ngIf="s.config?.traceabilityDisplay === 'Table' && hasConfiguredGenericTable(s)">
+              <table class="table table-sm table-bordered align-middle result-table mb-1">
+                <thead class="result-table-head text-center">
+                  <tr>
+                    <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      {{ col.label }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                    <td *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'" [class.text-center]="col.resolvedRole !== 'row_label'">
+                      <span *ngIf="col.resolvedRole === 'row_label'" class="fw-semibold text-dark">{{ row.label }}</span>
+                      <span *ngIf="col.resolvedRole === 'static_text'" class="font-monospace small">{{ col.staticValue || '—' }}</span>
+                      <input *ngIf="col.resolvedRole !== 'row_label' && col.resolvedRole !== 'static_text'" type="text"
+                             class="form-control form-control-xs text-center"
+                             [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key) || col.dbMasterName || ''"
+                             [ngModelOptions]="{ standalone: true }"
+                             (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event)"
+                             [readOnly]="isViewMode || isLocked" [placeholder]="col.label" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Compact Grid Display Style (Default — Dynamically renders checked ISO 17025 fields) -->
+            <div class="row g-2" *ngIf="s.config?.traceabilityDisplay !== 'Table' || !hasConfiguredGenericTable(s)">
+              <div class="col-md-3 col-sm-6" *ngFor="let tf of getTraceabilityFields(s)">
                 <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Sample No / UID</span>
-                  <span class="trace-val fw-bold text-primary">{{ sample?.sampleNo || '—' }}</span>
-                </div>
-              </div>
-              <div class="col-md-3 col-sm-6">
-                <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Case / Certificate No</span>
-                  <span class="trace-val fw-semibold text-dark">{{ inward?.caseNo || '—' }}</span>
-                </div>
-              </div>
-              <div class="col-md-3 col-sm-6">
-                <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Batch / Heat No</span>
-                  <span class="trace-val text-dark">{{ sample?.batchNo || '—' }}</span>
-                </div>
-              </div>
-              <div class="col-md-3 col-sm-6">
-                <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Material / Grade</span>
-                  <span class="trace-val fw-semibold text-dark">{{ sample?.material || testPlan?.specification || '—' }}</span>
-                </div>
-              </div>
-              <div class="col-md-3 col-sm-6">
-                <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Test Standard Method</span>
-                  <span class="trace-val text-dark">{{ getCleanTestMethod() }}</span>
-                </div>
-              </div>
-              <div class="col-md-3 col-sm-6">
-                <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Testing Equipment</span>
-                  <span class="trace-val text-dark">{{ selectedEquipment.length ? selectedEquipment[0]?.name : 'General Testing Machine' }}</span>
-                </div>
-              </div>
-              <div class="col-md-3 col-sm-6">
-                <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Performer / Analyst</span>
-                  <span class="trace-val text-dark">{{ timingData?.performedByName || 'Laboratory Analyst' }}</span>
-                </div>
-              </div>
-              <div class="col-md-3 col-sm-6">
-                <div class="trace-box p-2 rounded bg-light border">
-                  <span class="trace-label text-muted d-block text-xxs">Test Discipline</span>
-                  <span class="trace-val text-dark">{{ testPlan?.discipline || 'Mechanical / Metallurgical' }}</span>
+                  <span class="trace-label text-muted d-block text-xxs">{{ tf.label }}</span>
+                  <span class="trace-val fw-semibold text-dark">{{ tf.value }}</span>
                 </div>
               </div>
             </div>
@@ -239,62 +225,86 @@
           <!-- ARCHETYPE 2: TEST CONDITIONS & ENVIRONMENT (cond / condition) -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'cond' || s.type === 'condition'">
-            <div class="row g-2">
-              <div class="col-md-3 col-sm-6">
-                <div class="condition-input-box p-2 rounded border bg-light">
-                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
-                    <i class="bi bi-thermometer-half text-danger me-1"></i><span>Ambient Temperature (&deg;C)</span>
-                  </label>
-                  <input type="number" step="0.1" class="form-control form-control-xs text-center fw-bold text-danger"
-                         [(ngModel)]="conditionValues['Temperature']"
-                         [ngModelOptions]="{ standalone: true }"
-                         (ngModelChange)="onConditionChange('Temperature', $event)"
-                         [readOnly]="isViewMode || isLocked"
-                         placeholder="23.0" />
-                </div>
-              </div>
+            <!-- Table Layout (When Layout === 'Table' and tableColumns configured) -->
+            <div class="table-responsive" *ngIf="s.config?.layout === 'Table' && hasConfiguredGenericTable(s)">
+              <table class="table table-sm table-bordered align-middle result-table mb-1">
+                <thead class="result-table-head text-center">
+                  <tr>
+                    <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      {{ col.label }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                    <td *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'" [class.text-center]="col.resolvedRole !== 'row_label'">
+                      <ng-container [ngSwitch]="col.resolvedRole">
+                        <span *ngSwitchCase="'row_label'" class="fw-semibold text-dark">{{ row.label }}</span>
+                        <span *ngSwitchCase="'static_text'" class="font-monospace small text-muted">{{ col.staticValue || '—' }}</span>
+                        <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-muted">{{ row.requirement || col.requirement || '—' }}</span>
+                        <ng-container *ngSwitchDefault>
+                          <input type="text" class="form-control form-control-xs text-center font-monospace"
+                                 [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key) || conditionValues[row.label] || col.dbMasterName || ''"
+                                 [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); onConditionChange(row.label, $event)"
+                                 [readOnly]="isViewMode || isLocked" [placeholder]="col.label" />
+                        </ng-container>
+                      </ng-container>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-              <div class="col-md-3 col-sm-6">
-                <div class="condition-input-box p-2 rounded border bg-light">
-                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
-                    <i class="bi bi-droplet-half text-primary me-1"></i><span>Relative Humidity (% RH)</span>
-                  </label>
-                  <input type="number" step="0.5" class="form-control form-control-xs text-center fw-bold text-primary"
-                         [(ngModel)]="conditionValues['Relative Humidity']"
-                         [ngModelOptions]="{ standalone: true }"
-                         (ngModelChange)="onConditionChange('Relative Humidity', $event)"
-                         [readOnly]="isViewMode || isLocked"
-                         placeholder="50.0" />
+            <!-- Form Grid Layout (Default — Dynamically renders configured condition rows or standard 4) -->
+            <div class="row g-2" *ngIf="s.config?.layout !== 'Table' || !hasConfiguredGenericTable(s)">
+              <ng-container *ngIf="getGenericTableRows(s).length > 0; else defaultConditionGrid">
+                <div class="col-md-3 col-sm-6" *ngFor="let row of getGenericTableRows(s)">
+                  <div class="condition-input-box p-2 rounded border bg-light">
+                    <label class="form-label mb-1 text-xxs fw-semibold text-muted">{{ row.label }}</label>
+                    <input type="text" class="form-control form-control-xs text-center fw-semibold"
+                           [ngModel]="conditionValues[row.label] ?? getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, 'val')"
+                           [ngModelOptions]="{ standalone: true }"
+                           (ngModelChange)="onConditionChange(row.label, $event); setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, 'val', $event)"
+                           [readOnly]="isViewMode || isLocked"
+                           [placeholder]="row.label + '...'" />
+                  </div>
                 </div>
-              </div>
-
-              <div class="col-md-3 col-sm-6">
-                <div class="condition-input-box p-2 rounded border bg-light">
-                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
-                    <i class="bi bi-speedometer text-success me-1"></i><span>Test Speed / Strain Rate</span>
-                  </label>
-                  <input type="text" class="form-control form-control-xs text-center"
-                         [(ngModel)]="conditionValues['Test Speed']"
-                         [ngModelOptions]="{ standalone: true }"
-                         (ngModelChange)="onConditionChange('Test Speed', $event)"
-                         [readOnly]="isViewMode || isLocked"
-                         placeholder="2 mm/min" />
+              </ng-container>
+              <ng-template #defaultConditionGrid>
+                <div class="col-md-3 col-sm-6">
+                  <div class="condition-input-box p-2 rounded border bg-light">
+                    <label class="form-label mb-1 text-xxs fw-semibold text-muted">Ambient Temperature (&deg;C)</label>
+                    <input type="number" step="0.1" class="form-control form-control-xs text-center fw-bold text-danger"
+                           [(ngModel)]="conditionValues['Temperature']" [ngModelOptions]="{ standalone: true }"
+                           (ngModelChange)="onConditionChange('Temperature', $event)" [readOnly]="isViewMode || isLocked" placeholder="23.0" />
+                  </div>
                 </div>
-              </div>
-
-              <div class="col-md-3 col-sm-6">
-                <div class="condition-input-box p-2 rounded border bg-light">
-                  <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
-                    <i class="bi bi-snow text-info me-1"></i><span>Medium / Environment</span>
-                  </label>
-                  <input type="text" class="form-control form-control-xs text-center"
-                         [(ngModel)]="conditionValues['Medium']"
-                         [ngModelOptions]="{ standalone: true }"
-                         (ngModelChange)="onConditionChange('Medium', $event)"
-                         [readOnly]="isViewMode || isLocked"
-                         placeholder="Ambient Air" />
+                <div class="col-md-3 col-sm-6">
+                  <div class="condition-input-box p-2 rounded border bg-light">
+                    <label class="form-label mb-1 text-xxs fw-semibold text-muted">Relative Humidity (% RH)</label>
+                    <input type="number" step="0.5" class="form-control form-control-xs text-center fw-bold text-primary"
+                           [(ngModel)]="conditionValues['Relative Humidity']" [ngModelOptions]="{ standalone: true }"
+                           (ngModelChange)="onConditionChange('Relative Humidity', $event)" [readOnly]="isViewMode || isLocked" placeholder="50.0" />
+                  </div>
                 </div>
-              </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="condition-input-box p-2 rounded border bg-light">
+                    <label class="form-label mb-1 text-xxs fw-semibold text-muted">Test Speed / Strain Rate</label>
+                    <input type="text" class="form-control form-control-xs text-center"
+                           [(ngModel)]="conditionValues['Test Speed']" [ngModelOptions]="{ standalone: true }"
+                           (ngModelChange)="onConditionChange('Test Speed', $event)" [readOnly]="isViewMode || isLocked" placeholder="2 mm/min" />
+                  </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                  <div class="condition-input-box p-2 rounded border bg-light">
+                    <label class="form-label mb-1 text-xxs fw-semibold text-muted">Medium / Environment</label>
+                    <input type="text" class="form-control form-control-xs text-center"
+                           [(ngModel)]="conditionValues['Medium']" [ngModelOptions]="{ standalone: true }"
+                           (ngModelChange)="onConditionChange('Medium', $event)" [readOnly]="isViewMode || isLocked" placeholder="Ambient Air" />
+                  </div>
+                </div>
+              </ng-template>
             </div>
           </ng-container>
 
@@ -1501,9 +1511,9 @@
                         <!-- 1. Calculated parameter: Strictly Readonly / Non-Editable -->
                         <ng-container *ngIf="isParameterCalculated(parametersFormArray.at(r).value)">
                           <input type="text" class="form-control form-control-xs text-center font-monospace bg-light fw-bold text-primary num-tabular"
-                                 formControlName="value"
+                                 [value]="parametersFormArray.at(r).get('value')?.value ?? ''"
                                  readonly
-                                 [attr.disabled]="true"
+                                 disabled
                                  [title]="'Auto-calculated from dependent parameters (Read-Only): ' + (getFormulaDisplay(parametersFormArray.at(r).value) || 'Formula')"
                                  placeholder="Auto" />
                         </ng-container>
@@ -1870,10 +1880,10 @@
             <div class="chart-box border rounded p-2 bg-light" *ngIf="getStressStrainChartData() as chart">
               <div class="d-flex align-items-center justify-content-between mb-2 px-2">
                 <div class="d-flex align-items-center gap-2">
-                  <span class="fw-semibold small text-danger">Engineering Stress vs Strain Curve</span>
+                  <span class="fw-semibold small text-danger">{{ s.config?.chartType || 'Engineering Stress vs Strain Curve' }}</span>
                   <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 6892-1 / ASTM E8</span>
                 </div>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2" *ngIf="s.config?.showLegend !== false">
                   <span class="badge bg-success-subtle text-success border border-success-subtle text-xxs">
                     <i class="bi bi-activity me-1"></i>Real-time Synchronized
                   </span>
@@ -1883,25 +1893,27 @@
               <!-- Interactive / Scaled SVG Chart Canvas -->
               <svg viewBox="0 0 760 215" class="svg-full-curve w-100">
                 <!-- Background Grid Lines -->
-                <line x1="65" y1="25" x2="730" y2="25" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="65" y1="55" x2="730" y2="55" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="65" y1="85" x2="730" y2="85" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="65" y1="115" x2="730" y2="115" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="65" y1="145" x2="730" y2="145" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                <g *ngIf="s.config?.showGrid !== false">
+                  <line x1="65" y1="25" x2="730" y2="25" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="65" y1="55" x2="730" y2="55" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="65" y1="85" x2="730" y2="85" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="65" y1="115" x2="730" y2="115" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="65" y1="145" x2="730" y2="145" stroke="#e2e8f0" stroke-dasharray="3 3" />
 
-                <!-- Vertical Grid Lines (Strain %) -->
-                <line x1="160" y1="25" x2="160" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="255" y1="25" x2="255" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="350" y1="25" x2="350" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="445" y1="25" x2="445" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="540" y1="25" x2="540" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
-                <line x1="635" y1="25" x2="635" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <!-- Vertical Grid Lines -->
+                  <line x1="160" y1="25" x2="160" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="255" y1="25" x2="255" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="350" y1="25" x2="350" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="445" y1="25" x2="445" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="540" y1="25" x2="540" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                  <line x1="635" y1="25" x2="635" y2="175" stroke="#e2e8f0" stroke-dasharray="3 3" />
+                </g>
 
                 <!-- Axes -->
                 <line x1="65" y1="15" x2="65" y2="175" stroke="#64748b" stroke-width="1.8" />
                 <line x1="65" y1="175" x2="735" y2="175" stroke="#64748b" stroke-width="1.8" />
 
-                <!-- Y-Axis Tick Labels (Stress in MPa) -->
+                <!-- Y-Axis Tick Labels -->
                 <text x="58" y="28" font-size="9" text-anchor="end" fill="#64748b" font-weight="600">600</text>
                 <text x="58" y="58" font-size="9" text-anchor="end" fill="#64748b">500</text>
                 <text x="58" y="88" font-size="9" text-anchor="end" fill="#64748b">400</text>
@@ -1909,7 +1921,7 @@
                 <text x="58" y="148" font-size="9" text-anchor="end" fill="#64748b">200</text>
                 <text x="58" y="178" font-size="9" text-anchor="end" fill="#64748b" font-weight="600">0</text>
 
-                <!-- X-Axis Tick Labels (Strain % / Elongation) -->
+                <!-- X-Axis Tick Labels -->
                 <text x="65" y="192" font-size="9" text-anchor="middle" fill="#64748b" font-weight="600">0%</text>
                 <text x="160" y="192" font-size="9" text-anchor="middle" fill="#64748b">5%</text>
                 <text x="255" y="192" font-size="9" text-anchor="middle" fill="#64748b">10%</text>
@@ -1919,49 +1931,49 @@
                 <text x="635" y="192" font-size="9" text-anchor="middle" fill="#64748b">30%</text>
                 <text x="730" y="192" font-size="9" text-anchor="middle" fill="#64748b">35%</text>
 
-                <!-- Axis Titles -->
-                <text x="400" y="208" font-size="10" text-anchor="middle" fill="#475569" font-weight="600">Strain (%) / Elongation</text>
-                <text transform="translate(18,95) rotate(-90)" font-size="10" text-anchor="middle" fill="#475569" font-weight="600">Engineering Stress (MPa)</text>
+                <!-- Dynamic Axis Titles -->
+                <text x="400" y="208" font-size="10" text-anchor="middle" fill="#475569" font-weight="600">
+                  {{ s.config?.xLabel || 'Strain (%) / Elongation' }}
+                </text>
+                <text transform="translate(18,95) rotate(-90)" font-size="10" text-anchor="middle" fill="#475569" font-weight="600">
+                  {{ s.config?.yLabel || 'Engineering Stress (MPa)' }}
+                </text>
 
-                <!-- Dashed Projection Drop Lines for Key Points -->
-                <!-- Yield Point Drop Lines -->
-                <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="65" [attr.y2]="chart.yieldPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
-                <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="chart.yieldPt.x" y2="175" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
-
-                <!-- Peak Drop Line -->
-                <line [attr.x1]="chart.peakPt.x" [attr.y1]="chart.peakPt.y" [attr.x2]="65" [attr.y2]="chart.peakPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
-
-                <!-- Rupture Drop Line -->
-                <line [attr.x1]="chart.rupturePt.x" [attr.y1]="chart.rupturePt.y" [attr.x2]="chart.rupturePt.x" y2="175" stroke="#475569" stroke-dasharray="3 2" stroke-width="1.2" />
+                <!-- Optional Limit Reference Lines -->
+                <g *ngIf="s.config?.showLimit !== false">
+                  <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="65" [attr.y2]="chart.yieldPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
+                  <line [attr.x1]="chart.yieldPt.x" [attr.y1]="chart.yieldPt.y" [attr.x2]="chart.yieldPt.x" y2="175" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
+                  <line [attr.x1]="chart.peakPt.x" [attr.y1]="chart.peakPt.y" [attr.x2]="65" [attr.y2]="chart.peakPt.y" stroke="#da261c" stroke-dasharray="3 2" stroke-width="1.2" />
+                  <line [attr.x1]="chart.rupturePt.x" [attr.y1]="chart.rupturePt.y" [attr.x2]="chart.rupturePt.x" y2="175" stroke="#475569" stroke-dasharray="3 2" stroke-width="1.2" />
+                </g>
 
                 <!-- Dynamic Stress vs Strain Polyline/Curve -->
                 <path [attr.d]="chart.curvePath" fill="none" stroke="#da261c" stroke-width="2.8" stroke-linejoin="round" />
 
                 <!-- Markers & Value Callouts -->
-                <!-- 1. Yield Point (0.2% Proof Stress) -->
-                <circle [attr.cx]="chart.yieldPt.x" [attr.cy]="chart.yieldPt.y" r="4.5" fill="#da261c" stroke="#ffffff" stroke-width="1.5" />
-                <rect [attr.x]="chart.yieldPt.x + 8" [attr.y]="chart.yieldPt.y - 18" width="105" height="18" rx="3" fill="#ffffff" stroke="#da261c" stroke-width="1" />
-                <text [attr.x]="chart.yieldPt.x + 12" [attr.y]="chart.yieldPt.y - 5" font-size="9.5" fill="#da261c" font-weight="700">
-                  Rp0.2: {{ chart.rp }} MPa
-                </text>
+                <g *ngIf="s.config?.showPoints !== false">
+                  <circle [attr.cx]="chart.yieldPt.x" [attr.cy]="chart.yieldPt.y" r="4.5" fill="#da261c" stroke="#ffffff" stroke-width="1.5" />
+                  <rect [attr.x]="chart.yieldPt.x + 8" [attr.y]="chart.yieldPt.y - 18" width="105" height="18" rx="3" fill="#ffffff" stroke="#da261c" stroke-width="1" />
+                  <text [attr.x]="chart.yieldPt.x + 12" [attr.y]="chart.yieldPt.y - 5" font-size="9.5" fill="#da261c" font-weight="700">
+                    Rp0.2: {{ chart.rp }} MPa
+                  </text>
 
-                <!-- 2. Ultimate Tensile Strength (Peak) -->
-                <circle [attr.cx]="chart.peakPt.x" [attr.cy]="chart.peakPt.y" r="5" fill="#b91c1c" stroke="#ffffff" stroke-width="1.5" />
-                <rect [attr.x]="chart.peakPt.x - 55" [attr.y]="chart.peakPt.y - 22" width="115" height="18" rx="3" fill="#ffffff" stroke="#b91c1c" stroke-width="1" />
-                <text [attr.x]="chart.peakPt.x + 2" [attr.y]="chart.peakPt.y - 9" font-size="9.5" fill="#b91c1c" font-weight="700" text-anchor="middle">
-                  Rm (Peak): {{ chart.rm }} MPa
-                </text>
+                  <circle [attr.cx]="chart.peakPt.x" [attr.cy]="chart.peakPt.y" r="5" fill="#b91c1c" stroke="#ffffff" stroke-width="1.5" />
+                  <rect [attr.x]="chart.peakPt.x - 55" [attr.y]="chart.peakPt.y - 22" width="115" height="18" rx="3" fill="#ffffff" stroke="#b91c1c" stroke-width="1" />
+                  <text [attr.x]="chart.peakPt.x + 2" [attr.y]="chart.peakPt.y - 9" font-size="9.5" fill="#b91c1c" font-weight="700" text-anchor="middle">
+                    Rm (Peak): {{ chart.rm }} MPa
+                  </text>
 
-                <!-- 3. Rupture / Fracture Point -->
-                <circle [attr.cx]="chart.rupturePt.x" [attr.cy]="chart.rupturePt.y" r="4.5" fill="#475569" stroke="#ffffff" stroke-width="1.5" />
-                <rect [attr.x]="chart.rupturePt.x - 75" [attr.y]="chart.rupturePt.y - 20" width="75" height="18" rx="3" fill="#ffffff" stroke="#475569" stroke-width="1" />
-                <text [attr.x]="chart.rupturePt.x - 38" [attr.y]="chart.rupturePt.y - 7" font-size="9.5" fill="#475569" font-weight="700" text-anchor="middle">
-                  A: {{ chart.el }}%
-                </text>
+                  <circle [attr.cx]="chart.rupturePt.x" [attr.cy]="chart.rupturePt.y" r="4.5" fill="#475569" stroke="#ffffff" stroke-width="1.5" />
+                  <rect [attr.x]="chart.rupturePt.x - 75" [attr.y]="chart.rupturePt.y - 20" width="75" height="18" rx="3" fill="#ffffff" stroke="#475569" stroke-width="1" />
+                  <text [attr.x]="chart.rupturePt.x - 38" [attr.y]="chart.rupturePt.y - 7" font-size="9.5" fill="#475569" font-weight="700" text-anchor="middle">
+                    A: {{ chart.el }}%
+                  </text>
+                </g>
               </svg>
 
               <!-- Live Key Metrics Ribbon -->
-              <div class="row g-2 mt-1 px-1">
+              <div class="row g-2 mt-1 px-1" *ngIf="s.config?.showLegend !== false">
                 <div class="col-md-3 col-6">
                   <div class="metric-card p-2 rounded border bg-white text-center">
                     <span class="text-xxs text-muted d-block">0.2% Proof Stress (Rp0.2)</span>
@@ -1998,29 +2010,35 @@
           <!-- ARCHETYPE 8: DERIVED CALCULATIONS & FORMULAS (calc / formula) -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'calc' || s.type === 'formula'">
-            <div class="row g-2">
-              <ng-container *ngFor="let p of test?.parameters; let pIdx = index">
-                <div class="col-md-4 col-sm-6" *ngIf="p.isCalculated || p.formulaExpression">
-                  <div class="formula-card p-2 rounded border bg-light h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                      <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">
-                          {{ getSpecimenLabelForParam(pIdx) }}
-                        </span>
-                        <span class="fw-semibold small text-dark">{{ p.parameterName }}</span>
-                      </div>
-                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle">&fnof;</span>
+            <div class="row g-2" *ngIf="getFormulaSectionParameters(s) as formulaParams">
+              <div class="col-12" *ngIf="formulaParams.length === 0">
+                <div class="text-center py-2 bg-light rounded border">
+                  <span class="text-xxs text-muted">No formula-driven parameters configured for this test plan.</span>
+                </div>
+              </div>
+              <div class="col-md-4 col-sm-6" *ngFor="let item of formulaParams">
+                <div class="formula-card p-2 rounded border bg-light h-100">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">
+                        {{ getSpecimenLabelForParam(item.idx) }}
+                      </span>
+                      <span class="fw-semibold small text-dark">{{ s.config?.resultLabel || item.param.parameterName }}</span>
                     </div>
-                    <code class="formula-expr-pill d-block mb-2 p-1 rounded font-monospace text-xxs bg-white border">
-                      {{ getFormulaDisplay(p) || 'Automated Calculation' }}
-                    </code>
-                    <div class="d-flex align-items-center justify-content-between">
-                      <span class="text-muted text-xxs">Evaluated Result:</span>
-                      <span class="fw-bold text-danger font-monospace fs-7">{{ p.value != null ? (p.value + ' ' + (p.unit || '')) : 'Pending' }}</span>
-                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" title="Auto-calculated (read-only)">&fnof;x Auto</span>
+                  </div>
+                  <code class="formula-expr-pill d-block mb-2 p-1 rounded font-monospace text-xxs bg-white border"
+                        *ngIf="s.config?.showFormulaSteps !== false">
+                    {{ getFormulaDisplay(item.param) || s.config?.formula || 'Automated Calculation' }}
+                  </code>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span class="text-muted text-xxs">Evaluated Result (Read-Only):</span>
+                    <span class="fw-bold text-danger font-monospace fs-7">
+                      {{ item.param.value != null && item.param.value !== '' ? (item.param.value + ' ' + (item.param.unit || '')) : 'Pending' }}
+                    </span>
                   </div>
                 </div>
-              </ng-container>
+              </div>
             </div>
           </ng-container>
 
@@ -2031,21 +2049,27 @@
             <div class="narrative-box d-flex flex-column gap-2">
               <div>
                 <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
-                  <i class="bi bi-chat-left-text text-danger me-1"></i><span>General Technical Remarks / Test Summary</span>
+                  <i class="bi bi-chat-left-text text-danger me-1"></i>
+                  <span>{{ s.config?.label || 'General Technical Remarks / Test Summary' }}</span>
+                  <span class="text-danger ms-1" *ngIf="s.config?.required">*</span>
                 </label>
-                <textarea class="form-control form-control-xs" rows="2"
+                <input *ngIf="s.config?.inputType === 'Single Line'" type="text" class="form-control form-control-xs"
+                       formControlName="remarks"
+                       [readOnly]="isViewMode || isLocked"
+                       [placeholder]="s.config?.defaultText || s.config?.extraFields || 'Enter technical summary or conformance statement...'" />
+                <textarea *ngIf="s.config?.inputType !== 'Single Line'" class="form-control form-control-xs" rows="2"
                           formControlName="remarks"
                           [readOnly]="isViewMode || isLocked"
-                          placeholder="Enter technical summary, fracture appearance, or conformance statement..."></textarea>
+                          [placeholder]="s.config?.defaultText || s.config?.extraFields || 'Enter technical summary, fracture appearance, or conformance statement...'"></textarea>
               </div>
 
               <!-- Structured Technical Observations (Gap 4) -->
               <div class="structured-observations-section mt-1">
                 <div class="d-flex align-items-center justify-content-between mb-1">
                   <span class="text-xxs fw-semibold text-secondary d-flex align-items-center">
-                    <i class="bi bi-card-text text-primary me-1"></i><span>Itemized Observations & Defect Logs ({{ observations.length }})</span>
+                    <i class="bi bi-card-text text-primary me-1"></i><span>Itemized Observations &amp; Defect Logs ({{ observations.length }})</span>
                   </span>
-                  <button *ngIf="!isViewMode && !isLocked" type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addObservation()">
+                  <button *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false" type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addObservation()">
                     <i class="bi bi-plus-circle me-1"></i><span>Add Observation</span>
                   </button>
                 </div>
@@ -2069,17 +2093,12 @@
                       <tr *ngFor="let obs of observations; let oIdx = index">
                         <td class="text-center text-muted small fw-semibold">{{ oIdx + 1 }}</td>
                         <td>
-                          <select class="form-select form-select-xs fw-semibold"
-                                  [(ngModel)]="obs.category" [ngModelOptions]="{ standalone: true }"
-                                  (ngModelChange)="syncCollectionsToTest()"
-                                  [disabled]="isViewMode || isLocked">
-                            <option value="General">General</option>
-                            <option value="Fracture Appearance">Fracture Appearance</option>
-                            <option value="Microstructure">Microstructure</option>
-                            <option value="Surface Defect">Surface Defect</option>
-                            <option value="Dimensional">Dimensional</option>
-                            <option value="Non-Conformance">Non-Conformance</option>
-                          </select>
+                          <app-custom-select
+                            [options]="observationCategoryOptions"
+                            [(ngModel)]="obs.category" [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="syncCollectionsToTest()"
+                            size="xs" [searchable]="false" [disabled]="isViewMode || isLocked">
+                          </app-custom-select>
                         </td>
                         <td>
                           <input type="text" class="form-control form-control-xs"
@@ -2117,6 +2136,12 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'checklist'">
             <div class="checklist-grid d-flex flex-column gap-2">
+              <div class="d-flex align-items-center justify-content-between" *ngIf="s.config?.requireAll">
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle text-xxs">
+                  <i class="bi bi-exclamation-circle me-1"></i>All checkpoints required before submission
+                </span>
+                <span class="text-xxs text-muted">{{ checklistItems.length }} Checkpoints</span>
+              </div>
               <div *ngFor="let item of checklistItems; let cIdx = index" class="checklist-row p-2 rounded border bg-light d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 me-2">
                   <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">#{{ cIdx + 1 }}</span>
@@ -2127,20 +2152,18 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <div class="btn-group btn-group-xs" role="group">
-                    <button type="button" class="btn" [ngClass]="item.status === 'Pass' ? 'btn-success' : 'btn-outline-secondary'"
-                            (click)="setChecklistStatus(item, 'Pass'); syncCollectionsToTest()">Pass</button>
-                    <button type="button" class="btn" [ngClass]="item.status === 'Fail' ? 'btn-danger' : 'btn-outline-secondary'"
-                            (click)="setChecklistStatus(item, 'Fail'); syncCollectionsToTest()">Fail</button>
-                    <button type="button" class="btn" [ngClass]="item.status === 'NA' ? 'btn-secondary' : 'btn-outline-secondary'"
-                            (click)="setChecklistStatus(item, 'NA'); syncCollectionsToTest()">N/A</button>
+                    <button *ngFor="let opt of getChecklistOptions(s)" type="button" class="btn"
+                            [ngClass]="item.status === opt.value ? opt.activeClass : 'btn-outline-secondary'"
+                            [disabled]="isViewMode || isLocked"
+                            (click)="setChecklistStatus(item, opt.value); syncCollectionsToTest()">{{ opt.label }}</button>
                   </div>
-                  <button *ngIf="!isViewMode && !isLocked && checklistItems.length > 1" type="button"
+                  <button *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false && checklistItems.length > 1" type="button"
                           class="btn-lims-icon btn-lims-delete" (click)="removeChecklistItem(cIdx)" title="Remove item">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </div>
-              <div class="d-flex align-items-center justify-content-between mt-1" *ngIf="!isViewMode && !isLocked">
+              <div class="d-flex align-items-center justify-content-between mt-1" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">
                 <span class="text-xxs text-muted">Technical raw data checklist items verified as per ISO 17025 testing SOPs.</span>
                 <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addChecklistItem()">
                   <i class="bi bi-plus-circle me-1"></i><span>Add Inspection Item</span>
@@ -2156,16 +2179,39 @@
             <div class="photo-gallery-section">
               <div *ngIf="testImages.length === 0" class="text-center py-3 bg-light rounded border border-dashed">
                 <i class="bi bi-images fs-3 text-muted d-block mb-1"></i>
-                <span class="small text-muted d-block">No microstructure or test images attached.</span>
+                <span class="small text-muted d-block">No microstructure or test images attached (Target slots: {{ s.config?.count || 2 }}).</span>
                 <button *ngIf="!isViewMode && !isLocked" type="button" class="btn btn-xs btn-lims btn-lims-add mt-2" (click)="photoUploadRequested.emit()">
                   <i class="bi bi-upload me-1"></i><span>Attach Image</span>
                 </button>
               </div>
               <div *ngIf="testImages.length > 0" class="row g-2">
-                <div class="col-md-3 col-sm-6" *ngFor="let img of testImages">
-                  <div class="photo-card border rounded p-2 bg-light text-center">
-                    <img [src]="img.url" class="img-fluid rounded mb-1 photo-thumbnail" [alt]="img.name || 'Test Image'" />
-                    <span class="d-block text-xxs text-truncate text-muted">{{ img.name || 'Microstructure' }}</span>
+                <div [ngClass]="getPhotoGridColClass(s)" *ngFor="let img of testImages; let imgIdx = index">
+                  <div class="photo-card border rounded p-2 bg-light">
+                    <img [src]="img.url" class="img-fluid rounded mb-1 photo-thumbnail d-block mx-auto" [alt]="img.name || 'Test Image'" />
+                    <span class="d-block text-xxs text-truncate text-muted text-center mb-1">{{ img.name || s.config?.caption || 'Microstructure' }}</span>
+                    <div class="row g-1 mt-1" *ngIf="s.config?.showMagnification || s.config?.showEtchant || s.config?.showLocation">
+                      <div class="col-6" *ngIf="s.config?.showMagnification">
+                        <input type="text" class="form-control form-control-xs"
+                               [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'magnification')"
+                               [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'magnification', $event)"
+                               [readOnly]="isViewMode || isLocked" placeholder="Mag (e.g. 100X)" />
+                      </div>
+                      <div class="col-6" *ngIf="s.config?.showEtchant">
+                        <input type="text" class="form-control form-control-xs"
+                               [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'etchant')"
+                               [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'etchant', $event)"
+                               [readOnly]="isViewMode || isLocked" placeholder="Etchant (2% Nital)" />
+                      </div>
+                      <div class="col-12" *ngIf="s.config?.showLocation">
+                        <input type="text" class="form-control form-control-xs"
+                               [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'location')"
+                               [ngModelOptions]="{ standalone: true }"
+                               (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, 'img_' + imgIdx, 'location', $event)"
+                               [readOnly]="isViewMode || isLocked" placeholder="Location / Zone" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2405,18 +2451,16 @@
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
                     <i class="bi bi-shield-check text-danger me-1"></i><span>Decision Rule Type (ISO 17025 / ILAC G8)</span>
                   </label>
-                  <select class="form-select form-select-xs fw-semibold"
-                          [ngModel]="decisionRule.ruleType" [ngModelOptions]="{ standalone: true }"
-                          (ngModelChange)="onDecisionRuleTypeChange($event)"
-                          [disabled]="isViewMode || isLocked">
-                    <option value="Simple Acceptance">Simple Acceptance (Binary, w = 0)</option>
-                    <option value="Guard Banded (ILAC-G8)">Guard Banded (ILAC-G8:09/2019, w = 1.0 U)</option>
-                    <option value="Non-Binary">Non-Binary Statement (Pass / Inconclusive / Fail)</option>
-                  </select>
+                  <app-custom-select
+                    [options]="decisionRuleTypeOptions"
+                    [ngModel]="decisionRule.ruleType" [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="onDecisionRuleTypeChange($event)"
+                    size="xs" [searchable]="false" [disabled]="isViewMode || isLocked">
+                  </app-custom-select>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
-                    <i class="bi bi-percent text-primary me-1"></i><span>Confidence Level & Multiplier</span>
+                    <i class="bi bi-percent text-primary me-1"></i><span>Confidence Level &amp; Multiplier</span>
                   </label>
                   <div class="d-flex align-items-center gap-1">
                     <input type="number" class="form-control form-control-xs text-center font-monospace"
@@ -2441,8 +2485,49 @@
                   </div>
                 </div>
               </div>
-              <div class="decision-statement-box p-1.5 rounded bg-white border">
-                <span class="text-xxs text-muted d-block fw-semibold mb-0.5">Conformity Statement Text (Print on Lab Report):</span>
+
+              <!-- Dynamic Rule Evaluation Table (When Studio tableColumns configured) -->
+              <div class="table-responsive mb-2" *ngIf="hasConfiguredGenericTable(s) && getGenericTableRows(s).length > 0">
+                <table class="table table-sm table-bordered align-middle result-table mb-0 bg-white">
+                  <thead class="result-table-head text-center">
+                    <tr>
+                      <th class="w-col-35">#</th>
+                      <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                        {{ col.label }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                      <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
+                      <td *ngFor="let col of getParamTableColumns(s)"
+                          [class.text-start]="col.resolvedRole === 'row_label'"
+                          [class.text-center]="col.resolvedRole !== 'row_label'">
+                        <ng-container [ngSwitch]="col.resolvedRole">
+                          <span *ngSwitchCase="'row_label'" class="fw-semibold text-dark small">{{ row.label }}</span>
+                          <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-muted">{{ row.requirement || col.requirement || '—' }}</span>
+                          <span *ngSwitchCase="'static_text'" class="font-monospace small text-dark">{{ col.staticValue || '—' }}</span>
+                          <app-custom-select *ngSwitchCase="'status_verdict'"
+                            [options]="booleanSelectOptions"
+                            [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                            size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Verdict">
+                          </app-custom-select>
+                          <input *ngSwitchDefault type="text" class="form-control form-control-xs text-center font-monospace"
+                                 [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                 [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                 [readOnly]="isViewMode || isLocked" [placeholder]="col.label || '—'" />
+                        </ng-container>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="decision-statement-box p-2 rounded bg-white border">
+                <span class="text-xxs text-muted d-block fw-semibold mb-1">Conformity Statement Text (Print on Lab Report):</span>
                 <input type="text" class="form-control form-control-xs"
                        [(ngModel)]="decisionRule.statementText" [ngModelOptions]="{ standalone: true }"
                        (ngModelChange)="syncCollectionsToTest()" [readOnly]="isViewMode || isLocked" />
@@ -2455,19 +2540,17 @@
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'classification' || s.type === 'class'">
             <div class="classification-section p-2 rounded bg-light border">
-              <div class="row g-2">
+              <div class="row g-2 mb-2">
                 <div class="col-md-3">
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
                     <i class="bi bi-tag text-danger me-1"></i><span>Standard Specification</span>
                   </label>
-                  <select class="form-select form-select-xs"
-                          [(ngModel)]="classification.classificationStandard" [ngModelOptions]="{ standalone: true }"
-                          (ngModelChange)="onClassificationChange()" [disabled]="isViewMode || isLocked">
-                    <option value="ASTM E45">ASTM E45 (Inclusion Rating)</option>
-                    <option value="ASTM A247">ASTM A247 (Graphite in Iron)</option>
-                    <option value="ASTM E112">ASTM E112 (Grain Size)</option>
-                    <option value="ISO 4967">ISO 4967 (Non-metallic Inclusions)</option>
-                  </select>
+                  <app-custom-select
+                    [options]="classificationStandardOptions"
+                    [(ngModel)]="classification.classificationStandard" [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="onClassificationChange()"
+                    size="xs" [searchable]="false" [disabled]="isViewMode || isLocked">
+                  </app-custom-select>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
@@ -2477,7 +2560,7 @@
                          [(ngModel)]="classification.ratingType" [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onClassificationChange()" [readOnly]="isViewMode || isLocked" placeholder="Inclusion Rating" />
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3" *ngIf="!hasConfiguredGenericTable(s)">
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
                     <i class="bi bi-funnel text-success me-1"></i><span>Category / Form</span>
                   </label>
@@ -2485,7 +2568,7 @@
                          [(ngModel)]="classification.selectedCategory" [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onClassificationChange()" [readOnly]="isViewMode || isLocked" placeholder="Type A (Sulfides)" />
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3" *ngIf="!hasConfiguredGenericTable(s)">
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center">
                     <i class="bi bi-bar-chart-steps text-info me-1"></i><span>Severity / Index</span>
                   </label>
@@ -2493,62 +2576,254 @@
                          [(ngModel)]="classification.severity" [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onClassificationChange()" [readOnly]="isViewMode || isLocked" placeholder="Thin 1.0 / Heavy 0.5" />
                 </div>
-                <div class="col-12">
-                  <label class="form-label text-xxs fw-semibold text-muted mb-1">Classification Remarks & Microstructural Description</label>
+                <div class="col-md-6" *ngIf="hasConfiguredGenericTable(s)">
+                  <label class="form-label text-xxs fw-semibold text-muted mb-1">Classification Remarks &amp; Microstructural Description</label>
+                  <input type="text" class="form-control form-control-xs"
+                         [(ngModel)]="classification.remarks" [ngModelOptions]="{ standalone: true }"
+                         (ngModelChange)="onClassificationChange()" [readOnly]="isViewMode || isLocked" placeholder="e.g. Fine globular sulfides dispersed uniformly..." />
+                </div>
+                <div class="col-12" *ngIf="!hasConfiguredGenericTable(s)">
+                  <label class="form-label text-xxs fw-semibold text-muted mb-1">Classification Remarks &amp; Microstructural Description</label>
                   <input type="text" class="form-control form-control-xs"
                          [(ngModel)]="classification.remarks" [ngModelOptions]="{ standalone: true }"
                          (ngModelChange)="onClassificationChange()" [readOnly]="isViewMode || isLocked" placeholder="e.g. Fine globular sulfides dispersed uniformly..." />
                 </div>
               </div>
-            </div>
-          </ng-container>
 
-          <!-- ───────────────────────────────────────────────────────────── -->
-          <!-- ARCHETYPE 16: CUSTOM ATTRIBUTES & LAB METADATA (custom / attrs)-->
-          <!-- ───────────────────────────────────────────────────────────── -->
-          <ng-container *ngIf="s.type === 'custom' || s.type === 'attrs'">
-            <div class="custom-attributes-section">
-              <div class="table-responsive mb-1">
-                <table class="table table-sm table-bordered align-middle result-table mb-1">
+              <!-- Dynamic Classification Rating Matrix (When Studio tableColumns configured) -->
+              <div class="table-responsive" *ngIf="hasConfiguredGenericTable(s) && getGenericTableRows(s).length > 0">
+                <table class="table table-sm table-bordered align-middle result-table mb-0 bg-white">
                   <thead class="result-table-head text-center">
-                    <tr>
+                    <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
+                      <tr>
+                        <th rowspan="2" class="w-col-35 align-middle">#</th>
+                        <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                            [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                        <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
+                        <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                            [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      </tr>
+                      <tr>
+                        <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                      </tr>
+                    </ng-container>
+                    <tr *ngIf="!hasParamMergedHeader(s) || !isParamSubLabelsVisible(s)">
                       <th class="w-col-35">#</th>
-                      <th class="w-col-240 text-start">Attribute Name / Metadata Key</th>
-                      <th class="text-start">Attribute Value / Reading</th>
-                      <th class="w-col-65" *ngIf="!isViewMode && !isLocked">Actions</th>
+                      <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                        {{ col.label }}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let attr of customAttributes; let aIdx = index">
-                      <td class="text-center text-muted small fw-semibold">{{ aIdx + 1 }}</td>
-                      <td>
-                        <input type="text" class="form-control form-control-xs fw-semibold"
-                               [(ngModel)]="attr.key" [ngModelOptions]="{ standalone: true }"
-                               (ngModelChange)="syncCollectionsToTest()"
-                               [readOnly]="isViewMode || isLocked" placeholder="e.g. Machine Serial, Heat Lot..." />
-                      </td>
-                      <td>
-                        <input type="text" class="form-control form-control-xs"
-                               [(ngModel)]="attr.value" [ngModelOptions]="{ standalone: true }"
-                               (ngModelChange)="syncCollectionsToTest()"
-                               [readOnly]="isViewMode || isLocked" placeholder="e.g. UTM-500KN-02, Shift B..." />
-                      </td>
-                      <td class="text-center" *ngIf="!isViewMode && !isLocked">
-                        <button type="button" class="btn-lims-icon btn-lims-delete"
-                                (click)="removeCustomAttribute(aIdx)" title="Remove attribute">
-                          <i class="bi bi-trash"></i>
-                        </button>
+                    <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                      <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
+                      <td *ngFor="let col of getParamTableColumns(s)"
+                          [class.text-start]="col.resolvedRole === 'row_label'"
+                          [class.text-center]="col.resolvedRole !== 'row_label'">
+                        <ng-container [ngSwitch]="col.resolvedRole">
+                          <span *ngSwitchCase="'row_label'" class="fw-semibold text-dark small">{{ row.label }}</span>
+                          <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-muted">{{ row.requirement || col.requirement || '—' }}</span>
+                          <span *ngSwitchCase="'static_text'" class="font-monospace small text-dark">{{ col.staticValue || '—' }}</span>
+                          <app-custom-select *ngSwitchCase="'status_verdict'"
+                            [options]="booleanSelectOptions"
+                            [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                            size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Status">
+                          </app-custom-select>
+                          <ng-container *ngSwitchDefault>
+                            <ng-container [ngSwitch]="getEffectiveInputType(col, null)">
+                              <app-custom-select *ngSwitchCase="'boolean'"
+                                [options]="booleanSelectOptions"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
+                              <app-custom-select *ngSwitchCase="'dropdown'"
+                                [options]="getDropdownOptionsForCell(col, null)"
+                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                size="xs" [searchable]="true" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                              </app-custom-select>
+                              <input *ngSwitchCase="'decimal'" type="number" [attr.step]="getStepForPrecision(col.decimalPrecision)"
+                                     class="form-control form-control-xs text-center font-monospace"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                     [readOnly]="isViewMode || isLocked" placeholder="0.0" />
+                              <input *ngSwitchDefault type="text" class="form-control form-control-xs text-center"
+                                     [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                     [ngModelOptions]="{ standalone: true }"
+                                     (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                     [readOnly]="isViewMode || isLocked" [placeholder]="col.label || 'Enter...'" />
+                            </ng-container>
+                          </ng-container>
+                        </ng-container>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div class="d-flex align-items-center justify-content-between mt-1" *ngIf="!isViewMode && !isLocked">
-                <span class="text-xxs text-muted">Add custom key-value metadata preserved across audit logs.</span>
-                <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addCustomAttribute()">
-                  <i class="bi bi-plus-circle me-1"></i><span>Add Attribute</span>
-                </button>
-              </div>
+            </div>
+          </ng-container>
+
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <!-- ARCHETYPE 16: CUSTOM TABLE & LAB METADATA (custom / attrs)    -->
+          <!-- ───────────────────────────────────────────────────────────── -->
+          <ng-container *ngIf="s.type === 'custom' || s.type === 'attrs'">
+            <div class="custom-attributes-section">
+              <!-- Dynamic Custom Table Matrix (When Studio tableColumns configured) -->
+              <ng-container *ngIf="hasConfiguredGenericTable(s) && getGenericTableRows(s).length > 0">
+                <div class="table-responsive mb-1">
+                  <table class="table table-sm table-bordered align-middle result-table mb-1">
+                    <thead class="result-table-head text-center" *ngIf="s.config?.showHeader !== false">
+                      <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
+                        <tr>
+                          <th rowspan="2" class="w-col-35 align-middle">#</th>
+                          <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                              [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                          <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
+                          <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                              [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                          <th rowspan="2" class="w-col-65 align-middle" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
+                        </tr>
+                        <tr>
+                          <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                        </tr>
+                      </ng-container>
+                      <tr *ngIf="!hasParamMergedHeader(s) || !isParamSubLabelsVisible(s)">
+                        <th class="w-col-35">#</th>
+                        <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                          {{ col.label }}
+                        </th>
+                        <th class="w-col-65" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                        <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
+                        <td *ngFor="let col of getParamTableColumns(s)"
+                            [class.text-start]="col.resolvedRole === 'row_label'"
+                            [class.text-center]="col.resolvedRole !== 'row_label'">
+                          <ng-container [ngSwitch]="col.resolvedRole">
+                            <input *ngSwitchCase="'row_label'" type="text" class="form-control form-control-xs fw-semibold"
+                                   [(ngModel)]="row.raw.label" [ngModelOptions]="{ standalone: true }"
+                                   (ngModelChange)="syncCollectionsToTest()"
+                                   [readOnly]="isViewMode || isLocked" placeholder="Row label..." />
+                            <span *ngSwitchCase="'spec_requirement'" class="font-monospace small text-muted">{{ row.requirement || col.requirement || '—' }}</span>
+                            <span *ngSwitchCase="'static_text'" class="font-monospace small text-dark">{{ col.staticValue || '—' }}</span>
+                            <app-custom-select *ngSwitchCase="'status_verdict'"
+                              [options]="booleanSelectOptions"
+                              [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                              [ngModelOptions]="{ standalone: true }"
+                              (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                              size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Status">
+                            </app-custom-select>
+                            <ng-container *ngSwitchDefault>
+                              <ng-container [ngSwitch]="getEffectiveInputType(col, null)">
+                                <app-custom-select *ngSwitchCase="'boolean'"
+                                  [options]="booleanSelectOptions"
+                                  [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                  size="xs" [searchable]="false" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                                </app-custom-select>
+                                <app-custom-select *ngSwitchCase="'dropdown'"
+                                  [options]="getDropdownOptionsForCell(col, null)"
+                                  [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                  [ngModelOptions]="{ standalone: true }"
+                                  (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                  size="xs" [searchable]="true" [disabled]="isViewMode || isLocked" placeholder="Select...">
+                                </app-custom-select>
+                                <input *ngSwitchCase="'number'" type="number" step="1" class="form-control form-control-xs text-center font-monospace"
+                                       [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                       [ngModelOptions]="{ standalone: true }"
+                                       (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                       [readOnly]="isViewMode || isLocked" placeholder="0" />
+                                <input *ngSwitchCase="'decimal'" type="number" [attr.step]="getStepForPrecision(col.decimalPrecision)"
+                                       class="form-control form-control-xs text-center font-monospace"
+                                       [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                       [ngModelOptions]="{ standalone: true }"
+                                       (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                       [readOnly]="isViewMode || isLocked" placeholder="0.00" />
+                                <input *ngSwitchCase="'date'" type="date" class="form-control form-control-xs text-center"
+                                       [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                       [ngModelOptions]="{ standalone: true }"
+                                       (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                       [readOnly]="isViewMode || isLocked" />
+                                <input *ngSwitchDefault type="text" class="form-control form-control-xs text-center"
+                                       [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key)"
+                                       [ngModelOptions]="{ standalone: true }"
+                                       (ngModelChange)="setCustomCellValue(s.config?.sectionKey || s.id, row.rowKey, col.key, $event); syncCollectionsToTest()"
+                                       [readOnly]="isViewMode || isLocked" [placeholder]="col.label || 'Enter...'" />
+                              </ng-container>
+                            </ng-container>
+                          </ng-container>
+                        </td>
+                        <td class="text-center" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">
+                          <button type="button" class="btn-lims-icon btn-lims-delete"
+                                  (click)="removeGenericSectionRow(s, rIdx)" [disabled]="getGenericTableRows(s).length <= 1" title="Remove row">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="d-flex align-items-center justify-content-between mt-1" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">
+                  <span class="text-xxs text-muted">Dynamic custom table preserved in execution JSON audit records.</span>
+                  <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addGenericSectionRow(s)">
+                    <i class="bi bi-plus-circle me-1"></i><span>Add Row</span>
+                  </button>
+                </div>
+              </ng-container>
+
+              <!-- Legacy Key-Value Fallback -->
+              <ng-container *ngIf="!hasConfiguredGenericTable(s) || getGenericTableRows(s).length === 0">
+                <div class="table-responsive mb-1">
+                  <table class="table table-sm table-bordered align-middle result-table mb-1">
+                    <thead class="result-table-head text-center">
+                      <tr>
+                        <th class="w-col-35">#</th>
+                        <th class="w-col-240 text-start">Attribute Name / Metadata Key</th>
+                        <th class="text-start">Attribute Value / Reading</th>
+                        <th class="w-col-65" *ngIf="!isViewMode && !isLocked">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let attr of customAttributes; let aIdx = index">
+                        <td class="text-center text-muted small fw-semibold">{{ aIdx + 1 }}</td>
+                        <td>
+                          <input type="text" class="form-control form-control-xs fw-semibold"
+                                 [(ngModel)]="attr.key" [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="syncCollectionsToTest()"
+                                 [readOnly]="isViewMode || isLocked" placeholder="e.g. Machine Serial, Heat Lot..." />
+                        </td>
+                        <td>
+                          <input type="text" class="form-control form-control-xs"
+                                 [(ngModel)]="attr.value" [ngModelOptions]="{ standalone: true }"
+                                 (ngModelChange)="syncCollectionsToTest()"
+                                 [readOnly]="isViewMode || isLocked" placeholder="e.g. UTM-500KN-02, Shift B..." />
+                        </td>
+                        <td class="text-center" *ngIf="!isViewMode && !isLocked">
+                          <button type="button" class="btn-lims-icon btn-lims-delete"
+                                  (click)="removeCustomAttribute(aIdx)" title="Remove attribute">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="d-flex align-items-center justify-content-between mt-1" *ngIf="!isViewMode && !isLocked">
+                  <span class="text-xxs text-muted">Add custom key-value metadata preserved across audit logs.</span>
+                  <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="addCustomAttribute()">
+                    <i class="bi bi-plus-circle me-1"></i><span>Add Attribute</span>
+                  </button>
+                </div>
+              </ng-container>
             </div>
           </ng-container>
 
@@ -2558,9 +2833,11 @@
           <ng-container *ngIf="s.type === 'opinion'">
             <div class="opinion-interp-section">
               <div class="d-flex align-items-center justify-content-between mb-1 pb-1 border-bottom">
-                <span class="badge" [ngClass]="s.config?.isOptional !== false ? 'bg-secondary-subtle text-secondary' : 'bg-danger-subtle text-danger'">
-                  <i class="bi" [ngClass]="s.config?.isOptional !== false ? 'bi-shield-check me-1' : 'bi-exclamation-circle me-1'"></i>
-                  {{ s.config?.isOptional !== false ? 'Optional Section (ISO 17025 Cl. 7.8.7)' : 'Mandatory Section (Required on Report)' }}
+                <span class="badge"
+                      [ngClass]="(s.config?.sectionStatus === 'Mandatory' || s.config?.isOptional === false) ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary'">
+                  <i class="bi"
+                     [ngClass]="(s.config?.sectionStatus === 'Mandatory' || s.config?.isOptional === false) ? 'bi-exclamation-circle me-1' : 'bi-shield-check me-1'"></i>
+                  {{ (s.config?.sectionStatus === 'Mandatory' || s.config?.isOptional === false) ? 'Mandatory Section (Required on Report)' : 'Optional Section (ISO 17025 Cl. 7.8.7)' }}
                 </span>
                 <span class="text-xxs text-muted">{{ opinionData.items.length }} Evaluation Items</span>
               </div>
@@ -2600,15 +2877,12 @@
                                placeholder="Enter observation / status..." />
                       </td>
                       <td class="text-center">
-                        <select class="form-select form-select-xs fw-bold"
-                                [(ngModel)]="item.status" [ngModelOptions]="{ standalone: true }"
-                                (ngModelChange)="syncCollectionsToTest()"
-                                [disabled]="isViewMode || isLocked"
-                                [ngClass]="item.status === 'Pass' ? 'text-success' : (item.status === 'Fail' ? 'text-danger' : 'text-warning')">
-                          <option value="Pass">PASS</option>
-                          <option value="Fail">FAIL</option>
-                          <option value="NA">N/A</option>
-                        </select>
+                        <app-custom-select
+                          [options]="opinionStatusOptions"
+                          [(ngModel)]="item.status" [ngModelOptions]="{ standalone: true }"
+                          (ngModelChange)="syncCollectionsToTest()"
+                          size="xs" [searchable]="false" [disabled]="isViewMode || isLocked">
+                        </app-custom-select>
                       </td>
                     </tr>
                   </tbody>
@@ -2616,7 +2890,7 @@
               </div>
 
               <!-- Overall Technical Opinion & Interpretation Synthesis -->
-              <div class="opinion-statement-box p-2 rounded border bg-light-subtle">
+              <div class="opinion-statement-box p-2 rounded border bg-light-subtle" *ngIf="s.config?.showOverallStatement !== false">
                 <label class="form-label text-xxs fw-bold text-dark d-flex align-items-center mb-1">
                   <i class="bi bi-chat-square-quote-fill text-danger me-1"></i>
                   <span>Overall Technical Opinion &amp; Interpretation Statement (QuestPDF Certificate Output):</span>

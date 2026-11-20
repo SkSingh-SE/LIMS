@@ -538,8 +538,17 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   private initOpinion(): void {
     const opSec = this.sections.find(s => s.type === 'opinion');
     if (!opSec) return;
+    const isMandatory = opSec.config?.sectionStatus === 'Mandatory' || opSec.config?.isOptional === false;
+    this.opinionData.isOptional = !isMandatory;
+    if (!this.opinionData.overallStatement && opSec.config?.overallStatement) {
+      this.opinionData.overallStatement = opSec.config.overallStatement;
+    }
     if (this.opinionData.items.length === 0 && opSec.config?.tableRows && Array.isArray(opSec.config.tableRows)) {
-      this.opinionData.items = opSec.config.tableRows.map((r: any) => ({
+      const rows = opSec.config.derivedOnly
+        ? opSec.config.tableRows.filter((r: any) => !!(r.formulaDisplay || r.formula || r.isCalculated))
+        : opSec.config.tableRows;
+      const sourceRows = rows.length > 0 ? rows : opSec.config.tableRows;
+      this.opinionData.items = sourceRows.map((r: any) => ({
         label: r.label,
         formulaDisplay: r.formulaDisplay || r.formula || '',
         unit: r.unit || '',
@@ -547,12 +556,32 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         value: r.staticValue || '',
         status: 'Pass'
       }));
-      this.opinionData.overallStatement = opSec.config.overallStatement || '';
-      this.opinionData.isOptional = opSec.config.isOptional !== false;
     }
   }
 
   private initExecutionExtra(): void {
+    // Hydrate section-configured defaults before applying saved ExecutionExtraJson overrides
+    const ruleSec = this.sections.find(s => s.type === 'rule' || s.type === 'decision');
+    if (ruleSec?.config) {
+      if (ruleSec.config.decisionRule) this.decisionRule.ruleType = ruleSec.config.decisionRule;
+      if (ruleSec.config.confidenceLevel != null) this.decisionRule.confidenceLevel = Number(ruleSec.config.confidenceLevel) || 95;
+      if (ruleSec.config.guardBandMultiplier != null) this.decisionRule.guardBandMultiplier = Number(ruleSec.config.guardBandMultiplier) || 1.0;
+    }
+
+    const classSec = this.sections.find(s => s.type === 'classification' || s.type === 'class');
+    if (classSec?.config) {
+      const stdVal = classSec.config.ratingSystem || classSec.config.standard;
+      const methodVal = classSec.config.decision || classSec.config.ratingMethod;
+      if (stdVal) this.classification.classificationStandard = stdVal;
+      if (methodVal) this.classification.ratingType = methodVal;
+    }
+
+    const narrativeSec = this.sections.find(s => s.type === 'narrative' || s.type === 'rem');
+    const defaultNarr = narrativeSec?.config?.defaultText || narrativeSec?.config?.extraFields;
+    if (defaultNarr && this.testFormGroup && !this.testFormGroup.get('remarks')?.value) {
+      this.testFormGroup.get('remarks')?.patchValue(defaultNarr, { emitEvent: false });
+    }
+
     if (this.test?.executionExtraJson) {
       try {
         const extra = typeof this.test.executionExtraJson === 'string'
@@ -2264,6 +2293,150 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       const k = String(c.key || '').toLowerCase();
       return k !== 'x' && k !== 'y' && c.resolvedRole !== 'row_label';
     });
+  }
+
+  // =========================================================================
+  // Batch 2 & 3 Dynamic Renderer Helpers (condition, rule, classification, custom, checklist, traceability, photo, formula)
+  // =========================================================================
+  readonly decisionRuleTypeOptions = [
+    { value: 'Simple Acceptance', label: 'Simple Acceptance (Binary, w = 0)' },
+    { value: 'Guard Banded (ILAC-G8)', label: 'Guard Banded (ILAC-G8, w = 1.0 U)' },
+    { value: 'Non-Binary', label: 'Non-Binary Statement (Pass / Inconclusive / Fail)' }
+  ];
+
+  readonly classificationStandardOptions = [
+    { value: 'ASTM E45', label: 'ASTM E45 (Inclusion Rating)' },
+    { value: 'ASTM A247', label: 'ASTM A247 (Graphite in Iron)' },
+    { value: 'ASTM E112', label: 'ASTM E112 (Grain Size)' },
+    { value: 'ISO 4967', label: 'ISO 4967 (Non-metallic Inclusions)' }
+  ];
+
+  readonly opinionStatusOptions = [
+    { value: 'Pass', label: 'PASS' },
+    { value: 'Fail', label: 'FAIL' },
+    { value: 'NA', label: 'N/A' }
+  ];
+
+  readonly observationCategoryOptions = [
+    { value: 'General', label: 'General' },
+    { value: 'Fracture Appearance', label: 'Fracture Appearance' },
+    { value: 'Microstructure', label: 'Microstructure' },
+    { value: 'Surface Defect', label: 'Surface Defect' },
+    { value: 'Dimensional', label: 'Dimensional' },
+    { value: 'Non-Conformance', label: 'Non-Conformance' }
+  ];
+
+  addGenericSectionRow(s: any): void {
+    if (this.isViewMode || this.isLocked || !s?.config) return;
+    if (!Array.isArray(s.config.tableRows)) s.config.tableRows = [];
+    const nextIdx = s.config.tableRows.length + 1;
+    s.config.tableRows.push({
+      key: `row_${Date.now()}_${nextIdx}`,
+      label: `Row ${nextIdx}`,
+      visible: true
+    });
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  removeGenericSectionRow(s: any, idx: number): void {
+    if (this.isViewMode || this.isLocked || !Array.isArray(s?.config?.tableRows) || s.config.tableRows.length <= 1) return;
+    s.config.tableRows.splice(idx, 1);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  hasConfiguredGenericTable(s: any): boolean {
+    return Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0;
+  }
+
+  getGenericTableRows(s: any): any[] {
+    if (!Array.isArray(s?.config?.tableRows)) return [];
+    return s.config.tableRows
+      .filter((r: any) => r && r.visible !== false)
+      .map((r: any, idx: number) => ({
+        rowKey: r.key || `row_${idx}`,
+        label: r.label || `Row ${idx + 1}`,
+        unit: r.unit || '',
+        requirement: r.requirement || '',
+        raw: r
+      }));
+  }
+
+  getTraceabilityFields(s: any): { label: string; value: string }[] {
+    const configured: string[] = Array.isArray(s?.config?.fields) && s.config.fields.length > 0
+      ? s.config.fields
+      : ['Sample No / UID', 'Case / Certificate No', 'Batch / Heat No', 'Material / Grade', 'Test Standard Method', 'Testing Equipment', 'Performer / Analyst', 'Test Discipline'];
+
+    return configured.map((f: string) => ({
+      label: f,
+      value: this.resolveTraceabilityFieldValue(f)
+    }));
+  }
+
+  private resolveTraceabilityFieldValue(field: string): string {
+    const k = String(field || '').toLowerCase();
+    if (k.includes('sample') || k.includes('uid') || k.includes('lab ref')) return this.sample?.sampleNo || '—';
+    if (k.includes('case') || k.includes('cert')) return this.inward?.caseNo || '—';
+    if (k.includes('batch') || k.includes('heat')) return this.sample?.batchNo || '—';
+    if (k.includes('material') || k.includes('grade')) return this.sample?.material || this.testPlan?.specification || '—';
+    if (k.includes('method') || k.includes('std') || k.includes('standard')) return this.getCleanTestMethod();
+    if (k.includes('equip') || k.includes('cal')) {
+      return this.selectedEquipment?.length ? (this.selectedEquipment[0]?.name || 'Calibrated Equipment') : 'General Testing Machine';
+    }
+    if (k.includes('analyst') || k.includes('performer') || k.includes('tech')) return this.timingData?.performedByName || 'Laboratory Analyst';
+    if (k.includes('env') || k.includes('temp') || k.includes('humid')) {
+      const t = this.environmentData?.roomTemperature ?? this.conditionValues['Temperature'];
+      const h = this.environmentData?.roomHumidity ?? this.conditionValues['Relative Humidity'];
+      return (t != null || h != null) ? `${t ?? '—'} °C / ${h ?? '—'} %RH` : '23.0 °C / 50% RH';
+    }
+    if (k.includes('date')) return this.timingData?.startTime ? new Date(this.timingData.startTime).toLocaleDateString() : new Date().toLocaleDateString();
+    if (k.includes('discipline')) return this.testPlan?.discipline || 'Mechanical / Metallurgical';
+    return '—';
+  }
+
+  getChecklistOptions(s: any): { value: 'Pass' | 'Fail' | 'NA'; label: string; activeClass: string }[] {
+    const rt = String(s?.config?.responseType || '').toLowerCase();
+    if (rt.includes('yes')) {
+      return [
+        { value: 'Pass', label: 'Yes', activeClass: 'btn-success' },
+        { value: 'Fail', label: 'No', activeClass: 'btn-danger' },
+        { value: 'NA', label: 'N/A', activeClass: 'btn-secondary' }
+      ];
+    }
+    if (rt.includes('ok')) {
+      return [
+        { value: 'Pass', label: 'OK', activeClass: 'btn-success' },
+        { value: 'Fail', label: 'Not OK', activeClass: 'btn-danger' },
+        { value: 'NA', label: 'N/A', activeClass: 'btn-secondary' }
+      ];
+    }
+    return [
+      { value: 'Pass', label: 'Pass', activeClass: 'btn-success' },
+      { value: 'Fail', label: 'Fail', activeClass: 'btn-danger' },
+      { value: 'NA', label: 'N/A', activeClass: 'btn-secondary' }
+    ];
+  }
+
+  getPhotoGridColClass(s: any): string {
+    const raw = String(s?.config?.gridColumns || '').trim();
+    if (raw === '1' || raw.includes('1 Column')) return 'col-12';
+    if (raw === '2' || raw.includes('2 Column')) return 'col-md-6';
+    if (raw === '3' || raw.includes('3 Column')) return 'col-md-4';
+    if (raw === '4' || raw.includes('4 Column')) return 'col-md-3 col-sm-6';
+    return 'col-md-6';
+  }
+
+  getFormulaSectionParameters(s: any): { param: any; idx: number }[] {
+    const all = (this.parametersFormArray?.controls || [])
+      .map((c, idx) => ({ param: c.value, idx }))
+      .filter(item => this.isParameterCalculated(item.param));
+    if (s?.config?.sectionDataMode === 'template' && s?.config?.targetOutput) {
+      const target = String(s.config.targetOutput).trim().toLowerCase();
+      const filtered = all.filter(item => String(item.param?.parameterName || '').trim().toLowerCase() === target);
+      return filtered.length > 0 ? filtered : all;
+    }
+    return all;
   }
 
   getTargetParamIndexForCell(row: any, col: any): number | null {

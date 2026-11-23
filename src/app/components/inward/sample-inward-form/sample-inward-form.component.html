@@ -696,7 +696,7 @@
               <tbody formArrayName="sampleAdditionalDetails">
                 <tr *ngFor="let row of sampleAdditionalDetails.controls; let rowIndex = index" [formGroupName]="rowIndex">
                   <td>
-                    <select class="form-select form-select-sm border-secondary-subtle fw-medium" formControlName="label" (change)="onLabelChange()">
+                    <select class="form-select form-select-sm border-secondary-subtle fw-medium" formControlName="label" (change)="onLabelChange(rowIndex)">
                       <option value="" disabled>Select Attribute</option>
                       <option *ngFor="let option of descriptionOptions" [value]="option" [disabled]="isOptionSelected(option, rowIndex)">
                         {{ option }}
@@ -764,18 +764,19 @@
                 </div>
                 <button *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value"
                         type="button" class="btn-lims-clear-chip ms-auto"
-                        (click)="sampleInwardForm.patchValue({sampleReceiptNote: ''})"
+                        (click)="clearReceiptNote()"
                         title="Clear all receipt note text">
                   <i class="bi bi-x-circle-fill"></i><span>Clear Note</span>
                 </button>
               </div>
 
               <textarea
+                #receiptNoteTextarea
                 class="form-control form-control-sm receipt-note-textarea"
-                type="text"
                 placeholder="Enter any specific sample receipt notes, packaging condition, or visual remarks..."
                 formControlName="sampleReceiptNote"
                 rows="3"
+                (input)="autoResizeReceiptNote(receiptNoteTextarea)"
               ></textarea>
             </fieldset>
           </div>

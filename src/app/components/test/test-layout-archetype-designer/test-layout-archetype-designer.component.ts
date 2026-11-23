@@ -1425,6 +1425,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     { key: 'corrosion_sst', label: 'Salt Spray Corrosion Structure (Periodic Inspection Intervals)', icon: '↗' }
   ];
 
+  // Shared Panel Width Presets (identical for Left & Right panels)
+  readonly panelWidthPresets = { S: 320, M: 380, L: 460 } as const;
+
   // Left Panel Dynamic Resizing & Responsive State
   leftPanelWidth: number = 380;
   leftPanelCollapsed: boolean = false;
@@ -1853,7 +1856,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       }
     }
 
-    // Adaptive default based on viewport width (matches Right Panel)
+    // Adaptive default based on viewport width (matches right panel)
     const winWidth = window.innerWidth;
     if (winWidth >= 1800) {
       this.leftPanelWidth = 440;
@@ -1878,7 +1881,7 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       const delta = moveEvent.clientX - this.startX;
       let newWidth = this.startWidth + delta;
 
-      // Smart limits: min 260px, max 55% of viewport width or 650px (matches Right Panel)
+      // Smart limits: min 260px, max 55% of viewport width or 650px (matches right panel)
       const minWidth = 260;
       const maxWidth = Math.min(650, Math.floor(window.innerWidth * 0.55));
 
@@ -2038,9 +2041,8 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     if (this.leftPanelWidth > maxAllowed && maxAllowed >= 260) {
       this.leftPanelWidth = maxAllowed;
     }
-    const maxAllowedRight = Math.min(650, Math.floor(window.innerWidth * 0.55));
-    if (this.rightPanelWidth > maxAllowedRight && maxAllowedRight >= 260) {
-      this.rightPanelWidth = maxAllowedRight;
+    if (this.rightPanelWidth > maxAllowed && maxAllowed >= 260) {
+      this.rightPanelWidth = maxAllowed;
     }
   }
 

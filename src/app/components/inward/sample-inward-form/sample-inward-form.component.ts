@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit , HostListener } from '@angular/core';
+import { Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { SearchableDropdownComponent } from "../../../utility/components/searchable-dropdown/searchable-dropdown.component";
 import { Observable } from 'rxjs';
@@ -36,7 +36,9 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
   styleUrl: './sample-inward-form.component.css'
 })
 export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit {
+  @ViewChild('receiptNoteTextarea') receiptNoteTextarea?: ElementRef<HTMLTextAreaElement>;
   saved = false;
+  private fetchDetailsSeq = 0;
 
   // ─── Embedding support: used by CaseLifecycleWorkspaceComponent ───
   @Input() embeddedInwardId: number = 0;
@@ -539,12 +541,14 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   fetchSampleInwardDetails(sampleId: number): void {
+    const seq = ++this.fetchDetailsSeq;
     this.inwardService.getSampleInwardById(sampleId).subscribe({
       next: (data) => {
-        if (!data) return;
+        if (!data || seq !== this.fetchDetailsSeq) return;
 
         this.customerService.getCustomerById(data.customerID).subscribe({
           next: (customer) => {
+            if (seq !== this.fetchDetailsSeq) return;
             if (customer) {
               this.customerData = customer;
               this.selectedCustomerType = (customer.customerType || '').toLowerCase();
@@ -609,6 +613,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               status: data.status,
               collectionTime: data.collectionTime || this.getCurrentTime()
             });
+            setTimeout(() => this.autoResizeReceiptNote());
 
             // Restore PO in edit mode
             if (data.purchaseOrderId) {
@@ -632,28 +637,40 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
               });
             }
 
-            // Override Dispatch Modes
+            // Override Dispatch Modes (deduplicated by dispatchModeID)
             if (Array.isArray(data.dispatchModes)) {
               this.dispatchModesArray.clear();
               this.selectedDispatchModes = [];
+              const seenModeIds = new Set<number>();
               data.dispatchModes.forEach((dm: any) => {
+                const modeId = Number(dm.dispatchModeID || dm.id);
+                if (!modeId || seenModeIds.has(modeId)) return;
+                seenModeIds.add(modeId);
                 this.dispatchModesArray.push(
                   this.fb.group({
                     id: dm.id,
                     inwardId: dm.inwardID,
-                    dispatchModeID: dm.dispatchModeID
+                    dispatchModeID: modeId
                   })
                 );
-                this.selectedDispatchModes.push(dm.dispatchModeID || dm.id);
+                this.selectedDispatchModes.push(modeId);
               });
             }
 
-            // Override Contacts
+            // Override Contacts (deduplicated by contactID or name+email, latest wins)
             if (Array.isArray(data.contacts)) {
               this.contactControls.clear();
               this.billingToContactPerson = [];
               this.reportingToContactPerson = [];
+              const uniqueContactsMap = new Map<string, any>();
               data.contacts.forEach((c: any) => {
+                const cId = Number(c.contactID || 0);
+                const key = cId > 0
+                  ? `id:${cId}`
+                  : `key:${(c.name || '').trim().toLowerCase()}|${(c.emailId || '').trim().toLowerCase()}`;
+                uniqueContactsMap.set(key, c);
+              });
+              uniqueContactsMap.forEach((c: any) => {
                 const matchedCp = this.customerData?.contactPersons?.find((cp: any) => cp.id === c.contactID || cp.contactID === c.contactID);
                 const isAcc = matchedCp ? this.checkIsAccountant(matchedCp) : this.checkIsAccountant(c);
                 this.contactControls.push(
@@ -1504,31 +1521,38 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
 
-  // Traceability deduplication fix v2
+  // Traceability deduplication fix v3 (strictly case-insensitive unique attribute labels)
   private addAdditionalDetailsForSample(
     sampleNo: string,
     additionalDetails: any[] = []
   ): void {
     const formArray = this.sampleAdditionalDetails as FormArray;
-    const existingLabels = new Set<string>(
-      formArray.controls.map(r => (r.get('label')?.value || '').trim()).filter(Boolean)
+    const existingLabelsLower = new Set<string>(
+      formArray.controls
+        .map(r => (r.get('label')?.value || '').trim().toLowerCase())
+        .filter(Boolean)
     );
+
+    // Deduplicate incoming details for this sample by normalized label (latest wins)
+    const dedupedDetailsMap = new Map<string, any>();
+    (additionalDetails || []).forEach(ad => {
+      const label = (ad?.label || '').trim();
+      if (!label) return;
+      dedupedDetailsMap.set(label.toLowerCase(), { ...ad, label });
+    });
 
     // 1. For all existing rows, append this sample's value (or empty string if not present)
     formArray.controls.forEach(row => {
       const valuesArray = row.get('values') as FormArray;
-      const label = (row.get('label')?.value || '').trim();
-      const match = additionalDetails.find(x => (x.label || '').trim().toLowerCase() === label.toLowerCase());
+      const labelLower = (row.get('label')?.value || '').trim().toLowerCase();
+      const match = labelLower ? dedupedDetailsMap.get(labelLower) : undefined;
       valuesArray.push(this.fb.control(match?.value ?? ''));
     });
 
     // 2. For newly introduced labels from this sample, add new row(s) with previous columns filled with empty string
-    const processedNewLabels = new Set<string>();
-    additionalDetails.forEach(ad => {
-      const label = (ad.label || '').trim();
-      if (!label || existingLabels.has(label) || processedNewLabels.has(label.toLowerCase())) return;
-      processedNewLabels.add(label.toLowerCase());
-      existingLabels.add(label);
+    dedupedDetailsMap.forEach((ad, labelLower) => {
+      if (existingLabelsLower.has(labelLower)) return;
+      existingLabelsLower.add(labelLower);
 
       // Previous samples count is this.sampleNumbers.length - 1
       const valuesArray = this.fb.array(
@@ -1540,7 +1564,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       formArray.push(
         this.fb.group({
           id: [ad.id || 0],
-          label: [label],
+          label: [ad.label],
           enabled: [true],
           values: valuesArray
         })
@@ -1548,7 +1572,7 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     });
 
     if (!this.bufferedAdditionalDetails[sampleNo]) {
-      this.bufferedAdditionalDetails[sampleNo] = additionalDetails;
+      this.bufferedAdditionalDetails[sampleNo] = Array.from(dedupedDetailsMap.values());
     }
   }
 
@@ -1740,23 +1764,47 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
   }
 
   addAdditionalSampleRow(label: string = ''): void {
+    const normalizedLabel = (label || '').trim();
+    if (normalizedLabel) {
+      const alreadyExists = this.sampleAdditionalDetails.controls.some(
+        ctrl => (ctrl.get('label')?.value || '').trim().toLowerCase() === normalizedLabel.toLowerCase()
+      );
+      if (alreadyExists) {
+        this.toastService.show(`"${normalizedLabel}" row is already added below.`, 'info');
+        return;
+      }
+    } else if (this.sampleAdditionalDetails.length >= this.descriptionOptions.length) {
+      this.toastService.show('All available traceability attributes have already been added.', 'info');
+      return;
+    }
+
     const valuesArray = this.fb.array(this.sampleNumbers.map(() => this.fb.control('')));
     this.sampleAdditionalDetails.push(this.fb.group({
-      label: [label || ''],
+      label: [normalizedLabel],
       enabled: [false],
       values: valuesArray
     }));
   }
 
-  onLabelChange(): void {
-    // Trigger change detection for dropdown options
+  onLabelChange(rowIndex?: number): void {
+    if (rowIndex === undefined) return;
+    const row = this.sampleAdditionalDetails.at(rowIndex) as FormGroup;
+    const selectedLabel = (row?.get('label')?.value || '').trim();
+    if (!selectedLabel) return;
+
+    if (this.isOptionSelected(selectedLabel, rowIndex)) {
+      row.get('label')?.setValue('');
+      this.toastService.show(`"${selectedLabel}" is already added. Duplicate attributes are not allowed.`, 'warning');
+    }
   }
 
   isOptionSelected(option: string, currentIndex: number): boolean {
-    const selectedOptions = this.sampleAdditionalDetails.controls
-      .map((group, index) => index !== currentIndex ? group.get('label')?.value : null)
-      .filter(val => val !== null);
-    return selectedOptions.includes(option);
+    const target = (option || '').trim().toLowerCase();
+    if (!target) return false;
+    return this.sampleAdditionalDetails.controls.some((group, index) => {
+      if (index === currentIndex) return false;
+      return (group.get('label')?.value || '').trim().toLowerCase() === target;
+    });
   }
 
   // ─── Tab 2 Sample Details Redesign Helpers ───
@@ -1780,11 +1828,35 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     const updatedNote = currentNote ? `${currentNote.trim()}, ${templateText}` : templateText;
     this.sampleInwardForm.patchValue({ sampleReceiptNote: updatedNote });
     this.sampleInwardForm.markAsDirty();
+    setTimeout(() => this.autoResizeReceiptNote());
+  }
+
+  clearReceiptNote(): void {
+    if (this.isViewMode) return;
+    this.sampleInwardForm.patchValue({ sampleReceiptNote: '' });
+    this.sampleInwardForm.markAsDirty();
+    const el = this.receiptNoteTextarea?.nativeElement;
+    if (el) {
+      el.style.height = '';
+    }
+  }
+
+  autoResizeReceiptNote(target?: HTMLTextAreaElement): void {
+    const el = target ?? this.receiptNoteTextarea?.nativeElement;
+    if (!el) return;
+    if (typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('field-sizing', 'content')) {
+      return;
+    }
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + 3}px`;
   }
 
   quickAddAdditionalRow(labelName: string): void {
     if (this.isViewMode) return;
-    const exists = this.sampleAdditionalDetails.controls.some(ctrl => ctrl.get('label')?.value === labelName);
+    const target = (labelName || '').trim().toLowerCase();
+    const exists = this.sampleAdditionalDetails.controls.some(
+      ctrl => (ctrl.get('label')?.value || '').trim().toLowerCase() === target
+    );
     if (exists) {
       this.toastService.show(`"${labelName}" row is already added below.`, 'info');
       return;
@@ -2028,11 +2100,17 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       file: value.file
     });
 
-    // Dispatch modes
-    value.dispatchModes?.forEach((d: any, i: number) => {
-      formData.append(`dispatchModes[${i}].dispatchModeID`, d.dispatchModeID);
-      formData.append(`dispatchModes[${i}].inwardID`, d.inwardID || '0');
-      formData.append(`dispatchModes[${i}].id`, d.id || '0');
+    // Dispatch modes (deduplicated by dispatchModeID)
+    const seenDispatchModeIds = new Set<number>();
+    let dispatchIdx = 0;
+    value.dispatchModes?.forEach((d: any) => {
+      const modeId = Number(d.dispatchModeID || 0);
+      if (!modeId || seenDispatchModeIds.has(modeId)) return;
+      seenDispatchModeIds.add(modeId);
+      formData.append(`dispatchModes[${dispatchIdx}].dispatchModeID`, String(modeId));
+      formData.append(`dispatchModes[${dispatchIdx}].inwardID`, d.inwardID || '0');
+      formData.append(`dispatchModes[${dispatchIdx}].id`, d.id || '0');
+      dispatchIdx++;
     });
 
     // Contacts: Gather actual selections from Reporting To and Billing To cards

@@ -85,14 +85,21 @@
         <span class="panel-header-title">
           <i class="bi bi-grid-3x3-gap-fill me-1.5 text-danger"></i><span>Components</span>
         </span>
-        <span class="badge bg-secondary ms-1">{{ sections.length }}</span>
-        <div class="btn-group btn-group-xs ms-auto me-1 flex-shrink-0">
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 320" (click)="setLeftPreset(320)"
-            title="Compact width (320px)">S</button>
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 380" (click)="setLeftPreset(380)"
-            title="Standard width (380px)">M</button>
-          <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 460" (click)="setLeftPreset(460)"
-            title="Wide width (460px)">L</button>
+        <span class="badge bg-light text-dark border me-1.5">{{ sections.length }}</span>
+        <div class="d-flex align-items-center gap-1.5 ms-auto flex-shrink-0">
+          <div class="btn-group btn-group-xs" title="Panel width presets: S (320px), M (380px), L (460px)">
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === panelWidthPresets.S" (click)="setLeftPreset(panelWidthPresets.S)"
+              title="Compact width (320px)">S</button>
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === panelWidthPresets.M" (click)="setLeftPreset(panelWidthPresets.M)"
+              title="Standard width (380px)">M</button>
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === panelWidthPresets.L" (click)="setLeftPreset(panelWidthPresets.L)"
+              title="Wide width (460px)">L</button>
+            <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to default width" aria-label="Reset to default width"><i
+                class="bi bi-arrow-counterclockwise"></i></button>
+          </div>
+          <button type="button" class="btn-nav-icon" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)" aria-label="Collapse panel (Ctrl+[)">
+            <i class="bi bi-chevron-left"></i>
+          </button>
         </div>
         <button type="button" class="btn-panel-action" (click)="toggleLeftPanel()" title="Collapse panel (Ctrl+[)">
           <i class="bi bi-chevron-left"></i>
@@ -2039,17 +2046,21 @@
           <strong class="config-title" [title]="selectedSection ? selectedSection.title : 'Section Configuration'">{{
             selectedSection ? selectedSection.title : 'Section Configuration' }}</strong>
         </div>
-        <div class="btn-group btn-group-xs ms-auto me-1 flex-shrink-0">
-          <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 320" (click)="setRightPreset(320)"
-            title="Compact width (320px)">S</button>
-          <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 380" (click)="setRightPreset(380)"
-            title="Standard width (380px)">M</button>
-          <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 460" (click)="setRightPreset(460)"
-            title="Wide width (460px)">L</button>
+        <div class="d-flex align-items-center gap-1.5 ms-auto flex-shrink-0">
+          <div class="btn-group btn-group-xs" title="Panel width presets: S (320px), M (380px), L (460px)">
+            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === panelWidthPresets.S" (click)="setRightPreset(panelWidthPresets.S)"
+              title="Compact width (320px)">S</button>
+            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === panelWidthPresets.M" (click)="setRightPreset(panelWidthPresets.M)"
+              title="Standard width (380px)">M</button>
+            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === panelWidthPresets.L" (click)="setRightPreset(panelWidthPresets.L)"
+              title="Wide width (460px)">L</button>
+            <button type="button" class="btn-preset" (click)="resetRightWidth()" title="Reset width" aria-label="Reset width"><i
+                class="bi bi-arrow-counterclockwise"></i></button>
+          </div>
+          <button type="button" class="btn-nav-icon" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])" aria-label="Collapse panel (Ctrl+])">
+            <i class="bi bi-chevron-right"></i>
+          </button>
         </div>
-        <button type="button" class="btn-panel-action" (click)="toggleRightPanel()" title="Collapse panel (Ctrl+])">
-          <i class="bi bi-chevron-right"></i>
-        </button>
       </div>
 
       <!-- Flat Config Body -->

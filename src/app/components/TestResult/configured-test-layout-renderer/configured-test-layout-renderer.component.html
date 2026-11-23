@@ -63,7 +63,7 @@
   <!-- ========================================================================= -->
   <div class="sections-stack d-flex flex-column gap-0" [formGroup]="testFormGroup">
 
-    <ng-container *ngFor="let s of sections; let sIdx = index">
+    <ng-container *ngFor="let s of sections; let sIdx = index; trackBy: trackBySectionId">
 
       <div *ngIf="isSectionVisible(s)" class="lims-workbench-card" [ngClass]="{ 'half-width': s.config?.width === 'Half Width' }">
 
@@ -195,14 +195,14 @@
               <table class="table table-sm table-bordered align-middle result-table mb-1">
                 <thead class="result-table-head text-center">
                   <tr>
-                    <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                    <th *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                       {{ col.label }}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
-                    <td *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'" [class.text-center]="col.resolvedRole !== 'row_label'">
+                  <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index; trackBy: trackByRowKey">
+                    <td *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'" [class.text-center]="col.resolvedRole !== 'row_label'">
                       <span *ngIf="col.resolvedRole === 'row_label'" class="fw-semibold text-dark">{{ row.label }}</span>
                       <span *ngIf="col.resolvedRole === 'static_text'" class="font-monospace small">{{ col.staticValue || '—' }}</span>
                       <input *ngIf="col.resolvedRole !== 'row_label' && col.resolvedRole !== 'static_text'" type="text"
@@ -219,7 +219,7 @@
 
             <!-- Compact Grid Display Style (Default — Dynamically renders checked ISO 17025 fields) -->
             <div class="row g-2" *ngIf="s.config?.traceabilityDisplay !== 'Table' || !hasConfiguredGenericTable(s)">
-              <div class="col-md-3 col-sm-6" *ngFor="let tf of getTraceabilityFields(s)">
+              <div class="col-md-3 col-sm-6" *ngFor="let tf of getTraceabilityFields(s); trackBy: trackByRowKey">
                 <div class="trace-box p-2 rounded bg-light border">
                   <span class="trace-label text-muted d-block text-xxs">{{ tf.label }}</span>
                   <span class="trace-val fw-semibold text-dark">{{ tf.value }}</span>
@@ -237,14 +237,14 @@
               <table class="table table-sm table-bordered align-middle result-table mb-1">
                 <thead class="result-table-head text-center">
                   <tr>
-                    <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                    <th *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                       {{ col.label }}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
-                    <td *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'" [class.text-center]="col.resolvedRole !== 'row_label'">
+                  <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index; trackBy: trackByRowKey">
+                    <td *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'" [class.text-center]="col.resolvedRole !== 'row_label'">
                       <ng-container [ngSwitch]="col.resolvedRole">
                         <span *ngSwitchCase="'row_label'" class="fw-semibold text-dark">{{ row.label }}</span>
                         <span *ngSwitchCase="'static_text'" class="font-monospace small text-muted">{{ col.staticValue || '—' }}</span>
@@ -266,7 +266,7 @@
             <!-- Form Grid Layout (Default — Dynamically renders configured condition rows or standard 4) -->
             <div class="row g-2" *ngIf="s.config?.layout !== 'Table' || !hasConfiguredGenericTable(s)">
               <ng-container *ngIf="getGenericTableRows(s).length > 0; else defaultConditionGrid">
-                <div class="col-md-3 col-sm-6" *ngFor="let row of getGenericTableRows(s)">
+                <div class="col-md-3 col-sm-6" *ngFor="let row of getGenericTableRows(s); trackBy: trackByRowKey">
                   <div class="condition-input-box p-2 rounded border bg-light">
                     <label class="form-label mb-1 text-xxs fw-semibold text-muted">{{ row.label }}</label>
                     <input type="text" class="form-control form-control-xs text-center fw-semibold"
@@ -355,20 +355,20 @@
                     <!-- Header Mode 1: Merged Header Active + Sub-Labels Visible -->
                     <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
                       <tr>
-                        <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">
                           {{ col.label }}
                         </th>
                         <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">
                           {{ getParamMergedHeaderTitle(s) }}
                         </th>
-                        <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">
                           {{ col.label }}
                         </th>
                       </tr>
                       <tr>
-                        <th *ngFor="let col of getParamMergedCols(s)" class="text-center">
+                        <th *ngFor="let col of getParamMergedCols(s); trackBy: trackByColKey" class="text-center">
                           {{ col.label }}
                         </th>
                       </tr>
@@ -376,20 +376,20 @@
 
                     <!-- Header Mode 2: Merged Header Active + Sub-Labels Hidden -->
                     <tr *ngIf="hasParamMergedHeader(s) && !isParamSubLabelsVisible(s)">
-                      <th *ngFor="let col of getParamPreMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                         {{ col.label }}
                       </th>
                       <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">
                         {{ getParamMergedHeaderTitle(s) }}
                       </th>
-                      <th *ngFor="let col of getParamPostMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                         {{ col.label }}
                       </th>
                     </tr>
 
                     <!-- Header Mode 3: Standard Flat Header -->
                     <tr *ngIf="!hasParamMergedHeader(s)">
-                      <th *ngFor="let col of getSpecimenMatrixColumns(s)"
+                      <th *ngFor="let col of getSpecimenMatrixColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.avg-col-header]="col.resolvedRole === 'agg_average'"
                           [class.spm-col-header]="col.specimenIndex != null">
@@ -409,12 +409,12 @@
 
                   <!-- BODY A: Parameters × Specimens (Standard Orientation) -->
                   <tbody *ngIf="!isSpecimenTransposed(s)">
-                    <tr *ngFor="let row of getSpecimenMatrixRows(s); let rIdx = index"
+                    <tr *ngFor="let row of getSpecimenMatrixRows(s); let rIdx = index; trackBy: trackByRowKey"
                         [ngClass]="{
                           'table-danger-subtle': getRowComplianceStatus(row) === false,
                           'table-success-subtle': getRowComplianceStatus(row) === true
                         }">
-                      <td *ngFor="let col of getSpecimenMatrixColumns(s)"
+                      <td *ngFor="let col of getSpecimenMatrixColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.text-center]="col.resolvedRole !== 'row_label'"
                           [class.avg-col-cell]="col.resolvedRole === 'agg_average'">
@@ -629,8 +629,8 @@
 
                   <!-- BODY B: Specimens × Parameters (Transposed Orientation) -->
                   <tbody *ngIf="isSpecimenTransposed(s)">
-                    <tr *ngFor="let row of getSpecimenMatrixRows(s); let rIdx = index">
-                      <td *ngFor="let col of getSpecimenMatrixColumns(s)"
+                    <tr *ngFor="let row of getSpecimenMatrixRows(s); let rIdx = index; trackBy: trackByRowKey">
+                      <td *ngFor="let col of getSpecimenMatrixColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.text-center]="col.resolvedRole !== 'row_label'">
                         <ng-container [ngSwitch]="col.resolvedRole">
@@ -952,7 +952,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let p of getBaseParameterList()">
+                    <tr *ngFor="let p of getBaseParameterList(); trackBy: trackByRowKey">
                       <td class="fw-semibold text-start">
                         <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                         <span>{{ p.name }}</span>
@@ -1048,21 +1048,21 @@
                   <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
                     <tr>
                       <th rowspan="2" class="w-col-35 align-middle">#</th>
-                      <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                      <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                           [class.text-start]="col.resolvedRole === 'row_label'">
                         {{ col.label }}
                       </th>
                       <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">
                         {{ getParamMergedHeaderTitle(s) }}
                       </th>
-                      <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                      <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                           [class.text-start]="col.resolvedRole === 'row_label'">
                         {{ col.label }}
                       </th>
                       <th rowspan="2" class="w-col-75 align-middle">Actions</th>
                     </tr>
                     <tr>
-                      <th *ngFor="let col of getParamMergedCols(s)" class="text-center">
+                      <th *ngFor="let col of getParamMergedCols(s); trackBy: trackByColKey" class="text-center">
                         {{ col.label }}
                       </th>
                     </tr>
@@ -1071,13 +1071,13 @@
                   <!-- Header Mode 2: Merged Header Active + Sub-Labels Hidden -->
                   <tr *ngIf="hasParamMergedHeader(s) && !isParamSubLabelsVisible(s)">
                     <th class="w-col-35">#</th>
-                    <th *ngFor="let col of getParamPreMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                    <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                       {{ col.label }}
                     </th>
                     <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">
                       {{ getParamMergedHeaderTitle(s) }}
                     </th>
-                    <th *ngFor="let col of getParamPostMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                    <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                       {{ col.label }}
                     </th>
                     <th class="w-col-75">Actions</th>
@@ -1086,7 +1086,7 @@
                   <!-- Header Mode 3: Standard Single Row -->
                   <tr *ngIf="!hasParamMergedHeader(s)">
                     <th class="w-col-35">#</th>
-                    <th *ngFor="let col of getParamTableColumns(s)"
+                    <th *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey"
                         [class.text-start]="col.resolvedRole === 'row_label'">
                       {{ col.label }}
                     </th>
@@ -1094,7 +1094,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let row of getParamTableRows(s); let rIdx = index"
+                  <tr *ngFor="let row of getParamTableRows(s); let rIdx = index; trackBy: trackByRowKey"
                       [ngClass]="{
                         'table-danger-subtle': getRowComplianceStatus(row) === false,
                         'table-success-subtle': getRowComplianceStatus(row) === true
@@ -1103,7 +1103,7 @@
                     <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
 
                     <!-- Dynamic Semantic Columns -->
-                    <td *ngFor="let col of getParamTableColumns(s)"
+                    <td *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey"
                         [class.text-start]="col.resolvedRole === 'row_label'"
                         [class.text-center]="col.resolvedRole !== 'row_label'">
 
@@ -1471,7 +1471,7 @@
                 </thead>
                 <tbody formArrayName="parameters" *ngIf="parametersFormArray">
 
-                  <ng-container *ngFor="let r of getFilteredParamIndices()">
+                  <ng-container *ngFor="let r of getFilteredParamIndices(); trackBy: trackByIndex">
 
                     <!-- Specimen Group Divider (shown only in All Specimens view at boundary) -->
                     <tr *ngIf="selectedSpecimenFilter === 'all' && isFirstParamOfSpecimen(r)" class="specimen-group-divider">
@@ -1676,23 +1676,23 @@
                   <thead class="result-table-head text-center">
                     <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
                       <tr>
-                        <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                         <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
-                        <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                       </tr>
                       <tr>
-                        <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                        <th *ngFor="let col of getParamMergedCols(s); trackBy: trackByColKey" class="text-center">{{ col.label }}</th>
                       </tr>
                     </ng-container>
                     <tr *ngIf="hasParamMergedHeader(s) && !isParamSubLabelsVisible(s)">
-                      <th *ngFor="let col of getParamPreMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                       <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
-                      <th *ngFor="let col of getParamPostMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                     </tr>
                     <tr *ngIf="!hasParamMergedHeader(s)">
-                      <th *ngFor="let col of getReadingMatrixColumns(s)"
+                      <th *ngFor="let col of getReadingMatrixColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.bg-primary-subtle]="col.resolvedRole === 'agg_average'"
                           [class.text-primary]="col.resolvedRole === 'agg_average'">
@@ -1701,8 +1701,8 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of getReadingMatrixRows(s)" [ngClass]="getReadingRowClass(row.targetParam)">
-                      <td *ngFor="let col of getReadingMatrixColumns(s)"
+                    <tr *ngFor="let row of getReadingMatrixRows(s); trackBy: trackByRowKey" [ngClass]="getReadingRowClass(row.targetParam)">
+                      <td *ngFor="let col of getReadingMatrixColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.text-center]="col.resolvedRole !== 'row_label'">
                         <ng-container [ngSwitch]="col.resolvedRole">
@@ -1782,7 +1782,7 @@
                     <tr>
                       <th class="text-start w-col-200">TARGET PARAMETER</th>
                       <th class="w-col-60">UNIT</th>
-                      <th *ngFor="let idx of getReadingIndices(s)" class="w-col-80">
+                      <th *ngFor="let idx of getReadingIndices(s); trackBy: trackByIndex" class="w-col-80">
                         {{ getReadingColumnHeader(s, idx) }}
                       </th>
                       <th class="w-col-95 bg-primary-subtle text-primary">MEAN / AVG</th>
@@ -1795,7 +1795,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let targetParam of getReadingTargetParameters(s); let r = index"
+                    <tr *ngFor="let targetParam of getReadingTargetParameters(s); let r = index; trackBy: trackByRowKey"
                         [ngClass]="getReadingRowClass(targetParam)">
                       <td class="fw-semibold text-start">
                         <i class="bi bi-hash me-1 text-danger"></i>
@@ -1807,7 +1807,7 @@
                       <td class="text-center font-monospace text-muted small">
                         {{ getParamControl(targetParam)?.get('unit')?.value || '—' }}
                       </td>
-                      <td *ngFor="let idx of getReadingIndices(s)">
+                      <td *ngFor="let idx of getReadingIndices(s); trackBy: trackByIndex">
                         <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
                                [ngModel]="getReadingVal(targetParam, idx)"
                                [ngModelOptions]="{ standalone: true }"
@@ -1879,7 +1879,7 @@
                         </td>
                       </tr>
                       <!-- Extra configured semantic columns rendered cleanly as additional rows -->
-                      <tr *ngFor="let extraCol of getTraverseExtraColumns(s)">
+                      <tr *ngFor="let extraCol of getTraverseExtraColumns(s); trackBy: trackByColKey">
                         <td class="text-start text-muted small fw-semibold">{{ extraCol.label }}</td>
                         <td *ngFor="let pt of traversePoints; let ptIdx = index" class="text-center">
                           <ng-container [ngSwitch]="extraCol.resolvedRole">
@@ -2211,7 +2211,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <div class="btn-group btn-group-xs" role="group">
-                    <button *ngFor="let opt of getChecklistOptions(s)" type="button" class="btn"
+                    <button *ngFor="let opt of getChecklistOptions(s); trackBy: trackByIndex" type="button" class="btn"
                             [ngClass]="item.status === opt.value ? opt.activeClass : 'btn-outline-secondary'"
                             [disabled]="isViewMode || isLocked"
                             (click)="setChecklistStatus(item, opt.value); syncCollectionsToTest()">{{ opt.label }}</button>
@@ -2322,27 +2322,27 @@
                     <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
                       <tr>
                         <th rowspan="2" class="w-col-35 align-middle">#</th>
-                        <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                         <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
-                        <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                         <th rowspan="2" class="w-col-65 align-middle" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
                       </tr>
                       <tr>
-                        <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                        <th *ngFor="let col of getParamMergedCols(s); trackBy: trackByColKey" class="text-center">{{ col.label }}</th>
                       </tr>
                     </ng-container>
                     <tr *ngIf="hasParamMergedHeader(s) && !isParamSubLabelsVisible(s)">
                       <th class="w-col-35">#</th>
-                      <th *ngFor="let col of getParamPreMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                       <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
-                      <th *ngFor="let col of getParamPostMergedCols(s)" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
+                      <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                       <th class="w-col-65" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
                     </tr>
                     <tr *ngIf="!hasParamMergedHeader(s)">
                       <th class="w-col-35">#</th>
-                      <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      <th *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                         {{ col.label }}
                       </th>
                       <th class="w-col-65" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
@@ -2351,7 +2351,7 @@
                   <tbody>
                     <tr *ngFor="let loc of locations; let lIdx = index">
                       <td class="text-center text-muted small fw-semibold">{{ lIdx + 1 }}</td>
-                      <td *ngFor="let col of getParamTableColumns(s)"
+                      <td *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.text-center]="col.resolvedRole !== 'row_label'">
                         <ng-container [ngSwitch]="col.resolvedRole">
@@ -2561,15 +2561,15 @@
                   <thead class="result-table-head text-center">
                     <tr>
                       <th class="w-col-35">#</th>
-                      <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      <th *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                         {{ col.label }}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of getRuleEvaluationRows(s); let rIdx = index">
+                    <tr *ngFor="let row of getRuleEvaluationRows(s); let rIdx = index; trackBy: trackByRowKey">
                       <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
-                      <td *ngFor="let col of getParamTableColumns(s)"
+                      <td *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.text-center]="col.resolvedRole !== 'row_label'">
                         <ng-container [ngSwitch]="col.resolvedRole">
@@ -2668,27 +2668,27 @@
                     <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
                       <tr>
                         <th rowspan="2" class="w-col-35 align-middle">#</th>
-                        <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                         <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
-                        <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                        <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                             [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                       </tr>
                       <tr>
-                        <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                        <th *ngFor="let col of getParamMergedCols(s); trackBy: trackByColKey" class="text-center">{{ col.label }}</th>
                       </tr>
                     </ng-container>
                     <tr *ngIf="!hasParamMergedHeader(s) || !isParamSubLabelsVisible(s)">
                       <th class="w-col-35">#</th>
-                      <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                      <th *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                         {{ col.label }}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                    <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index; trackBy: trackByRowKey">
                       <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
-                      <td *ngFor="let col of getParamTableColumns(s)"
+                      <td *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey"
                           [class.text-start]="col.resolvedRole === 'row_label'"
                           [class.text-center]="col.resolvedRole !== 'row_label'">
                         <ng-container [ngSwitch]="col.resolvedRole">
@@ -2753,29 +2753,29 @@
                       <ng-container *ngIf="hasParamMergedHeader(s) && isParamSubLabelsVisible(s)">
                         <tr>
                           <th rowspan="2" class="w-col-35 align-middle">#</th>
-                          <th *ngFor="let col of getParamPreMergedCols(s)" rowspan="2" class="align-middle"
+                          <th *ngFor="let col of getParamPreMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                               [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                           <th [attr.colspan]="getParamMergedCols(s).length" class="text-center">{{ getParamMergedHeaderTitle(s) }}</th>
-                          <th *ngFor="let col of getParamPostMergedCols(s)" rowspan="2" class="align-middle"
+                          <th *ngFor="let col of getParamPostMergedCols(s); trackBy: trackByColKey" rowspan="2" class="align-middle"
                               [class.text-start]="col.resolvedRole === 'row_label'">{{ col.label }}</th>
                           <th rowspan="2" class="w-col-65 align-middle" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
                         </tr>
                         <tr>
-                          <th *ngFor="let col of getParamMergedCols(s)" class="text-center">{{ col.label }}</th>
+                          <th *ngFor="let col of getParamMergedCols(s); trackBy: trackByColKey" class="text-center">{{ col.label }}</th>
                         </tr>
                       </ng-container>
                       <tr *ngIf="!hasParamMergedHeader(s) || !isParamSubLabelsVisible(s)">
                         <th class="w-col-35">#</th>
-                        <th *ngFor="let col of getParamTableColumns(s)" [class.text-start]="col.resolvedRole === 'row_label'">
+                        <th *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey" [class.text-start]="col.resolvedRole === 'row_label'">
                           {{ col.label }}
                         </th>
                         <th class="w-col-65" *ngIf="!isViewMode && !isLocked && s.config?.runtimeAdjust !== false">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index">
+                      <tr *ngFor="let row of getGenericTableRows(s); let rIdx = index; trackBy: trackByRowKey">
                         <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
-                        <td *ngFor="let col of getParamTableColumns(s)"
+                        <td *ngFor="let col of getParamTableColumns(s); trackBy: trackByColKey"
                             [class.text-start]="col.resolvedRole === 'row_label'"
                             [class.text-center]="col.resolvedRole !== 'row_label'">
                           <ng-container [ngSwitch]="col.resolvedRole">

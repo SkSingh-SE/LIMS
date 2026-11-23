@@ -163,6 +163,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // ================================================================
   // Environment info per headerId
   environmentMap: Record<number, { roomTemperature?: number; roomHumidity?: number; labRoomName?: string; labRoomId?: number }> = {};
+  readonly emptyArray: any[] = [];
+  private _cachedLayoutItemKey: string = '';
+  private _cachedLayoutItem: any = null;
   // Equipment selection per headerId
   selectedEquipmentMap: Record<number, any[]> = {};
   // Test timing info per headerId (from API response)
@@ -4813,14 +4816,20 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   };
 
   get selectedLayoutItem(): any {
+    const key = `${this.selectedLayoutTemplateId}|${this.currentTestLayout?.id ?? ''}|${this.currentTestLayout?.layoutName ?? ''}|${this.availableLayoutTemplates?.length ?? 0}`;
+    if (key === this._cachedLayoutItemKey) {
+      return this._cachedLayoutItem;
+    }
+    this._cachedLayoutItemKey = key;
     if (this.selectedLayoutTemplateId === -1) {
-      return { id: -1, name: 'Standard Layout (No Template)' };
+      this._cachedLayoutItem = { id: -1, name: 'Standard Layout (No Template)' };
+    } else if (this.selectedLayoutTemplateId === null || this.selectedLayoutTemplateId === undefined) {
+      this._cachedLayoutItem = { id: null, name: `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}` };
+    } else {
+      const found = this.availableLayoutTemplates?.find(t => t.id === this.selectedLayoutTemplateId);
+      this._cachedLayoutItem = found ? { id: found.id, name: `${found.layoutName} (${found.layoutCode || 'Layout'})` } : null;
     }
-    if (this.selectedLayoutTemplateId === null || this.selectedLayoutTemplateId === undefined) {
-      return { id: null, name: `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}` };
-    }
-    const found = this.availableLayoutTemplates?.find(t => t.id === this.selectedLayoutTemplateId);
-    return found ? { id: found.id, name: `${found.layoutName} (${found.layoutCode || 'Layout'})` } : null;
+    return this._cachedLayoutItem;
   }
 
   onLayoutItemSelected(item: any): void {

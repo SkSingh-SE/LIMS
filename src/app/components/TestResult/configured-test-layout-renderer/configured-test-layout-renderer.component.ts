@@ -243,6 +243,18 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     opinion: 'Opinion & Interpretation'
   };
 
+  // Stable TrackBy functions to prevent Angular from destroying/recreating NgModel inputs on change detection
+  readonly trackBySectionId = (index: number, s: any): string =>
+    s?.id ?? s?.config?.sectionKey ?? `${s?.type || 'sec'}_${index}`;
+  readonly trackByRowKey = (index: number, row: any): string =>
+    row?.rowKey ?? row?.key ?? row?.id ?? row?.targetName ?? row?.locationCode ?? String(index);
+  readonly trackByColKey = (index: number, col: any): string =>
+    col?.key ?? `${col?.resolvedRole || 'col'}_${col?.label || ''}_${index}`;
+  readonly trackByIndex = (index: number): number => index;
+
+  private dropdownOptionsCache = new Map<string, { label: string; value: string }[]>();
+  private readonly emptyDropdownOptions: { label: string; value: string }[] = [];
+
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
@@ -296,16 +308,22 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     });
   }
 
+  private initializedLayoutRef: any = null;
+
   ngOnInit(): void {
-    this.initLayoutData();
+    if (this.layoutConfig && this.initializedLayoutRef !== this.layoutConfig) {
+      this.initializedLayoutRef = this.layoutConfig;
+      this.initLayoutData();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['layoutConfig'] || changes['test'] || changes['testPlan']) {
+      this.initializedLayoutRef = this.layoutConfig;
       this.initLayoutData();
     } else if (changes['activeTabSection']) {
       this.hydrateSpecimensFromParameters();
-      this.recalculateSpecimens();
+      this.recalculateSpecimens(false);
     }
   }
 
@@ -809,7 +827,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Guard: If specimen array already exists with target length and has values, avoid wiping
     if (this.specimens.length === count && this.specimens.some(s => s.yieldLoad != null || s.peakLoad != null || s.proofStress != null || s.uts != null)) {
       this.hydrateSpecimensFromParameters();
-      this.recalculateSpecimens();
+      this.recalculateSpecimens(false);
       this.cdr.markForCheck();
       return;
     }
@@ -818,7 +836,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const t = this.sample?.thickness != null ? Number(this.sample.thickness) : null;
     const w = this.sample?.width != null ? Number(this.sample.width) : null;
     const d = this.sample?.diameter != null ? Number(this.sample.diameter) : null;
-    const l0 = this.sample?.gaugeLength != null ? Number(this.sample.gaugeLength) : 50;
+    const l0 = this.sample?.gaugeLength != null ? Number(this.sample.gaugeLength) : null;
 
     for (let i = 1; i <= count; i++) {
       const initialArea = this.calculateArea(t, w, d);
@@ -849,13 +867,15 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
           Promise.resolve().then(() => {
             if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
             const liveBase = this.getBaseParameterCount();
+            if (liveBase <= 0) return;
             const liveTarget = this.specimens.length * liveBase;
+            let guard = 0;
             if (this.parametersFormArray.length > liveTarget) {
-              while (this.parametersFormArray.length > liveTarget) {
+              while (this.parametersFormArray.length > liveTarget && guard++ < 500) {
                 this.parametersFormArray.removeAt(this.parametersFormArray.length - 1);
               }
             } else if (this.parametersFormArray.length < liveTarget) {
-              while (this.parametersFormArray.length < liveTarget) {
+              while (this.parametersFormArray.length < liveTarget && guard++ < 500) {
                 const templateIdx = this.parametersFormArray.length % liveBase;
                 const templateCtrl = this.parametersFormArray.at(templateIdx);
                 if (!templateCtrl) break;
@@ -871,7 +891,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
               }
             }
             this.hydrateSpecimensFromParameters();
-            this.recalculateSpecimens();
+            this.recalculateSpecimens(false);
             this.cdr.markForCheck();
           });
         }
@@ -881,7 +901,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Hydrate specimen data from existing parameter controls (e.g. S1, S2 from database)
     this.hydrateSpecimensFromParameters();
 
-    this.recalculateSpecimens();
+    this.recalculateSpecimens(false);
     this.cdr.markForCheck();
   }
 
@@ -997,7 +1017,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
   }
 
-  private recalculateSpecimens(): void {
+  private recalculateSpecimens(syncToForm: boolean = true): void {
     const validProof = this.specimens.map(s => s.proofStress).filter((v): v is number => v != null && v > 0);
     const validUts = this.specimens.map(s => s.uts).filter((v): v is number => v != null && v > 0);
     const validElong = this.specimens.map(s => s.elongation).filter((v): v is number => v != null && v > 0);
@@ -1012,8 +1032,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       area: validArea.length ? Number((validArea.reduce((a, b) => a + b, 0) / validArea.length).toFixed(2)) : null
     };
 
-    // Auto-sync calculated specimen values with parameters FormArray!
-    this.syncSpecimenValuesToForm();
+    // Auto-sync calculated specimen values with parameters FormArray only on user edits (never during ngOnInit/ngOnChanges!)
+    if (syncToForm) {
+      this.syncSpecimenValuesToForm();
+    }
   }
 
   /**
@@ -2542,19 +2564,30 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   getDropdownOptionsForCell(col: any, param: any): { label: string; value: string }[] {
     if (col?.dropdownOptions && String(col.dropdownOptions).trim().length > 0) {
-      return String(col.dropdownOptions)
+      const raw = String(col.dropdownOptions).trim();
+      const cacheKey = `col:${raw}`;
+      const existing = this.dropdownOptionsCache.get(cacheKey);
+      if (existing) return existing;
+      const built: { label: string; value: string }[] = raw
         .split(',')
         .map((s: string) => s.trim())
         .filter((s: string) => s.length > 0)
         .map((s: string) => ({ label: s, value: s }));
+      this.dropdownOptionsCache.set(cacheKey, built);
+      return built;
     }
     if (Array.isArray(param?.dropdownOptions) && param.dropdownOptions.length > 0) {
-      return param.dropdownOptions.map((o: any) => ({
-        label: o.displayText || o.value,
-        value: o.value || o.displayText
+      const cacheKey = `param:${param.parameterID || param.parameterName || ''}:${param.dropdownOptions.length}`;
+      const existing = this.dropdownOptionsCache.get(cacheKey);
+      if (existing) return existing;
+      const built: { label: string; value: string }[] = param.dropdownOptions.map((o: any) => ({
+        label: String(o.displayText || o.value || ''),
+        value: String(o.value || o.displayText || '')
       }));
+      this.dropdownOptionsCache.set(cacheKey, built);
+      return built;
     }
-    return [];
+    return this.emptyDropdownOptions;
   }
 
   formatUncertainty(param: any): string {

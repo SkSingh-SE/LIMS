@@ -860,12 +860,15 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     { key: 'corrosion_sst', label: 'Salt Spray Corrosion Structure (Periodic Inspection Intervals)', icon: '↗' }
   ];
 
+  // Shared Panel Width Presets (identical for Left & Right panels)
+  readonly panelWidthPresets = { S: 320, M: 380, L: 460 } as const;
+
   // Left Panel Dynamic Resizing & Responsive State
-  leftPanelWidth: number = 270;
+  leftPanelWidth: number = 380;
   leftPanelCollapsed: boolean = false;
   isResizingLeft: boolean = false;
   private startX: number = 0;
-  private startWidth: number = 270;
+  private startWidth: number = 380;
   private readonly STORAGE_KEY_LEFT_WIDTH = 'lims_studio_left_panel_width';
   private readonly STORAGE_KEY_LEFT_COLLAPSED = 'lims_studio_left_panel_collapsed';
 
@@ -1232,22 +1235,22 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
     const savedWidth = localStorage.getItem(this.STORAGE_KEY_LEFT_WIDTH);
     if (savedWidth) {
       const parsed = parseInt(savedWidth, 10);
-      if (!isNaN(parsed) && parsed >= 190 && parsed <= 550) {
+      if (!isNaN(parsed) && parsed >= 260 && parsed <= 650) {
         this.leftPanelWidth = parsed;
         return;
       }
     }
 
-    // Adaptive default based on viewport width
+    // Adaptive default based on viewport width (matches right panel)
     const winWidth = window.innerWidth;
     if (winWidth >= 1800) {
-      this.leftPanelWidth = 310;
+      this.leftPanelWidth = 440;
     } else if (winWidth >= 1440) {
-      this.leftPanelWidth = 280;
+      this.leftPanelWidth = 380;
     } else if (winWidth <= 1200) {
-      this.leftPanelWidth = 230;
+      this.leftPanelWidth = 320;
     } else {
-      this.leftPanelWidth = 270;
+      this.leftPanelWidth = 360;
     }
   }
 
@@ -1263,9 +1266,9 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
       const delta = moveEvent.clientX - this.startX;
       let newWidth = this.startWidth + delta;
 
-      // Smart limits: min 190px, max 45% of viewport width or 550px
-      const minWidth = 190;
-      const maxWidth = Math.min(550, Math.floor(window.innerWidth * 0.45));
+      // Smart limits: min 260px, max 55% of viewport width or 650px (matches right panel)
+      const minWidth = 260;
+      const maxWidth = Math.min(650, Math.floor(window.innerWidth * 0.55));
 
       if (newWidth < minWidth) newWidth = minWidth;
       if (newWidth > maxWidth) newWidth = maxWidth;
@@ -1297,13 +1300,13 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
   resetLeftWidth(): void {
     const winWidth = window.innerWidth;
     if (winWidth >= 1800) {
-      this.leftPanelWidth = 310;
+      this.leftPanelWidth = 440;
     } else if (winWidth >= 1440) {
-      this.leftPanelWidth = 280;
+      this.leftPanelWidth = 380;
     } else if (winWidth <= 1200) {
-      this.leftPanelWidth = 230;
+      this.leftPanelWidth = 320;
     } else {
-      this.leftPanelWidth = 270;
+      this.leftPanelWidth = 360;
     }
     this.leftPanelCollapsed = false;
     localStorage.setItem(this.STORAGE_KEY_LEFT_WIDTH, this.leftPanelWidth.toString());
@@ -1419,13 +1422,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit, CanComponen
 
   @HostListener('window:resize')
   onWindowResize(): void {
-    const maxAllowed = Math.min(550, Math.floor(window.innerWidth * 0.45));
-    if (this.leftPanelWidth > maxAllowed && maxAllowed >= 190) {
+    const maxAllowed = Math.min(650, Math.floor(window.innerWidth * 0.55));
+    if (this.leftPanelWidth > maxAllowed && maxAllowed >= 260) {
       this.leftPanelWidth = maxAllowed;
     }
-    const maxAllowedRight = Math.min(650, Math.floor(window.innerWidth * 0.55));
-    if (this.rightPanelWidth > maxAllowedRight && maxAllowedRight >= 260) {
-      this.rightPanelWidth = maxAllowedRight;
+    if (this.rightPanelWidth > maxAllowed && maxAllowed >= 260) {
+      this.rightPanelWidth = maxAllowed;
     }
   }
 

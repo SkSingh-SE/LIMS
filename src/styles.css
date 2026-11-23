@@ -170,7 +170,7 @@ body {
    GLOBAL COMPACT FORM CONTROLS STANDARDIZATION (28px)
    Guarantees uniform height across inputs, selects, & dropdowns
    ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• */
-.form-control-sm,
+.form-control-sm:not(textarea),
 .form-select-sm,
 input.form-control-sm,
 select.form-select-sm {
@@ -180,6 +180,16 @@ select.form-select-sm {
   padding: 0.15rem 0.5rem !important;
   line-height: 1.35 !important;
   border-radius: 4px !important;
+}
+
+textarea.form-control-sm {
+  font-size: 0.78rem !important;
+  line-height: 1.45 !important;
+  padding: 0.35rem 0.5rem !important;
+  border-radius: 4px !important;
+  height: auto;
+  min-height: calc(1.45em * 3 + 0.7rem + 2px);
+  resize: vertical;
 }
 
 app-searchable-dropdown .input-group.input-group-sm,
@@ -2789,7 +2799,7 @@ fieldset.border legend i {
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Compact controls (30px) Ã¢â€â‚¬Ã¢â€â‚¬ */
-.form-control-sm,
+.form-control-sm:not(textarea),
 .form-select-sm {
   font-size: var(--font-sm) !important;
   font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
@@ -5155,7 +5165,12 @@ fieldset.border {
   font-size: 0.78rem !important;
   line-height: 1.45 !important;
   padding: 8px 12px !important;
-  transition: all 0.2s ease-in-out !important;
+  min-height: calc(1.45em * 3 + 16px + 3px) !important;
+  height: auto;
+  resize: vertical;
+  field-sizing: content;
+  overflow-y: auto;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out !important;
   background-color: #fafbfc !important;
 }
 
@@ -8981,11 +8996,19 @@ button i.bi:only-child,
 }
 
 /* ── 1. Studio Shell & Topbar ── */
+app-test-layout-archetype-designer {
+  display: block !important;
+  width: 100% !important;
+  height: calc(100vh - var(--nav-height, 60px)) !important;
+  max-height: calc(100vh - var(--nav-height, 60px)) !important;
+  overflow: hidden !important;
+}
+
 .studio-container {
   display: flex !important;
   flex-direction: column !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
+  height: calc(100vh - var(--nav-height, 60px)) !important;
+  max-height: calc(100vh - var(--nav-height, 60px)) !important;
   background-color: var(--surface-elevated, #f8fafc) !important;
   font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   overflow: hidden !important;
@@ -9069,9 +9092,11 @@ button i.bi:only-child,
 
 .studio-workspace {
   display: flex !important;
-  flex: 1 !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
   overflow: hidden !important;
-  height: calc(100vh - 88px) !important;
+  height: calc(100vh - var(--nav-height, 60px) - 88px) !important;
+  max-height: calc(100vh - var(--nav-height, 60px) - 88px) !important;
   position: relative !important;
 }
 
@@ -9154,6 +9179,73 @@ button i.bi:only-child,
   background-color: var(--surface-elevated, #f8fafc) !important;
 }
 
+/* ── Preview Modal Document Sheet & Interactive Polish ── */
+.preview-modal-scroll {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  background-color: var(--surface-elevated, #f8fafc) !important;
+}
+
+.preview-paper-container {
+  padding: 20px 16px !important;
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.canvas-paper.preview-paper {
+  width: 860px !important;
+  max-width: 100% !important;
+  min-height: auto !important;
+  margin: 0 auto !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+.preview-inline-cell-input {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 1px 4px !important;
+  font-size: 0.74rem !important;
+  border: 1px solid var(--neutral-300, #cbd5e1) !important;
+  border-radius: var(--radius-sm, 3px) !important;
+  background-color: #ffffff !important;
+  color: var(--neutral-800, #1e293b) !important;
+  max-width: 110px !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-family: inherit !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.preview-inline-cell-input:focus {
+  outline: none !important;
+  border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.15) !important;
+}
+
+.badge-status-pass {
+  background-color: var(--success-50, #ecfdf5) !important;
+  color: var(--success-700, #047857) !important;
+  border: 1px solid var(--success-200, #a7f3d0) !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
+  display: inline-block !important;
+}
+
+.badge-status-fail {
+  background-color: var(--danger-50, #fef2f2) !important;
+  color: var(--danger-700, #b91c1c) !important;
+  border: 1px solid var(--danger-200, #fecaca) !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
+  display: inline-block !important;
+}
+
 .param-search-icon {
   position: absolute !important;
   right: 7px !important;
@@ -9174,8 +9266,8 @@ button i.bi:only-child,
 }
 
 .studio-panel-left {
-  flex: 0 0 var(--left-panel-width, 270px) !important;
-  min-width: 200px !important;
+  flex: 0 0 var(--left-panel-width, 360px) !important;
+  min-width: 260px !important;
   max-width: 50% !important;
   border-right: 1px solid var(--neutral-200, #e2e8f0) !important;
 }
@@ -9625,7 +9717,8 @@ button i.bi:only-child,
 .canvas-scroll-container {
   overflow-y: auto !important;
   overflow-x: auto !important;
-  flex: 1 !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
   width: 100% !important;
   background-color: var(--neutral-100, #f1f5f9) !important;
   padding: 20px 16px !important;
@@ -10683,6 +10776,9 @@ td:hover .btn-cell-row-del {
   border-top: 1px solid var(--neutral-200, #e2e8f0) !important;
   font-size: 0.68rem !important;
   color: var(--neutral-500, #64748b) !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  flex-shrink: 0 !important;
 }
 
 .canvas-footer-hint {

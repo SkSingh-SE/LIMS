@@ -87,13 +87,13 @@
         </span>
         <span class="badge bg-light text-dark border me-1.5">{{ sections.length }}</span>
         <div class="d-flex align-items-center gap-1.5 ms-auto flex-shrink-0">
-          <div class="btn-group btn-group-xs" title="Panel width presets: S (220px), M (270px), L (340px)">
-            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 220" (click)="setLeftPreset(220)"
-              title="Compact width (220px)">S</button>
-            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 270" (click)="setLeftPreset(270)"
-              title="Default width (270px)">M</button>
-            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === 340" (click)="setLeftPreset(340)"
-              title="Wide width (340px)">L</button>
+          <div class="btn-group btn-group-xs" title="Panel width presets: S (320px), M (380px), L (460px)">
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === panelWidthPresets.S" (click)="setLeftPreset(panelWidthPresets.S)"
+              title="Compact width (320px)">S</button>
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === panelWidthPresets.M" (click)="setLeftPreset(panelWidthPresets.M)"
+              title="Standard width (380px)">M</button>
+            <button type="button" class="btn-preset" [class.active]="leftPanelWidth === panelWidthPresets.L" (click)="setLeftPreset(panelWidthPresets.L)"
+              title="Wide width (460px)">L</button>
             <button type="button" class="btn-preset" (click)="resetLeftWidth()" title="Reset to default width" aria-label="Reset to default width"><i
                 class="bi bi-arrow-counterclockwise"></i></button>
           </div>
@@ -2274,11 +2274,11 @@
 
         <div class="d-flex align-items-center gap-1.5 ms-auto flex-shrink-0">
           <div class="btn-group btn-group-xs" title="Panel width presets: S (320px), M (380px), L (460px)">
-            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 320" (click)="setRightPreset(320)"
+            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === panelWidthPresets.S" (click)="setRightPreset(panelWidthPresets.S)"
               title="Compact width (320px)">S</button>
-            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 380" (click)="setRightPreset(380)"
+            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === panelWidthPresets.M" (click)="setRightPreset(panelWidthPresets.M)"
               title="Standard width (380px)">M</button>
-            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === 460" (click)="setRightPreset(460)"
+            <button type="button" class="btn-preset" [class.active]="rightPanelWidth === panelWidthPresets.L" (click)="setRightPreset(panelWidthPresets.L)"
               title="Wide width (460px)">L</button>
             <button type="button" class="btn-preset" (click)="resetRightWidth()" title="Reset width" aria-label="Reset width"><i
                 class="bi bi-arrow-counterclockwise"></i></button>

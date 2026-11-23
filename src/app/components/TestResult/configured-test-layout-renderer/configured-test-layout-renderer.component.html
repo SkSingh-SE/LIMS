@@ -334,7 +334,7 @@
                   <tbody>
                     <tr *ngFor="let spm of specimens; let spIdx = index">
                       <td class="text-center text-muted small fw-semibold">{{ spIdx + 1 }}</td>
-                      <td class="text-center font-monospace fw-semibold">{{ spm.code }}</td>
+                      <td class="text-center font-monospace fw-semibold">{{ spm.id }}</td>
                       <td>
                         <input type="text" class="form-control form-control-xs"
                                [ngModel]="getCustomCellValue(s.config?.sectionKey || s.id, 'spm_id_' + spIdx, 'marking')"

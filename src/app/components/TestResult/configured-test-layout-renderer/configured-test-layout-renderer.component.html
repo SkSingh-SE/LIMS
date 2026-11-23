@@ -355,7 +355,7 @@
               </button>
             </div>
             <!-- Ambient conditions: only when the layout lists no conditions of its own, or asks for them -->
-            <div class="row g-2" *ngIf="!conditionFields(s).length || s.config?.showAmbient">
+            <div class="row g-2" *ngIf="isColumnShown(s, 'showAmbient')">
               <div class="col-md-3 col-sm-6">
                 <div class="condition-input-box p-2 rounded border bg-light">
                   <label class="form-label mb-1 text-xxs fw-semibold text-muted d-flex align-items-center">
@@ -1178,15 +1178,15 @@
                   <tr>
                     <th class="w-col-35">#</th>
                     <th class="text-start w-col-24p">Parameter Name</th>
-                    <th class="w-col-80">Source</th>
-                    <th *ngIf="s.config?.columns?.unit !== false" class="w-col-75">Unit</th>
-                    <th *ngIf="s.config?.columns?.requirement !== false" class="w-col-130">Requirement</th>
+                    <th *ngIf="isColumnShown(s, 'source')" class="w-col-80">Source</th>
+                    <th *ngIf="isColumnShown(s, 'unit')" class="w-col-75">Unit</th>
+                    <th *ngIf="isColumnShown(s, 'requirement')" class="w-col-130">Requirement</th>
                     <th class="w-col-145">Result (Observed)</th>
-                    <th *ngIf="s.config?.columns?.status !== false" class="w-col-90">Status</th>
-                    <th class="w-col-65 text-center text-nowrap"><i class="bi bi-printer me-1 text-primary"></i>Print</th>
-                    <th *ngIf="s.config?.columns?.method" class="w-col-160">Method / Standard</th>
-                    <th *ngIf="s.config?.columns?.uncertainty" class="w-col-100">Uncertainty (±)</th>
-                    <th *ngIf="s.config?.columns?.remarks" class="w-col-140">Remarks</th>
+                    <th *ngIf="isColumnShown(s, 'status')" class="w-col-90">Status</th>
+                    <th *ngIf="isColumnShown(s, 'print')" class="w-col-65 text-center text-nowrap"><i class="bi bi-printer me-1 text-primary"></i>Print</th>
+                    <th *ngIf="isColumnShown(s, 'method')" class="w-col-160">Method / Standard</th>
+                    <th *ngIf="isColumnShown(s, 'uncertainty')" class="w-col-100">Uncertainty (±)</th>
+                    <th *ngIf="isColumnShown(s, 'remarks')" class="w-col-140">Remarks</th>
                     <th class="w-col-75 action-col">Actions</th>
                   </tr>
                 </thead>
@@ -1214,7 +1214,7 @@
                       </td>
 
                       <!-- Parameter Source Badge -->
-                      <td class="text-center">
+                      <td *ngIf="isColumnShown(s, 'source')" class="text-center">
                         <span class="badge {{ getParameterSource(parametersFormArray.at(r).value).badgeClass }}"
                               [title]="getParameterSource(parametersFormArray.at(r).value).tooltip">
                           <i class="bi {{ getParameterSource(parametersFormArray.at(r).value).icon }} me-1"></i>
@@ -1223,7 +1223,7 @@
                       </td>
 
                       <!-- Unit -->
-                      <td *ngIf="s.config?.columns?.unit !== false" class="text-center">
+                      <td *ngIf="isColumnShown(s, 'unit')" class="text-center">
                         <ng-container *ngIf="parametersFormArray.at(r).value.unitOptions?.length > 1; else plainUnit">
                           <select class="form-select form-select-xs" formControlName="selectedUnit" (change)="onUnitSelect(r)">
                             <option *ngFor="let opt of parametersFormArray.at(r).value.unitOptions" [value]="opt.unitName">{{ opt.unitName }}</option>
@@ -1235,7 +1235,7 @@
                       </td>
 
                       <!-- Requirement -->
-                      <td *ngIf="s.config?.columns?.requirement !== false" class="text-center">
+                      <td *ngIf="isColumnShown(s, 'requirement')" class="text-center">
                         <span class="badge bg-light text-dark border px-2 py-1 font-monospace text-xs">
                           {{ formatRequirement(parametersFormArray.at(r).value) }}
                         </span>
@@ -1295,7 +1295,7 @@
                       </td>
 
                       <!-- Status Badge -->
-                      <td *ngIf="s.config?.columns?.status !== false" class="text-center">
+                      <td *ngIf="isColumnShown(s, 'status')" class="text-center">
                         <span *ngIf="parametersFormArray.at(r).value.isWithinLimit === true" class="status-pill-lims status-pill-pass">
                           PASS
                         </span>
@@ -1308,7 +1308,7 @@
                       </td>
 
                       <!-- Print Checkbox -->
-                      <td class="text-center">
+                      <td *ngIf="isColumnShown(s, 'print')" class="text-center">
                         <div class="form-check d-flex justify-content-center m-0">
                           <input type="checkbox" class="form-check-input print-checkbox"
                                  [checked]="isParamReportable(r)"
@@ -1319,17 +1319,17 @@
                       </td>
 
                       <!-- Method / Standard -->
-                      <td *ngIf="s.config?.columns?.method" class="text-center text-muted small text-truncate" [title]="getCleanTestMethod(parametersFormArray.at(r).value)">
+                      <td *ngIf="isColumnShown(s, 'method')" class="text-center text-muted small text-truncate" [title]="getCleanTestMethod(parametersFormArray.at(r).value)">
                         {{ getCleanTestMethod(parametersFormArray.at(r).value) }}
                       </td>
 
                       <!-- Uncertainty -->
-                      <td *ngIf="s.config?.columns?.uncertainty" class="text-center text-muted small font-monospace">
+                      <td *ngIf="isColumnShown(s, 'uncertainty')" class="text-center text-muted small font-monospace">
                         &plusmn; 0.25
                       </td>
 
                       <!-- Remarks -->
-                      <td *ngIf="s.config?.columns?.remarks">
+                      <td *ngIf="isColumnShown(s, 'remarks')">
                         <input type="text" class="form-control form-control-xs" formControlName="remarks" [readOnly]="isViewMode || isLocked" placeholder="Remark..." />
                       </td>
 
@@ -2212,7 +2212,7 @@
               <div class="text-xxs text-muted" *ngIf="!rb.applicable">
                 No statement of conformity is given for this sample (Conformity is "Not Applicable" on the sample inward / plan).
               </div>
-              <ng-container *ngIf="rb.applicable && s.config?.showRule !== false">
+              <ng-container *ngIf="rb.applicable && isColumnShown(s, 'showRule')">
                 <div class="decision-statement-box p-1.5 rounded bg-white border mb-1">
                   <label class="form-label text-xxs fw-semibold text-muted mb-1 d-flex align-items-center justify-content-between">
                     <span>Statement of conformity</span>

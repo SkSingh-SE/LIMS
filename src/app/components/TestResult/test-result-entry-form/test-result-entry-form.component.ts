@@ -6191,14 +6191,18 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         if (template && template.layoutConfigJson) {
           try {
             const parsed = JSON.parse(template.layoutConfigJson);
+            const allSecs: any[] = parsed.sections || [];
+            const hasSpm = allSecs.some((s: any) => s.type === 'specimen' || s.type === 'spm');
             this.currentTestLayout = {
               ...template,
               parsedConfig: parsed,
-              sections: (parsed.sections || []).filter((s: any) => s.type === 'specimen')
+              sections: hasSpm
+                ? allSecs.filter((s: any) => s.type === 'specimen' || s.type === 'spm')
+                : allSecs.filter((s: any) => s.config?.enabled !== false)
             };
 
-            const spmSec = this.currentTestLayout.sections.find((s: any) => s.type === 'specimen' || s.type === 'spm');
-            const targetCount = spmSec?.config?.count ? Number(spmSec.config.count) : 1;
+            const spmSec = this.currentTestLayout.sections.find((s: any) => s.type === 'specimen' || s.type === 'spm' || ((s.type === 'parameter' || s.type === 'param') && s.config?.enableMultiSpecimen));
+            const targetCount = spmSec?.config?.count ? Number(spmSec.config.count) : (spmSec?.config?.specimenCount ? Number(spmSec.config.specimenCount) : 1);
             this.updateWorkbenchSpecimenCount(targetCount);
 
             const renderer = this.configuredRenderers?.find(r => !r.printMode);

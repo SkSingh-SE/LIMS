@@ -8927,10 +8927,47 @@ button i.bi:only-child,
 .me-1\.5 { margin-right: 0.375rem !important; }
 .ms-1\.5 { margin-left: 0.375rem !important; }
 .gap-1\.5 { gap: 0.375rem !important; }
-.mt-0\.5 { margin-top: 0.25rem !important; }
+.mt-0\.5 { margin-top: 0.125rem !important; }
+.mb-0\.5 { margin-bottom: 0.125rem !important; }
+.mt-1\.5 { margin-top: 0.375rem !important; }
 .mb-1\.5 { margin-bottom: 0.375rem !important; }
+.p-1\.5 { padding: 0.375rem !important; }
+.p-2\.5 { padding: 0.625rem !important; }
+.px-1\.5 { padding-left: 0.375rem !important; padding-right: 0.375rem !important; }
 .px-2\.5 { padding-left: 0.625rem !important; padding-right: 0.625rem !important; }
+.py-0\.5 { padding-top: 0.125rem !important; padding-bottom: 0.125rem !important; }
 .py-1\.5 { padding-top: 0.375rem !important; padding-bottom: 0.375rem !important; }
+.min-w-0 { min-width: 0 !important; }
+
+app-navbar nav.fixed-top {
+  z-index: 1045 !important;
+}
+
+.form-check.form-switch.compact-switch {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  padding-left: 0.5rem !important;
+  min-height: 26px !important;
+}
+
+.form-check.form-switch.compact-switch .form-check-input {
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  float: none !important;
+  flex-shrink: 0;
+  width: 2rem !important;
+  height: 1.05rem !important;
+  cursor: pointer;
+}
+
+.form-check.form-switch.compact-switch .form-check-label {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.25;
+  margin-bottom: 0 !important;
+  cursor: pointer;
+}
 
 .text-purple { color: var(--primary-color, #da261c) !important; }
 .bg-purple-subtle { background-color: var(--primary-50, rgba(218, 38, 28, 0.08)) !important; }

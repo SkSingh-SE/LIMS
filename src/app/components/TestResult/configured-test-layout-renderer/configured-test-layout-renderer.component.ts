@@ -1070,12 +1070,15 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     for (const i of rowsOfSpecimen(this.getRowSpecimenIndexes(), 0)) {
       const ctrl = this.parametersFormArray.at(i);
       if (ctrl) {
+        const pName = ctrl.get('parameterName')?.value || `Parameter ${i + 1}`;
+        const rawInputType = ctrl.get('inputType')?.value || 'Decimal';
+        const isTextRow = rawInputType === 'Text' || rawInputType === 'Qualitative' || String(pName).toLowerCase().includes('location of fracture');
         list.push({
           index: i,
-          name: ctrl.get('parameterName')?.value || `Parameter ${i + 1}`,
+          name: pName,
           unit: ctrl.get('unit')?.value || '—',
           requirement: this.formatRequirement(ctrl.value),
-          inputType: ctrl.get('inputType')?.value || 'Decimal',
+          inputType: isTextRow ? 'Text' : rawInputType,
           isCalculated: ctrl.get('isCalculated')?.value || !!ctrl.get('formulaExpression')?.value
         });
       }
@@ -1159,12 +1162,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
   public initSpecimens(): void {
     let count = 1;
-    if (this.hasSpecimenSection) {
-      const declared = this.layoutSpecimenCount();
+    const declaredCount = this.layoutSpecimenCount();
+    if (this.hasSpecimenSection || declaredCount > 1) {
       const rowIndexes = this.getRowSpecimenIndexes();
       const maxRowSpecimen = rowIndexes.length ? Math.max(...rowIndexes) : 0;
       const userSpecified = Number(this.testPlan?.totalSpecimens || this.test?.totalSpecimens || 0);
-      count = declared || Math.max(1, userSpecified, maxRowSpecimen + 1);
+      count = declaredCount || Math.max(1, userSpecified, maxRowSpecimen + 1);
     } else {
       // Layout without specimen section:
       // An already saved extra specimen row (SpecimenIndex > 0) that has no value, no reading,
@@ -2856,7 +2859,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** Header text of specimen i: the layout's own name, else its prefix + number, else S{n}. */
   specimenLabel(spmIdx: number, sec?: any): string {
-    const s = sec ?? this.specimenSection;
+    const s = sec ?? this.specimenSection ?? (this.sections || []).find(x => (x.type === 'parameter' || x.type === 'param') && x.config?.enableMultiSpecimen);
+    if (typeof s?.config?.specimenNames === 'string' && s.config.specimenNames.trim()) {
+      const parts = s.config.specimenNames.split(',').map((p: string) => p.trim());
+      if (parts[spmIdx]) return parts[spmIdx];
+    }
     const named = s?.config?.specimenRows?.[spmIdx];
     const text = typeof named === 'string' ? named.trim() : '';
     if (text) return text;
@@ -2898,14 +2905,59 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (t === 'spm' || t === 'specimen') {
       return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }, { key: 'print', label: 'Print Checkbox' }];
     }
+    if (t === 'param' || t === 'parameter') {
+      if (this.specimens.length > 1 || s?.config?.enableMultiSpecimen) {
+        return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }, { key: 'print', label: 'Print Checkbox' }];
+      }
+      return [
+        { key: 'source', label: 'Source' },
+        { key: 'unit', label: 'Unit' },
+        { key: 'requirement', label: 'Requirement' },
+        { key: 'status', label: 'Status' },
+        { key: 'print', label: 'Print Checkbox' },
+        { key: 'method', label: 'Method' },
+        { key: 'uncertainty', label: 'Uncertainty' },
+        { key: 'remarks', label: 'Remarks' }
+      ];
+    }
     if (t === 'reading' && this.isReadingGrid(s)) {
       return [{ key: 'agg', label: this.gridAggregateLabel(s) || 'Average' }, { key: 'stats', label: 'Min / Max' }, { key: 'requirement', label: 'Requirement' }, { key: 'status', label: 'Status' }, { key: 'unit', label: 'Unit' }];
+    }
+    if (t === 'rule' || t === 'decision') {
+      return [{ key: 'showRule', label: 'Decision Rule Statement' }];
+    }
+    if (t === 'traverse' || t === 'case_depth') {
+      return [{ key: 'showCurve', label: 'Hardness Curve' }];
+    }
+    if (t === 'cond' || t === 'condition') {
+      return [{ key: 'showAmbient', label: 'Ambient Temp / RH' }];
     }
     return [];
   }
 
   isColumnShown(s: any, key: string): boolean {
     if (key === 'stats') return this.gridStatsShown(s);
+    if (key === 'showRule') {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.['showRule'];
+      return ov !== undefined ? ov : s?.config?.showRule !== false;
+    }
+    if (key === 'showCurve') {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.['showCurve'];
+      return ov !== undefined ? ov : s?.config?.showCurve !== false;
+    }
+    if (key === 'showAmbient') {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.['showAmbient'];
+      return ov !== undefined ? ov : (!!s?.config?.showAmbient || !this.conditionFields(s).length);
+    }
+    const t = String(s?.type || '').toLowerCase();
+    if ((t === 'param' || t === 'parameter') && this.specimens.length <= 1 && !s?.config?.enableMultiSpecimen) {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.[key];
+      if (ov !== undefined) return ov;
+      const cols = s?.config?.columns || {};
+      if (key === 'source' || key === 'print') return cols[key] !== false;
+      if (key === 'unit' || key === 'requirement' || key === 'status') return cols[key] !== false && this.columnVisible(s, key);
+      if (key === 'method' || key === 'uncertainty' || key === 'remarks') return !!cols[key];
+    }
     if (['avg', 'requirement', 'status', 'unit', 'print'].includes(key) && !this.isReadingGrid(s)) return this.specimenShow(s, key as any);
     if (key === 'unit') return this.specimenShow(s, 'unit');
     return this.columnVisible(s, key);
@@ -3039,10 +3091,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   /** The specimen count the layout asks for (its specimen names, else its count); 0 when it asks for none. */
   private layoutSpecimenCount(): number {
-    const cfg = this.specimenSection?.config;
+    const paramMultiSec = (this.sections || []).find(s => (s.type === 'parameter' || s.type === 'param') && s.config?.enableMultiSpecimen);
+    const cfg = this.specimenSection?.config || paramMultiSec?.config;
     if (!cfg) return 0;
-    const named = Array.isArray(cfg.specimenRows) ? cfg.specimenRows.filter((n: any) => String(n ?? '').trim() !== '').length : 0;
-    return Math.min(20, named || Number(cfg.count) || 0);
+    const namedRows = Array.isArray(cfg.specimenRows) ? cfg.specimenRows.filter((n: any) => String(n ?? '').trim() !== '').length : 0;
+    const namedStr = typeof cfg.specimenNames === 'string' && cfg.specimenNames.trim()
+      ? cfg.specimenNames.split(',').map((s: string) => s.trim()).filter(Boolean).length
+      : 0;
+    return Math.min(20, namedRows || namedStr || Number(cfg.specimenCount) || Number(cfg.count) || 0);
   }
 
   /** Set once the specimen count was fixed (from the layout, or by the user); saved with the test. */

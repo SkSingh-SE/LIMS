@@ -2510,13 +2510,18 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getEffectiveInputType(col: any, param: any): string {
+    // ParameterMaster non-numeric types (Text / Boolean / Dropdown / Date / Qualitative)
+    // must take precedence over a column's default numeric/decimal inputType (e.g. Location of Fracture = "W.G.L")
+    if (param) {
+      const pType = String(param.inputType || '').toLowerCase();
+      if (pType === 'boolean') return 'boolean';
+      if (pType === 'dropdown') return 'dropdown';
+      if (pType === 'text' || String(param.parameterType || '').toLowerCase() === 'qualitative') return 'text';
+      if (pType === 'date') return 'date';
+    }
     if (col?.inputType) return String(col.inputType).toLowerCase();
     const pType = String(param?.inputType || 'Decimal').toLowerCase();
-    if (pType === 'boolean') return 'boolean';
-    if (pType === 'dropdown') return 'dropdown';
-    if (pType === 'text') return 'text';
     if (pType === 'integer' || pType === 'number') return 'number';
-    if (pType === 'date') return 'date';
     return 'decimal';
   }
 

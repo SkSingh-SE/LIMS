@@ -6,8 +6,12 @@ import { ParameterService } from '../../../services/parameter.service';
 import { EquipmentService } from '../../../services/equipment.service';
 import { TestMethodSpecificationService } from '../../../services/test-method-specification.service';
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { DimensionalFactorService } from '../../../services/dimensional-factor.service';
+import { HeatTreatmentService } from '../../../services/heat-treatment.service';
+import { ProductConditionService } from '../../../services/product-condition.service';
+import { SpecimenOrientationService } from '../../../services/specimen-orientation.service';
 import { TestLayoutService } from '../../../services/test-layout.service';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
 import { ToastService } from '../../../services/toast.service';
 import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
@@ -52,16 +56,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   isViewMode: boolean = false;
   payloadLoaded: boolean = false;
 
-  // 6-Tab Workflow Navigation as per ISO 17025 Redesign (Parameters merged into Execution)
-  activeTab: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history' = 'info';
+  // 2-Tab Consolidated Workflow Navigation (ISO 17025)
+  // Tab 1: 'execution' (1. Test & Execution Workspace)
+  // Tab 2: 'nabl_audit' (2. NABL QA & Audit)
+  activeTab: 'execution' | 'nabl_audit' = 'execution';
 
-  testTabs: { id: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'; label: string; icon: string }[] = [
-    { id: 'info', label: 'Test Information', icon: 'bi-file-text' },
-    { id: 'execution', label: 'Test Execution', icon: 'bi-play-circle' },
-    { id: 'calculations', label: 'Calculations', icon: 'bi-calculator' },
-    { id: 'nabl', label: 'NABL & QA', icon: 'bi-shield-check' },
-    { id: 'attachments', label: 'Attachments', icon: 'bi-paperclip' },
-    { id: 'history', label: 'History', icon: 'bi-clock-history' },
+  testTabs: { id: 'execution' | 'nabl_audit'; label: string; icon: string }[] = [
+    { id: 'execution', label: '1. Test & Execution Workspace', icon: 'bi-clipboard-data' },
+    { id: 'nabl_audit', label: '2. NABL QA & Audit', icon: 'bi-shield-check' }
   ];
 
   testPurposeOptions: string[] = [
@@ -244,6 +246,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   selectedMethodParam: any = null;
   loadingMethodParams = false;
 
+  // Material Specification Condition Filter Engine
+  dimensionalFactorsList: any[] = [];
+  heatTreatmentsList: any[] = [];
+  productConditions1List: any[] = [];
+  productConditions2List: any[] = [];
+  specimenOrientationsList: any[] = [];
+  loadingConditions = false;
+  selectedConditionsMap: Record<number, {
+    dimensionalFactorID: number | null;
+    heatTreatmentID: number | null;
+    productConditionID1: number | null;
+    productConditionID2: number | null;
+    specimenOrientationID: number | null;
+  }> = {};
+  cachedGradeSpecLines: Record<number, any[]> = {};
+  matchedConditionLinesCount: Record<number, number> = {};
+
   constructor(
     private fb: FormBuilder,
     private testResultService: TestResultService,
@@ -251,6 +270,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     private equipmentService: EquipmentService,
     private testMethodService: TestMethodSpecificationService,
     private materialSpecService: MaterialSpecificationService,
+    private dimensionalFactorService: DimensionalFactorService,
+    private heatTreatmentService: HeatTreatmentService,
+    private productConditionService: ProductConditionService,
+    private specimenOrientationService: SpecimenOrientationService,
     private testLayoutService: TestLayoutService,
     private toastService: ToastService,
     private route: ActivatedRoute,
@@ -481,8 +504,10 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     const analysisTypeId = plan.analysisTypeId || null;
     const leafNode = plan.leafNode || plan.tests?.[0]?.name || null;
     const headerId = plan.headerId || plan.tests?.[0]?.headerId || `plan_${planIndex}`;
+    const methodId = plan.methodId || plan.tests?.[0]?.testMethodId || null;
+    const methodName = plan.methodName || plan.tests?.[0]?.testMethodName || null;
 
-    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}`;
+    const cacheKey = `${headerId}_${testId}_${subGroupId}_${analysisTypeId}_${leafNode}_${methodId}_${methodName}`;
     if (this.layoutCache[cacheKey]) {
       this.currentTestLayout = this.layoutCache[cacheKey];
       this.selectedLayoutTemplateId = this.currentTestLayout?.id || null;
@@ -511,7 +536,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }
 
     this.loadingLayout = true;
-    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leafNode).subscribe({
+    this.testLayoutService.getLayoutByHierarchy(testId, subGroupId, analysisTypeId, leafNode, methodId, methodName).subscribe({
       next: (template: any) => {
         this.loadingLayout = false;
         if (template && template.layoutConfigJson) {
@@ -1149,6 +1174,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
           }
           // Fetch environment data
           this.fetchEnvironmentData(test.headerId);
+          if (test.executionExtraJson) {
+            try {
+              const extra = typeof test.executionExtraJson === 'string' ? JSON.parse(test.executionExtraJson) : test.executionExtraJson;
+              if (extra?.selectedConditions) {
+                this.selectedConditionsMap[test.headerId] = extra.selectedConditions;
+              }
+            } catch (e) {}
+          }
         }
       });
     });
@@ -2534,17 +2567,17 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   // ================================================================
   // 6-Tab Workflow Navigation & Quick Actions
   // ================================================================
-  switchTab(tab: 'info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history'): void {
-    this.activeTab = tab;
+  switchTab(tab: string): void {
+    if (tab === 'nabl' || tab === 'history' || tab === 'nabl_audit') {
+      this.activeTab = 'nabl_audit';
+    } else {
+      this.activeTab = 'execution';
+    }
   }
 
   goToNextTab(): void {
-    const tabOrder: ('info' | 'execution' | 'calculations' | 'nabl' | 'attachments' | 'history')[] = [
-      'info', 'execution', 'calculations', 'nabl', 'attachments', 'history'
-    ];
-    const currentIndex = tabOrder.indexOf(this.activeTab);
-    if (currentIndex < tabOrder.length - 1) {
-      this.activeTab = tabOrder[currentIndex + 1];
+    if (this.activeTab === 'execution') {
+      this.activeTab = 'nabl_audit';
     }
   }
 
@@ -3123,6 +3156,189 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
   }
 
   // ================================================================
+  // Workbench Inspector Data Helpers (Compact Global UI Pattern)
+  // ================================================================
+  isTensileActive(planIndex: number, testIndex: number): boolean {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    const name = (test?.name || this.plans?.[planIndex]?.type || '').toLowerCase();
+    return name.includes('tensile') || name.includes('tension') || name.includes('a370') || name.includes('is 1608');
+  }
+
+  getCalculatedKeyResults(planIndex: number, testIndex: number): Array<{
+    symbol: string;
+    name: string;
+    value: string;
+    unit: string;
+    requirement: string;
+    status: 'PASS' | 'FAIL' | 'PENDING';
+  }> {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    if (!test) return [];
+
+    const results: Array<{
+      symbol: string;
+      name: string;
+      value: string;
+      unit: string;
+      requirement: string;
+      status: 'PASS' | 'FAIL' | 'PENDING';
+    }> = [];
+
+    const params: any[] = test.parameters || [];
+    const spm = this.layoutRendererComponent?.specimens?.[0];
+
+    const findParam = (terms: string[]) =>
+      params.find(pm => terms.some(term => (pm.parameterName || '').toLowerCase().includes(term.toLowerCase())));
+
+    const widthParam = findParam(['width']);
+    const thickParam = findParam(['thickness']);
+    const areaParam = findParam(['cross section area', 'cross-sectional area', 'area']);
+    const ysParam = findParam(['yield strength', 'proof stress', '0.5% (eul)', '0.2% proof', '0.5% extension']);
+    const utsParam = findParam(['uts', 'tensile strength', 'u.t.s']);
+    const elParam = findParam(['elongation']);
+    const ystsParam = findParam(['ys/ts', 'ratio']);
+
+    // 1. Cross-sectional Area
+    const areaVal = areaParam?.value ?? spm?.area ?? (
+      (widthParam?.value && thickParam?.value)
+        ? (Number(widthParam.value) * Number(thickParam.value))
+        : null
+    );
+    if (areaVal != null && areaVal !== '') {
+      results.push({
+        symbol: 'S₀',
+        name: 'Cross Section Area',
+        value: Number(areaVal).toFixed(areaParam?.decimalPrecision != null ? areaParam.decimalPrecision : 2),
+        unit: areaParam?.unit || 'mm²',
+        requirement: 'Formula: W × T',
+        status: 'PASS'
+      });
+    }
+
+    // 2. Yield Strength (0.5% EUL / 0.2% Proof)
+    const ysVal = ysParam?.value ?? spm?.proofStress;
+    if (ysVal != null && ysVal !== '') {
+      const reqMin = ysParam?.specMinValue ?? ysParam?.minValue ?? 485;
+      const reqMax = ysParam?.specMaxValue ?? ysParam?.maxValue ?? 605;
+      const isPass = Number(ysVal) >= reqMin && (reqMax ? Number(ysVal) <= reqMax : true);
+      results.push({
+        symbol: 'R_p0.2',
+        name: ysParam?.parameterName || '0.5% Yield Strength',
+        value: String(ysVal),
+        unit: ysParam?.unit || 'MPa',
+        requirement: reqMin + ' - ' + reqMax,
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // 3. Ultimate Tensile Strength (UTS)
+    const utsVal = utsParam?.value ?? spm?.uts;
+    if (utsVal != null && utsVal !== '') {
+      const reqMin = utsParam?.specMinValue ?? utsParam?.minValue ?? 570;
+      const reqMax = utsParam?.specMaxValue ?? utsParam?.maxValue ?? 760;
+      const isPass = Number(utsVal) >= reqMin && (reqMax ? Number(utsVal) <= reqMax : true);
+      results.push({
+        symbol: 'R_m',
+        name: utsParam?.parameterName || 'Tensile Strength (UTS)',
+        value: String(utsVal),
+        unit: utsParam?.unit || 'MPa',
+        requirement: reqMin + ' - ' + reqMax,
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // 4. Percentage Elongation
+    const elVal = elParam?.value ?? spm?.elongation;
+    if (elVal != null && elVal !== '') {
+      const reqMin = elParam?.specMinValue ?? elParam?.minValue ?? 25.0;
+      const isPass = Number(elVal) >= reqMin;
+      results.push({
+        symbol: 'A',
+        name: elParam?.parameterName || 'Elongation (%)',
+        value: String(elVal),
+        unit: elParam?.unit || '%',
+        requirement: '≥ ' + reqMin + ' min',
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // 5. YS / TS Ratio
+    let ystsVal = ystsParam?.value;
+    if ((ystsVal == null || ystsVal === '') && ysVal && utsVal && Number(utsVal) > 0) {
+      ystsVal = (Number(ysVal) / Number(utsVal)).toFixed(2);
+    }
+    if (ystsVal != null && ystsVal !== '') {
+      const reqMax = ystsParam?.specMaxValue ?? ystsParam?.maxValue ?? 0.90;
+      const isPass = Number(ystsVal) <= reqMax;
+      results.push({
+        symbol: 'YS/TS',
+        name: 'Yield / Tensile Ratio',
+        value: String(ystsVal),
+        unit: '',
+        requirement: '≤ ' + reqMax + ' max',
+        status: isPass ? 'PASS' : 'FAIL'
+      });
+    }
+
+    // Fallback: If not standard tensile or no tensile parameters detected
+    if (results.length === 0) {
+      for (const pm of params) {
+        if (pm.isCalculated || pm.formulaExpression || pm.value != null) {
+          results.push({
+            symbol: 'fx',
+            name: pm.parameterName,
+            value: String(pm.value ?? '—'),
+            unit: pm.unit || '',
+            requirement: (pm.minValue != null ? String(pm.minValue) : '') + (pm.maxValue != null ? ' - ' + pm.maxValue : '—'),
+            status: pm.status === 'Pass' || pm.isWithinLimit === true ? 'PASS' : (pm.status === 'Fail' ? 'FAIL' : 'PENDING')
+          });
+          if (results.length >= 4) break;
+        }
+      }
+    }
+
+    return results;
+  }
+
+  getSpecimenDimensionValue(dimKey: string, planIndex: number, testIndex: number): string {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    const params: any[] = test?.parameters || [];
+    const spm = this.layoutRendererComponent?.specimens?.[0];
+
+    if (dimKey === 'thickness') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('thickness'));
+      return String(pMatch?.value ?? spm?.thickness ?? this.sample?.thickness ?? '—');
+    }
+    if (dimKey === 'width') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('width'));
+      return String(pMatch?.value ?? spm?.width ?? this.sample?.width ?? '—');
+    }
+    if (dimKey === 'gaugeLength') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('original gauge'));
+      return String(pMatch?.value ?? spm?.gaugeLength ?? '50.0');
+    }
+    if (dimKey === 'finalLength') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('final gauge'));
+      return String(pMatch?.value ?? spm?.finalLength ?? '—');
+    }
+    if (dimKey === 'diameter') {
+      const pMatch = params.find(pm => (pm.parameterName || '').toLowerCase().includes('diameter'));
+      return String(pMatch?.value ?? spm?.diameter ?? this.sample?.diameter ?? '—');
+    }
+    return '—';
+  }
+
+  hasFormulaParameters(planIndex: number, testIndex: number): boolean {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    return (test?.parameters || []).some((pm: any) => pm.isCalculated || pm.formulaExpression);
+  }
+
+  getFormulaParametersList(planIndex: number, testIndex: number): any[] {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    return (test?.parameters || []).filter((pm: any) => pm.isCalculated || pm.formulaExpression);
+  }
+
+  // ================================================================
   // Phase 2A: Equipment Dropdown
   // ================================================================
   getEquipmentDropdown = (term: string, page: number, pageSize: number): Observable<any[]> =>
@@ -3152,7 +3368,25 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     }
     // Avoid duplicates
     if (!this.selectedEquipmentMap[headerId].find((e: any) => e.id === selectedItem.id)) {
-      this.selectedEquipmentMap[headerId].push({ id: selectedItem.id, name: selectedItem.name });
+      this.selectedEquipmentMap[headerId].push({
+        id: selectedItem.id,
+        name: selectedItem.name,
+        calibrationRequired: selectedItem.calibrationRequired,
+        nextCalibrationDueDate: selectedItem.nextCalibrationDueDate
+      });
+      // Query full equipment details to check calibration validity
+      this.equipmentService.getEquipmentById(selectedItem.id).subscribe({
+        next: (eqDetails: any) => {
+          const item = this.selectedEquipmentMap[headerId]?.find((e: any) => e.id === selectedItem.id);
+          if (item && eqDetails) {
+            item.calibrationRequired = eqDetails.calibrationRequired;
+            item.nextCalibrationDueDate = eqDetails.nextCalibrationDueDate;
+            item.labRoomName = eqDetails.labRoom?.roomName || '';
+            this.cdr.markForCheck();
+          }
+        },
+        error: () => {}
+      });
     }
   }
 
@@ -4371,5 +4605,377 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges {
     window.print();
   }
 
-}
 
+
+  // ================================================================
+  // Material Specification Condition Filter Engine
+  // ================================================================
+  loadConditionDropdowns(): void {
+    this.loadingConditions = true;
+    this.dimensionalFactorService.getDimensionalFactorDropdown('', 1, 100).subscribe({
+      next: (res: any) => { this.dimensionalFactorsList = res?.items || res?.data || res || []; },
+      error: () => {}
+    });
+    this.heatTreatmentService.getHeatTreatmentDropdown('', 1, 100).subscribe({
+      next: (res: any) => { this.heatTreatmentsList = res?.items || res?.data || res || []; },
+      error: () => {}
+    });
+    this.productConditionService.getProductConditionDropdown('', 1, 100).subscribe({
+      next: (res: any) => {
+        const items = res?.items || res?.data || res || [];
+        this.productConditions1List = items;
+        this.productConditions2List = items;
+      },
+      error: () => {}
+    });
+    this.specimenOrientationService.getSpecimenOrientationDropdown('', 1, 100).subscribe({
+      next: (res: any) => { this.specimenOrientationsList = res?.items || res?.data || res || []; },
+      error: () => {}
+    });
+  }
+
+  getConditionFilter(headerId: number) {
+    if (!this.selectedConditionsMap[headerId]) {
+      this.selectedConditionsMap[headerId] = {
+        dimensionalFactorID: null,
+        heatTreatmentID: null,
+        productConditionID1: null,
+        productConditionID2: null,
+        specimenOrientationID: null
+      };
+    }
+    return this.selectedConditionsMap[headerId];
+  }
+
+  isEquipmentCalibrated(equipment: any): boolean {
+    if (!equipment) return true;
+    if (equipment.calibrationRequired === false) return true;
+    const dueDate = equipment.nextCalibrationDueDate || equipment.nextCalibrationDate;
+    if (!dueDate) return true;
+    const due = new Date(dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return due >= today;
+  }
+
+  getEquipmentCalibrationText(equipment: any): string {
+    if (!equipment) return 'Verified';
+    if (equipment.calibrationRequired === false) return 'Not Required';
+    const dueDate = equipment.nextCalibrationDueDate || equipment.nextCalibrationDate;
+    if (!dueDate) return 'Valid (On File)';
+    const d = new Date(dueDate);
+    const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return this.isEquipmentCalibrated(equipment) ? `Valid (${dateStr})` : `EXPIRED (${dateStr})`;
+  }
+
+  onSpecificationConditionChanged(planIndex: number, testIndex: number): void {
+    const plan = this.plans[planIndex];
+    const test = plan?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+
+    const headerId = test.headerId;
+    const gradeId = Number(test.specification1 || test.specification2 || plan.specification1 || 0);
+    const filter = this.getConditionFilter(headerId);
+
+    const applyLines = (lines: any[]) => {
+      if (!lines || lines.length === 0) return;
+      const targetLabTestId = test.laboratoryTestId || test.labTestId;
+      
+      const matched = lines.filter((line: any) => {
+        if (targetLabTestId && line.laboratoryTestID && line.laboratoryTestID !== targetLabTestId) {
+          return false;
+        }
+        if (filter.dimensionalFactorID && line.dimensionalFactorID && line.dimensionalFactorID !== Number(filter.dimensionalFactorID)) {
+          return false;
+        }
+        if (filter.heatTreatmentID && line.heatTreatmentID && line.heatTreatmentID !== Number(filter.heatTreatmentID)) {
+          return false;
+        }
+        if (filter.productConditionID1 && line.productConditionID1 && line.productConditionID1 !== Number(filter.productConditionID1)) {
+          return false;
+        }
+        if (filter.productConditionID2 && line.productConditionID2 && line.productConditionID2 !== Number(filter.productConditionID2)) {
+          return false;
+        }
+        if (filter.specimenOrientationID && line.specimenOrientationID && line.specimenOrientationID !== Number(filter.specimenOrientationID)) {
+          return false;
+        }
+        return true;
+      });
+
+      this.matchedConditionLinesCount[headerId] = matched.length;
+
+      const paramsFA = this.getParameters(planIndex, testIndex);
+      if (paramsFA && paramsFA.length > 0) {
+        matched.forEach((mLine: any) => {
+          for (let i = 0; i < paramsFA.length; i++) {
+            const group = paramsFA.at(i);
+            const pId = group.get('parameterID')?.value;
+            const pName = (group.get('parameterName')?.value || '').toLowerCase();
+            const mName = (mLine.parameterName || '').toLowerCase();
+
+            if ((pId && mLine.parameterID && pId === mLine.parameterID) || (pName && mName && pName === mName)) {
+              if (mLine.minValue !== undefined) group.get('minValue')?.setValue(mLine.minValue);
+              if (mLine.maxValue !== undefined) group.get('maxValue')?.setValue(mLine.maxValue);
+              if (mLine.unitName && !group.get('unit')?.value) group.get('unit')?.setValue(mLine.unitName);
+              if (mLine.equation) group.get('formulaExpression')?.setValue(mLine.equation);
+              if (mLine.acceptanceCriteria) group.get('acceptanceCriteria')?.setValue(mLine.acceptanceCriteria);
+              break;
+            }
+          }
+        });
+      }
+
+      this.autoEvaluateAllFormulas();
+      this.cdr.markForCheck();
+      this.toastService.show(`Conditions applied: ${matched.length} specification rule(s) active.`, 'info');
+    };
+
+    if (gradeId > 0) {
+      if (this.cachedGradeSpecLines[gradeId]) {
+        applyLines(this.cachedGradeSpecLines[gradeId]);
+      } else {
+        this.materialSpecService.getMechanicalLimitsByGrade(gradeId).subscribe({
+          next: (lines: any[]) => {
+            this.cachedGradeSpecLines[gradeId] = lines || [];
+            applyLines(this.cachedGradeSpecLines[gradeId]);
+          },
+          error: () => {
+            this.toastService.show('Failed to fetch grade specification conditions', 'warning');
+          }
+        });
+      }
+    }
+  }
+
+  resetConditionFilters(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    this.selectedConditionsMap[test.headerId] = {
+      dimensionalFactorID: null,
+      heatTreatmentID: null,
+      productConditionID1: null,
+      productConditionID2: null,
+      specimenOrientationID: null
+    };
+    const f = this.selectedConditionsMap[test.headerId] as any;
+    f.dimensionalFactorItem = null;
+    f.heatTreatmentItem = null;
+    f.productCondition1Item = null;
+    f.productCondition2Item = null;
+    f.specimenOrientationItem = null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+
+
+  // ================================================================
+  // Searchable Dropdowns for Condition Engine & Layout Selection
+  // ================================================================
+  fetchDimensionalFactors = (term: string, page: number, pageSize: number) => {
+    return this.dimensionalFactorService.getDimensionalFactorDropdown(term, page, pageSize);
+  };
+
+  fetchHeatTreatments = (term: string, page: number, pageSize: number) => {
+    return this.heatTreatmentService.getHeatTreatmentDropdown(term, page, pageSize);
+  };
+
+  fetchProductConditions1 = (term: string, page: number, pageSize: number) => {
+    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
+  };
+
+  fetchProductConditions2 = (term: string, page: number, pageSize: number) => {
+    return this.productConditionService.getProductConditionDropdown(term, page, pageSize);
+  };
+
+  fetchSpecimenOrientations = (term: string, page: number, pageSize: number) => {
+    return this.specimenOrientationService.getSpecimenOrientationDropdown(term, page, pageSize);
+  };
+
+  fetchLayoutTemplates = (term: string, page: number, pageSize: number): Observable<any[]> => {
+    const termLower = (term || '').toLowerCase().trim();
+    const items: any[] = [];
+    const autoLabel = `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}`;
+    if (!termLower || autoLabel.toLowerCase().includes(termLower)) {
+      items.push({ id: null, name: autoLabel });
+    }
+    const list = this.availableLayoutTemplates || [];
+    for (const t of list) {
+      const name = `${t.layoutName} (${t.layoutCode || 'Layout'})`;
+      if (!termLower || name.toLowerCase().includes(termLower)) {
+        items.push({ id: t.id, name });
+      }
+    }
+    if (!termLower || 'standard layout (no template)'.includes(termLower)) {
+      items.push({ id: -1, name: 'Standard Layout (No Template)' });
+    }
+    return of(items.slice(page * pageSize, (page + 1) * pageSize));
+  };
+
+  get selectedLayoutItem(): any {
+    if (this.selectedLayoutTemplateId === -1) {
+      return { id: -1, name: 'Standard Layout (No Template)' };
+    }
+    if (this.selectedLayoutTemplateId === null || this.selectedLayoutTemplateId === undefined) {
+      return { id: null, name: `Auto: ${this.currentTestLayout ? this.currentTestLayout.layoutName : 'Default'}` };
+    }
+    const found = this.availableLayoutTemplates?.find(t => t.id === this.selectedLayoutTemplateId);
+    return found ? { id: found.id, name: `${found.layoutName} (${found.layoutCode || 'Layout'})` } : null;
+  }
+
+  onLayoutItemSelected(item: any): void {
+    const id = item && item.id !== undefined ? item.id : null;
+    this.onLayoutTemplateSelect(id, true);
+  }
+
+  getDimensionalFactorItem(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).dimensionalFactorItem !== undefined) return (f as any).dimensionalFactorItem;
+    if (f.dimensionalFactorID && this.dimensionalFactorsList?.length) {
+      const m = this.dimensionalFactorsList.find(x => (x.id || x.dimensionalFactorID) === f.dimensionalFactorID);
+      if (m) {
+        (f as any).dimensionalFactorItem = { id: m.id || m.dimensionalFactorID, name: m.name || m.factorName || m.dimensionalFactorName };
+        return (f as any).dimensionalFactorItem;
+      }
+    }
+    return null;
+  }
+
+  getHeatTreatmentItem(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).heatTreatmentItem !== undefined) return (f as any).heatTreatmentItem;
+    if (f.heatTreatmentID && this.heatTreatmentsList?.length) {
+      const m = this.heatTreatmentsList.find(x => (x.id || x.heatTreatmentID) === f.heatTreatmentID);
+      if (m) {
+        (f as any).heatTreatmentItem = { id: m.id || m.heatTreatmentID, name: m.name || m.heatTreatmentName };
+        return (f as any).heatTreatmentItem;
+      }
+    }
+    return null;
+  }
+
+  getProductCondition1Item(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).productCondition1Item !== undefined) return (f as any).productCondition1Item;
+    if (f.productConditionID1 && this.productConditions1List?.length) {
+      const m = this.productConditions1List.find(x => (x.id || x.productConditionID) === f.productConditionID1);
+      if (m) {
+        (f as any).productCondition1Item = { id: m.id || m.productConditionID, name: m.name || m.conditionName };
+        return (f as any).productCondition1Item;
+      }
+    }
+    return null;
+  }
+
+  getProductCondition2Item(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).productCondition2Item !== undefined) return (f as any).productCondition2Item;
+    if (f.productConditionID2 && this.productConditions2List?.length) {
+      const m = this.productConditions2List.find(x => (x.id || x.productConditionID) === f.productConditionID2);
+      if (m) {
+        (f as any).productCondition2Item = { id: m.id || m.productConditionID, name: m.name || m.conditionName };
+        return (f as any).productCondition2Item;
+      }
+    }
+    return null;
+  }
+
+  getSpecimenOrientationItem(headerId: number): any {
+    const f = this.getConditionFilter(headerId);
+    if ((f as any).specimenOrientationItem !== undefined) return (f as any).specimenOrientationItem;
+    if (f.specimenOrientationID && this.specimenOrientationsList?.length) {
+      const m = this.specimenOrientationsList.find(x => (x.id || x.specimenOrientationID) === f.specimenOrientationID);
+      if (m) {
+        (f as any).specimenOrientationItem = { id: m.id || m.specimenOrientationID, name: m.name || m.orientationName };
+        return (f as any).specimenOrientationItem;
+      }
+    }
+    return null;
+  }
+
+  onDimensionalFactorSelected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.dimensionalFactorID = item ? item.id : null;
+    (filter as any).dimensionalFactorItem = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onHeatTreatmentSelected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.heatTreatmentID = item ? item.id : null;
+    (filter as any).heatTreatmentItem = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onProductCondition1Selected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.productConditionID1 = item ? item.id : null;
+    (filter as any).productCondition1Item = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onProductCondition2Selected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.productConditionID2 = item ? item.id : null;
+    (filter as any).productCondition2Item = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  onSpecimenOrientationSelected(planIndex: number, testIndex: number, item: any): void {
+    const test = this.plans[planIndex]?.tests?.[testIndex];
+    if (!test || !test.headerId) return;
+    const filter = this.getConditionFilter(test.headerId);
+    filter.specimenOrientationID = item ? item.id : null;
+    (filter as any).specimenOrientationItem = item || null;
+    this.onSpecificationConditionChanged(planIndex, testIndex);
+  }
+
+  
+  // ================================================================
+  // Case Details & Quality Dossier Helper Methods (Tab 2)
+  // ================================================================
+  getAllCaseTestsList(): any[] {
+    const list: any[] = [];
+    if (!this.plans?.length) return list;
+    this.plans.forEach((plan: any, pIdx: number) => {
+      (plan.tests || []).forEach((test: any, tIdx: number) => {
+        list.push({
+          planIndex: pIdx,
+          testIndex: tIdx,
+          testName: test.name || plan.type,
+          methodName: plan.methodName || test.methodName || 'Standard Method',
+          specification: test.specification || plan.specification || 'Standard Spec',
+          quantity: test.plannedQuantity || 1,
+          status: test.status || 'In Progress',
+          headerId: test.headerId,
+          parametersCount: test.parameters?.length || 0,
+          isOverallPass: test.isOverallPass
+        });
+      });
+    });
+    return list;
+  }
+
+  selectTestFromCaseDossier(planIndex: number, testIndex: number): void {
+    this.selectPlanTab(planIndex);
+    this.switchTab('execution');
+  }
+
+  getSampleStatusBadgeClass(status: string | null | undefined): string {
+    if (!status) return 'badge-neutral';
+    const s = status.toLowerCase();
+    if (s.includes('completed') || s.includes('approved') || s.includes('pass')) return 'badge-success';
+    if (s.includes('progress') || s.includes('started')) return 'badge-warning';
+    if (s.includes('rejected') || s.includes('fail')) return 'badge-danger';
+    return 'badge-info';
+  }
+
+}

@@ -31,14 +31,14 @@
         <span class="conformity-divider"></span>
         <div class="d-flex align-items-center gap-2">
           <span class="info-label"><i class="bi bi-shield-check me-2 text-danger"></i><span>Conformity:</span></span>
-          <select class="form-select form-select-sm compact-select" formControlName="statementOfConformity">
+          <select class="form-select form-select-sm compact-select" formControlName="statementOfConformity" (change)="onConformityChange()">
             <option>Applicable</option>
             <option>Not Applicable</option>
           </select>
         </div>
         <div class="d-flex align-items-center gap-2">
           <span class="info-label"><i class="bi bi-rulers me-2 text-danger"></i><span>Decision Rule:</span></span>
-          <select class="form-select form-select-sm compact-select" formControlName="decisionRule">
+          <select class="form-select form-select-sm compact-select" formControlName="decisionRule" (change)="onDecisionRuleChange()">
             <option>Without taking MOU into account</option>
             <option>With MOU consideration</option>
             <option>Not Applicable</option>

@@ -191,7 +191,7 @@
                         <small *ngIf="hp.get('parameterID')?.touched && hp.get('parameterID')?.hasError('required')" class="text-danger">Parameter is required.</small>
                       </td>
                       <td>
-                        <select class="form-select form-select-sm" formControlName="parameterUnitEquivalentID">
+                        <select class="form-select form-select-sm" formControlName="parameterUnitEquivalentID" [disabled]="isViewMode">
                           <option *ngIf="!getRowEquivalentUnits(hp).length" [ngValue]="null" disabled>Select Parameter first</option>
                           <option *ngFor="let unit of getRowEquivalentUnits(hp)" [ngValue]="unit.equivalentId">{{ unit.name }}</option>
                         </select>
@@ -278,7 +278,7 @@
               <div class="row gy-3 mb-2">
                 <div class="col-md-3">
                   <label class="form-label">Grade <span class="text-danger">*</span></label>
-                  <input class="form-control form-control-sm" formControlName="grade" placeholder="Enter grade" maxlength="100"
+                  <input class="form-control form-control-sm" formControlName="grade" placeholder="Enter grade" maxlength="100"  [readonly]="isViewMode"
                     (input)="onGradeInput(gi, $any($event.target).value)"
                     [ngClass]="{ 'is-invalid': grade.get('grade')?.touched && grade.get('grade')?.invalid }" />
                   <span *ngIf="grade.get('grade')?.touched && grade.get('grade')?.invalid" class="text-danger small">Grade is required.</span>

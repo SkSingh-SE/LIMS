@@ -7,7 +7,7 @@ import { PaginationComponent } from '../../../utility/components/pagination/pagi
 
 @Component({
     selector: 'app-employee-performance-record',
-    imports: [ CommonModule, ReactiveFormsModule, FormsModule, PaginationComponent ],
+    imports: [CommonModule, ReactiveFormsModule, FormsModule, PaginationComponent],
     templateUrl: './employee-performance-record.component.html',
     styleUrl: './employee-performance-record.component.css',
 })
@@ -16,6 +16,7 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
     @Input() employeeName: string = '';
     @Input() designationName: string = '';
     @Input() isViewMode: boolean = false;
+    @Input() isViewMode1: boolean = false;
     @ViewChild('filterModal') filterModal!: ElementRef;
 
     showPerformanceModal = signal<boolean>(false);
@@ -43,9 +44,9 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
     // Column definitions
     columns = [
         { key: 'reviewPeriod', type: 'string', label: 'Review Period', filter: true },
-        { key: 'technicalRating', type: 'number', label: 'Technical Rating', filter: true },
-        { key: 'behavioralRating', type: 'number', label: 'Behavioral Rating', filter: true },
-        { key: 'overallRating', type: 'number', label: 'Overall Rating', filter: true },
+        { key: 'technicalRating', type: 'number', label: 'Technical Rating', filter: false },
+        { key: 'behavioralRating', type: 'number', label: 'Behavioral Rating', filter: false },
+        { key: 'overallRating', type: 'number', label: 'Overall Rating', filter: false },
         { key: 'reviewerName', type: 'string', label: 'Reviewer', filter: true },
         { key: 'reviewDate', type: 'date', label: 'Review Date', filter: true },
         { key: 'status', type: 'string', label: 'Status', filter: true },
@@ -84,7 +85,7 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
         private fb: FormBuilder,
         private performanceService: EmployeePerformanceService,
         private toastService: ToastService
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.initForm();
@@ -227,13 +228,13 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
 
             // Clamp to viewport so the popup doesn't overflow
             requestAnimationFrame(() => {
-              const modalRect = modal.getBoundingClientRect();
-              if (modalRect.right > window.innerWidth) {
-                modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
-              }
-              if (modalRect.bottom > window.innerHeight) {
-                modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
-              }
+                const modalRect = modal.getBoundingClientRect();
+                if (modalRect.right > window.innerWidth) {
+                    modal.style.left = `${window.innerWidth - modalRect.width - 10 + window.scrollX}px`;
+                }
+                if (modalRect.bottom > window.innerHeight) {
+                    modal.style.top = `${rect.top + window.scrollY - modalRect.height - 5}px`;
+                }
             });
         }
     }
@@ -329,6 +330,7 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
     }
 
     viewPerformance(record: any) {
+        this.isViewMode1 = true;
         this.editingId = record.id;
         this.performanceForm.patchValue({
             ...record,
@@ -339,6 +341,7 @@ export class EmployeePerformanceRecordComponent implements OnInit, OnChanges {
     }
 
     editPerformance(record: any) {
+        this.isViewMode1 = false;
         if (this.isViewMode) return;
         this.editingId = record.id;
         this.performanceForm.patchValue({

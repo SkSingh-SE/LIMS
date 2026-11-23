@@ -1,4 +1,4 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+/* Fonts loaded via preconnect in index.html */
 @import "quill/dist/quill.snow.css";
 
 /* You can add global styles to this file, and also import other style files */
@@ -14,6 +14,11 @@
   z-index: 1070 !important;
 }
 
+/* Ensure the global top navbar stays above in-page sticky headers, cards, and tables */
+nav.fixed-top {
+  z-index: 1045 !important;
+}
+
 :root {
   --nav-height: 60px;
   --transition-speed: 0.3s;
@@ -22,6 +27,7 @@
   --select2-selection-border-radius: 5px;
   --select2-selection-choice-line-height: 23px;
   accent-color: var(--primary-color);
+  --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-xs: 0.72rem;
   --font-sm: 0.78rem;
   --font-md: 0.875rem;
@@ -82,7 +88,7 @@
 
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-size: 0.8125rem;
   line-height: 1.5;
   color: #1F2937;
@@ -93,7 +99,7 @@ body {
    Guarantees 100% horizontal baseline alignment for inputs
 ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• */
 .form-label {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.76rem !important;
   font-weight: 500 !important;
   color: #374151 !important;
@@ -119,7 +125,7 @@ body {
    Theme: Poppins | High Density | 0.72rem - 0.75rem
 ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••• */
 .form-field-hint {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 400 !important;
   color: #64748b !important;
@@ -138,7 +144,7 @@ body {
 .field-due-badge {
   display: inline-flex !important;
   align-items: center !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 500 !important;
   color: #334155 !important;
@@ -1493,6 +1499,7 @@ a.btn i.bi,
 .form-select {
   background-image: var(--form-select-arrow) !important;
   accent-color: var(--primary-color);
+  --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .form-select option:checked {
@@ -2741,7 +2748,7 @@ fieldset.border legend i {
   font-weight: 500;
   color: var(--neutral-700);
   margin-bottom: 0.28rem;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Compact label (use alongside form-control-sm) Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -2750,7 +2757,7 @@ fieldset.border legend i {
   font-weight: 600;
   color: var(--neutral-700);
   margin-bottom: 0.15rem;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Metal Box & Title Label Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -2759,7 +2766,7 @@ fieldset.border legend i {
   font-weight: 600;
   color: var(--neutral-700);
   margin-bottom: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 .metal-box {
@@ -2773,7 +2780,7 @@ fieldset.border legend i {
 .form-control,
 .form-select {
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   border-radius: var(--radius-sm) !important;
   border-color: var(--neutral-300);
   color: var(--neutral-900);
@@ -2784,7 +2791,7 @@ fieldset.border legend i {
 .form-control-sm,
 .form-select-sm {
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   border-radius: var(--radius-sm) !important;
   border-color: var(--neutral-300);
   color: var(--neutral-900);
@@ -2979,7 +2986,7 @@ textarea:focus-visible,
   padding: 0.75rem 1.25rem !important;
   margin-bottom: 1rem !important;
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
 }
 
 .alert-dismissible {
@@ -3219,7 +3226,7 @@ textarea:focus-visible,
   border-radius: var(--radius-sm) !important;
   min-height: 36px !important;
   font-size: var(--font-sm) !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   background-color: #fff !important;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -3628,7 +3635,7 @@ textarea:focus-visible,
 .lims-suggestion-chip {
   display: inline-flex;
   align-items: center;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-size: var(--font-xs, 0.72rem);
   font-weight: 500;
   padding: 1px 8px;
@@ -3885,6 +3892,7 @@ textarea:focus-visible,
   cursor: pointer;
   padding: 0;
   accent-color: var(--primary-color);
+  --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Modern browser fallback */
 }
 
@@ -4016,7 +4024,7 @@ input[type="file"].form-control::-webkit-file-upload-button {
   border-radius: 0 !important;
   font-size: 0.78rem !important;
   font-weight: 500 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   cursor: pointer !important;
   transition: all 0.15s ease-in-out !important;
 }
@@ -4058,7 +4066,7 @@ input[type="file"].form-control::file-selector-button {
   border-radius: 0 !important;
   font-size: 0.78rem !important;
   font-weight: 500 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   cursor: pointer !important;
   transition: all 0.15s ease-in-out !important;
 }
@@ -4527,7 +4535,7 @@ input[type="file"].form-control:hover::file-selector-button {
   background: var(--primary-100);
   border-color: var(--primary-color);
   color: var(--primary-color);
-  content: 'Ã¢Å“â€œ';
+  content: '\2713';
 }
 
 /* Active / current step */
@@ -4579,7 +4587,7 @@ input[type="file"].form-control:hover::file-selector-button {
   border-radius: 8px;
   padding: 6px 12px;
   transition: all 0.2s ease;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 
 .stat-badge-pill:hover {
@@ -4743,7 +4751,7 @@ fieldset.border {
 
 /* Base LIMS Action Button */
 .btn-lims {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.76rem !important;
   font-weight: 500 !important;
   padding: 4px 14px !important;
@@ -5523,7 +5531,7 @@ input[type="checkbox"]:checked {
   border-radius: 6px;
   padding: 3px 10px;
   font-size: 0.75rem;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   color: #334155;
   transition: all 0.15s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -5603,7 +5611,7 @@ input[type="checkbox"]:checked {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-size: 0.76rem;
   font-weight: 600;
   padding: 4px 10px;
@@ -7654,7 +7662,7 @@ fieldset.fieldset-card {
 legend.form-section-legend,
 fieldset>legend.w-auto,
 fieldset>legend {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.82rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.2px;
@@ -7694,21 +7702,83 @@ fieldset.fieldset-collapsed {
   z-index: 100;
 }
 
-/* GLOBAL ICON & SPACING UTILITIES (Enforces strict min 5-6px spacing) */
-.me-1\.5 {
-  margin-right: 0.375rem !important;
-  /* 6px */
-}
+/* GLOBAL ULTRA-HIGH DENSITY SPACING UTILITIES (0.5 = 2px, 1.5 = 6px, 2.5 = 10px)
+   Enforces ISO 17025 Ultra-High Density & Global Icon-to-Label Spacing Standards */
 
-.ms-1\.5 {
-  margin-left: 0.375rem !important;
-  /* 6px */
-}
+/* ── 1.5 Spacing (0.375rem / 6px) ── */
+.p-1\.5 { padding: 0.375rem !important; }
+.pt-1\.5 { padding-top: 0.375rem !important; }
+.pb-1\.5 { padding-bottom: 0.375rem !important; }
+.ps-1\.5 { padding-left: 0.375rem !important; }
+.pe-1\.5 { padding-right: 0.375rem !important; }
+.px-1\.5 { padding-left: 0.375rem !important; padding-right: 0.375rem !important; }
+.py-1\.5 { padding-top: 0.375rem !important; padding-bottom: 0.375rem !important; }
 
-.gap-1\.5 {
-  gap: 0.375rem !important;
-  /* 6px */
-}
+.m-1\.5 { margin: 0.375rem !important; }
+.mt-1\.5 { margin-top: 0.375rem !important; }
+.mb-1\.5 { margin-bottom: 0.375rem !important; }
+.ms-1\.5 { margin-left: 0.375rem !important; }
+.me-1\.5 { margin-right: 0.375rem !important; }
+.mx-1\.5 { margin-left: 0.375rem !important; margin-right: 0.375rem !important; }
+.my-1\.5 { margin-top: 0.375rem !important; margin-bottom: 0.375rem !important; }
+
+.gap-1\.5 { gap: 0.375rem !important; }
+.row-gap-1\.5 { row-gap: 0.375rem !important; }
+.column-gap-1\.5 { column-gap: 0.375rem !important; }
+
+.g-1\.5 { --bs-gutter-x: 0.375rem; --bs-gutter-y: 0.375rem; }
+.gx-1\.5 { --bs-gutter-x: 0.375rem; }
+.gy-1\.5 { --bs-gutter-y: 0.375rem; }
+
+/* ── 0.5 Spacing (0.125rem / 2px) ── */
+.p-0\.5 { padding: 0.125rem !important; }
+.pt-0\.5 { padding-top: 0.125rem !important; }
+.pb-0\.5 { padding-bottom: 0.125rem !important; }
+.ps-0\.5 { padding-left: 0.125rem !important; }
+.pe-0\.5 { padding-right: 0.125rem !important; }
+.px-0\.5 { padding-left: 0.125rem !important; padding-right: 0.125rem !important; }
+.py-0\.5 { padding-top: 0.125rem !important; padding-bottom: 0.125rem !important; }
+
+.m-0\.5 { margin: 0.125rem !important; }
+.mt-0\.5 { margin-top: 0.125rem !important; }
+.mb-0\.5 { margin-bottom: 0.125rem !important; }
+.ms-0\.5 { margin-left: 0.125rem !important; }
+.me-0\.5 { margin-right: 0.125rem !important; }
+.mx-0\.5 { margin-left: 0.125rem !important; margin-right: 0.125rem !important; }
+.my-0\.5 { margin-top: 0.125rem !important; margin-bottom: 0.125rem !important; }
+
+.gap-0\.5 { gap: 0.125rem !important; }
+.row-gap-0\.5 { row-gap: 0.125rem !important; }
+.column-gap-0\.5 { column-gap: 0.125rem !important; }
+
+.g-0\.5 { --bs-gutter-x: 0.125rem; --bs-gutter-y: 0.125rem; }
+.gx-0\.5 { --bs-gutter-x: 0.125rem; }
+.gy-0\.5 { --bs-gutter-y: 0.125rem; }
+
+/* ── 2.5 Spacing (0.625rem / 10px) ── */
+.p-2\.5 { padding: 0.625rem !important; }
+.pt-2\.5 { padding-top: 0.625rem !important; }
+.pb-2\.5 { padding-bottom: 0.625rem !important; }
+.ps-2\.5 { padding-left: 0.625rem !important; }
+.pe-2\.5 { padding-right: 0.625rem !important; }
+.px-2\.5 { padding-left: 0.625rem !important; padding-right: 0.625rem !important; }
+.py-2\.5 { padding-top: 0.625rem !important; padding-bottom: 0.625rem !important; }
+
+.m-2\.5 { margin: 0.625rem !important; }
+.mt-2\.5 { margin-top: 0.625rem !important; }
+.mb-2\.5 { margin-bottom: 0.625rem !important; }
+.ms-2\.5 { margin-left: 0.625rem !important; }
+.me-2\.5 { margin-right: 0.625rem !important; }
+.mx-2\.5 { margin-left: 0.625rem !important; margin-right: 0.625rem !important; }
+.my-2\.5 { margin-top: 0.625rem !important; margin-bottom: 0.625rem !important; }
+
+.gap-2\.5 { gap: 0.625rem !important; }
+.row-gap-2\.5 { row-gap: 0.625rem !important; }
+.column-gap-2\.5 { column-gap: 0.625rem !important; }
+
+.g-2\.5 { --bs-gutter-x: 0.625rem; --bs-gutter-y: 0.625rem; }
+.gx-2\.5 { --bs-gutter-x: 0.625rem; }
+.gy-2\.5 { --bs-gutter-y: 0.625rem; }
 
 /* GLOBAL AUDIT CELL (Modified By & Date Time in List Tables - 2-Line Compact Stacked) */
 .cell-audit {
@@ -8091,7 +8161,7 @@ fieldset.fieldset-collapsed {
 }
 
 .lims-fieldset legend {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.78rem !important;
   font-weight: 600 !important;
   color: var(--primary-color, #da261c) !important;
@@ -8105,7 +8175,7 @@ fieldset.fieldset-collapsed {
   display: inline-flex !important;
   align-items: center !important;
   gap: 0.3rem !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 500 !important;
   padding: 0.2rem 0.6rem !important;
@@ -8263,7 +8333,7 @@ fieldset.lims-fieldset legend {
   display: inline-flex !important;
   align-items: center !important;
   gap: 3px !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.68rem !important;
   font-weight: 500 !important;
   padding: 1px 8px !important;
@@ -8327,7 +8397,7 @@ fieldset.lims-fieldset legend {
   justify-content: center !important;
   border: none !important;
   background: transparent !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.73rem !important;
   font-weight: 500 !important;
   padding: 0 0.5rem !important;
@@ -8514,7 +8584,7 @@ fieldset.lims-fieldset legend {
   border-radius: 3px !important;
   background: transparent !important;
   color: #475569 !important;
-  font-family: 'Poppins', sans-serif !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
   font-size: 0.74rem !important;
   font-weight: 500 !important;
   padding: 0 6px !important;
@@ -8562,7 +8632,7 @@ fieldset.lims-fieldset legend {
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   font-weight: 500;
 }
 
@@ -8750,4 +8820,112 @@ button i.bi:only-child,
 /* Ensure Primary Fixed Navbar Always Remains Above Page Sub-Toolbars */
 app-navbar nav.fixed-top {
   z-index: 1045 !important;
+}
+
+.compact-label {
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  color: var(--neutral-700, #374151) !important;
+  margin-bottom: 0.15rem !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+}
+
+.compact-input {
+  height: 28px !important;
+  min-height: 28px !important;
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.5rem !important;
+  font-family: var(--font-family-base, 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif) !important;
+}
+
+/* ================================================================
+   MATERIAL SPECIFICATION CONDITION FILTER ENGINE (RESULT ENTRY)
+   Enterprise Ultra-High Density Standards
+   ================================================================ */
+.spec-condition-card {
+  border: 1px solid var(--neutral-200, #e2e8f0) !important;
+  border-radius: var(--radius-md, 6px) !important;
+  background-color: #ffffff !important;
+  overflow: hidden !important;
+}
+
+.spec-condition-header {
+  padding: 5px 8px !important;
+  background-color: var(--neutral-50, #f8fafc) !important;
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.spec-condition-body {
+  padding: 6px 8px !important;
+}
+
+.spec-condition-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 5px 8px !important;
+}
+
+.spec-cond-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.spec-cond-label {
+  font-size: 0.70rem !important;
+  font-weight: 600 !important;
+  color: var(--neutral-600, #475569) !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.spec-cond-select {
+  height: 26px !important;
+  min-height: 26px !important;
+  font-size: 0.74rem !important;
+  padding: 2px 6px !important;
+  border: 1px solid var(--neutral-300, #cbd5e1) !important;
+  border-radius: var(--radius-sm, 4px) !important;
+  background-color: #ffffff !important;
+  color: var(--neutral-800, #1e293b) !important;
+  width: 100% !important;
+}
+
+.spec-cond-select:focus {
+  border-color: var(--primary-color, #da261c) !important;
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.1) !important;
+  outline: none !important;
+}
+
+.spec-context-banner {
+  background-color: var(--neutral-50, #f8fafc) !important;
+  border: 1px solid var(--neutral-200, #e2e8f0) !important;
+  border-radius: var(--radius-sm, 4px) !important;
+  padding: 4px 6px !important;
+  margin-bottom: 6px !important;
+  font-size: 0.72rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.spec-match-chip {
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  padding: 1px 6px !important;
+  border-radius: 10px !important;
+  background-color: var(--success-surface, rgba(22, 163, 74, 0.1)) !important;
+  color: var(--success-main, #15803d) !important;
+  border: 1px solid var(--success-border, rgba(22, 163, 74, 0.25)) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
 }

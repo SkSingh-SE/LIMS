@@ -840,31 +840,40 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       });
     }
 
-    // Align parametersFormArray with initial count
+    // Align parametersFormArray with initial count (deferred to microtask to avoid NG0100 parent count mutation during ngOnInit)
     if (this.parametersFormArray && this.parametersFormArray.length > 0) {
       const base = this.getBaseParameterCount();
       if (base > 0) {
         const targetLen = count * base;
-        if (this.parametersFormArray.length > targetLen) {
-          while (this.parametersFormArray.length > targetLen) {
-            this.parametersFormArray.removeAt(this.parametersFormArray.length - 1);
-          }
-        } else if (this.parametersFormArray.length < targetLen) {
-          while (this.parametersFormArray.length < targetLen) {
-            const templateIdx = this.parametersFormArray.length % base;
-            const templateCtrl = this.parametersFormArray.at(templateIdx);
-            if (templateCtrl) {
-              const cloned = this.createParamControl({
-                ...templateCtrl.value,
-                id: null,
-                value: null,
-                resultStatus: null,
-                isWithinLimit: null,
-                remarks: ''
-              });
-              this.parametersFormArray.push(cloned);
+        if (this.parametersFormArray.length !== targetLen) {
+          Promise.resolve().then(() => {
+            if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
+            const liveBase = this.getBaseParameterCount();
+            const liveTarget = this.specimens.length * liveBase;
+            if (this.parametersFormArray.length > liveTarget) {
+              while (this.parametersFormArray.length > liveTarget) {
+                this.parametersFormArray.removeAt(this.parametersFormArray.length - 1);
+              }
+            } else if (this.parametersFormArray.length < liveTarget) {
+              while (this.parametersFormArray.length < liveTarget) {
+                const templateIdx = this.parametersFormArray.length % liveBase;
+                const templateCtrl = this.parametersFormArray.at(templateIdx);
+                if (!templateCtrl) break;
+                const cloned = this.createParamControl({
+                  ...templateCtrl.value,
+                  id: null,
+                  value: null,
+                  resultStatus: null,
+                  isWithinLimit: null,
+                  remarks: ''
+                });
+                this.parametersFormArray.push(cloned);
+              }
             }
-          }
+            this.hydrateSpecimensFromParameters();
+            this.recalculateSpecimens();
+            this.cdr.markForCheck();
+          });
         }
       }
     }

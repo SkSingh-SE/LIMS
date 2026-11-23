@@ -1,4 +1,4 @@
-<div *ngIf="visible" class="custom-modal-backdrop">
+<div *ngIf="visible" class="custom-modal-backdrop overflow-auto d-flex justify-content-center align-items-start p-4">
   <div class="custom-modal-dialog" style="max-width: 900px;">
     <div class="custom-modal-content">
       <div class="custom-modal-header d-flex justify-content-between align-items-center">
@@ -164,7 +164,8 @@
             <div class="card shadow-sm border-0">
               <div class="card-body">
                 <div class="mb-3">
-                  <label class="form-label fw-bold"><i class="bi bi-pencil-square me-1"></i><span>Type Formula</span></label>
+                  <label class="form-label fw-bold"><i class="bi bi-pencil-square me-1"></i><span>Type
+                      Formula</span></label>
                   <textarea class="form-control" rows="2" [(ngModel)]="smartFormulaInput" (input)="parseSmartInput()"
                     [placeholder]="parameterType === 'Dimensional' ? 'Type formula using factor names or codes, e.g. W0 * T0 or PI / 4 * (D0 ^ 2)' : 'Type formula using parameter names, e.g. (Carbon * 1000) / Manganese'"></textarea>
                   <small class="text-muted d-block mt-1">
@@ -191,8 +192,7 @@
                     <span *ngFor="let t of smartTokens" class="d-inline">
                       <span *ngIf="t.type === 'param'"
                         class="badge bg-success-subtle text-success border border-success me-1 mb-1"
-                        [title]="t.matched || t.token">{{ t.token }} <i
-                          class="bi bi-check-circle-fill ms-1"></i></span>
+                        [title]="t.matched || t.token">{{ t.token }} <i class="bi bi-check-circle-fill ms-1"></i></span>
                       <span *ngIf="t.type === 'number'"
                         class="badge bg-info-subtle text-info border border-info me-1 mb-1">{{ t.token }}</span>
                       <span *ngIf="t.type === 'operator' || t.type === 'paren' || t.type === 'comma'"
@@ -211,7 +211,8 @@
                     </div>
                   </div>
                   <div *ngIf="smartValid" class="mt-2 text-success fw-bold small">
-                    <i class="bi bi-check-circle-fill me-1"></i><span>Valid format. Click Apply below to build it.</span>
+                    <i class="bi bi-check-circle-fill me-1"></i><span>Valid format. Click Apply below to build
+                      it.</span>
                   </div>
                 </div>
               </div>
@@ -228,8 +229,8 @@
           <span *ngIf="isValidating" class="spinner-border spinner-border-sm me-1"></span>
           Validate
         </button>
-        <button *ngIf="currentMode === 'click'" type="button" class="btn btn-sm btn-primary px-4 shadow-sm" (click)="save()"
-          [disabled]="tokens.length > 0 && !isValid">
+        <button *ngIf="currentMode === 'click'" type="button" class="btn btn-sm btn-primary px-4 shadow-sm"
+          (click)="save()" [disabled]="tokens.length > 0 && !isValid">
           <i class="bi bi-check2-circle me-1"></i><span>Confirm & Save</span>
         </button>
         <button *ngIf="currentMode === 'smart'" type="button" class="btn btn-sm btn-success px-4 shadow-sm"

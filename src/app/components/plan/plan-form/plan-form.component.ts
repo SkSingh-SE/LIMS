@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
+﻿import { Component, Input, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, Observable, of, Subject } from 'rxjs';
 import { catchError, map, takeUntil, tap } from 'rxjs/operators';
@@ -453,7 +453,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
 
   onCombinedStandardSelected(item: any, methodIdx: number): void {
     const m = this.getCombinedMethods().at(methodIdx);
-    if (m) m.patchValue({ standardID: item?.id ?? null, standardName: item?.name ?? null });
+    const specId = item?.additionalValues?.testMethodSpecificationId ?? item?.id ?? null;
+    if (m) m.patchValue({ standardID: specId, standardName: item?.name ?? null });
   }
 
   onCombinedChemLabTestSelected(item: any, methodIdx: number): void {
@@ -639,7 +640,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
 
   onCombinedChemStandardSelected(item: any, methodIdx: number): void {
     const m = this.getCombinedChemMethods().at(methodIdx);
-    if (m) m.patchValue({ standardID: item?.id ?? null, standardName: item?.name ?? null });
+    const specId = item?.additionalValues?.testMethodSpecificationId ?? item?.id ?? null;
+    if (m) m.patchValue({ standardID: specId, standardName: item?.name ?? null });
   }
 
   buildCombinedGeneralLabTestFetchFn = () => {
@@ -1277,6 +1279,58 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       decisionRule: ['Not Applicable'],
       samples: this.fb.array([])
     });
+
+    this.planForm.get('statementOfConformity')?.valueChanges.subscribe(value => {
+      if (value === 'Applicable') {
+        const currentRule = this.planForm.get('decisionRule')?.value;
+        if (!currentRule || currentRule === 'Not Applicable') {
+          this.planForm.get('decisionRule')?.setValue('Without taking MOU into account', { emitEvent: false });
+        }
+      } else if (value === 'Not Applicable') {
+        if (this.planForm.get('decisionRule')?.value !== 'Not Applicable') {
+          this.planForm.get('decisionRule')?.setValue('Not Applicable', { emitEvent: false });
+        }
+      }
+    });
+
+    this.planForm.get('decisionRule')?.valueChanges.subscribe(rule => {
+      if (rule && rule !== 'Not Applicable') {
+        if (this.planForm.get('statementOfConformity')?.value !== 'Applicable') {
+          this.planForm.get('statementOfConformity')?.setValue('Applicable', { emitEvent: false });
+        }
+      } else if (rule === 'Not Applicable') {
+        if (this.planForm.get('statementOfConformity')?.value === 'Applicable') {
+          this.planForm.get('statementOfConformity')?.setValue('Not Applicable', { emitEvent: false });
+        }
+      }
+    });
+  }
+
+  onConformityChange(): void {
+    const conformity = this.planForm.get('statementOfConformity')?.value;
+    if (conformity === 'Applicable') {
+      const currentRule = this.planForm.get('decisionRule')?.value;
+      if (!currentRule || currentRule === 'Not Applicable') {
+        this.planForm.get('decisionRule')?.setValue('Without taking MOU into account');
+      }
+    } else if (conformity === 'Not Applicable') {
+      this.planForm.get('decisionRule')?.setValue('Not Applicable');
+    }
+    this.planForm.markAsDirty();
+  }
+
+  onDecisionRuleChange(): void {
+    const rule = this.planForm.get('decisionRule')?.value;
+    if (rule && rule !== 'Not Applicable') {
+      if (this.planForm.get('statementOfConformity')?.value !== 'Applicable') {
+        this.planForm.get('statementOfConformity')?.setValue('Applicable');
+      }
+    } else if (rule === 'Not Applicable') {
+      if (this.planForm.get('statementOfConformity')?.value !== 'Not Applicable') {
+        this.planForm.get('statementOfConformity')?.setValue('Not Applicable');
+      }
+    }
+    this.planForm.markAsDirty();
   }
 
   // Getters
@@ -3293,6 +3347,14 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   }
 
   updateFormFromPayload(payload: any): void {
+    let conformity = payload.statementOfConformity ?? 'Not Applicable';
+    let decisionRule = payload.decisionRule ?? 'Not Applicable';
+    if (conformity === 'Not Applicable') {
+      decisionRule = 'Not Applicable';
+    } else if (conformity === 'Applicable' && (!decisionRule || decisionRule === 'Not Applicable')) {
+      decisionRule = 'Without taking MOU into account';
+    }
+
     this.planForm.patchValue({
       id: payload.id ?? 0,
       caseNo: payload.caseNo ?? '',
@@ -3300,8 +3362,8 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
       urgent: payload.urgent ?? false,
       returnSample: payload.returnSample ?? false,
       notDestroyed: payload.notDestroyed ?? false,
-      statementOfConformity: payload.statementOfConformity ?? 'Not Applicable',
-      decisionRule: payload.decisionRule ?? 'Not Applicable'
+      statementOfConformity: conformity,
+      decisionRule: decisionRule
     });
 
     this.samples.clear();
@@ -4569,11 +4631,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   onTestMethodSpecificationSelected(item: any, si: number, pi: number, mi: number): void {
     const row = this.getMethodRows(si, pi).at(mi);
     if (!row) return;
+    const specId = item?.additionalValues?.testMethodSpecificationId ?? item?.id ?? null;
     row.patchValue({
-      standardID: item?.id ?? null,
+      standardID: specId,
       standardName: item?.name ?? ''
     });
-    this.checkAndSetPreparationRequired(row, row.get('testMethodID')?.value, item?.id, si);
+    this.checkAndSetPreparationRequired(row, row.get('testMethodID')?.value, specId, si);
     this.evaluateRowCompliance(si, pi, mi);
   }
 
@@ -4663,11 +4726,12 @@ export class PlanFormComponent implements CanComponentDeactivate, OnInit, OnDest
   onChemicalTestMethodSpecificationSelected(item: any, sampleIdx: number, planIdx: number, chemIdx: number, mIdx: number): void {
     const methodRow = this.getChemicalMethodRows(sampleIdx, planIdx, chemIdx)?.at(mIdx);
     if (!methodRow) return;
+    const specId = item?.additionalValues?.testMethodSpecificationId ?? item?.id ?? null;
     methodRow.patchValue({
-      standardID: item?.id ?? null,
+      standardID: specId,
       standardName: item?.name ?? ''
     });
-    this.checkAndSetPreparationRequired(methodRow, methodRow.get('testMethodID')?.value, item?.id, sampleIdx);
+    this.checkAndSetPreparationRequired(methodRow, methodRow.get('testMethodID')?.value, specId, sampleIdx);
     this.evaluateRowCompliance(sampleIdx, planIdx, mIdx, true);
   }
 

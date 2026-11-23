@@ -24,6 +24,16 @@ export class MaterialSpecificationService {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }
 
+  /** Lazy loading: header + header parameters + grades WITHOUT specification lines (each grade has linesLoaded=false). */
+  getMaterialSpecificationSummary(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/details-summary/${id}`);
+  }
+
+  /** Lazy loading: specification lines of one grade, fetched when the user opens that grade. */
+  getGradeSpecificationLines(gradeId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/grade-lines/${gradeId}`);
+  }
+
   // MS-A: detached deep-copy of a spec (IDs=0, Version cleared) to seed a new-version create form.
   getCloneTemplate(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/clone-template/${id}`);
@@ -72,6 +82,16 @@ export class MaterialSpecificationService {
   getMechanicalLimitsByGrade(gradeId: number, gradeId2?: number): Observable<any[]> {
     let url = `${this.apiUrl}/GetMechanicalLimitsByGrade?gradeId=${gradeId}`;
     if (gradeId2) url += `&gradeId2=${gradeId2}`;
+    return this.http.get<any[]>(url);
+  }
+
+  /** All specification lines of the grade(s) that apply to this test/method, with display names. */
+  getConditionOptions(gradeId: number, gradeId2?: number | null, laboratoryTestId?: number | null, testMethodId?: number | null, testKind?: 'general' | 'chemical' | null): Observable<any[]> {
+    let url = `${this.apiUrl}/condition-options?gradeId=${gradeId}`;
+    if (gradeId2) url += `&gradeId2=${gradeId2}`;
+    if (laboratoryTestId) url += `&laboratoryTestId=${laboratoryTestId}`;
+    if (testMethodId) url += `&testMethodId=${testMethodId}`;
+    if (testKind) url += `&testKind=${testKind}`;
     return this.http.get<any[]>(url);
   }
 }

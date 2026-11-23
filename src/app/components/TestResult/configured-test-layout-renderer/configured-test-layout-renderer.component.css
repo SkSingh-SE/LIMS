@@ -49,10 +49,53 @@
   background: #ffffff;
 }
 
-.section-card.half-width {
-  width: calc(50% - 0.25rem);
-  display: inline-block;
-  vertical-align: top;
+/* The layout hid the Unit column of a specimen matrix (it is the second cell of every row) */
+.hide-unit-col th:nth-child(2),
+.hide-unit-col td:nth-child(2) {
+  display: none;
+}
+
+/* Section width follows the layout: every section takes a full row unless the studio set "Half Width",
+   and two Half Width sections that follow each other share one row. */
+/* styles.css gives every .sections-stack a column direction with !important (the studio canvas uses it);
+   the result screen needs rows that wrap, so this has to be !important as well. Sections keep no gap between
+   rows (each card has its own top margin); two Half Width sections get 12px between them (bootstrap's gap-0
+   on the element is !important too). */
+.sections-stack {
+  display: flex;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  column-gap: 12px !important;
+  container-type: inline-size;
+}
+
+.sections-stack > .lims-section {
+  flex: 0 0 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sections-stack > .lims-section.half-width {
+  flex-basis: calc(50% - 6px);
+}
+
+/* an area too narrow for two tables side by side stacks them */
+@container (max-width: 640px) {
+  .sections-stack > .lims-section.half-width {
+    flex-basis: 100%;
+  }
+}
+
+:host(.print-mode) .sections-stack {
+  column-gap: 0 !important;
+}
+
+:host(.print-mode) .sections-stack > .lims-section.half-width {
+  flex-basis: 50%;
+}
+
+:host(.print-mode) .unsupported-section {
+  display: none !important;
 }
 
 .section-card-header {
@@ -412,4 +455,142 @@ input[type="number"] {
   border-bottom: 1px solid #e2e8f0;
 }
 
+/* A remove button whose row is still needed by a calculated row: looks off, the tooltip and the click message say why */
+.btn-lims-icon.btn-lims-delete.remove-blocked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ─── Print mode (raw data sheet): the saved test in the same layout, values as plain text, no controls ─── */
+:host(.print-mode) {
+  display: block;
+  pointer-events: none;
+}
+:host(.print-mode) button,
+:host(.print-mode) .btn-nav-link,
+:host(.print-mode) .workbench-action-toolbar,
+:host(.print-mode) .action-col,
+:host(.print-mode) .spm-filter-pill {
+  display: none !important;
+}
+/* Buttons that show a recorded choice stay, as plain text */
+:host(.print-mode) .btn-group .btn:not(.btn-outline-secondary),
+:host(.print-mode) .reportable-toggle-btn {
+  display: inline-block !important;
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: #111 !important;
+  padding: 0 !important;
+  font-weight: 600;
+}
+:host(.print-mode) input:not([type='checkbox']):not([type='radio']),
+:host(.print-mode) select,
+:host(.print-mode) textarea {
+  border: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: #111 !important;
+  -webkit-text-fill-color: #111;
+  opacity: 1 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  resize: none;
+}
+:host(.print-mode) textarea {
+  field-sizing: content;
+  min-height: 0;
+}
+:host(.print-mode) input::placeholder,
+:host(.print-mode) textarea::placeholder {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Entry hints and empty-list prompts are not part of the record */
+:host(.print-mode) .print-hide {
+  display: none !important;
+}
+:host(.print-mode) input::-webkit-outer-spin-button,
+:host(.print-mode) input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+:host(.print-mode) .input-group-text {
+  border: 0 !important;
+  background: transparent !important;
+  padding-left: 2px;
+}
+:host(.print-mode) .lims-workbench-card {
+  box-shadow: none !important;
+  break-inside: avoid;
+}
+:host(.print-mode) table {
+  break-inside: auto;
+}
+:host(.print-mode) tr {
+  break-inside: avoid;
+}
+
+/* Location grid: per-section average menu (screen only) */
+.loc-adjust { position: relative; }
+.loc-adjust > summary { list-style: none; cursor: pointer; }
+.loc-adjust > summary::-webkit-details-marker { display: none; }
+.loc-adjust-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 200px; }
+
+/* ── Parameter Single-Row Guarantee & Clean UI ── */
+.param-name-col {
+  min-width: 235px !important;
+  white-space: nowrap !important;
+}
+
+.param-name-cell {
+  white-space: nowrap !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  padding-right: 10px !important;
+}
+
+/* ── Matrix Table High-Density Optimization ── */
+.lims-matrix-table th {
+  padding: 6px 8px !important;
+  font-size: 0.72rem !important;
+}
+
+.lims-matrix-table td {
+  padding: 3px 8px !important;
+  font-size: 0.76rem !important;
+}
+
+.lims-matrix-table .spm-input-control {
+  max-width: 70px !important;
+  height: 25px !important;
+  font-size: 0.75rem !important;
+  padding: 1px 4px !important;
+}
+
+/* ── Print Checkbox Styling ── */
+.print-checkbox {
+  cursor: pointer !important;
+  width: 15px !important;
+  height: 15px !important;
+  margin: 0 !important;
+  border-color: #cbd5e1 !important;
+  border-radius: 4px !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.print-checkbox:checked {
+  background-color: var(--primary-color, #da261c) !important;
+  border-color: var(--primary-color, #da261c) !important;
+}
+
+.print-checkbox:focus {
+  box-shadow: 0 0 0 2px rgba(218, 38, 28, 0.2) !important;
+}
 

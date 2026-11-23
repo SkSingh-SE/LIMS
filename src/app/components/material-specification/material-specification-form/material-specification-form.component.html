@@ -314,8 +314,8 @@
               <ul class="nav nav-tabs">
                 <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemical'" (click)="selectSpecTab(gi, 'chemical')">Chemical</a></li>
                 <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanical'" (click)="selectSpecTab(gi, 'mechanical')">General</a></li>
-                <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemicalTestMethod'" (click)="selectSpecTab(gi, 'chemicalTestMethod')">Chemical Test Method</a></li>
-                <li class="nav-item"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanicalTestMethod'" (click)="selectSpecTab(gi, 'mechanicalTestMethod')">General Test Method</a></li>
+                <li class="nav-item" *ngIf="showTestMethodTabs"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemicalTestMethod'" (click)="selectSpecTab(gi, 'chemicalTestMethod')">Chemical Test Method</a></li>
+                <li class="nav-item" *ngIf="showTestMethodTabs"><a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanicalTestMethod'" (click)="selectSpecTab(gi, 'mechanicalTestMethod')">General Test Method</a></li>
               </ul>
               <span *ngIf="grade.hasError('noSpecLine') && grade.touched" class="text-danger small">At least one specification line is required in Chemical or Mechanical tab.</span>
               <div [formGroupName]="'specificationLines'">
@@ -919,6 +919,10 @@
                                 <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Method'" [labelName]="'Test Method'"
                                   [fetchDataFn]="getTestMethodSpecification" (itemSelected)="m.get('testMethodSpecificationID')?.setValue($event?.id ?? null)"
                                   [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('testMethodSpecificationID')?.value"></app-searchable-dropdown>
+                                <input *ngIf="m.get('testMethodSpecificationID')?.value" type="number" min="1" max="99" step="1"
+                                  class="form-control form-control-sm mt-1 spec-count-input" formControlName="numberOfTestSpecimen"
+                                  placeholder="Specimens" title="Number of test specimens for this method" [readonly]="isViewMode"
+                                  (change)="clampSpecimenCount(m)" />
                               </td>
                             </ng-container>
                             <td *ngIf="!isViewMode" class="text-center spec-col-action">
@@ -972,6 +976,10 @@
                                 <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Method'" [labelName]="'Test Method'"
                                   [fetchDataFn]="getTestMethodSpecification" (itemSelected)="m.get('testMethodSpecificationID')?.setValue($event?.id ?? null)"
                                   [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('testMethodSpecificationID')?.value"></app-searchable-dropdown>
+                                <input *ngIf="m.get('testMethodSpecificationID')?.value" type="number" min="1" max="99" step="1"
+                                  class="form-control form-control-sm mt-1 spec-count-input" formControlName="numberOfTestSpecimen"
+                                  placeholder="Specimens" title="Number of test specimens for this method" [readonly]="isViewMode"
+                                  (change)="clampSpecimenCount(m)" />
                               </td>
                             </ng-container>
                             <td *ngIf="!isViewMode" class="text-center spec-col-action">

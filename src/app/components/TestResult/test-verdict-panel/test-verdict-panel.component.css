@@ -36,3 +36,18 @@
 .w-col-130 {
   width: 130px;
 }
+
+.verdict-summary {
+  margin-bottom: 6px;
+}
+
+.verdict-summary-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--neutral-800, #1e293b);
+}
+
+.verdict-summary-text {
+  font-size: 0.74rem;
+  color: var(--neutral-600, #475569);
+}

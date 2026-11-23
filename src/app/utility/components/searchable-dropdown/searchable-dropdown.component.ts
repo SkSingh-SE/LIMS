@@ -23,6 +23,8 @@ export class SearchableDropdownComponent {
   @Input() smallInput = false;
   @Input() isInvalid = false;
   @Input() reloadKey: any;
+  /** Fetch the list again when opening while only the selected item is cached (default off: no change for other screens). */
+  @Input() reloadOnOpen = false;
 
   @Output() itemSelected = new EventEmitter<any>();
 
@@ -193,7 +195,8 @@ export class SearchableDropdownComponent {
 
   onFocus(): void {
     if (this.isDisabled) return;
-    if (!this.dropdownData.length || !this.hasValidSelection) {
+    // With a local list the chosen item is cached alone; reloadOnOpen then fetches the full list so the user can change it
+    if (!this.dropdownData.length || !this.hasValidSelection || (this.reloadOnOpen && this.dropdownData.length <= 1)) {
       this.loadInitialData();
     } else {
       this.openDropdownPanel();

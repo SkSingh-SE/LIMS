@@ -1,4 +1,6 @@
-import { Routes } from '@angular/router';
+import { permissionGuard } from './guards/permission.guard';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import { LayoutComponent } from './components/layout/layout.component';
 import { MainDashboardComponent } from './components/main-dashboard/main-dashboard.component';
 import { ListDesignationComponent } from './components/designation/list-designation/list-designation.component';
@@ -644,13 +646,12 @@ export const routes: Routes = [
             { path: 'org-chart', loadComponent: () => import('./components/org-chart/org-chart.component').then(m => m.OrgChartComponent) },
             // Testing Department routes
             { path: 'testing/dashboard', component: TestResultComponent },
-            { path: 'testing/perform/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'testing/perform/:id', redirectTo: ({ params, queryParams }) => inject(Router).createUrlTree(['/test-result/entry', params['id']], { queryParams }) },
             { path: 'testing/longterm', component: LongTermTrackingComponent },
-            { path: 'testing/results/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'testing/results/:id', redirectTo: ({ params, queryParams }) => inject(Router).createUrlTree(['/test-result/entry', params['id']], { queryParams: { mode: 'view', ...queryParams } }) },
             { path: 'testing/verification', loadComponent: () => import('./components/TestResult/test-result-verification/test-result-verification.component').then(m => m.TestResultVerificationComponent) },
             { path: 'test-result', component: TestResultComponent },
-            { path: 'test-result/entry/:id', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
-            { path: 'test-result/entry', component: TestResultEntryFormComponent, canDeactivate: [unsavedChangesGuard] },
+            { path: 'test-result/entry/:sampleId', component: TestResultEntryFormComponent, canActivate: [permissionGuard], data: { permissions: ['CanReadPerformTest', 'CanReadTestResults', 'CanReadTestVerification'] }, canDeactivate: [unsavedChangesGuard] },
             // Reporting routes
             { path: 'reporting/dashboard', component: ReportingListComponent },
             { path: 'reporting/preview/:sampleId', component: ReportingPreviewComponent },

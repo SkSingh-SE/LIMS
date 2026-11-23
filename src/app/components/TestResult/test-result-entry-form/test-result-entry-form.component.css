@@ -29,22 +29,6 @@
 }
 
 /* ─── 1. Clean Case Bar (Sticky White Header) ─── */
-.casebar {
-  position: sticky;
-  top: 61px;
-  z-index: 30;
-  padding: 10px 22px;
-  background: #fff;
-  color: var(--ink);
-  border-top: 0;
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 2px 7px rgba(23, 35, 52, 0.04);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-height: 46px;
-}
 .back {
   background: #fff;
   color: #334155;
@@ -106,15 +90,6 @@
 }
 
 /* ─── 3. Test Strip ─── */
-.teststrip {
-  padding: 8px 22px;
-  gap: 7px;
-  background: #fff;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
 .testlabel {
   color: var(--muted);
   font-size: 10px;
@@ -233,22 +208,6 @@
   padding: 16px 22px 86px;
   max-width: 100%;
   margin: auto;
-}
-.pagehead {
-  margin-bottom: 14px;
-  padding-bottom: 11px;
-  border-bottom: 1px solid #e5eaf0;
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-.pagehead h2 {
-  font-size: 16px;
-  letter-spacing: -.2px;
-  margin: 0;
-  font-weight: 800;
-  color: var(--ink);
 }
 .sub {
   font-size: 11px;
@@ -403,7 +362,8 @@
   border: 1px solid #fecaca;
 }
 
-.kpi-pending {
+.kpi-pending,
+.kpi-info {
   background: #f1f5f9;
   color: #64748b;
   border: 1px solid #e2e8f0;
@@ -882,13 +842,6 @@
   }
 }
 @media(max-width: 720px) {
-  .casebar {
-    padding: 9px 10px;
-    gap: 6px;
-  }
-  .materialbar, .teststrip {
-    padding: 8px 10px;
-  }
   .tabs {
     padding: 0 6px;
     gap: 2px;
@@ -1664,100 +1617,12 @@ input[type="number"] {
 }
 
 /* ─── ISO/IEC 17025 Clause 7.5 Technical Raw Data Sheet Preview Modal ─── */
-.raw-data-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(3px);
-  z-index: 1050;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow-y: auto;
-  padding: 1rem;
-}
-
-.raw-data-modal-dialog {
-  width: 100%;
-  max-width: 980px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-}
-
-.raw-data-modal-header {
-  background: #1e293b;
-  color: #ffffff;
-  border-bottom: 2px solid var(--primary-color, #da261c);
-}
-
-.raw-data-document {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #1e293b;
-  font-size: 0.76rem;
-  background-color: #ffffff;
-  line-height: 1.4;
-}
-
-.raw-data-brand-box {
-  min-width: 58px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
 .text-xxs {
   font-size: 0.68rem;
 }
 
 .tracking-wider {
   letter-spacing: 0.08em;
-}
-
-.raw-data-section-title {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: #1e293b;
-  text-transform: uppercase;
-  margin-bottom: 0.35rem;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  border-bottom: 1.5px solid #e2e8f0;
-  padding-bottom: 0.2rem;
-  letter-spacing: 0.02em;
-}
-
-.raw-data-meta-table {
-  font-size: 0.73rem;
-  border-color: #e2e8f0;
-}
-
-.raw-data-meta-table td,
-.raw-data-meta-table th {
-  padding: 0.32rem 0.5rem;
-  vertical-align: middle;
-}
-
-.raw-data-reading-table {
-  font-size: 0.73rem;
-  border-color: #cbd5e1;
-}
-
-.raw-data-reading-table th,
-.raw-data-reading-table td {
-  padding: 0.35rem 0.45rem;
-  vertical-align: middle;
-}
-
-.raw-data-sig-line {
-  width: 60%;
-  height: 24px;
 }
 
 /* Modal Table Column Width Utility Classes */
@@ -1801,30 +1666,6 @@ input[type="number"] {
   min-width: 65px;
 }
 
-/* Print Styles */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .raw-data-document,
-  .raw-data-document * {
-    visibility: visible;
-  }
-  .raw-data-document {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-  }
-  .no-print {
-    display: none !important;
-  }
-}
-
 
 /* ================================================================
    SPECIFICATION CONDITION FILTER ENGINE & CALIBRATION STYLING
@@ -1851,6 +1692,12 @@ input[type="number"] {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 5px 8px;
+}
+
+.spec-cond-info {
+  color: var(--primary-color, #da261c);
+  font-size: 0.72rem;
+  cursor: help;
 }
 
 .spec-cond-item {
@@ -1947,34 +1794,6 @@ input[type="number"] {
   border-color: var(--neutral-400, #94a3b8);
 }
 
-.casebar-title {
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: var(--neutral-900, #0f172a);
-  letter-spacing: -0.2px;
-}
-
-.casebar-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.74rem;
-  color: var(--neutral-600, #475569);
-  flex: 1 1 0%;
-  min-width: 0;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
-.casebar-meta strong {
-  color: var(--neutral-900, #0f172a);
-  font-weight: 600;
-}
-
-.casebar-meta-sep {
-  color: var(--neutral-300, #cbd5e1);
-}
-
 .casebar-right {
   display: flex;
   align-items: center;
@@ -2056,19 +1875,6 @@ input[type="number"] {
   background: #fef2f2;
   color: var(--primary-color, #da261c);
   font-weight: 600;
-}
-
-.teststrip-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Compact Layout Dropdown Container */
-.compact-layout-dropdown {
-  min-width: 220px;
-  max-width: 280px;
 }
 
 /* Compact Specimen Stepper */
@@ -2296,4 +2102,73 @@ input[type="number"] {
 
 .case-tests-table tr:hover td {
   background: var(--neutral-50, #f8fafc);
+}
+
+/* Per-test tab bar (two tabs per test) */
+.test-tabbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--neutral-200, #e2e8f0);
+}
+
+.test-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Specimen Size Toolbar & Modal Styles */
+.lims-test-toolbar-size {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.size-prompt-btn {
+  height: 26px;
+  font-size: 0.75rem;
+  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-color: #cbd5e1;
+  background-color: #fff;
+  color: #334155;
+  border-radius: 4px;
+  transition: all 0.15s ease-in-out;
+}
+
+.size-prompt-btn:hover {
+  border-color: var(--primary-color, #da261c);
+  color: var(--primary-color, #da261c);
+  background-color: var(--primary-50, #fef2f2);
+}
+
+.size-summary-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.specimen-size-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.55);
+  z-index: var(--z-index-modal, 1055);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.specimen-size-dialog {
+  max-width: 520px;
+  width: 100%;
+  margin: 1rem;
 }

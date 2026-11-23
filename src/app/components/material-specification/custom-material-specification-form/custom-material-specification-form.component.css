@@ -501,3 +501,9 @@
   border-radius: 0 0 6px 6px;
   background: #fff;
 }
+
+.spec-count-input {
+  max-width: 90px;
+  font-size: 0.75rem;
+  min-height: 28px;
+}

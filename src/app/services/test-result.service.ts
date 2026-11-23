@@ -290,6 +290,10 @@ export class TestResultService {
     return this.http.post<any>(`${this.apiUrl}/submit-sample-for-verification/${sampleId}`, {});
   }
 
+  resetSampleResults(sampleId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/reset-sample-results/${sampleId}`, {});
+  }
+
   submitForReportReview(sampleId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/submit-for-report-review/${sampleId}`, {});
   }

@@ -27,10 +27,11 @@ import { TestStatusBadgeComponent } from '../../TestResult/test-status-badge/tes
 import { CanComponentDeactivate } from '../../../guards/unsaved-changes.guard';
 import { UnsavedChangesService } from '../../../services/unsaved-changes.service';
 import { FormValidationHelper } from '../../../utility/helper/form-validation.helper';
+import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.directive';
 
 @Component({
   selector: 'app-sample-inward-form',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent, TestStatusBadgeComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, PlanFormComponent, TestStatusBadgeComponent, DecimalOnlyDirective],
   templateUrl: './sample-inward-form.component.html',
   styleUrl: './sample-inward-form.component.css'
 })
@@ -1423,6 +1424,28 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
     }));
   }
 
+  // Sample size (mm). Stored as decimal(10,2): 0 to 10000 with at most 2 decimals. Optional.
+  readonly dimensionMax = 10000;
+  readonly dimensionFields: { key: 'thickness' | 'diameter' | 'width' | 'length'; label: string }[] = [
+    { key: 'thickness', label: 'Thickness' },
+    { key: 'diameter', label: 'Diameter' },
+    { key: 'width', label: 'Width' },
+    { key: 'length', label: 'Length' },
+  ];
+  /**
+   * Size (thickness / diameter / width / length) column of the Sample Details table: hidden on request (2026-11-17).
+   * The form controls stay, so sizes already saved on a sample are kept on edit and still reach plan, result entry,
+   * pricing and report. Set to true to show the column again.
+   */
+  readonly showSampleSize = false;
+
+  private readonly dimensionValidators = [Validators.min(0), Validators.max(this.dimensionMax), Validators.pattern(/^\d+(\.\d{1,2})?$/)];
+
+  isSampleFieldInvalid(sample: AbstractControl, key: string): boolean {
+    const c = sample.get(key);
+    return !!c && c.invalid && (c.touched || this.submitted);
+  }
+
   // Sample Helpers
   addSample(existingSample: any = null): void {
     let sampleNo: string;
@@ -1452,10 +1475,10 @@ export class SampleInwardFormComponent implements CanComponentDeactivate, OnInit
       sampleFilePath: [existingSample?.sampleFilePath || ''],
       file: [null],
       productFormID: [existingSample?.productFormID || null],
-      thickness: [existingSample?.thickness || null],
-      diameter: [existingSample?.diameter || null],
-      width: [existingSample?.width || null],
-      length: [existingSample?.length || null],
+      thickness: [existingSample?.thickness ?? null, this.dimensionValidators],
+      diameter: [existingSample?.diameter ?? null, this.dimensionValidators],
+      width: [existingSample?.width ?? null, this.dimensionValidators],
+      length: [existingSample?.length ?? null, this.dimensionValidators],
       sampleStatus: [existingSample?.sampleStatus || ''],
       isCancelled: [existingSample?.isCancelled || false],
       cancellationReason: [existingSample?.cancellationReason || ''],

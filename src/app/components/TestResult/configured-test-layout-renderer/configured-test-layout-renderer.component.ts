@@ -2247,8 +2247,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   private gridParamControl(s: any): AbstractControl | null {
     const want = this.normKey(this.readingGridTarget(s));
     const fa = this.parametersFormArray;
-    for (let i = 0; fa && i < fa.length; i++) {
+    if (!fa || fa.length === 0) return null;
+    for (let i = 0; i < fa.length; i++) {
       if (this.normKey(fa.at(i).get('parameterName')?.value) === want) return fa.at(i);
+    }
+    // Fallback when a Studio preset left a generic/stale targetParamName (e.g. "Rockwell Hardness" on a Brinell test):
+    // bind to the test's primary non-auxiliary reading parameter (preferring summary/hardness/impact over "Reading 1/2").
+    if (this.hasConfiguredReadingStructure(s) || this.isReadingGrid(s)) {
+      const isAuxSlot = (name: string) => {
+        const lower = name.toLowerCase();
+        return lower.includes('scale') || lower.includes('test point') || /\breading\s*\d+\b/i.test(lower);
+      };
+      const primary = fa.controls.find(c => {
+        const n = String(c.get('parameterName')?.value ?? '').trim();
+        return !!n && !isAuxSlot(n);
+      });
+      if (primary) return primary;
+      return fa.at(0);
     }
     return null;
   }
@@ -2298,20 +2313,31 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return Math.min(25, Math.max(1, Math.round(n)));
   }
 
+  /** Clean 32-bit SQL float artifacts (e.g. 145.10000610351562 -> 145.1). */
+  private cleanFloat(v: any): number {
+    return Math.round(Number(v) * 1e6) / 1e6;
+  }
+
   /** Readings of the target parameter held by the test, by sample code (database rows first, else the saved remarks). */
   private savedGridReadings(s: any): Map<string, (number | null)[]> {
     const out = new Map<string, (number | null)[]>();
-    const want = this.normKey(this.readingGridTarget(s));
+    const wantTarget = this.normKey(this.readingGridTarget(s));
+    const wantParam = this.normKey(this.readingGridParam(s));
     const put = (code: string, seq: number, v: any) => {
       if (v == null || v === '' || isNaN(Number(v)) || seq < 1) return;
       const arr = out.get(code) || [];
       while (arr.length < seq) arr.push(null);
-      arr[seq - 1] = Number(v);
+      arr[seq - 1] = this.cleanFloat(v);
       out.set(code, arr);
     };
-    const stored: any[] = Array.isArray(this.test?.readings) ? this.test.readings : [];
-    stored.filter(r => this.normKey(r.parameterName || r.parameterCode) === want && r.isVoided !== true)
-      .forEach(r => put(String(r.specimenCode || 'S1'), Number(r.readingNumber || r.sequenceNo || 1), r.readingValue ?? r.value));
+    const stored: any[] = (Array.isArray(this.test?.readings) ? this.test.readings : []).filter((r: any) => r.isVoided !== true);
+    const matched = stored.filter(r => {
+      const k = this.normKey(r.parameterName || r.parameterCode);
+      return k === wantParam || k === wantTarget;
+    });
+    const readingSectionsCount = (this.sections || []).filter(sec => sec.type === 'reading').length;
+    const sourceRows = matched.length ? matched : (readingSectionsCount === 1 ? stored : []);
+    sourceRows.forEach(r => put(String(r.specimenCode || 'S1'), Number(r.readingNumber || r.sequenceNo || 1), r.readingValue ?? r.value));
     if (out.size) return out;
     // older saves kept the readings only in the remarks of the parameter row
     const raw = this.gridParamControl(s)?.get('remarks')?.value;
@@ -2351,6 +2377,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       this.readingValues[this.readingGridKey(s, r.code)] = arr;
       this.recalcGridStats(s, r.code);
     });
+    // If saved readings exist and the bound parameter row still has no value (e.g. legacy/preset target mismatch), hydrate its average cleanly
+    const ctrl = this.gridParamControl(s);
+    const overall = this.gridOverallAverage(s);
+    if (ctrl && overall != null && (ctrl.get('value')?.value == null || ctrl.get('value')?.value === '')) {
+      ctrl.patchValue({ value: overall }, { emitEvent: false });
+      this.evaluateLimitForControl(ctrl);
+    }
   }
 
   private gridDecimals(s: any): number {
@@ -3381,10 +3414,37 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    */
   getActiveLayoutParameterKeys(): string[] | null {
     const primary = this.specimenSection || (this.sections || []).find(s => s.type === 'parameter' || s.type === 'param');
-    if (!primary || !this.isTemplateConfiguredMode(primary)) return null;
-    const rows = this.specimenParams(primary).filter(p => !p.isDivider && !p.isStatic);
-    if (!rows.length) return null;
-    return rows.map(p => p.parameterID != null ? `id:${p.parameterID}` : `name:${String(p.name || '').trim().toLowerCase()}`);
+    if (primary) {
+      if (!this.isTemplateConfiguredMode(primary)) return null;
+      const rows = this.specimenParams(primary).filter(p => !p.isDivider && !p.isStatic);
+      if (!rows.length) return null;
+      return rows.map(p => p.parameterID != null ? `id:${p.parameterID}` : `name:${String(p.name || '').trim().toLowerCase()}`);
+    }
+    // Reading-grid / Location-grid only layout (no parameter/specimen section): scope active keys to grid target parameters
+    const gridKeys: string[] = [];
+    const seen = new Set<string>();
+    for (const s of (this.sections || [])) {
+      if (this.isReadingGrid(s)) {
+        const ctrl = this.gridParamControl(s);
+        if (ctrl) {
+          const id = ctrl.get('parameterID')?.value;
+          const name = String(ctrl.get('parameterName')?.value ?? '').trim().toLowerCase();
+          const k = id != null && Number(id) !== 0 ? `id:${id}` : `name:${name}`;
+          if (!seen.has(k)) { seen.add(k); gridKeys.push(k); }
+        }
+      } else if (this.isLocationGrid(s)) {
+        for (const lp of this.locationParamsOf(s)) {
+          const ctrl = this.locParamControl(lp.name);
+          if (ctrl) {
+            const id = ctrl.get('parameterID')?.value;
+            const name = String(ctrl.get('parameterName')?.value ?? '').trim().toLowerCase();
+            const k = id != null && Number(id) !== 0 ? `id:${id}` : `name:${name}`;
+            if (!seen.has(k)) { seen.add(k); gridKeys.push(k); }
+          }
+        }
+      }
+    }
+    return gridKeys.length ? gridKeys : null;
   }
 
   /** Returns the active specimen display labels (e.g. ['S.NO.1', 'S.NO.2']) for cross-tab consistency. */

@@ -3352,14 +3352,29 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return;
     }
 
-    // Check for empty values in parameters
-    const missingValues = testParams.controls.filter((ctrl) => {
+    // Check for empty values strictly among active layout parameters (never blocking on unrendered master parameters in Template Configured / Reading-only layouts)
+    const rendererForCheck = this.layoutRendererComponent?.test === test ? this.layoutRendererComponent : null;
+    const activeKeys = this.getActiveLayoutParameterKeys(planIndex, testIndex);
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+    const controlsToValidate = activeKeySet
+      ? testParams.controls.filter((ctrl) => {
+          const pId = ctrl.get('parameterID')?.value;
+          const pName = String(ctrl.get('parameterName')?.value || '').trim().toLowerCase();
+          const k = pId != null && Number(pId) !== 0 ? `id:${pId}` : `name:${pName}`;
+          return activeKeySet.has(k);
+        })
+      : testParams.controls;
+
+    const readingProgress = rendererForCheck ? rendererForCheck.readingProgress() : { entered: 0, expected: 0 };
+    const hasRecordedReadings = readingProgress.entered > 0 || (Array.isArray(test.readings) && test.readings.some((r: any) => r?.isVoided !== true));
+
+    const missingValues = controlsToValidate.filter((ctrl) => {
       // a Text parameter (e.g. Location of Fracture) keeps its result in Remarks
       const raw = ctrl.get('inputType')?.value === 'Text' ? ctrl.get('remarks')?.value : ctrl.get('value')?.value;
       return raw === null || raw === undefined || String(raw).trim() === '';
     });
 
-    if (missingValues.length > 0) {
+    if (missingValues.length > 0 && !(readingProgress.expected > 0 && hasRecordedReadings && controlsToValidate.length === 0)) {
       const missingNames = missingValues.map(ctrl => ctrl.get('parameterName')?.value || 'Parameter').slice(0, 3).join(', ');
       this.toastService.show(`Cannot complete test. Missing values for: ${missingNames}${missingValues.length > 3 ? '...' : ''}`, 'error');
       return;

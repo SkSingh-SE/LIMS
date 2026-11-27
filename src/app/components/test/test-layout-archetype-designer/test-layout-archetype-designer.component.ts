@@ -2174,12 +2174,12 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
       case 'reading':
         config.readingSource = 'Runtime readings';
         config.readingCount = 'Fixed count';
-        config.count = 5;
-        config.spotCount = 5;
-        config.targetParamName = 'Rockwell Hardness';
-        config.targetUnit = 'HRC';
-        config.targetRequirement = '28 – 34 HRC';
-        config.readingLabel = 'Rockwell Hardness Spot Readings';
+        config.count = 3;
+        config.spotCount = 3;
+        config.targetParamName = '';
+        config.targetUnit = '';
+        config.targetRequirement = '';
+        config.readingLabel = 'Reading';
         config.aggregation = 'Average / Mean';
         config.showIndividual = true;
         config.showStatistics = true;

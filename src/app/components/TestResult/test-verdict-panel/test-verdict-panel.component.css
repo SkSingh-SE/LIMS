@@ -51,3 +51,12 @@
   font-size: 0.74rem;
   color: var(--neutral-600, #475569);
 }
+
+.verdict-col-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 185px;
+  z-index: var(--z-index-dropdown, 1050);
+}

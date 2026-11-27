@@ -206,11 +206,17 @@
               </button>
             </ng-container>
 
-            <!-- Parameters Table Action (Suppressed when unified reading or specimen matrix is active) -->
-            <button *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSpecimenSection && !isViewMode && !isLocked"
-                    type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()">
-              <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
-            </button>
+            <!-- Parameters Table Actions (Suppressed when unified reading or specimen matrix is active) -->
+            <ng-container *ngIf="(s.type === 'param' || s.type === 'parameter') && !hasLegacyReadingSection() && !hasSpecimenSection && !isViewMode && !isLocked">
+              <button type="button" class="btn btn-xs btn-lims btn-lims-secondary"
+                      (click)="syncFromLabTestRequested.emit(s)"
+                      title="Load / Sync parameters, units, formulas, and specification limits from Lab Test Master">
+                <i class="bi bi-arrow-repeat me-1"></i><span>Sync Lab Test</span>
+              </button>
+              <button type="button" class="btn btn-xs btn-lims btn-lims-add" (click)="openAddParamModal()">
+                <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
+              </button>
+            </ng-container>
 
             <!-- Location Section Action -->
             <button *ngIf="(s.type === 'location' || s.type === 'loc') && !isViewMode && !isLocked && canAddRemoveRows(s)"
@@ -1109,45 +1115,51 @@
                       </div>
                     </th>
                     <th *ngIf="specimenShow(s, 'avg')" class="w-col-115 avg-col-header">{{ columnLabel(s, 'avg', 'Average') }}</th>
-                    <th *ngIf="s.config?.showMinMax" class="w-col-85">{{ columnLabel(s, 'min', 'Min') }}</th>
-                    <th *ngIf="s.config?.showMinMax" class="w-col-85">{{ columnLabel(s, 'max', 'Max') }}</th>
+                    <th *ngIf="specimenShow(s, 'min')" class="w-col-85">{{ columnLabel(s, 'min', 'Min') }}</th>
+                    <th *ngIf="specimenShow(s, 'max')" class="w-col-85">{{ columnLabel(s, 'max', 'Max') }}</th>
                     <th *ngIf="specimenShow(s, 'requirement')" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
                     <th *ngIf="specimenShow(s, 'status')" class="w-col-90">{{ columnLabel(s, 'status', 'Status') }}</th>
                     <th *ngIf="specimenShow(s, 'print')" class="w-col-65 text-center text-nowrap"><i class="bi bi-printer me-1 text-primary"></i>Print</th>
-                    <th class="w-col-85 action-col">Action</th>
+                    <th *ngIf="!printMode" class="w-col-85 action-col">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   <ng-container *ngFor="let p of specimenParams(s); trackBy: trackByBaseRow">
                   <tr *ngIf="!p.isDivider">
                     <td class="fw-semibold text-start text-nowrap param-name-cell">
-                      <i *ngIf="p.isCalculated" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
+                      <i *ngIf="p.isCalculated && !printMode" class="bi bi-calculator text-primary me-1" title="Formula Parameter"></i>
                       <span>{{ p.displayName }}</span>
                     </td>
                     <td class="text-center text-muted small">{{ p.unit }}</td>
-                    <td *ngFor="let spm of specimens; let spmIdx = index">
+                    <td *ngFor="let spm of specimens; let spmIdx = index" class="text-center">
                       <span *ngIf="p.isStatic" class="small">{{ p.staticValue }}</span>
-                      <input *ngIf="!p.isStatic && p.inputType !== 'Text'" type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
-                             [value]="getParamValueForSpecimen(p.index, spmIdx)"
-                             (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
-                             [readOnly]="isViewMode || isLocked"
-                             placeholder="—" />
-                      <input *ngIf="!p.isStatic && p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
-                             [value]="getParamTextForSpecimen(p.index, spmIdx)"
-                             (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
-                             [readOnly]="isViewMode || isLocked"
-                             placeholder="—" />
+                      <ng-container *ngIf="!p.isStatic && printMode">
+                        <span class="num-tabular fw-semibold small">{{ p.inputType === 'Text' ? (getParamTextForSpecimen(p.index, spmIdx) || '—') : (getParamValueForSpecimen(p.index, spmIdx) !== '' && getParamValueForSpecimen(p.index, spmIdx) != null ? getParamValueForSpecimen(p.index, spmIdx) : '—') }}</span>
+                      </ng-container>
+                      <ng-container *ngIf="!p.isStatic && !printMode">
+                        <input *ngIf="p.inputType !== 'Text'" type="number" step="any" class="form-control form-control-xs text-center num-tabular spm-input-control"
+                               [value]="getParamValueForSpecimen(p.index, spmIdx)"
+                               (input)="onParamValueChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="—" />
+                        <input *ngIf="p.inputType === 'Text'" type="text" class="form-control form-control-xs text-center spm-input-control"
+                               [value]="getParamTextForSpecimen(p.index, spmIdx)"
+                               (input)="onParamTextChangeForSpecimen(p.index, spmIdx, $any($event.target).value)"
+                               [readOnly]="isViewMode || isLocked"
+                               placeholder="—" />
+                      </ng-container>
                     </td>
                     <td *ngIf="specimenShow(s, 'avg')" class="avg-col-cell num-tabular">
                       {{ p.isStatic ? '' : getBaseParamAverage(p.index) }}
                     </td>
-                    <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ p.isStatic ? '' : getBaseParamStat(p.index, 'min') }}</td>
-                    <td *ngIf="s.config?.showMinMax" class="text-center num-tabular text-muted">{{ getBaseParamStat(p.index, 'max') }}</td>
+                    <td *ngIf="specimenShow(s, 'min')" class="text-center num-tabular text-muted">{{ p.isStatic ? '' : getBaseParamStat(p.index, 'min') }}</td>
+                    <td *ngIf="specimenShow(s, 'max')" class="text-center num-tabular text-muted">{{ p.isStatic ? '' : getBaseParamStat(p.index, 'max') }}</td>
                     <td *ngIf="specimenShow(s, 'requirement')" class="text-center text-dark small">
                       {{ p.requirement }}
                     </td>
                     <td *ngIf="specimenShow(s, 'status')" class="text-center">
-                      <span *ngIf="!p.isStatic" class="badge" [ngClass]="getBaseParamStatus(p.index) === 'Pass' ? 'bg-success' : (getBaseParamStatus(p.index) === 'Fail' ? 'bg-danger' : 'bg-secondary')">
+                      <span *ngIf="!p.isStatic" class="badge"
+                            [ngClass]="getBaseParamStatus(p.index) === 'Pass' ? 'bg-success' : (getBaseParamStatus(p.index) === 'Fail' ? 'bg-danger' : (getBaseParamStatus(p.index) === 'Reported' ? 'bg-info text-dark' : 'bg-secondary'))">
                         {{ getBaseParamStatus(p.index) }}
                       </span>
                     </td>
@@ -1160,10 +1172,21 @@
                                [title]="isRowPrintable(p.index) ? 'Printed on Certificate / Test Report' : 'Excluded from Certificate (Internal test data)'" />
                       </div>
                     </td>
-                    <td class="text-center action-col">
-                      <button *ngIf="p.isCalculated && !p.isStatic" type="button" class="btn-lims-icon me-1" (click)="openRowFormula(p.index)" title="Formula Details">
-                        <i class="bi bi-calculator"></i>
-                      </button>
+                    <td *ngIf="!printMode" class="text-center action-col">
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <button *ngIf="p.isCalculated && !p.isStatic" type="button" class="btn-lims-icon" (click)="openRowFormula(p.index)" title="Formula Details">
+                          <i class="bi bi-calculator"></i>
+                        </button>
+                        <button *ngIf="!p.isCalculated && !p.isStatic && !isViewMode && !isLocked" type="button" class="btn-lims-icon"
+                                (click)="multipleReadingsRequested.emit({ rowIdx: p.index, param: parametersFormArray?.at(p.index)?.value })" title="Multiple Readings">
+                          <i class="bi bi-hash"></i>
+                        </button>
+                        <button *ngIf="!p.isStatic && !isViewMode && !isLocked && canAddRemoveRows(s) && getBaseParameterList().length > 1"
+                                type="button" class="btn-lims-icon btn-lims-delete"
+                                (click)="removeBaseParameter(p.index)" title="Remove parameter">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   </ng-container>
@@ -1187,12 +1210,12 @@
                     <th *ngIf="isColumnShown(s, 'method')" class="w-col-160">Method / Standard</th>
                     <th *ngIf="isColumnShown(s, 'uncertainty')" class="w-col-100">Uncertainty (±)</th>
                     <th *ngIf="isColumnShown(s, 'remarks')" class="w-col-140">Remarks</th>
-                    <th class="w-col-75 action-col">Actions</th>
+                    <th *ngIf="!printMode" class="w-col-75 action-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody formArrayName="parameters" *ngIf="parametersFormArray">
 
-                  <ng-container *ngFor="let r of getFilteredParamIndices()">
+                  <ng-container *ngFor="let r of getFilteredParamIndices(s); let rIdx = index">
 
                     <!-- Parameter Row -->
                     <tr [formGroupName]="r"
@@ -1202,7 +1225,7 @@
                         }">
 
                       <!-- Index -->
-                      <td class="text-center text-muted small fw-semibold">{{ r + 1 }}</td>
+                      <td class="text-center text-muted small fw-semibold">{{ rIdx + 1 }}</td>
 
                       <!-- Parameter Name -->
                       <td class="text-start">
@@ -1277,7 +1300,8 @@
 
                         <!-- 3b. Text result (e.g. Location of Fracture): kept in Remarks, the value stays empty -->
                         <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType === 'Text'">
-                          <input type="text" class="form-control form-control-xs text-center fw-semibold"
+                          <span *ngIf="printMode" class="fw-semibold small">{{ parametersFormArray.at(r).value.remarks || '—' }}</span>
+                          <input *ngIf="!printMode" type="text" class="form-control form-control-xs text-center fw-semibold"
                                  formControlName="remarks"
                                  (input)="onParameterInputChange(r)"
                                  [readOnly]="isViewMode || isLocked"
@@ -1286,7 +1310,8 @@
 
                         <!-- 4. Numeric / Decimal / Default Input -->
                         <ng-container *ngIf="!isParameterCalculated(parametersFormArray.at(r).value) && parametersFormArray.at(r).value.inputType !== 'Boolean' && parametersFormArray.at(r).value.inputType !== 'Text' && (parametersFormArray.at(r).value.inputType !== 'Dropdown' || !(parametersFormArray.at(r).value.dropdownOptions?.length))">
-                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace fw-semibold num-tabular"
+                          <span *ngIf="printMode" class="font-monospace fw-semibold num-tabular small">{{ parametersFormArray.at(r).value.value !== null && parametersFormArray.at(r).value.value !== '' ? parametersFormArray.at(r).value.value : '—' }}</span>
+                          <input *ngIf="!printMode" type="number" step="any" class="form-control form-control-xs text-center font-monospace fw-semibold num-tabular"
                                  formControlName="value"
                                  (input)="onParameterInputChange(r)"
                                  [readOnly]="isViewMode || isLocked"
@@ -1302,7 +1327,10 @@
                         <span *ngIf="parametersFormArray.at(r).value.isWithinLimit === false" class="status-pill-lims status-pill-fail">
                           FAIL
                         </span>
-                        <span *ngIf="parametersFormArray.at(r).value.isWithinLimit == null" class="status-pill-lims status-pill-pending">
+                        <span *ngIf="parametersFormArray.at(r).value.isWithinLimit == null && parametersFormArray.at(r).value.resultStatus === 'Reported'" class="status-pill-lims bg-info text-dark">
+                          REPORTED
+                        </span>
+                        <span *ngIf="parametersFormArray.at(r).value.isWithinLimit == null && parametersFormArray.at(r).value.resultStatus !== 'Reported'" class="status-pill-lims status-pill-pending">
                           PENDING
                         </span>
                       </td>
@@ -1325,7 +1353,7 @@
 
                       <!-- Uncertainty -->
                       <td *ngIf="isColumnShown(s, 'uncertainty')" class="text-center text-muted small font-monospace">
-                        &plusmn; 0.25
+                        {{ getParamUncertaintyDisplay(parametersFormArray.at(r).value) }}
                       </td>
 
                       <!-- Remarks -->
@@ -1334,7 +1362,7 @@
                       </td>
 
                       <!-- Actions -->
-                      <td class="text-center action-col">
+                      <td *ngIf="!printMode" class="text-center action-col">
                         <div class="d-flex align-items-center justify-content-center gap-1">
                           <button *ngIf="isParameterCalculated(parametersFormArray.at(r).value)"
                                   type="button" class="btn-lims-icon"
@@ -1389,17 +1417,18 @@
                     <tr *ngFor="let targetParam of getReadingTargetParameters(s); let r = index"
                         [ngClass]="getReadingRowClass(targetParam)">
                       <td class="fw-semibold text-start">
-                        <i class="bi bi-hash me-1 text-danger"></i>
+                        <i *ngIf="!printMode" class="bi bi-hash me-1 text-danger"></i>
                         <span>{{ targetParam }}</span>
-                        <span class="badge bg-light text-muted border text-xxs ms-1" *ngIf="getParamControl(targetParam)?.get('isReportable')?.value">
+                        <span class="badge bg-light text-muted border text-xxs ms-1" *ngIf="!printMode && getParamControl(targetParam)?.get('isReportable')?.value">
                           Reportable
                         </span>
                       </td>
                       <td class="text-center font-monospace text-muted small">
                         {{ getParamControl(targetParam)?.get('unit')?.value || '—' }}
                       </td>
-                      <td *ngFor="let idx of getReadingIndices(s)">
-                        <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                      <td *ngFor="let idx of getReadingIndices(s)" class="text-center">
+                        <span *ngIf="printMode" class="rds-val">{{ getReadingVal(targetParam, idx) ?? '—' }}</span>
+                        <input *ngIf="!printMode" type="number" step="any" class="form-control form-control-xs text-center font-monospace"
                                [ngModel]="getReadingVal(targetParam, idx)"
                                [ngModelOptions]="{ standalone: true }"
                                (ngModelChange)="onReadingChange(targetParam, idx, $event)"
@@ -1452,18 +1481,34 @@
                 <table class="table table-sm table-bordered align-middle result-table mb-1" *ngIf="!readingsAsRows(s)">
                   <thead class="result-table-head text-center">
                     <tr>
-                      <th class="text-start">{{ columnLabel(s, 'specimen', 'Sample / Test Point') }}</th>
-                      <th *ngIf="specimenShow(s, 'unit')" class="w-col-60">{{ columnLabel(s, 'unit', 'Unit') }}</th>
+                      <th class="text-start" [attr.rowspan]="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s) ? 2 : null">
+                        {{ columnLabel(s, 'specimen', columnLabel(s, 'param', 'Sample / Test Point')) }}
+                      </th>
+                      <th *ngIf="specimenShow(s, 'unit')" class="w-col-60" [attr.rowspan]="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s) ? 2 : null">
+                        {{ columnLabel(s, 'unit', 'Unit') }}
+                      </th>
                       <ng-container *ngIf="showGridReadings(s)">
-                        <th *ngFor="let idx of getReadingIndices(s)" class="w-col-80">{{ getReadingColumnHeader(s, idx) }}</th>
+                        <th *ngIf="locMergedTitle(s)" [attr.colspan]="getReadingIndices(s).length">{{ locMergedTitle(s) }}</th>
+                        <ng-container *ngIf="!locMergedTitle(s)">
+                          <th *ngFor="let idx of getReadingIndices(s)" class="w-col-80">{{ getReadingColumnHeader(s, idx) }}</th>
+                        </ng-container>
                       </ng-container>
-                      <th *ngIf="columnVisible(s, 'agg')" class="w-col-95">{{ gridAggregateLabel(s) }}</th>
+                      <th *ngIf="gridColumnVisible(s, 'agg')" class="w-col-95" [attr.rowspan]="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s) ? 2 : null">
+                        {{ gridAggregateLabel(s) }}
+                      </th>
                       <ng-container *ngIf="gridStatsShown(s)">
-                        <th class="w-col-70">{{ columnLabel(s, 'min', 'Min') }}</th>
-                        <th class="w-col-70">{{ columnLabel(s, 'max', 'Max') }}</th>
+                        <th class="w-col-70" [attr.rowspan]="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s) ? 2 : null">{{ columnLabel(s, 'min', 'Min') }}</th>
+                        <th class="w-col-70" [attr.rowspan]="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s) ? 2 : null">{{ columnLabel(s, 'max', 'Max') }}</th>
                       </ng-container>
-                      <th *ngIf="columnVisible(s, 'requirement') && !s.config?.requirementRow" class="w-col-120">{{ columnLabel(s, 'requirement', 'Requirement') }}</th>
-                      <th *ngIf="columnVisible(s, 'status')" class="w-col-85">{{ columnLabel(s, 'status', 'Status') }}</th>
+                      <th *ngIf="gridColumnVisible(s, 'requirement') && !s.config?.requirementRow" class="w-col-120" [attr.rowspan]="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s) ? 2 : null">
+                        {{ columnLabel(s, 'requirement', 'Requirement') }}
+                      </th>
+                      <th *ngIf="gridColumnVisible(s, 'status')" class="w-col-85" [attr.rowspan]="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s) ? 2 : null">
+                        {{ columnLabel(s, 'status', 'Status') }}
+                      </th>
+                    </tr>
+                    <tr *ngIf="showGridReadings(s) && locMergedTitle(s) && locShowReadingLabels(s)">
+                      <th *ngFor="let idx of getReadingIndices(s)" class="w-col-80">{{ getReadingColumnHeader(s, idx) }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1471,21 +1516,22 @@
                       <td class="fw-semibold text-start">{{ row.label }}</td>
                       <td *ngIf="specimenShow(s, 'unit')" class="text-center font-monospace text-muted small">{{ gridUnit(s) || '—' }}</td>
                       <ng-container *ngIf="showGridReadings(s)">
-                        <td *ngFor="let idx of getReadingIndices(s)">
-                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                        <td *ngFor="let idx of getReadingIndices(s)" class="text-center">
+                          <span *ngIf="printMode" class="rds-val">{{ getGridReadingDisplay(s, row.code, idx) }}</span>
+                          <input *ngIf="!printMode" type="number" step="any" class="form-control form-control-xs text-center font-monospace"
                                  [ngModel]="getGridReading(s, row.code, idx)"
                                  [ngModelOptions]="{ standalone: true }"
                                  (ngModelChange)="onGridReadingChange(s, row.code, idx, $event)"
                                  [readOnly]="isViewMode || isLocked" placeholder="—" />
                         </td>
                       </ng-container>
-                      <td *ngIf="columnVisible(s, 'agg')" class="text-center font-monospace fw-bold">{{ gridFmt(s, gridAggregate(s, row.code)) }}</td>
+                      <td *ngIf="gridColumnVisible(s, 'agg')" class="text-center font-monospace fw-bold">{{ gridFmt(s, gridAggregate(s, row.code)) }}</td>
                       <ng-container *ngIf="gridStatsShown(s)">
                         <td class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'min')) }}</td>
                         <td class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'max')) }}</td>
                       </ng-container>
-                      <td *ngIf="columnVisible(s, 'requirement') && !s.config?.requirementRow" class="text-center small font-monospace">{{ gridRequirement(s) }}</td>
-                      <td *ngIf="columnVisible(s, 'status')" class="text-center">
+                      <td *ngIf="gridColumnVisible(s, 'requirement') && !s.config?.requirementRow" class="text-center small font-monospace">{{ gridRequirement(s) }}</td>
+                      <td *ngIf="gridColumnVisible(s, 'status')" class="text-center">
                         <span class="badge text-xxs" [ngClass]="gridBadge(gridStatus(s, row.code))">{{ gridStatus(s, row.code) }}</span>
                       </td>
                     </tr>
@@ -1507,7 +1553,7 @@
                 <table class="table table-sm table-bordered align-middle result-table mb-1" *ngIf="readingsAsRows(s)">
                   <thead class="result-table-head text-center">
                     <tr>
-                      <th class="text-start">{{ columnLabel(s, 'specimen', 'Sample / Test Point') }}</th>
+                      <th class="text-start">{{ columnLabel(s, 'specimen', columnLabel(s, 'param', 'Sample / Test Point')) }}</th>
                       <th *ngFor="let row of readingGridRows(s)">
                         {{ row.label }}
                         <div *ngIf="specimenShow(s, 'unit') && gridUnit(s)" class="text-muted small fw-normal">{{ gridUnit(s) }}</div>
@@ -1518,8 +1564,9 @@
                     <ng-container *ngIf="showGridReadings(s)">
                       <tr *ngFor="let idx of getReadingIndices(s)">
                         <td class="fw-semibold text-start">{{ getReadingColumnHeader(s, idx) }}</td>
-                        <td *ngFor="let row of readingGridRows(s)">
-                          <input type="number" step="any" class="form-control form-control-xs text-center font-monospace"
+                        <td *ngFor="let row of readingGridRows(s)" class="text-center">
+                          <span *ngIf="printMode" class="rds-val">{{ getGridReadingDisplay(s, row.code, idx) }}</span>
+                          <input *ngIf="!printMode" type="number" step="any" class="form-control form-control-xs text-center font-monospace"
                                  [ngModel]="getGridReading(s, row.code, idx)"
                                  [ngModelOptions]="{ standalone: true }"
                                  (ngModelChange)="onGridReadingChange(s, row.code, idx, $event)"
@@ -1527,7 +1574,7 @@
                         </td>
                       </tr>
                     </ng-container>
-                    <tr *ngIf="columnVisible(s, 'agg')">
+                    <tr *ngIf="gridColumnVisible(s, 'agg')">
                       <td class="fw-semibold text-start">{{ gridAggregateLabel(s) }}</td>
                       <td *ngFor="let row of readingGridRows(s)" class="text-center font-monospace fw-bold">{{ gridFmt(s, gridAggregate(s, row.code)) }}</td>
                     </tr>
@@ -1541,13 +1588,13 @@
                         <td *ngFor="let row of readingGridRows(s)" class="text-center font-monospace text-muted">{{ gridFmt(s, gridStat(s, row.code, 'max')) }}</td>
                       </tr>
                     </ng-container>
-                    <tr *ngIf="columnVisible(s, 'status')">
+                    <tr *ngIf="gridColumnVisible(s, 'status')">
                       <td class="fw-semibold text-start">{{ columnLabel(s, 'status', 'Status') }}</td>
                       <td *ngFor="let row of readingGridRows(s)" class="text-center">
                         <span class="badge text-xxs" [ngClass]="gridBadge(gridStatus(s, row.code))">{{ gridStatus(s, row.code) }}</span>
                       </td>
                     </tr>
-                    <tr *ngIf="s.config?.requirementRow || columnVisible(s, 'requirement')">
+                    <tr *ngIf="s.config?.requirementRow || gridColumnVisible(s, 'requirement')">
                       <td class="fw-semibold text-start">{{ columnLabel(s, 'requirement', 'Requirement') }}</td>
                       <td [attr.colspan]="readingGridRows(s).length" class="text-center small font-monospace">{{ gridRequirement(s) }}</td>
                     </tr>
@@ -2194,9 +2241,27 @@
           <!-- ARCHETYPE 14: DECISION RULE & CONFORMITY (rule / decision)    -->
           <!-- ───────────────────────────────────────────────────────────── -->
           <ng-container *ngIf="s.type === 'rule' || s.type === 'decision'">
-            <div class="decision-rule-section p-2 rounded bg-light border" *ngIf="ruleBasis(s.config) as rb">
+            <!-- Print / Raw Data Sheet mode: contiguous flat rows joined cleanly to the results table (DMSPL NABL report format) -->
+            <div *ngIf="printMode" class="rds-rule-block">
+              <ng-container *ngIf="ruleBasis(s.config) as rb">
+                <ng-container *ngIf="rb.applicable && isColumnShown(s, 'showRule')">
+                  <div class="rds-rule-row">
+                    <span class="rds-rule-key">Statement of conformity:</span> {{ ruleStatement(s) || '—' }}
+                  </div>
+                  <div class="rds-rule-row">
+                    <span class="rds-rule-key">Decision Rule:</span> {{ ruleDecisionText(s) }}
+                  </div>
+                </ng-container>
+                <div class="rds-rule-row" *ngIf="!rb.applicable">
+                  No statement of conformity is given for this sample (Conformity is "Not Applicable").
+                </div>
+              </ng-container>
+            </div>
+
+            <!-- Interactive Result Entry screen -->
+            <div *ngIf="!printMode && ruleBasis(s.config) as rb" class="decision-rule-section p-2 rounded bg-light border">
               <!-- Where the rule comes from (studio: Verdict source); not part of the printed record -->
-              <div class="d-flex align-items-center flex-wrap gap-2 mb-2 print-hide" *ngIf="!printMode">
+              <div class="d-flex align-items-center flex-wrap gap-2 mb-2 print-hide">
                 <span class="text-xxs fw-semibold text-muted"><i class="bi bi-shield-check text-danger me-1"></i>Basis:</span>
                 <span class="text-xxs">{{ rb.basis }}</span>
                 <ng-container *ngIf="rb.applicable && s.config?.conformity !== false">

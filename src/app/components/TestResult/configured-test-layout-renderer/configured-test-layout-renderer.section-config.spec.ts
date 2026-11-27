@@ -76,7 +76,7 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     });
     expect(cfg.sections.length).toBe(1);
     const c: any = cfg.sections[0].config;
-    expect(c.visibility).toBeUndefined();
+    expect(c.visibility).toBe('Always');
     expect(c.pageBreak).toBeUndefined();
     expect(c.showStatus).toBeFalse();
     expect(c.width).toBe('Full Width');
@@ -300,18 +300,21 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     expect(cmp.getBaseParamStat(load.index, 'max')).toBe('30');
   });
 
-  it('L6.1: layout without specimen section has one specimen per header and ignores empty S2', () => {
-    // 1. Layout without specimen section + plannedQuantity: 2 -> 1 specimen
+  it('G1: plannedQuantity auto-selects matching specimen count without duplicating parameters', () => {
+    // 1. plannedQuantity: 2 -> 2 specimens auto-selected
     create([sec('rule'), sec('narrative')], {
-      rows: [paramRow(1, 'Hardness', null, 0, { maxValue: 200 })]
+      rows: [
+        paramRow(1, 'Hardness', null, 0, { maxValue: 200 }),
+        paramRow(2, 'Hardness', null, 1, { maxValue: 200, parameterID: 1 })
+      ]
     });
     cmp.test.plannedQuantity = 2;
     cmp.testPlan.plannedQuantity = 2;
     cmp.testPlan.totalSpecimens = 2;
     fixture.detectChanges();
-    expect(cmp.specimens.length).toBe(1);
+    expect(cmp.specimens.length).toBe(2);
 
-    // 2. Saved rows S1 (value) + S2 (empty) -> 1 specimen and rule section shows no "pending" for S2
+    // 2. Saved rows S1 (value) + S2 (empty) with plannedQuantity: 2 -> keeps 2 specimens, S1 passes
     create([sec('rule'), sec('narrative')], {
       rows: [
         paramRow(1, 'Hardness', 157.73, 0, { maxValue: 200 }),
@@ -322,7 +325,7 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     cmp.testPlan.plannedQuantity = 2;
     cmp.testPlan.totalSpecimens = 2;
     fixture.detectChanges();
-    expect(cmp.specimens.length).toBe(1);
+    expect(cmp.specimens.length).toBe(2);
     expect(cmp.conformityVerdict.status).toBe('PASS');
 
     // 3. S1 + S2 both with values -> 2 specimens
@@ -351,5 +354,61 @@ describe('ConfiguredTestLayoutRendererComponent section config', () => {
     cmp.testPlan.specification = 'TP316L (Grade default)';
     fixture.detectChanges();
     expect(cmp.ruleStatement()).toBe('The Result meets the Requirement of TP316L (Grade default).');
+  });
+
+  it('reading grid (Template Configured Brinell): honors tableRows, strict tableColumns, headerMerge without sub-labels, 2-dec avg, and plain text in printMode', () => {
+    const brinellSec = sec('reading', {
+      sectionDataMode: 'template',
+      count: 3,
+      headerMerge: { title: 'Hardness in HBW(5mm/750 kgf)', startCol: 'spot_1', colspan: 3, showSubLabels: false, isMerged: true },
+      tableColumns: [
+        { key: 'specimen', label: 'Sample ID/Location', columnRole: 'row_label', visible: true },
+        { key: 'spot_1', label: 'R1', columnRole: 'observation_value', visible: true, decimalPrecision: 2 },
+        { key: 'spot_2', label: 'R2', columnRole: 'observation_value', visible: true, decimalPrecision: 2 },
+        { key: 'spot_3', label: 'R3', columnRole: 'observation_value', visible: true, decimalPrecision: 2 },
+        { key: 'agg', label: 'Average', columnRole: 'agg_average', visible: true },
+      ],
+      tableRows: [
+        { key: 'spec_0', label: 'A1', nature: 'data', visible: true },
+        { key: 'spec_1', label: 'A2', nature: 'data', visible: true },
+        { key: 'custom_row_1', label: 'B1', visible: true },
+        { key: 'custom_row_2', label: 'B2', visible: true },
+        { key: 'sum_avg', label: 'Overall Avg', nature: 'summary', visible: true },
+      ],
+    }, 'Brinell Hardness Test');
+
+    const host = create([brinellSec], {
+      rows: [paramRow(10, 'Hardness in HBW', null, 0, { unit: 'HBW', decimalPrecision: 0 })],
+    });
+    const s = cmp.sections[0];
+    expect(cmp.isReadingGrid(s)).toBeTrue();
+    expect(cmp.readingGridRows(s).map(r => r.label)).toEqual(['A1', 'A2', 'B1', 'B2']);
+    expect(cmp.getReadingCount(s)).toBe(3);
+
+    // Strict Template Configured columns: only Sample ID/Location, merged Hardness header (colspan=3), Average
+    const headerCells = Array.from(host.querySelectorAll('thead th')).map(th => th.textContent?.trim());
+    expect(headerCells).toEqual(['Sample ID/Location', 'Hardness in HBW(5mm/750 kgf)', 'Average']);
+    expect(host.querySelectorAll('thead tr').length).toBe(1);
+    expect(host.querySelector('thead th[colspan="3"]')?.textContent?.trim()).toBe('Hardness in HBW(5mm/750 kgf)');
+
+    // Enter A1 readings -> 130.67
+    cmp.onGridReadingChange(s, 'S1', 0, 130.0);
+    cmp.onGridReadingChange(s, 'S1', 1, 131.0);
+    cmp.onGridReadingChange(s, 'S1', 2, 131.0);
+    cmp.onGridReadingChange(s, 'S2', 0, 145.1);
+    cmp.onGridReadingChange(s, 'S2', 1, 146.0);
+    cmp.onGridReadingChange(s, 'S2', 2, 145.2);
+    fixture.detectChanges();
+    expect(cmp.gridFmt(s, cmp.gridAggregate(s, 'S1'))).toBe('130.67');
+    expect(cmp.gridFmt(s, cmp.gridAggregate(s, 'S2'))).toBe('145.43');
+
+    // printMode renders plain text spans, 0 <input> elements
+    const printHost = create([brinellSec], {
+      printMode: true,
+      rows: [paramRow(10, 'Hardness in HBW', 130.67, 0, { unit: 'HBW' })],
+    });
+    expect(printHost.querySelectorAll('input').length).toBe(0);
+    expect(Array.from(printHost.querySelectorAll('thead th')).map(th => th.textContent?.trim()))
+      .toEqual(['Sample ID/Location', 'Hardness in HBW(5mm/750 kgf)', 'Average']);
   });
 });

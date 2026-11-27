@@ -177,6 +177,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   @Output() photoUploadRequested = new EventEmitter<void>();
   @Output() parametersAdjusted = new EventEmitter<void>();
   @Output() specimenCountChanged = new EventEmitter<number>();
+  @Output() syncFromLabTestRequested = new EventEmitter<any>();
+
+  /** Sections where the user explicitly clicked "Sync Lab Test" at runtime (switches from strict template subset to synced master params). */
+  private syncedLabTestSections: Record<string, boolean> = {};
+
+  markSyncedFromLabTest(sec?: any): void {
+    const target = sec || this.specimenSection || (this.sections || []).find(s => s.type === 'parameter' || s.type === 'param');
+    if (target) {
+      this.syncedLabTestSections[this.sectionUiKey(target)] = true;
+    }
+    this.cdr.markForCheck();
+  }
+
+  getParamUncertaintyDisplay(param: any): string {
+    const u = this.uncertaintyOf(param?.parameterID ?? param?.parameterId);
+    return u > 0 ? `± ${u}` : '—';
+  }
 
   // Parsed sections array
   sections: any[] = [];
@@ -223,19 +240,19 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     decimalPrecision: number;
     dropdownOptions: any[];
   } = {
-    parameterID: null,
-    parameterName: '',
-    unit: '',
-    inputType: 'Decimal',
-    minValue: null,
-    maxValue: null,
-    acceptanceCriteria: '',
-    testMethodUsed: '',
-    applyTo: 'all',
-    isReportable: true,
-    decimalPrecision: 2,
-    dropdownOptions: []
-  };
+      parameterID: null,
+      parameterName: '',
+      unit: '',
+      inputType: 'Decimal',
+      minValue: null,
+      maxValue: null,
+      acceptanceCriteria: '',
+      testMethodUsed: '',
+      applyTo: 'all',
+      isReportable: true,
+      decimalPrecision: 2,
+      dropdownOptions: []
+    };
 
   // Multi-reading state
   readingValues: Record<string, (number | null)[]> = {};
@@ -314,10 +331,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     overallStatement: string;
     isOptional: boolean;
   } = {
-    items: [],
-    overallStatement: '',
-    isOptional: true
-  };
+      items: [],
+      overallStatement: '',
+      isOptional: true
+    };
 
   // Active section mapping name
   componentNames: Record<string, string> = {
@@ -357,7 +374,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     private parameterService: ParameterService,
     private materialSpecService: MaterialSpecificationService,
     private toastService: ToastService
-  ) {}
+  ) { }
 
   fetchGradeDropdown = (searchTerm: string, page: number, pageSize: number) => {
     return this.materialSpecService.getGradeDropdown(searchTerm, page, pageSize);
@@ -544,7 +561,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['layoutConfig'] || changes['test'] || changes['testPlan']) {
+    if (changes['layoutConfig'] || changes['test'] || changes['testPlan'] || changes['testFormGroup']) {
       this.initLayoutData();
     } else if (changes['environmentData']) {
       this.applyRoomConditions();
@@ -699,7 +716,16 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
    */
   get conformityVerdict(): { status: 'PASS' | 'FAIL' | 'BORDERLINE' | 'PENDING' | 'NO_LIMIT'; label: string; detail: string } {
     const rawRows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
-    const rows = filterEmptyExtraSpecimenRows(rawRows, this.hasSpecimenSection, {
+    const activeKeys = this.getActiveLayoutParameterKeys();
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+    const scopedRows = activeKeySet
+      ? rawRows.filter(r => {
+        const k = r.parameterID != null ? `id:${r.parameterID}` : `name:${String(r.parameterName || '').trim().toLowerCase()}`;
+        return activeKeySet.has(k);
+      })
+      : rawRows;
+    const keepExtra = this.hasSpecimenSection || this.layoutSpecimenCount() > 1 || this.specimens.length > 1;
+    const rows = filterEmptyExtraSpecimenRows(scopedRows, keepExtra, {
       readings: this.test?.readings,
       readingValues: this.readingValues,
       testImages: this.testImages
@@ -979,18 +1005,46 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return rowsOfSpecimen(indexes, indexes[rowIdx] ?? 0)[0] === rowIdx;
   }
 
-  getFilteredParamIndices(): number[] {
+  getFilteredParamIndices(sec?: any): number[] {
     if (!this.parametersFormArray) return [];
+    const activeSec = sec ?? (this.sections || []).find(s => s.type === 'parameter' || s.type === 'param');
     const indexes = this.getRowSpecimenIndexes();
     const rows = this.selectedSpecimenFilter === 'all' ? rowsOrderedBySpecimen(indexes) : rowsOfSpecimen(indexes, this.selectedSpecimenFilter - 1);
     const rawFormRows = (this.parametersFormArray.controls || []).map(c => (c as FormGroup).getRawValue());
-    const validRows = filterEmptyExtraSpecimenRows(rawFormRows, this.hasSpecimenSection, {
+    const plannedQty = Number(this.testPlan?.plannedQuantity || this.test?.plannedQuantity || 1);
+    const keepExtra = this.hasSpecimenSection || plannedQty > 1 || this.layoutSpecimenCount() > 1;
+    const validRows = filterEmptyExtraSpecimenRows(rawFormRows, keepExtra, {
       readings: this.test?.readings,
       readingValues: this.readingValues,
       testImages: this.testImages
     });
     const validSet = new Set(validRows);
-    const shown = rows.filter(i => !this.isGridTargetRow(i) && (this.hasSpecimenSection || validSet.has(rawFormRows[i])));
+    const shown = rows.filter(i => !this.isGridTargetRow(i) && (keepExtra || validSet.has(rawFormRows[i])));
+
+    // Template Configured mode: display strictly the Studio-configured rows in template order (+ manually added rows)
+    if (activeSec && this.isTemplateConfiguredMode(activeSec)) {
+      const configuredRows: any[] = (Array.isArray(activeSec.config?.tableRows) ? activeSec.config.tableRows : [])
+        .filter((r: any) => r?.visible !== false && !String(r?.key ?? '').startsWith('tensile_') && r?.rowOrigin !== 'custom' && r?.bindingMode !== 'static');
+      if (configuredRows.length > 0) {
+        const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const orderIndex = (rowIdx: number): number => {
+          const r = rawFormRows[rowIdx];
+          if (!r) return -1;
+          return configuredRows.findIndex(lr => {
+            const targetId = lr.dbMasterId ?? lr.parameterId ?? lr.parameterID ?? null;
+            if (targetId != null && r.parameterID != null && Number(targetId) === Number(r.parameterID)) return true;
+            const candidates = [lr.dbMasterName, lr.sourceName, lr.label].map(norm).filter(Boolean);
+            return candidates.includes(norm(r.parameterName));
+          });
+        };
+        return shown
+          .map((i, pos) => ({ i, pos, spm: this.getSpecimenIndexForParam(i), ord: orderIndex(i), add: !!rawFormRows[i]?.isAdditional }))
+          .filter(x => x.ord >= 0 || x.add)
+          .sort((a, b) => a.spm - b.spm || (a.ord >= 0 ? a.ord : 9999) - (b.ord >= 0 ? b.ord : 9999) || a.pos - b.pos)
+          .map(x => x.i);
+      }
+    }
+
     if (!this.parameterSubset().length) return shown;
     // the layout's parameters first within each specimen, the test's other parameters after them
     return shown
@@ -1075,6 +1129,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         const isTextRow = rawInputType === 'Text' || rawInputType === 'Qualitative' || String(pName).toLowerCase().includes('location of fracture');
         list.push({
           index: i,
+          parameterID: ctrl.get('parameterID')?.value ?? null,
+          isAdditional: !!ctrl.get('isAdditional')?.value,
           name: pName,
           unit: ctrl.get('unit')?.value || '—',
           requirement: this.formatRequirement(ctrl.value),
@@ -1109,7 +1165,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
     const ctrl = targetIdx >= 0 ? this.parametersFormArray?.at(targetIdx) : null;
     if (ctrl) {
-      ctrl.patchValue({ remarks: text });
+      const trimmed = String(text ?? '').trim();
+      ctrl.patchValue({
+        remarks: text,
+        resultStatus: trimmed ? 'Reported' : null,
+        isWithinLimit: null
+      });
       this.paramValueChanged.emit({ rowIdx: targetIdx, param: ctrl.value });
       this.cdr.markForCheck();
     }
@@ -1145,15 +1206,27 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   getBaseParamStatus(baseParamIdx: number): string {
     let hasFail = false;
     let hasPass = false;
+    let hasReported = false;
     for (let s = 0; s < this.specimens.length; s++) {
       const idx = this.getMatchingRow(baseParamIdx, s);
       const ctrl = idx >= 0 ? this.parametersFormArray?.at(idx) : null;
       const st = ctrl?.get('resultStatus')?.value;
+      const val = ctrl?.get('value')?.value;
+      const remarks = ctrl?.get('remarks')?.value;
+      const inputType = ctrl?.get('inputType')?.value;
       if (st === 'Fail') hasFail = true;
-      if (st === 'Pass') hasPass = true;
+      else if (st === 'Pass') hasPass = true;
+      else if (st === 'Reported' || (inputType === 'Text' && String(remarks ?? '').trim() !== '')) hasReported = true;
+      else if (val !== null && val !== undefined && val !== '') {
+        const min = ctrl?.get('specMinValue')?.value ?? ctrl?.get('minValue')?.value;
+        const max = ctrl?.get('specMaxValue')?.value ?? ctrl?.get('maxValue')?.value;
+        const crit = String(ctrl?.get('acceptanceCriteria')?.value || '').trim();
+        if (min == null && max == null && !crit) hasReported = true;
+      }
     }
     if (hasFail) return 'Fail';
     if (hasPass) return 'Pass';
+    if (hasReported) return 'Reported';
     return 'Pending';
   }
 
@@ -1163,13 +1236,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   public initSpecimens(): void {
     let count = 1;
     const declaredCount = this.layoutSpecimenCount();
-    if (this.hasSpecimenSection || declaredCount > 1) {
+    const plannedQty = Number(this.testPlan?.plannedQuantity || this.test?.plannedQuantity || 0);
+    if (this.hasSpecimenSection || declaredCount > 1 || plannedQty > 1) {
       const rowIndexes = this.getRowSpecimenIndexes();
       const maxRowSpecimen = rowIndexes.length ? Math.max(...rowIndexes) : 0;
       const userSpecified = Number(this.testPlan?.totalSpecimens || this.test?.totalSpecimens || 0);
-      count = declaredCount || Math.max(1, userSpecified, maxRowSpecimen + 1);
+      count = Math.max(1, plannedQty, declaredCount, userSpecified, maxRowSpecimen + 1);
     } else {
-      // Layout without specimen section:
+      // Layout without specimen section and single planned quantity:
       // An already saved extra specimen row (SpecimenIndex > 0) that has no value, no reading,
       // and no photo is not drawn and not counted in the conformity table.
       if (this.parametersFormArray && this.parametersFormArray.length > 0) {
@@ -1211,7 +1285,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const d = this.sample?.diameter != null ? Number(this.sample.diameter) : (pricingDim > 0 ? pricingDim : null);
     const t = this.sample?.thickness != null ? Number(this.sample.thickness) : null;
     const w = this.sample?.width != null ? Number(this.sample.width) : null;
-    const l0 = this.sample?.gaugeLength != null ? Number(this.sample.gaugeLength) : 50;
+    // Strictly bind from DB sample gaugeLength only — never fabricate a default 50 on untouched tests
+    const l0 = this.sample?.gaugeLength != null ? Number(this.sample.gaugeLength) : null;
 
     for (let i = 1; i <= count; i++) {
       const initialArea = this.calculateArea(t, w, d);
@@ -1240,6 +1315,15 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     this.hydrateSpecimensFromParameters();
 
     this.recalculateSpecimens();
+
+    // Sync resolved specimen count back to parent toolbar stepper when needed
+    const currentParentCount = Number(this.test?.totalSpecimens || this.testPlan?.totalSpecimens || 0);
+    if (!this.printMode && count !== currentParentCount) {
+      Promise.resolve().then(() => {
+        if (!this.printMode) this.specimenCountChanged.emit(count);
+      });
+    }
+
     this.cdr.markForCheck();
   }
 
@@ -2031,8 +2115,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       const testReadings = this.test.readings.filter((r: any) => {
         const pName = (r.parameterName || r.parameterCode || '').trim().toLowerCase();
         return pName === targetName.trim().toLowerCase() ||
-               (targetName.toLowerCase().includes('hardness') && pName.includes('hardness')) ||
-               (targetName.toLowerCase().includes('impact') && pName.includes('impact'));
+          (targetName.toLowerCase().includes('hardness') && pName.includes('hardness')) ||
+          (targetName.toLowerCase().includes('impact') && pName.includes('impact'));
       });
       if (testReadings.length > 0) {
         const maxSeq = Math.max(...testReadings.map((r: any) => r.readingNumber || r.sequenceNo || 1));
@@ -2098,13 +2182,62 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
   }
 
-  /** The parameter the layout set for a reading section ('' = the section lists the test's parameters). */
+  /** True when a Studio reading section carries explicit template rows / specimen rows / template mode. */
+  private hasConfiguredReadingStructure(s: any): boolean {
+    if (s?.type !== 'reading') return false;
+    const cfg = s?.config || {};
+    if (this.isTemplateConfiguredMode(s)) return true;
+    if (Array.isArray(cfg.tableRows) && cfg.tableRows.some((r: any) => r?.visible !== false && String(r?.label ?? '').trim())) return true;
+    if (Array.isArray(cfg.specimenRows) && cfg.specimenRows.some((n: any) => String(n ?? '').trim())) return true;
+    return false;
+  }
+
+  /** Visible reading / spot columns defined in Studio `tableColumns` (e.g. `spot_1..spot_n`, `reading_1..n`). */
+  private readingSpotColumns(s: any): any[] {
+    const cols: any[] = Array.isArray(s?.config?.tableColumns) ? s.config.tableColumns : [];
+    return cols.filter((c: any) => {
+      if (!c || c.visible === false) return false;
+      const k = String(c.key || '').trim().toLowerCase();
+      const role = String(c.columnRole || '').trim().toLowerCase();
+      return /^(spot|reading|r)_?\d+$/i.test(k) || role === 'observation_value' || role === 'reading' || role === 'spot' || role === 'measurement';
+    });
+  }
+
+  /** The parameter the layout set for a reading section ('' = legacy multi-parameter reading table). */
   readingGridTarget(s: any): string {
-    return String(s?.config?.targetParamName ?? '').trim();
+    const explicit = String(s?.config?.targetParamName ?? s?.config?.targetParameter ?? '').trim();
+    if (explicit) return explicit;
+    if (!this.hasConfiguredReadingStructure(s)) return '';
+    // Studio Template Configured reading grid without explicit targetParamName: bind to test's primary reading parameter
+    const rows: any[] = Array.isArray(s?.config?.tableRows) ? s.config.tableRows : [];
+    const linked = rows.find((r: any) => r?.visible !== false && (r?.dbMasterName || r?.sourceName));
+    if (linked) return String(linked.dbMasterName || linked.sourceName).trim();
+    const fa = this.parametersFormArray;
+    if (fa && fa.length > 0) {
+      let firstNonAux = '';
+      for (let i = 0; i < fa.length; i++) {
+        const pName = String(fa.at(i).get('parameterName')?.value ?? '').trim();
+        if (!pName) continue;
+        const lower = pName.toLowerCase();
+        if (!lower.includes('scale') && !lower.includes('test point') && !lower.includes('average hardness')) {
+          firstNonAux = pName;
+          break;
+        }
+      }
+      if (firstNonAux) return firstNonAux;
+      const fallbackFirst = String(fa.at(0).get('parameterName')?.value ?? '').trim();
+      if (fallbackFirst) return fallbackFirst;
+    }
+    const testParam = Array.isArray(this.test?.parameters) && this.test.parameters.length > 0
+      ? String(this.test.parameters[0]?.parameterName ?? '').trim()
+      : '';
+    if (testParam) return testParam;
+    return String(s?.title ?? '').trim() || 'Test Parameter';
   }
 
   isReadingGrid(s: any): boolean {
-    return s?.type === 'reading' && !!this.readingGridTarget(s);
+    if (s?.type !== 'reading') return false;
+    return !!String(s?.config?.targetParamName ?? s?.config?.targetParameter ?? '').trim() || this.hasConfiguredReadingStructure(s);
   }
 
   readingsAsRows(s: any): boolean {
@@ -2138,19 +2271,30 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return `${this.readingGridParam(s)}|${code}`;
   }
 
-  /** Row names the layout lists: its sample rows, else its specimen names, else one row. */
+  /** Row names the layout lists: all visible data rows in Studio order (excluding summary/requirement rows), else specimenRows, else one row. */
   private configuredReadingRows(s: any): string[] {
     const cfg = s?.config || {};
-    const fromRows = (Array.isArray(cfg.tableRows) ? cfg.tableRows : [])
-      .filter((r: any) => String(r?.key ?? '').startsWith('spec_') && r.visible !== false)
-      .map((r: any) => String(r.label ?? '').trim()).filter(Boolean);
-    if (fromRows.length) return fromRows;
+    const tableRows: any[] = Array.isArray(cfg.tableRows) ? cfg.tableRows : [];
+    const dataRows = tableRows
+      .filter((r: any) => {
+        if (r?.visible === false) return false;
+        const nature = String(r?.nature ?? '').trim().toLowerCase();
+        if (nature === 'summary' || nature === 'requirement' || nature === 'footer') return false;
+        const k = String(r?.key ?? '').trim().toLowerCase();
+        if (k.startsWith('sum_') || k.startsWith('summary_') || k.startsWith('req_') || k === 'requirement') return false;
+        return true;
+      })
+      .map((r: any) => String(r.label ?? '').trim())
+      .filter(Boolean);
+    if (dataRows.length) return dataRows;
     const fromList = (Array.isArray(cfg.specimenRows) ? cfg.specimenRows : []).map((n: any) => String(n ?? '').trim()).filter(Boolean);
     return fromList.length ? fromList : [this.readingGridTarget(s)];
   }
 
   private configuredReadingCount(s: any): number {
-    const n = Number(s?.config?.count) || Number(s?.config?.spotCount) || 5;
+    const spotCols = this.readingSpotColumns(s);
+    if (spotCols.length > 0) return Math.min(25, Math.max(1, spotCols.length));
+    const n = Number(s?.config?.count) || Number(s?.config?.readingCount) || Number(s?.config?.spotCount) || 5;
     return Math.min(25, Math.max(1, Math.round(n)));
   }
 
@@ -2210,8 +2354,28 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private gridDecimals(s: any): number {
-    const d = Number(this.gridParamControl(s)?.get('decimalPrecision')?.value);
-    return Number.isFinite(d) && d >= 0 && d <= 6 ? d : 2;
+    const aggDef = this.columnDef(s, 'agg');
+    const colDec = aggDef?.decimalPrecision != null && aggDef?.decimalPrecision !== '' ? Number(aggDef.decimalPrecision) : NaN;
+    if (Number.isFinite(colDec) && colDec >= 0 && colDec <= 6) return colDec;
+    // Averages should not have fewer decimals than the reading columns being averaged
+    const spotDec = this.readingSpotColumns(s)
+      .map((c: any) => (c?.decimalPrecision != null && c?.decimalPrecision !== '' ? Number(c.decimalPrecision) : NaN))
+      .find((d: number) => Number.isFinite(d) && d > 0 && d <= 6);
+    if (spotDec != null) return spotDec;
+    // Parameter Master SQL int defaults to 0 when unset; only honor explicit positive precision
+    const rawParamDec = this.gridParamControl(s)?.get('decimalPrecision')?.value;
+    const d = rawParamDec != null && rawParamDec !== '' ? Number(rawParamDec) : NaN;
+    return Number.isFinite(d) && d > 0 && d <= 6 ? d : 2;
+  }
+
+  /** Plain-text display of a reading cell for Raw Data Sheet / print mode. */
+  getGridReadingDisplay(s: any, code: string, idx: number): string {
+    const val = this.getGridReading(s, code, idx);
+    if (val == null || isNaN(Number(val))) return '—';
+    const spotCol = this.readingSpotColumns(s)[idx];
+    const colDec = spotCol?.decimalPrecision != null ? Number(spotCol.decimalPrecision) : NaN;
+    if (Number.isFinite(colDec) && colDec >= 0 && colDec <= 6) return Number(val).toFixed(colDec);
+    return String(val);
   }
 
   private recalcGridStats(s: any, code: string): void {
@@ -2322,15 +2486,26 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return Number.isFinite(limit) && limit > 0 && spread != null && spread > limit;
   }
 
+  /** Visibility of reading-grid aggregate/requirement/status columns (strict in Template Configured mode). */
+  gridColumnVisible(s: any, key: 'agg' | 'requirement' | 'status'): boolean {
+    const ov = this.columnOverride[this.sectionUiKey(s)]?.[key];
+    if (ov !== undefined) return ov;
+    if (this.isTemplateConfiguredMode(s) && Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0) {
+      const def = this.columnDef(s, key);
+      return !!def && def.visible !== false;
+    }
+    return this.columnVisible(s, key);
+  }
+
   gridColumnCount(s: any): number {
     const cfg = s?.config || {};
     let n = 1;
     if (this.specimenShow(s, 'unit')) n++;
     if (this.showGridReadings(s)) n += this.getReadingCount(s);
-    if (this.columnVisible(s, 'agg')) n++;
+    if (this.gridColumnVisible(s, 'agg')) n++;
     if (this.gridStatsShown(s)) n += 2;
-    if (this.columnVisible(s, 'requirement') && !cfg.requirementRow) n++;
-    if (this.columnVisible(s, 'status')) n++;
+    if (this.gridColumnVisible(s, 'requirement') && !cfg.requirementRow) n++;
+    if (this.gridColumnVisible(s, 'status')) n++;
     return n;
   }
 
@@ -2791,6 +2966,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getDefaultReadingCount(s: any): number {
+    if (this.isReadingGrid(s)) return this.configuredReadingCount(s);
+    const spotCols = this.readingSpotColumns(s);
+    if (spotCols.length > 0) return spotCols.length;
     return parseInt(s?.config?.count || s?.config?.readingCount || '5', 10) || 5;
   }
 
@@ -2800,8 +2978,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       const ctrl = this.parametersFormArray.at(i);
       const name = (ctrl.get('parameterName')?.value || '').trim();
       if (name.toLowerCase() === targetName.trim().toLowerCase() ||
-         (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
-         (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+        (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+        (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
         return ctrl;
       }
     }
@@ -2871,8 +3049,44 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return prefix ? `${prefix}${spmIdx + 1}` : `S${spmIdx + 1}`;
   }
 
+  private static readonly COLUMN_ROLE_MAP: Record<string, string[]> = {
+    param: ['row_label', 'param_name', 'parameter_name', 'label'],
+    specimen: ['row_label', 'specimen_label', 'sample_id', 'location', 'label'],
+    unit: ['unit'],
+    requirement: ['spec_requirement', 'requirement', 'limit'],
+    status: ['status_verdict', 'status', 'verdict'],
+    avg: ['agg_average', 'average', 'avg'],
+    agg: ['agg_average', 'average', 'avg', 'agg'],
+    min: ['agg_min', 'min'],
+    max: ['agg_max', 'max'],
+    uncertainty: ['uncertainty', 'mu'],
+    method: ['test_method', 'method'],
+    remarks: ['custom_data', 'remarks', 'remark'],
+    print: ['reportable_toggle', 'print']
+  };
+
   private columnDef(sec: any, key: string): any {
-    return (Array.isArray(sec?.config?.tableColumns) ? sec.config.tableColumns : []).find((c: any) => c?.key === key);
+    const cols: any[] = Array.isArray(sec?.config?.tableColumns) ? sec.config.tableColumns : [];
+    const direct = cols.find((c: any) => c?.key === key);
+    if (direct) return direct;
+    const roles = ConfiguredTestLayoutRendererComponent.COLUMN_ROLE_MAP[key];
+    if (!roles) return undefined;
+    return cols.find((c: any) => roles.includes(String(c?.columnRole || '').trim().toLowerCase()));
+  }
+
+  /**
+   * True when the Studio section is in Template Configured mode (`sectionDataMode: 'template' | 'template_configured'`
+   * or `parameterMode` subset with explicit `tableRows`) and has not been explicitly synced from Lab Test Master.
+   */
+  isTemplateConfiguredMode(sec: any): boolean {
+    if (!sec?.config) return false;
+    if (this.syncedLabTestSections[this.sectionUiKey(sec)]) return false;
+    const dm = String(sec.config.sectionDataMode || '').trim().toLowerCase();
+    if (dm === 'template' || dm === 'template_configured') return true;
+    if (dm === 'runtime' || dm === 'auto_load') return false;
+    const pm = String(sec.config.parameterMode || '').trim().toLowerCase();
+    const hasTableRows = Array.isArray(sec.config.tableRows) && sec.config.tableRows.length > 0;
+    return (pm.includes('subset') || pm.includes('template')) && hasTableRows;
   }
 
   /** A column the layout lists as hidden is not drawn; a column it does not list follows the section's own switches. */
@@ -2896,14 +3110,20 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   gridStatsShown(s: any): boolean {
     const ov = this.columnOverride[this.sectionUiKey(s)]?.['stats'];
-    return ov !== undefined ? ov : s?.config?.showStatistics !== false;
+    if (ov !== undefined) return ov;
+    if (this.isTemplateConfiguredMode(s) && Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0) {
+      const minDef = this.columnDef(s, 'min');
+      const maxDef = this.columnDef(s, 'max');
+      return (!!minDef && minDef.visible !== false) || (!!maxDef && maxDef.visible !== false);
+    }
+    return s?.config?.showStatistics !== false;
   }
 
   /** The columns the Adjust menu of a section offers, by section type. */
   adjustableColumns(s: any): { key: string; label: string }[] {
     const t = String(s?.type || '').toLowerCase();
     if (t === 'spm' || t === 'specimen') {
-      return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }, { key: 'print', label: 'Print Checkbox' }];
+      return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }];
     }
     if (t === 'param' || t === 'parameter') {
       if (this.specimens.length > 1 || s?.config?.enableMultiSpecimen) {
@@ -2936,6 +3156,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   isColumnShown(s: any, key: string): boolean {
+    if (this.printMode && key === 'print') return false;
     if (key === 'stats') return this.gridStatsShown(s);
     if (key === 'showRule') {
       const ov = this.columnOverride[this.sectionUiKey(s)]?.['showRule'];
@@ -2953,12 +3174,19 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if ((t === 'param' || t === 'parameter') && this.specimens.length <= 1 && !s?.config?.enableMultiSpecimen) {
       const ov = this.columnOverride[this.sectionUiKey(s)]?.[key];
       if (ov !== undefined) return ov;
+      if (this.isTemplateConfiguredMode(s) && Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0) {
+        if (key === 'print') return s?.config?.showPrint !== false;
+        if (key === 'source') return !!this.columnDef(s, 'source') && this.columnDef(s, 'source').visible !== false;
+        const def = this.columnDef(s, key);
+        return !!def && def.visible !== false;
+      }
       const cols = s?.config?.columns || {};
       if (key === 'source' || key === 'print') return cols[key] !== false;
       if (key === 'unit' || key === 'requirement' || key === 'status') return cols[key] !== false && this.columnVisible(s, key);
       if (key === 'method' || key === 'uncertainty' || key === 'remarks') return !!cols[key];
     }
-    if (['avg', 'requirement', 'status', 'unit', 'print'].includes(key) && !this.isReadingGrid(s)) return this.specimenShow(s, key as any);
+    if (['avg', 'min', 'max', 'requirement', 'status', 'unit', 'print'].includes(key) && !this.isReadingGrid(s)) return this.specimenShow(s, key as any);
+    if (this.isReadingGrid(s) && (key === 'agg' || key === 'requirement' || key === 'status')) return this.gridColumnVisible(s, key);
     if (key === 'unit') return this.specimenShow(s, 'unit');
     return this.columnVisible(s, key);
   }
@@ -2968,13 +3196,22 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     this.columnOverride = { ...this.columnOverride, [sec]: { ...(this.columnOverride[sec] || {}), [key]: !this.isColumnShown(s, key) } };
   }
 
-  /** Average / Requirement / Status / Unit / Print column switches of the specimen matrix. */
-  specimenShow(sec: any, what: 'avg' | 'requirement' | 'status' | 'unit' | 'print'): boolean {
+  /** Average / Min / Max / Requirement / Status / Unit / Print column switches of the specimen matrix & multi-specimen parameter table. */
+  specimenShow(sec: any, what: 'avg' | 'min' | 'max' | 'requirement' | 'status' | 'unit' | 'print'): boolean {
+    if (this.printMode && what === 'print') return false;
     const cfg = sec?.config || {};
     const ov = this.columnOverride[this.sectionUiKey(sec)]?.[what];
     if (ov !== undefined) return ov;
+    // Template Configured mode: strictly render ONLY columns explicitly configured in tableColumns (+ Print & Action always present)
+    if (this.isTemplateConfiguredMode(sec) && Array.isArray(cfg.tableColumns) && cfg.tableColumns.length > 0) {
+      if (what === 'print') return true;
+      const def = this.columnDef(sec, what);
+      return !!def && def.visible !== false;
+    }
     switch (what) {
       case 'avg': return cfg.showAverage !== false && this.columnVisible(sec, 'avg');
+      case 'min': return !!cfg.showMinMax && this.columnVisible(sec, 'min');
+      case 'max': return !!cfg.showMinMax && this.columnVisible(sec, 'max');
       case 'requirement': return cfg.showRequirement !== false && this.columnVisible(sec, 'requirement');
       case 'status': return cfg.showStatus !== false && this.columnVisible(sec, 'status');
       case 'unit': return cfg.showUnit !== false && this.columnVisible(sec, 'unit');
@@ -3005,24 +3242,95 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   /**
-   * Parameter rows the specimen matrix shows.
-   * - Technician can adjust: the test's own parameters, under the layout's names.
-   * - Fixed (as designed): the layout's rows in its order (a row with a value written in the layout is shown as
-   *   that value); the checklist counts when the layout has no rows. A test parameter the layout does not list is
-   *   still entered, in a separate "Other parameters of this test" group, so it can never block Complete unseen.
-   * A layout that names none of the test's parameters restricts nothing.
+   * Parameter rows the specimen matrix / multi-specimen parameter table shows.
+   * - Template Configured (`sectionDataMode === 'template_configured'`): strictly follows `sec.config.tableRows`
+   *   in exact Studio order (matching Master Link rows by parameterId/name, rendering Custom/Static rows in place,
+   *   plus any manually added `isAdditional` rows — never injecting unconfigured runtime parameters).
+   * - Runtime Auto-Load (`sectionDataMode === 'auto_load'` or unset): dynamically loads all runtime parameters
+   *   from the test, applying layout display labels and static rows.
+   * - Fixed (as designed): layout's rows in its order + separate group for other test parameters.
    */
   specimenParams(sec: any): any[] {
     const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const base = this.getBaseParameterList();
     const rows: any[] = (Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : []).filter((r: any) => !String(r?.key ?? '').startsWith('tensile_'));
-    const isStaticRow = (r: any) => r?.bindingMode === 'static' && !r.sourceName && !String(r.key ?? '').startsWith('param_');
-    const nameOfRow = (r: any) => norm(r?.sourceName || r?.label);
+    const isStaticRow = (r: any) => (r?.bindingMode === 'static' && !r.sourceName && !r.parameterId && !r.dbMasterId && !String(r.key ?? '').startsWith('param_')) || (r?.rowOrigin === 'custom' && !r.parameterId && !r.dbMasterId && !r.sourceName);
+    const nameCandidatesOfRow = (r: any) => [r?.dbMasterName, r?.sourceName, r?.label].map(norm).filter(Boolean);
+    const nameOfRow = (r: any) => norm(r?.dbMasterName || r?.sourceName || r?.label);
+    const matchParam = (r: any, usedSet?: Set<number>) => {
+      const targetId = r?.dbMasterId ?? r?.parameterId ?? r?.parameterID ?? null;
+      if (targetId != null) {
+        const byId = base.find(x => x.parameterID != null && Number(x.parameterID) === Number(targetId) && (!usedSet || !usedSet.has(x.index)));
+        if (byId) return byId;
+      }
+      const candidates = nameCandidatesOfRow(r);
+      if (!candidates.length) return undefined;
+      return base.find(x => candidates.includes(norm(x.name)) && (!usedSet || !usedSet.has(x.index)));
+    };
     const named = (p: any) => {
-      const row = rows.find(r => !isStaticRow(r) && nameOfRow(r) === norm(p.name));
+      const row = rows.find(r => !isStaticRow(r) && (
+        ((r?.dbMasterId ?? r?.parameterId) != null && p.parameterID != null && Number(r?.dbMasterId ?? r?.parameterId) === Number(p.parameterID)) ||
+        nameCandidatesOfRow(r).includes(norm(p.name))
+      ));
       return { ...p, displayName: String(row?.label ?? '').trim() || p.name };
     };
     const staticOf = (r: any, n: number) => ({ index: -(2000 + n), name: r.label, displayName: String(r.label ?? ''), unit: r.unit || '', requirement: r.requirement || '', inputType: 'Text', isCalculated: false, isStatic: true, staticValue: String(r.staticValue ?? '') });
+
+    // 1. Template Configured mode: strictly render the Studio-configured rows in exact template order
+    if (this.isTemplateConfiguredMode(sec)) {
+      const layoutRows = rows.filter(r => r?.visible !== false);
+      if (layoutRows.length > 0) {
+        const main: any[] = [];
+        const used = new Set<number>();
+        let statics = 0;
+        for (const r of layoutRows) {
+          if (isStaticRow(r)) {
+            main.push({
+              index: -(1000 + statics++),
+              name: r.label,
+              displayName: String(r.label ?? ''),
+              unit: r.unit || '',
+              requirement: r.requirement || '',
+              inputType: r.inputType || 'Text',
+              isCalculated: false,
+              isStatic: true,
+              staticValue: String(r.staticValue ?? '')
+            });
+            continue;
+          }
+          const p = matchParam(r, used);
+          if (p) {
+            used.add(p.index);
+            main.push({
+              ...p,
+              displayName: String(r.label ?? '').trim() || p.name,
+              unit: (r.unit && r.unit !== '—') ? r.unit : p.unit
+            });
+          } else {
+            // Configured row not yet present in form: render its configured template definition without auto-binding test/spec extras
+            main.push({
+              index: -(1000 + statics++),
+              parameterID: r.dbMasterId ?? r.parameterId ?? null,
+              name: String(r.dbMasterName || r.sourceName || r.label || ''),
+              displayName: String(r.label ?? '').trim() || String(r.dbMasterName || ''),
+              unit: r.unit || '—',
+              requirement: r.requirement && r.requirement !== 'Runtime' ? r.requirement : '—',
+              inputType: r.inputType || 'Text',
+              isCalculated: !!r.isCalculated,
+              isStatic: true,
+              staticValue: String(r.staticValue ?? '—')
+            });
+          }
+        }
+        // Keep any manually added runtime parameters (+ Add Parameter) visible at the end
+        const added = base.filter(p => !used.has(p.index) && p.isAdditional).map(named);
+        if (main.length > 0 || added.length > 0) {
+          return [...main, ...added];
+        }
+      }
+    }
+
+    // 2. Runtime Auto-Load (default flexible mode)
     if (!this.isFixedStructure(sec)) {
       // the test's own parameters, with the layout's fixed-value rows above / below them as the layout places them
       const before: any[] = [];
@@ -3036,18 +3344,19 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       return [...before, ...base.map(named), ...after];
     }
 
+    // 3. Fixed Structure mode (legacy A1b behavior)
     const picked: string[] = Array.isArray(sec?.config?.specimenColumns) ? sec.config.specimenColumns : [];
     const layoutRows = rows.filter(r => r?.visible !== false);
     const main: any[] = [];
     const used = new Set<number>();
-    if (layoutRows.some(r => isStaticRow(r) || base.some(p => nameOfRow(r) === norm(p.name)))) {
+    if (layoutRows.some(r => isStaticRow(r) || !!matchParam(r))) {
       let statics = 0;
       for (const r of layoutRows) {
         if (isStaticRow(r)) {
           main.push({ index: -(1000 + statics++), name: r.label, displayName: String(r.label ?? ''), unit: r.unit || '', requirement: r.requirement || '', inputType: 'Text', isCalculated: false, isStatic: true, staticValue: String(r.staticValue ?? '') });
           continue;
         }
-        const p = base.find(x => nameOfRow(r) === norm(x.name) && !used.has(x.index));
+        const p = matchParam(r, used);
         if (p) {
           used.add(p.index);
           main.push({ ...p, displayName: String(r.label ?? '').trim() || p.name });
@@ -3064,6 +3373,24 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
     const others = base.filter(p => !used.has(p.index)).map(p => ({ ...named(p), isOther: true }));
     return others.length && main.length ? [...main, { index: -1, isDivider: true, name: '', displayName: '' }, ...others] : [...main, ...others];
+  }
+
+  /**
+   * Returns active parameter keys (ordered) when the primary result section is in Template Configured mode,
+   * or null when in Runtime Auto-Load mode (meaning all runtime parameters are active).
+   */
+  getActiveLayoutParameterKeys(): string[] | null {
+    const primary = this.specimenSection || (this.sections || []).find(s => s.type === 'parameter' || s.type === 'param');
+    if (!primary || !this.isTemplateConfiguredMode(primary)) return null;
+    const rows = this.specimenParams(primary).filter(p => !p.isDivider && !p.isStatic);
+    if (!rows.length) return null;
+    return rows.map(p => p.parameterID != null ? `id:${p.parameterID}` : `name:${String(p.name || '').trim().toLowerCase()}`);
+  }
+
+  /** Returns the active specimen display labels (e.g. ['S.NO.1', 'S.NO.2']) for cross-tab consistency. */
+  getSpecimenDisplayLabels(): string[] {
+    const primary = this.specimenSection || (this.sections || []).find(s => (s.type === 'parameter' || s.type === 'param') && s.config?.enableMultiSpecimen);
+    return this.specimens.map((_, i) => this.specimenLabel(i, primary));
   }
 
   /** The parameters as columns of the transposed matrix (no group divider). */
@@ -3128,9 +3455,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   private hasLegacySpmSection = false;
 
   hasSectionOfType(type: string): boolean {
-    if (type === 'spm' && this.hasLegacySpmSection) return true;
+    if (type === 'spm') return this.hasLegacySpmSection;
     if (type === 'specimen' && this.hasSpecimenSection) return true;
-    return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param') || ((type === 'spm' || type === 'specimen') && (s.type === 'spm' || s.type === 'specimen')));
+    return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param'));
   }
 
   /** A reading section that lists the test's parameters itself (no target parameter): the plain parameter table is then not drawn. */
@@ -3157,6 +3484,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getReadingColumnHeader(s: any, idx: number): string {
+    if (this.isReadingGrid(s)) {
+      const spotCol = this.readingSpotColumns(s)[idx];
+      if (spotCol && typeof spotCol.label === 'string' && spotCol.label.trim()) {
+        return spotCol.label.trim();
+      }
+    }
     const rawPrefix = s?.config?.readingLabel || s?.config?.readingPrefix;
     // a label the layout cleared on purpose (empty text, not missing) numbers the readings 1, 2, 3 ...
     if (typeof s?.config?.readingLabel === 'string' && s.config.readingLabel.trim() === '' && !s?.config?.readingPrefix) return String(idx + 1);
@@ -3233,8 +3566,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         this.parametersFormArray.controls.forEach((ctrl, idx) => {
           const name = (ctrl.get('parameterName')?.value || '').trim();
           if (name.toLowerCase() === targetName.toLowerCase() ||
-             (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
-             (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+            (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+            (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
             ctrl.patchValue({ value: avg, remarks: readingsJson });
             this.evaluateLimitForControl(ctrl);
             this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
@@ -3271,8 +3604,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       this.parametersFormArray.controls.forEach((ctrl, idx) => {
         const name = (ctrl.get('parameterName')?.value || '').trim();
         if (name.toLowerCase() === targetName.toLowerCase() ||
-           (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
-           (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+          (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+          (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
           ctrl.patchValue({ value: avg, remarks: readingsJson });
           this.evaluateLimitForControl(ctrl);
           this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
@@ -3292,7 +3625,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     const numVals = arr.map(Number);
     const sum = numVals.reduce((a, b) => a + b, 0);
-    const avg = Number((sum / numVals.length).toFixed(1));
+    const avg = Number((sum / numVals.length).toFixed(2));
     const min = Math.min(...numVals);
     const max = Math.max(...numVals);
 
@@ -3453,22 +3786,36 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     const min = ctrl.get('specMinValue')?.value ?? ctrl.get('minValue')?.value;
     const max = ctrl.get('specMaxValue')?.value ?? ctrl.get('maxValue')?.value;
+    const criteria = String(ctrl.get('acceptanceCriteria')?.value || '').trim();
     const num = parseFloat(val);
 
     if (isNaN(num)) {
       if (typeof val === 'string') {
         const lower = val.trim().toLowerCase();
-        const pass = lower === 'pass' || lower === 'satisfactory' || lower === 'yes';
-        ctrl.patchValue({ isWithinLimit: pass, resultStatus: pass ? 'Pass' : 'Fail' }, { emitEvent: false });
+        if (lower === 'pass' || lower === 'satisfactory' || lower === 'yes' || lower === 'conforms') {
+          ctrl.patchValue({ isWithinLimit: true, resultStatus: 'Pass' }, { emitEvent: false });
+        } else if (lower === 'fail' || lower === 'not satisfactory' || lower === 'no' || lower === 'non-conforming') {
+          ctrl.patchValue({ isWithinLimit: false, resultStatus: 'Fail' }, { emitEvent: false });
+        } else {
+          ctrl.patchValue({ isWithinLimit: null, resultStatus: 'Reported' }, { emitEvent: false });
+        }
       }
       return;
     }
 
+    const hasMin = min != null && min !== '' && !isNaN(parseFloat(min));
+    const hasMax = max != null && max !== '' && !isNaN(parseFloat(max));
+    if (!hasMin && !hasMax && !criteria) {
+      // Informational parameter without specification tolerance -> Reported (never false Pass)
+      ctrl.patchValue({ isWithinLimit: null, resultStatus: 'Reported' }, { emitEvent: false });
+      return;
+    }
+
     let isWithin = true;
-    if (min != null && !isNaN(parseFloat(min)) && num < parseFloat(min)) {
+    if (hasMin && num < parseFloat(min)) {
       isWithin = false;
     }
-    if (max != null && !isNaN(parseFloat(max)) && num > parseFloat(max)) {
+    if (hasMax && num > parseFloat(max)) {
       isWithin = false;
     }
 
@@ -3767,7 +4114,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (basis.source === 'fixed' && fixed) return fixed;
     return basis.withMU
       ? 'Statement of Conformity is provided with consideration of measurement uncertainty.'
-      : 'Statement of Conformity is provided without consideration measurement uncertainty.';
+      : 'Statement of Conformity is provided without consideration of measurement uncertainty.';
   }
 
   /** What the rule resolved to, saved with the test so the report prints the same lines. */

@@ -36,7 +36,7 @@ const UI_STATE_KEYS = [
  */
 const RETIRED_KEYS = [
   // a section is either in the layout or not; the technician hides it on the result screen
-  'enabled', 'visibility', 'sectionStatus', 'isOptional',
+  'enabled', 'sectionStatus', 'isOptional',
   // report group: only `reportable` and `printTitle` remain
   'printCertificate', 'reportLabel', 'pageBreak', 'density', 'keepHeader', 'showLabels', 'highlightStatus', 'showRaw',
   'showMUReport', 'showConformity', 'showEquipment', 'showScopeMark', 'reportProjection', 'alignment',
@@ -50,8 +50,8 @@ const RETIRED_KEYS = [
   'readingSource', 'locationSource', 'formulaSource', 'observedSource', 'dataSource',
   // parameter section: decimals come from the parameter master, requirement / status are column switches
   'decimals', 'resultMode', 'requirement', 'status',
-  // rule section: replaced by verdictSource
-  'evaluation', 'valueSource', 'operator', 'parameter', 'failAction', 'decisionRule',
+  // rule section: replaced by verdictSource (preserve failAction & Studio decisionRulePolicy / showParameterEvaluationTable / defaultStatementText)
+  'evaluation', 'valueSource', 'operator', 'parameter', 'decisionRule',
   // L3 duplicate keys (2026-11 config audit §4)
   'locationNames', 'showPreText', 'showPostText', 'spotCount', 'readingCount', 'targetParameter', 'customColumns', 'rows'
 ];

@@ -55,6 +55,18 @@ describe('countExecutionMetrics', () => {
     expect(m.pending).toBe(2);
     expect(m.entered).toBe(1);
   });
+
+  it('groups multi-specimen rows of the same parameter so counts reflect unique parameters', () => {
+    const m = countExecutionMetrics([
+      { parameterID: 1, parameterName: 'Yield Strength', specimenIndex: 0, value: '310', isWithinLimit: true },
+      { parameterID: 1, parameterName: 'Yield Strength', specimenIndex: 1, value: '210', isWithinLimit: false },
+      { parameterID: 2, parameterName: 'UTS', specimenIndex: 0, value: '450', isWithinLimit: true },
+      { parameterID: 2, parameterName: 'UTS', specimenIndex: 1, value: '460', isWithinLimit: true },
+      { parameterID: 3, parameterName: 'Elongation', specimenIndex: 0, value: null, isWithinLimit: null },
+      { parameterID: 3, parameterName: 'Elongation', specimenIndex: 1, value: null, isWithinLimit: null },
+    ]);
+    expect(m).toEqual({ total: 3, entered: 2, pass: 1, fail: 1, pending: 1 });
+  });
 });
 
 describe('sameExecutionMetricsList', () => {

@@ -19,6 +19,7 @@ import { TestMethodSpecificationService } from '../../../services/test-method-sp
 import { MaterialSpecificationService } from '../../../services/material-specification.service';
 import { SampleInwardService } from '../../../services/sample-inward.service';
 import { TestLayoutService } from '../../../services/test-layout.service';
+import { LaboratoryTestService } from '../../../services/laboratory-test.service';
 import { Observable, Subscription, of } from 'rxjs';
 import { switchMap, tap } from 'rxjs/operators';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
@@ -31,12 +32,14 @@ import { environment } from '../../../../environments/environment';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { ConfiguredTestLayoutRendererComponent } from '../configured-test-layout-renderer/configured-test-layout-renderer.component';
 import { layoutRequiredGaps, layoutPhotoGaps } from '../configured-test-layout-renderer/layout-required-gaps';
-import { TestVerdictPanelComponent } from '../test-verdict-panel/test-verdict-panel.component';
+import { TestVerdictPanelComponent, VerdictColumnConfig } from '../test-verdict-panel/test-verdict-panel.component';
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
 import { ExecutionMetrics, countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
-import { findByTensileRole,
-  tensileArea, TensileRole } from '../configured-test-layout-renderer/tensile-parameter-roles';
+import {
+  findByTensileRole,
+  tensileArea, TensileRole
+} from '../configured-test-layout-renderer/tensile-parameter-roles';
 import {
   addSpecimenRows,
   filterEmptyExtraSpecimenRows,
@@ -135,6 +138,23 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   // Configured Test-Wise Layout State
   currentTestLayout: any = null;
+  /** Standard fallback layout rendered whenever a test has no mapped TestLayoutTemplate in DB. */
+  readonly defaultFallbackLayout: any = {
+    id: 0,
+    layoutName: 'Standard Parameter Table',
+    sections: [
+      {
+        id: 'default-params',
+        type: 'parameter',
+        title: 'Test Parameters',
+        config: {
+          sectionDataMode: 'runtime',
+          runtimeAdjust: true,
+          allowRuntimeAdd: true
+        }
+      }
+    ]
+  };
   activeLayoutMode: 'configured' | 'default' = 'configured';
   layoutCache: Record<string, any> = {};
   loadingLayout: boolean = false;
@@ -175,7 +195,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       try {
         const formParams = this.getParameters(planIndex, testIndex)?.value;
         if (Array.isArray(formParams)) lookupList.push(...formParams);
-      } catch {}
+      } catch { }
     }
     lookupList.push(this.globalParamMap);
 
@@ -797,13 +817,368 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   getActiveSpecimenCount(): number {
     const plan = this.plans[this.activePlanIndex];
-    return Number(plan?.tests?.[0]?.totalSpecimens || plan?.totalSpecimens || 1);
+    return Math.max(1, Number(plan?.tests?.[0]?.totalSpecimens || plan?.totalSpecimens || plan?.plannedQuantity || plan?.quantity || 1));
   }
 
   getActivePlanSpecimenCount(p: number): number {
     const plan = this.plans[p];
     if (!plan) return 1;
-    return Number(plan.tests?.[0]?.totalSpecimens || plan.totalSpecimens || plan.plannedQuantity || 1);
+    return Math.max(1, Number(plan.tests?.[0]?.totalSpecimens || plan.totalSpecimens || plan.plannedQuantity || plan.quantity || 1));
+  }
+
+  private getPrimaryLayoutSection(): any {
+    const sections: any[] = this.currentTestLayout?.sections || this.currentTestLayout?.parsedConfig?.sections || [];
+    return sections.find((s: any) => s?.type === 'specimen' || s?.type === 'spm')
+      || sections.find((s: any) => s?.type === 'parameter' || s?.type === 'param')
+      || null;
+  }
+
+  private laboratoryTestService = inject(LaboratoryTestService);
+  /** Headers where the user explicitly clicked "Sync Lab Test" to pull actual Lab Test Master parameters. */
+  syncedFromLabTestHeaders: Record<number, boolean> = {};
+
+  private isSectionTemplateConfigured(sec: any): boolean {
+    if (!sec?.config) return false;
+    const dm = String(sec.config.sectionDataMode || '').trim().toLowerCase();
+    if (dm === 'template' || dm === 'template_configured') return true;
+    if (dm === 'runtime' || dm === 'auto_load') return false;
+    const pm = String(sec.config.parameterMode || '').trim().toLowerCase();
+    const hasTableRows = Array.isArray(sec.config.tableRows) && sec.config.tableRows.length > 0;
+    return (pm.includes('subset') || pm.includes('template')) && hasTableRows;
+  }
+
+  /**
+   * Returns ordered active parameter keys (`id:<id>` or `name:<lower>`) when the active layout's
+   * primary section is in Template Configured mode, or `null` in Runtime Auto-Load / Synced mode.
+   * Works even when Tab 2 is open and `<app-configured-test-layout-renderer>` is unmounted.
+   */
+  getActiveLayoutParameterKeys(planIndex?: number, testIndex?: number): string[] | null {
+    const p = planIndex ?? this.activePlanIndex ?? 0;
+    const t = testIndex ?? 0;
+    if (p !== this.activePlanIndex) return null;
+
+    const headerId = this.plans?.[p]?.tests?.[t]?.headerId;
+    if (headerId != null && this.syncedFromLabTestHeaders[headerId]) return null;
+
+    if (this.layoutRendererComponent) {
+      return this.layoutRendererComponent.getActiveLayoutParameterKeys();
+    }
+
+    const sec = this.getPrimaryLayoutSection();
+    if (!sec || !this.isSectionTemplateConfigured(sec)) return null;
+
+    const tableRows: any[] = Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : [];
+    const layoutRows = tableRows.filter(r => r?.visible !== false && r?.rowSource !== 'custom_text' && r?.rowOrigin !== 'custom' && !r?.isStatic && r?.source !== 'static' && r?.bindingMode !== 'static');
+    if (!layoutRows.length) return null;
+
+    const paramsFA = this.getParameters(p, t);
+    const rawRows: any[] = paramsFA?.getRawValue?.() || this.plans?.[p]?.tests?.[t]?.parameters || [];
+    const baseRows = rawRows.filter(r => (Number(r?.specimenIndex) || 0) === 0);
+    const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const keyOf = (r: any) => (r?.parameterID != null && Number(r.parameterID) !== 0)
+      ? `id:${r.parameterID}`
+      : `name:${String(r?.parameterName || '').trim().toLowerCase()}`;
+
+    const keys: string[] = [];
+    const used = new Set<string>();
+    for (const lr of layoutRows) {
+      const targetId = lr.dbMasterId ?? lr.parameterId ?? lr.parameterID ?? null;
+      let matched = targetId != null
+        ? baseRows.find(b => b.parameterID != null && Number(b.parameterID) === Number(targetId) && !used.has(keyOf(b)))
+        : undefined;
+      if (!matched) {
+        const want = [lr.dbMasterName, lr.sourceName, lr.label].map(norm).filter(Boolean);
+        matched = baseRows.find(b => want.includes(norm(b.parameterName)) && !used.has(keyOf(b)));
+      }
+      if (matched) {
+        const k = keyOf(matched);
+        used.add(k);
+        keys.push(k);
+      }
+    }
+    // Include manually added (+ Add Parameter) runtime rows
+    for (const b of baseRows) {
+      const k = keyOf(b);
+      if (b.isAdditional && !used.has(k)) {
+        used.add(k);
+        keys.push(k);
+      }
+    }
+    return keys.length ? keys : null;
+  }
+
+  /**
+   * Explicitly loads / syncs parameters directly from the Lab Test Master hierarchy
+   * (AnalysisType -> SubGroup -> LabTest -> fallback Test Method) into the active test.
+   * Never runs automatically in Template Configured mode — only on explicit user click.
+   */
+  onSyncFromLabTest(planIndex: number, testIndex: number, sec?: any): void {
+    const plan = this.plans?.[planIndex];
+    const test = plan?.tests?.[testIndex];
+    if (!plan || !test) return;
+
+    const applyMasterParams = (masterList: any[], sourceLabel: string) => {
+      const paramsFA = this.getParameters(planIndex, testIndex);
+      if (!paramsFA) return;
+      const existingRaw: any[] = paramsFA.getRawValue();
+      const spmCount = Math.max(1, this.getActiveSpecimenCount());
+      const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      let updatedCount = 0;
+      let addedCount = 0;
+
+      const normalized = (masterList || []).map((item: any) => {
+        const pObj = item?.parameter || item;
+        const pId = Number(pObj?.id ?? item?.parameterId ?? item?.parameterID ?? 0) || null;
+        const pName = String(pObj?.name ?? item?.parameterName ?? '').trim();
+        const unit = String(pObj?.parameterUnit?.name ?? item?.parameterUnit ?? item?.unit ?? '').trim();
+        const isCalculated = !!(pObj?.isCalculated ?? item?.isCalculated);
+        const formulaExpression = String(pObj?.formula ?? item?.formulaExpression ?? item?.formula ?? '').trim();
+        const formulaDisplay = String(pObj?.formulaDisplay ?? item?.formulaDisplay ?? '').trim();
+        const inputType = String(pObj?.inputType ?? item?.inputType ?? (pObj?.parameterType === 'Qualitative' ? 'Text' : 'Decimal'));
+        const decimalPrecision = pObj?.decimalPrecision ?? item?.decimalPrecision ?? 2;
+        return { pId, pName, unit, isCalculated, formulaExpression, formulaDisplay, inputType, decimalPrecision };
+      }).filter(m => !!m.pName);
+
+      for (const m of normalized) {
+        const matchingIndices: number[] = [];
+        existingRaw.forEach((r, idx) => {
+          const sameId = m.pId != null && r.parameterID != null && Number(r.parameterID) === m.pId;
+          const sameName = norm(r.parameterName) === norm(m.pName);
+          if (sameId || sameName) matchingIndices.push(idx);
+        });
+
+        if (matchingIndices.length > 0) {
+          matchingIndices.forEach(idx => {
+            const grp = paramsFA.at(idx) as FormGroup;
+            if (!grp) return;
+            const patch: any = {};
+            if (m.unit && !grp.get('unit')?.value) patch.unit = m.unit;
+            if (m.formulaExpression) {
+              patch.formulaExpression = m.formulaExpression;
+              patch.isCalculated = true;
+            }
+            if (m.formulaDisplay) patch.formulaDisplay = m.formulaDisplay;
+            if (Object.keys(patch).length > 0) {
+              grp.patchValue(patch, { emitEvent: false });
+            }
+          });
+          updatedCount++;
+        } else {
+          for (let s = 0; s < spmCount; s++) {
+            paramsFA.push(this.createParamGroup({
+              id: 0,
+              specimenIndex: s,
+              parameterID: m.pId,
+              parameterName: m.pName,
+              unit: m.unit,
+              value: null,
+              remarks: '',
+              minValue: null,
+              maxValue: null,
+              isWithinLimit: null,
+              formulaExpression: m.formulaExpression,
+              formulaDisplay: m.formulaDisplay,
+              isAdditional: true,
+              isCalculated: m.isCalculated || !!m.formulaExpression,
+              inputType: m.inputType,
+              decimalPrecision: m.decimalPrecision,
+              isReportable: true,
+              isBillable: true
+            }, plan.type));
+          }
+          addedCount++;
+        }
+      }
+
+      if (test.headerId != null) {
+        this.syncedFromLabTestHeaders[test.headerId] = true;
+      }
+      this.layoutRendererComponent?.markSyncedFromLabTest(sec);
+      this.applyConditionLines(planIndex, testIndex, false);
+      this.autoEvaluateAllFormulas();
+      this.refreshPlanMetrics();
+      this.cdr.markForCheck();
+
+      const msg = addedCount > 0
+        ? `Synced from ${sourceLabel}: ${addedCount} added, ${updatedCount} updated.`
+        : `Synced from ${sourceLabel}: all ${updatedCount} parameter(s) up to date.`;
+      this.toastService.show(msg, 'success');
+    };
+
+    const fallbackMethodSync = () => {
+      if (test.headerId && plan.methodId) {
+        this.testResultService.getMethodParametersForHeader(test.headerId, plan.methodId).subscribe({
+          next: (list: any[]) => applyMasterParams(list || [], 'Lab Test Method Master'),
+          error: () => this.toastService.show('Could not fetch parameters from Lab Test Master.', 'error')
+        });
+      } else {
+        // Reveal all loaded parameters from header even when no master link IDs exist
+        if (test.headerId != null) this.syncedFromLabTestHeaders[test.headerId] = true;
+        this.layoutRendererComponent?.markSyncedFromLabTest(sec);
+        this.applyConditionLines(planIndex, testIndex, false);
+        this.refreshPlanMetrics();
+        this.cdr.markForCheck();
+        this.toastService.show('Synced parameters from Test Plan.', 'info');
+      }
+    };
+
+    if (plan.analysisTypeId) {
+      this.laboratoryTestService.getAnalysisTypeDetails(Number(plan.analysisTypeId)).subscribe({
+        next: (at: any) => {
+          const list = at?.parameters || [];
+          if (list.length) applyMasterParams(list, 'Lab Test Master (Analysis Type)');
+          else fallbackMethodSync();
+        },
+        error: () => fallbackMethodSync()
+      });
+    } else if (plan.subGroupId) {
+      this.laboratoryTestService.getSubGroupDetails(Number(plan.subGroupId)).subscribe({
+        next: (sg: any) => {
+          const list = sg?.parameters || [];
+          if (list.length) applyMasterParams(list, 'Lab Test Master (Sub-Group)');
+          else fallbackMethodSync();
+        },
+        error: () => fallbackMethodSync()
+      });
+    } else if (plan.labTestId) {
+      this.laboratoryTestService.getSubGroupsByLabTest(Number(plan.labTestId)).subscribe({
+        next: (subGroups: any[]) => {
+          const firstSg = Array.isArray(subGroups) && subGroups.length > 0 ? subGroups[0] : null;
+          if (firstSg?.id) {
+            this.laboratoryTestService.getSubGroupDetails(Number(firstSg.id)).subscribe({
+              next: (sg: any) => {
+                const list = sg?.parameters || [];
+                if (list.length) applyMasterParams(list, 'Lab Test Master');
+                else fallbackMethodSync();
+              },
+              error: () => fallbackMethodSync()
+            });
+          } else {
+            fallbackMethodSync();
+          }
+        },
+        error: () => fallbackMethodSync()
+      });
+    } else {
+      fallbackMethodSync();
+    }
+  }
+
+  /** Active specimen display labels (e.g. ['S.NO.1', 'S.NO.2']) consistent across Tab 1 & Tab 2. */
+  getActiveSpecimenLabels(): string[] {
+    if (this.layoutRendererComponent) {
+      const rendererLabels = this.layoutRendererComponent.getSpecimenDisplayLabels();
+      if (rendererLabels?.length) return rendererLabels;
+    }
+    const count = this.getActiveSpecimenCount();
+    const sec = this.getPrimaryLayoutSection();
+    const cfg = sec?.config || {};
+    const namedRows: string[] = Array.isArray(cfg.specimenRows)
+      ? cfg.specimenRows.map((x: any) => String(x ?? '').trim())
+      : [];
+    const namedCsv: string[] = typeof cfg.specimenNames === 'string' && cfg.specimenNames.trim()
+      ? cfg.specimenNames.split(',').map((x: string) => x.trim())
+      : [];
+    const labels: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const custom = namedRows[i] || namedCsv[i];
+      labels.push(custom || `S${i + 1}`);
+    }
+    return labels;
+  }
+
+  /** Decision rule basis synced with Tab 1's Statement of Conformity card (ISO/IEC 17025 Cl 7.8.6). */
+  getActiveDecisionRuleInfo(): { label: string; withMU: boolean } {
+    if (this.layoutRendererComponent) {
+      const basis = this.layoutRendererComponent.ruleBasis();
+      return { label: basis.basis, withMU: basis.withMU };
+    }
+    const sections: any[] = this.currentTestLayout?.sections || this.currentTestLayout?.parsedConfig?.sections || [];
+    const ruleCfg = sections.find((s: any) => s?.type === 'rule')?.config || null;
+    const source: 'inward' | 'scope' | 'fixed' =
+      ruleCfg?.verdictSource === 'scope' || ruleCfg?.verdictSource === 'fixed' ? ruleCfg.verdictSource : 'inward';
+    const conformity = String(this.inward?.statementOfConformity ?? '').trim().toLowerCase();
+    const rule = String(this.inward?.decisionRule ?? '').trim().toLowerCase();
+    const inwardApplicable = conformity === 'applicable';
+    const inwardWithMU = inwardApplicable && rule.startsWith('with ') && !rule.startsWith('without');
+    if (source === 'fixed') {
+      return { label: 'Fixed text of the layout', withMU: false };
+    }
+    if (source === 'scope') {
+      const activeTest = this.plans?.[this.activePlanIndex]?.tests?.[0];
+      const inScope = activeTest ? this.isNablAccredited(activeTest) : false;
+      if (!inScope) {
+        return { label: 'Lab scope: outside the accredited scope, without measurement uncertainty', withMU: false };
+      }
+      return {
+        label: `Lab scope: within the accredited scope, ${inwardWithMU ? 'with' : 'without'} measurement uncertainty`,
+        withMU: inwardWithMU
+      };
+    }
+    if (!inwardApplicable) {
+      return { label: 'Sample inward: statement of conformity not applicable', withMU: false };
+    }
+    return {
+      label: `Sample inward: ${inwardWithMU ? 'with' : 'without'} measurement uncertainty`,
+      withMU: inwardWithMU
+    };
+  }
+
+  getActiveDecisionRuleLabel(): string {
+    return this.getActiveDecisionRuleInfo().label;
+  }
+
+  getActiveDecisionRuleWithMU(): boolean {
+    return this.getActiveDecisionRuleInfo().withMU;
+  }
+
+  /**
+   * Builds the Conformity Assessment column visibility & labels directly from the active Result Entry
+   * layout configuration so Tab 2 matches Tab 1 (with Verdict and Scope Status always appended).
+   */
+  private verdictColConfigCache: { key: string; val: VerdictColumnConfig } | null = null;
+
+  getActiveVerdictColumnConfig(): VerdictColumnConfig {
+    const sec = this.getPrimaryLayoutSection();
+    const cfg = sec?.config || {};
+    const cols: any[] = Array.isArray(cfg.tableColumns) ? cfg.tableColumns : [];
+    const roleMap: Record<string, string[]> = {
+      param: ['row_label', 'param_name', 'parameter_name', 'label'],
+      unit: ['unit'],
+      requirement: ['spec_requirement', 'requirement', 'limit'],
+      avg: ['agg_average', 'average', 'avg'],
+      uncertainty: ['uncertainty', 'mu']
+    };
+    const findCol = (key: string) =>
+      cols.find((c: any) => c?.key === key) ||
+      cols.find((c: any) => (roleMap[key] || []).includes(String(c?.columnRole || '').trim().toLowerCase()));
+    const labelOf = (key: string, fallback: string) => {
+      const c = findCol(key);
+      return c && typeof c.label === 'string' && c.label.trim() ? c.label.trim() : fallback;
+    };
+    const inTableCols = (key: string) => {
+      const c = findCol(key);
+      return !!c && c.visible !== false;
+    };
+
+    const strictTemplate = !!sec && this.isSectionTemplateConfigured(sec) && cols.length > 0;
+    const val: VerdictColumnConfig = {
+      paramLabel: labelOf('param', 'Parameter Name'),
+      unitLabel: labelOf('unit', 'Unit'),
+      requirementLabel: labelOf('requirement', 'Requirement'),
+      avgLabel: labelOf('avg', 'Average'),
+      showUnit: strictTemplate ? inTableCols('unit') : cfg.showUnit !== false,
+      showRequirement: strictTemplate ? inTableCols('requirement') : cfg.showRequirement !== false,
+      showAverage: strictTemplate ? inTableCols('avg') : cfg.showAverage !== false,
+      showUncertainty: strictTemplate ? inTableCols('uncertainty') : !!cfg.columns?.uncertainty,
+      showDecisionDetail: false
+    };
+    const key = JSON.stringify(val);
+    if (!this.verdictColConfigCache || this.verdictColConfigCache.key !== key) {
+      this.verdictColConfigCache = { key, val };
+    }
+    return this.verdictColConfigCache.val;
   }
 
   // ----------------------------------------------------------------
@@ -829,7 +1204,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const name = String(test.name || test.laboratoryTest || test.leafNode || '').toLowerCase();
     const technique = String(test.analysisTechnique || '').toLowerCase();
     if (name.includes('tensile') || name.includes('yield') || name.includes('proof') || name.includes('uts') ||
-        technique.includes('tensile') || technique.includes('yield') || technique.includes('proof')) {
+      technique.includes('tensile') || technique.includes('yield') || technique.includes('proof')) {
       return true;
     }
     if (this.currentTestLayout && (this.currentTestLayout.sections || []).some((s: any) => s.type === 'spm' || s.type === 'specimen')) {
@@ -837,10 +1212,41 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     }
     const priceSummary = this.priceSummaryMap[test.headerId];
     if (priceSummary?.availablePricingTypes?.includes('SizeRange') || priceSummary?.availablePricingTypes?.includes('SizeAndLoad') ||
-        priceSummary?.selectedPricingType === 'SizeRange' || priceSummary?.selectedPricingType === 'SizeAndLoad') {
+      priceSummary?.selectedPricingType === 'SizeRange' || priceSummary?.selectedPricingType === 'SizeAndLoad') {
       return true;
     }
     return false;
+  }
+
+  private cachedSpecimenDims: Record<number, { diameter?: number | null; thickness?: number | null; width?: number | null; area?: number | null }> = {};
+
+  private getPrimarySpecimenDims(planIndex: number, testIndex: number): { diameter?: number | null; thickness?: number | null; width?: number | null; area?: number | null } | null {
+    const test = this.plans?.[planIndex]?.tests?.[testIndex];
+    const headerId = test?.headerId;
+    const live = planIndex === this.activePlanIndex ? this.layoutRendererComponent?.specimens?.[0] : null;
+    if (live && ((live.diameter && live.diameter > 0) || (live.thickness && live.thickness > 0) || (live.area && live.area > 0))) {
+      const snap = { diameter: live.diameter, thickness: live.thickness, width: live.width, area: live.area };
+      if (headerId != null) this.cachedSpecimenDims[headerId] = snap;
+      return snap;
+    }
+    if (headerId != null && this.cachedSpecimenDims[headerId]) {
+      return this.cachedSpecimenDims[headerId];
+    }
+    const formRows = (this.getParameters(planIndex, testIndex)?.getRawValue?.() || test?.parameters || [])
+      .filter((r: any) => !(Number(r?.specimenIndex) > 0));
+    const numOf = (role: TensileRole) => {
+      const pm = findByTensileRole(formRows, role, (x: any) => x?.parameterName);
+      const n = pm?.value != null && pm.value !== '' ? Number(pm.value) : NaN;
+      return isFinite(n) && n > 0 ? n : null;
+    };
+    const diameter = numOf('diameter');
+    const thickness = numOf('thickness');
+    const width = numOf('width');
+    const area = numOf('area');
+    if (diameter || thickness || area) {
+      return { diameter, thickness, width, area };
+    }
+    return live || null;
   }
 
   hasSpecimenSize(planIndex?: number, testIndex?: number): boolean {
@@ -849,8 +1255,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const test = this.plans?.[p]?.tests?.[t];
     if (!test) return false;
     if (test.pricingDimensionValue && Number(test.pricingDimensionValue) > 0) return true;
-    if (this.layoutRendererComponent?.specimens?.some((s: any) => (s.diameter && s.diameter > 0) || (s.thickness && s.thickness > 0) || (s.area && s.area > 0))) return true;
+    const spm = this.getPrimarySpecimenDims(p, t);
+    if (spm && ((spm.diameter && spm.diameter > 0) || (spm.thickness && spm.thickness > 0) || (spm.area && spm.area > 0))) return true;
     if (Number(this.sample?.diameter) > 0 || (Number(this.sample?.thickness) > 0 && Number(this.sample?.width) > 0) || Number(this.sample?.crossSectionArea) > 0) return true;
+    const formRows = this.getParameters(p, t)?.getRawValue?.() || test.parameters || [];
+    const dimParam = (role: TensileRole) => findByTensileRole(formRows, role, (pm: any) => pm?.parameterName);
+    const numPos = (pm: any) => pm?.value != null && pm.value !== '' && Number(pm.value) > 0;
+    if (numPos(dimParam('diameter')) || numPos(dimParam('thickness')) || numPos(dimParam('area'))) return true;
     return false;
   }
 
@@ -866,7 +1277,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const p = planIndex ?? this.activePlanIndex ?? 0;
     const t = testIndex ?? 0;
     const test = this.plans?.[p]?.tests?.[t];
-    const spm = this.layoutRendererComponent?.specimens?.[0];
+    const spm = this.getPrimarySpecimenDims(p, t);
     if (spm) {
       if (spm.diameter && spm.diameter > 0) return `⌀ ${spm.diameter} mm`;
       if (spm.thickness && spm.width) return `${spm.thickness} × ${spm.width} mm`;
@@ -888,7 +1299,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const p = planIndex ?? this.activePlanIndex ?? 0;
     const t = testIndex ?? 0;
     const test = this.plans?.[p]?.tests?.[t];
-    const spm = this.layoutRendererComponent?.specimens?.[0];
+    const spm = this.getPrimarySpecimenDims(p, t);
     if (spm) {
       if (spm.diameter && spm.diameter > 0) return `Round Bar: ⌀ ${spm.diameter} mm (Area: ${spm.area || '-'} mm²)`;
       if (spm.thickness && spm.width) return `Flat Plate: ${spm.thickness} × ${spm.width} mm (Area: ${spm.area || '-'} mm²)`;
@@ -1267,13 +1678,14 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
         const plannedQuantity = Number(generalTest.plannedQuantity || generalTest.quantity || 1);
         const hasSpmSec = layoutHasSpecimenSection(generalTest.layoutSnapshotJson);
-        const validParams = filterEmptyExtraSpecimenRows(generalTest.parameters || [], hasSpmSec, {
+        const keepExtra = hasSpmSec || plannedQuantity > 1;
+        const validParams = filterEmptyExtraSpecimenRows(generalTest.parameters || [], keepExtra, {
           readings: generalTest.readings,
           testImages: generalTest.testImages
         });
         const declaredSpmCount = hasSpmSec ? layoutDeclaredSpecimenCount(generalTest.layoutSnapshotJson) : 0;
-        // In-header specimen count: layout declared count when specimen section exists, otherwise max(1, highest saved SpecimenIndex + 1)
-        const totalSpecimens = declaredSpmCount || resolveSpecimenCount(validParams, 1);
+        // In-header specimen count: honour planned quantity, layout declared count, and highest saved SpecimenIndex
+        const totalSpecimens = Math.max(1, plannedQuantity, declaredSpmCount, resolveSpecimenCount(validParams, 1));
         const sequenceNo = generalTest.sequenceNo || 1;
         const baseName = generalTest.laboratoryTest || 'General Test';
         const testName = baseName;
@@ -1390,12 +1802,13 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
         const chemPlannedQuantity = Number(chemicalTest.plannedQuantity || chemicalTest.quantity || 1);
         const chemHasSpmSec = layoutHasSpecimenSection(chemicalTest.layoutSnapshotJson);
-        const chemValidParams = filterEmptyExtraSpecimenRows(chemicalTest.parameters || [], chemHasSpmSec, {
+        const chemKeepExtra = chemHasSpmSec || chemPlannedQuantity > 1;
+        const chemValidParams = filterEmptyExtraSpecimenRows(chemicalTest.parameters || [], chemKeepExtra, {
           readings: chemicalTest.readings,
           testImages: chemicalTest.testImages
         });
         const chemDeclaredCount = chemHasSpmSec ? layoutDeclaredSpecimenCount(chemicalTest.layoutSnapshotJson) : 0;
-        const chemTotalSpecimens = chemDeclaredCount || resolveSpecimenCount(chemValidParams, 1);
+        const chemTotalSpecimens = Math.max(1, chemPlannedQuantity, chemDeclaredCount, resolveSpecimenCount(chemValidParams, 1));
         const chemPlan: any = {
           type: 'Chemical',
           plannedQuantity: chemPlannedQuantity,
@@ -1455,39 +1868,39 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
                 return allParams.map((param: any, rowIdx: number) => ({
                   id: param.id,
                   specimenIndex: specimenIndexes[rowIdx] ?? 0,
-                parameterID: param.parameterID || null,
-                parameterName: param.parameterName || '',
-                unit: param.unit || '',
-                value: param.value ?? null,
-                remarks: param.remarks ?? '',
-                minValue: param.minValue ?? null,
-                maxValue: param.maxValue ?? null,
-                isWithinLimit: param.isWithinLimit ?? null,
-                altered: param.altered || false,
-                formulaExpression: param.formulaExpression || '',
-                formulaDisplay: param.formulaDisplay || '',
-                specMinValue: param.specMinValue ?? null,
-                specMaxValue: param.specMaxValue ?? null,
-                acceptanceCriteria: param.acceptanceCriteria || '',
-                specificationLineID: param.specificationLineID ?? null,
-                isAdditional: param.isAdditional ?? false,
-                isCalculated: param.isCalculated || !!param.formulaExpression || false,
-                isStandalone: param.isStandalone || false,
-                sourceTestMethodId: param.sourceTestMethodId ?? null,
-                resultStatus: param.resultStatus || null,
-                parameterType: param.parameterType || '',
-                testMethodUsed: param.testMethodUsed || '',
-                decimalPrecision: param.decimalPrecision ?? 2,
-                conversionFactor: param.conversionFactor ?? 1,
-                convertedValue: param.convertedValue ?? null,
-                selectedUnit: param.selectedUnit || param.unit || '',
-                unitOptions: param.unitOptions || [],
-                isBillable: param.isBillable ?? true,
-                isReportable: param.isReportable !== false,
-                inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
-                dropdownOptions: param.dropdownOptions || []
-              }))
-            })()
+                  parameterID: param.parameterID || null,
+                  parameterName: param.parameterName || '',
+                  unit: param.unit || '',
+                  value: param.value ?? null,
+                  remarks: param.remarks ?? '',
+                  minValue: param.minValue ?? null,
+                  maxValue: param.maxValue ?? null,
+                  isWithinLimit: param.isWithinLimit ?? null,
+                  altered: param.altered || false,
+                  formulaExpression: param.formulaExpression || '',
+                  formulaDisplay: param.formulaDisplay || '',
+                  specMinValue: param.specMinValue ?? null,
+                  specMaxValue: param.specMaxValue ?? null,
+                  acceptanceCriteria: param.acceptanceCriteria || '',
+                  specificationLineID: param.specificationLineID ?? null,
+                  isAdditional: param.isAdditional ?? false,
+                  isCalculated: param.isCalculated || !!param.formulaExpression || false,
+                  isStandalone: param.isStandalone || false,
+                  sourceTestMethodId: param.sourceTestMethodId ?? null,
+                  resultStatus: param.resultStatus || null,
+                  parameterType: param.parameterType || '',
+                  testMethodUsed: param.testMethodUsed || '',
+                  decimalPrecision: param.decimalPrecision ?? 2,
+                  conversionFactor: param.conversionFactor ?? 1,
+                  convertedValue: param.convertedValue ?? null,
+                  selectedUnit: param.selectedUnit || param.unit || '',
+                  unitOptions: param.unitOptions || [],
+                  isBillable: param.isBillable ?? true,
+                  isReportable: param.isReportable !== false,
+                  inputType: param.inputType || (param.parameterType === 'Qualitative' ? 'Text' : 'Decimal'),
+                  dropdownOptions: param.dropdownOptions || []
+                }))
+              })()
             }
           ]
         };
@@ -1550,7 +1963,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
               if (extra?.selectedConditions) {
                 this.selectedConditionsMap[test.headerId] = extra.selectedConditions;
               }
-            } catch (e) {}
+            } catch (e) { }
           }
           this.restoreSpecConditions(test);
         }
@@ -1723,7 +2136,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       specification: [plan.specification],
       grade: [plan.grade],
       headerId: [plan.headerId],
-      tests: this.fb.array(plan.tests.map((t: any) => this.createTestGroup(t,plan.type)))
+      tests: this.fb.array(plan.tests.map((t: any) => this.createTestGroup(t, plan.type)))
     });
   }
 
@@ -2097,10 +2510,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         }
         this.toastService.show(`${testName} — saved successfully`, 'success');
         this.resultSaved.emit(response);
-        // Automatically evaluate formula parameters on backend
-        this.calculateParameters(planIndex, testIndex);
         if (onSaved) {
+          // Defer reload to the caller (e.g., completeTest / startTest) to prevent mid-flight payload overwrite races
           onSaved(response);
+        } else {
+          // Automatically evaluate formula parameters on backend
+          this.calculateParameters(planIndex, testIndex);
         }
       },
       error: (error) => {
@@ -2863,11 +3278,18 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return;
     }
 
-    // The server checks the SAVED equipment, so a pick made on the screen must be saved first
+    // The server checks the SAVED equipment, so any unsaved/auto-assigned equipment is persisted transparently first
     if (this.equipmentDirty[headerId]) {
-      this.toastService.show('Equipment was changed. Click Save Draft to store it, then start the test.', 'warning');
+      this.saveTestWise(planIndex, testIndex, () => this.continueStartTest(planIndex, testIndex));
       return;
     }
+
+    this.continueStartTest(planIndex, testIndex);
+  }
+
+  private continueStartTest(planIndex: number, testIndex: number): void {
+    const test = this.plans[planIndex].tests[testIndex];
+    const headerId = test.headerId;
 
     // Call configuration validation endpoint
     this.testResultService.validateTestConfiguration(headerId).subscribe({
@@ -2959,12 +3381,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return;
     }
 
-    // Recalculate all formulas before completion
-    this.calculateParameters(planIndex, testIndex);
-
     this.askConfirm('Complete test', `Complete test "${test.name}"? This will finalize test results, evaluate overall pass/fail status, and generate audit record.`, () => {
-      // Save test data first, then trigger completion sequentially
-      this.saveTestWise(planIndex, testIndex, () => {
+      // Sequential flow: save -> calculate formulas -> complete -> reload cleanly (prevents status revert race)
+      const finalizeComplete = () => {
         this.testResultService.completeTest(headerId).subscribe({
           next: (response) => {
             test.status = 'Completed';
@@ -2983,11 +3402,19 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
             } else {
               this.fetchEnvironmentData(headerId);
             }
+            this.cdr.markForCheck();
           },
           error: (error) => {
             console.error('Error completing test:', error);
             this.toastService.show('Error completing test: ' + (error?.error?.message || error?.message || 'Server error'), 'error');
           }
+        });
+      };
+
+      this.saveTestWise(planIndex, testIndex, () => {
+        this.testResultService.calculateParameters(headerId).subscribe({
+          next: () => finalizeComplete(),
+          error: () => finalizeComplete()
         });
       });
     }, { confirmLabel: 'Complete Test' });
@@ -3098,16 +3525,38 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const paramsFA = testGroup?.get('parameters') as FormArray;
     if (!paramsFA || !paramsFA.length) {
       const rawParams = this.plans?.[p]?.tests?.[t]?.parameters || [];
-      return { total: rawParams.length, entered: 0, pass: 0, fail: 0, pending: rawParams.length };
+      return countExecutionMetrics(rawParams.map((r: any) => ({
+        parameterID: r.parameterID,
+        parameterName: r.parameterName,
+        specimenIndex: r.specimenIndex,
+        value: r.value,
+        remarks: r.remarks,
+        inputType: r.inputType,
+        resultStatus: r.resultStatus,
+        status: r.status,
+        isWithinLimit: r.isWithinLimit
+      })));
     }
 
     // The open test with a reading / location grid counts its readings (36 Charpy values), not the parameter
     // rows that only hold their averages. Other tabs count rows until they are opened.
     const renderer = p === this.activePlanIndex ? this.layoutRendererComponent : undefined;
-    const controls = renderer
-      ? paramsFA.controls.filter(ctrl => !renderer.isGridParameter(String(ctrl.get('parameterName')?.value ?? '')))
-      : paramsFA.controls;
+    const activeKeys = this.getActiveLayoutParameterKeys(p, t);
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+    const controls = paramsFA.controls.filter(ctrl => {
+      const pName = String(ctrl.get('parameterName')?.value ?? '');
+      if (renderer && renderer.isGridParameter(pName)) return false;
+      if (activeKeySet) {
+        const pId = ctrl.get('parameterID')?.value;
+        const k = (pId != null && Number(pId) !== 0) ? `id:${pId}` : `name:${pName.trim().toLowerCase()}`;
+        if (!activeKeySet.has(k)) return false;
+      }
+      return true;
+    });
     const rowMetrics = countExecutionMetrics(controls.map(ctrl => ({
+      parameterID: ctrl.get('parameterID')?.value,
+      parameterName: ctrl.get('parameterName')?.value,
+      specimenIndex: ctrl.get('specimenIndex')?.value,
       value: ctrl.get('value')?.value,
       remarks: ctrl.get('remarks')?.value,
       inputType: ctrl.get('inputType')?.value,
@@ -3353,28 +3802,68 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   /**
    * Parameters of the test as the result screen has them now: one entry per parameter (not per specimen row),
-   * read from the live form so a parameter added or removed on the Execution tab shows the same here.
+   * scoped to active layout parameters in Template Configured mode, with real MU & k-factor from uncertaintyMap.
    */
-  getNablParameters(planIndex: number, testIndex: number): { parameterID: number; parameterName: string; unit: string; expandedUncertainty: any }[] {
+  getNablParameters(planIndex: number, testIndex: number): { parameterID: number; parameterName: string; unit: string; expandedUncertainty: any; coverageFactor: any }[] {
+    const headerId = this.plans?.[planIndex]?.tests?.[testIndex]?.headerId;
+    const uncList: any[] = headerId != null ? (this.uncertaintyMap[headerId] || []) : [];
     const rows: any[] = this.getParameters(planIndex, testIndex)?.getRawValue?.() || [];
-    const seen = new Set<string>();
-    const list: { parameterID: number; parameterName: string; unit: string; expandedUncertainty: any }[] = [];
+    const activeKeys = this.getActiveLayoutParameterKeys(planIndex, testIndex);
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+
+    const byKey = new Map<string, { parameterID: number; parameterName: string; unit: string; expandedUncertainty: any; coverageFactor: any }>();
     rows.forEach(r => {
-      const key = r.parameterID ? 'id:' + r.parameterID : 'name:' + String(r.parameterName || '').trim().toLowerCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      list.push({ parameterID: r.parameterID, parameterName: r.parameterName, unit: r.unit, expandedUncertainty: r.expandedUncertainty });
+      const key = (r.parameterID != null && Number(r.parameterID) !== 0)
+        ? 'id:' + r.parameterID
+        : 'name:' + String(r.parameterName || '').trim().toLowerCase();
+      if (activeKeySet && !activeKeySet.has(key)) return;
+      if (byKey.has(key)) return;
+      const pNameLower = String(r.parameterName || '').trim().toLowerCase();
+      const uncItem = uncList.find((u: any) =>
+        (r.parameterID && (Number(u.parameterId) === Number(r.parameterID) || Number(u.parameterID) === Number(r.parameterID))) ||
+        (u.parameterName && u.parameterName.trim().toLowerCase() === pNameLower)
+      );
+      byKey.set(key, {
+        parameterID: r.parameterID,
+        parameterName: r.parameterName,
+        unit: r.unit,
+        expandedUncertainty: uncItem?.expandedUncertainty ?? r.expandedUncertainty ?? null,
+        coverageFactor: uncItem?.coverageFactor ?? r.coverageFactor ?? null
+      });
     });
-    return list;
+
+    if (activeKeys) {
+      const ordered: { parameterID: number; parameterName: string; unit: string; expandedUncertainty: any; coverageFactor: any }[] = [];
+      activeKeys.forEach(k => {
+        const item = byKey.get(k);
+        if (item) ordered.push(item);
+      });
+      byKey.forEach((v, k) => {
+        if (!activeKeys.includes(k)) ordered.push(v);
+      });
+      return ordered;
+    }
+    return Array.from(byKey.values());
   }
 
-  /** In-scope / out-of-scope counts over the parameters of the result screen. */
-  getNablScopeCounts(planIndex: number, testIndex: number): { total: number; inScope: number; outOfScope: number } {
+  /** In-scope / out-of-scope / not-in-scope-master counts over the active parameters of the result screen. */
+  getNablScopeCounts(planIndex: number, testIndex: number): { total: number; inScope: number; outOfScope: number; notConfigured: number } {
     const headerId = this.plans[planIndex]?.tests?.[testIndex]?.headerId;
     const list = this.getNablParameters(planIndex, testIndex);
     const hasScopeData = (this.nablScopeMap[headerId] || []).length > 0;
-    const inScope = hasScopeData ? list.filter(x => this.getNablScopeStatus(headerId, x.parameterID) === 'WithinScope').length : 0;
-    return { total: list.length, inScope, outOfScope: list.length - inScope };
+    if (!hasScopeData) {
+      return { total: list.length, inScope: 0, outOfScope: 0, notConfigured: list.length };
+    }
+    let inScope = 0;
+    let outOfScope = 0;
+    let notConfigured = 0;
+    for (const x of list) {
+      const st = this.getNablScopeStatus(headerId, x.parameterID);
+      if (st === 'WithinScope') inScope++;
+      else if (st === 'OutsideScope') outOfScope++;
+      else notConfigured++;
+    }
+    return { total: list.length, inScope, outOfScope, notConfigured };
   }
 
   /** Requirement source lines, one per parameter and limit (specimen rows of one parameter share a line). */
@@ -3388,9 +3877,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     });
   }
 
-  getNablScopeStatus(headerId: number, parameterId: number): string {
+  getNablScopeStatus(headerId: number, parameterId: number): 'WithinScope' | 'OutsideScope' | 'NotAccredited' {
     const statusObj = this.getNablStatus(headerId, parameterId);
-    return statusObj?.scopeStatus || 'WithinScope';
+    if (statusObj?.scopeStatus === 'WithinScope') return 'WithinScope';
+    if (statusObj?.scopeStatus === 'OutsideScope') return 'OutsideScope';
+    return 'NotAccredited';
   }
 
   onParameterValueChanged(planIndex: number, testIndex: number, paramIndex: number): void {
@@ -3631,7 +4122,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   private clearSelectedPreviews(headerId: number): void {
     const arr = this.selectedFilesMap[headerId] || [];
     arr.forEach(a => {
-      try { URL.revokeObjectURL(a.preview); } catch (e) {}
+      try { URL.revokeObjectURL(a.preview); } catch (e) { }
     });
     this.selectedFilesMap[headerId] = [];
   }
@@ -3653,7 +4144,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   /** Utility: open full image in new tab */
   openImage(imgUrl: string): void {
     if (!imgUrl) return;
-    window.open(this.baseUrl+imgUrl, '_blank');
+    window.open(this.baseUrl + imgUrl, '_blank');
   }
   cancel(): void {
     if (this.isInline) {
@@ -3863,9 +4354,19 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const results: Tile[] = [];
 
     const formRows = this.getParameters(planIndex, testIndex);
-    const params: any[] = formRows
+    const rawParams: any[] = formRows
       ? formRows.controls.map(c => (c as FormGroup).getRawValue()).filter(r => !(Number(r.specimenIndex) > 0))
       : (test.parameters || []);
+    const activeKeys = this.getActiveLayoutParameterKeys(planIndex, testIndex);
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+    const params: any[] = activeKeySet
+      ? rawParams.filter(r => {
+        const k = (r.parameterID != null && Number(r.parameterID) !== 0)
+          ? `id:${r.parameterID}`
+          : `name:${String(r.parameterName || '').trim().toLowerCase()}`;
+        return activeKeySet.has(k);
+      })
+      : rawParams;
     const spm = this.layoutRendererComponent?.specimens?.[0];
 
     const findParam = (terms: string[]) =>
@@ -3990,7 +4491,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     }
     if (dimKey === 'gaugeLength') {
       const pMatch = byRole('gaugeLength');
-      return String(pMatch?.value ?? spm?.gaugeLength ?? '50.0');
+      return String(pMatch?.value ?? spm?.gaugeLength ?? this.sample?.gaugeLength ?? '—');
     }
     if (dimKey === 'finalLength') {
       const pMatch = byRole('finalLength');
@@ -4004,13 +4505,58 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   }
 
   hasFormulaParameters(planIndex: number, testIndex: number): boolean {
-    const test = this.plans?.[planIndex]?.tests?.[testIndex];
-    return (test?.parameters || []).some((pm: any) => pm.isCalculated || pm.formulaExpression);
+    return this.getFormulaParametersList(planIndex, testIndex).length > 0;
   }
 
+  /**
+   * Returns deduplicated formula parameters (1 per unique parameter, never duplicated across specimens),
+   * scoped to active layout parameters when Template Configured mode is active.
+   */
   getFormulaParametersList(planIndex: number, testIndex: number): any[] {
-    const test = this.plans?.[planIndex]?.tests?.[testIndex];
-    return (test?.parameters || []).filter((pm: any) => pm.isCalculated || pm.formulaExpression);
+    const formRows = this.getParameters(planIndex, testIndex)?.getRawValue?.();
+    const rawParams: any[] = Array.isArray(formRows) && formRows.length
+      ? formRows
+      : (this.plans?.[planIndex]?.tests?.[testIndex]?.parameters || []);
+    const activeKeys = this.getActiveLayoutParameterKeys(planIndex, testIndex);
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+    const labels = this.getActiveSpecimenLabels();
+
+    const groups = new Map<string, any[]>();
+    for (const pm of rawParams) {
+      if (!(pm?.isCalculated || pm?.formulaExpression)) continue;
+      const key = (pm.parameterID != null && Number(pm.parameterID) !== 0)
+        ? `id:${pm.parameterID}`
+        : `name:${String(pm.parameterName || '').trim().toLowerCase()}`;
+      if (activeKeySet && !activeKeySet.has(key)) continue;
+      const list = groups.get(key);
+      if (list) list.push(pm);
+      else groups.set(key, [pm]);
+    }
+
+    const result: any[] = [];
+    groups.forEach(items => {
+      const primary = items[0];
+      const unit = primary.unit || '';
+      if (items.length <= 1) {
+        result.push({
+          ...primary,
+          displayValue: primary.value != null && primary.value !== '' ? `${primary.value}${unit ? ' ' + unit : ''}` : 'Pending'
+        });
+      } else {
+        const parts = items.map((it, idx) => {
+          const spmIdx = Number(it.specimenIndex ?? idx);
+          const lbl = labels[spmIdx] || `S${spmIdx + 1}`;
+          const val = it.value != null && it.value !== '' ? `${it.value}${unit ? ' ' + unit : ''}` : '—';
+          return `${lbl}: ${val}`;
+        });
+        const anyValue = items.some(it => it.value != null && it.value !== '');
+        result.push({
+          ...primary,
+          displayValue: anyValue ? parts.join(' | ') : 'Pending'
+        });
+      }
+    });
+    return result;
   }
 
   // ================================================================
@@ -4099,11 +4645,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
   /** Grade dropdown of the result screen (same source as the plan). */
   fetchGrades = (term: string, page: number, pageSize: number): Observable<any[]> => this.materialSpecService.getGradeDropdown(term, page, pageSize);
 
-  /** Grade currently applied to the sample: shown selected in the Specification Conditions card. */
+  /** Grade currently applied to the sample or active test plan: shown selected in the Specification Conditions card. */
   get currentGradeItem(): any {
-    const id = this.sample?.assignedGradeID || this.sample?.specificationGradeID;
+    const planSpec = this.plans?.[this.activePlanIndex]?.specSelected;
+    const id = this.sample?.assignedGradeID || this.sample?.specificationGradeID || planSpec?.id;
     if (!id) return null;
-    const name = this.sample?.specificationGradeName || this.sample?.assignedGradeName || ('Grade #' + id);
+    const name = this.sample?.specificationGradeName || this.sample?.assignedGradeName || planSpec?.name || ('Grade #' + id);
     // same object while nothing changed, so the dropdown is not re-bound on every change detection
     if (!this.gradeItemCache || this.gradeItemCache.id !== id || this.gradeItemCache.name !== name) this.gradeItemCache = { id, name };
     return this.gradeItemCache;
@@ -4138,7 +4685,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
           list.slice(0, 3).forEach(item => this.onEquipmentSelected(headerId, item));
           this.cdr.markForCheck();
         },
-        error: () => {}
+        error: () => { }
       });
   }
 
@@ -4299,8 +4846,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         let params: any[] = [];
         if (method?.versions && method.versions.length > 0) {
           const ver = method.versions.find((v: any) => v.id === methodId)
-                   || method.versions.find((v: any) => v.isDefault)
-                   || method.versions[0];
+            || method.versions.find((v: any) => v.isDefault)
+            || method.versions[0];
           if (ver && ver.parameters && ver.parameters.length > 0) {
             params = ver.parameters.map((vp: any) => {
               const pId = vp.parameterID || vp.parameter?.id || vp.id;
@@ -4645,8 +5192,12 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   getNablStatus(headerId: number, parameterId: number): any {
     const results = this.nablScopeMap[headerId];
-    if (!results) return null;
-    return results.find((r: any) => r.parameterId === parameterId);
+    if (!results || parameterId == null) return null;
+    const matches = results.filter((r: any) => Number(r.parameterId ?? r.parameterID) === Number(parameterId));
+    if (!matches.length) return null;
+    return matches.find((r: any) => r.scopeStatus === 'OutsideScope')
+      || matches.find((r: any) => r.scopeStatus === 'WithinScope')
+      || matches[0];
   }
 
   nablScopeAcknowledged: Record<number, boolean> = {};
@@ -5280,6 +5831,48 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const layout = this.resolveSheetLayout(pIdx, test, testGroup);
     const rows: any[] = (testGroup?.get('parameters') as FormArray)?.getRawValue?.() || test.parameters || [];
 
+    // Group fallback rawParameters by unique parameter (scoped to active layout keys) with side-by-side specimens
+    const activeKeys = this.getActiveLayoutParameterKeys(pIdx, tIdx);
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+    const spmLabels = this.getActiveSpecimenLabels();
+    const spmCount = Math.max(1, spmLabels.length);
+    const groupedMap = new Map<string, { first: any; bySpm: Map<number, any> }>();
+    rows.forEach((p: any, idx: number) => {
+      const key = (p.parameterID != null && Number(p.parameterID) !== 0)
+        ? `id:${p.parameterID}`
+        : `name:${String(p.parameterName || '').trim().toLowerCase() || idx}`;
+      if (activeKeySet && !activeKeySet.has(key)) return;
+      const spmIdx = Math.max(0, Number(p.specimenIndex) || 0);
+      if (spmIdx >= spmCount) return;
+      let entry = groupedMap.get(key);
+      if (!entry) {
+        entry = { first: p, bySpm: new Map<number, any>() };
+        groupedMap.set(key, entry);
+      }
+      if (!entry.bySpm.has(spmIdx)) entry.bySpm.set(spmIdx, p);
+    });
+    const orderedKeys: string[] = [];
+    if (activeKeys) {
+      activeKeys.forEach(k => { if (groupedMap.has(k) && !orderedKeys.includes(k)) orderedKeys.push(k); });
+    }
+    groupedMap.forEach((_, k) => { if (!orderedKeys.includes(k)) orderedKeys.push(k); });
+    const rawParameters = orderedKeys.map(k => {
+      const entry = groupedMap.get(k)!;
+      const first = entry.first;
+      const specimenValues = Array.from({ length: spmCount }, (_, s) => {
+        const sp = entry.bySpm.get(s);
+        const val = sp?.value !== null && sp?.value !== undefined && sp?.value !== '' ? sp.value : (sp?.remarks || '');
+        return val !== '' && val !== null && val !== undefined ? String(val) : '—';
+      });
+      return {
+        name: first.parameterName,
+        unit: first.unit || '—',
+        specimenValues,
+        requirement: this.formatRequirement(first),
+        status: this.getParameterStatus(first)
+      };
+    });
+
     this.rawDataSheetData = {
       sample: this.sample,
       inward: this.inward,
@@ -5293,15 +5886,9 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       equipment: this.selectedEquipmentMap[test.headerId] || [],
       images: this.testImagesMap[test.headerId] || [],
       timing: this.testTimingMap[test.headerId] || {},
-      info: this.withConditionSuffix(this.buildSheetInfo(plan, test), layout, test),
-      rawParameters: rows.map((p: any) => ({
-        name: p.parameterName,
-        specimen: 'S' + ((Number(p.specimenIndex) || 0) + 1),
-        unit: p.unit,
-        value: p.value ?? (p.remarks || null),
-        requirement: this.formatRequirement(p),
-        status: this.getParameterStatus(p)
-      })),
+      info: this.withConditionSuffix(this.buildSheetInfo(plan, test, pIdx, tIdx), layout, test),
+      rawSpecimenLabels: spmLabels,
+      rawParameters,
       generatedAt: new Date()
     };
 
@@ -5326,7 +5913,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return value ? { ...info, testName: `${info.testName} @ ${value}`.trim() } : info;
   }
 
-  private buildSheetInfo(plan: any, test: any): any {
+  private buildSheetInfo(plan: any, test: any, planIndex: number = this.activePlanIndex, testIndex: number = 0): any {
     const details: any[] = this.sample?.additionalDetails || [];
     const norm = (s: any) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const detail = (...labels: string[]): string => {
@@ -5342,6 +5929,22 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     if (env?.roomTemperature != null) envParts.push(`${env.roomTemperature} °C`);
     if (env?.roomHumidity != null) envParts.push(`${env.roomHumidity} % RH`);
 
+    const scopeCounts = this.getNablScopeCounts(planIndex, testIndex);
+    const accreditationScope = scopeCounts.inScope > 0 && scopeCounts.outOfScope === 0
+      ? `In Scope (${scopeCounts.inScope} parameter${scopeCounts.inScope > 1 ? 's' : ''})`
+      : scopeCounts.inScope > 0 && scopeCounts.outOfScope > 0
+        ? `Partly in Scope (${scopeCounts.inScope} in, ${scopeCounts.outOfScope} out)`
+        : scopeCounts.outOfScope > 0
+          ? `Outside Scope (${scopeCounts.outOfScope})`
+          : 'Not Configured in Lab Scope Master';
+
+    const specimenSize = this.hasSpecimenSize(planIndex, testIndex)
+      ? this.getSpecimenSizeSummary(planIndex, testIndex)
+      : '';
+
+    const liveVerdict = planIndex === this.activePlanIndex ? this.layoutRendererComponent?.conformityVerdict : null;
+    const verdictLabel = liveVerdict?.label || this.computeFallbackVerdictLabel(planIndex, testIndex, test);
+
     return {
       reference: detail('Reference', 'Customer Reference', 'Letter No', 'Ref No') || this.inward?.poNo || '',
       description: this.sample?.details || '',
@@ -5355,10 +5958,54 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       technique: plan?.analysisTechnique && plan.analysisTechnique !== '—' ? String(plan.analysisTechnique).toUpperCase() : '',
       testName: String(test?.name || '').toUpperCase(),
       method: this.getCleanMethodLabel(plan?.methodName),
-      testedOn: testedOn ? this.formatSheetDate(testedOn) : '',
+      testedOn: testedOn ? this.formatDateDisplay(testedOn) : '',
+      testedDateTime: testedOn ? this.formatDateTime(testedOn) : '',
       environment: envParts.join(' / '),
+      specimenSize,
+      accreditationScope,
+      verdictLabel,
       testedBy: timing.performedByName || '',
     };
+  }
+
+  /** Computes conformity verdict label when the Tab 1 renderer is unmounted (e.g. Raw Data Sheet opened from Tab 2). */
+  private computeFallbackVerdictLabel(planIndex: number, testIndex: number, test: any): string {
+    const paramsFA = this.getParameters(planIndex, testIndex);
+    const activeKeys = this.getActiveLayoutParameterKeys(planIndex, testIndex);
+    const activeSet = activeKeys ? new Set(activeKeys) : null;
+    const toNum = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+
+    let withValue = 0;
+    let judged = 0;
+    let failed = 0;
+
+    if (paramsFA && paramsFA.length > 0) {
+      for (const ctrl of paramsFA.controls) {
+        const r = (ctrl as FormGroup).getRawValue();
+        if (activeSet) {
+          const k = r.parameterID != null ? `id:${r.parameterID}` : `name:${String(r.parameterName || '').trim().toLowerCase()}`;
+          if (!activeSet.has(k)) continue;
+        }
+        const v = toNum(r.value);
+        if (v === null) continue;
+        withValue++;
+        const min = toNum(r.minValue ?? r.specMinValue);
+        const max = toNum(r.maxValue ?? r.specMaxValue);
+        if (min === null && max === null) continue;
+        judged++;
+        if ((min !== null && v < min) || (max !== null && v > max)) {
+          failed++;
+        }
+      }
+    }
+
+    if (withValue === 0) {
+      if (test?.isOverallPass === true) return 'CONFORMING (PASS)';
+      if (test?.isOverallPass === false) return 'NON-CONFORMING (FAIL)';
+      return 'RESULTS PENDING';
+    }
+    if (judged === 0) return 'NOT ASSESSED';
+    return failed > 0 ? 'NON-CONFORMING (FAIL)' : 'CONFORMING (PASS)';
   }
 
   /** dd-MM-yyyy, as on the lab's reports. */
@@ -6266,7 +6913,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     this.onLayoutTemplateSelect(id, true);
   }
 
-  
+
   // ================================================================
   // Case Details & Quality Dossier Helper Methods (Tab 2)
   // ================================================================

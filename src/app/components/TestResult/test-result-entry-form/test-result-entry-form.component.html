@@ -129,7 +129,7 @@
               <div class="test-tabs" role="tablist">
                 <button type="button" role="tab" class="tab-compact" [class.active]="activeTab === 'execution'"
                   [attr.aria-selected]="activeTab === 'execution'" (click)="switchTab('execution')">
-                  <span>1. Execution ({{ plans[p].tests[t]?.parameters?.length || 0 }})</span>
+                  <span>1. Execution ({{ pillMetrics(p).total }})</span>
                 </button>
                 <button type="button" role="tab" class="tab-compact" [class.active]="activeTab === 'nabl_audit'"
                   [attr.aria-selected]="activeTab === 'nabl_audit'" (click)="switchTab('nabl_audit')">
@@ -141,7 +141,7 @@
               <div class="lims-test-toolbar-controls" *ngIf="activePlanIndex === p">
                 <!-- Layout -->
                 <div class="lims-test-toolbar-group">
-                  <span class="lims-test-toolbar-label">Layout</span>
+                  <span class="lims-tb-label">Layout</span>
                   <div class="lims-test-toolbar-layout" [title]="selectedLayoutItem?.name || 'Select layout'">
                     <app-searchable-dropdown
                       [placeholder]="'Select Layout...'"
@@ -156,74 +156,86 @@
                   </div>
                 </div>
 
+                <span class="lims-tb-divider" *ngIf="shouldShowSpecimenToolbar()" aria-hidden="true"></span>
+
                 <!-- Specimen count: available for all layouts unless fixed by template -->
                 <div class="lims-test-toolbar-group" *ngIf="shouldShowSpecimenToolbar()">
-                  <span class="lims-test-toolbar-label">Specimens</span>
-                  <div class="spm-stepper-compact" *ngIf="canAdjustSpecimenCount(); else fixedSpecimenBadge">
-                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
-                      [disabled]="tbLocked || getActiveSpecimenCount() <= 1" title="Decrease specimen count">-</button>
-                    <input type="number" class="spm-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="tbLocked"
+                  <span class="lims-tb-label">Specimens</span>
+                  <div class="lims-tb-stepper" *ngIf="canAdjustSpecimenCount(); else fixedSpecimenBadge">
+                    <button type="button" class="lims-tb-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
+                      [disabled]="tbLocked || getActiveSpecimenCount() <= 1" title="Decrease specimen count">−</button>
+                    <input type="number" class="lims-tb-stepper-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="tbLocked"
                       aria-label="Specimen count" (change)="onWorkbenchSpecimenInputChange($event)" />
-                    <button type="button" class="spm-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
+                    <button type="button" class="lims-tb-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
                       [disabled]="tbLocked || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
                   </div>
                   <ng-template #fixedSpecimenBadge>
-                    <span class="badge bg-light text-dark border">{{ getActiveSpecimenCount() }}</span>
+                    <span class="lims-tb-meta-chip">{{ getActiveSpecimenCount() }}</span>
                   </ng-template>
-                  <span class="spm-plan-badge" *ngIf="getActivePlannedQuantity() > 1" title="Tests in plan">Tests in plan: {{ getActivePlannedQuantity() }}</span>
+                  <span class="lims-tb-meta-chip" *ngIf="getActivePlannedQuantity() > 1" title="Tests planned in Sample Plan">Plan: {{ getActivePlannedQuantity() }}</span>
                 </div>
 
+                <span class="lims-tb-divider" *ngIf="shouldShowSpecimenSizePrompt()" aria-hidden="true"></span>
+
                 <!-- Specimen Size Prompt (Task L8.1 Option 1) -->
-                <div class="lims-test-toolbar-group lims-test-toolbar-size" *ngIf="shouldShowSpecimenSizePrompt()">
-                  <span class="lims-test-toolbar-label">
-                    Size
-                    <span class="text-danger fw-bold" *ngIf="isSpecimenSizeRequired(tbTest)">*</span>
+                <div class="lims-test-toolbar-group" *ngIf="shouldShowSpecimenSizePrompt()">
+                  <span class="lims-tb-label">
+                    Size<span class="text-danger fw-bold ms-0.5" *ngIf="isSpecimenSizeRequired(tbTest)">*</span>
                   </span>
-                  <button type="button" class="size-prompt-btn"
+                  <button type="button" class="lims-tb-size-btn"
+                    [class.is-set]="hasSpecimenSize(p, t)"
+                    [class.is-required]="isSpecimenSizeRequired(tbTest) && !hasSpecimenSize(p, t)"
                     (click)="openSpecimenSizeModal(p, t)"
                     [title]="getSpecimenSizeSummary(p, t)">
                     <i class="bi bi-rulers"></i>
-                    <span class="size-summary-text font-monospace">{{ getSpecimenSizeDisplay(p, t) }}</span>
-                    <span class="badge" [ngClass]="isSpecimenSizeRequired(tbTest) ? (hasSpecimenSize(p, t) ? 'bg-success' : 'bg-danger') : (hasSpecimenSize(p, t) ? 'bg-success' : 'bg-secondary')">
-                      {{ isSpecimenSizeRequired(tbTest) ? (hasSpecimenSize(p, t) ? 'Set' : 'Required *') : (hasSpecimenSize(p, t) ? 'Set' : 'Optional') }}
+                    <span class="lims-tb-size-val">{{ getSpecimenSizeDisplay(p, t) }}</span>
+                    <span class="lims-tb-status-pill"
+                      [ngClass]="isSpecimenSizeRequired(tbTest) ? (hasSpecimenSize(p, t) ? 'bg-success text-white' : 'bg-danger text-white') : (hasSpecimenSize(p, t) ? 'bg-success text-white' : 'bg-secondary text-white')">
+                      {{ isSpecimenSizeRequired(tbTest) ? (hasSpecimenSize(p, t) ? 'Set' : 'Required') : (hasSpecimenSize(p, t) ? 'Set' : 'Optional') }}
                     </span>
                   </button>
                 </div>
 
+                <span class="lims-tb-divider" *ngIf="currentTestLayout" aria-hidden="true"></span>
+
                 <!-- Layout Mode: Template vs Dynamic Adjust -->
                 <div class="lims-test-toolbar-group" *ngIf="currentTestLayout">
-                  <span class="lims-test-toolbar-label">Mode</span>
-                  <div class="btn-group btn-group-sm" role="group" aria-label="Layout Mode">
-                    <button type="button" class="btn btn-xs py-0 px-2"
-                      [ngClass]="!isDynamicAdjustMode ? 'btn-primary' : 'btn-outline-secondary'"
+                  <span class="lims-tb-label">Mode</span>
+                  <div class="lims-tb-segmented" role="group" aria-label="Layout Mode">
+                    <button type="button" class="lims-tb-seg-btn"
+                      [class.is-active]="!isDynamicAdjustMode"
                       (click)="setDynamicAdjustMode(false)"
                       [disabled]="tbLocked"
                       title="Template Mode: Load pristine template structure from master">
-                      <i class="bi bi-file-earmark-ruled me-1"></i>Template
+                      <i class="bi bi-file-earmark-ruled"></i><span>Template</span>
                     </button>
-                    <button type="button" class="btn btn-xs py-0 px-2"
-                      [ngClass]="isDynamicAdjustMode ? 'btn-primary' : 'btn-outline-secondary'"
+                    <button type="button" class="lims-tb-seg-btn"
+                      [class.is-active]="isDynamicAdjustMode"
                       (click)="setDynamicAdjustMode(true)"
                       [disabled]="tbLocked"
                       title="Dynamic Mode: Dynamically adjust specimens, dimensions, columns, and parameters on the fly">
-                      <i class="bi bi-sliders me-1"></i>Adjust
+                      <i class="bi bi-sliders"></i><span>Adjust</span>
                     </button>
                   </div>
                 </div>
 
-                <!-- Fresh Entry (Clear results) -->
-                <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 text-xxs"
-                  (click)="confirmResetSampleResults()"
-                  *ngIf="!isViewMode && !isTestFinalized(tbTest?.status)"
-                  title="Clear all entered results and restart with fresh entry">
-                  <i class="bi bi-arrow-counterclockwise me-1"></i>Fresh Entry
-                </button>
+                <span class="lims-tb-divider" *ngIf="(!isViewMode && !isTestFinalized(tbTest?.status)) || currentTestLayout" aria-hidden="true"></span>
 
-              <a *ngIf="currentTestLayout" class="btn btn-sm btn-lims btn-lims-secondary lims-test-toolbar-studio text-decoration-none"
-                [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }"
-                title="Open this layout in Layout Studio">
-                <i class="bi bi-grid-1x2"></i><span>Studio</span>
-              </a>
+                <!-- Fresh Entry (Clear results) & Studio Link -->
+                <div class="lims-test-toolbar-group">
+                  <button type="button" class="lims-tb-btn lims-tb-btn-danger"
+                    (click)="confirmResetSampleResults()"
+                    *ngIf="!isViewMode && !isTestFinalized(tbTest?.status)"
+                    title="Clear all entered results and restart with fresh entry">
+                    <i class="bi bi-arrow-counterclockwise"></i><span>Fresh Entry</span>
+                  </button>
+
+                  <a *ngIf="currentTestLayout" class="lims-tb-btn lims-tb-btn-studio"
+                    [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }"
+                    title="Open this layout in Layout Studio">
+                    <i class="bi bi-grid-1x2"></i><span>Studio</span>
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -368,7 +380,7 @@
                           <div *ngFor="let param of getFormulaParametersList(p, t)" class="p-1 bg-light rounded border">
                             <div class="d-flex justify-content-between align-items-center">
                               <span class="fw-semibold text-dark text-xxs">{{ param.parameterName }}</span>
-                              <strong class="text-primary text-xxs">{{ param.value != null ? param.value + ' ' + (param.unit || '') : 'Pending' }}</strong>
+                              <strong class="text-primary text-xxs">{{ param.displayValue || (param.value != null ? param.value + ' ' + (param.unit || '') : 'Pending') }}</strong>
                             </div>
                             <div class="font-monospace text-xxs text-secondary bg-white px-1 py-0.5 rounded border mt-0.5 text-truncate" [title]="getFormulaDisplay(param, p, t)">
                               {{ getFormulaDisplay(param, p, t) }}
@@ -500,35 +512,27 @@
                 <!-- RIGHT COLUMN (65-68% on desktop): Dynamic Configured Layout Section -->
                 <div class="col-12 col-xl-8 col-lg-7 d-flex flex-column gap-2">
 
-                  <!-- Dynamic Configured Layout (when template is configured) -->
-                  <ng-container *ngIf="currentTestLayout">
-                    <app-configured-test-layout-renderer #layoutRenderer [layoutConfig]="currentTestLayout" [testPlan]="plans[p]"
-                      [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
-                      [nablInScope]="isNablAccredited(plans[p].tests[t])" [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []"
-                      [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
-                      [isDynamicMode]="isDynamicAdjustMode"
-                      [activeTabSection]="'execution'"
-                      [environmentData]="environmentMap[plans[p].tests[t]?.headerId]"
-                      [timingData]="testTimingMap[plans[p].tests[t]?.headerId]"
-                      [selectedEquipment]="selectedEquipmentMap[plans[p].tests[t]?.headerId] || []"
-                      [testImages]="testImagesMap[plans[p].tests[t]?.headerId] || []"
-                      (paramValueChanged)="onConfiguredParamChanged($event)"
-                      (unitChanged)="onUnitChanged(p, t, $event.rowIdx)"
-                      (formulaRequested)="openFormulaBuilder(p, t, $event.rowIdx)"
-                      (environmentRequested)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])"
-                      (multipleReadingsRequested)="openMultipleReadingsModal(p, t, $event.rowIdx)"
-                      (photoUploadRequested)="switchTab('execution')"
-                      (parametersAdjusted)="onRendererParametersAdjusted(p, t)"
-                      (specimenCountChanged)="onWorkbenchSpecimenCountChanged($event)">
-                    </app-configured-test-layout-renderer>
-                  </ng-container>
-
-                  <!-- Standard Fallback View (when no configured layout template) -->
-                  <div class="d-flex flex-column gap-2" *ngIf="!currentTestLayout">
-                    <div class="card border-0 shadow-sm lims-panel p-2">
-                      <div class="text-muted small">Standard parameter matrix rendered below when no layout template is mapped.</div>
-                    </div>
-                  </div>
+                  <!-- Dynamic Configured Layout (falls back to standard Parameter Table when unmapped) -->
+                  <app-configured-test-layout-renderer #layoutRenderer [layoutConfig]="currentTestLayout || defaultFallbackLayout" [testPlan]="plans[p]"
+                    [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
+                    [nablInScope]="isNablAccredited(plans[p].tests[t])" [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []"
+                    [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
+                    [isDynamicMode]="isDynamicAdjustMode"
+                    [activeTabSection]="'execution'"
+                    [environmentData]="environmentMap[plans[p].tests[t]?.headerId]"
+                    [timingData]="testTimingMap[plans[p].tests[t]?.headerId]"
+                    [selectedEquipment]="selectedEquipmentMap[plans[p].tests[t]?.headerId] || []"
+                    [testImages]="testImagesMap[plans[p].tests[t]?.headerId] || []"
+                    (paramValueChanged)="onConfiguredParamChanged($event)"
+                    (unitChanged)="onUnitChanged(p, t, $event.rowIdx)"
+                    (formulaRequested)="openFormulaBuilder(p, t, $event.rowIdx)"
+                    (environmentRequested)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])"
+                    (multipleReadingsRequested)="openMultipleReadingsModal(p, t, $event.rowIdx)"
+                    (photoUploadRequested)="switchTab('execution')"
+                    (parametersAdjusted)="onRendererParametersAdjusted(p, t)"
+                    (specimenCountChanged)="onWorkbenchSpecimenCountChanged($event)"
+                    (syncFromLabTestRequested)="onSyncFromLabTest(p, t, $event)">
+                  </app-configured-test-layout-renderer>
 
                 </div>
               </div>
@@ -552,6 +556,9 @@
                   <div class="lims-kv"><span class="lims-kv-label">Parameters</span><span class="lims-kv-value">{{ scopeCounts.total }}</span></div>
                   <div class="lims-kv"><span class="lims-kv-label">In scope</span><span class="lims-kv-value">{{ scopeCounts.inScope }}</span></div>
                   <div class="lims-kv"><span class="lims-kv-label">Out of scope</span><span class="lims-kv-value">{{ scopeCounts.outOfScope }}</span></div>
+                  <div class="lims-kv" *ngIf="scopeCounts.notConfigured > 0" title="Parameters not configured in Lab Scope Master (neither In Scope nor Out of Scope)">
+                    <span class="lims-kv-label">Not in scope master</span><span class="lims-kv-value">{{ scopeCounts.notConfigured }}</span>
+                  </div>
                   <div class="lims-kv"><span class="lims-kv-label">Accreditation standard</span><span class="lims-kv-value">ISO/IEC 17025:2017</span></div>
                 </div>
                 <p class="lims-section-note mb-0" *ngIf="scopeCounts.inScope > 0">
@@ -567,7 +574,14 @@
                 <app-test-verdict-panel [plan]="plans[p]" [test]="plans[p].tests[t]"
                   [parametersFormArray]="getActiveParametersFormArray()"
                   [nablScopeData]="nablScopeMap[plans[p].tests[t]?.headerId] || []"
-                  [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []" [sample]="sample"
+                  [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []"
+                  [sample]="sample"
+                  [inward]="inward"
+                  [specimenLabels]="getActiveSpecimenLabels()"
+                  [activeParameterKeys]="getActiveLayoutParameterKeys(p, t)"
+                  [decisionRuleText]="getActiveDecisionRuleLabel()"
+                  [useGuardBand]="getActiveDecisionRuleWithMU()"
+                  [layoutColumnConfig]="getActiveVerdictColumnConfig()"
                   [isViewMode]="isViewMode">
                 </app-test-verdict-panel>
               </div>
@@ -607,12 +621,12 @@
                   <table class="case-tests-table">
                     <thead>
                       <tr>
-                        <th style="width: 36px;">#</th>
+                        <th class="lims-col-num">#</th>
                         <th>Parameter</th>
-                        <th style="width: 70px;">Unit</th>
-                        <th style="width: 120px;">NABL Scope Status</th>
+                        <th>Unit</th>
+                        <th>NABL Scope Status</th>
                         <th>Measurement Uncertainty (U)</th>
-                        <th style="width: 180px;">Coverage Factor (k)</th>
+                        <th>Coverage Factor (k)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -621,18 +635,26 @@
                         <td><strong>{{ param.parameterName }}</strong></td>
                         <td>{{ param.unit || '—' }}</td>
                         <td>
-                          <span class="badge font-monospace text-xxs"
-                            [ngClass]="getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope' ? 'bg-success text-white' : 'bg-secondary text-white'">
-                            {{ getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope' ? 'In Scope' : 'Out of Scope' }}
+                          @let paramScopeStatus = getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID);
+                          <span *ngIf="paramScopeStatus === 'WithinScope'" class="badge font-monospace text-xxs bg-success text-white">
+                            In Scope
+                          </span>
+                          <span *ngIf="paramScopeStatus === 'OutsideScope'" class="badge font-monospace text-xxs bg-danger text-white">
+                            Out of Scope
+                          </span>
+                          <span *ngIf="paramScopeStatus === 'NotAccredited'" class="text-muted text-xxs" title="Not configured in Lab Scope Master">
+                            —
                           </span>
                         </td>
                         <td>
                           <span class="text-secondary font-monospace">
-                            {{ param.expandedUncertainty ? '± ' + param.expandedUncertainty + ' ' + param.unit : 'As per MU Matrix' }}
+                            {{ param.expandedUncertainty != null ? ('± ' + param.expandedUncertainty + (param.unit ? ' ' + param.unit : '')) : '—' }}
                           </span>
                         </td>
                         <td>
-                          <span class="text-secondary font-monospace">k = 2.0 (95.45% CL)</span>
+                          <span class="text-secondary font-monospace">
+                            {{ param.coverageFactor != null ? ('k = ' + param.coverageFactor) : '—' }}
+                          </span>
                         </td>
                       </tr>
                       <tr *ngIf="!scopeCounts.total">
@@ -660,10 +682,10 @@
                       <tr>
                         <td>1</td>
                         <td>Test planned and allocated</td>
-                        <td>Case {{ inward?.caseNo }} · Sample {{ sample?.sampleRegNo || inward?.sampleNo }} · Method {{ plans[p].methodName || plans[p].specification || '—' }}</td>
+                        <td>Case {{ inward?.caseNo }} · Sample {{ sample?.sampleNo || sample?.sampleRegNo || inward?.sampleNo || '—' }} · Method {{ plans[p].methodName || plans[p].specification || '—' }}</td>
                         <td>{{ inward?.receivedOn || '—' }}</td>
                       </tr>
-                      <tr>
+                      <tr *ngIf="tlTiming?.testStartTime || (tlTest.status && tlTest.status !== 'Pending')">
                         <td>2</td>
                         <td>Testing started</td>
                         <td>Performed by {{ tlTiming?.performedByName || '—' }}</td>
@@ -1157,12 +1179,17 @@
         <button type="button" class="btn-close" aria-label="Close" (click)="closeRawDataSheetModal()"></button>
       </div>
 
-      <div class="modal-body p-2">
-        <!-- The document: fixed identification, then the test in the layout it was entered with, then the sign-off -->
+      <div class="modal-body p-3 rds-modal-paper-bg">
+        <!-- A4 NABL Technical Raw Data Sheet matching DMSPL reference format (Calibri / Arial, 9pt body, 12pt underlined title) -->
         <div class="raw-data-document" *ngIf="rawDataSheetData as rds">
-          <div class="rds-title">Raw Data Sheet</div>
 
-          <!-- Sample and customer -->
+          <!-- BOX 1: Document Title & Sample / Customer Identification -->
+          <div class="rds-header-box">
+            <div class="rds-header-left">Case No: {{ rds.inward?.caseNo || '—' }}</div>
+            <div class="rds-title">Raw Data Sheet</div>
+            <div class="rds-header-right">Page 1 of 1</div>
+          </div>
+
           <table class="rds-grid">
             <tbody>
               <tr>
@@ -1179,18 +1206,17 @@
               </tr>
               <tr>
                 <td class="rds-label">Customer Address</td>
-                <td colspan="3">{{ rds.inward?.customerAddress || '—' }}</td>
-                <td colspan="2">Test Performed at: DMSPL, Ahmedabad.</td>
+                <td colspan="5">{{ rds.inward?.customerAddress || '—' }}</td>
               </tr>
             </tbody>
           </table>
 
-          <!-- What the customer stated about the sample; a line that was not given is left out -->
-          <table class="rds-grid">
+          <!-- BOX 2: Information Provided by the Customer -->
+          <table class="rds-grid rds-grid-spaced">
             <tbody>
               <tr><td colspan="4" class="rds-band">INFORMATION PROVIDED BY THE CUSTOMER</td></tr>
               <tr *ngIf="rds.info.reference">
-                <td class="rds-label">Reference</td>
+                <td class="rds-label">Reference.</td>
                 <td colspan="3">{{ rds.info.reference }}</td>
               </tr>
               <tr *ngIf="rds.info.description">
@@ -1220,35 +1246,42 @@
             </tbody>
           </table>
 
-          <!-- The test: method, date, equipment, room conditions, selected specification conditions -->
-          <table class="rds-grid">
+          <!-- BOX 3: Test Discipline, Compact Execution Metadata & Seamlessly Joined Results + Conformity -->
+          <table class="rds-grid rds-grid-spaced">
             <tbody>
               <tr>
-                <td colspan="2" class="rds-band">
-                  {{ rds.info.discipline || 'TEST' }}<span *ngIf="rds.info.technique && rds.info.technique !== rds.info.testName"> | {{ rds.info.technique }}</span>
+                <td class="rds-band-left">
+                  {{ rds.info.discipline || 'TEST' }}<span *ngIf="rds.info.technique && rds.info.technique !== rds.info.testName"> &nbsp;|&nbsp; {{ rds.info.technique }}</span>
                 </td>
               </tr>
               <tr>
-                <td colspan="2"><span class="rds-key">Test Name :</span> <span class="rds-strong">{{ rds.info.testName || '—' }}</span></td>
-              </tr>
-              <tr>
-                <td><span class="rds-key">Test Method :</span> {{ rds.info.method || '—' }}</td>
-                <td class="rds-w-35"><span class="rds-key">Dt. of Testing :</span> {{ rds.info.testedOn || '—' }}</td>
-              </tr>
-              <tr *ngFor="let eq of rds.equipment">
-                <td colspan="2"><span class="rds-key">Equipment :</span> {{ sheetEquipmentLine(eq) }}</td>
-              </tr>
-              <tr *ngIf="!rds.equipment.length">
-                <td colspan="2"><span class="rds-key">Equipment :</span> —</td>
-              </tr>
-              <tr>
-                <td><span class="rds-key">Environment :</span> {{ rds.info.environment || '—' }}</td>
-                <td class="rds-w-35"><span class="rds-key">Test Status :</span> {{ rds.test?.status || '—' }}</td>
-              </tr>
-              <tr *ngIf="rds.conditions.length">
-                <td colspan="2">
-                  <span class="rds-key">Specification Conditions :</span>
-                  <span *ngFor="let c of rds.conditions; let last = last"> {{ c.label }}: {{ c.value }}<span *ngIf="!last">;</span></span>
+                <td class="rds-test-meta-cell">
+                  <div class="rds-meta-line"><span class="rds-key">Test Name :</span> <span class="rds-strong">{{ rds.info.testName || '—' }}</span></div>
+                  <div class="rds-meta-line">
+                    <span class="rds-key">Test Method :</span> {{ rds.info.method || '—' }}
+                    <span class="rds-meta-sep">|</span>
+                    <span class="rds-key">Dt. of Testing :</span> {{ rds.info.testedOn || '—' }}
+                  </div>
+                  <div class="rds-meta-line" *ngFor="let eq of rds.equipment">
+                    <span class="rds-key">Equipment :</span> {{ sheetEquipmentLine(eq) }}
+                  </div>
+                  <div class="rds-meta-line" *ngIf="!rds.equipment.length">
+                    <span class="rds-key">Equipment :</span> —
+                  </div>
+                  <div class="rds-meta-line" *ngIf="rds.info.environment || rds.info.specimenSize">
+                    <ng-container *ngIf="rds.info.environment"><span class="rds-key">Environment :</span> {{ rds.info.environment }}</ng-container>
+                    <span class="rds-meta-sep" *ngIf="rds.info.environment && rds.info.specimenSize">|</span>
+                    <ng-container *ngIf="rds.info.specimenSize"><span class="rds-key">Specimen Size :</span> {{ rds.info.specimenSize }}</ng-container>
+                  </div>
+                  <div class="rds-meta-line">
+                    <span class="rds-key">Accreditation Scope :</span> {{ rds.info.accreditationScope || '—' }}
+                    <span class="rds-meta-sep">|</span>
+                    <span class="rds-key">Overall Verdict :</span> <span class="rds-strong">{{ rds.info.verdictLabel || '—' }}</span>
+                  </div>
+                  <div class="rds-meta-line" *ngIf="rds.conditions.length">
+                    <span class="rds-key">Specification Conditions :</span>
+                    <span *ngFor="let c of rds.conditions; let last = last"> {{ c.label }}: {{ c.value }}<span *ngIf="!last">;</span></span>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -1262,28 +1295,34 @@
             [selectedEquipment]="rds.equipment" [testImages]="rds.images">
           </app-configured-test-layout-renderer>
 
-          <!-- A test without a layout: plain list of its results -->
+          <!-- A test without a layout: grouped unique-parameter table with side-by-side specimens -->
           <table class="rds-grid rds-results" *ngIf="!rds.layout">
             <thead>
-              <tr><th class="text-start">Parameter</th><th>Specimen</th><th>Unit</th><th>Result</th><th>Requirement</th></tr>
+              <tr>
+                <th>Parameter</th>
+                <th>Unit</th>
+                <th *ngFor="let lbl of rds.rawSpecimenLabels">{{ lbl }}</th>
+                <th>Requirement</th>
+              </tr>
             </thead>
             <tbody>
               <tr *ngFor="let r of rds.rawParameters">
                 <td>{{ r.name }}</td>
-                <td class="text-center">{{ r.specimen }}</td>
-                <td class="text-center">{{ r.unit || '—' }}</td>
-                <td class="text-center">{{ r.value ?? '—' }}</td>
-                <td class="text-center">{{ r.requirement }}</td>
+                <td>{{ r.unit || '—' }}</td>
+                <td *ngFor="let val of r.specimenValues">{{ val }}</td>
+                <td>{{ r.requirement }}</td>
               </tr>
-              <tr *ngIf="!rds.rawParameters.length"><td colspan="5">No parameters.</td></tr>
+              <tr *ngIf="!rds.rawParameters.length">
+                <td [attr.colspan]="3 + (rds.rawSpecimenLabels?.length || 1)">No parameters.</td>
+              </tr>
             </tbody>
           </table>
 
           <div class="rds-sign" *ngIf="!rds.hasSignSection">
             <div>
               <div class="rds-key">Tested By</div>
-              <div class="rds-sign-space"></div>
-              <div>{{ rds.info.testedBy }}</div>
+              <div class="rds-sign-name">{{ rds.info.testedBy || '—' }}</div>
+              <div class="rds-sign-time" *ngIf="rds.info.testedDateTime">{{ rds.info.testedDateTime }}</div>
             </div>
             <div class="text-end">
               <div class="rds-key">Reviewed &amp; Authorized by</div>
@@ -1292,7 +1331,7 @@
             </div>
           </div>
 
-          <div class="rds-end">---------- End of Raw Data Sheet ----------</div>
+          <div class="rds-end">--------------End of Raw Data Sheet--------------</div>
         </div>
       </div>
 

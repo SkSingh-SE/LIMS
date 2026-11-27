@@ -9,6 +9,9 @@ export interface ExecutionMetrics {
 
 /** The parameter row fields the counts read (same fields the form saves). */
 export interface ExecutionMetricsRow {
+  parameterID?: number | string | null;
+  parameterName?: string | null;
+  specimenIndex?: number | string | null;
   value?: unknown;
   /** Text results (input type Text) are kept here. */
   remarks?: unknown;
@@ -21,36 +24,68 @@ export interface ExecutionMetricsRow {
 const PASS_STATUSES = ['Pass', 'Compliant', 'Within Range'];
 const FAIL_STATUSES = ['Fail', 'Non-compliant', 'Under Range', 'Over Range'];
 
+function isRowEntered(row: ExecutionMetricsRow | null | undefined): boolean {
+  const val = row?.value;
+  const hasText = row?.inputType === 'Text' && String(row?.remarks ?? '').trim() !== '';
+  return (val !== null && val !== undefined && val !== '') || hasText;
+}
+
+function isRowPass(row: ExecutionMetricsRow | null | undefined): boolean {
+  const status = row?.resultStatus || row?.status;
+  return (!!status && PASS_STATUSES.includes(status)) || row?.isWithinLimit === true;
+}
+
+function isRowFail(row: ExecutionMetricsRow | null | undefined): boolean {
+  const status = row?.resultStatus || row?.status;
+  return (!!status && FAIL_STATUSES.includes(status)) || row?.isWithinLimit === false;
+}
+
 /**
- * Counts entered / pass / fail / pending parameter rows of one test.
- * A row is entered when its value is not empty. Pass / fail follow the
- * row's resultStatus (or status) and isWithinLimit, which the min/max check sets.
+ * Counts entered / pass / fail / pending unique parameters of one test.
+ * Multi-specimen rows sharing the same parameterID or parameterName are grouped into a single
+ * parameter so a 2-specimen test with 11 parameters reports 0/11 rather than 0/22.
+ * Worst-case verdict wins across specimens (Fail > Pass > Pending).
  */
 export function countExecutionMetrics(rows: ExecutionMetricsRow[] | null | undefined): ExecutionMetrics {
   const list = rows || [];
+  if (!list.length) {
+    return { total: 0, entered: 0, pass: 0, fail: 0, pending: 0 };
+  }
+
+  const groups = new Map<string, ExecutionMetricsRow[]>();
+  list.forEach((row, idx) => {
+    const pid = row?.parameterID;
+    const pname = String(row?.parameterName ?? '').trim().toLowerCase();
+    const key = (pid !== null && pid !== undefined && pid !== '' && Number(pid) !== 0)
+      ? `id:${pid}`
+      : (pname ? `name:${pname}` : `row:${idx}`);
+    const bucket = groups.get(key);
+    if (bucket) {
+      bucket.push(row);
+    } else {
+      groups.set(key, [row]);
+    }
+  });
+
   let entered = 0;
   let pass = 0;
   let fail = 0;
   let pending = 0;
 
-  list.forEach(row => {
-    const val = row?.value;
-    const status = row?.resultStatus || row?.status;
-    const isWithinLimit = row?.isWithinLimit;
-    const hasText = row?.inputType === 'Text' && String(row?.remarks ?? '').trim() !== '';
-    if ((val !== null && val !== undefined && val !== '') || hasText) {
+  groups.forEach(groupRows => {
+    if (groupRows.some(isRowEntered)) {
       entered++;
     }
-    if ((status && PASS_STATUSES.includes(status)) || isWithinLimit === true) {
-      pass++;
-    } else if ((status && FAIL_STATUSES.includes(status)) || isWithinLimit === false) {
+    if (groupRows.some(isRowFail)) {
       fail++;
+    } else if (groupRows.some(isRowPass)) {
+      pass++;
     } else {
       pending++;
     }
   });
 
-  return { total: list.length, entered, pass, fail, pending };
+  return { total: groups.size, entered, pass, fail, pending };
 }
 
 /** True when two per-test metrics lists hold the same counts (used as a signal equality check). */

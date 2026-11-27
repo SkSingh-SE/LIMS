@@ -11,7 +11,7 @@ import { PaginationComponent } from '../../utility/components/pagination/paginat
 
 @Component({
   selector: 'app-parameter-unit',
-  imports: [ CommonModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent ],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, FormFieldErrorComponent, PaginationComponent],
   templateUrl: './parameter-unit.component.html',
   styleUrl: './parameter-unit.component.css',
 })
@@ -21,10 +21,10 @@ export class ParameterUnitComponent implements OnInit {
   private bsModal!: Modal;
 
   columns = [
-    { key: 'id', type: 'number', label: 'SN', filter: false },
-    { key: 'name', type: 'string', label: 'Unit Name', filter: true },
-    { key: 'conversionFactor', type: 'string', label: 'Base Factor', filter: true },
-    { key: 'equivalents', type: 'string', label: 'Equivalent Units', filter: false },
+    { key: 'id', type: 'number', label: 'SN', filter: false, sortable: true },
+    { key: 'name', type: 'string', label: 'Unit Name', filter: true, sortable: true },
+    { key: 'conversionFactor', type: 'string', label: 'Base Factor', filter: false, sortable: true },
+    { key: 'equivalents', type: 'string', label: 'Equivalent Units', filter: false, sortable: false },
   ];
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     name: 'string',
@@ -74,7 +74,7 @@ export class ParameterUnitComponent implements OnInit {
     private fb: FormBuilder,
     private parameterUnitService: ParameterUnitService,
     private toastService: ToastService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.fetchData();

@@ -96,13 +96,13 @@ export class SignalRService implements OnDestroy {
   }
 
   private resolveHubUrl(): string {
-    // Prefer a relative URL so the Angular dev proxy (/hubs -> https://localhost:7049)
-    // handles local runs. Absolute baseUrl values in environment files (e.g.
-    // 192.168.x or ntempurl hosts) break local SignalR + cause silent empty dashboards.
-    if (typeof window !== 'undefined') {
+    // Use relative URL ONLY on localhost so the Angular dev proxy (/hubs -> https://localhost:7049) handles local runs.
+    // On Staging/Production (separate frontend & API hosts), always target environment.baseUrl.
+    if (typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)) {
       return `${window.location.origin}/hubs/notifications`;
     }
-    return `${environment.baseUrl}hubs/notifications`;
+    const base = (environment.baseUrl || '').replace(/\/+$/, '');
+    return `${base}/hubs/notifications`;
   }
 
   private async joinDashboard(): Promise<void> {

@@ -1,18 +1,3 @@
-.basic-data-table {
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.card-form-header {
-  background: linear-gradient(135deg, var(--primary-color, #da261c) 0%, #a61a12 100%);
-  border-bottom: none;
-}
-
-.custom-search {
-  max-width: 280px;
-}
-
-
 .archetype-summary-text {
   max-width: 220px;
   display: inline-block;

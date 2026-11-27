@@ -356,7 +356,7 @@
             <label class="form-label">Formula</label>
             <div class="input-group">
               <input type="text" class="form-control bg-light" formControlName="formulaDisplay" placeholder="e.g. Carbon + Manganese / 6" readonly />
-              <button type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder()">Build Formula</button>
+              <button [disabled]="isViewMode" type="button" class="btn btn-outline-primary" (click)="openFormulaBuilder()">Build Formula</button>
             </div>
           </div>
 
@@ -381,13 +381,13 @@
                 <tbody formArrayName="dropdownOptions">
                   <tr *ngFor="let option of dropdownOptions.controls; let i = index" [formGroupName]="i" class="align-middle">
                     <td>
-                      <input type="text" class="form-control form-control-sm" formControlName="displayText" placeholder="e.g. Pass" [attr.disabled]="isViewMode ? true : null" required>
+                      <input type="text" class="form-control form-control-sm" formControlName="displayText" placeholder="e.g. Pass" [readonly]="isViewMode" required>
                     </td>
                     <td>
-                      <input type="text" class="form-control form-control-sm" formControlName="value" placeholder="e.g. PASS" [attr.disabled]="isViewMode ? true : null" required>
+                      <input type="text" class="form-control form-control-sm" formControlName="value" placeholder="e.g. PASS" [readonly]="isViewMode" required>
                     </td>
                     <td class="text-center">
-                      <input type="checkbox" class="form-check-input mt-0" formControlName="isDefault" [attr.disabled]="isViewMode ? true : null">
+                      <input type="checkbox" class="form-check-input mt-0" formControlName="isDefault" [readonly]="isViewMode" [style.pointer-events]="isViewMode ? 'none' : 'auto'">
                     </td>
                     <td *ngIf="!isViewMode" class="text-center">
                       <button type="button" class="btn btn-remove btn-sm p-1" (click)="removeDropdownOption(i)" title="Remove Option">

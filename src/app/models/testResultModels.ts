@@ -206,6 +206,17 @@ export interface TestResultGroupDto {
   layoutVersion?: string | null;
   layoutSnapshotJson?: string | null;
   executionExtraJson?: string | null;
+  specDimensionalFactorID?: number | null;
+  specDimLowerSymbol?: string | null;
+  specDimLowerValue?: number | null;
+  specDimUpperSymbol?: string | null;
+  specDimUpperValue?: number | null;
+  specHeatTreatmentID?: number | null;
+  specProductConditionID1?: number | null;
+  specProductConditionID2?: number | null;
+  specProductSizeMasterID?: number | null;
+  specTestCondition?: string | null;
+  specSpecimenOrientationID?: number | null;
   roomTemperature?: number | null;
   roomHumidity?: number | null;
   retestOfHeaderId?: number | null;

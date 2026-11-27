@@ -497,6 +497,7 @@
               <colgroup>
                 <col class="col-w-150" />   <!-- Sample No -->
                 <col />                      <!-- Sample Identification & Description — flexible main column -->
+                <col *ngIf="showSampleSize" class="col-w-340" />    <!-- Size (mm): hidden, see showSampleSize -->
                 <col class="col-w-140" />    <!-- Qty -->
                 <col class="col-w-260" />    <!-- Image / Photo Attachment -->
                 <col class="col-w-90" />     <!-- Action -->
@@ -505,6 +506,7 @@
                 <tr class="sample-table-header">
                   <th class="text-center text-nowrap py-2">Sample No</th>
                   <th class="text-nowrap py-2">Sample Identification & Description <span class="text-danger">*</span></th>
+                  <th *ngIf="showSampleSize" class="text-nowrap py-2">Size (mm)</th>
                   <th class="text-center text-nowrap py-2">Qty</th>
                   <th class="text-nowrap py-2">Image / Photo Attachment</th>
                   <th class="text-center py-2">Action</th>
@@ -527,6 +529,25 @@
                   <td class="align-middle">
                     <input class="form-control form-control-sm border-secondary-subtle" formControlName="details" placeholder="Enter Sample Description, Heat No, Grade..."
                       [ngClass]="{'is-invalid': sample.get('details')?.invalid && (sample.get('details')?.touched || submitted)}" />
+                    <span *ngIf="isSampleFieldInvalid(sample, 'details') && sample.get('details')?.hasError('required')" class="text-danger text-sm d-block">
+                      Sample description is required.
+                    </span>
+                  </td>
+                  <td class="align-middle" *ngIf="showSampleSize">
+                    <div class="row g-1">
+                      <div class="col-3" *ngFor="let d of dimensionFields">
+                        <label class="d-block text-muted mb-0 text-xs-68" [for]="'dim-' + d.key + '-' + i">{{ d.label }}</label>
+                        <input class="form-control form-control-sm text-end" type="text" inputmode="decimal" appDecimalOnly maxlength="8"
+                               [id]="'dim-' + d.key + '-' + i" [formControlName]="d.key" placeholder="mm"
+                               [title]="d.label + ' in mm'"
+                               [ngClass]="{ 'is-invalid': isSampleFieldInvalid(sample, d.key) }" />
+                        <div *ngIf="isSampleFieldInvalid(sample, d.key)" class="text-xs-68">
+                          <span *ngIf="sample.get(d.key)?.hasError('pattern')" class="text-danger d-block">Use a number with up to 2 decimals.</span>
+                          <span *ngIf="sample.get(d.key)?.hasError('min')" class="text-danger d-block">Cannot be below 0.</span>
+                          <span *ngIf="sample.get(d.key)?.hasError('max')" class="text-danger d-block">Max {{ dimensionMax }} mm.</span>
+                        </div>
+                      </div>
+                    </div>
                   </td>
                   <td class="text-center align-middle">
                     <div class="d-flex align-items-center justify-content-center gap-1">
@@ -675,7 +696,7 @@
               <tbody formArrayName="sampleAdditionalDetails">
                 <tr *ngFor="let row of sampleAdditionalDetails.controls; let rowIndex = index" [formGroupName]="rowIndex">
                   <td>
-                    <select class="form-select form-select-sm border-secondary-subtle fw-medium" formControlName="label" (change)="onLabelChange()">
+                    <select class="form-select form-select-sm border-secondary-subtle fw-medium" formControlName="label" (change)="onLabelChange(rowIndex)">
                       <option value="" disabled>Select Attribute</option>
                       <option *ngFor="let option of descriptionOptions" [value]="option" [disabled]="isOptionSelected(option, rowIndex)">
                         {{ option }}
@@ -743,18 +764,19 @@
                 </div>
                 <button *ngIf="sampleInwardForm.get('sampleReceiptNote')?.value"
                         type="button" class="btn-lims-clear-chip ms-auto"
-                        (click)="sampleInwardForm.patchValue({sampleReceiptNote: ''})"
+                        (click)="clearReceiptNote()"
                         title="Clear all receipt note text">
                   <i class="bi bi-x-circle-fill"></i><span>Clear Note</span>
                 </button>
               </div>
 
               <textarea
+                #receiptNoteTextarea
                 class="form-control form-control-sm receipt-note-textarea"
-                type="text"
                 placeholder="Enter any specific sample receipt notes, packaging condition, or visual remarks..."
                 formControlName="sampleReceiptNote"
                 rows="3"
+                (input)="autoResizeReceiptNote(receiptNoteTextarea)"
               ></textarea>
             </fieldset>
           </div>

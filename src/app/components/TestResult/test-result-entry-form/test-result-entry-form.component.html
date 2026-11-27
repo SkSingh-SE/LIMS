@@ -1,156 +1,69 @@
 <div class="test-result-container p-0 m-0 w-100">
 
   <!-- ================================================================ -->
-  <!-- 1. CLEAN CASE BAR — White Header with Chips                      -->
+  <!-- 1. CASE BAR (one line: case / sample, meta with tooltips, details) -->
   <!-- ================================================================ -->
-  <div class="casebar" *ngIf="!isInline">
-    <button class="back" type="button" (click)="cancel()" title="Back to List">← Back</button>
-    <div class="case-title">Test Result Entry</div>
-    <span class="chip font-monospace" *ngIf="inward?.caseNo">{{ inward.caseNo }}</span>
-    <span class="chip font-monospace" *ngIf="sample?.sampleNo">{{ sample.sampleNo }}</span>
-    <span class="chip status" *ngIf="sample?.sampleStatus">{{ sample.sampleStatus }}</span>
-    <div class="grow"></div>
-    <span class="chip" *ngIf="inward?.customerName" [title]="inward.customerName">{{ inward.customerName }}</span>
-    <span class="chip" title="Planned specimen quantity">
-      <i class="bi bi-stack me-1 text-danger"></i>{{ getActivePlannedQuantity() }} {{ getActivePlannedQuantity() === 1 ?
-      'Specimen' : 'Specimens' }}
-    </span>
+  <div class="compact-casebar" *ngIf="!isInline">
+    <!-- Left: Back, Case / Sample chips, Status -->
+    <div class="casebar-left">
+      <button class="casebar-back-btn" type="button" (click)="cancel()" title="Back to list">← Back</button>
+      <span class="badge bg-light text-dark border font-monospace" *ngIf="inward?.caseNo" [title]="'Case No: ' + inward.caseNo">{{ inward.caseNo }}</span>
+      <span class="badge bg-light text-dark border font-monospace" *ngIf="sample?.sampleNo" [title]="'Sample No: ' + sample.sampleNo">{{ sample.sampleNo }}</span>
+      <span class="badge font-monospace" *ngIf="sample?.sampleStatus" [ngClass]="getSampleStatusBadgeClass(sample.sampleStatus)"
+        [title]="'Sample status: ' + sample.sampleStatus">{{ sample.sampleStatus }}</span>
+    </div>
+
+    <!-- Center: single-line metadata; each item truncates, full text on hover. PO and full details sit in Case Details. -->
+    <div class="lims-casebar-meta">
+      <span class="lims-casebar-meta-item" [title]="'Customer: ' + (inward?.customerName || '—')">Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
+      <span class="lims-casebar-meta-item" [title]="'Material: ' + (sample?.material || sample?.productMasterName || '—')">Material: <strong>{{ sample?.material || sample?.productMasterName || '—' }}</strong></span>
+      <span class="lims-casebar-meta-item" [title]="'Class: ' + (sample?.metalClassification || '—')">Class: <strong>{{ sample?.metalClassification || '—' }}</strong></span>
+      @let caseSizeText = (sample?.productSizeFormatted || '').trim() && (sample?.productSizeFormatted || '').trim() !== '-' ? sample.productSizeFormatted.trim() : '—';
+      <span class="lims-casebar-meta-item lims-casebar-meta-item--fixed" [title]="'Size: ' + caseSizeText">Size: <strong>{{ caseSizeText }}</strong></span>
+      <span class="lims-casebar-meta-item lims-casebar-meta-item--fixed" *ngIf="sample?.heatNo || sample?.batchNo" [title]="'Heat/Batch: ' + (sample.heatNo || sample.batchNo)">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
+      <span class="lims-casebar-meta-item lims-casebar-meta-item--fixed" [title]="'Received: ' + (inward?.receivedOn || '—')">Received: <strong>{{ inward?.receivedOn || '—' }}</strong></span>
+    </div>
+
+    <!-- Right: Case Details (case-level data panel) -->
+    <div class="casebar-right" *ngIf="inward || sample">
+      <button type="button" class="btn btn-sm btn-lims-secondary" (click)="openCaseDetails()" title="Case registration, sample, dimensions and planned tests">
+        <i class="bi bi-folder2-open me-1"></i><span>Case Details</span>
+      </button>
+    </div>
   </div>
 
   <!-- ================================================================ -->
-  <!-- 2. MATERIAL METADATA BAR                                         -->
+  <!-- 2. TEST STRIP (one pill per test; controls live in the per-test toolbar) -->
   <!-- ================================================================ -->
-  <div class="materialbar flex-wrap gap-3">
-    <span>Customer: <strong>{{ inward?.customerName || '—' }}</strong></span>
-    <span *ngIf="inward?.poNo">PO / Ref: <strong>{{ inward.poNo }}</strong></span>
-    <span>Material: <strong>{{ sample?.material || sample?.productMasterName || 'Structural Steel' }}</strong></span>
-    <span>Class: <strong>{{ sample?.metalClassification || 'Not specified' }}</strong></span>
-    <span>Size: <strong>{{ sample?.productSizeFormatted || 'Not specified' }}</strong></span>
-    <span *ngIf="sample?.batchNo || sample?.heatNo">Heat/Batch: <strong>{{ sample.heatNo || sample.batchNo }}</strong></span>
-    <span *ngIf="sample?.heatTreatment">Heat Treatment: <strong>{{ sample.heatTreatment }}</strong></span>
-    <span>Received: <strong>{{ inward?.receivedOn || '—' }}</strong></span>
-  </div>
-
-  <!-- ================================================================ -->
-  <!-- 3. SELECTED TESTS STRIP & EXECUTION PROFILE                      -->
-  <!-- ================================================================ -->
-  <div class="teststrip">
-    <span class="testlabel">Selected tests</span>
-    <button *ngFor="let plan of plans; let p = index" type="button" class="testpill"
-      [class.active]="activePlanIndex === p" (click)="selectPlanTab(p)">
-      <span>{{ plan.tests?.[0]?.name || plan.type }}</span>
-      <small>{{ plan.tests?.[0]?.status || 'In Progress' }}</small>
-    </button>
-
-    <div class="spacer"></div>
-
-    <!-- Execution Layout Selector (Temp Feature for Testing & Rendering) -->
-    <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1 me-2">
-      <span class="text-xxs fw-semibold text-secondary">
-        <i class="bi bi-layout-wtf text-danger me-1"></i>Layout:
-      </span>
-      <select class="form-select form-select-xs bg-white text-dark fw-semibold layout-template-select"
-        [ngModel]="selectedLayoutTemplateId" (ngModelChange)="onLayoutTemplateSelect($event)">
-        <option [ngValue]="null">Auto: {{ currentTestLayout ? currentTestLayout.layoutName : 'By Test Hierarchy' }}
-        </option>
-        <optgroup label="Recommended Layouts" *ngIf="getAvailableLayoutTemplatesForActiveTest().length > 0">
-          <option *ngFor="let tpl of getAvailableLayoutTemplatesForActiveTest()" [ngValue]="tpl.id">
-            {{ tpl.layoutName }} ({{ tpl.isGlobalDefault ? 'Global' : (tpl.laboratoryTestName || tpl.layoutCode) }})
-          </option>
-        </optgroup>
-        <optgroup label="Other Available Layouts" *ngIf="getOtherLayoutTemplatesForActiveTest().length > 0">
-          <option *ngFor="let tpl of getOtherLayoutTemplatesForActiveTest()" [ngValue]="tpl.id">
-            {{ tpl.layoutName }} ({{ tpl.laboratoryTestName || tpl.layoutCode }})
-          </option>
-        </optgroup>
-        <option [ngValue]="-1">Standard Layout (No Template)</option>
-      </select>
+  <div class="compact-teststrip" *ngIf="plans.length > 1">
+    <!-- Left: Selected Tests Pills -->
+    <div class="teststrip-left lims-teststrip-pills">
+      <span class="text-secondary fw-semibold text-xxs lims-teststrip-pills-label">Selected Tests:</span>
+      <ng-container *ngFor="let plan of plans; let p = index">
+        <button *ngIf="pillMetrics(p) as pm" type="button" class="testpill-compact lims-testpill-status"
+          [class.active]="activePlanIndex === p" [class.lims-testpill-status--fail]="pm.fail > 0"
+          [title]="getTestPillTitle(p)" (click)="selectPlanTab(p)">
+          <span class="lims-testpill-dot" [ngClass]="getSampleStatusBadgeClass(plan.tests?.[0]?.status || 'In Progress')"
+            aria-hidden="true"></span>
+          <span class="font-monospace fw-semibold text-xxs flex-shrink-0" *ngIf="plan.specimenLabel as spl">{{ spl }}</span>
+          <span class="lims-testpill-name">{{ pillName(plan) }}</span>
+          <span class="badge bg-light text-dark border ms-1 font-monospace" *ngIf="getActivePlanSpecimenCount(p) > 1">({{ getActivePlanSpecimenCount(p) }})</span>
+          <span class="lims-testpill-count font-monospace">{{ pm.entered }}/{{ pm.total }}</span>
+          <span class="lims-testpill-fail font-monospace" *ngIf="pm.fail > 0">{{ pm.fail }} Fail</span>
+        </button>
+      </ng-container>
     </div>
-
-    <!-- Specimen Stepper -->
-    <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1">
-      <span class="text-xxs fw-semibold text-secondary">
-        <i class="bi bi-stack me-1 text-danger"></i>Spm:
-      </span>
-      <button type="button" class="spm-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
-        [disabled]="isViewMode || getActiveSpecimenCount() <= 1" title="Decrease specimen count">
-        <i class="bi bi-dash"></i>
-      </button>
-      <input type="number" class="form-control form-control-sm text-center fw-bold text-danger specimen-count-input"
-        [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="isViewMode"
-        (change)="onWorkbenchSpecimenInputChange($event)" />
-      <button type="button" class="spm-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
-        [disabled]="isViewMode || getActiveSpecimenCount() >= 20" title="Increase specimen count">
-        <i class="bi bi-plus"></i>
-      </button>
-      <span class="badge bg-white text-muted border text-xxs" title="Planned quantity">
-        Plan: {{ getActivePlannedQuantity() }}
-      </span>
-    </div>
-
-    <!-- Execution Progress Metrics -->
-    <div class="d-flex align-items-center gap-1 bg-light border rounded px-2 py-1"
-      *ngIf="getExecutionMetrics() as metrics">
-      <span class="badge text-xxs font-monospace"
-        [ngClass]="metrics.entered === metrics.total && metrics.total > 0 ? 'bg-success text-white' : 'bg-primary-subtle text-primary border border-primary-subtle'">
-        {{ metrics.entered }}/{{ metrics.total }}
-      </span>
-      <span class="badge bg-danger text-white text-xxs font-monospace" *ngIf="metrics.fail > 0">
-        <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ metrics.fail }} Fail
-      </span>
-    </div>
-
-    <!-- Studio Button -->
-    <a *ngIf="currentTestLayout" class="btn small softred ms-1 text-nowrap text-decoration-none"
-      [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }">
-      <i class="bi bi-grid-3x3-gap me-1"></i><span>Studio</span>
-    </a>
   </div>
 
   <!-- Empty State Alert if no plans -->
-  <div class="alert alert-warning d-flex align-items-center gap-2 my-1 shadow-sm p-2"
+  <div class="alert alert-warning d-flex align-items-center gap-2 m-2 p-2 shadow-sm"
     *ngIf="payloadLoaded && (!plans || plans.length === 0)">
-    <i class="bi bi-exclamation-triangle-fill fs-6 text-warning"></i>
     <div class="small">
       <strong>No test plans found for this sample.</strong>
       <span class="text-muted"> Create a sample plan first — no test records are available.</span>
     </div>
   </div>
 
-  <!-- ================================================================ -->
-  <!-- 4. WORKFLOW STEP TABS                                            -->
-  <!-- ================================================================ -->
-  <div class="tabs" role="tablist" *ngIf="plans.length > 0">
-    <button type="button" class="tab" [class.active]="activeTab === 'info'" (click)="switchTab('info')" data-step="1">
-      <span>Test Information</span>
-    </button>
-    <button type="button" class="tab" [class.active]="activeTab === 'execution'" (click)="switchTab('execution')"
-      data-step="2">
-      <span>Test Execution</span>
-      <span class="count">{{ getActiveTestGroup()?.get('parameters')?.value?.length ||
-        plans[activePlanIndex]?.tests?.[0]?.parameters?.length || 0 }}</span>
-    </button>
-    <button type="button" class="tab" [class.active]="activeTab === 'calculations'" (click)="switchTab('calculations')"
-      data-step="3">
-      <span>Calculations</span>
-    </button>
-    <button type="button" class="tab" [class.active]="activeTab === 'nabl'" (click)="switchTab('nabl')" data-step="4">
-      <span>NABL &amp; QA</span>
-    </button>
-    <button type="button" class="tab" [class.active]="activeTab === 'attachments'" (click)="switchTab('attachments')"
-      data-step="5">
-      <span>Attachments</span>
-      <span *ngIf="testImagesMap[plans[activePlanIndex]?.tests?.[0]?.headerId]?.length" class="count">
-        {{ testImagesMap[plans[activePlanIndex].tests[0].headerId].length }}
-      </span>
-    </button>
-    <button type="button" class="tab" [class.active]="activeTab === 'history'" (click)="switchTab('history')"
-      data-step="6">
-      <span>History</span>
-    </button>
-  </div>
-
-  <!-- ================================================================ -->
   <!-- 5. MAIN FORM CONTAINER                                           -->
   <!-- ================================================================ -->
   <div [formGroup]="resultForm" *ngIf="resultForm" class="p-2 pb-5">
@@ -160,917 +73,557 @@
           <div *ngFor="let test of getTests(p).controls; let t = index" [formGroupName]="t">
 
             <!-- ========================================================== -->
-            <!-- TAB 1: TEST INFORMATION (3-Column Layout)                  -->
+            <!-- PER-TEST TOOLBAR (acts on this test only; rendered for the active test) -->
             <!-- ========================================================== -->
-            <div class="tab-pane-content" *ngIf="activeTab === 'info'">
-              <div class="pagehead">
-                <div>
-                  <h2>Test &amp; Sample Overview</h2>
-                  <div class="sub">Review the assigned test, applicable method, preparation and execution context.</div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                  <span class="state" [ngClass]="plans[p].tests[t]?.status === 'Completed' ? 'green' : 'amber'">{{
-                    plans[p].tests[t]?.status || 'In Progress' }}</span>
-                  <button *ngIf="canStartTest(plans[p].tests[t]?.status)" type="button" class="btn primary small"
-                    (click)="startTest(p, t)" [disabled]="isViewMode">
-                    <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
-                  </button>
-                  <button *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)" type="button" class="btn btn-lims btn-lims-print small"
-                    (click)="openRawDataSheetModal(p, t)" title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
-                    <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
-                  </button>
-                </div>
-              </div>
-
-              <div class="grid3">
-                <!-- Card 1: Test & Sample Details -->
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Test &amp; Sample Details</h3>
-                    <span class="state">Read-only context</span>
-                  </div>
-                  <div class="cardbody">
-                    <div class="detail">
-                      <div class="ico">◇</div>
-                      <div><label>Test Name</label><strong>{{ plans[p].tests[t]?.name }}</strong></div>
-                    </div>
-                    <div class="detail" *ngIf="inward?.customerName">
-                      <div class="ico">🏢</div>
-                      <div><label>Customer Name</label><strong>{{ inward.customerName }}</strong></div>
-                    </div>
-                    <div class="detail" *ngIf="inward?.poNo">
-                      <div class="ico">📄</div>
-                      <div><label>PO / Letter Reference</label><strong>{{ inward.poNo }}</strong></div>
-                    </div>
-                    <div class="detail" *ngIf="sample?.heatNo || sample?.batchNo">
-                      <div class="ico">🏷</div>
-                      <div><label>Heat / Batch No</label><strong>{{ sample.heatNo || sample.batchNo }}</strong></div>
-                    </div>
-                    <div class="detail" *ngIf="sample?.stampedAs">
-                      <div class="ico">🔖</div>
-                      <div><label>Stamped As</label><strong>{{ sample.stampedAs }}</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">⌘</div>
-                      <div><label>Discipline</label><strong>{{ plans[p].discipline || (plans[p].type === 'Chemical' ?
-                          'Chemical' : 'Mechanical') }}</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">◎</div>
-                      <div><label>Analysis Technique</label><strong>{{ plans[p].analysisTechnique || '—' }}</strong>
-                      </div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">▤</div>
-                      <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <label>Test Method / Version</label>
-                          <a *ngIf="!isViewMode && !isConfigLocked(plans[p].tests[t]?.status)" class="link text-xs"
-                            (click)="plans[p].showMethodEdit = !plans[p].showMethodEdit">
-                            {{ plans[p].showMethodEdit ? 'Close' : 'Change' }}
-                          </a>
-                        </div>
-                        <strong *ngIf="!plans[p].showMethodEdit"><a class="link"
-                            (click)="viewMethodDetails(plans[p].tests[t].testMethodId || plans[p].tests[t].standard || plans[p].methodId)">{{
-                            plans[p].methodName || '—' }}</a></strong>
-                        <div
-                          *ngIf="plans[p].showMethodEdit && !isViewMode && !isConfigLocked(plans[p].tests[t]?.status)"
-                          class="mt-1">
-                          <app-searchable-dropdown [fetchDataFn]="getMethodVersionDrop"
-                            [selectedItem]="plans[p].methodSelected"
-                            (itemSelected)="onTestMethodReselect(p, t, $event); plans[p].showMethodEdit = false"
-                            [smallInput]="true" [hideLabel]="true" placeholder="Search method standard...">
-                          </app-searchable-dropdown>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">▧</div>
-                      <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <label>Material Specification</label>
-                          <a *ngIf="!isViewMode && !isConfigLocked(plans[p].tests[t]?.status)" class="link text-xs"
-                            (click)="plans[p].showSpecEdit = !plans[p].showSpecEdit">
-                            {{ plans[p].showSpecEdit ? 'Close' : 'Change' }}
-                          </a>
-                        </div>
-                        <strong *ngIf="!plans[p].showSpecEdit">{{ plans[p].specification || '—' }}</strong>
-                        <div *ngIf="plans[p].showSpecEdit && !isViewMode && !isConfigLocked(plans[p].tests[t]?.status)"
-                          class="mt-1">
-                          <app-searchable-dropdown [fetchDataFn]="getSpecGradeDrop"
-                            [selectedItem]="plans[p].specSelected"
-                            (itemSelected)="onSpecReselect(p, t, $event); plans[p].showSpecEdit = false"
-                            [smallInput]="true" [hideLabel]="true" placeholder="Search specification grade...">
-                          </app-searchable-dropdown>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">□</div>
-                      <div><label>Sample Type</label><strong>{{ plans[p].sampleType || sample?.sampleType ||
-                          sample?.productForm || sample?.productMasterName || '—' }}</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">⌁</div>
-                      <div><label>Sampling</label><strong>{{ plans[p].sampling || sample?.details || '—' }}</strong>
-                      </div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">⚒</div>
-                      <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <label>Specimen Preparation</label>
-                          <a class="link text-xs" *ngIf="sampleId" (click)="navigateToPreparation(sampleId)">Manage</a>
-                        </div>
-                        <strong>{{ plans[p].specimenPreparation || '—' }}</strong>
-                      </div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">◉</div>
-                      <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <label>Environment</label>
-                          <button class="btn small softred py-0 px-1" (click)="switchTab('execution')">{{
-                            getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}</button>
-                        </div>
-                        <strong>
-                          <ng-container
-                            *ngIf="getEnvironmentDisplay(plans[p].tests[t].headerId) as envText; else noEnv">
-                            {{ envText }}
-                          </ng-container>
-                          <ng-template #noEnv>
-                            <em class="muted">Not recorded</em>
-                          </ng-template>
-                        </strong>
-                      </div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">▧</div>
-                      <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <label>Report Format</label>
-                          <a class="link text-xs" (click)="viewReportFormat(plans[p].reportFormatId)">· View</a>
-                        </div>
-                        <strong>{{ plans[p].reportFormatName || '—' }}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-
-                <!-- Card 2: Applicable Parameters & Additional Info -->
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Applicable Parameters</h3>
-                    <button class="btn small" type="button" (click)="switchTab('execution')">Manage in Execution
-                      →</button>
-                  </div>
-                  <div class="tablewrap">
-                    <table class="data">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Parameter</th>
-                          <th>Unit</th>
-                          <th>Requirement</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let param of plans[p].tests[t].parameters; let r = index">
-                          <td>{{ r + 1 }}</td>
-                          <td>
-                            <i *ngIf="param.formulaExpression" class="bi bi-calculator text-primary me-1"
-                              title="Formula"></i>
-                            <strong>{{ param.parameterName }}</strong>
-                          </td>
-                          <td>{{ param.unit || '—' }}</td>
-                          <td>{{ formatRequirement(param) }}</td>
-                          <td>
-                            <span class="badge"
-                              [ngClass]="param.status === 'Completed' || param.status === 'Pass' ? 'pass' : 'pending'">{{
-                              param.status || 'Active' }}</span>
-                          </td>
-                        </tr>
-                        <tr *ngIf="!plans[p].tests[t].parameters?.length">
-                          <td colspan="5" class="text-center py-3 text-muted">No parameters configured.</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <div class="cardbody">
-                    <div class="notice mb-2">
-                      <span>ⓘ</span>
-                      <div>
-                        <strong>Configuration is locked while testing is in progress.</strong>
-                        Parameter values and test configuration are managed in the Execution tab.
-                      </div>
-                    </div>
-                    <div class="d-flex gap-2" *ngIf="!isViewMode && !isConfigLocked(plans[p].tests[t]?.status)">
-                      <button type="button" class="btn small softred flex-grow-1" (click)="addParameter(p, t)">＋ Add
-                        Parameter</button>
-                      <button type="button" class="btn small primary flex-grow-1"
-                        (click)="openFromMethodModal(p, t)">Load From Method</button>
-                    </div>
-                  </div>
-
-                  <!-- Additional Information inside middle column -->
-                  <div class="cardhead border-top">
-                    <h3>Additional Information</h3>
-                  </div>
-                  <div class="cardbody">
-                    <div class="field">
-                      <label>Test Purpose</label>
-                      <select class="form-select form-select-sm" formControlName="testPurpose"
-                        [attr.disabled]="isViewMode ? true : null">
-                        <option *ngFor="let opt of testPurposeOptions" [value]="opt">{{ opt }}</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label>Remarks</label>
-                      <textarea id="test-remarks-input" class="form-control form-control-sm" rows="3"
-                        formControlName="remarks" placeholder="Enter remarks or observations..."
-                        [readOnly]="isViewMode"></textarea>
-                    </div>
-                  </div>
-                </article>
-
-                <!-- Column 3: NABL Compliance & Quick Actions -->
-                <article class="rightcol">
-                  <div class="card card-mb-14">
-                    <div class="cardhead">
-                      <h3>NABL Compliance</h3>
-                      <span class="badge" [ngClass]="isNablAccredited(plans[p].tests[t]) ? 'pass' : 'scope'">
-                        {{ isNablAccredited(plans[p].tests[t]) ? 'In Scope' : 'Not in scope' }}
-                      </span>
-                    </div>
-                    <div class="cardbody">
-                      <div class="notice">
-                        <span>{{ isNablAccredited(plans[p].tests[t]) ? '✓' : '⚠' }}</span>
-                        <div>
-                          <strong *ngIf="!isNablAccredited(plans[p].tests[t])">No parameters are currently mapped to the
-                            laboratory scope.</strong>
-                          <strong *ngIf="isNablAccredited(plans[p].tests[t])">Parameters are mapped to accredited scope
-                            under ISO/IEC 17025:2017.</strong>
-                          <a class="link" (click)="navigateToScope()">Open NABL &amp; QA →</a>
-                        </div>
-                      </div>
-                      <div class="sectionlabel sec-mt-13">Relevant ISO/IEC 17025 clauses</div>
-                      <div class="muted small">7.1 Review of requests · 7.2 Method selection · 7.3 Sampling · 7.5
-                        Technical records · 7.8 Reporting · 7.10 Nonconforming work</div>
-                    </div>
-                  </div>
-
-                  <div class="card">
-                    <div class="cardhead">
-                      <h3>Quick Actions</h3>
-                    </div>
-                    <div class="cardbody grid-actions">
-                      <button class="btn" type="button"
-                        (click)="viewMethodDetails(plans[p].tests[t].testMethodId || plans[p].tests[t].standard || plans[p].methodId)">View
-                        Method Details →</button>
-                      <button class="btn" type="button"
-                        (click)="viewSpecification(plans[p].specSelected?.id || plans[p].tests[t].specification1 || sample?.specificationGradeID)">View
-                        Specification →</button>
-                      <button class="btn" type="button" (click)="viewEquipment(plans[p].tests[t].equipmentId)">View
-                        Equipment →</button>
-                      <button class="btn" type="button"
-                        (click)="viewSOP(plans[p].tests[t].testMethodId || plans[p].tests[t].standard || plans[p].methodId, plans[p].tests[t].sopFilePath)">View
-                        SOP / Procedure →</button>
-                      <button class="btn" type="button" (click)="addRemarkFocus()">Add Remark →</button>
-                      <button class="btn softred" type="button" (click)="markAsNonconforming(p, t)">Mark as
-                        Nonconforming</button>
-                    </div>
-                  </div>
-                </article>
-              </div>
-            </div>
-
-            <!-- ========================================================== -->
-            <!-- TAB: EXECUTION (Unified Workbench & Results Entry)         -->
-            <!-- ========================================================== -->
-            <div class="tab-pane-content" *ngIf="activeTab === 'execution'">
-              <div class="pagehead">
-                <div>
-                  <h2>Execution &amp; Result Capture</h2>
-                  <div class="sub">Enter specimen observations, review calculated results and record test conditions.
-                  </div>
-                </div>
-                <div class="actions">
-                  <span class="state" [ngClass]="isConfigLocked(plans[p].tests[t]?.status) ? 'amber' : 'green'">
-                    {{ isConfigLocked(plans[p].tests[t]?.status) ? '🔒 Configuration locked' : 'Active' }}
+            @let tbTest = plans[p].tests[t];
+            @let tbName = tbTest?.name || plans[p].type || 'Test';
+            @let tbMethod = getCleanMethodLabel(plans[p].methodName || tbTest?.testMethodName || '');
+            @let tbLocked = isViewMode || isToolbarLocked(tbTest?.status);
+            @let tbStatus = tbTest?.status || 'In Progress';
+            <div class="lims-test-toolbar" *ngIf="activePlanIndex === p">
+              <div class="lims-test-toolbar-id">
+                <strong class="lims-test-toolbar-name" [title]="'Test: ' + tbName">{{ tbName }}</strong>
+                <span class="lims-test-toolbar-method" *ngIf="tbMethod" [title]="'Method: ' + tbMethod">{{ tbMethod }}</span>
+                <span class="badge lims-test-toolbar-status" [ngClass]="getSampleStatusBadgeClass(tbStatus)"
+                  [title]="'Test status: ' + tbStatus">{{ tbStatus }}</span>
+                <!-- Entered / total and fail count -->
+                <div *ngIf="pillMetrics(p) as metrics" class="lims-test-toolbar-group lims-test-toolbar-count" title="Parameters entered / total">
+                  <span class="badge font-monospace"
+                    [ngClass]="metrics.entered === metrics.total && metrics.total > 0 ? 'bg-success' : 'bg-secondary'">
+                    {{ metrics.entered }}/{{ metrics.total }}
                   </span>
-                  <button *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)" type="button"
-                    class="btn btn-lims btn-lims-print small" (click)="openRawDataSheetModal(p, t)"
-                    title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
-                    <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
-                  </button>
-                  <button *ngIf="!isViewMode && !isTestFinalized(plans[p].tests[t]?.status)" type="button"
-                    class="btn primary small" (click)="onWorkbenchSpecimenCountAdjust(1)">
-                    <i class="bi bi-plus-lg me-1"></i><span>Add Specimen</span>
-                  </button>
+                  <span class="badge bg-danger font-monospace" *ngIf="metrics.fail > 0">{{ metrics.fail }} Fail</span>
                 </div>
               </div>
 
-              <!-- Configured Execution View (Matrix, Curve, Parameters, Checklist, Remarks) -->
-              <ng-container *ngIf="currentTestLayout">
-                <app-configured-test-layout-renderer #layoutRenderer [layoutConfig]="currentTestLayout" [testPlan]="plans[p]"
-                  [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
-                  [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
-                  [activeTabSection]="'execution'"
-                  [environmentData]="{ roomTemperature: getActiveTestGroup()?.get('roomTemperature')?.value, roomHumidity: getActiveTestGroup()?.get('roomHumidity')?.value }"
-                  [timingData]="testTimingMap[plans[p].tests[t]?.headerId]"
-                  [selectedEquipment]="selectedEquipmentMap[plans[p].tests[t]?.headerId] || []"
-                  [testImages]="testImagesMap[plans[p].tests[t]?.headerId] || []"
-                  (paramValueChanged)="onConfiguredParamChanged($event)"
-                  (unitChanged)="onUnitChanged(p, t, $event.rowIdx)"
-                  (formulaRequested)="openFormulaBuilder(p, t, $event.rowIdx)"
-                  (environmentRequested)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])"
-                  (multipleReadingsRequested)="openMultipleReadingsModal(p, t, $event.rowIdx)"
-                  (photoUploadRequested)="switchTab('attachments')"
-                  (specimenCountChanged)="onWorkbenchSpecimenCountChanged($event)">
-                </app-configured-test-layout-renderer>
-              </ng-container>
-
-              <!-- Standard Fallback View (when no configured layout template) -->
-              <div class="d-flex flex-column gap-2" *ngIf="!currentTestLayout">
-                <div class="card border-0 shadow-sm lims-panel p-2">
-
-                  <!-- Alert Banners -->
-                  <ng-container *ngIf="parameterAlerts.length > 0">
-                    <div *ngFor="let alert of parameterAlerts" class="alert-banner mb-2"
-                      [ngClass]="alert.type === 'fail' ? 'alert-banner-fail' : 'alert-banner-warn'">
-                      <div class="d-flex align-items-center gap-2">
-                        <i class="bi"
-                          [ngClass]="alert.type === 'fail' ? 'bi-x-octagon-fill text-danger' : 'bi-exclamation-triangle-fill text-warning'"></i>
-                        <strong>{{ alert.title }}</strong>
-                        <span class="ms-2">{{ alert.message }}</span>
-                      </div>
-                      <button type="button" class="btn-close" (click)="dismissAlert(alert.id)"></button>
-                    </div>
-                  </ng-container>
-
-                  <!-- Parameter Entry Table (Standardized Primary Table) -->
-                  <div class="table-responsive mb-2">
-                    <table class="table table-sm table-bordered align-middle result-table mb-0">
-                      <thead class="result-table-head text-center">
-                        <tr>
-                          <th class="w-col-35">#</th>
-                          <th class="w-col-24p text-start">Parameter</th>
-                          <th class="w-col-70">Unit</th>
-                          <th class="w-col-140">Requirement</th>
-                          <th class="w-col-150">Result (Observed)</th>
-                          <th class="w-col-90">Status</th>
-                          <th class="w-col-160">Method Used</th>
-                          <th class="w-col-160">Remarks</th>
-                          <th class="w-col-65">Billable</th>
-                          <th class="w-col-110" *ngIf="!isViewMode">Actions</th>
-                        </tr>
-                      </thead>
-
-                      <tbody formArrayName="parameters">
-                        <tr *ngFor="let row of getParameters(p, t).controls; let r = index" [formGroupName]="r"
-                          [ngClass]="getParameterRowClass(row.value)">
-
-                          <!-- Row Number -->
-                          <td class="text-center text-muted small fw-semibold">{{ r + 1 }}</td>
-
-                          <!-- Parameter Dropdown -->
-                          <td [class.row-disabled]="isParameterCalculated(row.value)">
-                            <div class="d-flex align-items-center gap-1">
-                              <i *ngIf="row.value.formulaExpression" class="bi bi-calculator text-primary"
-                                title="Formula parameter"></i>
-                              <app-searchable-dropdown class="w-100" [placeholder]="'Search Parameter'"
-                                [labelName]="'Parameter'" [fetchDataFn]="getParameterDrop(plans[p].type)"
-                                (itemSelected)="onParameterSelected(p, t, r, $event)" [hideLabel]="true"
-                                [selectedItem]="row.get('parameterID')?.value"
-                                [isDisabled]="isParameterCalculated(row.value) || isConfigLocked(plans[p].tests[t].status)"></app-searchable-dropdown>
-                            </div>
-                          </td>
-
-                          <!-- Unit -->
-                          <td>
-                            <ng-container *ngIf="getUnitOptions(row).length > 1; else plainUnit">
-                              <select class="form-select form-select-sm" formControlName="selectedUnit"
-                                (change)="onUnitChanged(p, t, r)"
-                                [attr.disabled]="isViewMode || isTestFinalized(plans[p].tests[t].status) ? true : null">
-                                <option *ngFor="let opt of getUnitOptions(row)" [value]="opt.unitName">{{ opt.unitName
-                                  }}</option>
-                              </select>
-                            </ng-container>
-                            <ng-template #plainUnit>
-                              <input type="text" class="form-control form-control-sm text-center" formControlName="unit"
-                                readonly />
-                            </ng-template>
-                          </td>
-
-                          <!-- Requirement (Unified for Chemical & General) -->
-                          <td>
-                            <div
-                              class="d-flex align-items-center justify-content-between px-2 py-1 bg-light rounded border">
-                              <span class="fw-medium text-dark small text-truncate"
-                                [title]="formatRequirement(row.value)">
-                                {{ formatRequirement(row.value) }}
-                              </span>
-                              <button type="button" class="btn btn-xs btn-link p-0 text-secondary ms-1 flex-shrink-0"
-                                (click)="openRequirementDetails(row.value)" title="View Requirement Details">
-                                <i class="bi bi-info-circle"></i>
-                              </button>
-                            </div>
-                          </td>
-
-                          <!-- Result (Observed Value) -->
-                          <td>
-                            <div class="position-relative d-flex align-items-center gap-1">
-                              <span *ngIf="isParameterCalculated(row.value)"
-                                class="badge bg-primary-subtle text-primary border border-primary-subtle px-1"
-                                title="Calculated via formula">
-                                &fnof;
-                              </span>
-
-                              <!-- 1. Calculated Parameter: Disabled / Readonly -->
-                              <ng-container *ngIf="isParameterCalculated(row.value)">
-                                <input type="text"
-                                  class="form-control form-control-sm fw-semibold text-center bg-light text-muted opacity-75"
-                                  formControlName="value" readonly [attr.disabled]="true"
-                                  [attr.data-param-input]="p + '-' + t + '-' + r"
-                                  [title]="'Calculated via formula: ' + (getFormulaDisplay(row.value, p, t) || 'Automated')"
-                                  placeholder="Auto-calculated" />
-                              </ng-container>
-
-                              <!-- 2. Non-Calculated: Boolean (Pass/Fail, Yes/No, Satisfactory) -->
-                              <ng-container
-                                *ngIf="!isParameterCalculated(row.value) && row.value.inputType === 'Boolean'">
-                                <select class="form-select form-select-sm fw-semibold text-center"
-                                  formControlName="value" (change)="onValueChanged(p, t, r)"
-                                  [attr.disabled]="isTestFinalized(plans[p].tests[t].status) || isViewMode ? true : null">
-                                  <option [ngValue]="null">Select Result...</option>
-                                  <option value="Pass">Pass</option>
-                                  <option value="Fail">Fail</option>
-                                  <option value="Satisfactory">Satisfactory</option>
-                                  <option value="Not Satisfactory">Not Satisfactory</option>
-                                  <option value="Yes">Yes</option>
-                                  <option value="No">No</option>
-                                </select>
-                              </ng-container>
-
-                              <!-- 3. Non-Calculated: Dropdown (with configured options) -->
-                              <ng-container
-                                *ngIf="!isParameterCalculated(row.value) && row.value.inputType === 'Dropdown' && (row.value.dropdownOptions?.length || 0) > 0">
-                                <select class="form-select form-select-sm fw-semibold" formControlName="value"
-                                  (change)="onValueChanged(p, t, r)"
-                                  [attr.disabled]="isTestFinalized(plans[p].tests[t].status) || isViewMode ? true : null">
-                                  <option [ngValue]="null">Select Option...</option>
-                                  <option *ngFor="let opt of row.value.dropdownOptions"
-                                    [value]="opt.value || opt.displayText">
-                                    {{ opt.displayText || opt.value }}
-                                  </option>
-                                </select>
-                              </ng-container>
-
-                              <!-- 4. Non-Calculated: Integer Number -->
-                              <ng-container
-                                *ngIf="!isParameterCalculated(row.value) && row.value.inputType === 'Integer'">
-                                <input type="number" step="1"
-                                  class="form-control form-control-sm fw-semibold text-center" formControlName="value"
-                                  [readOnly]="isTestFinalized(plans[p].tests[t].status) || isViewMode"
-                                  (input)="onValueChanged(p, t, r)" (keydown)="onParameterKeyDown($event, p, t, r)"
-                                  [attr.data-param-input]="p + '-' + t + '-' + r" placeholder="Result..." />
-                              </ng-container>
-
-                              <!-- 5. Non-Calculated: Decimal / Numeric Number -->
-                              <ng-container
-                                *ngIf="!isParameterCalculated(row.value) && (row.value.inputType === 'Decimal' || row.value.inputType === 'Numeric' || row.value.inputType === 'Number' || (!row.value.inputType && row.value.parameterType !== 'Qualitative'))">
-                                <input type="number" step="any"
-                                  class="form-control form-control-sm fw-semibold text-center" formControlName="value"
-                                  [readOnly]="isTestFinalized(plans[p].tests[t].status) || isViewMode"
-                                  (input)="onValueChanged(p, t, r)" (keydown)="onParameterKeyDown($event, p, t, r)"
-                                  [attr.data-param-input]="p + '-' + t + '-' + r" placeholder="Result..." />
-                              </ng-container>
-
-                              <!-- 6. Non-Calculated: Text / Qualitative Observation / Dropdown fallback -->
-                              <ng-container
-                                *ngIf="!isParameterCalculated(row.value) && (row.value.inputType === 'Text' || (row.value.parameterType === 'Qualitative' && row.value.inputType !== 'Boolean') || (row.value.inputType === 'Dropdown' && (!row.value.dropdownOptions || row.value.dropdownOptions.length === 0)))">
-                                <input type="text" class="form-control form-control-sm fw-semibold text-center"
-                                  formControlName="value"
-                                  [readOnly]="isTestFinalized(plans[p].tests[t].status) || isViewMode"
-                                  (input)="onValueChanged(p, t, r)" (keydown)="onParameterKeyDown($event, p, t, r)"
-                                  [attr.data-param-input]="p + '-' + t + '-' + r" placeholder="Result..." />
-                              </ng-container>
-
-                              <button
-                                *ngIf="isHardnessTest(plans[p].tests[t]) && !isParameterCalculated(row.value) && !isViewMode && !isTestFinalized(plans[p].tests[t].status)"
-                                type="button" class="btn btn-xs btn-outline-secondary"
-                                (click)="openMultipleReadingsModal(p, t, r)" title="Multiple Indentation Readings">
-                                <i class="bi bi-hash"></i>
-                              </button>
-                            </div>
-                          </td>
-
-                          <!-- Status Badge -->
-                          <td class="text-center">
-                            <span *ngIf="getParameterStatus(row.value) === 'pass'"
-                              class="badge bg-success-subtle text-success border border-success px-2 py-1">
-                              <i class="bi bi-check-circle me-1"></i><span>Pass</span>
-                            </span>
-                            <span *ngIf="getParameterStatus(row.value) === 'fail'"
-                              class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">
-                              <i class="bi bi-x-circle me-1"></i><span>Fail</span>
-                            </span>
-                            <span *ngIf="getParameterStatus(row.value) === 'marginal'"
-                              class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">
-                              <i class="bi bi-exclamation-circle me-1"></i><span>Marginal</span>
-                            </span>
-                            <span *ngIf="!getParameterStatus(row.value)" class="text-muted small">—</span>
-                          </td>
-
-                          <!-- Method Used -->
-                          <td>
-                            <app-searchable-dropdown class="w-100" [placeholder]="'Method'" [labelName]="'Test Method'"
-                              [fetchDataFn]="getTestMethodSpecDrop"
-                              (itemSelected)="onTestMethodUsedSelected(p, t, r, $event)" [hideLabel]="true"
-                              [selectedItem]="row.get('testMethodUsed')?.value" [smallInput]="true"
-                              [isDisabled]="isViewMode || isTestFinalized(plans[p].tests[t].status)"></app-searchable-dropdown>
-                          </td>
-
-                          <!-- Remarks -->
-                          <td>
-                            <input type="text" class="form-control form-control-sm" formControlName="remarks"
-                              placeholder="Observation..."
-                              [readOnly]="isViewMode || isTestFinalized(plans[p].tests[t].status)" />
-                          </td>
-
-                          <!-- Billable -->
-                          <td class="text-center">
-                            <input type="checkbox" class="form-check-input" formControlName="isBillable"
-                              [disabled]="isTestFinalized(plans[p].tests[t].status) || isViewMode" />
-                          </td>
-
-                          <!-- Actions -->
-                          <td class="text-center" *ngIf="!isViewMode">
-                            <div class="d-flex align-items-center justify-content-center gap-1">
-                              <button type="button" class="btn btn-outline-info btn-xs"
-                                (click)="updateParameterInline(p, t, r)" title="Save Inline"
-                                [disabled]="isTestFinalized(plans[p].tests[t].status)">
-                                <i class="bi bi-cloud-arrow-up"></i>
-                              </button>
-                              <button type="button" class="btn btn-outline-secondary btn-xs"
-                                (click)="openFormulaBuilder(p, t, r)" title="Formula"
-                                [disabled]="isConfigLocked(plans[p].tests[t].status)">
-                                <i class="bi bi-calculator"></i>
-                              </button>
-                              <button type="button" class="btn btn-outline-danger btn-xs"
-                                (click)="removeParameter(p, t, r)" title="Delete"
-                                [disabled]="isConfigLocked(plans[p].tests[t].status)">
-                                <i class="bi bi-trash"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <!-- Parameters Action Buttons -->
-                  <div class="d-flex flex-wrap gap-2 pt-2 border-top" *ngIf="!isViewMode">
-                    <button class="btn btn-xs btn-lims btn-lims-save" type="button"
-                      (click)="loadParametersFromSpec(p, t)"
-                      [disabled]="loadingParams[plans[p].tests[t].headerId] || isConfigLocked(plans[p].tests[t].status)">
-                      <i class="bi bi-download me-1"></i><span>Load Parameters From Spec</span>
-                    </button>
-                    <button class="btn btn-xs btn-lims btn-lims-add" type="button" (click)="addParameter(p, t)"
-                      [disabled]="isConfigLocked(plans[p].tests[t].status)">
-                      <i class="bi bi-plus-circle me-1"></i><span>Add Parameter</span>
-                    </button>
-                    <button class="btn btn-xs btn-lims btn-lims-save" type="button" (click)="openFromMethodModal(p, t)"
-                      [disabled]="isConfigLocked(plans[p].tests[t].status)">
-                      <i class="bi bi-box-arrow-in-down me-1"></i><span>Add From Test Method</span>
-                    </button>
-                    <button class="btn btn-xs btn-lims btn-lims-save" type="button" (click)="calculateParameters(p, t)">
-                      <i class="bi bi-calculator me-1"></i><span>Auto-Calculate</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Standard Fallback View: Environment, Timing & Equipment -->
-                <div class="row g-2">
-                  <!-- Environment Conditions -->
-                  <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 lims-panel">
-                      <div
-                        class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 fw-semibold text-danger fs-7"><i
-                            class="bi bi-thermometer-half me-2"></i><span>Lab Environment</span></h6>
-                        <button *ngIf="!isViewMode" type="button"
-                          class="btn btn-xs btn-lims btn-lims-add d-inline-flex align-items-center gap-1"
-                          (click)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])"
-                          title="Record Ambient Temperature & Humidity">
-                          <i class="bi bi-pencil-square me-1"></i><span>Record</span>
-                        </button>
-                      </div>
-                      <div class="card-body p-3">
-                        <div class="env-metric-box mb-2">
-                          <div class="env-metric-icon bg-secondary-subtle text-secondary"><i class="bi bi-building"></i>
-                          </div>
-                          <div>
-                            <span class="detail-label">Lab / Room</span>
-                            <span class="detail-value fw-semibold text-dark">
-                              {{ environmentMap[plans[p].tests[t].headerId]?.labRoomName || 'General Laboratory' }}
-                            </span>
-                          </div>
-                        </div>
-                        <div class="env-metric-box mb-2">
-                          <div class="env-metric-icon bg-danger-subtle text-danger"><i
-                              class="bi bi-thermometer-half"></i></div>
-                          <div>
-                            <span class="detail-label">Room Temperature</span>
-                            <span class="detail-value fw-bold text-danger fs-6">
-                              {{ environmentMap[plans[p].tests[t].headerId]?.roomTemperature != null ?
-                              environmentMap[plans[p].tests[t].headerId]?.roomTemperature + ' °C' : 'Not Recorded' }}
-                            </span>
-                          </div>
-                        </div>
-                        <div class="env-metric-box">
-                          <div class="env-metric-icon bg-primary-subtle text-primary"><i class="bi bi-droplet"></i>
-                          </div>
-                          <div>
-                            <span class="detail-label">Relative Humidity</span>
-                            <span class="detail-value fw-bold text-primary fs-6">
-                              {{ environmentMap[plans[p].tests[t].headerId]?.roomHumidity != null ?
-                              environmentMap[plans[p].tests[t].headerId]?.roomHumidity + ' % RH' : 'Not Recorded' }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Test Timing & Performer -->
-                  <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 lims-panel">
-                      <div class="card-header bg-white border-bottom py-2">
-                        <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-clock-history me-2"></i><span>Test
-                            Timing &amp; Performer</span></h6>
-                      </div>
-                      <div class="card-body p-3">
-                        <div class="timing-metric-box mb-2">
-                          <div class="timing-icon bg-dark-subtle text-dark"><i class="bi bi-person-badge"></i></div>
-                          <div>
-                            <span class="detail-label">Performed By</span>
-                            <span class="detail-value fw-semibold text-dark">
-                              {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || 'System User' }}
-                            </span>
-                          </div>
-                        </div>
-                        <div class="timing-metric-box mb-2">
-                          <div class="timing-icon bg-success-subtle text-success"><i class="bi bi-play-circle"></i>
-                          </div>
-                          <div>
-                            <span class="detail-label">Test Start Time</span>
-                            <span class="detail-value">
-                              {{ testTimingMap[plans[p].tests[t].headerId]?.testStartTime ?
-                              formatDateTime(testTimingMap[plans[p].tests[t].headerId].testStartTime) : 'Not Started' }}
-                            </span>
-                          </div>
-                        </div>
-                        <div class="timing-metric-box">
-                          <div class="timing-icon bg-danger-subtle text-danger"><i class="bi bi-stop-circle"></i></div>
-                          <div>
-                            <span class="detail-label">Test End Time</span>
-                            <span class="detail-value">
-                              {{ testTimingMap[plans[p].tests[t].headerId]?.testEndTime ?
-                              formatDateTime(testTimingMap[plans[p].tests[t].headerId].testEndTime) : 'In Progress' }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Equipment Selection -->
-                  <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0 lims-panel">
-                      <div class="card-header bg-white border-bottom py-2">
-                        <h6 class="mb-0 fw-semibold text-danger"><i class="bi bi-cpu me-2"></i><span>Equipment
-                            Used</span></h6>
-                      </div>
-                      <div class="card-body p-3">
-                        <label class="form-label small fw-semibold text-muted mb-1">Linked Equipment Tags</label>
-                        <div class="d-flex flex-wrap gap-1 mb-2">
-                          <span *ngFor="let eq of selectedEquipmentMap[plans[p].tests[t].headerId] || []"
-                            class="badge bg-light text-dark border p-1 d-inline-flex align-items-center">
-                            <i class="bi bi-cpu me-1 text-primary"></i><span>{{ eq.name }}</span>
-                            <button *ngIf="!isViewMode" type="button" class="btn-close btn-close-xs ms-1"
-                              (click)="removeEquipment(plans[p].tests[t].headerId, eq.id)"></button>
-                          </span>
-                          <span *ngIf="!(selectedEquipmentMap[plans[p].tests[t].headerId] || []).length"
-                            class="text-muted small fst-italic">
-                            No specific equipment linked yet.
-                          </span>
-                        </div>
-                        <div *ngIf="!isViewMode" class="mt-2">
-                          <app-searchable-dropdown [placeholder]="'Add Equipment...'" [labelName]="'Equipment'"
-                            [fetchDataFn]="getEquipmentDropdownFor(p, t)"
-                            (itemSelected)="onEquipmentSelected(plans[p].tests[t].headerId, $event)" [hideLabel]="true"
-                            [smallInput]="true">
-                          </app-searchable-dropdown>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- NABL ISO/IEC 17025 Conformity Assessment & Result Verdict Panel -->
-                <div class="mt-2">
-                  <app-test-verdict-panel [plan]="plans[p]" [test]="plans[p].tests[t]"
-                    [parametersFormArray]="getActiveParametersFormArray()"
-                    [nablScopeData]="nablScopeMap[plans[p].tests[t]?.headerId] || []"
-                    [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []" [sample]="sample"
-                    [isViewMode]="isViewMode">
-                  </app-test-verdict-panel>
-                </div>
-
+              <div class="lims-test-toolbar-actions">
+                <button *ngIf="canStartTest(tbTest?.status)" type="button" class="btn btn-sm btn-lims btn-lims-primary"
+                  (click)="startTest(p, t)" [disabled]="isViewMode">
+                  <i class="bi bi-play-circle"></i><span>Start Test</span>
+                </button>
+                <button *ngIf="canViewRawDataSheet(tbTest?.status)" type="button" class="btn btn-sm btn-lims btn-lims-print"
+                  (click)="openRawDataSheetModal(p, t)" title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
+                  <i class="bi bi-file-earmark-text"></i><span>Raw Data Sheet</span>
+                </button>
+                @let completeBlockedReason = getCompleteBlockedReason(tbTest?.headerId);
+                <button type="button" class="btn btn-sm btn-lims btn-lims-save" (click)="completeTest(p, t)"
+                  [disabled]="!!completeBlockedReason || isSavingResult" [title]="completeBlockedReason || 'Complete this test'">
+                  <i class="bi bi-check-circle"></i><span>Complete</span>
+                </button>
+                <ng-container *hasPermission="'CanPerformTest'">
+                  <button *ngIf="canSubmitForVerification(tbTest?.status)"
+                    type="button" class="btn btn-sm btn-lims btn-lims-primary"
+                    (click)="requestSubmitForVerification(p, t)"
+                    [disabled]="isSubmittingVerification"
+                    title="Submit completed test for verification">
+                    <i class="bi bi-send-check"></i><span>Submit for Verification</span>
+                  </button>
+                </ng-container>
               </div>
             </div>
 
             <!-- ========================================================== -->
-            <!-- TAB: CALCULATIONS (Formulas, Dimensions, Auto-Eval)        -->
+            <!-- PER-TEST TABS (test-related data only)                     -->
             <!-- ========================================================== -->
-            <div class="tab-pane-content" *ngIf="activeTab === 'calculations'">
-
-              <div class="pagehead">
-                <div>
-                  <h2>Calculations &amp; Derived Results</h2>
-                  <div class="sub">Formula results are linked to their runtime inputs and retain traceable expressions.
-                  </div>
-                </div>
-                <button type="button" class="btn primary small" (click)="calculateParameters(p, t)"
-                  [disabled]="isViewMode">
-                  <i class="bi bi-arrow-repeat me-1"></i><span>Recalculate Formulas</span>
+            <div class="test-tabbar">
+              <div class="test-tabs" role="tablist">
+                <button type="button" role="tab" class="tab-compact" [class.active]="activeTab === 'execution'"
+                  [attr.aria-selected]="activeTab === 'execution'" (click)="switchTab('execution')">
+                  <span>1. Execution ({{ pillMetrics(p).total }})</span>
+                </button>
+                <button type="button" role="tab" class="tab-compact" [class.active]="activeTab === 'nabl_audit'"
+                  [attr.aria-selected]="activeTab === 'nabl_audit'" (click)="switchTab('nabl_audit')">
+                  <span>2. NABL QA &amp; Audit</span>
                 </button>
               </div>
 
-              <div class="grid2">
-                <!-- Derived Result Card -->
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Derived Result</h3>
-                    <span class="state">Active Test</span>
+              <!-- Layout and specimen count of this test -->
+              <div class="lims-test-toolbar-controls" *ngIf="activePlanIndex === p">
+                <!-- Layout -->
+                <div class="lims-test-toolbar-group">
+                  <span class="lims-tb-label">Layout</span>
+                  <div class="lims-test-toolbar-layout" [title]="selectedLayoutItem?.name || 'Select layout'">
+                    <app-searchable-dropdown
+                      [placeholder]="'Select Layout...'"
+                      [labelName]="'Layout'"
+                      [fetchDataFn]="fetchLayoutTemplates"
+                      [selectedItem]="selectedLayoutItem"
+                      [isDisabled]="tbLocked"
+                      (itemSelected)="onLayoutItemSelected($event)"
+                      [hideLabel]="true"
+                      [smallInput]="true">
+                    </app-searchable-dropdown>
                   </div>
-                  <div class="cardbody">
-                    <ng-container *ngFor="let param of plans[p].tests[t].parameters; let r = index">
-                      <div *ngIf="param.isCalculated || param.formulaExpression" class="mb-3">
-                        <div class="sectionlabel">{{ param.parameterName }} <span class="muted" *ngIf="param.unit">({{
-                            param.unit }})</span></div>
-                        <div class="formula-box">{{ getFormulaDisplay(param, p, t) }}</div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                          <span class="muted">Evaluated result</span>
-                          <strong class="text-primary fs-6">{{ param.value != null ? param.value + ' ' + (param.unit ||
-                            '') : 'Pending' }}</strong>
+                </div>
+
+                <span class="lims-tb-divider" *ngIf="shouldShowSpecimenToolbar()" aria-hidden="true"></span>
+
+                <!-- Specimen count: available for all layouts unless fixed by template -->
+                <div class="lims-test-toolbar-group" *ngIf="shouldShowSpecimenToolbar()">
+                  <span class="lims-tb-label">Specimens</span>
+                  <div class="lims-tb-stepper" *ngIf="canAdjustSpecimenCount(); else fixedSpecimenBadge">
+                    <button type="button" class="lims-tb-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(-1)"
+                      [disabled]="tbLocked || getActiveSpecimenCount() <= 1" title="Decrease specimen count">−</button>
+                    <input type="number" class="lims-tb-stepper-input" [value]="getActiveSpecimenCount()" min="1" max="20" [disabled]="tbLocked"
+                      aria-label="Specimen count" (change)="onWorkbenchSpecimenInputChange($event)" />
+                    <button type="button" class="lims-tb-stepper-btn" (click)="onWorkbenchSpecimenCountAdjust(1)"
+                      [disabled]="tbLocked || getActiveSpecimenCount() >= 20" title="Increase specimen count">+</button>
+                  </div>
+                  <ng-template #fixedSpecimenBadge>
+                    <span class="lims-tb-meta-chip">{{ getActiveSpecimenCount() }}</span>
+                  </ng-template>
+                  <span class="lims-tb-meta-chip" *ngIf="getActivePlannedQuantity() > 1" title="Tests planned in Sample Plan">Plan: {{ getActivePlannedQuantity() }}</span>
+                </div>
+
+                <span class="lims-tb-divider" *ngIf="shouldShowSpecimenSizePrompt()" aria-hidden="true"></span>
+
+                <!-- Specimen Size Prompt (Task L8.1 Option 1) -->
+                <div class="lims-test-toolbar-group" *ngIf="shouldShowSpecimenSizePrompt()">
+                  <span class="lims-tb-label">
+                    Size<span class="text-danger fw-bold ms-0.5" *ngIf="isSpecimenSizeRequired(tbTest)">*</span>
+                  </span>
+                  <button type="button" class="lims-tb-size-btn"
+                    [class.is-set]="hasSpecimenSize(p, t)"
+                    [class.is-required]="isSpecimenSizeRequired(tbTest) && !hasSpecimenSize(p, t)"
+                    (click)="openSpecimenSizeModal(p, t)"
+                    [title]="getSpecimenSizeSummary(p, t)">
+                    <i class="bi bi-rulers"></i>
+                    <span class="lims-tb-size-val">{{ getSpecimenSizeDisplay(p, t) }}</span>
+                    <span class="lims-tb-status-pill"
+                      [ngClass]="isSpecimenSizeRequired(tbTest) ? (hasSpecimenSize(p, t) ? 'bg-success text-white' : 'bg-danger text-white') : (hasSpecimenSize(p, t) ? 'bg-success text-white' : 'bg-secondary text-white')">
+                      {{ isSpecimenSizeRequired(tbTest) ? (hasSpecimenSize(p, t) ? 'Set' : 'Required') : (hasSpecimenSize(p, t) ? 'Set' : 'Optional') }}
+                    </span>
+                  </button>
+                </div>
+
+                <span class="lims-tb-divider" *ngIf="currentTestLayout" aria-hidden="true"></span>
+
+                <!-- Layout Mode: Template vs Dynamic Adjust -->
+                <div class="lims-test-toolbar-group" *ngIf="currentTestLayout">
+                  <span class="lims-tb-label">Mode</span>
+                  <div class="lims-tb-segmented" role="group" aria-label="Layout Mode">
+                    <button type="button" class="lims-tb-seg-btn"
+                      [class.is-active]="!isDynamicAdjustMode"
+                      (click)="setDynamicAdjustMode(false)"
+                      [disabled]="tbLocked"
+                      title="Template Mode: Load pristine template structure from master">
+                      <i class="bi bi-file-earmark-ruled"></i><span>Template</span>
+                    </button>
+                    <button type="button" class="lims-tb-seg-btn"
+                      [class.is-active]="isDynamicAdjustMode"
+                      (click)="setDynamicAdjustMode(true)"
+                      [disabled]="tbLocked"
+                      title="Dynamic Mode: Dynamically adjust specimens, dimensions, columns, and parameters on the fly">
+                      <i class="bi bi-sliders"></i><span>Adjust</span>
+                    </button>
+                  </div>
+                </div>
+
+                <span class="lims-tb-divider" *ngIf="(!isViewMode && !isTestFinalized(tbTest?.status)) || currentTestLayout" aria-hidden="true"></span>
+
+                <!-- Fresh Entry (Clear results) & Studio Link -->
+                <div class="lims-test-toolbar-group">
+                  <button type="button" class="lims-tb-btn lims-tb-btn-danger"
+                    (click)="confirmResetSampleResults()"
+                    *ngIf="!isViewMode && !isTestFinalized(tbTest?.status)"
+                    title="Clear all entered results and restart with fresh entry">
+                    <i class="bi bi-arrow-counterclockwise"></i><span>Fresh Entry</span>
+                  </button>
+
+                  <a *ngIf="currentTestLayout" class="lims-tb-btn lims-tb-btn-studio"
+                    [routerLink]="['/test/layout-archetypes']" [queryParams]="{ id: currentTestLayout.id }"
+                    title="Open this layout in Layout Studio">
+                    <i class="bi bi-grid-1x2"></i><span>Studio</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- TAB 1: TEST & EXECUTION WORKSPACE                          -->
+            <!-- ========================================================== -->
+            <div class="tab-pane-content" *ngIf="activeTab === 'execution'">
+              <!-- Responsive 2-Column Split Workbench -->
+              <div class="row g-2">
+                <!-- LEFT COLUMN (32-35% on desktop): Fixed Data-Driven Sections -->
+                <div class="col-12 col-xl-4 col-lg-5 d-flex flex-column gap-2">
+
+                  <!-- CARD 1: MATERIAL SPECIFICATION & CONDITION ENGINE -->
+                  <article class="lims-section spec-condition-card">
+                    <div class="lims-section-head">
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="lims-section-title">Specification Conditions</h3>
+                      </div>
+                      <div class="d-flex align-items-center gap-1">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs"
+                          *ngIf="matchedConditionLinesCount[plans[p].tests[t]?.headerId]">
+                          {{ matchedConditionLinesCount[plans[p].tests[t]?.headerId] }} Matched
+                        </span>
+                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 text-xxs"
+                          (click)="resetConditionFilters(p, t)" [disabled]="isViewMode" title="Reset all specification conditions">
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                    <div class="cardbody p-1">
+                      <!-- Active Spec Grade Banner -->
+                      <div class="spec-context-banner mb-2">
+                        <div class="d-flex align-items-center gap-1.5 flex-grow-1" style="min-width: 0;">
+                          <span class="text-secondary text-xxs">Grade:</span>
+                          <div class="flex-grow-1" style="min-width: 0;">
+                            <app-searchable-dropdown
+                              [hideLabel]="true"
+                              [smallInput]="true"
+                              [placeholder]="'Select grade'"
+                              [fetchDataFn]="fetchGrades"
+                              [selectedItem]="currentGradeItem"
+                              [isDisabled]="isViewMode || isTestFinalized(plans[p].tests[t]?.status)"
+                              (itemSelected)="onGradePicked($event, p)">
+                            </app-searchable-dropdown>
+                          </div>
+                        </div>
+                        <span class="badge bg-secondary-subtle text-secondary text-xxs font-monospace">{{ (conditionLines[plans[p].tests[t]?.headerId] || []).length }} lines</span>
+                      </div>
+
+                      <!-- Condition selectors: options come from this grade's own specification lines -->
+                      <ng-container *ngIf="plans[p].tests[t]?.headerId as hid">
+                        <div class="spec-condition-grid">
+                          <div class="spec-cond-item" *ngFor="let fc of conditionFacetOrder">
+                            <label class="spec-cond-label">{{ conditionFacetLabels[fc] }}
+                              <span class="badge bg-info-subtle text-info text-xxs" *ngIf="isAutoCondition(hid, fc)">Auto</span>
+                              <i class="bi bi-info-circle spec-cond-info" *ngIf="conditionHint(hid, fc) as hint" [title]="hint"
+                                 tabindex="0" [attr.aria-label]="hint"></i>
+                            </label>
+                            <app-searchable-dropdown
+                              [hideLabel]="true"
+                              [smallInput]="true"
+                              [placeholder]="condFacetPresent(hid, fc) ? (fc === 'df' ? 'All sizes' : 'All') : 'Not used by this grade'"
+                              [fetchDataFn]="condFetch(hid, fc)"
+                              [selectedItem]="condSelectedItem(hid, fc)"
+                              [reloadKey]="conditionVersion[hid]"
+                              [reloadOnOpen]="true"
+                              [isDisabled]="isViewMode || !condFacetPresent(hid, fc)"
+                              (itemSelected)="onCondItemSelected(p, t, fc, $event)">
+                            </app-searchable-dropdown>
+                          </div>
+                        </div>
+                        <div class="text-warning-emphasis text-xxs mt-1" *ngIf="condOptions(hid, 'df').length > maxComfortableSegments">
+                          This grade cuts the size ranges of its parameters very differently ({{ condOptions(hid, 'df').length }} ranges). Check the limits of each parameter.
+                        </div>
+                        <details class="mt-1" *ngIf="(conditionLimitSummary[hid] || []).length">
+                          <summary class="text-xxs fw-semibold text-secondary">Limits for this selection ({{ conditionLimitSummary[hid].length }})</summary>
+                          <table class="table table-sm mb-0 text-xxs">
+                            <tbody>
+                              <tr *ngFor="let row of conditionLimitSummary[hid]; trackBy: trackByIndex">
+                                <td class="fw-semibold">{{ row.name }}</td>
+                                <td class="font-monospace text-nowrap">{{ row.limit }}</td>
+                                <td class="text-muted">{{ row.source }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </details>
+                        <div class="text-secondary text-xxs mt-1" *ngIf="(conditionConflicts[hid] || []).length">
+                          No limit applied to {{ conditionConflicts[hid].join(', ') }}: the specification has more than one limit for this selection.
+                        </div>
+                        <div class="text-secondary text-xxs mt-1" *ngIf="(conditionNotApplicable[hid] || []).length">
+                          No specification limit applies to: {{ conditionNotApplicable[hid].join(', ') }} for the selected conditions.
+                        </div>
+                        <div class="text-secondary text-xxs mt-1" *ngIf="conditionNoGrade[hid]">
+                          No specification grade is linked to this test plan or sample, so conditions are not available.
+                        </div>
+                        <div class="text-secondary text-xxs mt-1" *ngIf="conditionLines[hid] && conditionLines[hid].length === 0">
+                          This grade has no condition-based lines for this test.
+                        </div>
+                      </ng-container>
+                    </div>
+                  </article>
+
+                  <!-- CARD 2: LIVE CALCULATIONS & RESULT VERDICTS -->
+                  <article class="lims-section" *ngIf="getCalculatedKeyResults(p, t).length || hasFormulaParameters(p, t)">
+                    <div class="lims-section-head">
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="lims-section-title">Live Calculations &amp; Verdicts</h3>
+                      </div>
+                      <button type="button" class="btn btn-xs btn-lims btn-lims-add py-0 px-2 text-xxs"
+                              (click)="calculateParameters(p, t)" [disabled]="isViewMode" title="Recalculate live formulas">
+                        <span>Recalculate</span>
+                      </button>
+                    </div>
+                    <div class="cardbody p-1">
+                      <!-- Prominent Key Results KPI Grid -->
+                      <div class="kpi-metric-grid mb-2">
+                        <div *ngFor="let metric of getCalculatedKeyResults(p, t)" class="kpi-metric-tile">
+                          <div class="kpi-top-row">
+                            <span class="kpi-symbol">{{ metric.symbol }}</span>
+                            <span class="kpi-status-badge" [ngClass]="{
+                              'kpi-pass': metric.status === 'PASS',
+                              'kpi-fail': metric.status === 'FAIL',
+                              'kpi-pending': metric.status === 'PENDING',
+                              'kpi-info': metric.status === 'INFO'
+                            }">{{ metric.status }}</span>
+                          </div>
+                          <span class="kpi-name text-truncate" [title]="metric.name">{{ metric.name }}</span>
+                          <div class="kpi-val-row">
+                            <span class="kpi-value">{{ metric.value }}</span>
+                            <span class="kpi-unit">{{ metric.unit }}</span>
+                          </div>
+                          <div class="kpi-bottom-row" *ngIf="metric.requirement">
+                            <span class="kpi-req text-truncate" [title]="'Requirement: ' + metric.requirement">Req: {{ metric.requirement }}</span>
+                          </div>
                         </div>
                       </div>
-                    </ng-container>
-                    <div class="sub mt-2">Formula inputs update automatically based on entered readings and specimen
-                      dimensions.</div>
-                  </div>
-                </article>
 
-                <!-- Specimen Dimensions Card -->
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Specimen Dimensions</h3>
-                    <span class="state">Runtime values</span>
-                  </div>
-                  <div class="cardbody">
-                    <div class="fieldgrid">
-                      <div class="metric"><label>Thickness (T)</label><strong>{{ sample?.thickness || '—' }} mm</strong>
+                      <!-- Formula Parameters Breakdown (if any formula params exist) -->
+                      <div *ngIf="hasFormulaParameters(p, t)" class="formula-list-container">
+                        <div class="text-muted text-xxs fw-semibold mb-1">Formulas Evaluated:</div>
+                        <div class="d-flex flex-column gap-1">
+                          <div *ngFor="let param of getFormulaParametersList(p, t)" class="p-1 bg-light rounded border">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="fw-semibold text-dark text-xxs">{{ param.parameterName }}</span>
+                              <strong class="text-primary text-xxs">{{ param.displayValue || (param.value != null ? param.value + ' ' + (param.unit || '') : 'Pending') }}</strong>
+                            </div>
+                            <div class="font-monospace text-xxs text-secondary bg-white px-1 py-0.5 rounded border mt-0.5 text-truncate" [title]="getFormulaDisplay(param, p, t)">
+                              {{ getFormulaDisplay(param, p, t) }}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="metric"><label>Width (W)</label><strong>{{ sample?.width || '—' }} mm</strong></div>
-                      <div class="metric"><label>Diameter (D)</label><strong>{{ sample?.diameter || '—' }} mm</strong>
-                      </div>
-                      <div class="metric"><label>Length (L)</label><strong>{{ sample?.length || '—' }} mm</strong></div>
-                      <div class="metric"><label>Cross Section Area (S₀)</label><strong class="text-primary">{{
-                          sample?.crossSectionArea || '—' }} mm²</strong></div>
-                      <div class="metric"><label>Gauge Length (L₀)</label><strong>{{ sample?.gaugeLength || '—' }}
-                          mm</strong></div>
                     </div>
+                  </article>
+
+                  <!-- CARD 3: EXECUTION TRACEABILITY & ENVIRONMENTAL COMPLIANCE -->
+                  <article class="lims-section">
+                    <div class="lims-section-head">
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="lims-section-title">Execution Traceability</h3>
+                      </div>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs">ISO 17025 Cl 7.5</span>
+                    </div>
+                    <div class="cardbody p-1">
+                      <div class="trace-grid">
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Testing Equipment</span>
+                          <ng-container *ngIf="plans[p].tests[t]?.headerId as eqHid">
+                            <div *ngFor="let eq of selectedEquipmentMap[eqHid] || []; trackBy: trackByEquipment" class="d-flex align-items-center gap-1 flex-wrap">
+                              <span class="trace-val text-dark text-truncate" [title]="eq.name || ('Equipment #' + eq.id)">{{ eq.name || ('Equipment #' + eq.id) }}</span>
+                              <span class="badge text-xxs" [ngClass]="equipmentBadgeClass(eq)">{{ getEquipmentCalibrationText(eq) }}</span>
+                              <button *ngIf="!isViewMode && !isTestFinalized(plans[p].tests[t]?.status)" type="button" class="btn-lims-icon btn-lims-delete"
+                                      (click)="removeEquipment(eqHid, eq.id)" title="Remove this equipment">
+                                <i class="bi bi-x"></i>
+                              </button>
+                            </div>
+                            <span class="trace-val text-muted" *ngIf="!(selectedEquipmentMap[eqHid] || []).length">Not assigned</span>
+                            <ng-container *ngIf="!isViewMode && !isTestFinalized(plans[p].tests[t]?.status)">
+                              <ng-container *ngFor="let pickerKey of [equipmentPickerKey[eqHid] || 0]">
+                                <app-searchable-dropdown
+                                  [hideLabel]="true"
+                                  [smallInput]="true"
+                                  [placeholder]="'Add equipment...'"
+                                  [fetchDataFn]="getEquipmentPicker(p, t)"
+                                  (itemSelected)="onEquipmentPicked(eqHid, $event)">
+                                </app-searchable-dropdown>
+                              </ng-container>
+                              <span class="text-muted text-xxs d-block" *ngIf="equipmentUnfiltered[p + '_' + t]">
+                                No equipment is linked to this test in the master; all equipment is listed.
+                              </span>
+                            </ng-container>
+                          </ng-container>
+                        </div>
+                        <div class="trace-cell">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <span class="trace-lbl">Lab Environment</span>
+                            <button type="button" class="btn btn-xs py-0 px-1 text-danger border-0 bg-transparent" (click)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])">
+                              <u>{{ getEnvironmentDisplay(plans[p].tests[t].headerId) ? 'Edit' : 'Record' }}</u>
+                            </button>
+                          </div>
+                          <span class="trace-val text-dark">
+                            {{ getEnvironmentDisplay(plans[p].tests[t].headerId) || 'Not recorded' }}
+                          </span>
+                          <span class="text-muted text-xxs d-block" *ngIf="environmentMap[plans[p].tests[t]?.headerId]?.labRoomName">
+                            Room: {{ environmentMap[plans[p].tests[t]?.headerId]?.labRoomName }}
+                          </span>
+                        </div>
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Performer / Analyst</span>
+                          <span class="trace-val text-dark">
+                            {{ testTimingMap[plans[p].tests[t]?.headerId]?.performedByName || 'Not started' }}
+                          </span>
+                        </div>
+                        <div class="trace-cell">
+                          <span class="trace-lbl">Test Method Standard</span>
+                          <span class="trace-val text-dark text-truncate" [title]="plans[p].methodName">
+                            {{ getCleanMethodLabel(plans[p].methodName) || '—' }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <!-- CARD 4: ATTACHMENTS & EVIDENCE -->
+                  <article class="lims-section">
+                    <div class="lims-section-head">
+                      <div class="d-flex align-items-center gap-1.5">
+                        <h3 class="lims-section-title">Attachments &amp; Evidence</h3>
+                      </div>
+                      <label *ngIf="!isViewMode" class="btn btn-xs btn-lims btn-lims-add cursor-pointer m-0 py-0 px-2 text-xxs">
+                        <i class="bi bi-plus-lg me-1"></i><span>Add</span>
+                        <input type="file" accept="image/*" multiple class="d-none"
+                          (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
+                      </label>
+                    </div>
+                    <div class="cardbody p-1">
+                      <div class="img-dropzone p-2 text-center border border-dashed rounded bg-light mb-1">
+                        <div class="text-muted text-xxs mb-1">Upload specimen photos, fracture surface, or curve scans</div>
+                        <label *ngIf="!isViewMode" class="btn btn-xs btn-outline-secondary cursor-pointer m-0">
+                          <span>Browse Files</span>
+                          <input type="file" accept="image/*" multiple class="d-none"
+                            (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
+                        </label>
+                      </div>
+
+                      <!-- Staged Files -->
+                      <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId]?.length" class="mb-1 p-1 bg-light rounded border">
+                        <div class="d-flex gap-1 align-items-center flex-wrap">
+                          <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let sfIdx = index" class="img-staged-item">
+                            <img [src]="sf.preview" (click)="openImage(sf.preview)" class="img-staged-thumb" />
+                          </div>
+                          <button type="button" class="btn btn-xs btn-lims btn-lims-save py-0 px-1.5 text-xxs"
+                            (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
+                            <span>Upload</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Uploaded Images Gallery -->
+                      <div *ngIf="testImagesMap[plans[p].tests[t]?.headerId]?.length" class="d-flex flex-wrap gap-1">
+                        <div *ngFor="let img of testImagesMap[plans[p].tests[t]?.headerId]" class="img-gallery-thumb position-relative border rounded overflow-hidden"
+                          (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)">
+                          <img [src]="baseUrl + (img.filePath || img.fileUrl || img.thumbnailUrl)" class="img-gallery-img" />
+                        </div>
+                      </div>
+                      <div *ngIf="!testImagesMap[plans[p].tests[t]?.headerId]?.length && !selectedFilesMap[plans[p].tests[t].headerId]?.length" class="text-muted text-center text-xxs py-0.5">
+                        No test images attached yet.
+                      </div>
+                    </div>
+                  </article>
+
+                </div>
+
+                <!-- RIGHT COLUMN (65-68% on desktop): Dynamic Configured Layout Section -->
+                <div class="col-12 col-xl-8 col-lg-7 d-flex flex-column gap-2">
+
+                  <!-- Dynamic Configured Layout (falls back to standard Parameter Table when unmapped) -->
+                  <app-configured-test-layout-renderer #layoutRenderer [layoutConfig]="currentTestLayout || defaultFallbackLayout" [testPlan]="plans[p]"
+                    [test]="plans[p].tests[t]" [testFormGroup]="getActiveTestGroup()" [sample]="sample" [inward]="inward"
+                    [nablInScope]="isNablAccredited(plans[p].tests[t])" [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []"
+                    [isViewMode]="isViewMode" [isLocked]="isTestFinalized(plans[p].tests[t]?.status)"
+                    [isDynamicMode]="isDynamicAdjustMode"
+                    [activeTabSection]="'execution'"
+                    [environmentData]="environmentMap[plans[p].tests[t]?.headerId]"
+                    [timingData]="testTimingMap[plans[p].tests[t]?.headerId]"
+                    [selectedEquipment]="selectedEquipmentMap[plans[p].tests[t]?.headerId] || []"
+                    [testImages]="testImagesMap[plans[p].tests[t]?.headerId] || []"
+                    (paramValueChanged)="onConfiguredParamChanged($event)"
+                    (unitChanged)="onUnitChanged(p, t, $event.rowIdx)"
+                    (formulaRequested)="openFormulaBuilder(p, t, $event.rowIdx)"
+                    (environmentRequested)="openRecordEnvironmentModal(plans[p], plans[p].tests[t])"
+                    (multipleReadingsRequested)="openMultipleReadingsModal(p, t, $event.rowIdx)"
+                    (photoUploadRequested)="switchTab('execution')"
+                    (parametersAdjusted)="onRendererParametersAdjusted(p, t)"
+                    (specimenCountChanged)="onWorkbenchSpecimenCountChanged($event)"
+                    (syncFromLabTestRequested)="onSyncFromLabTest(p, t, $event)">
+                  </app-configured-test-layout-renderer>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- TAB 2: NABL QA & AUDIT (Static Structural Design)         -->
+            <!-- ========================================================== -->
+            <div class="tab-pane-content" *ngIf="activeTab === 'nabl_audit'">
+
+              <!-- 5. Scope summary: counts over the parameters of the result screen -->
+              @let scopeCounts = getNablScopeCounts(p, t);
+              <article class="lims-section">
+                <div class="lims-section-head">
+                  <h3>Scope Summary</h3>
+                  <div>
+                    <button type="button" class="btn btn-lims btn-lims-secondary" (click)="navigateToScope()">Open ISO Scope</button>
                   </div>
-                </article>
+                </div>
+                <div class="lims-kv-row">
+                  <div class="lims-kv"><span class="lims-kv-label">Parameters</span><span class="lims-kv-value">{{ scopeCounts.total }}</span></div>
+                  <div class="lims-kv"><span class="lims-kv-label">In scope</span><span class="lims-kv-value">{{ scopeCounts.inScope }}</span></div>
+                  <div class="lims-kv"><span class="lims-kv-label">Out of scope</span><span class="lims-kv-value">{{ scopeCounts.outOfScope }}</span></div>
+                  <div class="lims-kv" *ngIf="scopeCounts.notConfigured > 0" title="Parameters not configured in Lab Scope Master (neither In Scope nor Out of Scope)">
+                    <span class="lims-kv-label">Not in scope master</span><span class="lims-kv-value">{{ scopeCounts.notConfigured }}</span>
+                  </div>
+                  <div class="lims-kv"><span class="lims-kv-label">Accreditation standard</span><span class="lims-kv-value">ISO/IEC 17025:2017</span></div>
+                </div>
+                <p class="lims-section-note mb-0" *ngIf="scopeCounts.inScope > 0">
+                  This test is covered by the laboratory's accredited scope. Parameters marked In Scope carry the accredited endorsement.
+                </p>
+                <p class="lims-section-note mb-0" *ngIf="scopeCounts.inScope === 0">
+                  No parameter of this test is mapped to the accreditation scope. The certificate must state "Test not under NABL Scope" unless the scope mapping is verified.
+                </p>
+              </article>
+
+              <!-- 6. Consolidated NABL ISO/IEC 17025 Conformity Assessment & Result Verdict Panel -->
+              <div>
+                <app-test-verdict-panel [plan]="plans[p]" [test]="plans[p].tests[t]"
+                  [parametersFormArray]="getActiveParametersFormArray()"
+                  [nablScopeData]="nablScopeMap[plans[p].tests[t]?.headerId] || []"
+                  [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []"
+                  [sample]="sample"
+                  [inward]="inward"
+                  [specimenLabels]="getActiveSpecimenLabels()"
+                  [activeParameterKeys]="getActiveLayoutParameterKeys(p, t)"
+                  [decisionRuleText]="getActiveDecisionRuleLabel()"
+                  [useGuardBand]="getActiveDecisionRuleWithMU()"
+                  [layoutColumnConfig]="getActiveVerdictColumnConfig()"
+                  [tab1ReadingMatrix]="getActiveReadingMatrixSummary(p, t)"
+                  [layoutRuleConformityEnabled]="getLayoutRuleConformityEnabled()"
+                  [isViewMode]="isViewMode">
+                </app-test-verdict-panel>
               </div>
 
-              <!-- Formula Evaluation Log Card -->
-              <article class="card card-mt-12">
-                <div class="cardhead">
-                  <h3>Formula Evaluation Log</h3>
-                  <span class="state green">Traceable</span>
+              <!-- Requirement source: which specification line gave each limit -->
+              @let reqRows = getRequirementSourceRows(plans[p].tests[t]?.headerId);
+              <article class="lims-section" *ngIf="reqRows.length">
+                <div class="lims-section-head">
+                  <h3>Requirement Source</h3>
+                  <span class="badge bg-secondary">{{ reqRows.length }} lines</span>
                 </div>
-                <div class="tablewrap">
-                  <table class="data">
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered mb-0 text-xs">
                     <thead>
-                      <tr>
-                        <th>Calculated Parameter</th>
-                        <th>Formula Expression</th>
-                        <th>Computed Value</th>
-                        <th class="text-center">Action</th>
-                      </tr>
+                      <tr><th>Parameter</th><th>Min</th><th>Max</th><th>Unit</th><th>Conditions applied</th></tr>
                     </thead>
                     <tbody>
-                      <ng-container *ngFor="let param of plans[p].tests[t].parameters; let r = index">
-                        <tr *ngIf="param.isCalculated || param.formulaExpression">
-                          <td><strong>{{ param.parameterName }}</strong> <span class="muted small"
-                              *ngIf="param.unit">({{ param.unit }})</span></td>
-                          <td><code>{{ getFormulaDisplay(param, p, t) }}</code></td>
-                          <td><strong class="text-primary">{{ param.value != null ? param.value : 'Pending' }}</strong>
-                          </td>
-                          <td class="text-center">
-                            <button type="button" class="btn small" (click)="openFormulaBuilder(p, t, r)"
-                              [disabled]="isViewMode" title="Edit Formula">
-                              Edit Formula
-                            </button>
-                          </td>
-                        </tr>
-                      </ng-container>
-                      <tr *ngIf="!plans[p].tests[t].parameters?.length">
-                        <td colspan="4" class="text-center py-3 muted">No parameters configured for this test.</td>
+                      <tr *ngFor="let r of reqRows">
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.min ?? '—' }}</td>
+                        <td>{{ r.max ?? '—' }}</td>
+                        <td>{{ r.unit || '—' }}</td>
+                        <td>{{ r.source }}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </article>
-            </div>
 
-            <!-- ========================================================== -->
-            <!-- TAB: NABL & QA (Scope, Uncertainty, Orientation)           -->
-            <!-- ========================================================== -->
-            <div class="tab-pane-content" *ngIf="activeTab === 'nabl'">
-              <div class="pagehead">
-                <div>
-                  <h2>ISO/IEC 17025 &amp; NABL Accreditation QA</h2>
-                  <div class="sub">Scope status is separate from product-specification conformance.</div>
-                </div>
-                <span class="state">NABL 133 compliance view</span>
-              </div>
-
-              <!-- Summary Grid (4 Metrics) -->
-              <div class="summarygrid">
-                <div class="metric">
-                  <label>Total Parameters</label>
-                  <strong>{{ plans[p].tests[t].parameters?.length || 0 }}</strong>
-                </div>
-                <div class="metric">
-                  <label>In-scope Parameters</label>
-                  <strong class="green">{{ getNablScopeSummary(plans[p].tests[t].headerId).inScopeCount }}</strong>
-                </div>
-                <div class="metric">
-                  <label>Out-of-scope</label>
-                  <strong>{{ getNablScopeSummary(plans[p].tests[t].headerId).outOfScopeCount +
-                    (plans[p].tests[t].parameters?.length -
-                    getNablScopeSummary(plans[p].tests[t].headerId).inScopeCount) }}</strong>
-                </div>
-                <div class="metric">
-                  <label>Accreditation Standard</label>
-                  <strong class="standard-label-blue">ISO/IEC 17025:2017</strong>
-                </div>
-              </div>
-
-              <!-- Scope Notice -->
-              <div class="notice sec-mb-12">
-                <span>{{ hasAnyInScope(plans[p].tests[t].headerId) ? '✓' : '⚠' }}</span>
-                <div>
-                  <strong *ngIf="hasAnyInScope(plans[p].tests[t].headerId)">Accredited Scope Verified</strong>
-                  <strong *ngIf="!hasAnyInScope(plans[p].tests[t].headerId)">Scope Advisory Notice</strong>
-                  <span *ngIf="hasAnyInScope(plans[p].tests[t].headerId)">
-                    This test is covered under the laboratory's accredited NABL ISO/IEC 17025:2017 scope. All parameters
-                    marked 'In Scope' will carry accredited endorsement.
-                  </span>
-                  <span *ngIf="!hasAnyInScope(plans[p].tests[t].headerId)">
-                    No parameters are currently mapped to the laboratory accreditation scope. The certificate should
-                    clearly state: <em>"Test not under NABL Scope"</em> unless scope mapping is verified.
-                  </span>
-                </div>
-                <a class="link ms-auto align-self-start" (click)="navigateToScope()">Open ISO Scope →</a>
-              </div>
-
-              <!-- Consolidated NABL ISO/IEC 17025 Conformity Assessment & Result Verdict Panel -->
-              <div class="mb-3">
-                <app-test-verdict-panel [plan]="plans[p]" [test]="plans[p].tests[t]"
-                  [parametersFormArray]="getActiveParametersFormArray()"
-                  [nablScopeData]="nablScopeMap[plans[p].tests[t]?.headerId] || []"
-                  [uncertaintyData]="uncertaintyMap[plans[p].tests[t]?.headerId] || []" [sample]="sample"
-                  [isViewMode]="isViewMode">
-                </app-test-verdict-panel>
-              </div>
-
-              <!-- Parameter-wise Scope & Measurement Uncertainty Table -->
-              <article class="card">
-                <div class="cardhead">
+              <!-- 7. Parameter-wise Scope & Measurement Uncertainty Table -->
+              <article class="lims-section">
+                <div class="lims-section-head">
                   <h3>Parameter-wise Scope &amp; Measurement Uncertainty</h3>
-                  <span class="sub">Scope evaluation and uncertainty metadata</span>
+                  <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Scope &amp; MU Matrix</span>
                 </div>
-                <div class="tablewrap">
-                  <table class="data">
+                <div class="table-responsive">
+                  <table class="case-tests-table">
                     <thead>
                       <tr>
-                        <th>#</th>
+                        <th class="lims-col-num">#</th>
                         <th>Parameter</th>
                         <th>Unit</th>
                         <th>NABL Scope Status</th>
@@ -1079,31 +632,78 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let param of plans[p].tests[t].parameters; let r = index">
-                        <td>{{ r + 1 }}</td>
+                      <tr *ngFor="let param of getNablParameters(p, t); let r = index">
+                        <td class="font-monospace text-muted">{{ r + 1 }}</td>
                         <td><strong>{{ param.parameterName }}</strong></td>
                         <td>{{ param.unit || '—' }}</td>
                         <td>
-                          <span class="badge"
-                            [ngClass]="getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope' ? 'pass' : 'scope'">
-                            {{ getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID) === 'WithinScope' ? 'In
-                            Scope' : 'Out of Scope' }}
+                          @let paramScopeStatus = getNablScopeStatus(plans[p].tests[t].headerId, param.parameterID);
+                          <span *ngIf="paramScopeStatus === 'WithinScope'" class="badge font-monospace text-xxs bg-success text-white">
+                            In Scope
+                          </span>
+                          <span *ngIf="paramScopeStatus === 'OutsideScope'" class="badge font-monospace text-xxs bg-danger text-white">
+                            Out of Scope
+                          </span>
+                          <span *ngIf="paramScopeStatus === 'NotAccredited'" class="text-muted text-xxs" title="Not configured in Lab Scope Master">
+                            —
                           </span>
                         </td>
                         <td>
-                          <span class="muted font-monospace">
-                            {{ param.expandedUncertainty ? '± ' + param.expandedUncertainty + ' ' + param.unit : 'As per
-                            MU Matrix' }}
+                          <span class="text-secondary font-monospace">
+                            {{ param.expandedUncertainty != null ? ('± ' + param.expandedUncertainty + (param.unit ? ' ' + param.unit : '')) : '—' }}
                           </span>
                         </td>
                         <td>
-                          <span class="muted font-monospace">
-                            k = 2.0 (95.45% CL)
+                          <span class="text-secondary font-monospace">
+                            {{ param.coverageFactor != null ? ('k = ' + param.coverageFactor) : '—' }}
                           </span>
                         </td>
                       </tr>
-                      <tr *ngIf="!plans[p].tests[t].parameters?.length">
-                        <td colspan="6" class="text-center py-3 muted">No parameters configured.</td>
+                      <tr *ngIf="!scopeCounts.total">
+                        <td colspan="6" class="text-center py-2 text-muted">No parameters configured.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <!-- 8. Execution timeline -->
+              @let tlTest = plans[p].tests[t];
+              @let tlTiming = testTimingMap[tlTest.headerId];
+              <article class="lims-section">
+                <div class="lims-section-head">
+                  <h3>Execution Timeline &amp; Audit Trail</h3>
+                  <span class="badge bg-secondary">ISO 17025 Cl 7.5</span>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead>
+                      <tr><th class="lims-col-num">#</th><th>Event</th><th>Details</th><th class="lims-col-date">Date / time</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>1</td>
+                        <td>Test planned and allocated</td>
+                        <td>Case {{ inward?.caseNo }} · Sample {{ sample?.sampleNo || sample?.sampleRegNo || inward?.sampleNo || '—' }} · Method {{ plans[p].methodName || plans[p].specification || '—' }}</td>
+                        <td>{{ inward?.receivedOn || '—' }}</td>
+                      </tr>
+                      <tr *ngIf="tlTiming?.testStartTime || (tlTest.status && tlTest.status !== 'Pending')">
+                        <td>2</td>
+                        <td>Testing started</td>
+                        <td>Performed by {{ tlTiming?.performedByName || '—' }}</td>
+                        <td>{{ tlTiming?.testStartTime ? formatDateTime(tlTiming.testStartTime) : '—' }}</td>
+                      </tr>
+                      <tr *ngIf="tlTest.status === 'Completed' || tlTest.status === 'Verified' || tlTest.status === 'PendingVerification'">
+                        <td>3</td>
+                        <td>Testing completed</td>
+                        <td>All parameters recorded and calculated.</td>
+                        <td>{{ tlTiming?.testEndTime ? formatDateTime(tlTiming.testEndTime) : '—' }}</td>
+                      </tr>
+                      <tr *ngIf="tlTest.status === 'Verified'">
+                        <td>4</td>
+                        <td>Verified and approved</td>
+                        <td>Technical verification completed (ISO 17025 Cl 7.7).</td>
+                        <td><span class="badge bg-success">Verified</span></td>
                       </tr>
                     </tbody>
                   </table>
@@ -1111,244 +711,22 @@
               </article>
             </div>
 
-            <!-- ========================================================== -->
-            <!-- TAB: ATTACHMENTS (Photos, Microstructure, Evidence)       -->
-            <!-- ========================================================== -->
-            <div class="tab-pane-content" *ngIf="activeTab === 'attachments'">
-              <div class="pagehead">
-                <div>
-                  <h2>Attachments &amp; Evidence</h2>
-                  <div class="sub">Attach test images and supporting evidence to the current execution record.</div>
-                </div>
-                <label *ngIf="!isViewMode" class="btn primary small cursor-pointer m-0">
-                  <i class="bi bi-plus-lg me-1"></i><span>Add Attachment</span>
-                  <input type="file" accept="image/*" multiple class="d-none"
-                    (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
-                </label>
-              </div>
-
-              <div class="grid2">
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Upload Images</h3>
-                    <span class="state">Images</span>
-                  </div>
-                  <div class="cardbody">
-                    <div class="img-dropzone">
-                      <div class="dropzone-icon">▧</div>
-                      <strong>Upload specimen or test images</strong>
-                      <p class="sub mb-2">Select one or more image files (fracture surface, microstructure, test setup).
-                      </p>
-                      <label *ngIf="!isViewMode" class="btn small cursor-pointer">
-                        <span>Choose Images</span>
-                        <input type="file" accept="image/*" multiple class="d-none"
-                          (change)="onFilesSelected($event, plans[p].tests[t].headerId)" />
-                      </label>
-                    </div>
-
-                    <!-- Staged Uploads -->
-                    <div *ngIf="selectedFilesMap[plans[p].tests[t].headerId]?.length"
-                      class="card-mt-12 p-2 bg-light rounded border">
-                      <div class="d-flex gap-2 align-items-center flex-wrap">
-                        <div *ngFor="let sf of selectedFilesMap[plans[p].tests[t].headerId]; let i = index"
-                          class="img-staged-item">
-                          <img [src]="sf.preview" (click)="openImage(sf.preview)" />
-                          <input type="text" class="form-control form-control-sm mt-1" [value]="sf.caption"
-                            (input)="updateCaption(plans[p].tests[t].headerId, i, $any($event.target).value)"
-                            placeholder="Caption..." />
-                        </div>
-                        <button type="button" class="btn primary small"
-                          (click)="uploadSelectedFiles(plans[p].tests[t].headerId)">
-                          <i class="bi bi-cloud-upload me-1"></i><span>Upload Staged Files</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Uploaded Images Gallery -->
-                    <div *ngIf="testImagesMap[plans[p].tests[t].headerId]?.length" class="img-gallery card-mt-12">
-                      <div *ngFor="let img of testImagesMap[plans[p].tests[t].headerId]" class="img-gallery-item"
-                        (click)="openImage(img.filePath || img.path || img.fileUrl || img.thumbnailUrl)">
-                        <img [src]="baseUrl + (img.filePath || img.fileUrl || img.thumbnailUrl)" />
-                        <span class="img-gallery-caption">{{ img.caption || '-' }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Attachment Guidance</h3>
-                  </div>
-                  <div class="cardbody">
-                    <div class="detail">
-                      <div class="ico">1</div>
-                      <div><label>Evidence type</label><strong>Specimen, fracture surface, setup or equipment
-                          display</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">2</div>
-                      <div><label>Metadata</label><strong>Caption, specimen reference, captured date/time and
-                          magnification when relevant</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">3</div>
-                      <div><label>Traceability</label><strong>Each attachment should be linked to the case, sample and
-                          test execution.</strong></div>
-                    </div>
-                  </div>
-                </article>
-              </div>
-            </div>
-
-            <!-- ========================================================== -->
-            <!-- TAB: HISTORY (Audit Trail & Lifecycle Events)               -->
-            <!-- ========================================================== -->
-            <div class="tab-pane-content" *ngIf="activeTab === 'history'">
-              <div class="pagehead">
-                <div>
-                  <h2>Audit Trail &amp; Lifecycle Events</h2>
-                  <div class="sub">Chronological record of lifecycle events for the selected test.</div>
-                </div>
-                <span class="state">ISO/IEC 17025 · Clause 7.5</span>
-              </div>
-
-              <div class="grid2">
-                <!-- Timeline Card -->
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Execution Timeline</h3>
-                  </div>
-                  <div class="cardbody">
-                    <div class="timeline">
-                      <!-- Event 1: Test Planned -->
-                      <div class="event">
-                        <div class="dot">1</div>
-                        <div class="eventbox">
-                          <div class="eventtop">
-                            <strong>Test Planned &amp; Allocated</strong>
-                            <span class="state">{{ inward?.receivedOn || 'Planned' }}</span>
-                          </div>
-                          <p>Case {{ inward?.caseNo }} · Sample {{ sample?.sampleRegNo || inward?.sampleNo }} · Method
-                            {{ plans[p].methodName || plans[p].specification || 'General' }}</p>
-                        </div>
-                      </div>
-
-                      <!-- Event 2: In Progress -->
-                      <div class="event">
-                        <div class="dot">2</div>
-                        <div class="eventbox">
-                          <div class="eventtop">
-                            <strong>Testing Started</strong>
-                            <span class="state amber">{{ testTimingMap[plans[p].tests[t].headerId]?.testStartTime ?
-                              formatDateTime(testTimingMap[plans[p].tests[t].headerId].testStartTime) : 'In Progress'
-                              }}</span>
-                          </div>
-                          <p>Performer: {{ testTimingMap[plans[p].tests[t].headerId]?.performedByName || 'Laboratory
-                            Analyst' }} · Configuration locked at test start.</p>
-                        </div>
-                      </div>
-
-                      <!-- Event 3: Testing Completed -->
-                      <div class="event"
-                        *ngIf="plans[p].tests[t].status === 'Completed' || plans[p].tests[t].status === 'Verified' || plans[p].tests[t].status === 'PendingVerification'">
-                        <div class="dot">3</div>
-                        <div class="eventbox">
-                          <div class="eventtop">
-                            <strong class="text-success">Testing Completed</strong>
-                            <span class="state green">{{
-                              formatDateTime(testTimingMap[plans[p].tests[t].headerId]?.testEndTime) }}</span>
-                          </div>
-                          <p>All parameters recorded &amp; calculated. Test execution concluded.</p>
-                        </div>
-                      </div>
-
-                      <!-- Event 4: Verification -->
-                      <div class="event" *ngIf="plans[p].tests[t].status === 'Verified'">
-                        <div class="dot">4</div>
-                        <div class="eventbox">
-                          <div class="eventtop">
-                            <strong class="text-primary">Verified &amp; Approved</strong>
-                            <span class="state green">Verified</span>
-                          </div>
-                          <p>Technical verification completed per ISO 17025 Clause 7.7.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-
-                <!-- Execution Governance Card -->
-                <article class="card">
-                  <div class="cardhead">
-                    <h3>Execution Governance</h3>
-                  </div>
-                  <div class="cardbody">
-                    <div class="detail">
-                      <div class="ico">◇</div>
-                      <div><label>Case No.</label><strong>{{ inward?.caseNo || '—' }}</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">◇</div>
-                      <div><label>Test Name</label><strong>{{ plans[p].tests[t]?.name }}</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">◉</div>
-                      <div><label>Current Status</label><strong><span class="state"
-                            [ngClass]="plans[p].tests[t]?.status === 'Completed' ? 'green' : 'amber'">{{
-                            plans[p].tests[t]?.status || 'In Progress' }}</span></strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">👤</div>
-                      <div><label>Performer</label><strong>{{ testTimingMap[plans[p].tests[t].headerId]?.performedByName
-                          || 'System User' }}</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">⌘</div>
-                      <div><label>Total Parameters</label><strong class="text-primary">{{
-                          plans[p].tests[t].parameters?.length || 0 }}</strong></div>
-                    </div>
-                    <div class="detail">
-                      <div class="ico">✓</div>
-                      <div><label>NABL Status</label><strong><span class="badge"
-                            [ngClass]="isNablAccredited(plans[p].tests[t]) ? 'pass' : 'scope'">{{
-                            isNablAccredited(plans[p].tests[t]) ? 'In Scope' : 'Out of Scope' }}</span></strong></div>
-                    </div>
-                  </div>
-                </article>
-              </div>
-            </div>
-
-            <!-- ========================================================== -->
-            <!-- DOCKED FOOTER ACTION BAR                                   -->
-            <!-- ========================================================== -->
             <footer class="footer">
-              <div class="compliance">
-                ✿ &nbsp; ISO/IEC 17025:2017 Compliance <span class="muted">· Validated test execution workbench</span>
+              <div class="compliance" *ngIf="pillMetrics(p) as fm">
+                {{ fm.entered }}/{{ fm.total }} entered<span *ngIf="fm.fail > 0" class="text-danger"> · {{ fm.fail }} fail</span>
               </div>
               <div class="footeractions">
-                <button type="button" class="btn btn-lims btn-lims-print me-1" (click)="openRawDataSheetModal(p, t)"
-                  *ngIf="canViewRawDataSheet(plans[p].tests[t]?.status)"
-                  title="View / Print Technical Raw Data Sheet (ISO 17025 Cl 7.5)">
-                  <i class="bi bi-file-earmark-text me-1"></i><span>Raw Data Sheet</span>
-                </button>
-                <button type="button" class="btn" (click)="saveAsDraft(p, t)" [disabled]="isViewMode">
+                <button type="button" class="btn btn-lims btn-lims-save" (click)="saveAsDraft(p, t)" [disabled]="isViewMode || isSavingResult">
                   <i class="bi bi-bookmark me-1"></i><span>Save Draft</span>
                 </button>
-                <button type="button" class="btn" (click)="cancel()">
+                <button type="button" class="btn btn-lims btn-lims-cancel" (click)="cancel()">
                   <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
                 </button>
-                <button type="button" class="btn primary" *ngIf="canStartTest(plans[p].tests[t]?.status)"
-                  (click)="startTest(p, t)" [disabled]="isViewMode">
-                  <i class="bi bi-play-circle me-1"></i><span>Start Test</span>
+                <button type="button" class="btn btn-lims btn-lims-secondary" (click)="goToNextTab()" *ngIf="activeTab === 'execution'">
+                  <span>Next: NABL QA &amp; Audit →</span>
                 </button>
-                <button type="button" class="btn primary" (click)="goToNextTab()" *ngIf="activeTab !== 'history'">
-                  <span>Next: {{ activeTab === 'info' ? 'Execution' : activeTab === 'execution' ? 'Calculations' :
-                    activeTab === 'calculations' ? 'NABL & QA' : activeTab === 'nabl' ? 'Attachments' : 'History' }}
-                    →</span>
-                </button>
-                <button type="button" class="btn primary" (click)="completeTest(p, t)" *ngIf="activeTab === 'execution'"
-                  [disabled]="isViewMode || isHeaderCompleted(plans[p].tests[t].headerId)">
-                  <i class="bi bi-check-circle me-1"></i><span>Complete Test</span>
+                <button type="button" class="btn btn-lims btn-lims-secondary" (click)="switchTab('execution')" *ngIf="activeTab === 'nabl_audit'">
+                  <span>← Back to Execution</span>
                 </button>
               </div>
             </footer>
@@ -1455,7 +833,7 @@
           </div>
           <app-searchable-dropdown [placeholder]="'Search Test Method (e.g. IS 1608, ASTM E415...)'"
             [labelName]="'Test Method'" [fetchDataFn]="getTestMethodDropdown"
-            (itemSelected)="onTestMethodSelected($event)" [hideLabel]="true"></app-searchable-dropdown>
+            (itemSelected)="onTestMethodSelected($event)" [hideLabel]="true" [smallInput]="true"></app-searchable-dropdown>
         </div>
 
         <!-- Loading indicator -->
@@ -1752,16 +1130,26 @@
               <label class="form-label fw-semibold">Room Temperature (°C) <span class="text-danger">*</span></label>
               <div class="input-group input-group-sm">
                 <input type="number" step="0.1" class="form-control" formControlName="roomTemperature"
+                  [ngClass]="{ 'is-invalid': recordEnvForm.get('roomTemperature')?.touched && recordEnvForm.get('roomTemperature')?.invalid }"
                   placeholder="e.g. 23.5" />
                 <span class="input-group-text">°C</span>
+              </div>
+              <div *ngIf="recordEnvForm.get('roomTemperature')?.touched && recordEnvForm.get('roomTemperature')?.invalid">
+                <span *ngIf="recordEnvForm.get('roomTemperature')?.hasError('required')" class="text-danger text-sm">Room temperature is required.</span>
+                <span *ngIf="recordEnvForm.get('roomTemperature')?.hasError('min') || recordEnvForm.get('roomTemperature')?.hasError('max')" class="text-danger text-sm">Enter a value between -50 and 100 °C.</span>
               </div>
             </div>
             <div class="col-6">
               <label class="form-label fw-semibold">Relative Humidity (%) <span class="text-danger">*</span></label>
               <div class="input-group input-group-sm">
                 <input type="number" step="0.1" class="form-control" formControlName="roomHumidity"
+                  [ngClass]="{ 'is-invalid': recordEnvForm.get('roomHumidity')?.touched && recordEnvForm.get('roomHumidity')?.invalid }"
                   placeholder="e.g. 55.0" />
                 <span class="input-group-text">% RH</span>
+              </div>
+              <div *ngIf="recordEnvForm.get('roomHumidity')?.touched && recordEnvForm.get('roomHumidity')?.invalid">
+                <span *ngIf="recordEnvForm.get('roomHumidity')?.hasError('required')" class="text-danger text-sm">Relative humidity is required.</span>
+                <span *ngIf="recordEnvForm.get('roomHumidity')?.hasError('min') || recordEnvForm.get('roomHumidity')?.hasError('max')" class="text-danger text-sm">Enter a value between 0 and 100 %.</span>
               </div>
             </div>
           </div>
@@ -1770,7 +1158,7 @@
           <button type="button" class="btn btn-lims btn-lims-cancel" (click)="closeRecordEnvironmentModal()">
             <i class="bi bi-x-circle me-1"></i><span>Cancel</span>
           </button>
-          <button type="submit" class="btn btn-lims btn-lims-save" [disabled]="recordEnvForm.invalid">
+          <button type="submit" class="btn btn-lims btn-lims-save">
             <i class="bi bi-check-circle me-1"></i><span>Save</span>
           </button>
         </div>
@@ -1782,332 +1170,597 @@
 <!-- ================================================================ -->
 <!-- TECHNICAL RAW DATA SHEET PREVIEW MODAL (ISO 17025 Clause 7.5)   -->
 <!-- ================================================================ -->
-<div *ngIf="showRawDataSheetModal" class="modal d-block modal-backdrop-custom" tabindex="-1">
+<div *ngIf="showRawDataSheetModal" class="modal d-block modal-backdrop-custom" tabindex="-1" (keydown.escape)="closeRawDataSheetModal()">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content border-0 shadow">
-      <!-- Modal Header (no-print) -->
-      <div class="modal-header raw-data-modal-header py-2 px-3 no-print d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-file-earmark-ruled fs-5 text-white"></i>
-          <div>
-            <h6 class="modal-title m-0 fw-bold text-white">TECHNICAL RAW DATA & OBSERVATION RECORD</h6>
-            <span class="text-white-50 text-xxs font-monospace">ISO/IEC 17025:2017 Clause 7.5 · Format No: DMSPL/L4/TRD/01</span>
-          </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <button type="button" class="btn btn-sm btn-light fw-bold text-dark d-inline-flex align-items-center" (click)="printRawDataSheet()">
-            <i class="bi bi-printer-fill text-danger me-1"></i><span>Print Raw Data Sheet</span>
-          </button>
-          <button type="button" class="btn-close btn-close-white" (click)="closeRawDataSheetModal()"></button>
-        </div>
+      <div class="modal-header modal-header-red py-2 px-3 no-print">
+        <h6 class="modal-title m-0 d-flex align-items-center">
+          <span>Raw Data Sheet</span>
+          <span class="badge bg-light text-dark border font-monospace ms-2" *ngIf="rawDataSheetData?.sample?.sampleNo">{{ rawDataSheetData.sample.sampleNo }}</span>
+        </h6>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeRawDataSheetModal()"></button>
       </div>
 
-      <!-- Modal Body / Document Sheet -->
-      <div class="modal-body p-3 bg-light">
-        <div class="raw-data-document bg-white p-4 border rounded shadow-sm">
-          
-          <!-- Document Header -->
-          <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-            <div class="d-flex align-items-center gap-3">
-              <div class="raw-data-brand-box bg-danger text-white fw-bold px-3 py-2 rounded text-center">
-                <div class="fs-4 lh-1">DMS</div>
-                <div class="text-xxs tracking-wider">LABS</div>
-              </div>
-              <div>
-                <h5 class="fw-bold text-dark m-0">DEEP METALLURGICAL SERVICES</h5>
-                <div class="text-muted small">NABL ACCREDITED TESTING LABORATORY (ISO/IEC 17025:2017)</div>
-                <div class="text-secondary text-xxs">Testing of Metals, Mechanical, Metallurgical & Chemical Properties</div>
-              </div>
+      <div class="modal-body p-3 rds-modal-paper-bg">
+        <!-- A4 NABL Technical Raw Data Sheet matching DMSPL reference format (Calibri / Arial, 9pt body, 12pt underlined title) -->
+        <div class="raw-data-document" *ngIf="rawDataSheetData as rds">
+
+          <!-- BOX 1: Document Title & Sample / Customer Identification -->
+          <div class="rds-header-box">
+            <div class="rds-header-left">Case No: {{ rds.inward?.caseNo || '—' }}</div>
+            <div class="rds-title">Raw Data Sheet</div>
+            <div class="rds-header-right">Page 1 of 1</div>
+          </div>
+
+          <table class="rds-grid">
+            <tbody>
+              <tr>
+                <td class="rds-label">Sample ID</td>
+                <td class="rds-strong">{{ rds.sample?.sampleNo || '—' }}</td>
+                <td class="rds-label">Case No</td>
+                <td>{{ rds.inward?.caseNo || '—' }}</td>
+                <td class="rds-label">Sample Received On</td>
+                <td>{{ rds.inward?.receivedOn || '—' }}</td>
+              </tr>
+              <tr>
+                <td class="rds-label">Customer Name</td>
+                <td colspan="5">{{ rds.inward?.customerName || '—' }}</td>
+              </tr>
+              <tr>
+                <td class="rds-label">Customer Address</td>
+                <td colspan="5">{{ rds.inward?.customerAddress || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- BOX 2: Information Provided by the Customer -->
+          <table class="rds-grid rds-grid-spaced">
+            <tbody>
+              <tr><td colspan="4" class="rds-band">INFORMATION PROVIDED BY THE CUSTOMER</td></tr>
+              <tr *ngIf="rds.info.reference">
+                <td class="rds-label">Reference.</td>
+                <td colspan="3">{{ rds.info.reference }}</td>
+              </tr>
+              <tr *ngIf="rds.info.description">
+                <td class="rds-label">Description</td>
+                <td colspan="3">{{ rds.info.description }}</td>
+              </tr>
+              <tr *ngIf="rds.info.stampedAs || rds.info.sampleDrawnBy">
+                <td class="rds-label">Stamped As</td>
+                <td>{{ rds.info.stampedAs || '—' }}</td>
+                <td class="rds-label">Sample Drawn By</td>
+                <td>{{ rds.info.sampleDrawnBy || '—' }}</td>
+              </tr>
+              <tr *ngIf="rds.info.heatNo || rds.info.batchNo">
+                <td class="rds-label">Heat No</td>
+                <td>{{ rds.info.heatNo || '—' }}</td>
+                <td class="rds-label">Batch No</td>
+                <td>{{ rds.info.batchNo || '—' }}</td>
+              </tr>
+              <tr *ngIf="rds.info.natureOfSample">
+                <td class="rds-label">Nature of Sample</td>
+                <td colspan="3">{{ rds.info.natureOfSample }}</td>
+              </tr>
+              <tr *ngIf="rds.info.specification">
+                <td class="rds-label">Specification</td>
+                <td colspan="3">{{ rds.info.specification }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- BOX 3: Test Discipline, Compact Execution Metadata & Seamlessly Joined Results + Conformity -->
+          <table class="rds-grid rds-grid-spaced">
+            <tbody>
+              <tr>
+                <td class="rds-band-left">
+                  {{ rds.info.discipline || 'TEST' }}<span *ngIf="rds.info.technique && rds.info.technique !== rds.info.testName"> &nbsp;|&nbsp; {{ rds.info.technique }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="rds-test-meta-cell">
+                  <div class="rds-meta-line"><span class="rds-key">Test Name :</span> <span class="rds-strong">{{ rds.info.testName || '—' }}</span></div>
+                  <div class="rds-meta-line">
+                    <span class="rds-key">Test Method :</span> {{ rds.info.method || '—' }}
+                    <span class="rds-meta-sep">|</span>
+                    <span class="rds-key">Dt. of Testing :</span> {{ rds.info.testedOn || '—' }}
+                  </div>
+                  <div class="rds-meta-line" *ngFor="let eq of rds.equipment">
+                    <span class="rds-key">Equipment :</span> {{ sheetEquipmentLine(eq) }}
+                  </div>
+                  <div class="rds-meta-line" *ngIf="!rds.equipment.length">
+                    <span class="rds-key">Equipment :</span> —
+                  </div>
+                  <div class="rds-meta-line" *ngIf="rds.info.environment || rds.info.specimenSize">
+                    <ng-container *ngIf="rds.info.environment"><span class="rds-key">Environment :</span> {{ rds.info.environment }}</ng-container>
+                    <span class="rds-meta-sep" *ngIf="rds.info.environment && rds.info.specimenSize">|</span>
+                    <ng-container *ngIf="rds.info.specimenSize"><span class="rds-key">Specimen Size :</span> {{ rds.info.specimenSize }}</ng-container>
+                  </div>
+                  <div class="rds-meta-line">
+                    <span class="rds-key">Accreditation Scope :</span> {{ rds.info.accreditationScope || '—' }}
+                    <span class="rds-meta-sep">|</span>
+                    <span class="rds-key">Overall Verdict :</span> <span class="rds-strong">{{ rds.info.verdictLabel || '—' }}</span>
+                  </div>
+                  <div class="rds-meta-line" *ngIf="rds.conditions.length">
+                    <span class="rds-key">Specification Conditions :</span>
+                    <span *ngFor="let c of rds.conditions; let last = last"> {{ c.label }}: {{ c.value }}<span *ngIf="!last">;</span></span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- The results, in the layout the test was entered with (read-only copy of the result screen) -->
+          <app-configured-test-layout-renderer *ngIf="rds.layout" [printMode]="true" [layoutConfig]="rds.layout"
+            [testPlan]="rds.plan" [test]="rds.test" [testFormGroup]="rds.testGroup" [sample]="rds.sample" [inward]="rds.inward"
+            [nablInScope]="isNablAccredited(rds.test)" [uncertaintyData]="uncertaintyMap[rds.test?.headerId] || []"
+            [activeTabSection]="'execution'" [environmentData]="rds.env" [timingData]="rds.timing"
+            [selectedEquipment]="rds.equipment" [testImages]="rds.images">
+          </app-configured-test-layout-renderer>
+
+          <!-- A test without a layout: grouped unique-parameter table with side-by-side specimens -->
+          <table class="rds-grid rds-results" *ngIf="!rds.layout">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Unit</th>
+                <th *ngFor="let lbl of rds.rawSpecimenLabels">{{ lbl }}</th>
+                <th>Requirement</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of rds.rawParameters">
+                <td>{{ r.name }}</td>
+                <td>{{ r.unit || '—' }}</td>
+                <td *ngFor="let val of r.specimenValues">{{ val }}</td>
+                <td>{{ r.requirement }}</td>
+              </tr>
+              <tr *ngIf="!rds.rawParameters.length">
+                <td [attr.colspan]="3 + (rds.rawSpecimenLabels?.length || 1)">No parameters.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="rds-sign" *ngIf="!rds.hasSignSection">
+            <div>
+              <div class="rds-key">Tested By</div>
+              <div class="rds-sign-name">{{ rds.info.testedBy || '—' }}</div>
+              <div class="rds-sign-time" *ngIf="rds.info.testedDateTime">{{ rds.info.testedDateTime }}</div>
             </div>
             <div class="text-end">
-              <span class="badge bg-danger-subtle text-danger border border-danger fw-bold px-2 py-1 mb-1 d-inline-block">
-                TECHNICAL RAW DATA SHEET
-              </span>
-              <div class="text-xxs font-monospace text-muted">Clause 7.5 Technical Records</div>
-              <div class="text-xxs font-monospace text-secondary">Date: {{ rawDataSheetData?.generatedAt | date:'dd-MMM-yyyy HH:mm' }}</div>
+              <div class="rds-key">Reviewed &amp; Authorized by</div>
+              <div class="rds-sign-space"></div>
+              <div>&nbsp;</div>
             </div>
           </div>
 
-          <!-- Section 1: Sample & Customer Identification -->
-          <div class="mb-3">
-            <div class="raw-data-section-title">
-              <i class="bi bi-tag-fill text-danger me-1"></i>I. SAMPLE IDENTIFICATION & CUSTOMER CONTEXT
-            </div>
-            <table class="table table-bordered table-sm raw-data-meta-table mb-0">
-              <tbody>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary col-w-15">Sample ID / UID</td>
-                  <td class="fw-bold font-monospace text-danger col-w-35">{{ rawDataSheetData?.sample?.sampleNo || '—' }}</td>
-                  <td class="bg-light fw-semibold text-secondary col-w-15">Case / Inward No</td>
-                  <td class="fw-bold font-monospace col-w-35">{{ rawDataSheetData?.inward?.caseNo || '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary">Customer Name</td>
-                  <td class="fw-bold">{{ rawDataSheetData?.inward?.customerName || '—' }}</td>
-                  <td class="bg-light fw-semibold text-secondary">PO / Ref No</td>
-                  <td class="font-monospace">{{ rawDataSheetData?.inward?.poNo || '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary">Material / Grade</td>
-                  <td class="fw-bold">{{ rawDataSheetData?.sample?.material || '—' }}</td>
-                  <td class="bg-light fw-semibold text-secondary">Metal Classification</td>
-                  <td>{{ rawDataSheetData?.sample?.metalClassification || '—' }}</td>
-                </tr>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary">Heat / Batch No</td>
-                  <td class="font-monospace">{{ rawDataSheetData?.sample?.heatNo || rawDataSheetData?.sample?.batchNo || '—' }}</td>
-                  <td class="bg-light fw-semibold text-secondary">Sampling Method</td>
-                  <td>{{ rawDataSheetData?.plan?.sampling || 'Customer Supplied (As Received)' }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="rds-end">--------------End of Raw Data Sheet--------------</div>
+        </div>
+      </div>
+
+      <div class="modal-footer py-2 px-3 bg-light border-top no-print d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-lims btn-lims-cancel" (click)="closeRawDataSheetModal()">
+          <i class="bi bi-x-circle"></i><span>Close</span>
+        </button>
+        <button type="button" class="btn btn-lims btn-lims-print" (click)="printRawDataSheet()">
+          <i class="bi bi-printer"></i><span>Print</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- CASE DOSSIER (case-level data; not part of per-test tabs)        -->
+<!-- ================================================================ -->
+<div *ngIf="caseDetailsVisible" class="modal d-block modal-backdrop-custom" tabindex="-1" (keydown.escape)="closeCaseDetails()">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header modal-header-red py-2 px-3">
+        <h6 class="modal-title m-0 d-flex align-items-center">
+          <i class="bi bi-folder2-open me-2 text-danger"></i><span>Case Details</span>
+          <span class="badge bg-light text-dark border font-monospace ms-2" *ngIf="inward?.caseNo">{{ inward.caseNo }}</span>
+          <span class="badge bg-light text-dark border font-monospace ms-1" *ngIf="sample?.sampleNo">{{ sample.sampleNo }}</span>
+        </h6>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeCaseDetails()"></button>
+      </div>
+      <div class="modal-body p-2">
+    <!-- 2. Dual Case Registration & Sample Material Cards -->
+    <div class="dossier-grid mb-2">
+      <!-- CARD A: CASE & CUSTOMER REGISTRATION -->
+      <article class="lims-section">
+        <div class="lims-section-head">
+          <h3>Case &amp; Customer Registration</h3>
+          <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">ISO 17025 Cl 7.1</span>
+        </div>
+        <div class="case-meta-grid">
+          <div class="case-meta-item">
+            <span class="case-meta-label">Case Number</span>
+            <span class="case-meta-val font-monospace fw-bold text-dark">{{ inward?.caseNo || '—' }}</span>
           </div>
-
-          <!-- Section 2: Test Method, Equipment & Environmental Conditions -->
-          <div class="mb-3">
-            <div class="raw-data-section-title">
-              <i class="bi bi-gear-fill text-danger me-1"></i>II. TEST METHOD, EQUIPMENT & ENVIRONMENTAL TRACEABILITY
-            </div>
-            <table class="table table-bordered table-sm raw-data-meta-table mb-0">
-              <tbody>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary col-w-15">Test Name</td>
-                  <td class="fw-bold text-dark col-w-35">{{ rawDataSheetData?.test?.name || rawDataSheetData?.plan?.type }}</td>
-                  <td class="bg-light fw-semibold text-secondary col-w-15">Standard Method</td>
-                  <td class="fw-bold col-w-35">{{ rawDataSheetData?.plan?.methodName || 'Standard Method' }}</td>
-                </tr>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary">Testing Equipment</td>
-                  <td class="fw-semibold">{{ rawDataSheetData?.test?.equipmentName || 'Laboratory Test Apparatus' }}</td>
-                  <td class="bg-light fw-semibold text-secondary">Equipment Calibration</td>
-                  <td><span class="badge bg-success-subtle text-success border border-success">Valid & Traceable</span></td>
-                </tr>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary">Ambient Temperature</td>
-                  <td>{{ rawDataSheetData?.envData?.temperature }} °C</td>
-                  <td class="bg-light fw-semibold text-secondary">Relative Humidity</td>
-                  <td>{{ rawDataSheetData?.envData?.humidity }} % RH</td>
-                </tr>
-                <tr>
-                  <td class="bg-light fw-semibold text-secondary">Testing Medium</td>
-                  <td>{{ rawDataSheetData?.envData?.medium || 'Ambient Air' }}</td>
-                  <td class="bg-light fw-semibold text-secondary">Test Speed / Rate</td>
-                  <td>{{ rawDataSheetData?.envData?.speed || '2 mm/min' }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Customer Name</span>
+            <span class="case-meta-val fw-bold text-dark text-truncate" [title]="inward?.customerName">{{ inward?.customerName || '—' }}</span>
           </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Purchase Order / Ref</span>
+            <span class="case-meta-val font-monospace">{{ inward?.poNo || '—' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Receipt &amp; Inward Date</span>
+            <span class="case-meta-val">{{ inward?.receivedOn || '—' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Statement of Conformity</span>
+            <span class="case-meta-val">{{ inward?.statementOfConformity || 'Standard Pass/Fail requested' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Agreed Decision Rule</span>
+            <span class="case-meta-val">{{ inward?.decisionRule || 'Simple Acceptance Binary Rule (w=0)' }}</span>
+          </div>
+          <div class="case-meta-item case-meta-item-full">
+            <span class="case-meta-label">Sample Receipt Condition &amp; Notes</span>
+            <span class="case-meta-val text-muted fst-italic">{{ inward?.sampleReceiptNote || 'Received intact in good condition with identification mark.' }}</span>
+          </div>
+        </div>
+      </article>
 
-          <!-- Section 3: UNIFIED RAW DATA MEASUREMENT MATRIX -->
-          <div class="mb-3">
-            <div class="raw-data-section-title">
-              <i class="bi bi-table text-danger me-1"></i>III. UNIFIED TECHNICAL RAW DATA MATRIX (OBSERVED READINGS)
-            </div>
+      <!-- CARD B: SAMPLE MATERIAL & TECHNICAL CHARACTERIZATION -->
+      <article class="lims-section">
+        <div class="lims-section-head">
+          <h3>Sample Material &amp; Specification</h3>
+          <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Sample Traceability</span>
+        </div>
+        <div class="case-meta-grid">
+          <div class="case-meta-item">
+            <span class="case-meta-label">Sample Registration ID</span>
+            <span class="case-meta-val font-monospace fw-bold text-danger">{{ sample?.sampleNo || '—' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Material / Grade</span>
+            <span class="case-meta-val fw-bold text-dark text-truncate" [title]="sample?.productMasterName || sample?.material">
+              {{ sample?.productMasterName || sample?.material || 'Structural Steel' }}
+            </span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Metal Classification</span>
+            <span class="case-meta-val">{{ sample?.metalClassification || 'Not specified' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Product Form / Section</span>
+            <span class="case-meta-val">{{ sample?.productSizeFormatted || sample?.productSizeDescription || sample?.productForm || '—' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Heat / Cast Number</span>
+            <span class="case-meta-val font-monospace fw-bold">{{ sample?.heatNo || '—' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Batch / Lot Number</span>
+            <span class="case-meta-val font-monospace">{{ sample?.batchNo || '—' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Stamped As / Marking</span>
+            <span class="case-meta-val font-monospace">{{ sample?.stampedAs || sample?.details || '—' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Thermal Condition / Heat Treatment</span>
+            <span class="case-meta-val">{{ sample?.heatTreatment || 'As Received / Standard' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Specimen Orientation</span>
+            <span class="case-meta-val">{{ sample?.specimenOrientation || 'Longitudinal (L)' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Sampling Protocol</span>
+            <span class="case-meta-val text-truncate" [title]="sample?.sampling">{{ sample?.sampling || 'Customer Supplied (As Received)' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Specimen Preparation</span>
+            <span class="case-meta-val">{{ sample?.specimenPreparation || 'Direct Testing (No Prep)' }}</span>
+          </div>
+          <div class="case-meta-item">
+            <span class="case-meta-label">Report Format Profile</span>
+            <span class="case-meta-val text-truncate" [title]="sample?.reportFormatName">{{ sample?.reportFormatName || 'Standard Laboratory Report' }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
 
-            <!-- Reading Matrix (Spots / Indentations / Specimens) -->
-            <div *ngIf="rawDataSheetData?.readingRows?.length > 0" class="table-responsive">
-              <table class="table table-bordered table-sm raw-data-reading-table text-center mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th class="text-start col-w-25">Target Parameter</th>
-                    <th class="col-w-8">Unit</th>
-                    <th *ngFor="let val of rawDataSheetData.readingRows[0]?.values; let spotIdx = index" class="col-spot-cell">
-                      Spot {{ spotIdx + 1 }}
-                    </th>
-                    <th class="bg-primary-subtle text-primary col-w-10">Mean / Avg</th>
-                    <th class="col-w-8">Min</th>
-                    <th class="col-w-8">Max</th>
-                    <th class="col-w-8">Std Dev (σ)</th>
-                    <th class="col-w-14">Requirement</th>
-                    <th class="col-w-10">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let row of rawDataSheetData.readingRows">
-                    <td class="text-start fw-bold">{{ row.name }}</td>
-                    <td class="text-secondary font-monospace">{{ row.unit }}</td>
-                    <td *ngFor="let v of row.values" class="font-monospace fw-semibold">
-                      {{ v != null ? v : '—' }}
-                    </td>
-                    <td class="bg-primary-subtle text-primary fw-bold font-monospace">{{ row.avg }}</td>
-                    <td class="text-secondary font-monospace">{{ row.min }}</td>
-                    <td class="text-secondary font-monospace">{{ row.max }}</td>
-                    <td class="text-muted font-monospace">{{ row.stdev }}</td>
-                    <td class="fw-medium text-dark">{{ row.requirement }}</td>
-                    <td>
-                      <span class="badge" [ngClass]="row.statusBadgeClass">
-                        {{ row.status }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+    <!-- 3. As-Received Physical Dimensions & Geometric Profile Strip -->
+    <article class="lims-section">
+      <div class="lims-section-head">
+        <h3>As-Received Physical Dimensions &amp; Geometric Profile</h3>
+        <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Dimensional Verification</span>
+      </div>
+      <div class="geom-metric-strip">
+        <div class="geom-cell">
+          <span class="geom-label">Diameter (d)</span>
+          <span class="geom-val">{{ sample?.diameter ? sample.diameter + ' mm' : '—' }}</span>
+        </div>
+        <div class="geom-cell">
+          <span class="geom-label">Thickness (t)</span>
+          <span class="geom-val">{{ sample?.thickness ? sample.thickness + ' mm' : '—' }}</span>
+        </div>
+        <div class="geom-cell">
+          <span class="geom-label">Width (w)</span>
+          <span class="geom-val">{{ sample?.width ? sample.width + ' mm' : '—' }}</span>
+        </div>
+        <div class="geom-cell">
+          <span class="geom-label">Length (L)</span>
+          <span class="geom-val">{{ sample?.length ? sample.length + ' mm' : '—' }}</span>
+        </div>
+        <div class="geom-cell">
+          <span class="geom-label">Cross-Section Area (S₀)</span>
+          <span class="geom-val">{{ sample?.crossSectionArea ? sample.crossSectionArea + ' mm²' : '—' }}</span>
+        </div>
+        <div class="geom-cell">
+          <span class="geom-label">Gauge Length (L₀)</span>
+          <span class="geom-val">{{ sample?.gaugeLength ? sample.gaugeLength + ' mm' : '—' }}</span>
+        </div>
+      </div>
+    </article>
 
-            <!-- Specimen Matrix (Tensile) -->
-            <div *ngIf="rawDataSheetData?.specimenData?.length > 0 && (!rawDataSheetData?.readingRows || rawDataSheetData.readingRows.length === 0)" class="table-responsive">
-              <table class="table table-bordered table-sm raw-data-reading-table text-center mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Specimen</th>
-                    <th>Dia / Thick (mm)</th>
-                    <th>Width (mm)</th>
-                    <th>Area (mm²)</th>
-                    <th>Gauge L0 (mm)</th>
-                    <th>Yield Load (kN)</th>
-                    <th>Peak Load (kN)</th>
-                    <th>Yield Strength (MPa)</th>
-                    <th>Tensile Strength (MPa)</th>
-                    <th>% Elongation</th>
-                    <th>% Red. Area</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let spm of rawDataSheetData.specimenData">
-                    <td class="fw-bold">{{ spm.id }}</td>
-                    <td>{{ spm.diameter || spm.thickness || '—' }}</td>
-                    <td>{{ spm.width || '—' }}</td>
-                    <td class="font-monospace">{{ spm.area || '—' }}</td>
-                    <td>{{ spm.gaugeLength || '—' }}</td>
-                    <td class="font-monospace">{{ spm.yieldLoad || '—' }}</td>
-                    <td class="font-monospace">{{ spm.peakLoad || '—' }}</td>
-                    <td class="fw-bold text-primary font-monospace">{{ spm.proofStress || '—' }}</td>
-                    <td class="fw-bold text-primary font-monospace">{{ spm.uts || '—' }}</td>
-                    <td class="font-monospace">{{ spm.elongation != null ? spm.elongation + '%' : '—' }}</td>
-                    <td class="font-monospace">{{ spm.reductionOfArea != null ? spm.reductionOfArea + '%' : '—' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- General Parameters Fallback -->
-            <div *ngIf="(!rawDataSheetData?.readingRows || rawDataSheetData.readingRows.length === 0) && (!rawDataSheetData?.specimenData || rawDataSheetData.specimenData.length === 0)" class="table-responsive">
-              <table class="table table-bordered table-sm raw-data-reading-table text-center mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th class="text-start">Parameter Name</th>
-                    <th>Unit</th>
-                    <th>Observed Result</th>
-                    <th>Requirement Limit</th>
-                    <th>Conformity Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let p of rawDataSheetData.rawParameters">
-                    <td class="text-start fw-bold">{{ p.name }}</td>
-                    <td class="text-secondary font-monospace">{{ p.unit || '—' }}</td>
-                    <td class="fw-bold font-monospace text-primary">{{ p.value != null ? p.value : '—' }}</td>
-                    <td>{{ p.requirement || '—' }}</td>
-                    <td>
-                      <span class="badge" [ngClass]="p.status === 'pass' ? 'bg-success text-white' : p.status === 'fail' ? 'bg-danger text-white' : 'bg-light text-muted border'">
-                        {{ (p.status || 'PENDING') | uppercase }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Microhardness Traverse Profile (if present) -->
-            <div *ngIf="rawDataSheetData?.traversePoints?.length > 0" class="mt-2 p-2 bg-light rounded border">
-              <div class="fw-semibold text-secondary small mb-1">
-                <i class="bi bi-graph-up text-danger me-1"></i>Microhardness Traverse Profile (Distance from Surface vs HV):
-              </div>
-              <div class="d-flex flex-wrap gap-2">
-                <span *ngFor="let pt of rawDataSheetData.traversePoints" class="badge bg-white text-dark border font-monospace">
-                  {{ pt.distance }} mm: <strong>{{ pt.hardness != null ? pt.hardness + ' HV' : '—' }}</strong>
+    <!-- 4. Planned Tests & Laboratory Execution Matrix for this Case / Sample -->
+    <article class="lims-section">
+      <div class="lims-section-head">
+        <div class="d-flex align-items-center gap-2">
+          <h3>Planned Tests &amp; Laboratory Execution Matrix</h3>
+          <span class="badge bg-light text-dark border font-monospace text-xxs">{{ getAllCaseTestsList().length }} Tests</span>
+        </div>
+        <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Case Scope</span>
+      </div>
+      <div class="table-responsive">
+        <table class="case-tests-table">
+          <thead>
+            <tr>
+              <th style="width: 36px;">#</th>
+              <th>Laboratory Test / Discipline</th>
+              <th>Test Method Standard</th>
+              <th>Specification Grade</th>
+              <th style="width: 70px; text-align: center;">Qty</th>
+              <th style="width: 80px; text-align: center;">Params</th>
+              <th style="width: 110px;">Status</th>
+              <th style="width: 95px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ct of getAllCaseTestsList(); let r = index" [class.table-active]="activePlanIndex === ct.planIndex">
+              <td class="font-monospace text-muted">{{ r + 1 }}</td>
+              <td>
+                <strong>{{ ct.testName }}</strong>
+              </td>
+              <td>
+                <span class="text-secondary">{{ ct.methodName }}</span>
+              </td>
+              <td>
+                <span class="text-dark">{{ ct.specification }}</span>
+              </td>
+              <td class="text-center">
+                <span class="font-monospace fw-bold">{{ ct.quantity }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-light text-secondary border font-monospace text-xxs">{{ ct.parametersCount }}</span>
+              </td>
+              <td>
+                <span class="badge font-monospace text-xxs" [ngClass]="getSampleStatusBadgeClass(ct.status)">
+                  {{ ct.status }}
                 </span>
-                <span *ngIf="rawDataSheetData.effectiveCaseDepth != null" class="badge bg-danger text-white font-monospace ms-auto">
-                  Effective Case Depth (Cutoff 550 HV): <strong>{{ rawDataSheetData.effectiveCaseDepth }} mm</strong>
-                </span>
-              </div>
-            </div>
-          </div>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn btn-lims btn-lims-secondary lims-btn-row"
+                  (click)="selectTestFromCaseDossier(ct.planIndex, ct.testIndex)"
+                  title="Open this test in Execution Workspace">
+                  Open
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!getAllCaseTestsList().length">
+              <td colspan="8" class="text-center py-2 text-muted">No planned tests found for this case.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
 
-          <!-- Section 4: SOP Checklist & Inspection Verification -->
-          <div *ngIf="rawDataSheetData?.checklist?.length > 0" class="mb-3">
-            <div class="raw-data-section-title">
-              <i class="bi bi-check2-square text-danger me-1"></i>IV. SOP & TECHNICAL QUALITY VERIFICATION
-            </div>
-            <table class="table table-bordered table-sm raw-data-meta-table mb-0">
-              <tbody>
-                <tr *ngFor="let c of rawDataSheetData.checklist; let cIdx = index">
-                  <td class="text-secondary font-monospace col-w-5">#{{ cIdx + 1 }}</td>
-                  <td class="col-w-75">{{ c.label || c.itemDescription }}</td>
-                  <td class="text-center col-w-20">
-                    <span class="badge" [ngClass]="c.status === 'Pass' ? 'bg-success text-white' : c.status === 'Fail' ? 'bg-danger text-white' : 'bg-secondary text-white'">
-                      {{ c.status || 'Verified' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-          <!-- Section 5: Decision Rule & Statement of Conformity -->
-          <div class="mb-3">
-            <div class="raw-data-section-title">
-              <i class="bi bi-shield-check text-danger me-1"></i>V. ISO/IEC 17025 ILAC-G8 STATEMENT OF CONFORMITY
-            </div>
-            <div class="p-2 border rounded bg-light">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="small fw-semibold text-dark">
-                  Decision Rule: <strong>{{ rawDataSheetData?.decisionRule?.ruleType || 'Simple Acceptance (Binary, w = 0)' }}</strong>
-                  <span class="text-muted ms-2">(Confidence Level: {{ rawDataSheetData?.decisionRule?.confidenceLevel || 95 }}%)</span>
-                </span>
-                <span class="badge bg-success text-white px-2 py-1">
-                  <i class="bi bi-check-circle me-1"></i>{{ rawDataSheetData?.decisionRule?.acceptanceStatus || 'CONFORMING (PASS)' }}
-                </span>
-              </div>
-              <div class="text-secondary text-xxs fst-italic">
-                "{{ rawDataSheetData?.decisionRule?.statementText || 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).' }}"
-              </div>
-            </div>
-          </div>
+<!-- One shared confirm dialog (start / complete / delete / nonconforming work) -->
+<app-confirm-dialog
+  [visible]="confirmState.visible"
+  [title]="confirmState.title"
+  [message]="confirmState.message"
+  [confirmLabel]="confirmState.confirmLabel"
+  [variant]="confirmState.variant"
+  (confirmed)="onGenericConfirmed()"
+  (cancelled)="onGenericCancelled()">
+</app-confirm-dialog>
 
-          <!-- Section 6: Governance & Traceability Sign-off -->
+<!-- Submit for Verification Confirmation Dialog (NABL ISO 17025 Cl 7.7) -->
+<app-confirm-dialog
+  [visible]="showVerificationConfirmDialog"
+  title="Submit for Verification"
+  message="Are you sure you want to submit this test result for verification? Once submitted, the test will be locked pending reviewer verification."
+  confirmLabel="Submit for Verification"
+  variant="primary"
+  (confirmed)="onVerificationConfirmed()"
+  (cancelled)="onVerificationCancelled()">
+</app-confirm-dialog>
+
+<!-- Specimen Size Modal (Task L8.1 Option 1) -->
+<div class="specimen-size-modal-backdrop" *ngIf="specimenSizeModalVisible">
+  <div class="modal-dialog modal-dialog-centered specimen-size-dialog">
+    <div class="modal-content border shadow-lg bg-white">
+      <div class="modal-header py-2 px-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+        <h6 class="modal-title m-0 fw-semibold d-flex align-items-center gap-1.5 text-danger">
+          <i class="bi bi-rulers"></i>
+          <span>Specimen Size Configuration</span>
+        </h6>
+        <button type="button" class="btn-close" (click)="closeSpecimenSizeModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-3">
+        <!-- Test summary strip -->
+        <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded border text-xxs">
           <div>
-            <div class="raw-data-section-title">
-              <i class="bi bi-pen text-danger me-1"></i>VI. EXECUTION & TECHNICAL VERIFICATION SIGN-OFF
+            <span class="text-muted">Test:</span>
+            <strong class="ms-1">{{ plans[activeSizePlanIndex]?.tests?.[activeSizeTestIndex]?.name || 'Test' }}</strong>
+          </div>
+          <div>
+            <span class="text-muted">Planned Qty:</span>
+            <strong class="badge bg-secondary ms-1">{{ getActivePlanSpecimenCount(activeSizePlanIndex) }}</strong>
+          </div>
+          <div>
+            <span class="badge" [ngClass]="isSpecimenSizeRequired(plans[activeSizePlanIndex]?.tests?.[activeSizeTestIndex]) ? 'bg-danger' : 'bg-info'">
+              {{ isSpecimenSizeRequired(plans[activeSizePlanIndex]?.tests?.[activeSizeTestIndex]) ? 'Required *' : 'Optional' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Specimen Profile Radio Group -->
+        <fieldset class="border rounded p-2 mb-3">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 m-0 text-xs">
+            <i class="bi bi-diagram-3"></i> Specimen Cross-Section Profile
+          </legend>
+          <div class="d-flex align-items-center gap-3 pt-1">
+            <div class="form-check form-check-inline m-0">
+              <input class="form-check-input" type="radio" id="profRound" name="specimenProfile"
+                [checked]="specimenSizeProfile === 'round'" (change)="setSpecimenSizeProfile('round')" />
+              <label class="form-check-label text-xs fw-medium cursor-pointer" for="profRound">
+                Round Bar (⌀ Diameter)
+              </label>
             </div>
-            <div class="row g-2">
-              <div class="col-6">
-                <div class="p-3 border rounded text-center h-100">
-                  <div class="text-xxs fw-semibold text-secondary text-uppercase mb-3">Tested & Recorded By (Analyst)</div>
-                  <div class="raw-data-sig-line border-bottom border-dark mx-auto mb-1"></div>
-                  <div class="fw-bold small text-dark">{{ rawDataSheetData?.timing?.performedByName || 'Laboratory Analyst' }}</div>
-                  <div class="text-xxs text-muted">Date: {{ rawDataSheetData?.timing?.testEndTime || (rawDataSheetData?.generatedAt | date:'dd-MMM-yyyy') }}</div>
-                </div>
+            <div class="form-check form-check-inline m-0">
+              <input class="form-check-input" type="radio" id="profFlat" name="specimenProfile"
+                [checked]="specimenSizeProfile === 'flat'" (change)="setSpecimenSizeProfile('flat')" />
+              <label class="form-check-label text-xs fw-medium cursor-pointer" for="profFlat">
+                Flat Plate (T × W)
+              </label>
+            </div>
+            <div class="form-check form-check-inline m-0">
+              <input class="form-check-input" type="radio" id="profPipe" name="specimenProfile"
+                [checked]="specimenSizeProfile === 'pipe'" (change)="setSpecimenSizeProfile('pipe')" />
+              <label class="form-check-label text-xs fw-medium cursor-pointer" for="profPipe">
+                Pipe / Tube
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Dimensional Inputs -->
+        <fieldset class="border rounded p-2 mb-3">
+          <legend class="w-auto fw-semibold text-danger d-flex align-items-center gap-1.5 px-2 m-0 text-xs">
+            <i class="bi bi-sliders"></i> Dimensional Measurements (mm)
+          </legend>
+
+          <!-- Round Bar inputs -->
+          <div class="row g-2 pt-1" *ngIf="specimenSizeProfile === 'round'">
+            <div class="col-6">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Diameter (⌀ mm) *</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeDiameter"
+                  (ngModelChange)="onSpecimenSizeDimensionChange()" min="0.1" step="0.01" placeholder="e.g. 16.00" />
+                <span class="input-group-text text-xxs">mm</span>
               </div>
-              <div class="col-6">
-                <div class="p-3 border rounded text-center h-100">
-                  <div class="text-xxs fw-semibold text-secondary text-uppercase mb-3">Technical Verification (ISO 17025 Cl 7.7)</div>
-                  <div class="raw-data-sig-line border-bottom border-dark mx-auto mb-1"></div>
-                  <div class="fw-bold small text-dark">Technical Reviewer / Signatory</div>
-                  <div class="text-xxs text-muted">Status: {{ rawDataSheetData?.status || 'In Progress' }}</div>
-                </div>
+            </div>
+            <div class="col-6">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Total Length (mm)</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeLength"
+                  min="1" step="1" placeholder="e.g. 300" />
+                <span class="input-group-text text-xxs">mm</span>
               </div>
             </div>
           </div>
 
+          <!-- Flat Plate inputs -->
+          <div class="row g-2 pt-1" *ngIf="specimenSizeProfile === 'flat'">
+            <div class="col-4">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Thickness (T mm) *</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeThickness"
+                  (ngModelChange)="onSpecimenSizeDimensionChange()" min="0.1" step="0.01" placeholder="e.g. 12.00" />
+                <span class="input-group-text text-xxs">mm</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Width (W mm) *</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeWidth"
+                  (ngModelChange)="onSpecimenSizeDimensionChange()" min="0.1" step="0.01" placeholder="e.g. 25.00" />
+                <span class="input-group-text text-xxs">mm</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Total Length (mm)</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeLength"
+                  min="1" step="1" placeholder="e.g. 300" />
+                <span class="input-group-text text-xxs">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pipe / Tube inputs -->
+          <div class="row g-2 pt-1" *ngIf="specimenSizeProfile === 'pipe'">
+            <div class="col-4">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Outer Diam. (OD) *</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeOuterDiameter"
+                  (ngModelChange)="onSpecimenSizeDimensionChange()" min="0.1" step="0.01" placeholder="e.g. 48.30" />
+                <span class="input-group-text text-xxs">mm</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Wall Thick. (WT) *</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeWallThickness"
+                  (ngModelChange)="onSpecimenSizeDimensionChange()" min="0.1" step="0.01" placeholder="e.g. 3.20" />
+                <span class="input-group-text text-xxs">mm</span>
+              </div>
+            </div>
+            <div class="col-4">
+              <label class="form-label text-xxs mb-1 fw-semibold text-secondary">Total Length (mm)</label>
+              <div class="input-group input-group-sm">
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="specimenSizeLength"
+                  min="1" step="1" placeholder="e.g. 300" />
+                <span class="input-group-text text-xxs">mm</span>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Calculated Parameters Box -->
+        <div class="p-2 mb-3 bg-light rounded border">
+          <div class="row g-2 text-xs">
+            <div class="col-6">
+              <span class="text-secondary fw-semibold">Cross-Section Area (A₀):</span>
+              <div class="fw-bold font-monospace text-dark fs-6 mt-1">
+                {{ specimenSizeArea ? specimenSizeArea + ' mm²' : '—' }}
+              </div>
+            </div>
+            <div class="col-6">
+              <span class="text-secondary fw-semibold">Gauge Length (5.65√A₀):</span>
+              <div class="fw-bold font-monospace text-dark fs-6 mt-1">
+                {{ specimenSizeGaugeLength ? specimenSizeGaugeLength + ' mm' : '—' }}
+              </div>
+            </div>
+          </div>
+          <div class="text-xxs text-muted mt-2 border-top pt-1">
+            <i class="bi bi-info-circle me-1"></i> Size will be applied across all planned specimens (S1 to S{{ getActivePlanSpecimenCount(activeSizePlanIndex) }}) and used for pricing &amp; area calculations.
+          </div>
         </div>
       </div>
-
-      <!-- Modal Footer (no-print) -->
-      <div class="modal-footer py-2 px-3 bg-light border-top no-print d-flex justify-content-between">
-        <span class="text-xxs text-muted">
-          <i class="bi bi-lock me-1"></i>ISO/IEC 17025:2017 Clause 7.5 Technical Record Integrity Guard Active
-        </span>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-lims btn-lims-cancel" (click)="closeRawDataSheetModal()">
-            <i class="bi bi-x-circle me-1"></i><span>Close</span>
-          </button>
-          <button type="button" class="btn btn-lims btn-lims-print" (click)="printRawDataSheet()">
-            <i class="bi bi-printer me-1"></i><span>Print Raw Data Sheet</span>
-          </button>
-        </div>
+      <div class="modal-footer py-2 px-3 bg-light border-top d-flex justify-content-between">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="closeSpecimenSizeModal()">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-sm btn-lims btn-lims-primary" (click)="applySpecimenSize()"
+          [disabled]="isSavingSpecimenSize || (specimenSizeProfile === 'round' && !specimenSizeDiameter) || (specimenSizeProfile === 'flat' && (!specimenSizeThickness || !specimenSizeWidth))">
+          <i class="bi bi-check-lg me-1"></i>
+          <span>Apply to Test &amp; Specimens</span>
+        </button>
       </div>
-
     </div>
   </div>
 </div>

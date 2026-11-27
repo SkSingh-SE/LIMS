@@ -1,3 +1,9 @@
+/* Ensure the fixed navbar stays on top of in-page sticky headers, cards, and tables */
+:host nav.fixed-top,
+nav.fixed-top {
+    z-index: 1045 !important;
+}
+
 /* Ensure the content container adjusts to navbar height */
 :host ::ng-deep .content-container {
     padding-top: var(--nav-height);
@@ -154,7 +160,8 @@
     background: #fff;
     margin-top: 6px !important;
     animation: submenuDropIn 0.18s ease;
-    overflow: visible;   /* must NOT be hidden — fly-out panel sits outside this box */
+    overflow: visible;
+    z-index: 1050;
 }
 
 @keyframes submenuDropIn {

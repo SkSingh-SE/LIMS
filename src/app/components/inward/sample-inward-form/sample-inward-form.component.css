@@ -597,6 +597,7 @@ fieldset legend {
 .col-w-140 { width: 140px; }
 .col-w-190 { width: 190px; }
 .col-w-260 { width: 260px; }
+.col-w-340 { width: 340px; min-width: 300px; }
 .col-w-80 { width: 80px; }
 .col-w-200 { width: 200px; }
 .col-w-90 { width: 90px; }

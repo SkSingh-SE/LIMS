@@ -299,15 +299,15 @@
 
       <div *ngIf="selectedSampleId && activeInlineAction === 'testing'" class="inline-form-panel mt-2">
         <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
-          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1">
-            <i class="bi bi-flask-fill"></i><span>Testing Execution: {{ getSelectedSample()?.sampleNo }}</span>
+          <span class="inline-form-title">
+            <span>Testing Execution: {{ getSelectedSample()?.sampleNo }}</span>
           </span>
           <div class="d-flex align-items-center gap-2">
-            <a class="btn btn-sm btn-outline-primary py-0 px-2 fs-8" [routerLink]="['/test-result/entry', selectedSampleId]" target="_blank" title="Open full screen in a new tab">
-              <i class="bi bi-box-arrow-up-right me-1"></i><span>Fullpage</span>
+            <a class="btn btn-lims btn-lims-secondary lims-btn-row text-decoration-none" [routerLink]="['/test-result/entry', selectedSampleId]" [queryParams]="{ mode: 'edit' }" target="_blank" title="Open full screen in a new tab">
+              <i class="bi bi-box-arrow-up-right"></i><span>Full page</span>
             </a>
-            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-8" (click)="onCloseInlineForm()">
-              <i class="bi bi-x-lg me-1"></i><span>Close</span>
+            <button type="button" class="btn btn-lims btn-lims-cancel lims-btn-row" (click)="onCloseInlineForm()">
+              <i class="bi bi-x-lg"></i><span>Close</span>
             </button>
           </div>
         </div>
@@ -333,15 +333,15 @@
 
       <div *ngIf="selectedSampleId && activeInlineAction === 'reporting'" class="inline-form-panel mt-2">
         <div class="inline-form-header d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom">
-          <span class="inline-form-title fs-7 fw-bold text-danger d-flex align-items-center gap-1">
-            <i class="bi bi-file-earmark-text-fill"></i><span>Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}</span>
+          <span class="inline-form-title">
+            <span>Report Preview & Sign-off: {{ getSelectedSample()?.sampleNo }}</span>
           </span>
           <div class="d-flex align-items-center gap-2">
-            <a class="btn btn-sm btn-outline-primary py-0 px-2 fs-8" [routerLink]="['/reporting/preview', selectedSampleId]" target="_blank" title="Open preview in a new tab">
-              <i class="bi bi-box-arrow-up-right me-1"></i><span>Fullpage</span>
+            <a class="btn btn-lims btn-lims-secondary lims-btn-row text-decoration-none" [routerLink]="['/reporting/preview', selectedSampleId]" target="_blank" title="Open preview in a new tab">
+              <i class="bi bi-box-arrow-up-right"></i><span>Full page</span>
             </a>
-            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fs-8" (click)="onCloseInlineForm()">
-              <i class="bi bi-x-lg me-1"></i><span>Close</span>
+            <button type="button" class="btn btn-lims btn-lims-cancel lims-btn-row" (click)="onCloseInlineForm()">
+              <i class="bi bi-x-lg"></i><span>Close</span>
             </button>
           </div>
         </div>

@@ -268,12 +268,12 @@
                     General
                   </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" *ngIf="showTestMethodTabs">
                   <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'chemicalTestMethod'" (click)="selectSpecTab(gi, 'chemicalTestMethod')">
                     Chemical Test Method
                   </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" *ngIf="showTestMethodTabs">
                   <a class="nav-link" [class.active]="selectedSpecTab[gi] === 'mechanicalTestMethod'" (click)="selectSpecTab(gi, 'mechanicalTestMethod')">
                     General Test Method
                   </a>
@@ -1473,6 +1473,10 @@
                                 <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Method'" [labelName]="'Test Method'"
                                   [fetchDataFn]="getTestMethodSpecification" (itemSelected)="m.get('testMethodSpecificationID')?.setValue($event?.id ?? null)"
                                   [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('testMethodSpecificationID')?.value"></app-searchable-dropdown>
+                                <input *ngIf="m.get('testMethodSpecificationID')?.value" type="number" min="1" max="99" step="1"
+                                  class="form-control form-control-sm mt-1 spec-count-input" formControlName="numberOfTestSpecimen"
+                                  placeholder="Specimens" title="Number of test specimens for this method" [readonly]="isViewMode"
+                                  (change)="clampSpecimenCount(m)" />
                               </td>
                             </ng-container>
                           </tr>
@@ -1520,6 +1524,10 @@
                                 <app-searchable-dropdown [smallInput]="true" class="w-100" [placeholder]="'Search Method'" [labelName]="'Test Method'"
                                   [fetchDataFn]="getTestMethodSpecification" (itemSelected)="m.get('testMethodSpecificationID')?.setValue($event?.id ?? null)"
                                   [isDisabled]="isViewMode" [hideLabel]="true" [selectedItem]="m.get('testMethodSpecificationID')?.value"></app-searchable-dropdown>
+                                <input *ngIf="m.get('testMethodSpecificationID')?.value" type="number" min="1" max="99" step="1"
+                                  class="form-control form-control-sm mt-1 spec-count-input" formControlName="numberOfTestSpecimen"
+                                  placeholder="Specimens" title="Number of test specimens for this method" [readonly]="isViewMode"
+                                  (change)="clampSpecimenCount(m)" />
                               </td>
                             </ng-container>
                           </tr>

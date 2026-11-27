@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -6,7 +6,58 @@ import { DecimalOnlyDirective } from '../../../utility/directives/decimal-only.d
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { formatFormulaDisplay } from '../../../utility/helper/formula.helper';
 import { SearchableDropdownComponent } from '../../../utility/components/searchable-dropdown/searchable-dropdown.component';
+import { ConfirmDialogComponent } from '../../../utility/components/confirm-dialog/confirm-dialog.component';
+import { Observable, of } from 'rxjs';
 import { ParameterService } from '../../../services/parameter.service';
+import { MaterialSpecificationService } from '../../../services/material-specification.service';
+import { formatBand } from '../../../utility/helper/spec-condition.helper';
+import { normalizeLayoutConfig } from '../../../utility/helper/test-layout-config.helper';
+import { layoutRequiredGaps, layoutPhotoGaps } from './layout-required-gaps';
+
+/** Section types this screen can draw (canonical names, after normalizeLayoutConfig). */
+export const SUPPORTED_SECTION_TYPES: ReadonlySet<string> = new Set([
+  'parameter', 'specimen', 'reading', 'location', 'condition', 'rule', 'traverse', 'chart', 'photo',
+  'formula', 'narrative', 'checklist', 'traceability', 'opinion', 'sign', 'classification', 'custom',
+]);
+import { ToastService } from '../../../services/toast.service';
+import {
+  addSpecimenRows,
+  insertPositionForSpecimen,
+  matchingRowInSpecimen,
+  filterEmptyExtraSpecimenRows,
+  layoutHasSpecimenSection,
+  removeParameterRows,
+  removeSpecimenRows,
+  resolveSpecimenIndexes,
+  rowRemovalMessage,
+  rowRemovalReason,
+  rowsOfSpecimen,
+  rowsOrderedBySpecimen,
+  rowValuesOf,
+  specimenHasData,
+  specimenIndexesOf,
+  specimenRemovalMessage,
+  SpecimenRowStore,
+} from './specimen-grouping';
+import {
+  buildTensileRoleIndex,
+  DERIVED_TENSILE_ROLES,
+  DIMENSION_ROLES,
+  isSpecimenRole,
+  parseTensileNumber,
+  planTensileWrites,
+  readTensileValues,
+  recalcTensileSpecimen,
+  RECALC_TRIGGER_ROLES,
+  resolveTensileRole,
+  roleOfRow,
+  savedHandTypedRoles,
+  SpecimenRole,
+  tensileArea,
+  tensileDependents,
+  TensileRoleIndex,
+  TensileValues,
+} from './tensile-parameter-roles';
 
 export interface SpecimenData {
   id: string;
@@ -33,7 +84,8 @@ export interface TraversePoint {
 export interface ChecklistItem {
   id: number;
   label: string;
-  status: 'Pass' | 'Fail' | 'NA';
+  /** '' = not answered yet; nothing is pre-ticked for the analyst. */
+  status: 'Pass' | 'Fail' | 'NA' | '';
 }
 
 export interface LocationData {
@@ -57,7 +109,7 @@ export interface DecisionRuleData {
   ruleType: string;
   confidenceLevel: number;
   guardBandMultiplier: number;
-  acceptanceStatus: 'Pass' | 'Fail' | 'Inconclusive' | 'Conditional';
+  acceptanceStatus: 'Pass' | 'Fail' | 'Inconclusive' | 'Conditional' | '';
   statementText: string;
 }
 
@@ -81,6 +133,7 @@ export interface CustomAttribute {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    ConfirmDialogComponent,
     RouterModule,
     DecimalOnlyDirective,
     TestStatusBadgeComponent,
@@ -96,6 +149,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   @Input() testFormGroup!: FormGroup;
   @Input() sample: any = null;
   @Input() inward: any = null;
+  /** Lab scope of this test: true = every tested parameter is within the accredited scope, null = not known. */
+  @Input() nablInScope: boolean | null = null;
+  /** Measurement uncertainty per parameter ({ parameterID, expandedUncertainty }); used when the decision rule takes it into account. */
+  @Input() uncertaintyData: any[] = [];
   @Input() isViewMode: boolean = false;
   @Input() isLocked: boolean = false;
   @Input() environmentData: any = null;
@@ -103,6 +160,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   @Input() selectedEquipment: any[] = [];
   @Input() testImages: any[] = [];
   @Input() activeTabSection: 'all' | 'parameters' | 'execution' | 'calculations' | 'info' = 'all';
+  /**
+   * Raw data sheet: shows the saved test in the same layout, read-only. In this mode the component never writes to the
+   * form or to the test object and never emits, so a second instance can sit next to the live result screen.
+   */
+  @Input() printMode = false;
+  @Input() isDynamicMode = true;
+  @HostBinding('class.print-mode') get printModeClass(): boolean { return this.printMode; }
 
   @Output() paramValueChanged = new EventEmitter<{ rowIdx: number; param: any }>();
   @Output() unitChanged = new EventEmitter<{ rowIdx: number }>();
@@ -113,6 +177,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   @Output() photoUploadRequested = new EventEmitter<void>();
   @Output() parametersAdjusted = new EventEmitter<void>();
   @Output() specimenCountChanged = new EventEmitter<number>();
+  @Output() syncFromLabTestRequested = new EventEmitter<any>();
+
+  /** Sections where the user explicitly clicked "Sync Lab Test" at runtime (switches from strict template subset to synced master params). */
+  private syncedLabTestSections: Record<string, boolean> = {};
+
+  markSyncedFromLabTest(sec?: any): void {
+    const target = sec || this.specimenSection || (this.sections || []).find(s => s.type === 'parameter' || s.type === 'param');
+    if (target) {
+      this.syncedLabTestSections[this.sectionUiKey(target)] = true;
+    }
+    this.cdr.markForCheck();
+  }
+
+  getParamUncertaintyDisplay(param: any): string {
+    const u = this.uncertaintyOf(param?.parameterID ?? param?.parameterId);
+    return u > 0 ? `± ${u}` : '—';
+  }
 
   // Parsed sections array
   sections: any[] = [];
@@ -122,6 +203,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   // Specimen matrix state
   specimens: SpecimenData[] = [];
+  /** Derived rows (area, stresses, elongation, RA) the user typed into in this session; the calculation never overwrites them. */
+  private userTypedDerivedRows = new WeakSet<AbstractControl>();
   specimenAverages: {
     proofStress: number | null;
     uts: number | null;
@@ -133,6 +216,16 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Quick-Add Parameter modal state
   showAddParamModal = false;
   selectedParamDropdownItem: any = null;
+  /** Grade the parameter comes from (the test's own grade by default, changeable, may be cleared). */
+  paramGrade: { id: number; name: string } | null = null;
+  /** The chosen grade's lines for this kind of test: they decide which parameters are offered and their limits. */
+  private gradeParamLines: any[] = [];
+  /** Spec line the new row's limit comes from (saved with the row), and a hint when no single line fits. */
+  private newParamLineId: number | null = null;
+  paramLimitHint = '';
+  /** Another grade with several limits for one parameter (size band, heat treatment, ...): the user picks the one that applies. */
+  paramLineChoices: { id: number; label: string; min: number | null; max: number | null; note: string }[] = [];
+  paramLineChoiceItem: { id: number; name: string } | null = null;
   newParamData: {
     parameterID: number | null;
     parameterName: string;
@@ -147,23 +240,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     decimalPrecision: number;
     dropdownOptions: any[];
   } = {
-    parameterID: null,
-    parameterName: '',
-    unit: '',
-    inputType: 'Decimal',
-    minValue: null,
-    maxValue: null,
-    acceptanceCriteria: '',
-    testMethodUsed: '',
-    applyTo: 'all',
-    isReportable: true,
-    decimalPrecision: 2,
-    dropdownOptions: []
-  };
+      parameterID: null,
+      parameterName: '',
+      unit: '',
+      inputType: 'Decimal',
+      minValue: null,
+      maxValue: null,
+      acceptanceCriteria: '',
+      testMethodUsed: '',
+      applyTo: 'all',
+      isReportable: true,
+      decimalPrecision: 2,
+      dropdownOptions: []
+    };
 
   // Multi-reading state
   readingValues: Record<string, (number | null)[]> = {};
-  readingStats: Record<string, { avg: number | null; min: number | null; max: number | null; stdev: number | null }> = {};
+  readingStats: Record<string, { avg: number | null; min: number | null; max: number | null; stdev: number | null; median?: number | null }> = {};
 
   // Case depth traverse state
   traversePoints: TraversePoint[] = [
@@ -175,15 +268,39 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     { distance: 1.0, hardness: null }
   ];
   effectiveCaseDepth: number | null = null;
-  cutoffLimit: number = 550; // HV
+  /** Hardness at which the effective case depth is read: the layout's value, else 550 (IS 6416). */
+  get cutoffLimit(): number {
+    const cfg = (this.sections || []).find(s => s.type === 'traverse')?.config;
+    const v = Number(cfg?.cutoffHardness ?? cfg?.cutoff);
+    return isFinite(v) && v > 0 ? v : 550;
+  }
+
+  /** A traverse of hardness against depth (the effective case depth applies); other traverses are plain series (exposure time / rating). */
+  isCaseDepthTraverse(s: any): boolean {
+    return /^h/i.test(this.traverseUnit(s, 'y'));
+  }
+
+  /** The curve is a screen aid for a hardness traverse; the layout can switch it off. */
+  showTraverseCurve(s: any): boolean {
+    return !this.printMode && s?.config?.showCurve !== false && this.isCaseDepthTraverse(s);
+  }
+
+  /** Row headings of the traverse table: the layout's own names with their units. */
+  traverseLabel(s: any, axis: 'x' | 'y'): string {
+    const name = String((axis === 'x' ? s?.config?.xField : s?.config?.yField) ?? '').trim();
+    const generic = /^runtime|^auto/i.test(name) || !name;
+    return `${generic ? (axis === 'x' ? 'Distance from Surface' : 'Hardness Value') : name} (${this.traverseUnit(s, axis)})`;
+  }
+
+  /** Units of the traverse table (layout), with the lab's usual ones as default. */
+  traverseUnit(s: any, axis: 'x' | 'y'): string {
+    const u = String((axis === 'x' ? s?.config?.xUnit : s?.config?.yUnit) ?? '').trim();
+    return u || (axis === 'x' ? 'mm' : 'HV');
+  }
 
   // Checklist state
-  checklistItems: ChecklistItem[] = [
-    { id: 1, label: 'Specimen surface free from defects / machining marks', status: 'Pass' },
-    { id: 2, label: 'Physical dimensions verified within tolerance', status: 'Pass' },
-    { id: 3, label: 'Testing equipment calibration is valid', status: 'Pass' },
-    { id: 4, label: 'Standard testing SOP followed strictly', status: 'Pass' }
-  ];
+  // Items come from the layout (tableRows) or the saved test; nothing is pre-filled or pre-ticked
+  checklistItems: ChecklistItem[] = [];
 
   // Custom condition values
   conditionValues: Record<string, any> = {};
@@ -191,24 +308,33 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Hybrid Relational Collections & Extra state
   locations: LocationData[] = [];
   observations: ObservationData[] = [];
+  // Empty until the analyst fills them: no demo rule, rating or machine data is saved with a result
   decisionRule: DecisionRuleData = {
-    ruleType: 'Simple Acceptance',
+    ruleType: '',
     confidenceLevel: 95,
     guardBandMultiplier: 1.0,
-    acceptanceStatus: 'Pass',
-    statementText: 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).'
+    acceptanceStatus: '',
+    statementText: ''
   };
   classification: ClassificationData = {
-    classificationStandard: 'ASTM E45',
-    ratingType: 'Inclusion Rating',
-    selectedCategory: 'Type A (Sulfides)',
-    severity: 'Thin 1.0 / Heavy 0.5',
+    classificationStandard: '',
+    ratingType: '',
+    selectedCategory: '',
+    severity: '',
     remarks: ''
   };
-  customAttributes: CustomAttribute[] = [
-    { key: 'Machine Serial', value: 'UTM-500KN-02' },
-    { key: 'Calibration Due', value: '2027-03-31' }
-  ];
+  customAttributes: CustomAttribute[] = [];
+
+  // Opinion & Interpretation state
+  opinionData: {
+    items: { label: string; formulaDisplay?: string; unit?: string; requirement?: string; value: string; status?: string }[];
+    overallStatement: string;
+    isOptional: boolean;
+  } = {
+      items: [],
+      overallStatement: '',
+      isOptional: true
+    };
 
   // Active section mapping name
   componentNames: Record<string, string> = {
@@ -238,39 +364,175 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     classification: 'Material Classification',
     class: 'Material Classification',
     custom: 'Custom Attributes',
-    attrs: 'Custom Attributes'
+    attrs: 'Custom Attributes',
+    opinion: 'Opinion & Interpretation'
   };
 
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private parameterService: ParameterService
-  ) {}
+    private parameterService: ParameterService,
+    private materialSpecService: MaterialSpecificationService,
+    private toastService: ToastService
+  ) { }
 
-  fetchParametersDropdown = (searchTerm: string, page: number, pageSize: number) => {
-    return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
+  fetchGradeDropdown = (searchTerm: string, page: number, pageSize: number) => {
+    return this.materialSpecService.getGradeDropdown(searchTerm, page, pageSize);
   };
+
+  /** With a grade: only the parameters that grade defines for this test. Without: the whole parameter master. */
+  fetchParametersDropdown = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
+    if (!this.paramGrade) return this.parameterService.getParameterDropdown(searchTerm, page, pageSize);
+    const term = (searchTerm || '').toLowerCase().trim();
+    const seen = new Set<number>();
+    const items: any[] = [];
+    for (const l of this.gradeParamLines) {
+      const id = Number(l.parameterID);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      if (!term || String(l.parameterName || '').toLowerCase().includes(term)) items.push({ id, name: l.parameterName || `Parameter #${id}` });
+    }
+    return of(items.slice(page * pageSize, (page + 1) * pageSize));
+  };
+
+  private limitLabel(min: number | null | undefined, max: number | null | undefined): string {
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return '';
+  }
+
+  /** A parameter with several limits in another grade cannot be added before one is chosen. */
+  get paramNeedsLineChoice(): boolean {
+    return this.paramLineChoices.length > 0 && !this.newParamLineId;
+  }
+
+  private get paramTestKind(): 'chemical' | 'general' {
+    return this.testPlan?.type === 'Chemical' ? 'chemical' : 'general';
+  }
+
+  private loadGradeParamLines(gradeId: number | null): void {
+    this.gradeParamLines = [];
+    if (!gradeId) { this.cdr.markForCheck(); return; }
+    this.materialSpecService.getConditionOptions(gradeId, null, null, null, this.paramTestKind).subscribe({
+      next: (lines: any[]) => { this.gradeParamLines = lines || []; this.cdr.markForCheck(); },
+      error: () => { this.gradeParamLines = []; this.toastService.show('Could not load the parameters of this grade', 'error'); this.cdr.markForCheck(); }
+    });
+  }
+
+  onParamGradeSelected(item: any): void {
+    this.paramGrade = item && item.id ? { id: Number(item.id), name: item.name } : null;
+    // another grade means another parameter list: start the parameter choice again
+    this.onMasterParameterSelected(null);
+    this.loadGradeParamLines(this.paramGrade?.id ?? null);
+  }
+
+  fetchParamLineChoices = (searchTerm: string, page: number, pageSize: number): Observable<any[]> => {
+    const term = (searchTerm || '').toLowerCase().trim();
+    const items = this.paramLineChoices.filter(c => !term || c.label.toLowerCase().includes(term)).map(c => ({ id: c.id, name: c.label }));
+    return of(items.slice(page * pageSize, (page + 1) * pageSize));
+  };
+
+  /** Conditions a grade line is written for, e.g. "Nominal Thickness ≥ 20 ≤ 40 mm · As-Rolled", or "Grade default". */
+  private lineConditionLabel(l: any): string {
+    const parts: string[] = [];
+    if (l.dimensionalFactorID) {
+      const band = formatBand({ lowerSymbol: l.lowerLimitValue ?? null, lowerValue: l.lowerLimitDecimalValue ?? null, upperSymbol: l.upperLimitValue ?? null, upperValue: l.upperLimitDecimalValue ?? null });
+      parts.push([l.dimensionalFactorName, band, l.dimensionalFactorUnit].filter(x => !!x).join(' '));
+    }
+    if (l.heatTreatmentName) parts.push(l.heatTreatmentName);
+    const pc = [l.productConditionName1, l.productConditionName2].filter(x => !!x).join(' + ');
+    if (pc) parts.push(pc);
+    if ((l.testCondition || '').trim()) parts.push(String(l.testCondition).trim());
+    if (l.productSizeName) parts.push(l.productSizeName);
+    if (l.specimenOrientationName) parts.push(l.specimenOrientationName);
+    return parts.join(' · ') || 'Grade default';
+  }
+
+  onParamLineChoice(item: any): void {
+    const choice = item?.id ? this.paramLineChoices.find(c => c.id === Number(item.id)) : null;
+    this.paramLineChoiceItem = choice ? { id: choice.id, name: choice.label } : null;
+    this.newParamLineId = choice?.id ?? null;
+    this.newParamData.minValue = choice?.min ?? null;
+    this.newParamData.maxValue = choice?.max ?? null;
+    this.newParamData.acceptanceCriteria = choice?.note ?? '';
+  }
+
+  /** Limit, note and unit of the chosen parameter from the grade's lines. */
+  private applyGradeLine(parameterId: number): void {
+    this.newParamLineId = null;
+    this.paramLimitHint = '';
+    this.paramLineChoices = [];
+    this.paramLineChoiceItem = null;
+    if (!this.paramGrade) return;
+    const lines = this.gradeParamLines.filter(l => Number(l.parameterID) === parameterId);
+    const hasNoCondition = (l: any) => !l.dimensionalFactorID && !l.heatTreatmentID && !l.productConditionID1 && !l.productConditionID2
+      && !(l.testCondition || '').trim() && !l.productSizeMasterID && !l.specimenOrientationID;
+    const pick = lines.find(hasNoCondition) ?? (lines.length === 1 ? lines[0] : null);
+    if (lines[0]?.unitName) this.newParamData.unit = lines[0].unitName;
+    if (!pick) {
+      if (lines.length > 1) {
+        const ownGradeId = Number(this.testPlan?.specSelected?.id || 0);
+        // several limits for one parameter (size band, heat treatment, ...): the user picks the line that applies and the limit follows
+        this.paramLineChoices = lines.map(l => ({
+          id: Number(l.specificationLineID),
+          label: `${this.lineConditionLabel(l)}  (${this.limitLabel(l.minValue, l.maxValue) || 'no numeric limit'})`,
+          min: l.minValue ?? null,
+          max: l.maxValue ?? null,
+          note: l.acceptanceCriteria || ''
+        }));
+        this.paramLimitHint = this.paramGrade.id === ownGradeId
+          ? 'This grade gives more than one limit for this parameter. Choose the one that applies; the conditions selected on the screen can change it later.'
+          : 'This grade gives more than one limit for this parameter. Choose the one that applies.';
+      }
+      return;
+    }
+    this.newParamLineId = pick.specificationLineID ?? null;
+    this.newParamData.minValue = pick.minValue ?? null;
+    this.newParamData.maxValue = pick.maxValue ?? null;
+    this.newParamData.acceptanceCriteria = pick.acceptanceCriteria || '';
+  }
 
   onMasterParameterSelected(item: any): void {
     if (!item) {
       this.selectedParamDropdownItem = null;
       this.newParamData.parameterID = null;
       this.newParamData.parameterName = '';
+      this.newParamData.unit = '';
+      this.newParamData.minValue = null;
+      this.newParamData.maxValue = null;
+      this.newParamData.acceptanceCriteria = '';
+      this.newParamLineId = null;
+      this.paramLimitHint = '';
+      this.paramLineChoices = [];
+      this.paramLineChoiceItem = null;
       return;
     }
     this.selectedParamDropdownItem = item;
     this.newParamData.parameterID = item.id;
     this.newParamData.parameterName = item.name;
+    this.newParamData.unit = '';
+    this.newParamData.minValue = null;
+    this.newParamData.maxValue = null;
+    this.newParamData.acceptanceCriteria = '';
+    // limits, note and unit of the grade first; the parameter master fills what the grade does not say
+    this.applyGradeLine(Number(item.id));
 
     // Fetch full parameter details to populate unit, inputType, precision, etc.
     this.parameterService.getParameterById(item.id).subscribe({
       next: (res: any) => {
         const details = res?.data || res;
         if (details) {
-          if (details.parameterUnit?.name) {
-            this.newParamData.unit = details.parameterUnit.name;
-          } else if (details.unit) {
-            this.newParamData.unit = details.unit;
+          // The dropdown label carries the type ("Yield Strength - (Reported)"); the row keeps the master name
+          if (details.name && this.newParamData.parameterID === item.id) {
+            this.newParamData.parameterName = details.name;
+          }
+          if (!this.newParamData.unit) {
+            if (details.parameterUnit?.name) {
+              this.newParamData.unit = details.parameterUnit.name;
+            } else if (details.unit) {
+              this.newParamData.unit = details.unit;
+            }
           }
           if (details.inputType) {
             this.newParamData.inputType = details.inputType;
@@ -299,17 +561,63 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['layoutConfig'] || changes['test'] || changes['testPlan']) {
+    if (changes['layoutConfig'] || changes['test'] || changes['testPlan'] || changes['testFormGroup']) {
       this.initLayoutData();
+    } else if (changes['environmentData']) {
+      this.applyRoomConditions();
     } else if (changes['activeTabSection']) {
       this.hydrateSpecimensFromParameters();
       this.recalculateSpecimens();
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Sections the user hides on this screen (Note, witness, sign ...). Screen only:
+  // nothing is saved, the layout keeps the section, the sheet / report still follow the layout.
+  // One result section always stays visible.
+  // ---------------------------------------------------------------------------
+  private static readonly RESULT_TYPES = new Set(['spm', 'specimen', 'reading', 'location', 'loc', 'param', 'parameter', 'custom', 'attrs', 'traverse', 'case_depth']);
+  hiddenSectionKeys = new Set<string>();
+
+  sectionUiKey(s: any): string {
+    const i = this.sections.indexOf(s);
+    return String(s?.id ?? s?.config?.sectionKey ?? '') + '#' + i;
+  }
+
+  isResultSection(s: any): boolean {
+    return ConfiguredTestLayoutRendererComponent.RESULT_TYPES.has(String(s?.type || '').toLowerCase());
+  }
+
+  canHideSection(s: any): boolean {
+    if (this.printMode || !s) return false;
+    if (!this.isResultSection(s)) return true;
+    // the last visible result section cannot be hidden
+    return this.sections.filter(x => this.isResultSection(x) && !this.isUnsupportedSection(x) && this.isSectionVisible(x)).length > 1;
+  }
+
+  hideSection(s: any): void {
+    if (!this.canHideSection(s)) return;
+    this.hiddenSectionKeys = new Set(this.hiddenSectionKeys).add(this.sectionUiKey(s));
+  }
+
+  showSection(key: string): void {
+    const next = new Set(this.hiddenSectionKeys);
+    next.delete(key);
+    this.hiddenSectionKeys = next;
+  }
+
+  get userHiddenSections(): { key: string; title: string }[] {
+    if (!this.hiddenSectionKeys.size) return [];
+    return this.sections.filter(s => this.hiddenSectionKeys.has(this.sectionUiKey(s))).map(s => ({ key: this.sectionUiKey(s), title: this.getSectionTitle(s) }));
+  }
+
   isSectionVisible(s: any): boolean {
     if (!s) return false;
+    if (!this.printMode && this.hiddenSectionKeys.size && this.hiddenSectionKeys.has(this.sectionUiKey(s))) return false;
     const t = (s.type || '').toLowerCase();
+    if (this.printMode && s.config?.reportable === false) return false;
+    // the printed record carries the rule only when a statement of conformity is given and the layout prints it
+    if (this.printMode && t === 'rule' && (!this.ruleBasis(s.config).applicable || s.config?.showRule === false)) return false;
     const isChemical = this.testPlan?.type === 'Chemical' ||
       this.test?.discipline === 'Chemical' ||
       (this.test?.name || '').toLowerCase().includes('chemical');
@@ -317,6 +625,14 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Chemical tests do not execute physical tensile specimen dimensions/loads or case-depth traverses
     if (isChemical && (t === 'spm' || t === 'specimen' || t === 'traverse' || t === 'case_depth' || t === 'reading')) {
       return false;
+    }
+
+    // Suppress parameter section when specimen matrix section is present,
+    // or when reading grid section handles parameters
+    if (t === 'param' || t === 'parameter') {
+      if (this.hasSpecimenSection || this.hasLegacyReadingSection()) {
+        return false;
+      }
     }
 
     // In Execution tab or 'all' mode, all configured layout sections are rendered together in order
@@ -379,6 +695,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       case 'custom':
       case 'attrs':
         return 'bi bi-sliders2 text-danger';
+      case 'opinion':
+        return 'bi bi-chat-square-quote text-danger';
       default:
         return 'bi bi-sliders text-danger';
     }
@@ -392,17 +710,112 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return this.testFormGroup?.get('parameters') as FormArray;
   }
 
+  /**
+   * Verdict of this test from the entered values and the limits of the plan / specification (never a fixed text).
+   * No value yet: pending. Values but no limit: not assessed. Any value outside its limit: non conforming.
+   */
+  get conformityVerdict(): { status: 'PASS' | 'FAIL' | 'BORDERLINE' | 'PENDING' | 'NO_LIMIT'; label: string; detail: string } {
+    const rawRows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
+    const activeKeys = this.getActiveLayoutParameterKeys();
+    const activeKeySet = activeKeys ? new Set(activeKeys) : null;
+    const scopedRows = activeKeySet
+      ? rawRows.filter(r => {
+        const k = r.parameterID != null ? `id:${r.parameterID}` : `name:${String(r.parameterName || '').trim().toLowerCase()}`;
+        return activeKeySet.has(k);
+      })
+      : rawRows;
+    const keepExtra = this.hasSpecimenSection || this.layoutSpecimenCount() > 1 || this.specimens.length > 1;
+    const rows = filterEmptyExtraSpecimenRows(scopedRows, keepExtra, {
+      readings: this.test?.readings,
+      readingValues: this.readingValues,
+      testImages: this.testImages
+    });
+    const num = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+    let withValue = 0;
+    let judged = 0;
+    const failed: string[] = [];
+    const borderline: string[] = [];
+    const withMU = this.ruleBasis().withMU;
+    let uncertaintyUsed = false;
+    const judge = (name: string, v: number, min: number | null, max: number | null, u = 0) => {
+      withValue++;
+      if (min === null && max === null) return;
+      judged++;
+      if ((min !== null && v < min) || (max !== null && v > max)) {
+        failed.push(name || 'Parameter');
+        return;
+      }
+      // decision rule with measurement uncertainty: a result closer to its limit than U is not a clear pass
+      if (withMU && u > 0) {
+        uncertaintyUsed = true;
+        if ((min !== null && v - min < u) || (max !== null && max - v < u)) borderline.push(name || 'Parameter');
+      }
+    };
+    // every reading of a reading / location grid is a result of its own (Charpy: each impact value against min 35 J)
+    const withReadings = new Set<string>();
+    Object.keys(this.readingValues).forEach(key => {
+      const sep = key.lastIndexOf('|');
+      const paramName = sep >= 0 ? key.slice(0, sep) : key;
+      const ctrl = this.locParamControl(paramName)?.value;
+      const min = num(ctrl?.minValue ?? ctrl?.specMinValue);
+      const max = num(ctrl?.maxValue ?? ctrl?.specMaxValue);
+      (this.readingValues[key] || []).forEach(raw => {
+        const v = num(raw);
+        if (v === null) return;
+        withReadings.add(this.normKey(paramName));
+        judge(ctrl?.parameterName || paramName, v, min, max, this.uncertaintyOf(ctrl?.parameterID));
+      });
+    });
+    // parameter rows; a row that only holds the average of its readings is not counted twice
+    for (const r of rows) {
+      const v = num(r.value);
+      if (v === null || withReadings.has(this.normKey(r.parameterName))) continue;
+      judge(r.parameterName, v, num(r.minValue ?? r.specMinValue), num(r.maxValue ?? r.specMaxValue), this.uncertaintyOf(r.parameterID));
+    }
+    const ruleNote = withMU && judged > 0 && !uncertaintyUsed ? ' (no measurement uncertainty available: judged without it)' : '';
+    if (withValue === 0) return { status: 'PENDING', label: 'RESULTS PENDING', detail: 'No result entered yet' };
+    if (judged === 0) return { status: 'NO_LIMIT', label: 'NOT ASSESSED', detail: 'No specification limit applies to the entered results (select the grade / conditions)' };
+    if (failed.length) return { status: 'FAIL', label: 'NON-CONFORMING (FAIL)', detail: `${failed.length} of ${judged} result(s) outside the limit: ${Array.from(new Set(failed)).join(', ')}${ruleNote}` };
+    if (borderline.length) {
+      return { status: 'BORDERLINE', label: 'BORDERLINE (WITHIN MEASUREMENT UNCERTAINTY)', detail: `${borderline.length} of ${judged} result(s) inside the limit but closer to it than the uncertainty: ${Array.from(new Set(borderline)).join(', ')}` };
+    }
+    return { status: 'PASS', label: 'CONFORMING (PASS)', detail: `${judged} of ${withValue} result(s) judged, all within the specification limits${ruleNote}` };
+  }
+
+  private lastBoundHeaderId: number | null = null;
+
   private initLayoutData(): void {
     if (!this.layoutConfig) return;
-
-    // Resolve sections
-    if (this.layoutConfig.sections && Array.isArray(this.layoutConfig.sections)) {
-      this.sections = this.layoutConfig.sections.filter((s: any) => s.config?.enabled !== false);
-    } else if (this.layoutConfig.parsedConfig?.sections) {
-      this.sections = this.layoutConfig.parsedConfig.sections.filter((s: any) => s.config?.enabled !== false);
-    } else {
-      this.sections = [];
+    if (this.printMode) {
+      this.isViewMode = true;
+      this.isLocked = true;
     }
+
+    // When switching between tests in the same Sample (e.g. Tensile -> Brinell),
+    // reset per-test transient specimen/reading caches so values never leak across headers.
+    const incomingHeaderId = Number(this.test?.headerId ?? this.test?.id ?? 0) || null;
+    if (incomingHeaderId !== null && this.lastBoundHeaderId !== null && incomingHeaderId !== this.lastBoundHeaderId) {
+      this.specimens = [];
+      this.readingValues = {};
+      this.readingStats = {};
+      this.userTypedDerivedRows = new WeakSet();
+    }
+    if (incomingHeaderId !== null) {
+      this.lastBoundHeaderId = incomingHeaderId;
+    }
+
+    // Resolve sections: legacy / shorthand type names (spm, loc, chk, note ...) become the studio's canonical names
+    const rawSections: any[] = Array.isArray(this.layoutConfig.sections)
+      ? this.layoutConfig.sections
+      : Array.isArray(this.layoutConfig.parsedConfig?.sections) ? this.layoutConfig.parsedConfig.sections : [];
+    // a layout saved with the literal "spm" type has always hidden the plain parameter table: keep that
+    this.hasLegacySpmSection = rawSections.some((s: any) => s?.type === 'spm' && s?.config?.enabled !== false);
+    this.sections = normalizeLayoutConfig({ sections: rawSections }).sections.filter((s: any) => s.config?.enabled !== false);
+    // Every test needs a place to enter its results: a layout without a result section gets the parameter table
+    if (!this.sections.some((s: any) => this.isResultSection(s) && !this.isUnsupportedSection(s))) {
+      this.sections = [...this.sections, { id: 'auto-results', type: 'parameter', title: 'Test Results', config: {} }];
+    }
+    this.hiddenSectionKeys = new Set();
 
     // Initialize Specimen Matrix
     this.initSpecimens();
@@ -425,44 +838,57 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Initialize Observations
     this.initObservations();
 
+    // Initialize Opinion & Interpretation
+    this.initOpinion();
+
     // Initialize Execution Extra
     this.initExecutionExtra();
+
+    const clsStandard = String(this.sections.find((s: any) => s.type === 'classification')?.config?.ratingSystem ?? '').trim();
+    if (clsStandard && !this.classification.classificationStandard && /^(ASTM|ISO|IS|EN|DIN|JIS|BS)\b/i.test(clsStandard)) {
+      this.classification = { ...this.classification, classificationStandard: clsStandard };
+    }
+
+    // A test that has not started takes its specimen count from the layout
+    this.scheduleLayoutSpecimenCount();
   }
 
   private initLocations(): void {
     const locSec = this.sections.find(s => s.type === 'location' || s.type === 'loc');
+    const layoutLabels = this.layoutLocationLabels(locSec);
     if (this.test?.locations && Array.isArray(this.test.locations) && this.test.locations.length > 0) {
+      // the server names them displayName / sequenceNo; the names this component writes back are accepted too
       this.locations = this.test.locations.map((loc: any, idx: number) => ({
         id: loc.id,
         locationCode: loc.locationCode || `LOC${idx + 1}`,
-        locationName: loc.locationName || `Zone ${idx + 1}`,
-        displayOrder: loc.displayOrder || (idx + 1),
+        locationName: loc.displayName || loc.locationName || `Zone ${idx + 1}`,
+        displayOrder: loc.sequenceNo || loc.displayOrder || (idx + 1),
         isReportable: loc.isReportable !== false,
         remarks: loc.remarks || ''
       }));
-    } else if (locSec?.config?.tableRows && Array.isArray(locSec.config.tableRows) && locSec.config.tableRows.length > 0) {
-      this.locations = locSec.config.tableRows.map((r: any, idx: number) => ({
-        locationCode: r.key || `LOC${idx + 1}`,
-        locationName: r.label,
+    } else if (layoutLabels.length) {
+      this.locations = layoutLabels.map((label, idx) => ({
+        locationCode: `LOC${idx + 1}`,
+        locationName: label,
         displayOrder: idx + 1,
         isReportable: true,
         remarks: ''
       }));
-    } else if (this.locations.length === 0) {
-      this.locations = [
-        { locationCode: 'SURF', locationName: 'Surface Zone', displayOrder: 1, isReportable: true, remarks: '0-2mm depth' },
-        { locationCode: 'CORE', locationName: 'Core / Mid-Radius', displayOrder: 2, isReportable: true, remarks: 'Center axis' }
-      ];
     }
+    // no invented list: a layout that lists no location starts without one, the technician adds them
+    this.initLocationGrids();
   }
 
   private initTraverse(): void {
     const travSec = this.sections.find(s => s.type === 'traverse');
     if (this.test?.traversePoints && Array.isArray(this.test.traversePoints) && this.test.traversePoints.length > 0) {
+      // Also reads the names this component writes back to the test (distanceMm, hardnessValue)
       this.traversePoints = this.test.traversePoints.map((pt: any) => ({
-        distance: pt.distance != null ? pt.distance : pt.depth,
-        hardness: pt.hardness != null ? pt.hardness : pt.value
+        distance: pt.distance != null ? pt.distance : (pt.distanceMm != null ? pt.distanceMm : pt.depth),
+        hardness: pt.hardness != null ? pt.hardness : (pt.hardnessValue != null ? pt.hardnessValue : pt.value)
       }));
+      // Shown again after a reload; the parameter row is only written when the user edits a point
+      this.effectiveCaseDepth = this.computeEffectiveCaseDepth();
     } else if (travSec?.config?.tableRows && Array.isArray(travSec.config.tableRows) && travSec.config.tableRows.length > 0) {
       this.traversePoints = travSec.config.tableRows.map((r: any) => ({
         distance: parseFloat(r.label) || 0.1,
@@ -476,15 +902,18 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (this.test?.checklist && Array.isArray(this.test.checklist) && this.test.checklist.length > 0) {
       this.checklistItems = this.test.checklist.map((chk: any, idx: number) => ({
         id: chk.id || (idx + 1),
-        label: chk.label || chk.inspectionPoint || `Item ${idx + 1}`,
-        status: chk.status || 'Pass'
+        label: chk.label || chk.itemLabel || chk.inspectionPoint || `Item ${idx + 1}`,
+        status: chk.status || ''
       }));
     } else if (chkSec?.config?.tableRows && Array.isArray(chkSec.config.tableRows) && chkSec.config.tableRows.length > 0) {
-      this.checklistItems = chkSec.config.tableRows.map((r: any, idx: number) => ({
+      this.checklistItems = chkSec.config.tableRows.filter((r: any) => r?.visible !== false).map((r: any, idx: number) => ({
         id: idx + 1,
         label: r.label,
-        status: 'Pass'
+        status: ''
       }));
+    } else if (typeof chkSec?.config?.items === 'string' && chkSec.config.items.trim()) {
+      // older layouts keep the items as one comma-separated text
+      this.checklistItems = chkSec.config.items.split(',').map((x: string) => x.trim()).filter(Boolean).map((label: string, idx: number) => ({ id: idx + 1, label, status: '' }));
     }
   }
 
@@ -497,6 +926,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         displayOrder: obs.displayOrder || (idx + 1),
         isReportable: obs.isReportable !== false
       }));
+    }
+  }
+
+  private initOpinion(): void {
+    const opSec = this.sections.find(s => s.type === 'opinion');
+    if (!opSec) return;
+    if (this.opinionData.items.length === 0 && opSec.config?.tableRows && Array.isArray(opSec.config.tableRows)) {
+      this.opinionData.items = opSec.config.tableRows.map((r: any) => ({
+        label: r.label,
+        formulaDisplay: r.formulaDisplay || r.formula || '',
+        unit: r.unit || '',
+        requirement: r.requirement || '',
+        value: r.staticValue || '',
+        status: 'Pass'
+      }));
+      this.opinionData.overallStatement = opSec.config.overallStatement || '';
+      this.opinionData.isOptional = opSec.config.isOptional !== false;
     }
   }
 
@@ -517,6 +963,29 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         }
         if (extra?.conditionValues) {
           this.conditionValues = { ...this.conditionValues, ...extra.conditionValues };
+          this.applyRoomConditions();
+        }
+        if (extra?.opinionData) {
+          this.opinionData = { ...this.opinionData, ...extra.opinionData };
+        }
+        if (extra?.conditionFields && typeof extra.conditionFields === 'object') {
+          this.runtimeConditionFields = { ...extra.conditionFields };
+        }
+        if (extra?.customCells && typeof extra.customCells === 'object') {
+          this.customCells = { ...extra.customCells };
+        }
+        if (extra?.narratives && typeof extra.narratives === 'object') {
+          this.narratives = { ...extra.narratives };
+        }
+        if (extra?.specimenCountApplied === true) this.specimenCountApplied = true;
+        if (extra?.userSpecimenCount != null && Number(extra.userSpecimenCount) > 0) {
+          this.savedUserSpecimenCount = Number(extra.userSpecimenCount);
+        }
+        if (extra?.tensileRowPrintMap && typeof extra.tensileRowPrintMap === 'object') {
+          this.tensileRowPrintMap = { ...extra.tensileRowPrintMap };
+        }
+        if (Array.isArray(extra?.hiddenRows)) {
+          this.hiddenFixedRoles = new Set(extra.hiddenRows.filter((r: string) => ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(r as SpecimenRole)) as SpecimenRole[]);
         }
       } catch (e) {
         console.warn('Could not parse test.executionExtraJson', e);
@@ -528,68 +997,95 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Specimen & Parameter Grouping / Detection
   // =========================================================================
 
-  /**
-   * Calculates the number of unique base parameters per specimen.
-   * e.g. If 18 total parameters are configured across 3 specimens, returns 6.
-   */
-  getBaseParameterCount(): number {
-    if (!this.parametersFormArray || this.parametersFormArray.length === 0) return 6;
-    const names = new Set<string>();
-    let count = 0;
-    for (let i = 0; i < this.parametersFormArray.length; i++) {
-      const ctrl = this.parametersFormArray.at(i);
-      if (!ctrl) continue;
-      const pName = (ctrl.get('parameterName')?.value || '').trim().toLowerCase();
-      if (pName && names.has(pName)) {
-        return count; // First duplicate found, this marks the end of specimen 1's parameter group!
-      }
-      if (pName) {
-        names.add(pName);
-      }
-      count++;
-    }
-    // If no duplicate was found at all, all parameters in array belong to a single specimen
-    if (count > 0) {
-      return count;
-    }
-    // Fallback based on specimen count
-    return this.specimens.length > 0
-      ? Math.max(1, Math.round(this.parametersFormArray.length / this.specimens.length))
-      : 6;
+  /** Specimen index of every row (each row carries its own; see specimen-grouping.ts). */
+  private getRowSpecimenIndexes(): number[] {
+    return specimenIndexesOf(this.parametersFormArray);
+  }
+
+  /** Number of rows that belong to one specimen. */
+  getSpecimenRowCount(spmIdx: number): number {
+    return rowsOfSpecimen(this.getRowSpecimenIndexes(), spmIdx).length;
   }
 
   getSpecimenIndexForParam(rowIdx: number): number {
-    const base = this.getBaseParameterCount();
-    return Math.floor(rowIdx / base);
+    return this.getRowSpecimenIndexes()[rowIdx] ?? 0;
   }
 
   getSpecimenLabelForParam(rowIdx: number): string {
-    const spmIdx = this.getSpecimenIndexForParam(rowIdx);
-    return `S${spmIdx + 1}`;
+    return this.specimenLabel(this.getSpecimenIndexForParam(rowIdx));
   }
 
   isFirstParamOfSpecimen(rowIdx: number): boolean {
-    const base = this.getBaseParameterCount();
-    return rowIdx % base === 0;
+    const indexes = this.getRowSpecimenIndexes();
+    return rowsOfSpecimen(indexes, indexes[rowIdx] ?? 0)[0] === rowIdx;
   }
 
-  getFilteredParamIndices(): number[] {
+  getFilteredParamIndices(sec?: any): number[] {
     if (!this.parametersFormArray) return [];
-    const total = this.parametersFormArray.length;
-    const indices: number[] = [];
+    const activeSec = sec ?? (this.sections || []).find(s => s.type === 'parameter' || s.type === 'param');
+    const indexes = this.getRowSpecimenIndexes();
+    const rows = this.selectedSpecimenFilter === 'all' ? rowsOrderedBySpecimen(indexes) : rowsOfSpecimen(indexes, this.selectedSpecimenFilter - 1);
+    const rawFormRows = (this.parametersFormArray.controls || []).map(c => (c as FormGroup).getRawValue());
+    const plannedQty = Number(this.testPlan?.plannedQuantity || this.test?.plannedQuantity || 1);
+    const keepExtra = this.hasSpecimenSection || plannedQty > 1 || this.layoutSpecimenCount() > 1;
+    const validRows = filterEmptyExtraSpecimenRows(rawFormRows, keepExtra, {
+      readings: this.test?.readings,
+      readingValues: this.readingValues,
+      testImages: this.testImages
+    });
+    const validSet = new Set(validRows);
+    const shown = rows.filter(i => !this.isGridTargetRow(i) && (keepExtra || validSet.has(rawFormRows[i])));
 
-    for (let i = 0; i < total; i++) {
-      if (this.selectedSpecimenFilter === 'all') {
-        indices.push(i);
-      } else {
-        const spmIdx = this.getSpecimenIndexForParam(i);
-        if (spmIdx === (this.selectedSpecimenFilter - 1)) {
-          indices.push(i);
-        }
+    // Template Configured mode: display strictly the Studio-configured rows in template order (+ manually added rows)
+    if (activeSec && this.isTemplateConfiguredMode(activeSec)) {
+      const configuredRows: any[] = (Array.isArray(activeSec.config?.tableRows) ? activeSec.config.tableRows : [])
+        .filter((r: any) => r?.visible !== false && !String(r?.key ?? '').startsWith('tensile_') && r?.rowOrigin !== 'custom' && r?.bindingMode !== 'static');
+      if (configuredRows.length > 0) {
+        const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const orderIndex = (rowIdx: number): number => {
+          const r = rawFormRows[rowIdx];
+          if (!r) return -1;
+          return configuredRows.findIndex(lr => {
+            const targetId = lr.dbMasterId ?? lr.parameterId ?? lr.parameterID ?? null;
+            if (targetId != null && r.parameterID != null && Number(targetId) === Number(r.parameterID)) return true;
+            const candidates = [lr.dbMasterName, lr.sourceName, lr.label].map(norm).filter(Boolean);
+            return candidates.includes(norm(r.parameterName));
+          });
+        };
+        return shown
+          .map((i, pos) => ({ i, pos, spm: this.getSpecimenIndexForParam(i), ord: orderIndex(i), add: !!rawFormRows[i]?.isAdditional }))
+          .filter(x => x.ord >= 0 || x.add)
+          .sort((a, b) => a.spm - b.spm || (a.ord >= 0 ? a.ord : 9999) - (b.ord >= 0 ? b.ord : 9999) || a.pos - b.pos)
+          .map(x => x.i);
       }
     }
-    return indices;
+
+    if (!this.parameterSubset().length) return shown;
+    // the layout's parameters first within each specimen, the test's other parameters after them
+    return shown
+      .map((i, pos) => ({ i, pos, spm: this.getSpecimenIndexForParam(i), out: this.isOutsideSubset(i) ? 1 : 0 }))
+      .sort((a, b) => a.spm - b.spm || a.out - b.out || a.pos - b.pos)
+      .map(x => x.i);
   }
+
+  /** Shared store on the test object for rows taken out of the table (see SpecimenRowStore). */
+  private get rowStore(): SpecimenRowStore {
+    if (!this.test) this.test = {};
+    return this.test as SpecimenRowStore;
+  }
+
+  /** Empty copy of a row for another specimen. */
+  private cloneRowForSpecimen = (source: any, specimen: number): FormGroup =>
+    this.createParamControl({
+      ...source,
+      id: null,
+      value: null,
+      convertedValue: null,
+      resultStatus: null,
+      isWithinLimit: null,
+      remarks: '',
+      specimenIndex: specimen
+    });
 
   setSpecimenFilter(filter: number | 'all'): void {
     this.selectedSpecimenFilter = filter;
@@ -636,18 +1132,32 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return name.includes('tensile') || name.includes('tension');
   }
 
+  /** S1 rows; the specimen matrix shows one line per S1 row and finds the matching row of every other specimen. */
   getBaseParameterList(): any[] {
     if (!this.parametersFormArray || this.parametersFormArray.length === 0) return [];
-    const base = this.getBaseParameterCount();
     const list: any[] = [];
-    for (let i = 0; i < Math.min(base, this.parametersFormArray.length); i++) {
+    for (const i of rowsOfSpecimen(this.getRowSpecimenIndexes(), 0)) {
       const ctrl = this.parametersFormArray.at(i);
       if (ctrl) {
+        const pName = ctrl.get('parameterName')?.value || `Parameter ${i + 1}`;
+        const rawInputType = ctrl.get('inputType')?.value || 'Decimal';
+        const rawParamType = String(ctrl.get('parameterType')?.value || '');
+        const lowerName = String(pName).toLowerCase();
+        const isTextRow = rawInputType === 'Text' || rawInputType === 'Qualitative'
+          || rawParamType === 'Qualitative'
+          || lowerName.includes('location of fracture')
+          || lowerName.includes('specimen type')
+          || lowerName.includes('type of specimen')
+          || lowerName.includes('specimen size')
+          || lowerName.includes('size of specimen');
         list.push({
           index: i,
-          name: ctrl.get('parameterName')?.value || `Parameter ${i + 1}`,
+          parameterID: ctrl.get('parameterID')?.value ?? null,
+          isAdditional: !!ctrl.get('isAdditional')?.value,
+          name: pName,
           unit: ctrl.get('unit')?.value || '—',
           requirement: this.formatRequirement(ctrl.value),
+          inputType: isTextRow ? 'Text' : rawInputType,
           isCalculated: ctrl.get('isCalculated')?.value || !!ctrl.get('formulaExpression')?.value
         });
       }
@@ -655,31 +1165,58 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return list;
   }
 
+  /** Form row of `spmIdx` that matches S1 row `baseParamIdx` (same parameter, same occurrence), or -1. */
+  private getMatchingRow(baseParamIdx: number, spmIdx: number): number {
+    if (!this.parametersFormArray) return -1;
+    return matchingRowInSpecimen(rowValuesOf(this.parametersFormArray), this.getRowSpecimenIndexes(), baseParamIdx, spmIdx);
+  }
+
   getParamValueForSpecimen(baseParamIdx: number, spmIdx: number): any {
-    const base = this.getBaseParameterCount();
-    const targetIdx = spmIdx * base + baseParamIdx;
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    if (targetIdx < 0) return '';
     return this.parametersFormArray?.at(targetIdx)?.get('value')?.value ?? '';
   }
 
-  onParamValueChangeForSpecimen(baseParamIdx: number, spmIdx: number, newVal: any): void {
-    const base = this.getBaseParameterCount();
-    const targetIdx = spmIdx * base + baseParamIdx;
-    const ctrl = this.parametersFormArray?.at(targetIdx);
+  /** Text parameters (input type Text) keep their result in Remarks. */
+  getParamTextForSpecimen(baseParamIdx: number, spmIdx: number): string {
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    if (targetIdx < 0) return '';
+    return this.parametersFormArray?.at(targetIdx)?.get('remarks')?.value ?? '';
+  }
+
+  onParamTextChangeForSpecimen(baseParamIdx: number, spmIdx: number, text: string): void {
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    const ctrl = targetIdx >= 0 ? this.parametersFormArray?.at(targetIdx) : null;
     if (ctrl) {
-      ctrl.patchValue({ value: newVal });
-      this.evaluateLimitForControl(ctrl);
+      const trimmed = String(text ?? '').trim();
+      ctrl.patchValue({
+        remarks: text,
+        resultStatus: trimmed ? 'Reported' : null,
+        isWithinLimit: null
+      });
       this.paramValueChanged.emit({ rowIdx: targetIdx, param: ctrl.value });
       this.cdr.markForCheck();
     }
   }
 
+  onParamValueChangeForSpecimen(baseParamIdx: number, spmIdx: number, newVal: any): void {
+    const targetIdx = this.getMatchingRow(baseParamIdx, spmIdx);
+    const ctrl = targetIdx >= 0 ? this.parametersFormArray?.at(targetIdx) : null;
+    if (ctrl) {
+      ctrl.patchValue({ value: newVal });
+      this.evaluateLimitForControl(ctrl);
+      this.paramValueChanged.emit({ rowIdx: targetIdx, param: ctrl.value });
+      this.applyTableEdit(targetIdx, newVal);
+      this.cdr.markForCheck();
+    }
+  }
+
   getBaseParamAverage(baseParamIdx: number): string {
-    const base = this.getBaseParameterCount();
     let sum = 0;
     let count = 0;
     for (let s = 0; s < this.specimens.length; s++) {
-      const idx = s * base + baseParamIdx;
-      const ctrl = this.parametersFormArray?.at(idx);
+      const idx = this.getMatchingRow(baseParamIdx, s);
+      const ctrl = idx >= 0 ? this.parametersFormArray?.at(idx) : null;
       const raw = ctrl?.get('value')?.value;
       if (raw !== null && raw !== undefined && raw !== '' && !isNaN(Number(raw))) {
         sum += Number(raw);
@@ -690,39 +1227,76 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getBaseParamStatus(baseParamIdx: number): string {
-    const base = this.getBaseParameterCount();
     let hasFail = false;
     let hasPass = false;
+    let hasReported = false;
     for (let s = 0; s < this.specimens.length; s++) {
-      const idx = s * base + baseParamIdx;
-      const ctrl = this.parametersFormArray?.at(idx);
+      const idx = this.getMatchingRow(baseParamIdx, s);
+      const ctrl = idx >= 0 ? this.parametersFormArray?.at(idx) : null;
       const st = ctrl?.get('resultStatus')?.value;
+      const val = ctrl?.get('value')?.value;
+      const remarks = ctrl?.get('remarks')?.value;
+      const inputType = ctrl?.get('inputType')?.value;
       if (st === 'Fail') hasFail = true;
-      if (st === 'Pass') hasPass = true;
+      else if (st === 'Pass') hasPass = true;
+      else if (st === 'Reported' || (inputType === 'Text' && String(remarks ?? '').trim() !== '')) hasReported = true;
+      else if (val !== null && val !== undefined && val !== '') {
+        const min = ctrl?.get('specMinValue')?.value ?? ctrl?.get('minValue')?.value;
+        const max = ctrl?.get('specMaxValue')?.value ?? ctrl?.get('maxValue')?.value;
+        const crit = String(ctrl?.get('acceptanceCriteria')?.value || '').trim();
+        if (min == null && max == null && !crit) hasReported = true;
+      }
     }
     if (hasFail) return 'Fail';
     if (hasPass) return 'Pass';
+    if (hasReported) return 'Reported';
     return 'Pending';
   }
 
   // =========================================================================
   // Specimen Matrix Operations
   // =========================================================================
-  private initSpecimens(): void {
-    const plannedQty = Number(
-      this.testPlan?.totalSpecimens ||
-      this.test?.totalSpecimens ||
-      this.testPlan?.plannedQuantity ||
-      this.testPlan?.quantity ||
-      this.test?.plannedQuantity ||
-      this.test?.quantity ||
-      1
-    );
-    const count = Math.max(1, plannedQty);
+  public initSpecimens(): void {
+    let count = 1;
+    const declaredCount = this.layoutSpecimenCount();
+    const plannedQty = Number(this.testPlan?.plannedQuantity || this.test?.plannedQuantity || 0);
+    if (this.hasSpecimenSection || declaredCount > 1 || plannedQty > 1) {
+      const rowIndexes = this.getRowSpecimenIndexes();
+      const maxRowSpecimen = rowIndexes.length ? Math.max(...rowIndexes) : 0;
+      const userSpecified = Number(this.testPlan?.totalSpecimens || this.test?.totalSpecimens || 0);
+      count = Math.max(1, plannedQty, declaredCount, userSpecified, maxRowSpecimen + 1);
+    } else {
+      // Layout without specimen section and single planned quantity:
+      // An already saved extra specimen row (SpecimenIndex > 0) that has no value, no reading,
+      // and no photo is not drawn and not counted in the conformity table.
+      if (this.parametersFormArray && this.parametersFormArray.length > 0) {
+        const rawControls = [...this.parametersFormArray.controls];
+        const rawRows = rawControls.map(c => (c as FormGroup).getRawValue());
+        const indexes = resolveSpecimenIndexes(rawRows);
+        for (let i = rawControls.length - 1; i >= 0; i--) {
+          const s = indexes[i];
+          if (s > 0 && !specimenHasData(s, rawRows, { readings: this.test?.readings, readingValues: this.readingValues, testImages: this.testImages })) {
+            this.parametersFormArray.removeAt(i);
+          }
+        }
+      }
+      const rawRows = (this.parametersFormArray?.controls || []).map(c => (c as FormGroup).getRawValue());
+      const sourceRows = rawRows.length > 0 ? rawRows : (this.test?.parameters || []);
+      const validRows = filterEmptyExtraSpecimenRows(sourceRows, false, {
+        readings: this.test?.readings,
+        readingValues: this.readingValues,
+        testImages: this.testImages
+      });
+      const validIndexes = resolveSpecimenIndexes(validRows);
+      const maxRowSpecimen = validIndexes.length ? Math.max(...validIndexes) : 0;
+      const userSpecified = Number(this.testPlan?.totalSpecimens || this.test?.totalSpecimens || this.savedUserSpecimenCount || 0);
+      count = Math.max(1, userSpecified, maxRowSpecimen + 1);
+    }
     const prefix = 'S';
 
     // Guard: If specimen array already exists with target length and has values, avoid wiping
     if (this.specimens.length === count && this.specimens.some(s => s.yieldLoad != null || s.peakLoad != null || s.proofStress != null || s.uts != null)) {
+      this.ensureRowsForSpecimens();
       this.hydrateSpecimensFromParameters();
       this.recalculateSpecimens();
       this.cdr.markForCheck();
@@ -730,10 +1304,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
 
     this.specimens = [];
+    const pricingDim = Number(this.test?.pricingDimensionValue);
+    const d = this.sample?.diameter != null ? Number(this.sample.diameter) : (pricingDim > 0 ? pricingDim : null);
     const t = this.sample?.thickness != null ? Number(this.sample.thickness) : null;
     const w = this.sample?.width != null ? Number(this.sample.width) : null;
-    const d = this.sample?.diameter != null ? Number(this.sample.diameter) : null;
-    const l0 = this.sample?.gaugeLength != null ? Number(this.sample.gaugeLength) : 50;
+    // Strictly bind from DB sample gaugeLength only — never fabricate a default 50 on untouched tests
+    const l0 = this.sample?.gaugeLength != null ? Number(this.sample.gaugeLength) : null;
 
     for (let i = 1; i <= count; i++) {
       const initialArea = this.calculateArea(t, w, d);
@@ -755,86 +1331,161 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       });
     }
 
-    // Align parametersFormArray with initial count
-    if (this.parametersFormArray && this.parametersFormArray.length > 0) {
-      const base = this.getBaseParameterCount();
-      if (base > 0) {
-        const targetLen = count * base;
-        if (this.parametersFormArray.length > targetLen) {
-          while (this.parametersFormArray.length > targetLen) {
-            this.parametersFormArray.removeAt(this.parametersFormArray.length - 1);
-          }
-        } else if (this.parametersFormArray.length < targetLen) {
-          while (this.parametersFormArray.length < targetLen) {
-            const templateIdx = this.parametersFormArray.length % base;
-            const templateCtrl = this.parametersFormArray.at(templateIdx);
-            if (templateCtrl) {
-              const cloned = this.createParamControl({
-                ...templateCtrl.value,
-                id: null,
-                value: null,
-                resultStatus: null,
-                isWithinLimit: null,
-                remarks: ''
-              });
-              this.parametersFormArray.push(cloned);
-            }
-          }
-        }
-      }
-    }
+    // Every specimen gets its rows (saved rows are kept as they are; nothing is trimmed)
+    this.ensureRowsForSpecimens();
 
     // Hydrate specimen data from existing parameter controls (e.g. S1, S2 from database)
     this.hydrateSpecimensFromParameters();
 
     this.recalculateSpecimens();
+
+    // Sync resolved specimen count back to parent toolbar stepper when needed
+    const currentParentCount = Number(this.test?.totalSpecimens || this.testPlan?.totalSpecimens || 0);
+    if (!this.printMode && count !== currentParentCount) {
+      Promise.resolve().then(() => {
+        if (!this.printMode) this.specimenCountChanged.emit(count);
+      });
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Apply specimen dimensions (from Specimen Size Prompt / toolbar) across all specimens
+   * and update corresponding parameter inputs.
+   */
+  applySpecimenSizeDimensions(dims: {
+    diameter?: number | null;
+    thickness?: number | null;
+    width?: number | null;
+    area?: number | null;
+    gaugeLength?: number | null;
+  }): void {
+    if (!this.specimens || this.specimens.length === 0) return;
+    for (let i = 0; i < this.specimens.length; i++) {
+      const spm = this.specimens[i];
+      if (dims.diameter != null && dims.diameter > 0) spm.diameter = dims.diameter;
+      if (dims.thickness != null && dims.thickness > 0) spm.thickness = dims.thickness;
+      if (dims.width != null && dims.width > 0) spm.width = dims.width;
+      if (dims.area != null && dims.area > 0) spm.area = dims.area;
+      if (dims.gaugeLength != null && dims.gaugeLength > 0) spm.gaugeLength = dims.gaugeLength;
+
+      if (this.parametersFormArray) {
+        const roleMap = this.getSpecimenRoleIndex(i);
+        if (dims.diameter != null && roleMap.has('diameter')) {
+          roleMap.get('diameter')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.diameter }, { emitEvent: false }));
+        }
+        if (dims.thickness != null && roleMap.has('thickness')) {
+          roleMap.get('thickness')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.thickness }, { emitEvent: false }));
+        }
+        if (dims.width != null && roleMap.has('width')) {
+          roleMap.get('width')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.width }, { emitEvent: false }));
+        }
+        if (dims.area != null && roleMap.has('area')) {
+          roleMap.get('area')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.area }, { emitEvent: false }));
+        }
+        if (dims.gaugeLength != null && roleMap.has('gaugeLength')) {
+          roleMap.get('gaugeLength')?.forEach(r => this.parametersFormArray.at(r)?.patchValue({ value: dims.gaugeLength }, { emitEvent: false }));
+        }
+      }
+    }
+    this.recalculateSpecimens();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Role -> FormArray row indexes for one specimen's parameter slice (exact name match, see tensile-parameter-roles.ts).
+   * Rows whose name has no role (or an ambiguous one) are not in the map, so nothing is read from or written to them.
+   */
+  private getSpecimenRoleIndex(spmIdx: number): TensileRoleIndex {
+    if (!this.parametersFormArray || spmIdx < 0) return new Map();
+    const rows = rowsOfSpecimen(this.getRowSpecimenIndexes(), spmIdx);
+    const names = rows.map(r => this.parametersFormArray.at(r)?.get('parameterName')?.value || '');
+    // Positions inside the specimen -> form row indexes
+    const index: TensileRoleIndex = new Map();
+    buildTensileRoleIndex(names).forEach((list, role) => index.set(role, list.map(i => rows[i])));
+    return index;
+  }
+
+  /** Adds rows for every specimen that has none (saved rows removed earlier come back first, else copies of S1). */
+  private ensureRowsForSpecimens(): void {
+    if (this.printMode) return; // the sheet shows the saved rows only
+    if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
+    for (let s = 0; s < this.specimens.length; s++) {
+      addSpecimenRows(this.parametersFormArray, s, this.rowStore, this.cloneRowForSpecimen);
+    }
+  }
+
+  /** Values the user typed in this session into derived rows (area, stresses, elongation, RA) of one specimen. */
+  private getLockedDerivedValues(spmIdx: number): TensileValues {
+    const locked: TensileValues = {};
+    this.getSpecimenRoleIndex(spmIdx).forEach((rows, role) => {
+      if (!isSpecimenRole(role) || !DERIVED_TENSILE_ROLES.has(role)) return;
+      for (const r of rows) {
+        const ctrl = this.parametersFormArray.at(r);
+        if (ctrl && this.userTypedDerivedRows.has(ctrl)) {
+          const v = parseTensileNumber(ctrl.get('value')?.value);
+          if (v != null) {
+            locked[role] = v;
+            return;
+          }
+        }
+      }
+    });
+    return locked;
+  }
+
+  /**
+   * A value typed in a parameter-table row: update that specimen field (clearing clears it),
+   * remember user-typed derived rows, and re-run the specimen calculation when an input changed.
+   */
+  private applyTableEdit(rowIdx: number, rawVal: any): void {
+    const spmIdx = this.getSpecimenIndexForParam(rowIdx);
+    const spm = this.specimens[spmIdx];
+    if (!spm) return;
+    const role = roleOfRow(this.getSpecimenRoleIndex(spmIdx), rowIdx);
+    // Unknown and read-only quantities (ReH, ReL, Rp0.5) never feed the specimen model
+    if (!isSpecimenRole(role)) return;
+
+    const value = parseTensileNumber(rawVal);
+    spm[role] = value;
+
+    if (DERIVED_TENSILE_ROLES.has(role)) {
+      const ctrl = this.parametersFormArray.at(rowIdx);
+      if (value == null) this.userTypedDerivedRows.delete(ctrl);
+      else this.userTypedDerivedRows.add(ctrl);
+    }
+
+    let clearRoles: Set<SpecimenRole> | undefined;
+    if (RECALC_TRIGGER_ROLES.has(role)) {
+      // A dimension edit, or clearing S0 by hand, recalculates S0 from the dimensions (null when they give none)
+      const recomputeArea = DIMENSION_ROLES.has(role) || (role === 'area' && value == null);
+      clearRoles = recalcTensileSpecimen(spm, { recomputeArea, locked: this.getLockedDerivedValues(spmIdx) });
+    }
+    this.recalculateSpecimens();
+    if (clearRoles?.size) this.syncSpecimenToForm(spm, clearRoles);
     this.cdr.markForCheck();
   }
 
   private hydrateSpecimensFromParameters(): void {
     if (!this.parametersFormArray || this.parametersFormArray.length === 0) return;
-    const base = this.getBaseParameterCount();
 
     for (let sIdx = 0; sIdx < this.specimens.length; sIdx++) {
       const spm = this.specimens[sIdx];
-      const startIdx = sIdx * base;
-      const endIdx = Math.min(startIdx + base, this.parametersFormArray.length);
 
-      for (let i = startIdx; i < endIdx; i++) {
-        const ctrl = this.parametersFormArray.at(i);
-        if (!ctrl) continue;
-        const name = (ctrl.get('parameterName')?.value || '').toLowerCase();
-        const val = ctrl.get('value')?.value;
+      // Read fallback for saved rows: each role reads only its own row group (exact name, never substring)
+      const roleIndex = this.getSpecimenRoleIndex(sIdx);
+      const values = readTensileValues(roleIndex, r => this.parametersFormArray.at(r)?.get('value')?.value);
+      Object.assign(spm, values);
 
-        if (val !== null && val !== undefined && val !== '' && !isNaN(Number(val))) {
-          const numVal = Number(val);
-          if (name.includes('thickness')) {
-            spm.thickness = numVal;
-          } else if (name.includes('width')) {
-            spm.width = numVal;
-          } else if (name.includes('diameter')) {
-            spm.diameter = numVal;
-          } else if (name.includes('cross section') || (name.includes('area') && !name.includes('reduction'))) {
-            spm.area = numVal;
-          } else if (name.includes('gauge length')) {
-            spm.gaugeLength = numVal;
-          } else if (name.includes('yield load')) {
-            spm.yieldLoad = numVal;
-          } else if (name.includes('peak load') || (name.includes('load') && !name.includes('yield'))) {
-            spm.peakLoad = numVal;
-          } else if (name.includes('final length')) {
-            spm.finalLength = numVal;
-          } else if (name.includes('proof stress') || name.includes('yield strength')) {
-            spm.proofStress = Math.round(numVal);
-          } else if (name.includes('tensile strength') || name.includes('uts')) {
-            spm.uts = Math.round(numVal);
-          } else if (name.includes('elongation')) {
-            spm.elongation = Number(numVal.toFixed(1));
-          } else if (name.includes('reduction of area')) {
-            spm.reductionOfArea = Number(numVal.toFixed(1));
-          }
-        }
-      }
+      // Reload rule (see savedHandTypedRoles): a saved S0 / Rp / Rm / A% that does not match its saved inputs was
+      // typed by hand, so it is locked like a value typed in this session and the calculation never replaces it.
+      savedHandTypedRoles(values).forEach(role => {
+        (roleIndex.get(role) || []).forEach(r => {
+          const ctrl = this.parametersFormArray.at(r);
+          if (ctrl && parseTensileNumber(ctrl.get('value')?.value) != null) this.userTypedDerivedRows.add(ctrl);
+        });
+      });
 
       if (!spm.area) {
         spm.area = this.calculateArea(spm.thickness || null, spm.width || null, spm.diameter || null);
@@ -848,59 +1499,28 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private calculateArea(t: number | null, w: number | null, d: number | null): number | null {
-    if (d && d > 0) {
-      return Number(((Math.PI * d * d) / 4).toFixed(2));
-    }
-    if (t && w && t > 0 && w > 0) {
-      return Number((t * w).toFixed(2));
-    }
-    return null;
+    return tensileArea(t, w, d);
   }
 
   onSpecimenDimensionChange(spm: SpecimenData): void {
-    spm.area = this.calculateArea(spm.thickness || null, spm.width || null, spm.diameter || null);
-    this.recalculateSpecimenRow(spm);
+    // S0 follows the dimensions unless it was typed by hand; no area from the dimensions clears a calculated S0
+    const clearRoles = this.recalculateSpecimenRow(spm, true);
     this.recalculateSpecimens();
-    this.syncSpecimenToForm(spm);
+    this.syncSpecimenToForm(spm, clearRoles);
   }
 
   onSpecimenLoadChange(spm: SpecimenData): void {
-    this.recalculateSpecimenRow(spm);
+    const clearRoles = this.recalculateSpecimenRow(spm);
     this.recalculateSpecimens();
-    this.syncSpecimenToForm(spm);
+    this.syncSpecimenToForm(spm, clearRoles);
   }
 
-  private recalculateSpecimenRow(spm: SpecimenData): void {
-    const s0 = spm.area;
-    if (s0 && s0 > 0) {
-      // Proof Stress Rp0.2 = Yield Load (kN) * 1000 / S0 (mm2)
-      if (spm.yieldLoad && spm.yieldLoad > 0) {
-        spm.proofStress = Math.round((spm.yieldLoad * 1000) / s0);
-      } else {
-        spm.proofStress = null;
-      }
-
-      // UTS Rm = Peak Load (kN) * 1000 / S0 (mm2)
-      if (spm.peakLoad && spm.peakLoad > 0) {
-        spm.uts = Math.round((spm.peakLoad * 1000) / s0);
-      } else {
-        spm.uts = null;
-      }
-    }
-
-    // Elongation A% = ((Lu - L0) / L0) * 100
-    if (spm.finalLength && spm.gaugeLength && spm.gaugeLength > 0 && spm.finalLength >= spm.gaugeLength) {
-      spm.elongation = Number((((spm.finalLength - spm.gaugeLength) / spm.gaugeLength) * 100).toFixed(1));
-    } else {
-      spm.elongation = null;
-    }
-
-    // Reduction of Area Z% = ((S0 - Su) / S0) * 100
-    if (spm.finalArea && s0 && s0 > 0 && spm.finalArea <= s0) {
-      spm.reductionOfArea = Number((((s0 - spm.finalArea) / s0) * 100).toFixed(1));
-    } else {
-      spm.reductionOfArea = null;
-    }
+  /**
+   * Rp, Rm, A%, Z% for one specimen (formulas in tensile-parameter-roles.ts); values the user typed into derived rows win.
+   * Returns the calculated roles whose result is now empty, so their rows are cleared instead of keeping an old value.
+   */
+  private recalculateSpecimenRow(spm: SpecimenData, recomputeArea = false): Set<SpecimenRole> {
+    return recalcTensileSpecimen(spm, { recomputeArea, locked: this.getLockedDerivedValues(this.specimens.indexOf(spm)) });
   }
 
   private recalculateSpecimens(): void {
@@ -911,11 +1531,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const validArea = this.specimens.map(s => s.area).filter((v): v is number => v != null && v > 0);
 
     this.specimenAverages = {
-      proofStress: validProof.length ? Math.round(validProof.reduce((a, b) => a + b, 0) / validProof.length) : null,
-      uts: validUts.length ? Math.round(validUts.reduce((a, b) => a + b, 0) / validUts.length) : null,
-      elongation: validElong.length ? Number((validElong.reduce((a, b) => a + b, 0) / validElong.length).toFixed(1)) : null,
+      proofStress: validProof.length ? Number((validProof.reduce((a, b) => a + b, 0) / validProof.length).toFixed(3)) : null,
+      uts: validUts.length ? Number((validUts.reduce((a, b) => a + b, 0) / validUts.length).toFixed(3)) : null,
+      elongation: validElong.length ? Number((validElong.reduce((a, b) => a + b, 0) / validElong.length).toFixed(3)) : null,
       reductionOfArea: validRA.length ? Number((validRA.reduce((a, b) => a + b, 0) / validRA.length).toFixed(1)) : null,
-      area: validArea.length ? Number((validArea.reduce((a, b) => a + b, 0) / validArea.length).toFixed(2)) : null
+      area: validArea.length ? Number((validArea.reduce((a, b) => a + b, 0) / validArea.length).toFixed(3)) : null
     };
 
     // Auto-sync calculated specimen values with parameters FormArray!
@@ -925,6 +1545,31 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   /**
    * Computes the dynamic arithmetic average across all active specimens for any measurement/dimension.
    */
+  /** Smallest / largest value of a tensile row over the specimens (studio: "Show Min / Max"). */
+  getDimensionStat(field: keyof SpecimenData, which: 'min' | 'max'): string {
+    const vals = this.specimens
+      .map(s => s[field])
+      .filter((v): v is number => v !== null && v !== undefined && !isNaN(v as number) && (v as number) > 0) as number[];
+    if (vals.length === 0) return '-';
+    return this.trimNumber(which === 'min' ? Math.min(...vals) : Math.max(...vals));
+  }
+
+  /** Smallest / largest value of a parameter row over the specimens. */
+  getBaseParamStat(baseParamIdx: number, which: 'min' | 'max'): string {
+    const vals: number[] = [];
+    for (let s = 0; s < this.specimens.length; s++) {
+      const idx = this.getMatchingRow(baseParamIdx, s);
+      const raw = idx >= 0 ? this.parametersFormArray?.at(idx)?.get('value')?.value : null;
+      if (raw !== null && raw !== undefined && raw !== '' && !isNaN(Number(raw))) vals.push(Number(raw));
+    }
+    if (vals.length === 0) return '-';
+    return this.trimNumber(which === 'min' ? Math.min(...vals) : Math.max(...vals));
+  }
+
+  private trimNumber(v: number): string {
+    return String(Number(v.toFixed(3)));
+  }
+
   getDimensionAverage(field: keyof SpecimenData): string {
     const vals = this.specimens
       .map(s => s[field])
@@ -941,79 +1586,38 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       return avg.toFixed(1);
     }
     if (field === 'proofStress' || field === 'uts') {
-      return String(Math.round(avg));
+      return avg.toFixed(3);
     }
     return avg.toFixed(2);
   }
 
-  private syncSpecimenToForm(spm: SpecimenData): void {
-    if (!this.parametersFormArray) return;
+  /**
+   * Writes each specimen field only into the rows of its own role group (synonyms of one quantity), never into another role's row.
+   * A row that already holds the same number is not patched, so the input the user is typing in is left alone.
+   * `clearRoles` (from the calculation) empties calculated rows whose result is now null; inputs are never emptied here.
+   */
+  private syncSpecimenToForm(spm: SpecimenData, clearRoles?: ReadonlySet<SpecimenRole>): void {
+    if (this.printMode || !this.parametersFormArray) return;
     const spmIdx = this.specimens.indexOf(spm);
     if (spmIdx < 0) return;
 
-    const base = this.getBaseParameterCount();
-    const startIdx = spmIdx * base;
-    const endIdx = Math.min(startIdx + base, this.parametersFormArray.length);
-
-    for (let i = startIdx; i < endIdx; i++) {
-      const ctrl = this.parametersFormArray.at(i);
-      if (!ctrl) continue;
-      const name = (ctrl.get('parameterName')?.value || '').toLowerCase();
-
-      if (spm.thickness != null && name.includes('thickness')) {
-        ctrl.patchValue({ value: spm.thickness });
+    planTensileWrites(this.getSpecimenRoleIndex(spmIdx), spm, clearRoles).forEach(({ rowIdx, value }) => {
+      const ctrl = this.parametersFormArray.at(rowIdx);
+      if (!ctrl) return;
+      const raw = ctrl.get('value')?.value;
+      const current = parseTensileNumber(raw);
+      if (current === value && (value != null || raw === null || raw === undefined || raw === '')) {
         this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.width != null && name.includes('width')) {
-        ctrl.patchValue({ value: spm.width });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.diameter != null && name.includes('diameter')) {
-        ctrl.patchValue({ value: spm.diameter });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.area != null && (name.includes('cross section') || (name.includes('area') && !name.includes('reduction')))) {
-        ctrl.patchValue({ value: spm.area });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.gaugeLength != null && name.includes('gauge length')) {
-        ctrl.patchValue({ value: spm.gaugeLength });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.yieldLoad != null && name.includes('yield load')) {
-        ctrl.patchValue({ value: spm.yieldLoad });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.peakLoad != null && (name.includes('peak load') || (name.includes('load') && !name.includes('yield')))) {
-        ctrl.patchValue({ value: spm.peakLoad });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.finalLength != null && name.includes('final length')) {
-        ctrl.patchValue({ value: spm.finalLength });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.proofStress != null && (name.includes('proof') || name.includes('yield strength'))) {
-        ctrl.patchValue({ value: spm.proofStress });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.uts != null && (name.includes('tensile strength') || name.includes('uts') || name.includes('ultimate'))) {
-        ctrl.patchValue({ value: spm.uts });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.elongation != null && name.includes('elongation')) {
-        ctrl.patchValue({ value: spm.elongation });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
-      } else if (spm.reductionOfArea != null && (name.includes('reduction') || name.includes('area'))) {
-        ctrl.patchValue({ value: spm.reductionOfArea });
-        this.evaluateLimitForControl(ctrl);
-        this.paramValueChanged.emit({ rowIdx: i, param: ctrl.value });
+        return;
       }
-    }
+      ctrl.patchValue({ value });
+      this.evaluateLimitForControl(ctrl);
+      this.paramValueChanged.emit({ rowIdx, param: ctrl.value });
+    });
   }
 
   private syncSpecimenValuesToForm(): void {
-    if (!this.parametersFormArray) return;
+    if (this.printMode || !this.parametersFormArray) return;
 
     // Sync each specimen's calculated values to the corresponding FormArray slice
     this.specimens.forEach(spm => {
@@ -1023,15 +1627,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     // Also update test.parameters in-memory if available so cards reflect values
     if (this.test?.parameters && Array.isArray(this.test.parameters)) {
       this.test.parameters.forEach((tp: any) => {
-        const name = (tp.parameterName || '').toLowerCase();
-        if (this.specimenAverages.proofStress != null && (name.includes('proof') || name.includes('yield'))) {
-          tp.value = this.specimenAverages.proofStress;
-        } else if (this.specimenAverages.uts != null && (name.includes('tensile') || name.includes('uts') || name.includes('ultimate'))) {
-          tp.value = this.specimenAverages.uts;
-        } else if (this.specimenAverages.elongation != null && name.includes('elongation')) {
-          tp.value = this.specimenAverages.elongation;
-        } else if (this.specimenAverages.reductionOfArea != null && (name.includes('reduction') || name.includes('area'))) {
-          tp.value = this.specimenAverages.reductionOfArea;
+        const role = resolveTensileRole(tp.parameterName);
+        if (role === 'proofStress' || role === 'uts' || role === 'elongation' || role === 'reductionOfArea') {
+          const avg = this.specimenAverages[role];
+          if (avg != null) tp.value = avg;
         }
       });
     }
@@ -1041,9 +1640,16 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Specimen & Parameter Adjustments (Dynamic Count / Stepper / Add / Remove)
   // =========================================================================
 
-  setSpecimenCount(targetCount: number): void {
+  setSpecimenCount(targetCount: number, fromLayout = false): void {
+    if (this.printMode) return;
+    const sec = this.specimenSection;
+    if (!fromLayout && sec && !this.canAdjustCount(sec)) {
+      this.toastService.show('The layout fixes the number of specimens.', 'warning');
+      this.specimenCountChanged.emit(this.specimens.length); // the toolbar shows the real count again
+      return;
+    }
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const newCount = Math.max(1, Math.min(20, Math.round(targetCount)));
-    const base = this.getBaseParameterCount();
 
     if (newCount > this.specimens.length) {
       const diff = newCount - this.specimens.length;
@@ -1053,19 +1659,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     } else if (newCount < this.specimens.length) {
       const diff = this.specimens.length - newCount;
       for (let i = 0; i < diff; i++) {
-        this.removeSpecimen();
-      }
-    }
-
-    // Safety guard: ALWAYS enforce parametersFormArray length matches this.specimens.length * base
-    if (this.parametersFormArray && base > 0) {
-      const targetLen = this.specimens.length * base;
-      while (this.parametersFormArray.length > targetLen) {
-        this.parametersFormArray.removeAt(this.parametersFormArray.length - 1);
+        // Stops at the first specimen that holds results (removeSpecimen shows why)
+        if (!this.removeSpecimen()) break;
       }
     }
 
     this.recalculateSpecimens();
+    this.specimenCountApplied = true; // from now on the count is the user's (or the layout's) choice
     this.parametersAdjusted.emit();
     this.specimenCountChanged.emit(this.specimens.length);
   }
@@ -1088,7 +1688,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   addSpecimen(): void {
     if (this.isViewMode || this.isLocked) return;
-    const base = this.getBaseParameterCount();
+    this.specimenCountApplied = true;
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const nextNum = this.specimens.length + 1;
     const refSpm = this.specimens[0];
 
@@ -1110,30 +1711,31 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     };
     this.specimens.push(newSpm);
 
-    // Clone base parameters for the new specimen into the form array
-    if (this.parametersFormArray && base > 0) {
-      for (let i = 0; i < base; i++) {
-        const srcCtrl = this.parametersFormArray.at(i);
-        const clonedGroup = this.createParamControl({
-          ...srcCtrl.value,
-          id: null,
-          value: null,
-          resultStatus: null,
-          isWithinLimit: null,
-          remarks: ''
-        });
-        this.parametersFormArray.push(clonedGroup);
-      }
+    // Rows for the new specimen: saved rows removed earlier come back with their IDs, otherwise empty copies of S1
+    if (this.parametersFormArray && this.parametersFormArray.length > 0) {
+      addSpecimenRows(this.parametersFormArray, this.specimens.length - 1, this.rowStore, this.cloneRowForSpecimen);
     }
 
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
   }
 
-  removeSpecimen(spmIndex?: number): void {
-    if (this.isViewMode || this.isLocked || this.specimens.length <= 1) return;
+  /**
+   * Removes a specimen only when none of its rows holds a value or remark; otherwise nothing is removed and a
+   * message says which row to clear first. Saved empty rows are deleted on the next save. Returns true when removed.
+   */
+  removeSpecimen(spmIndex?: number): boolean {
+    if (this.isViewMode || this.isLocked || this.specimens.length <= 1) return false;
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     const targetIdx = spmIndex !== undefined ? spmIndex : this.specimens.length - 1;
-    const base = this.getBaseParameterCount();
+
+    if (this.parametersFormArray) {
+      const block = removeSpecimenRows(this.parametersFormArray, targetIdx, this.rowStore);
+      if (block) {
+        this.toastService.show(specimenRemovalMessage(`S${targetIdx + 1}`, block), 'warning');
+        return false;
+      }
+    }
 
     // Remove from specimen array
     this.specimens.splice(targetIdx, 1);
@@ -1143,29 +1745,231 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       s.id = `S${idx + 1}`;
     });
 
-    // Remove corresponding parameter controls
-    if (this.parametersFormArray) {
-      const startRemove = targetIdx * base;
-      for (let i = 0; i < base; i++) {
-        if (this.parametersFormArray.length > startRemove) {
-          this.parametersFormArray.removeAt(startRemove);
-        }
-      }
-    }
-
     if (this.selectedSpecimenFilter !== 'all' && (this.selectedSpecimenFilter as number) > this.specimens.length) {
       this.selectedSpecimenFilter = 'all';
     }
 
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
+    return true;
   }
 
-  removeParameter(rowIdx: number): void {
+  /**
+   * Removes one row (by its FormArray index; other rows keep their own controls, IDs and specimen index).
+   * A row with a value or remark is kept (clear it first). A row cleared on screen whose value is still saved is kept
+   * until Save Draft stores the cleared value. A saved empty row is deleted on the next save.
+   */
+  removeParameter(rowIdx: number, discardResult = false): void {
     if (this.isViewMode || this.isLocked || !this.parametersFormArray || this.parametersFormArray.length <= 1) return;
+    const ctrl = this.parametersFormArray.at(rowIdx);
+    if (!ctrl) return;
+    const row = (ctrl as FormGroup).getRawValue();
+    const savedId = Number(row?.id) || 0;
+    const reason = rowRemovalReason(row, this.rowStore);
+    if (reason && !discardResult) {
+      this.askRemoveWithResult(row.parameterName || `Row ${rowIdx + 1}`, () => this.removeParameter(rowIdx, true));
+      return;
+    }
+    if (reason && savedId > 0) this.rowStore.discardedParameterIds = [...(this.rowStore.discardedParameterIds || []), savedId];
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
     this.parametersFormArray.removeAt(rowIdx);
+    if (savedId > 0) {
+      const store = this.rowStore;
+      store.removedParameterIds = [...(store.removedParameterIds || []), savedId];
+    }
     this.recalculateSpecimens();
     this.parametersAdjusted.emit();
+  }
+
+  /**
+   * Multi-specimen tables: takes one parameter out of EVERY specimen (S1, S2, ...). Refused, with the reason, when any
+   * specimen has a value for it; saved rows are deleted on the next save.
+   */
+  removeBaseParameter(baseRowIdx: number, opts: { discard?: boolean; after?: () => void } = {}): boolean {
+    if (this.isViewMode || this.isLocked || !this.parametersFormArray) return false;
+    const blockers = this.baseRowBlockers(baseRowIdx);
+    if (blockers.length) {
+      this.toastService.show(`This parameter is used to calculate ${blockers.join(', ')}. Remove ${blockers.length > 1 ? 'those' : 'it'} first.`, 'warning');
+      return false;
+    }
+    const rows: number[] = [];
+    for (let s = 0; s < Math.max(1, this.specimens.length); s++) {
+      const idx = this.getMatchingRow(baseRowIdx, s);
+      if (idx >= 0) rows.push(idx);
+    }
+    if (rows.length === 0) return false;
+    if (this.parametersFormArray.length - rows.length < 1) {
+      this.toastService.show('A test needs at least one parameter.', 'warning');
+      return false;
+    }
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows change
+    const block = removeParameterRows(this.parametersFormArray, rows, this.rowStore, !!opts.discard);
+    if (block) {
+      // the row holds a result: ask, then remove it with the old value recorded in the audit trail
+      this.askRemoveWithResult(block.name, () => this.removeBaseParameter(baseRowIdx, { discard: true, after: opts.after }));
+      return false;
+    }
+    this.recalculateSpecimens();
+    this.parametersAdjusted.emit();
+    opts.after?.();
+    return true;
+  }
+
+  // ---- Confirmation before a parameter that holds a result is removed ----
+  removeConfirm = { visible: false, message: '' };
+  private removeConfirmRun: (() => void) | null = null;
+
+  private askRemoveWithResult(name: string, run: () => void): void {
+    this.removeConfirm = { visible: true, message: `"${name}" has a result. Remove it anyway? The removal and the old value are recorded in the audit trail.` };
+    this.removeConfirmRun = run;
+    this.cdr.markForCheck();
+  }
+
+  onRemoveConfirmed(): void {
+    const run = this.removeConfirmRun;
+    this.removeConfirm = { visible: false, message: '' };
+    this.removeConfirmRun = null;
+    run?.();
+    this.cdr.markForCheck();
+  }
+
+  onRemoveCancelled(): void {
+    this.removeConfirm = { visible: false, message: '' };
+    this.removeConfirmRun = null;
+    this.cdr.markForCheck();
+  }
+
+  // ---- Tensile matrix: every row can be removed, but not while another shown row is calculated from it ----
+
+  /** Rows of the tensile matrix that come from the specimen model (they exist even when the test has no parameter row for them). */
+  private static readonly FIXED_TENSILE_ROWS: readonly SpecimenRole[] = ['diameter', 'thickness', 'width', 'gaugeLength', 'area', 'yieldLoad', 'peakLoad', 'finalLength'];
+
+  private static readonly TENSILE_ROW_LABELS: Readonly<Partial<Record<SpecimenRole, string>>> = {
+    diameter: 'Diameter (D)',
+    thickness: 'Thickness (T)',
+    width: 'Width (W)',
+    gaugeLength: 'Gauge Length (L₀)',
+    area: 'Cross Section Area (S₀)',
+    yieldLoad: '0.2% Yield Load (F_p0.2)',
+    peakLoad: 'Maximum / Peak Load (F_m)',
+    finalLength: 'Final Length (L_u)',
+    proofStress: 'Yield Strength',
+    uts: 'Ultimate Tensile Strength',
+    elongation: '% Elongation',
+  };
+
+  /** Fixed rows the user took off the screen (saved with the test, so a reload keeps them off). */
+  hiddenFixedRoles = new Set<SpecimenRole>();
+
+  /** Whether a tensile matrix row is on the screen. */
+  isTensileRowShown(role: SpecimenRole): boolean {
+    if (!this.tensileRowOn(this.specimenSection, role)) return false;
+    if (ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(role)) {
+      if (this.hiddenFixedRoles.has(role)) return false;
+      const round = !!this.sample?.diameter;
+      if (role === 'diameter') return round || this.sample?.productForm === 'Round' || this.sample?.productForm === 'Bar';
+      if (role === 'thickness' || role === 'width') return !round;
+      return true;
+    }
+    return this.hasParameterRole(role);
+  }
+
+  /** Names of the shown rows that are calculated from this one; the row can be removed only when there are none. */
+  removalBlockers(role: SpecimenRole): string[] {
+    const shown = new Set<SpecimenRole>((Object.keys(ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS) as SpecimenRole[]).filter(r => this.isTensileRowShown(r)));
+    return tensileDependents(role, shown).map(r => ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS[r] || r);
+  }
+
+  /** Tooltip of the remove button: the reason when the row is still needed. */
+  removeTitle(role: SpecimenRole): string {
+    const blockers = this.removalBlockers(role);
+    return blockers.length ? `Needed to calculate ${blockers.join(', ')}. Remove ${blockers.length > 1 ? 'those' : 'it'} first.` : 'Remove this parameter from all specimens';
+  }
+
+  /** Removes one tensile matrix row (every specimen). Refused while a shown row is calculated from it. */
+  removeTensileRow(role: SpecimenRole): void {
+    if (this.isViewMode || this.isLocked) return;
+    const blockers = this.removalBlockers(role);
+    if (blockers.length) {
+      this.toastService.show(`${ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS[role] || role} is used to calculate ${blockers.join(', ')}. Remove ${blockers.length > 1 ? 'those' : 'it'} first.`, 'warning');
+      return;
+    }
+    // a test parameter behind the row is deleted by the usual rules (a value blocks it); a model-only row is just taken off the screen
+    const base = this.getBaseParameterList().find(p => resolveTensileRole(p.name) === role);
+    const hideRow = () => {
+      if (ConfiguredTestLayoutRendererComponent.FIXED_TENSILE_ROWS.includes(role)) {
+        this.hiddenFixedRoles = new Set([...this.hiddenFixedRoles, role]);
+        this.syncCollectionsToTest(); // keeps the choice in the saved test data
+        this.parametersAdjusted.emit();
+      }
+      this.cdr.markForCheck();
+    };
+    if (base) this.removeBaseParameter(base.index, { after: hideRow });
+    else hideRow();
+  }
+
+  /** Row index (S1) of the test parameter behind a tensile role, or -1 when the row only comes from the specimen model. */
+  roleParamIndex(role: SpecimenRole): number {
+    return this.getBaseParameterList().find(p => resolveTensileRole(p.name) === role)?.index ?? -1;
+  }
+
+  /** Unit of the parameter behind a tensile result row (the unit that is saved and printed); the default when the row has none. */
+  roleUnit(role: SpecimenRole, fallback: string): string {
+    const idx = this.roleParamIndex(role);
+    const unit = idx >= 0 ? String(this.parametersFormArray.at(idx)?.get('unit')?.value || '').trim() : '';
+    return unit || fallback;
+  }
+
+  /** Formula details of the parameter behind a tensile result row. */
+  openRoleFormula(role: SpecimenRole): void {
+    const idx = this.roleParamIndex(role);
+    if (idx >= 0) this.formulaRequested.emit({ rowIdx: idx, param: this.parametersFormArray.at(idx).value });
+  }
+
+  /** Formula details of an extra parameter row. */
+  openRowFormula(rowIdx: number): void {
+    this.formulaRequested.emit({ rowIdx, param: this.parametersFormArray.at(rowIdx).value });
+  }
+
+  /** Labels of the fixed rows taken off the screen that the matrix can show again. */
+  get restorableTensileRows(): { role: SpecimenRole; label: string }[] {
+    return Array.from(this.hiddenFixedRoles).map(role => ({ role, label: ConfiguredTestLayoutRendererComponent.TENSILE_ROW_LABELS[role] || role }));
+  }
+
+  restoreTensileRow(role: SpecimenRole): void {
+    const next = new Set(this.hiddenFixedRoles);
+    next.delete(role);
+    this.hiddenFixedRoles = next;
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  /** Other parameters of the test whose formula uses this row's parameter (generic tables); they must be removed first. */
+  baseRowBlockers(baseRowIdx: number): string[] {
+    if (!this.parametersFormArray) return [];
+    const id = Number(this.parametersFormArray.at(baseRowIdx)?.get('parameterID')?.value) || 0;
+    if (!id) return [];
+    const token = new RegExp(`\\{?\\bP${id}\\b\\}?`, 'i');
+    return this.getBaseParameterList()
+      .filter(p => p.index !== baseRowIdx && token.test(String(this.parametersFormArray.at(p.index)?.get('formulaExpression')?.value || '')))
+      .map(p => p.name);
+  }
+
+  /** True when the test has a parameter row for this role, so the tensile matrix shows the matching result row. */
+  hasParameterRole(role: SpecimenRole): boolean {
+    return this.getBaseParameterList().some(p => resolveTensileRole(p.name) === role);
+  }
+
+  /** The list is rebuilt on every check; tracking by row index keeps the DOM rows (and the focus inside an input). */
+  trackByBaseRow = (_: number, p: { index: number }) => p.index;
+
+  /** The location grid builds its parameter and group lists on every check; these keep the rows (and the inputs in them) alive. */
+  trackByLocParam = (_: number, p: { name: string }) => p.name;
+  trackByPosition = (i: number) => i;
+
+  /** Tensile matrix: parameters that are not one of its fixed rows (e.g. Bend Diameter, added parameters). */
+  getExtraBaseParameterList(): any[] {
+    return this.getBaseParameterList().filter(p => !isSpecimenRole(resolveTensileRole(p.name)));
   }
 
   openAddParamModal(): void {
@@ -1185,36 +1989,77 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       decimalPrecision: 2,
       dropdownOptions: []
     };
+    // the test's own grade is the starting point
+    const own = this.testPlan?.specSelected;
+    this.paramGrade = own?.id ? { id: Number(own.id), name: own.name || `Grade #${own.id}` } : null;
+    this.newParamLineId = null;
+    this.paramLimitHint = '';
+    this.loadGradeParamLines(this.paramGrade?.id ?? null);
     this.showAddParamModal = true;
   }
 
   closeAddParamModal(): void {
     this.showAddParamModal = false;
     this.selectedParamDropdownItem = null;
+    this.newParamLineId = null;
+    this.paramLimitHint = '';
+    this.paramLineChoices = [];
+    this.paramLineChoiceItem = null;
   }
 
   submitAddParam(): void {
     if (!this.newParamData.parameterName.trim() || !this.parametersFormArray) return;
+    if (this.paramNeedsLineChoice) {
+      this.toastService.show('Choose which limit of this grade applies.', 'warning');
+      return;
+    }
+    this.hydrateSpecimensFromParameters(); // table values are the source of truth before rows/specimens change
 
-    const count = this.newParamData.applyTo === 'all' ? this.specimens.length : 1;
-    for (let i = 0; i < count; i++) {
+    // "All specimens": one row per specimen. "Single specimen": the specimen in view (S1 in the all-specimens view).
+    const targetSpecimens = this.newParamData.applyTo === 'all'
+      ? Array.from({ length: Math.max(1, this.specimens.length) }, (_, s) => s)
+      : [this.selectedSpecimenFilter === 'all' ? 0 : Math.max(0, this.selectedSpecimenFilter - 1)];
+
+    // One result per parameter and specimen: a parameter the test already has is not added a second time
+    // (a second row would also give the parameter two limits). Remove the old row first to replace it.
+    const wantedName = this.newParamData.parameterName.trim().toLowerCase();
+    const indexes = this.getRowSpecimenIndexes();
+    const duplicateIn = targetSpecimens.find(sp => rowsOfSpecimen(indexes, sp).some(i => {
+      const c = this.parametersFormArray.at(i);
+      return Number(c.get('parameterID')?.value) === Number(this.newParamData.parameterID)
+        || String(c.get('parameterName')?.value || '').trim().toLowerCase() === wantedName;
+    }));
+    if (duplicateIn !== undefined) {
+      const where = targetSpecimens.length > 1 ? '' : ` (S${duplicateIn + 1})`;
+      this.toastService.show(`"${this.newParamData.parameterName.trim()}" is already in this test${where}. Remove it first to replace it.`, 'warning');
+      return;
+    }
+
+    for (const specimen of targetSpecimens) {
       const newCtrl = this.createParamControl({
+        specimenIndex: specimen,
         parameterID: this.newParamData.parameterID,
         parameterName: this.newParamData.parameterName.trim(),
         unit: this.newParamData.unit.trim(),
         inputType: this.newParamData.inputType,
-        minValue: this.newParamData.minValue,
-        maxValue: this.newParamData.maxValue,
-        acceptanceCriteria: this.newParamData.acceptanceCriteria.trim(),
+        minValue: this.paramGrade ? this.newParamData.minValue : null,
+        maxValue: this.paramGrade ? this.newParamData.maxValue : null,
+        // the limit of a grade line keeps its source for traceability; without a grade there is no limit
+        specMinValue: this.paramGrade ? this.newParamData.minValue : null,
+        specMaxValue: this.paramGrade ? this.newParamData.maxValue : null,
+        specificationLineID: this.paramGrade ? this.newParamLineId : null,
+        acceptanceCriteria: this.paramGrade ? this.newParamData.acceptanceCriteria.trim() : '',
         testMethodUsed: this.newParamData.testMethodUsed.trim(),
         decimalPrecision: this.newParamData.decimalPrecision ?? 2,
         dropdownOptions: this.newParamData.dropdownOptions || [],
         isReportable: this.newParamData.isReportable,
         isStandalone: true,
+        isAdditional: true,
         isCalculated: false,
         isBillable: true
       });
-      this.parametersFormArray.push(newCtrl);
+      // Placed after that specimen's last row so each specimen's rows stay together
+      this.parametersFormArray.insert(insertPositionForSpecimen(this.parametersFormArray, specimen), newCtrl);
     }
 
     this.closeAddParamModal();
@@ -1224,7 +2069,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   private createParamControl(data: any): FormGroup {
     return this.fb.group({
-      id: [data.id || null],
+      // 0 = new row (not saved yet); the API inserts rows with id 0 and the reload brings the new id back
+      id: [data.id || 0],
+      // Specimen this row belongs to (0 = S1), saved with the row
+      specimenIndex: [Number(data.specimenIndex) > 0 ? Math.floor(Number(data.specimenIndex)) : 0],
       parameterID: [data.parameterID || null],
       parameterName: [data.parameterName || '', Validators.required],
       unit: [data.unit || ''],
@@ -1238,6 +2086,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       specMinValue: [data.specMinValue ?? null],
       specMaxValue: [data.specMaxValue ?? null],
       acceptanceCriteria: [data.acceptanceCriteria || ''],
+      specificationLineID: [data.specificationLineID ?? null],
+      isAdditional: [data.isAdditional ?? false],
+      specSource: [data.specSource || ''],
       isCalculated: [data.isCalculated || false],
       isStandalone: [data.isStandalone || false],
       sourceTestMethodId: [data.sourceTestMethodId ?? null],
@@ -1263,6 +2114,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (readingSections.length === 0) return;
 
     readingSections.forEach(s => {
+      if (this.isReadingGrid(s)) {
+        this.initReadingGrid(s);
+        return;
+      }
       const tableReadingCols = s.config?.tableColumns?.filter((c: any) => c.key && c.key.startsWith('reading_'))?.length;
       const defaultCount = tableReadingCols || parseInt(s.config?.count || s.config?.readingCount || '5', 10) || 5;
       const targets = this.getReadingTargetParameters(s);
@@ -1283,8 +2138,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       const testReadings = this.test.readings.filter((r: any) => {
         const pName = (r.parameterName || r.parameterCode || '').trim().toLowerCase();
         return pName === targetName.trim().toLowerCase() ||
-               (targetName.toLowerCase().includes('hardness') && pName.includes('hardness')) ||
-               (targetName.toLowerCase().includes('impact') && pName.includes('impact'));
+          (targetName.toLowerCase().includes('hardness') && pName.includes('hardness')) ||
+          (targetName.toLowerCase().includes('impact') && pName.includes('impact'));
       });
       if (testReadings.length > 0) {
         const maxSeq = Math.max(...testReadings.map((r: any) => r.readingNumber || r.sequenceNo || 1));
@@ -1333,11 +2188,809 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     }
   }
 
+  // =========================================================================
+  // Reading grid (A2): ONE target parameter, a row per sample / location, the readings across or down.
+  // Used when the layout names the parameter (studio: Target Parameter). Without it the section lists the
+  // parameters of the test as before.
+  // =========================================================================
+  readingRowsState: Record<string, { code: string; label: string }[]> = {};
+  readingGridCount: Record<string, number> = {};
+  private readingGridSignature: Record<string, string> = {};
+
+  private readingSecKey(s: any): string {
+    return String(s?.config?.sectionKey ?? s?.id ?? 'reading');
+  }
+
+  private normKey(v: any): string {
+    return String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  /** True when a Studio reading section carries explicit template rows / specimen rows / template mode. */
+  private hasConfiguredReadingStructure(s: any): boolean {
+    if (s?.type !== 'reading') return false;
+    const cfg = s?.config || {};
+    if (this.isTemplateConfiguredMode(s)) return true;
+    if (Array.isArray(cfg.tableRows) && cfg.tableRows.some((r: any) => r?.visible !== false && String(r?.label ?? '').trim())) return true;
+    if (Array.isArray(cfg.specimenRows) && cfg.specimenRows.some((n: any) => String(n ?? '').trim())) return true;
+    return false;
+  }
+
+  /** Visible reading / spot columns defined in Studio `tableColumns` (e.g. `spot_1..spot_n`, `reading_1..n`). */
+  private readingSpotColumns(s: any): any[] {
+    const cols: any[] = Array.isArray(s?.config?.tableColumns) ? s.config.tableColumns : [];
+    return cols.filter((c: any) => {
+      if (!c || c.visible === false) return false;
+      const k = String(c.key || '').trim().toLowerCase();
+      const role = String(c.columnRole || '').trim().toLowerCase();
+      return /^(spot|reading|r)_?\d+$/i.test(k) || role === 'observation_value' || role === 'reading' || role === 'spot' || role === 'measurement';
+    });
+  }
+
+  /** The parameter the layout set for a reading section ('' = legacy multi-parameter reading table). */
+  readingGridTarget(s: any): string {
+    const explicit = String(s?.config?.targetParamName ?? s?.config?.targetParameter ?? '').trim();
+    if (explicit) return explicit;
+    if (!this.hasConfiguredReadingStructure(s)) return '';
+    // Studio Template Configured reading grid without explicit targetParamName: bind to test's primary reading parameter
+    const rows: any[] = Array.isArray(s?.config?.tableRows) ? s.config.tableRows : [];
+    const linked = rows.find((r: any) => r?.visible !== false && (r?.dbMasterName || r?.sourceName));
+    if (linked) return String(linked.dbMasterName || linked.sourceName).trim();
+    const fa = this.parametersFormArray;
+    if (fa && fa.length > 0) {
+      let firstNonAux = '';
+      for (let i = 0; i < fa.length; i++) {
+        const pName = String(fa.at(i).get('parameterName')?.value ?? '').trim();
+        if (!pName) continue;
+        const lower = pName.toLowerCase();
+        if (!lower.includes('scale') && !lower.includes('test point') && !lower.includes('average hardness')) {
+          firstNonAux = pName;
+          break;
+        }
+      }
+      if (firstNonAux) return firstNonAux;
+      const fallbackFirst = String(fa.at(0).get('parameterName')?.value ?? '').trim();
+      if (fallbackFirst) return fallbackFirst;
+    }
+    const testParam = Array.isArray(this.test?.parameters) && this.test.parameters.length > 0
+      ? String(this.test.parameters[0]?.parameterName ?? '').trim()
+      : '';
+    if (testParam) return testParam;
+    return String(s?.title ?? '').trim() || 'Test Parameter';
+  }
+
+  isReadingGrid(s: any): boolean {
+    if (s?.type !== 'reading') return false;
+    return !!String(s?.config?.targetParamName ?? s?.config?.targetParameter ?? '').trim() || this.hasConfiguredReadingStructure(s);
+  }
+
+  readingsAsRows(s: any): boolean {
+    return String(s?.config?.readingsAs ?? '').toLowerCase() === 'rows';
+  }
+
+  private gridParamControl(s: any): AbstractControl | null {
+    const want = this.normKey(this.readingGridTarget(s));
+    const fa = this.parametersFormArray;
+    if (!fa || fa.length === 0) return null;
+    for (let i = 0; i < fa.length; i++) {
+      if (this.normKey(fa.at(i).get('parameterName')?.value) === want) return fa.at(i);
+    }
+    // Fallback when a Studio preset left a generic/stale targetParamName (e.g. "Rockwell Hardness" on a Brinell test)
+    // or blank targetParamName: first prefer a parameter matching keywords from the section/test/layout title
+    // (e.g. "Brinell" -> "Brinell Hardness Number"), then fall back to the first non-auxiliary reading parameter.
+    if (this.hasConfiguredReadingStructure(s) || this.isReadingGrid(s)) {
+      const isAuxSlot = (name: string) => {
+        const lower = name.toLowerCase();
+        return lower.includes('scale') || lower.includes('test point') || /\breading\s*\d+\b/i.test(lower);
+      };
+      const contextText = [
+        s?.title,
+        this.test?.name,
+        this.test?.laboratoryTest,
+        this.layoutConfig?.layoutName,
+        this.layoutConfig?.leafNode
+      ].filter(Boolean).join(' ').toLowerCase();
+      const domainKeywords = ['brinell', 'vickers', 'rockwell', 'knoop', 'shore', 'hardness', 'charpy', 'izod', 'impact', 'bend', 'tensile'];
+      const matchedKeywords = domainKeywords.filter(kw => contextText.includes(kw));
+      for (const kw of matchedKeywords) {
+        const domainMatch = fa.controls.find(c => {
+          const n = String(c.get('parameterName')?.value ?? '').trim();
+          return !!n && !isAuxSlot(n) && n.toLowerCase().includes(kw);
+        });
+        if (domainMatch) return domainMatch;
+      }
+      const primary = fa.controls.find(c => {
+        const n = String(c.get('parameterName')?.value ?? '').trim();
+        return !!n && !isAuxSlot(n);
+      });
+      if (primary) return primary;
+      return fa.at(0);
+    }
+    return null;
+  }
+
+  /** True when the test has the parameter the layout names. */
+  gridParamFound(s: any): boolean {
+    return !!this.gridParamControl(s);
+  }
+
+  /** Name of the target parameter as the test spells it (the layout's spelling when the test has none). */
+  readingGridParam(s: any): string {
+    return String(this.gridParamControl(s)?.get('parameterName')?.value ?? '').trim() || this.readingGridTarget(s);
+  }
+
+  readingGridRows(s: any): { code: string; label: string }[] {
+    return this.readingRowsState[this.readingSecKey(s)] || [];
+  }
+
+  readingGridKey(s: any, code: string): string {
+    return `${this.readingGridParam(s)}|${code}`;
+  }
+
+  /** Row names the layout lists: all visible data rows in Studio order (excluding summary/requirement rows), else specimenRows, else one row. */
+  private configuredReadingRows(s: any): string[] {
+    const cfg = s?.config || {};
+    const tableRows: any[] = Array.isArray(cfg.tableRows) ? cfg.tableRows : [];
+    const dataRows = tableRows
+      .filter((r: any) => {
+        if (r?.visible === false) return false;
+        const nature = String(r?.nature ?? '').trim().toLowerCase();
+        if (nature === 'summary' || nature === 'requirement' || nature === 'footer') return false;
+        const k = String(r?.key ?? '').trim().toLowerCase();
+        if (k.startsWith('sum_') || k.startsWith('summary_') || k.startsWith('req_') || k === 'requirement') return false;
+        return true;
+      })
+      .map((r: any) => String(r.label ?? '').trim())
+      .filter(Boolean);
+    if (dataRows.length) return dataRows;
+    const fromList = (Array.isArray(cfg.specimenRows) ? cfg.specimenRows : []).map((n: any) => String(n ?? '').trim()).filter(Boolean);
+    return fromList.length ? fromList : [this.readingGridTarget(s)];
+  }
+
+  private configuredReadingCount(s: any): number {
+    const spotCols = this.readingSpotColumns(s);
+    if (spotCols.length > 0) return Math.min(25, Math.max(1, spotCols.length));
+    const n = Number(s?.config?.count) || Number(s?.config?.readingCount) || Number(s?.config?.spotCount) || 5;
+    return Math.min(25, Math.max(1, Math.round(n)));
+  }
+
+  /** Clean 32-bit SQL float artifacts (e.g. 145.10000610351562 -> 145.1). */
+  private cleanFloat(v: any): number {
+    return Math.round(Number(v) * 1e6) / 1e6;
+  }
+
+  /** Readings of the target parameter held by the test, by sample code (database rows first, else the saved remarks). */
+  private savedGridReadings(s: any): Map<string, (number | null)[]> {
+    const out = new Map<string, (number | null)[]>();
+    const wantTarget = this.normKey(this.readingGridTarget(s));
+    const wantParam = this.normKey(this.readingGridParam(s));
+    const put = (code: string, seq: number, v: any) => {
+      if (v == null || v === '' || isNaN(Number(v)) || seq < 1) return;
+      const arr = out.get(code) || [];
+      while (arr.length < seq) arr.push(null);
+      arr[seq - 1] = this.cleanFloat(v);
+      out.set(code, arr);
+    };
+    const stored: any[] = (Array.isArray(this.test?.readings) ? this.test.readings : []).filter((r: any) => r.isVoided !== true);
+    const matched = stored.filter(r => {
+      const k = this.normKey(r.parameterName || r.parameterCode);
+      return k === wantParam || k === wantTarget;
+    });
+    const readingSectionsCount = (this.sections || []).filter(sec => sec.type === 'reading').length;
+    const sourceRows = matched.length ? matched : (readingSectionsCount === 1 ? stored : []);
+    sourceRows.forEach(r => put(String(r.specimenCode || 'S1'), Number(r.readingNumber || r.sequenceNo || 1), r.readingValue ?? r.value));
+    if (out.size) return out;
+    // older saves kept the readings only in the remarks of the parameter row
+    const raw = this.gridParamControl(s)?.get('remarks')?.value;
+    if (typeof raw === 'string' && /^[\[{]/.test(raw.trim())) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) parsed.forEach((v, i) => put('S1', i + 1, v));
+        else if (parsed && typeof parsed === 'object') Object.keys(parsed).forEach(code => (parsed[code] || []).forEach((v: any, i: number) => put(code, i + 1, v)));
+      } catch {
+        // not readings
+      }
+    }
+    return out;
+  }
+
+  private initReadingGrid(s: any): void {
+    const key = this.readingSecKey(s);
+    const labels = this.configuredReadingRows(s);
+    const count = this.configuredReadingCount(s);
+    const signature = JSON.stringify([this.readingGridParam(s), labels, count, this.test?.headerId]);
+    if (this.readingGridSignature[key] === signature) return; // nothing about the layout changed: keep what was typed
+    this.readingGridSignature[key] = signature;
+
+    const rows = labels.map((label, i) => ({ code: `S${i + 1}`, label }));
+    const saved = this.savedGridReadings(s);
+    saved.forEach((_vals, code) => {
+      if (!rows.some(r => r.code === code)) rows.push({ code, label: code }); // saved, though the layout does not list it
+    });
+    let n = count;
+    saved.forEach(vals => (n = Math.max(n, vals.length)));
+    n = Math.min(25, n);
+    this.readingRowsState[key] = rows;
+    this.readingGridCount[key] = n;
+    rows.forEach(r => {
+      const arr: (number | null)[] = Array(n).fill(null);
+      (saved.get(r.code) || []).forEach((v, i) => { if (i < n) arr[i] = v; });
+      this.readingValues[this.readingGridKey(s, r.code)] = arr;
+      this.recalcGridStats(s, r.code);
+    });
+    // If saved readings exist and the bound parameter row still has no value (e.g. legacy/preset target mismatch), hydrate its average cleanly
+    const ctrl = this.gridParamControl(s);
+    const overall = this.gridOverallAverage(s);
+    if (ctrl && overall != null && (ctrl.get('value')?.value == null || ctrl.get('value')?.value === '')) {
+      ctrl.patchValue({ value: overall }, { emitEvent: false });
+      this.evaluateLimitForControl(ctrl);
+    }
+  }
+
+  private gridDecimals(s: any): number {
+    const aggDef = this.columnDef(s, 'agg');
+    const colDec = aggDef?.decimalPrecision != null && aggDef?.decimalPrecision !== '' ? Number(aggDef.decimalPrecision) : NaN;
+    if (Number.isFinite(colDec) && colDec >= 0 && colDec <= 6) return colDec;
+    // Averages should not have fewer decimals than the reading columns being averaged
+    const spotDec = this.readingSpotColumns(s)
+      .map((c: any) => (c?.decimalPrecision != null && c?.decimalPrecision !== '' ? Number(c.decimalPrecision) : NaN))
+      .find((d: number) => Number.isFinite(d) && d > 0 && d <= 6);
+    if (spotDec != null) return spotDec;
+    // Parameter Master SQL int defaults to 0 when unset; only honor explicit positive precision
+    const rawParamDec = this.gridParamControl(s)?.get('decimalPrecision')?.value;
+    const d = rawParamDec != null && rawParamDec !== '' ? Number(rawParamDec) : NaN;
+    return Number.isFinite(d) && d > 0 && d <= 6 ? d : 2;
+  }
+
+  /** Plain-text display of a reading cell for Raw Data Sheet / print mode. */
+  getGridReadingDisplay(s: any, code: string, idx: number): string {
+    const val = this.getGridReading(s, code, idx);
+    if (val == null || isNaN(Number(val))) return '—';
+    const spotCol = this.readingSpotColumns(s)[idx];
+    const colDec = spotCol?.decimalPrecision != null ? Number(spotCol.decimalPrecision) : NaN;
+    if (Number.isFinite(colDec) && colDec >= 0 && colDec <= 6) return Number(val).toFixed(colDec);
+    return String(val);
+  }
+
+  private recalcGridStats(s: any, code: string): void {
+    const key = this.readingGridKey(s, code);
+    const vals = (this.readingValues[key] || []).filter((v): v is number => v != null && !isNaN(v));
+    if (!vals.length) {
+      this.readingStats[key] = { avg: null, min: null, max: null, stdev: null, median: null };
+      return;
+    }
+    const dec = this.gridDecimals(s);
+    const round = (v: number) => Number(v.toFixed(dec));
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const sorted = [...vals].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    const stdev = vals.length > 1 ? Math.sqrt(vals.reduce((a, v) => a + Math.pow(v - mean, 2), 0) / (vals.length - 1)) : null;
+    this.readingStats[key] = { avg: round(mean), min: Math.min(...vals), max: Math.max(...vals), stdev: stdev == null ? null : round(stdev), median: round(median) };
+  }
+
+  getGridReading(s: any, code: string, idx: number): number | null | undefined {
+    return this.readingValues[this.readingGridKey(s, code)]?.[idx];
+  }
+
+  /** Individual readings are shown while entering; a layout can leave them out of the finished record. */
+  showGridReadings(s: any): boolean {
+    return s?.config?.showIndividual !== false || (!this.isViewMode && !this.isLocked);
+  }
+
+  gridUnit(s: any): string {
+    return String(s?.config?.targetUnit ?? '').trim() || String(this.gridParamControl(s)?.get('unit')?.value ?? '').trim();
+  }
+
+  gridAggregateLabel(s: any): string {
+    return this.columnLabel(s, 'agg', String(s?.config?.aggregation ?? '').trim() || 'Average');
+  }
+
+  gridAggregate(s: any, code: string): number | null {
+    const st = this.readingStats[this.readingGridKey(s, code)];
+    if (!st) return null;
+    const a = String(s?.config?.aggregation ?? 'Average').toLowerCase();
+    if (a.startsWith('min')) return st.min;
+    if (a.startsWith('max')) return st.max;
+    if (a.startsWith('median')) return st.median ?? null;
+    if (a.startsWith('standard')) return st.stdev;
+    return st.avg;
+  }
+
+  gridStat(s: any, code: string, field: 'min' | 'max'): number | null {
+    return this.readingStats[this.readingGridKey(s, code)]?.[field] ?? null;
+  }
+
+  gridFmt(s: any, v: number | null | undefined): string {
+    return v == null ? '—' : v.toFixed(this.gridDecimals(s));
+  }
+
+  private gridLimits(s: any): { min: number | null; max: number | null } {
+    const num = (v: any) => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+    const cfgMin = num(s?.config?.targetMin);
+    const cfgMax = num(s?.config?.targetMax);
+    if (cfgMin != null || cfgMax != null) return { min: cfgMin, max: cfgMax };
+    const c = this.gridParamControl(s);
+    return { min: num(c?.get('specMinValue')?.value ?? c?.get('minValue')?.value), max: num(c?.get('specMaxValue')?.value ?? c?.get('maxValue')?.value) };
+  }
+
+  /** The requirement text: the layout's own, else the limits of the specification. */
+  gridRequirement(s: any): string {
+    const own = String(s?.config?.targetRequirement ?? '').trim();
+    if (own) return own;
+    const { min, max } = this.gridLimits(s);
+    if (min != null && max != null) return `${min} – ${max}`;
+    if (min != null) return `≥ ${min}`;
+    if (max != null) return `≤ ${max}`;
+    return this.formatSpecRange(this.gridParamControl(s)?.value);
+  }
+
+  gridStatus(s: any, code: string): 'PASS' | 'FAIL' | 'PENDING' {
+    const v = this.gridAggregate(s, code);
+    const { min, max } = this.gridLimits(s);
+    if (v == null || (min == null && max == null)) return 'PENDING';
+    return (min != null && v < min) || (max != null && v > max) ? 'FAIL' : 'PASS';
+  }
+
+  gridBadge(status: string): string {
+    return status === 'PASS' ? 'bg-success text-white' : status === 'FAIL' ? 'bg-danger text-white' : 'bg-light text-muted border';
+  }
+
+  private gridAllValues(s: any): number[] {
+    const all: number[] = [];
+    this.readingGridRows(s).forEach(r => (this.readingValues[this.readingGridKey(s, r.code)] || []).forEach(v => { if (v != null && !isNaN(v)) all.push(v); }));
+    return all;
+  }
+
+  /** Average of every reading of the section (the value the parameter row carries). */
+  gridOverallAverage(s: any): number | null {
+    const all = this.gridAllValues(s);
+    return all.length ? Number((all.reduce((a, b) => a + b, 0) / all.length).toFixed(this.gridDecimals(s))) : null;
+  }
+
+  /** Largest minus smallest reading of the section; null with fewer than two readings. */
+  gridSpread(s: any): number | null {
+    const all = this.gridAllValues(s);
+    return all.length > 1 ? Number((Math.max(...all) - Math.min(...all)).toFixed(this.gridDecimals(s))) : null;
+  }
+
+  gridSpreadExceeded(s: any): boolean {
+    const limit = Number(s?.config?.outlierSpreadLimit);
+    const spread = this.gridSpread(s);
+    return Number.isFinite(limit) && limit > 0 && spread != null && spread > limit;
+  }
+
+  /** Visibility of reading-grid aggregate/requirement/status columns (strict in Template Configured mode). */
+  gridColumnVisible(s: any, key: 'agg' | 'requirement' | 'status'): boolean {
+    const ov = this.columnOverride[this.sectionUiKey(s)]?.[key];
+    if (ov !== undefined) return ov;
+    if (this.isTemplateConfiguredMode(s) && Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0) {
+      const def = this.columnDef(s, key);
+      return !!def && def.visible !== false;
+    }
+    return this.columnVisible(s, key);
+  }
+
+  gridColumnCount(s: any): number {
+    const cfg = s?.config || {};
+    let n = 1;
+    if (this.specimenShow(s, 'unit')) n++;
+    if (this.showGridReadings(s)) n += this.getReadingCount(s);
+    if (this.gridColumnVisible(s, 'agg')) n++;
+    if (this.gridStatsShown(s)) n += 2;
+    if (this.gridColumnVisible(s, 'requirement') && !cfg.requirementRow) n++;
+    if (this.gridColumnVisible(s, 'status')) n++;
+    return n;
+  }
+
+  /** Writes the average of all readings (and the readings themselves) into the parameter row, like the legacy table. */
+  private updateGridParameter(s: any): void {
+    const ctrl = this.gridParamControl(s);
+    const fa = this.parametersFormArray;
+    if (!ctrl || !fa) return;
+    const rows = this.readingGridRows(s);
+    const remarks = rows.length === 1
+      ? JSON.stringify(this.readingValues[this.readingGridKey(s, rows[0].code)] || [])
+      : JSON.stringify(Object.fromEntries(rows.map(r => [r.code, this.readingValues[this.readingGridKey(s, r.code)] || []])));
+    ctrl.patchValue({ value: this.gridOverallAverage(s), remarks });
+    this.evaluateLimitForControl(ctrl);
+    this.paramValueChanged.emit({ rowIdx: fa.controls.indexOf(ctrl as any), param: ctrl.value });
+  }
+
+  onGridReadingChange(s: any, code: string, rIdx: number, val: any): void {
+    if (this.printMode) return;
+    const key = this.readingGridKey(s, code);
+    const parsed = val !== null && val !== '' && !isNaN(Number(val)) ? parseFloat(val) : null;
+    const arr = this.readingValues[key] || (this.readingValues[key] = []);
+    while (arr.length <= rIdx) arr.push(null);
+    arr[rIdx] = parsed;
+    this.recalcGridStats(s, code);
+    this.updateGridParameter(s);
+    this.syncCollectionsToTest();
+  }
+
+  private setGridCount(s: any, n: number): void {
+    this.readingGridCount[this.readingSecKey(s)] = n;
+    this.readingGridRows(s).forEach(r => {
+      const arr = this.readingValues[this.readingGridKey(s, r.code)] || (this.readingValues[this.readingGridKey(s, r.code)] = []);
+      while (arr.length < n) arr.push(null);
+      arr.length = n;
+      this.recalcGridStats(s, r.code);
+    });
+    this.updateGridParameter(s);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  addReadingRow(s: any): void {
+    if (this.isViewMode || this.isLocked || !this.canAddRemoveRows(s)) return;
+    const key = this.readingSecKey(s);
+    const rows = this.readingRowsState[key] || (this.readingRowsState[key] = []);
+    if (rows.length >= 30) return;
+    const code = `S${rows.length + 1}`;
+    rows.push({ code, label: code });
+    this.readingValues[this.readingGridKey(s, code)] = Array(this.getReadingCount(s)).fill(null);
+    this.recalcGridStats(s, code);
+    this.cdr.markForCheck();
+  }
+
+  /** Removes the last row; refused while it holds a reading (clear it first). */
+  removeReadingRow(s: any): void {
+    if (this.isViewMode || this.isLocked || !this.canAddRemoveRows(s)) return;
+    const key = this.readingSecKey(s);
+    const rows = this.readingRowsState[key] || [];
+    if (rows.length <= 1) return;
+    const last = rows[rows.length - 1];
+    const vkey = this.readingGridKey(s, last.code);
+    if ((this.readingValues[vkey] || []).some(v => v != null)) {
+      this.toastService.show(`${last.label} holds readings. Clear them before removing the row.`, 'warning');
+      return;
+    }
+    rows.pop();
+    delete this.readingValues[vkey];
+    delete this.readingStats[vkey];
+    this.updateGridParameter(s);
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
+  // =========================================================================
+  // Location grid (A3): the layout lists the parameters measured at each location; every location holds the
+  // readings of each of them (saved with the location code).
+  // =========================================================================
+  /** A location section the layout gave parameters to. Without them it is the plain list of locations. */
+  isLocationGrid(s: any): boolean {
+    return (s?.type === 'location' || s?.type === 'loc') && Array.isArray(s?.config?.locationParams) && s.config.locationParams.length > 0;
+  }
+
+  /** How the parameters of a location are laid out: under the location, as columns, or as rows (locations across). */
+  locationLayout(s: any): 'under' | 'columns' | 'rows' {
+    const o = String(s?.config?.orientation ?? '').trim().toLowerCase();
+    if (o.startsWith('parameters under')) return 'under';
+    if (o.startsWith('parameters')) return 'rows';
+    return 'columns';
+  }
+
+  private locParamControl(name: string): AbstractControl | null {
+    const want = this.normKey(name);
+    const fa = this.parametersFormArray;
+    for (let i = 0; fa && i < fa.length; i++) {
+      if (this.normKey(fa.at(i).get('parameterName')?.value) === want) return fa.at(i);
+    }
+    return null;
+  }
+
+  /** The parameters the layout lists for each location, as the test names them. */
+  locationParamsOf(s: any): { name: string; displayName: string; unit: string; average: boolean; found: boolean }[] {
+    const avgList: string[] | null = Array.isArray(s?.config?.locationAverageParams) ? s.config.locationAverageParams : null;
+    return (s?.config?.locationParams || []).map((layoutName: string) => {
+      const ctrl = this.locParamControl(layoutName);
+      const name = String(ctrl?.get('parameterName')?.value ?? '').trim() || layoutName;
+      return {
+        name,
+        displayName: name,
+        unit: String(ctrl?.get('unit')?.value ?? '').trim(),
+        average: this.locAvgOverride[this.readingSecKey(s)]?.[this.normKey(name)]
+          ?? (s?.config?.showAverage !== false && (!avgList || avgList.some(n => this.normKey(n) === this.normKey(layoutName)))),
+        found: !!ctrl,
+      };
+    });
+  }
+
+  /** Average shown for one location parameter: the layout decides, the user can switch it per section on this screen. */
+  private locAvgOverride: Record<string, Record<string, boolean>> = {};
+
+  toggleLocationAverage(s: any, paramName: string): void {
+    const sec = this.readingSecKey(s);
+    const cur = this.locationParamsOf(s).find(p => this.normKey(p.name) === this.normKey(paramName))?.average ?? false;
+    this.locAvgOverride[sec] = { ...(this.locAvgOverride[sec] || {}), [this.normKey(paramName)]: !cur };
+  }
+
+  /** Readings per location (R1..Rn) changed on this screen; within the configured range 1..10. */
+  adjustLocationReadings(s: any, delta: number): void {
+    if (this.isViewMode || this.isLocked || !this.canAdjustCount(s)) return;
+    const sec = this.readingSecKey(s);
+    const n = Math.min(10, Math.max(1, (this.locReadingCount[sec] ?? this.configuredLocationReadings(s)) + delta));
+    // a reading already entered is never cut off
+    const params = this.locationParamsOf(s).filter(p => p.found);
+    const used = Math.max(0, ...params.flatMap(p => this.locations.map(loc => {
+      const arr = this.readingValues[this.locKey(p.name, loc.locationCode)] || [];
+      let last = 0; arr.forEach((v, i) => { if (v != null && (v as any) !== '') last = i + 1; });
+      return last;
+    })));
+    if (n < used) return;
+    this.locReadingCount[sec] = n;
+    params.forEach(p => this.locations.forEach(loc => {
+      const key = this.locKey(p.name, loc.locationCode);
+      const arr = [...(this.readingValues[key] || [])];
+      while (arr.length < n) arr.push(null);
+      arr.length = n;
+      this.readingValues[key] = arr;
+    }));
+    this.syncCollectionsToTest();
+  }
+
+  locationReadingCount(s: any): number {
+    return this.locReadingCount[this.readingSecKey(s)] ?? this.configuredLocationReadings(s);
+  }
+
+  locAnyAverage(s: any): boolean {
+    return this.locationParamsOf(s).some(p => p.average);
+  }
+
+  locationReadingIndices(s: any): number[] {
+    return Array.from({ length: this.locReadingCount[this.readingSecKey(s)] ?? this.configuredLocationReadings(s) }, (_, i) => i);
+  }
+
+  private configuredLocationReadings(s: any): number {
+    return Math.min(10, Math.max(1, Math.round(Number(s?.config?.locationReadings) || 3)));
+  }
+
+  private locReadingCount: Record<string, number> = {};
+
+  private locKey(paramName: string, code: string): string {
+    return `${paramName}|loc:${code}`;
+  }
+
+  /** Locations the layout lists (its rows, else its names); a saved test keeps its own list. */
+  private layoutLocationLabels(locSec: any): string[] {
+    const cfg = locSec?.config || {};
+    const fromRows = (Array.isArray(cfg.locationRows) ? cfg.locationRows : []).map((n: any) => String(n ?? '').trim()).filter(Boolean);
+    if (fromRows.length) return fromRows;
+    const fromTable = (Array.isArray(cfg.tableRows) ? cfg.tableRows : [])
+      .filter((r: any) => r?.visible !== false).map((r: any) => String(r?.label ?? '').trim()).filter(Boolean);
+    if (fromTable.length) return fromTable;
+    return String(cfg.locationNames ?? '').split(',').map(n => n.trim()).filter(Boolean);
+  }
+
+  /** Readings the test holds for a parameter at a location, in order of their number. */
+  private savedLocationReadings(paramName: string, code: string): (number | null)[] {
+    const want = this.normKey(paramName);
+    const arr: (number | null)[] = [];
+    const stored: any[] = Array.isArray(this.test?.readings) ? this.test.readings : [];
+    stored
+      .filter(r => this.normKey(r.parameterName || r.parameterCode) === want && this.normKey(r.locationCode) === this.normKey(code) && r.isVoided !== true)
+      .forEach(r => {
+        const seq = Number(r.readingNumber || r.sequenceNo || 1);
+        const v = r.readingValue ?? r.value;
+        if (seq < 1 || v == null || v === '' || isNaN(Number(v))) return;
+        while (arr.length < seq) arr.push(null);
+        arr[seq - 1] = Number(v);
+      });
+    return arr;
+  }
+
+  private initLocationGrids(): void {
+    (this.sections || []).filter(sec => this.isLocationGrid(sec)).forEach(sec => this.initLocationGrid(sec));
+  }
+
+  /**
+   * Readings saved under a location the list does not hold (an older list) bring that location back, named by its
+   * code, so the next save does not drop them.
+   */
+  private restoreLocationsOfSavedReadings(paramNames: string[]): void {
+    const wanted = new Set(paramNames.map(n => this.normKey(n)));
+    const stored: any[] = Array.isArray(this.test?.readings) ? this.test.readings : [];
+    stored.forEach(r => {
+      const code = String(r.locationCode ?? '').trim();
+      if (!code || r.isVoided === true || !wanted.has(this.normKey(r.parameterName || r.parameterCode))) return;
+      if (this.locations.some(l => this.normKey(l.locationCode) === this.normKey(code))) return;
+      this.locations.push({ locationCode: code, locationName: code, displayOrder: this.locations.length + 1, isReportable: true, remarks: '' });
+    });
+  }
+
+  private initLocationGrid(s: any): void {
+    const params = this.locationParamsOf(s).filter(p => p.found);
+    this.restoreLocationsOfSavedReadings(params.map(p => p.name));
+    let n = this.configuredLocationReadings(s);
+    params.forEach(p => this.locations.forEach(loc => (n = Math.max(n, this.savedLocationReadings(p.name, loc.locationCode).length))));
+    n = Math.min(10, n);
+    this.locReadingCount[this.readingSecKey(s)] = n;
+    params.forEach(p => this.locations.forEach(loc => {
+      const key = this.locKey(p.name, loc.locationCode);
+      // what was typed in this session stays; a missing list is built from the saved readings
+      const arr: (number | null)[] = this.readingValues[key] ? [...this.readingValues[key]] : [...this.savedLocationReadings(p.name, loc.locationCode)];
+      while (arr.length < n) arr.push(null);
+      arr.length = n;
+      this.readingValues[key] = arr;
+    }));
+  }
+
+  getLocReading(paramName: string, code: string, idx: number): number | null | undefined {
+    return this.readingValues[this.locKey(paramName, code)]?.[idx];
+  }
+
+  private locDecimals(paramName: string): number {
+    const d = Number(this.locParamControl(paramName)?.get('decimalPrecision')?.value);
+    return Number.isFinite(d) && d >= 0 && d <= 6 ? d : 2;
+  }
+
+  /** Average of the readings of one parameter at one location (null without a reading). */
+  locAverage(paramName: string, code: string): number | null {
+    const vals = (this.readingValues[this.locKey(paramName, code)] || []).filter((v): v is number => v != null && !isNaN(v));
+    return vals.length ? Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(this.locDecimals(paramName))) : null;
+  }
+
+  locFmt(paramName: string, v: number | null | undefined): string {
+    return v == null ? '' : v.toFixed(this.locDecimals(paramName));
+  }
+
+  /** The readings of a cell as one list ("163,163,162"). */
+  locJoined(paramName: string, code: string): string {
+    return (this.readingValues[this.locKey(paramName, code)] || []).filter(v => v != null && !isNaN(v as number)).join(',');
+  }
+
+  /** Readings are shown as one list in the finished record when the layout asks for it. */
+  locJoinedView(s: any): boolean {
+    return !!s?.config?.readingsJoined && (this.isViewMode || this.isLocked || this.printMode);
+  }
+
+  /** Locations split into the column groups of the layout (the first group takes `locationGroupRows` rows). */
+  locationGroups(s: any): LocationData[][] {
+    const groups = Math.min(3, Math.max(1, Math.round(Number(s?.config?.locationColumns) || 1)));
+    const all = this.locations;
+    if (groups === 1) return [all];
+    const size = Math.max(1, Math.round(Number(s?.config?.locationGroupRows) || Math.ceil(all.length / groups)));
+    return Array.from({ length: groups }, (_, g) => all.slice(g * size, (g + 1) * size));
+  }
+
+  locationRowIndices(s: any): number[] {
+    const longest = Math.max(0, ...this.locationGroups(s).map(g => g.length));
+    return Array.from({ length: longest }, (_, i) => i);
+  }
+
+  /** Columns of one group of the "locations as rows" table: the name and a cell per parameter (plus its average). */
+  locGroupColumns(s: any): number {
+    return 1 + this.locationParamsOf(s).reduce((n, p) => n + 1 + (p.average ? 1 : 0), 0);
+  }
+
+  locTotalColumns(s: any): number {
+    return this.locationGroups(s).length * this.locGroupColumns(s);
+  }
+
+  /** Requirement of the parameters of the section (one text per parameter when there are several). */
+  locRequirement(s: any): string {
+    const params = this.locationParamsOf(s);
+    const text = (p: { name: string }) => this.formatSpecRange(this.locParamControl(p.name)?.value);
+    return params.length === 1 ? text(params[0]) : params.map(p => `${p.displayName}: ${text(p)}`).join(' · ');
+  }
+
+  /**
+   * Readings entered / expected over the reading and location grids of this layout (the counter of the screen),
+   * and whether a parameter is measured in such a grid (its parameter row then only holds the average).
+   */
+  readingProgress(): { entered: number; expected: number } {
+    let entered = 0;
+    let expected = 0;
+    const count = (arr: any[] | undefined) => (arr || []).filter(v => v !== null && v !== undefined && v !== '').length;
+    this.sections.forEach(s => {
+      if (!this.isSectionVisible(s)) return;
+      if (this.isLocationGrid(s)) {
+        const n = this.locationReadingCount(s);
+        this.locationParamsOf(s).filter(p => p.found).forEach(p => this.locations.forEach(loc => {
+          expected += n;
+          entered += count(this.readingValues[this.locKey(p.name, loc.locationCode)]);
+        }));
+      } else if (this.isReadingGrid(s)) {
+        const n = this.getReadingCount(s);
+        this.readingGridRows(s).forEach(r => {
+          expected += n;
+          entered += count(this.readingValues[this.readingGridKey(s, r.code)]);
+        });
+      }
+    });
+    return { entered, expected };
+  }
+
+  isGridParameter(name: string): boolean {
+    const want = this.normKey(name);
+    return this.sections.some(s =>
+      (this.isLocationGrid(s) && this.locationParamsOf(s).some(p => this.normKey(p.name) === want)) ||
+      (this.isReadingGrid(s) && this.normKey(this.readingGridParam(s)) === want));
+  }
+
+  /** Requirement column / row of a location grid: the layout decides, the user can switch it per section on this screen. */
+  private locReqOverride: Record<string, boolean> = {};
+
+  locShowRequirement(s: any): boolean {
+    return this.locReqOverride[this.readingSecKey(s)] ?? !!s?.config?.showRequirement;
+  }
+
+  toggleLocationRequirement(s: any): void {
+    this.locReqOverride = { ...this.locReqOverride, [this.readingSecKey(s)]: !this.locShowRequirement(s) };
+  }
+
+  /** Requirement of one location parameter, from its parameter row (plan / specification limit); '' when none. */
+  locParamRequirement(paramName: string): string {
+    const v = this.locParamControl(paramName)?.value;
+    const min = this.toNum(v?.minValue ?? v?.specMinValue);
+    const max = this.toNum(v?.maxValue ?? v?.specMaxValue);
+    return min !== null && max !== null ? `${min} – ${max}` : min !== null ? `≥ ${min}` : max !== null ? `≤ ${max}` : '';
+  }
+
+  /** True when an entered reading lies outside the limit of its parameter (the cell turns red). */
+  locReadingOutOfLimit(paramName: string, value: any): boolean {
+    const n = this.toNum(value);
+    if (n === null) return false;
+    const v = this.locParamControl(paramName)?.value;
+    const min = this.toNum(v?.minValue ?? v?.specMinValue);
+    const max = this.toNum(v?.maxValue ?? v?.specMaxValue);
+    return (min !== null && n < min) || (max !== null && n > max);
+  }
+
+  private toNum(v: any): number | null {
+    return v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v);
+  }
+
+  /** Writes the average of all readings of the parameter (and the readings by location) into its parameter row. */
+  private updateLocationParameter(paramName: string): void {
+    const ctrl = this.locParamControl(paramName);
+    const fa = this.parametersFormArray;
+    if (!ctrl || !fa) return;
+    const byLocation: Record<string, (number | null)[]> = {};
+    const all: number[] = [];
+    this.locations.forEach(loc => {
+      const arr = this.readingValues[this.locKey(paramName, loc.locationCode)] || [];
+      byLocation[loc.locationCode] = arr;
+      arr.forEach(v => { if (v != null && !isNaN(v)) all.push(v); });
+    });
+    const avg = all.length ? Number((all.reduce((a, b) => a + b, 0) / all.length).toFixed(this.locDecimals(paramName))) : null;
+    ctrl.patchValue({ value: avg, remarks: JSON.stringify(byLocation) });
+    this.evaluateLimitForControl(ctrl);
+    this.paramValueChanged.emit({ rowIdx: fa.controls.indexOf(ctrl as any), param: ctrl.value });
+  }
+
+  onLocationReadingChange(paramName: string, code: string, idx: number, val: any): void {
+    if (this.printMode) return;
+    const key = this.locKey(paramName, code);
+    const parsed = val !== null && val !== '' && !isNaN(Number(val)) ? parseFloat(val) : null;
+    const arr = this.readingValues[key] || (this.readingValues[key] = []);
+    while (arr.length <= idx) arr.push(null);
+    arr[idx] = parsed;
+    this.updateLocationParameter(paramName);
+    this.syncCollectionsToTest();
+  }
+
+  /** Removes the last location of a grid; refused while it holds a reading (clear it first). */
+  removeLastLocation(s: any): void {
+    if (this.isViewMode || this.isLocked || !this.canAddRemoveRows(s) || this.locations.length <= 1) return;
+    const last = this.locations[this.locations.length - 1];
+    const params = this.locationParamsOf(s);
+    if (params.some(p => (this.readingValues[this.locKey(p.name, last.locationCode)] || []).some(v => v != null))) {
+      this.toastService.show(`${last.locationName} holds readings. Clear them before removing the location.`, 'warning');
+      return;
+    }
+    params.forEach(p => delete this.readingValues[this.locKey(p.name, last.locationCode)]);
+    this.locations.pop();
+    params.forEach(p => this.updateLocationParameter(p.name));
+    this.syncCollectionsToTest();
+    this.cdr.markForCheck();
+  }
+
   getReadingTargetParameters(s: any): string[] {
     if (s?.config?.parameters && Array.isArray(s.config.parameters) && s.config.parameters.length > 0) {
       return s.config.parameters;
     }
-    const specified = s?.config?.targetParameter;
+    const specified = s?.config?.targetParamName || s?.config?.targetParameter;
     const names: string[] = [];
 
     if (this.parametersFormArray && this.parametersFormArray.length > 0) {
@@ -1376,6 +3029,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getReadingCount(s: any): number {
+    if (this.isReadingGrid(s)) return this.readingGridCount[this.readingSecKey(s)] ?? this.configuredReadingCount(s);
     const targets = this.getReadingTargetParameters(s);
     const primary = targets[0] || this.getTargetParamName();
     if (this.readingValues[primary] && this.readingValues[primary].length > 0) {
@@ -1385,6 +3039,9 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   getDefaultReadingCount(s: any): number {
+    if (this.isReadingGrid(s)) return this.configuredReadingCount(s);
+    const spotCols = this.readingSpotColumns(s);
+    if (spotCols.length > 0) return spotCols.length;
     return parseInt(s?.config?.count || s?.config?.readingCount || '5', 10) || 5;
   }
 
@@ -1394,8 +3051,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       const ctrl = this.parametersFormArray.at(i);
       const name = (ctrl.get('parameterName')?.value || '').trim();
       if (name.toLowerCase() === targetName.trim().toLowerCase() ||
-         (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
-         (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+        (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+        (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
         return ctrl;
       }
     }
@@ -1439,12 +3096,503 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return '';
   }
 
+  // ---- Specimen matrix follows the layout (A1) --------------------------------------------------------------
+
+  /** True when the layout contains a specimen-matrix section. */
+  get hasSpecimenSection(): boolean {
+    return layoutHasSpecimenSection(this.sections);
+  }
+
+  /** First specimen-matrix section of the layout. */
+  get specimenSection(): any {
+    return (this.sections || []).find(sec => sec.type === 'specimen') || null;
+  }
+
+  /** Header text of specimen i: the layout's own name, else its prefix + number, else S{n}. */
+  specimenLabel(spmIdx: number, sec?: any): string {
+    const s = sec ?? this.specimenSection ?? (this.sections || []).find(x => (x.type === 'parameter' || x.type === 'param') && x.config?.enableMultiSpecimen);
+    if (typeof s?.config?.specimenNames === 'string' && s.config.specimenNames.trim()) {
+      const parts = s.config.specimenNames.split(',').map((p: string) => p.trim());
+      if (parts[spmIdx]) return parts[spmIdx];
+    }
+    const named = s?.config?.specimenRows?.[spmIdx];
+    const text = typeof named === 'string' ? named.trim() : '';
+    if (text) return text;
+    const prefix = String(s?.config?.prefix ?? '').trim();
+    return prefix ? `${prefix}${spmIdx + 1}` : `S${spmIdx + 1}`;
+  }
+
+  private static readonly COLUMN_ROLE_MAP: Record<string, string[]> = {
+    param: ['row_label', 'param_name', 'parameter_name', 'label'],
+    specimen: ['row_label', 'specimen_label', 'sample_id', 'location', 'label'],
+    unit: ['unit'],
+    requirement: ['spec_requirement', 'requirement', 'limit'],
+    status: ['status_verdict', 'status', 'verdict'],
+    avg: ['agg_average', 'average', 'avg'],
+    agg: ['agg_average', 'average', 'avg', 'agg'],
+    min: ['agg_min', 'min'],
+    max: ['agg_max', 'max'],
+    uncertainty: ['uncertainty', 'mu'],
+    method: ['test_method', 'method'],
+    remarks: ['custom_data', 'remarks', 'remark'],
+    print: ['reportable_toggle', 'print']
+  };
+
+  private columnDef(sec: any, key: string): any {
+    const cols: any[] = Array.isArray(sec?.config?.tableColumns) ? sec.config.tableColumns : [];
+    const direct = cols.find((c: any) => c?.key === key);
+    if (direct) return direct;
+    const roles = ConfiguredTestLayoutRendererComponent.COLUMN_ROLE_MAP[key];
+    if (!roles) return undefined;
+    return cols.find((c: any) => roles.includes(String(c?.columnRole || '').trim().toLowerCase()));
+  }
+
+  /**
+   * True when the Studio section is in Template Configured mode (`sectionDataMode: 'template' | 'template_configured'`
+   * or `parameterMode` subset with explicit `tableRows`) and has not been explicitly synced from Lab Test Master.
+   */
+  isTemplateConfiguredMode(sec: any): boolean {
+    if (!sec?.config) return false;
+    if (this.syncedLabTestSections[this.sectionUiKey(sec)]) return false;
+    const dm = String(sec.config.sectionDataMode || '').trim().toLowerCase();
+    if (dm === 'template' || dm === 'template_configured') return true;
+    if (dm === 'runtime' || dm === 'auto_load') return false;
+    const pm = String(sec.config.parameterMode || '').trim().toLowerCase();
+    const hasTableRows = Array.isArray(sec.config.tableRows) && sec.config.tableRows.length > 0;
+    return (pm.includes('subset') || pm.includes('template')) && hasTableRows;
+  }
+
+  /** A column the layout lists as hidden is not drawn; a column it does not list follows the section's own switches. */
+  columnVisible(sec: any, key: string): boolean {
+    const ov = this.columnOverride[this.sectionUiKey(sec)]?.[key];
+    if (ov !== undefined) return ov;
+    const c = this.columnDef(sec, key);
+    return !c || c.visible !== false;
+  }
+
+  /** The layout's own heading; a heading it left empty on purpose stays empty, one it does not list gets the default. */
+  columnLabel(sec: any, key: string, fallback: string): string {
+    const def = this.columnDef(sec, key);
+    return def && typeof def.label === 'string' ? def.label.trim() : fallback;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Column switches a user can change per section on this screen (not saved; the layout gives the default).
+  // ---------------------------------------------------------------------------
+  private columnOverride: Record<string, Record<string, boolean>> = {};
+
+  gridStatsShown(s: any): boolean {
+    const ov = this.columnOverride[this.sectionUiKey(s)]?.['stats'];
+    if (ov !== undefined) return ov;
+    if (this.isTemplateConfiguredMode(s) && Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0) {
+      const minDef = this.columnDef(s, 'min');
+      const maxDef = this.columnDef(s, 'max');
+      return (!!minDef && minDef.visible !== false) || (!!maxDef && maxDef.visible !== false);
+    }
+    return s?.config?.showStatistics !== false;
+  }
+
+  /** The columns the Adjust menu of a section offers, by section type. */
+  adjustableColumns(s: any): { key: string; label: string }[] {
+    const t = String(s?.type || '').toLowerCase();
+    if (t === 'spm' || t === 'specimen') {
+      return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }];
+    }
+    if (t === 'param' || t === 'parameter') {
+      if (this.specimens.length > 1 || s?.config?.enableMultiSpecimen) {
+        return [{ key: 'avg', label: 'Average' }, { key: 'requirement', label: 'Requirement' }, { key: 'unit', label: 'Unit' }, { key: 'status', label: 'Status' }, { key: 'print', label: 'Print Checkbox' }];
+      }
+      return [
+        { key: 'source', label: 'Source' },
+        { key: 'unit', label: 'Unit' },
+        { key: 'requirement', label: 'Requirement' },
+        { key: 'status', label: 'Status' },
+        { key: 'print', label: 'Print Checkbox' },
+        { key: 'method', label: 'Method' },
+        { key: 'uncertainty', label: 'Uncertainty' },
+        { key: 'remarks', label: 'Remarks' }
+      ];
+    }
+    if (t === 'reading' && this.isReadingGrid(s)) {
+      return [{ key: 'agg', label: this.gridAggregateLabel(s) || 'Average' }, { key: 'stats', label: 'Min / Max' }, { key: 'requirement', label: 'Requirement' }, { key: 'status', label: 'Status' }, { key: 'unit', label: 'Unit' }];
+    }
+    if (t === 'rule' || t === 'decision') {
+      return [{ key: 'showRule', label: 'Decision Rule Statement' }];
+    }
+    if (t === 'traverse' || t === 'case_depth') {
+      return [{ key: 'showCurve', label: 'Hardness Curve' }];
+    }
+    if (t === 'cond' || t === 'condition') {
+      return [{ key: 'showAmbient', label: 'Ambient Temp / RH' }];
+    }
+    return [];
+  }
+
+  isColumnShown(s: any, key: string): boolean {
+    if (this.printMode && key === 'print') return false;
+    if (key === 'stats') return this.gridStatsShown(s);
+    if (key === 'showRule') {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.['showRule'];
+      return ov !== undefined ? ov : s?.config?.showRule !== false;
+    }
+    if (key === 'showCurve') {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.['showCurve'];
+      return ov !== undefined ? ov : s?.config?.showCurve !== false;
+    }
+    if (key === 'showAmbient') {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.['showAmbient'];
+      return ov !== undefined ? ov : (!!s?.config?.showAmbient || !this.conditionFields(s).length);
+    }
+    const t = String(s?.type || '').toLowerCase();
+    if ((t === 'param' || t === 'parameter') && this.specimens.length <= 1 && !s?.config?.enableMultiSpecimen) {
+      const ov = this.columnOverride[this.sectionUiKey(s)]?.[key];
+      if (ov !== undefined) return ov;
+      if (this.isTemplateConfiguredMode(s) && Array.isArray(s?.config?.tableColumns) && s.config.tableColumns.length > 0) {
+        if (key === 'print') return s?.config?.showPrint !== false;
+        if (key === 'source') return !!this.columnDef(s, 'source') && this.columnDef(s, 'source').visible !== false;
+        const def = this.columnDef(s, key);
+        return !!def && def.visible !== false;
+      }
+      const cols = s?.config?.columns || {};
+      if (key === 'source' || key === 'print') return cols[key] !== false;
+      if (key === 'unit' || key === 'requirement' || key === 'status') return cols[key] !== false && this.columnVisible(s, key);
+      if (key === 'method' || key === 'uncertainty' || key === 'remarks') return !!cols[key];
+    }
+    if (['avg', 'min', 'max', 'requirement', 'status', 'unit', 'print'].includes(key) && !this.isReadingGrid(s)) return this.specimenShow(s, key as any);
+    if (this.isReadingGrid(s) && (key === 'agg' || key === 'requirement' || key === 'status')) return this.gridColumnVisible(s, key);
+    if (key === 'unit') return this.specimenShow(s, 'unit');
+    return this.columnVisible(s, key);
+  }
+
+  toggleColumn(s: any, key: string): void {
+    const sec = this.sectionUiKey(s);
+    this.columnOverride = { ...this.columnOverride, [sec]: { ...(this.columnOverride[sec] || {}), [key]: !this.isColumnShown(s, key) } };
+  }
+
+  /** Average / Min / Max / Requirement / Status / Unit / Print column switches of the specimen matrix & multi-specimen parameter table. */
+  specimenShow(sec: any, what: 'avg' | 'min' | 'max' | 'requirement' | 'status' | 'unit' | 'print'): boolean {
+    if (this.printMode && what === 'print') return false;
+    const cfg = sec?.config || {};
+    const ov = this.columnOverride[this.sectionUiKey(sec)]?.[what];
+    if (ov !== undefined) return ov;
+    // Template Configured mode: strictly render ONLY columns explicitly configured in tableColumns (+ Print & Action always present)
+    if (this.isTemplateConfiguredMode(sec) && Array.isArray(cfg.tableColumns) && cfg.tableColumns.length > 0) {
+      if (what === 'print') return true;
+      const def = this.columnDef(sec, what);
+      return !!def && def.visible !== false;
+    }
+    switch (what) {
+      case 'avg': return cfg.showAverage !== false && this.columnVisible(sec, 'avg');
+      case 'min': return !!cfg.showMinMax && this.columnVisible(sec, 'min');
+      case 'max': return !!cfg.showMinMax && this.columnVisible(sec, 'max');
+      case 'requirement': return cfg.showRequirement !== false && this.columnVisible(sec, 'requirement');
+      case 'status': return cfg.showStatus !== false && this.columnVisible(sec, 'status');
+      case 'unit': return cfg.showUnit !== false && this.columnVisible(sec, 'unit');
+      case 'print': return cfg.showPrint !== false && this.columnVisible(sec, 'print');
+    }
+  }
+
+  /** The layout asks for specimens as rows and parameters as columns (the tensile matrix always keeps its own shape). */
+  isTransposed(sec: any): boolean {
+    return !this.isTensileTest() && String(sec?.config?.orientation ?? '').trim().toLowerCase().startsWith('specimens');
+  }
+
+  /** The layout asks for its structure exactly as designed (studio: "Structure on result screen: Fixed (as designed)"). */
+  isFixedStructure(sec: any): boolean {
+    const c = sec?.config || {};
+    return c.renderMode === 'fixed' || (c.allowRuntimeAdd === false && c.runtimeAdjust === false);
+  }
+
+  /** Add / remove parameter rows (studio: "Add / remove rows"). */
+  canAddRemoveRows(sec: any): boolean {
+    return !this.isFixedStructure(sec) && sec?.config?.allowRuntimeAdd !== false;
+  }
+
+  /** Change the specimen count (studio: "Change counts"). */
+  canAdjustCount(sec: any): boolean {
+    const mode = sec?.type === 'reading' ? sec?.config?.readingExecutionMode : sec?.config?.specimenExecutionMode;
+    return !this.isFixedStructure(sec) && sec?.config?.runtimeAdjust !== false && mode !== 'fixed';
+  }
+
+  /**
+   * Parameter rows the specimen matrix / multi-specimen parameter table shows.
+   * - Template Configured (`sectionDataMode === 'template_configured'`): strictly follows `sec.config.tableRows`
+   *   in exact Studio order (matching Master Link rows by parameterId/name, rendering Custom/Static rows in place,
+   *   plus any manually added `isAdditional` rows — never injecting unconfigured runtime parameters).
+   * - Runtime Auto-Load (`sectionDataMode === 'auto_load'` or unset): dynamically loads all runtime parameters
+   *   from the test, applying layout display labels and static rows.
+   * - Fixed (as designed): layout's rows in its order + separate group for other test parameters.
+   */
+  specimenParams(sec: any): any[] {
+    const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const base = this.getBaseParameterList();
+    const rows: any[] = (Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : []).filter((r: any) => !String(r?.key ?? '').startsWith('tensile_'));
+    const isStaticRow = (r: any) => r?.bindingMode === 'static' && !r.sourceName && !r.parameterId && !r.dbMasterId && !String(r.key ?? '').startsWith('param_');
+    const nameCandidatesOfRow = (r: any) => [r?.dbMasterName, r?.sourceName, r?.label].map(norm).filter(Boolean);
+    const nameOfRow = (r: any) => norm(r?.dbMasterName || r?.sourceName || r?.label);
+    const matchParam = (r: any, usedSet?: Set<number>) => {
+      const targetId = r?.dbMasterId ?? r?.parameterId ?? r?.parameterID ?? null;
+      if (targetId != null) {
+        const byId = base.find(x => x.parameterID != null && Number(x.parameterID) === Number(targetId) && (!usedSet || !usedSet.has(x.index)));
+        if (byId) return byId;
+      }
+      const candidates = nameCandidatesOfRow(r);
+      if (!candidates.length) return undefined;
+      return base.find(x => candidates.includes(norm(x.name)) && (!usedSet || !usedSet.has(x.index)));
+    };
+    const named = (p: any) => {
+      const row = rows.find(r => !isStaticRow(r) && (
+        ((r?.dbMasterId ?? r?.parameterId) != null && p.parameterID != null && Number(r?.dbMasterId ?? r?.parameterId) === Number(p.parameterID)) ||
+        nameCandidatesOfRow(r).includes(norm(p.name))
+      ));
+      return { ...p, displayName: String(row?.label ?? '').trim() || p.name };
+    };
+    const staticOf = (r: any, n: number) => ({ index: -(2000 + n), name: r.label, displayName: String(r.label ?? ''), unit: r.unit || '', requirement: r.requirement || '', inputType: 'Text', isCalculated: false, isStatic: true, staticValue: String(r.staticValue ?? '') });
+
+    // 1. Template Configured mode: strictly render the Studio-configured rows in exact template order
+    if (this.isTemplateConfiguredMode(sec)) {
+      const layoutRows = rows.filter(r => r?.visible !== false);
+      if (layoutRows.length > 0) {
+        const main: any[] = [];
+        const used = new Set<number>();
+        let statics = 0;
+        for (const r of layoutRows) {
+          if (isStaticRow(r)) {
+            main.push({
+              index: -(1000 + statics++),
+              name: r.label,
+              displayName: String(r.label ?? ''),
+              unit: r.unit || '',
+              requirement: r.requirement || '',
+              inputType: r.inputType || 'Text',
+              isCalculated: false,
+              isStatic: true,
+              staticValue: String(r.staticValue ?? '')
+            });
+            continue;
+          }
+          const p = matchParam(r, used);
+          if (p) {
+            used.add(p.index);
+            main.push({
+              ...p,
+              displayName: String(r.label ?? '').trim() || p.name,
+              unit: (r.unit && r.unit !== '—') ? r.unit : p.unit
+            });
+          } else {
+            // Configured row not yet present in form: render its configured template definition without auto-binding test/spec extras
+            main.push({
+              index: -(1000 + statics++),
+              parameterID: r.dbMasterId ?? r.parameterId ?? null,
+              name: String(r.dbMasterName || r.sourceName || r.label || ''),
+              displayName: String(r.label ?? '').trim() || String(r.dbMasterName || ''),
+              unit: r.unit || '—',
+              requirement: r.requirement && r.requirement !== 'Runtime' ? r.requirement : '—',
+              inputType: r.inputType || 'Text',
+              isCalculated: !!r.isCalculated,
+              isStatic: true,
+              staticValue: String(r.staticValue ?? '—')
+            });
+          }
+        }
+        // Keep any manually added runtime parameters (+ Add Parameter) visible at the end
+        const added = base.filter(p => !used.has(p.index) && p.isAdditional).map(named);
+        if (main.length > 0 || added.length > 0) {
+          return [...main, ...added];
+        }
+      }
+    }
+
+    // 2. Runtime Auto-Load (default flexible mode)
+    if (!this.isFixedStructure(sec)) {
+      // the test's own parameters, with the layout's fixed-value rows above / below them as the layout places them
+      const before: any[] = [];
+      const after: any[] = [];
+      let seenParam = false;
+      let n = 0;
+      for (const r of rows.filter(x => x?.visible !== false)) {
+        if (isStaticRow(r)) (seenParam ? after : before).push(staticOf(r, n++));
+        else seenParam = true;
+      }
+      return [...before, ...base.map(named), ...after];
+    }
+
+    // 3. Fixed Structure mode (legacy A1b behavior)
+    const picked: string[] = Array.isArray(sec?.config?.specimenColumns) ? sec.config.specimenColumns : [];
+    const layoutRows = rows.filter(r => r?.visible !== false);
+    const main: any[] = [];
+    const used = new Set<number>();
+    if (layoutRows.some(r => isStaticRow(r) || !!matchParam(r))) {
+      let statics = 0;
+      for (const r of layoutRows) {
+        if (isStaticRow(r)) {
+          main.push({ index: -(1000 + statics++), name: r.label, displayName: String(r.label ?? ''), unit: r.unit || '', requirement: r.requirement || '', inputType: 'Text', isCalculated: false, isStatic: true, staticValue: String(r.staticValue ?? '') });
+          continue;
+        }
+        const p = matchParam(r, used);
+        if (p) {
+          used.add(p.index);
+          main.push({ ...p, displayName: String(r.label ?? '').trim() || p.name });
+        }
+      }
+    } else if (picked.length > 0 && base.some(p => picked.some(n => norm(n) === norm(p.name)))) {
+      for (const p of base) {
+        if (!picked.some(n => norm(n) === norm(p.name))) continue;
+        used.add(p.index);
+        main.push(named(p));
+      }
+    } else {
+      return base.map(named);
+    }
+    const others = base.filter(p => !used.has(p.index)).map(p => ({ ...named(p), isOther: true }));
+    return others.length && main.length ? [...main, { index: -1, isDivider: true, name: '', displayName: '' }, ...others] : [...main, ...others];
+  }
+
+  /**
+   * Returns active parameter keys (ordered) when the primary result section is in Template Configured mode,
+   * or null when in Runtime Auto-Load mode (meaning all runtime parameters are active).
+   */
+  getActiveLayoutParameterKeys(): string[] | null {
+    const primary = this.specimenSection || (this.sections || []).find(s => s.type === 'parameter' || s.type === 'param');
+    if (primary) {
+      if (!this.isTemplateConfiguredMode(primary)) return null;
+      const rows = this.specimenParams(primary).filter(p => !p.isDivider && !p.isStatic);
+      if (!rows.length) return null;
+      return rows.map(p => p.parameterID != null && Number(p.parameterID) !== 0 ? `id:${p.parameterID}` : `name:${String(p.name || '').trim().toLowerCase()}`);
+    }
+    // Reading-grid / Location-grid only layout (no parameter/specimen section): scope active keys to grid target parameters
+    const gridKeys: string[] = [];
+    const seen = new Set<string>();
+    for (const s of (this.sections || [])) {
+      if (this.isReadingGrid(s)) {
+        const ctrl = this.gridParamControl(s);
+        if (ctrl) {
+          const id = ctrl.get('parameterID')?.value;
+          const name = String(ctrl.get('parameterName')?.value ?? '').trim().toLowerCase();
+          const k = id != null && Number(id) !== 0 ? `id:${id}` : `name:${name}`;
+          if (!seen.has(k)) { seen.add(k); gridKeys.push(k); }
+        }
+      } else if (this.isLocationGrid(s)) {
+        for (const lp of this.locationParamsOf(s)) {
+          const ctrl = this.locParamControl(lp.name);
+          if (ctrl) {
+            const id = ctrl.get('parameterID')?.value;
+            const name = String(ctrl.get('parameterName')?.value ?? '').trim().toLowerCase();
+            const k = id != null && Number(id) !== 0 ? `id:${id}` : `name:${name}`;
+            if (!seen.has(k)) { seen.add(k); gridKeys.push(k); }
+          }
+        }
+      }
+    }
+    return gridKeys.length ? gridKeys : null;
+  }
+
+  /** Returns the active specimen display labels (e.g. ['S.NO.1', 'S.NO.2']) for cross-tab consistency. */
+  getSpecimenDisplayLabels(): string[] {
+    const primary = this.specimenSection || (this.sections || []).find(s => (s.type === 'parameter' || s.type === 'param') && s.config?.enableMultiSpecimen);
+    return this.specimens.map((_, i) => this.specimenLabel(i, primary));
+  }
+
+  /** The parameters as columns of the transposed matrix (no group divider). */
+  specimenColumnList(sec: any): any[] {
+    return this.specimenParams(sec).filter(p => !p.isDivider);
+  }
+
+  private tensileRowDef(sec: any, role: string): any {
+    return (Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : []).find((r: any) => r?.key === `tensile_${role}`);
+  }
+
+  /** A layout that fixes its structure lists the tensile rows it wants; a row it does not list (or hides) is not drawn. */
+  tensileRowOn(sec: any, role: string): boolean {
+    if (!sec || !this.isFixedStructure(sec)) return true;
+    const rows: any[] = Array.isArray(sec.config?.tableRows) ? sec.config.tableRows : [];
+    if (!rows.some(r => String(r?.key ?? '').startsWith('tensile_'))) return true;
+    const def = this.tensileRowDef(sec, role);
+    return !!def && def.visible !== false;
+  }
+
+  /** Label of a tensile row: the layout's own name when it set one. */
+  tensileLabel(sec: any, role: string, fallback: string): string {
+    return String(this.tensileRowDef(sec, role)?.label ?? '').trim() || fallback;
+  }
+
+  /** The specimen count the layout asks for (its specimen names, else its count); 0 when it asks for none. */
+  private layoutSpecimenCount(): number {
+    const paramMultiSec = (this.sections || []).find(s => (s.type === 'parameter' || s.type === 'param') && s.config?.enableMultiSpecimen);
+    const cfg = this.specimenSection?.config || paramMultiSec?.config;
+    if (!cfg) return 0;
+    const namedRows = Array.isArray(cfg.specimenRows) ? cfg.specimenRows.filter((n: any) => String(n ?? '').trim() !== '').length : 0;
+    const namedStr = typeof cfg.specimenNames === 'string' && cfg.specimenNames.trim()
+      ? cfg.specimenNames.split(',').map((s: string) => s.trim()).filter(Boolean).length
+      : 0;
+    return Math.min(20, namedRows || namedStr || Number(cfg.specimenCount) || Number(cfg.count) || 0);
+  }
+
+  /** Set once the specimen count was fixed (from the layout, or by the user); saved with the test. */
+  private specimenCountApplied = false;
+  private savedUserSpecimenCount: number | null = null;
+
+  /**
+   * A test that has not started takes its specimen count from the layout, once. The plan's quantity is only the
+   * starting value; the user can still change it afterwards and that choice is kept.
+   */
+  private scheduleLayoutSpecimenCount(): void {
+    if (this.printMode || this.isViewMode || this.isLocked || this.specimenCountApplied) return;
+    const status = String(this.test?.status ?? 'Pending').toLowerCase();
+    if (status && status !== 'pending') return;
+    const wanted = this.layoutSpecimenCount();
+    if (wanted < 1) return;
+    // after the current change detection: the parent reacts to the new count
+    Promise.resolve().then(() => {
+      if (this.printMode || this.isViewMode || this.isLocked || this.specimenCountApplied) return;
+      if (wanted !== this.specimens.length) this.setSpecimenCount(wanted, true);
+      this.specimenCountApplied = true;
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** True when the saved layout used the literal legacy type "spm" (see initLayoutData). */
+  private hasLegacySpmSection = false;
+
   hasSectionOfType(type: string): boolean {
+    if (type === 'spm') return this.hasLegacySpmSection;
+    if (type === 'specimen' && this.hasSpecimenSection) return true;
     return (this.sections || []).some(s => s.type === type || (type === 'param' && s.type === 'parameter') || (type === 'parameter' && s.type === 'param'));
   }
 
+  /** A reading section that lists the test's parameters itself (no target parameter): the plain parameter table is then not drawn. */
+  hasLegacyReadingSection(): boolean {
+    return (this.sections || []).some(sec => sec.type === 'reading' && !this.isReadingGrid(sec));
+  }
+
+  /** Parameters a reading grid already shows are left out of the plain parameter table. */
+  private isGridTargetRow(rowIdx: number): boolean {
+    const name = this.normKey(this.parametersFormArray?.at(rowIdx)?.get('parameterName')?.value);
+    return !!name && (this.sections || []).some(sec =>
+      (this.isReadingGrid(sec) && this.normKey(this.readingGridTarget(sec)) === name) ||
+      (this.isLocationGrid(sec) && (sec.config.locationParams as string[]).some(n => this.normKey(n) === name)));
+  }
+
+  /** A section whose type this screen cannot draw (it would otherwise vanish without a trace). */
+  isUnsupportedSection(s: any): boolean {
+    return !!s && !SUPPORTED_SECTION_TYPES.has(String(s.type || '').trim().toLowerCase());
+  }
+
+  /** The warning card is for the person editing the result; it is not part of the printed record. */
+  showUnsupportedCard(s: any): boolean {
+    return !this.printMode && this.isUnsupportedSection(s) && (this.activeTabSection === 'all' || this.activeTabSection === 'execution');
+  }
+
   getReadingColumnHeader(s: any, idx: number): string {
+    if (this.isReadingGrid(s)) {
+      const spotCol = this.readingSpotColumns(s)[idx];
+      if (spotCol && typeof spotCol.label === 'string' && spotCol.label.trim()) {
+        return spotCol.label.trim();
+      }
+    }
     const rawPrefix = s?.config?.readingLabel || s?.config?.readingPrefix;
+    // a label the layout cleared on purpose (empty text, not missing) numbers the readings 1, 2, 3 ...
+    if (typeof s?.config?.readingLabel === 'string' && s.config.readingLabel.trim() === '' && !s?.config?.readingPrefix) return String(idx + 1);
     let prefix = 'R';
     if (rawPrefix && typeof rawPrefix === 'string') {
       const trimmed = rawPrefix.trim();
@@ -1493,6 +3641,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   setReadingCount(s: any, count: number): void {
     if (this.isViewMode || this.isLocked) return;
     const validCount = Math.min(25, Math.max(1, count));
+    if (this.isReadingGrid(s)) {
+      this.setGridCount(s, validCount);
+      return;
+    }
     const targets = this.getReadingTargetParameters(s);
 
     targets.forEach(targetName => {
@@ -1514,8 +3666,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
         this.parametersFormArray.controls.forEach((ctrl, idx) => {
           const name = (ctrl.get('parameterName')?.value || '').trim();
           if (name.toLowerCase() === targetName.toLowerCase() ||
-             (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
-             (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+            (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+            (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
             ctrl.patchValue({ value: avg, remarks: readingsJson });
             this.evaluateLimitForControl(ctrl);
             this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
@@ -1552,8 +3704,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       this.parametersFormArray.controls.forEach((ctrl, idx) => {
         const name = (ctrl.get('parameterName')?.value || '').trim();
         if (name.toLowerCase() === targetName.toLowerCase() ||
-           (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
-           (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
+          (targetName.toLowerCase().includes('hardness') && name.toLowerCase().includes('hardness')) ||
+          (targetName.toLowerCase().includes('impact') && name.toLowerCase().includes('impact'))) {
           ctrl.patchValue({ value: avg, remarks: readingsJson });
           this.evaluateLimitForControl(ctrl);
           this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
@@ -1573,7 +3725,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     const numVals = arr.map(Number);
     const sum = numVals.reduce((a, b) => a + b, 0);
-    const avg = Number((sum / numVals.length).toFixed(1));
+    const avg = Number((sum / numVals.length).toFixed(2));
     const min = Math.min(...numVals);
     const max = Math.max(...numVals);
 
@@ -1607,6 +3759,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private recalculateEffectiveCaseDepth(): void {
+    const ecd = this.computeEffectiveCaseDepth();
+    this.effectiveCaseDepth = ecd;
+    this.writeEffectiveCaseDepthToForm(ecd);
+  }
+
+  /** Depth where the hardness falls to the cut-off (linear between the two points around it). */
+  private computeEffectiveCaseDepth(): number | null {
     const cutoff = this.cutoffLimit || 550;
     let ecd: number | null = null;
 
@@ -1628,9 +3787,11 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       }
     }
 
-    this.effectiveCaseDepth = ecd;
+    return ecd;
+  }
 
-    if (ecd != null && this.parametersFormArray) {
+  private writeEffectiveCaseDepthToForm(ecd: number | null): void {
+    if (ecd != null && this.parametersFormArray && !this.printMode) {
       this.parametersFormArray.controls.forEach((ctrl, idx) => {
         const name = (ctrl.get('parameterName')?.value || '').toLowerCase();
         if (name.includes('case depth') || name.includes('effective case')) {
@@ -1646,10 +3807,16 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Conditions & Environment
   // =========================================================================
   private initConditions(): void {
-    this.conditionValues['Temperature'] = this.test?.roomTemperature ?? this.environmentData?.roomTemperature ?? 23;
-    this.conditionValues['Relative Humidity'] = this.test?.roomHumidity ?? this.environmentData?.roomHumidity ?? 50;
-    this.conditionValues['Test Speed'] = '2 mm/min';
-    this.conditionValues['Medium'] = 'Ambient Air';
+    this.applyRoomConditions();
+  }
+
+  /**
+   * Room temperature and humidity come from the environment record only (Record Ambient); a value kept in the saved
+   * extra data never replaces it, so this section and the traceability block always show the same.
+   */
+  private applyRoomConditions(): void {
+    this.conditionValues['Temperature'] = this.environmentData?.roomTemperature ?? this.test?.roomTemperature ?? null;
+    this.conditionValues['Relative Humidity'] = this.environmentData?.roomHumidity ?? this.test?.roomHumidity ?? null;
   }
 
   onConditionChange(key: string, val: any): void {
@@ -1659,6 +3826,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     } else if (key === 'Relative Humidity' && this.test) {
       this.test.roomHumidity = val ? parseFloat(val) : null;
     }
+    this.syncCollectionsToTest();
   }
 
   // =========================================================================
@@ -1677,6 +3845,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     if (!ctrl) return;
     this.evaluateLimitForControl(ctrl);
     this.paramValueChanged.emit({ rowIdx, param: ctrl.value });
+    // Keep the specimen model in step with the table so a later recalculation never writes an older value back
+    this.applyTableEdit(rowIdx, ctrl.get('value')?.value);
   }
 
   onUnitSelect(rowIdx: number): void {
@@ -1685,12 +3855,12 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   formatRequirement(param: any): string {
     if (!param) return '—';
-    if (param.acceptanceCriteria) return param.acceptanceCriteria;
     const min = param.specMinValue != null ? param.specMinValue : param.minValue;
     const max = param.specMaxValue != null ? param.specMaxValue : param.maxValue;
     if (min != null && max != null) return `${min} – ${max}`;
     if (min != null) return `≥ ${min}`;
     if (max != null) return `≤ ${max}`;
+    if (param.acceptanceCriteria) return param.acceptanceCriteria;
     return '—';
   }
 
@@ -1707,7 +3877,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   private evaluateLimitForControl(ctrl: any): void {
-    if (!ctrl) return;
+    if (!ctrl || this.printMode) return;
     const val = ctrl.get('value')?.value;
     if (val === null || val === undefined || val === '') {
       ctrl.patchValue({ isWithinLimit: null, resultStatus: null }, { emitEvent: false });
@@ -1716,26 +3886,45 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     const min = ctrl.get('specMinValue')?.value ?? ctrl.get('minValue')?.value;
     const max = ctrl.get('specMaxValue')?.value ?? ctrl.get('maxValue')?.value;
+    const criteria = String(ctrl.get('acceptanceCriteria')?.value || '').trim();
     const num = parseFloat(val);
 
     if (isNaN(num)) {
       if (typeof val === 'string') {
         const lower = val.trim().toLowerCase();
-        const pass = lower === 'pass' || lower === 'satisfactory' || lower === 'yes';
-        ctrl.patchValue({ isWithinLimit: pass, resultStatus: pass ? 'Pass' : 'Fail' }, { emitEvent: false });
+        if (lower === 'pass' || lower === 'satisfactory' || lower === 'yes' || lower === 'conforms') {
+          ctrl.patchValue({ isWithinLimit: true, resultStatus: 'Pass' }, { emitEvent: false });
+        } else if (lower === 'fail' || lower === 'not satisfactory' || lower === 'no' || lower === 'non-conforming') {
+          ctrl.patchValue({ isWithinLimit: false, resultStatus: 'Fail' }, { emitEvent: false });
+        } else {
+          ctrl.patchValue({ isWithinLimit: null, resultStatus: 'Reported' }, { emitEvent: false });
+        }
       }
       return;
     }
 
+    const hasMin = min != null && min !== '' && !isNaN(parseFloat(min));
+    const hasMax = max != null && max !== '' && !isNaN(parseFloat(max));
+    if (!hasMin && !hasMax && !criteria) {
+      // Informational parameter without specification tolerance -> Reported (never false Pass)
+      ctrl.patchValue({ isWithinLimit: null, resultStatus: 'Reported' }, { emitEvent: false });
+      return;
+    }
+
     let isWithin = true;
-    if (min != null && !isNaN(parseFloat(min)) && num < parseFloat(min)) {
+    if (hasMin && num < parseFloat(min)) {
       isWithin = false;
     }
-    if (max != null && !isNaN(parseFloat(max)) && num > parseFloat(max)) {
+    if (hasMax && num > parseFloat(max)) {
       isWithin = false;
     }
 
     ctrl.patchValue({ isWithinLimit: isWithin, resultStatus: isWithin ? 'Pass' : 'Fail' }, { emitEvent: false });
+  }
+
+  /** The formula section lists calculated parameters; without any it shows a note instead of an empty box. */
+  hasCalculatedParameters(): boolean {
+    return (this.test?.parameters || []).some((p: any) => p.isCalculated || p.formulaExpression);
   }
 
   isParameterCalculated(param: any): boolean {
@@ -1755,20 +3944,23 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
   // Chart Helper (Dynamic Stress-Strain Curve Data & Markers)
   // =========================================================================
+  /** Sketch of the curve from the averaged Rp, Rm and A%. Null until Rp or Rm exists: nothing is drawn from made-up numbers. */
   getStressStrainChartData(): {
     curvePath: string;
-    rp: number;
-    rm: number;
-    el: number;
-    ra: number;
+    rp: number | null;
+    rm: number | null;
+    el: number | null;
+    ra: number | null;
     yieldPt: { x: number; y: number };
     peakPt: { x: number; y: number };
     rupturePt: { x: number; y: number };
-  } {
-    const rp = this.specimenAverages.proofStress || 325;
-    const rm = this.specimenAverages.uts || 540;
-    const el = this.specimenAverages.elongation || 28.4;
-    const ra = this.specimenAverages.reductionOfArea || 58.0;
+  } | null {
+    const avg = this.specimenAverages;
+    if (!avg.proofStress && !avg.uts) return null;
+    // Geometry only: a missing value takes the other one (or a mid position) so the line can be drawn; the labels show the real values
+    const rp = avg.proofStress || avg.uts || 0;
+    const rm = avg.uts || avg.proofStress || 0;
+    const el = avg.elongation || 20;
 
     // ViewBox: 0 0 760 210
     // X axis: 65 to 720 (range 0% to 35% strain)
@@ -1788,10 +3980,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
     return {
       curvePath,
-      rp,
-      rm,
-      el,
-      ra,
+      rp: avg.proofStress || null,
+      rm: avg.uts || null,
+      el: avg.elongation || null,
+      ra: avg.reductionOfArea || null,
       yieldPt: { x: xYield, y: yYield },
       peakPt: { x: xPeak, y: yPeak },
       rupturePt: { x: xRupture, y: yRupture }
@@ -1827,6 +4019,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       isReportable: true,
       remarks: ''
     });
+    this.initLocationGrids(); // the new location gets its reading lists
     this.syncCollectionsToTest();
     this.cdr.markForCheck();
   }
@@ -1875,7 +4068,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     this.checklistItems.push({
       id: nextId,
       label: `Inspection check #${nextId}`,
-      status: 'Pass'
+      status: ''
     });
     this.syncCollectionsToTest();
     this.cdr.markForCheck();
@@ -1938,16 +4131,103 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // =========================================================================
   // Decision Rule & Classification Operations (Gaps 5 & 6)
   // =========================================================================
-  onDecisionRuleTypeChange(type: string): void {
-    this.decisionRule.ruleType = type;
-    if (type === 'Simple Acceptance') {
-      this.decisionRule.statementText = 'Statements of conformity are based on simple acceptance with no guard-banding applied (w = 0).';
-    } else if (type === 'Guard Banded (ILAC-G8)') {
-      this.decisionRule.statementText = 'Statements of conformity apply ILAC-G8:09/2019 binary decision rule with guard band w = 1.0 U (95% coverage probability).';
-    } else {
-      this.decisionRule.statementText = 'Non-binary acceptance criteria evaluated with conditional pass / inconclusive zone.';
+  /** The rule section of the layout (one per layout), or null. */
+  private get ruleConfig(): any {
+    return (this.sections || []).find(s => s.type === 'rule')?.config || null;
+  }
+
+  private uncertaintyOf(parameterId: any): number {
+    if (parameterId == null || !Array.isArray(this.uncertaintyData)) return 0;
+    const row = this.uncertaintyData.find((u: any) => String(u?.parameterID ?? u?.parameterId) === String(parameterId));
+    const u = Number(row?.expandedUncertainty);
+    return isFinite(u) && u > 0 ? u : 0;
+  }
+
+  /**
+   * Where the statement of conformity and its decision rule come from (studio: "Verdict source").
+   * - inward: the choice made on the sample inward / plan (Conformity: Applicable / Not Applicable;
+   *   Decision Rule: With MOU consideration / Without taking MOU into account).
+   * - scope:  the lab scope decides; outside the accredited scope the rule is always "without uncertainty".
+   * - fixed:  the text written in the layout; judged without uncertainty.
+   */
+  ruleBasis(cfg: any = this.ruleConfig): { source: 'inward' | 'scope' | 'fixed'; applicable: boolean; withMU: boolean; basis: string } {
+    const source: 'inward' | 'scope' | 'fixed' = cfg?.verdictSource === 'scope' || cfg?.verdictSource === 'fixed' ? cfg.verdictSource : 'inward';
+    const conformity = String(this.inward?.statementOfConformity ?? '').trim().toLowerCase();
+    const rule = String(this.inward?.decisionRule ?? '').trim().toLowerCase();
+    const inwardApplicable = conformity === 'applicable';
+    const inwardWithMU = inwardApplicable && rule.startsWith('with ') && !rule.startsWith('without');
+    if (source === 'fixed') {
+      return { source, applicable: true, withMU: false, basis: 'Fixed text of the layout' };
     }
+    if (source === 'scope') {
+      if (this.nablInScope === false) {
+        return { source, applicable: true, withMU: false, basis: 'Lab scope: outside the accredited scope, without measurement uncertainty' };
+      }
+      return {
+        source, applicable: true, withMU: inwardWithMU,
+        basis: `Lab scope: ${this.nablInScope ? 'within the accredited scope' : 'scope not known'}, ${inwardWithMU ? 'with' : 'without'} measurement uncertainty`
+      };
+    }
+    if (!inwardApplicable) {
+      return { source, applicable: false, withMU: false, basis: 'Sample inward: statement of conformity not applicable' };
+    }
+    return { source, applicable: true, withMU: inwardWithMU, basis: `Sample inward: ${inwardWithMU ? 'with' : 'without'} measurement uncertainty` };
+  }
+
+  /** The statement the verdict gives; empty until there is a clear pass or fail. */
+  private autoRuleStatement(cfg: any = this.ruleConfig): string {
+    const fixed = String(cfg?.statementText ?? '').trim();
+    if (this.ruleBasis(cfg).source === 'fixed' && fixed) return fixed;
+    const spec = String(this.testPlan?.specification ?? '').trim();
+    const target = spec && spec.toLowerCase() !== 'unknown' ? `the Requirement of ${spec}` : 'the Customer Requirement';
+    const status = this.conformityVerdict.status;
+    if (status === 'PASS') return `The Result meets ${target}.`;
+    if (status === 'FAIL') return `The Result does not meet ${target}.`;
+    return '';
+  }
+
+  /** Statement of conformity shown and printed: the technician's own wording when given, else the automatic one. */
+  ruleStatement(s?: any): string {
+    return String(this.decisionRule.statementText ?? '').trim() || this.autoRuleStatement(s?.config ?? this.ruleConfig);
+  }
+
+  isRuleStatementEdited(): boolean {
+    return String(this.decisionRule.statementText ?? '').trim() !== '';
+  }
+
+  onRuleStatementChange(s: any, value: string): void {
+    const text = String(value ?? '').trim();
+    // the automatic wording is not stored: it keeps following the verdict
+    this.decisionRule.statementText = text === this.autoRuleStatement(s?.config) ? '' : text;
     this.syncCollectionsToTest();
+  }
+
+  resetRuleStatement(): void {
+    this.decisionRule.statementText = '';
+    this.syncCollectionsToTest();
+  }
+
+  ruleDecisionText(s?: any): string {
+    const cfg = s?.config ?? this.ruleConfig;
+    const basis = this.ruleBasis(cfg);
+    const fixed = String(cfg?.decisionRuleText ?? '').trim();
+    if (basis.source === 'fixed' && fixed) return fixed;
+    return basis.withMU
+      ? 'Statement of Conformity is provided with consideration of measurement uncertainty.'
+      : 'Statement of Conformity is provided without consideration of measurement uncertainty.';
+  }
+
+  /** What the rule resolved to, saved with the test so the report prints the same lines. */
+  private resolvedRule(): { applicable: boolean; withMU: boolean; ruleType: string; resolvedStatement: string; resolvedDecisionRule: string } {
+    const cfg = this.ruleConfig;
+    const basis = this.ruleBasis(cfg);
+    return {
+      applicable: basis.applicable,
+      withMU: basis.withMU,
+      ruleType: basis.withMU ? 'With measurement uncertainty' : 'Simple Acceptance',
+      resolvedStatement: basis.applicable ? this.ruleStatement() : '',
+      resolvedDecisionRule: basis.applicable ? this.ruleDecisionText() : ''
+    };
   }
 
   onClassificationChange(): void {
@@ -1955,8 +4235,10 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   }
 
   // =========================================================================
-  // Parameter Reportability Toggle (Gap 10)
+  // Parameter & Row Printability / Reportability Toggle (Checkboxes)
   // =========================================================================
+  tensileRowPrintMap: Record<string, boolean> = {};
+
   isParamReportable(rowIdx: number): boolean {
     const ctrl = this.parametersFormArray?.at(rowIdx);
     if (!ctrl) return true;
@@ -1965,11 +4247,71 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
 
   toggleParamReportable(rowIdx: number): void {
     if (this.isViewMode || this.isLocked) return;
-    const ctrl = this.parametersFormArray?.at(rowIdx);
-    if (!ctrl) return;
-    const current = ctrl.get('isReportable')?.value !== false;
-    ctrl.patchValue({ isReportable: !current });
-    this.paramValueChanged.emit({ rowIdx, param: ctrl.value });
+    const current = this.isParamReportable(rowIdx);
+    this.setParamReportableAllSpecimens(rowIdx, !current);
+  }
+
+  setParamReportableAllSpecimens(baseIdx: number, isReportable: boolean): void {
+    const baseCtrl = this.parametersFormArray?.at(baseIdx);
+    if (!baseCtrl) return;
+    const paramName = String(baseCtrl.get('parameterName')?.value || '').trim();
+    const paramId = baseCtrl.get('parameterID')?.value;
+
+    this.parametersFormArray.controls.forEach((ctrl, idx) => {
+      const name = String(ctrl.get('parameterName')?.value || '').trim();
+      const id = ctrl.get('parameterID')?.value;
+      const matchName = name && name.toLowerCase() === paramName.toLowerCase();
+      const matchId = paramId != null && id === paramId;
+      if (matchName || matchId) {
+        ctrl.patchValue({ isReportable });
+        this.paramValueChanged.emit({ rowIdx: idx, param: ctrl.value });
+      }
+    });
+    this.parametersAdjusted.emit();
+    this.cdr.markForCheck();
+  }
+
+  isRowPrintable(target: string | number): boolean {
+    if (typeof target === 'number') {
+      return this.isParamReportable(target);
+    }
+    const role = target as SpecimenRole;
+    const paramIdx = this.roleParamIndex(role);
+    if (paramIdx >= 0) {
+      return this.isParamReportable(paramIdx);
+    }
+    if (this.tensileRowPrintMap[role] !== undefined) {
+      return this.tensileRowPrintMap[role];
+    }
+    // Default for dimensions (thickness, width, diameter, gaugeLength, area): true
+    if (role === 'thickness' || role === 'width' || role === 'diameter' || role === 'gaugeLength' || role === 'area') {
+      return true;
+    }
+    // Default for raw forces/loads/final lengths: false
+    if (role === 'yieldLoad' || role === 'peakLoad' || role === 'finalLength') {
+      return false;
+    }
+    return true;
+  }
+
+  toggleRowPrintable(target: string | number): void {
+    if (this.isViewMode || this.isLocked) return;
+    const current = this.isRowPrintable(target);
+    const next = !current;
+
+    if (typeof target === 'number') {
+      this.setParamReportableAllSpecimens(target, next);
+      return;
+    }
+
+    const role = target as SpecimenRole;
+    const paramIdx = this.roleParamIndex(role);
+    if (paramIdx >= 0) {
+      this.setParamReportableAllSpecimens(paramIdx, next);
+    }
+
+    this.tensileRowPrintMap = { ...this.tensileRowPrintMap, [role]: next };
+    this.parametersAdjusted.emit();
     this.cdr.markForCheck();
   }
 
@@ -1977,11 +4319,13 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
   // Sync Collections to Test Object & Extra JSON Serialization
   // =========================================================================
   syncCollectionsToTest(): void {
-    if (!this.test) return;
+    if (!this.test || this.printMode) return;
     const headerId = this.test.headerId || 0;
 
     this.test.locations = this.locations.map((loc, idx) => ({
       ...loc,
+      displayName: loc.locationName,
+      sequenceNo: idx + 1,
       displayOrder: idx + 1,
       testResultHeaderId: headerId
     }));
@@ -2017,8 +4361,18 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const readings: any[] = [];
     const headerId = this.test?.headerId || 0;
 
-    Object.keys(this.readingValues).forEach(paramName => {
-      const vals = this.readingValues[paramName] || [];
+    Object.keys(this.readingValues).forEach(key => {
+      const vals = this.readingValues[key] || [];
+      // a grid key is "<parameter>|<sample code>"; the legacy key is the parameter name
+      const sep = key.lastIndexOf('|');
+      const paramName = sep >= 0 ? key.slice(0, sep) : key;
+      let specimenCode = sep >= 0 ? key.slice(sep + 1) : 'S1';
+      // a location reading is keyed "<parameter>|loc:<location code>"
+      let locationCode: string | null = null;
+      if (specimenCode.startsWith('loc:')) {
+        locationCode = specimenCode.slice(4);
+        specimenCode = 'S1';
+      }
       let paramId: number | null = null;
       let paramCode = '';
       if (this.parametersFormArray) {
@@ -2041,7 +4395,8 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
             testResultParameterId: paramId,
             parameterCode: paramCode || paramName,
             parameterName: paramName,
-            specimenCode: `S${idx + 1}`,
+            specimenCode,
+            locationCode,
             sequenceNo: idx + 1,
             readingNumber: idx + 1,
             value: Number(v),
@@ -2060,12 +4415,415 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return readings;
   }
 
+  // ---------------------------------------------------------------------------
+  // Condition section: the layout's `fields` (test temperature, specimen size ...) plus fields added on the
+  // screen (kept per section in executionExtraJson.conditionFields); values live in conditionValues.
+  // ---------------------------------------------------------------------------
+  runtimeConditionFields: Record<string, string[]> = {};
+
+  private configuredConditionFields(s: any): string[] {
+    const list = Array.isArray(s?.config?.fields) ? s.config.fields : [];
+    return list.map((f: any) => String(typeof f === 'string' ? f : f?.label ?? f?.name ?? '').trim()).filter(Boolean);
+  }
+
+  conditionFields(s: any): string[] {
+    const cfg = this.configuredConditionFields(s);
+    const extra = (this.runtimeConditionFields[this.readingSecKey(s)] || []).filter(f => !cfg.includes(f));
+    return extra.length ? [...cfg, ...extra] : cfg;
+  }
+
+  isRuntimeConditionField(s: any, name: string): boolean {
+    return !this.configuredConditionFields(s).includes(name);
+  }
+
+  addConditionField(s: any, raw: string): void {
+    const name = String(raw ?? '').trim();
+    if (!name || this.isViewMode || this.isLocked) return;
+    if (this.conditionFields(s).some(f => f.toLowerCase() === name.toLowerCase())) return;
+    const key = this.readingSecKey(s);
+    this.runtimeConditionFields = { ...this.runtimeConditionFields, [key]: [...(this.runtimeConditionFields[key] || []), name] };
+    this.syncCollectionsToTest();
+  }
+
+  removeConditionField(s: any, name: string): void {
+    if (!this.isRuntimeConditionField(s, name) || this.isViewMode || this.isLocked) return;
+    const key = this.readingSecKey(s);
+    this.runtimeConditionFields = { ...this.runtimeConditionFields, [key]: (this.runtimeConditionFields[key] || []).filter(f => f !== name) };
+    const next = { ...this.conditionValues };
+    delete next[name];
+    this.conditionValues = next;
+    this.syncCollectionsToTest();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Narrative sections: the first note keeps the test remarks (and observations); every other note and the
+  // witness line keep their own text, saved in executionExtraJson.narratives by section key.
+  // ---------------------------------------------------------------------------
+  narratives: Record<string, string> = {};
+
+  narrativeKey(s: any): string {
+    return String(s?.config?.sectionKey || `narrative-${this.sections.indexOf(s)}`);
+  }
+
+  isWitnessSection(s: any): boolean {
+    return String(s?.config?.sectionKey || '').toLowerCase() === 'witness' || /witness/i.test(String(s?.title || s?.config?.label || ''));
+  }
+
+  isPrimaryNarrative(s: any): boolean {
+    const first = this.sections.find(x => ['narrative', 'rem'].includes(String(x?.type || '').toLowerCase()) && !this.isWitnessSection(x));
+    return first === s;
+  }
+
+  onNarrativeChange(s: any, value: string): void {
+    this.narratives = { ...this.narratives, [this.narrativeKey(s)]: value };
+    this.syncCollectionsToTest();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Layout settings the sections below honour (2026-11 config audit)
+  // ---------------------------------------------------------------------------
+
+  /** Location grid: the heading the layout puts over the reading columns ("Impact Energy Observed (in Joules)"). */
+  locMergedTitle(s: any): string {
+    const hm = s?.config?.headerMerge;
+    if (hm && hm.isMerged === false) return '';
+    return String(hm?.title ?? s?.config?.columns?.mergedHeader ?? '').trim();
+  }
+
+  /** Under a merged heading the R1 / R2 ... labels are drawn only when the layout keeps them. */
+  locShowReadingLabels(s: any): boolean {
+    return !this.locMergedTitle(s) || s?.config?.headerMerge?.showSubLabels !== false;
+  }
+
+  // ----- narrative -----
+  /** Text of a note: what was entered, else the default text of the layout. */
+  narrativeValue(s: any): string {
+    const saved = this.narratives[this.narrativeKey(s)];
+    return saved !== undefined ? saved : String(s?.config?.defaultText ?? s?.config?.extraFields ?? '');
+  }
+
+  isSingleLineNarrative(s: any): boolean {
+    return String(s?.config?.inputType ?? '').toLowerCase().startsWith('single');
+  }
+
+  isNarrativeMissing(s: any): boolean {
+    return s?.config?.required === true && !this.narrativeValue(s).trim();
+  }
+
+  // ----- checklist -----
+  /** The answers the layout offers; the saved value stays Pass / Fail / NA. */
+  checklistOptions(s: any): { value: 'Pass' | 'Fail' | 'NA'; label: string }[] {
+    const t = String(s?.config?.responseType ?? '').toLowerCase();
+    if (t.startsWith('yes')) return [{ value: 'Pass', label: 'Yes' }, { value: 'Fail', label: 'No' }];
+    if (t.startsWith('applied')) return [{ value: 'Pass', label: 'Applied' }, { value: 'Fail', label: 'Not applied' }];
+    return [{ value: 'Pass', label: 'Pass' }, { value: 'Fail', label: 'Fail' }, { value: 'NA', label: 'N/A' }];
+  }
+
+  checklistButtonClass(item: ChecklistItem, value: string): string {
+    if (item.status !== value) return 'btn-outline-secondary';
+    return value === 'Pass' ? 'btn-success' : value === 'Fail' ? 'btn-danger' : 'btn-secondary';
+  }
+
+  // ----- traceability / sign -----
+  private shortDate(v: any): string {
+    if (!v) return '';
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return String(v);
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
+  }
+
+  /** The traceability boxes the layout lists; null when it lists none (the standard boxes are drawn). */
+  traceFields(s: any): { label: string; value: string }[] | null {
+    const fields: string[] = Array.isArray(s?.config?.fields) ? s.config.fields.map((f: any) => String(f ?? '').trim()).filter(Boolean) : [];
+    if (!fields.length) return null;
+    const eq = this.selectedEquipment || [];
+    const env = [this.conditionValues?.['Temperature'], this.conditionValues?.['Relative Humidity']];
+    const valueOf = (label: string): string => {
+      switch (label.toLowerCase().replace(/[^a-z]/g, '')) {
+        case 'analysttester': return this.timingData?.performedByName || '';
+        case 'reviewerauthorisedsignatory': return this.test?.verifiedByName || this.test?.reviewedByName || '';
+        case 'testdate': return this.shortDate(this.timingData?.testEndTime || this.timingData?.testStartTime);
+        case 'dateofreceipt': return this.shortDate(this.inward?.receivedDate || this.inward?.inwardDate || this.inward?.sampleReceivedOn);
+        case 'samplelabid': return this.sample?.sampleNo || '';
+        case 'equipmentid': return eq.map((e: any) => e?.equipmentNo || e?.name).filter(Boolean).join(', ');
+        case 'calibrationdue': return eq.map((e: any) => this.shortDate(e?.nextCalibrationDueDate || e?.nextCalibrationDate)).filter(Boolean).join(', ');
+        case 'methodstandard': return this.getCleanTestMethod();
+        case 'environmentalreference':
+          return [env[0] != null && env[0] !== '' ? `${env[0]} °C` : '', env[1] != null && env[1] !== '' ? `${env[1]} % RH` : ''].filter(Boolean).join(' / ');
+        default: return '';
+      }
+    };
+    return fields.map(label => ({ label, value: valueOf(label) || '—' }));
+  }
+
+  /** A sign box the layout lists (a layout that lists none shows both). */
+  signShows(s: any, field: string): boolean {
+    const fields: any[] = Array.isArray(s?.config?.fields) ? s.config.fields : [];
+    return !fields.length || fields.includes(field);
+  }
+
+  // ----- photo -----
+  private static readonly PHOTO_COL_CLASS: Record<number, string> = { 1: 'col-12', 2: 'col-6', 3: 'col-4', 4: 'col-3' };
+
+  photoColClass(s: any): string {
+    const n = parseInt(String(s?.config?.gridColumns ?? ''), 10);
+    return ConfiguredTestLayoutRendererComponent.PHOTO_COL_CLASS[n] || 'col-md-3 col-sm-6';
+  }
+
+  photoText(s: any, where: 'pre' | 'post'): string {
+    const c = s?.config || {};
+    return String((where === 'pre' ? c.preText : c.postText) ?? '').trim();
+  }
+
+  /**
+   * The photo plates of the section: one per slot of the layout, filled with the test's images in order
+   * (a slot with an image of its own in the layout shows that one), then any further image.
+   * The printed record leaves out the slots the layout does not print and the ones still empty.
+   */
+  photoCells(s: any): { title: string; caption: string; required: boolean; url: string; fixed: boolean }[] {
+    const slots: any[] = Array.isArray(s?.config?.photoSlots) ? s.config.photoSlots.filter((x: any) => !!x) : [];
+    const images = [...(this.testImages || [])];
+    const cells: { title: string; caption: string; required: boolean; url: string; fixed: boolean }[] = [];
+    // an image uploaded with a slot's title as its caption belongs to that slot; the rest fill the free slots in order
+    const captionOf = (img: any) => this.normKey(img?.caption ?? img?.description ?? '');
+    const named = new Map<any, any>();
+    for (const slot of slots) {
+      const want = this.normKey(slot.title);
+      const at = want ? images.findIndex(img => captionOf(img) === want) : -1;
+      if (at >= 0) named.set(slot, images.splice(at, 1)[0]);
+    }
+    for (const slot of slots) {
+      const own = String(slot.imageUrl ?? slot.mockUrl ?? '').trim();
+      const fixed = slot.bindingSource === 'static' && !!own;
+      const img = fixed ? null : (named.get(slot) ?? images.shift());
+      if (this.printMode && (slot.reportable === false || (!fixed && !img))) continue;
+      cells.push({
+        title: String(slot.title ?? '').trim(), caption: String(slot.caption ?? '').trim(),
+        required: slot.mandatory === true && !fixed && !img, url: fixed ? own : (img?.url || ''), fixed
+      });
+    }
+    images.forEach(img => cells.push({ title: img?.name || '', caption: '', required: false, url: img?.url || '', fixed: false }));
+    return cells;
+  }
+
+  // ----- custom table (cell by cell) -----
+  /** Values entered in the cells of custom tables, by section key and cell id; saved in executionExtraJson.customCells. */
+  customCells: Record<string, Record<string, string>> = {};
+
+  customMatrix(s: any): any[][] | null {
+    const m = s?.config?.cellMatrix;
+    return Array.isArray(m) && m.length > 0 && Array.isArray(m[0]) && m[0].length > 0 ? m : null;
+  }
+
+  private customColumnVisible(s: any, c: number): boolean {
+    return s?.config?.tableColumns?.[c]?.visible !== false;
+  }
+
+  customHeaders(s: any): string[] {
+    const cols: any[] = Array.isArray(s?.config?.tableColumns) ? s.config.tableColumns : [];
+    const headers = cols.filter((_: any, c: number) => this.customColumnVisible(s, c)).map((c: any) => String(c?.label ?? ''));
+    const rowHeader = s?.config?.rowHeaderLabel || s?.config?.locationColHeader;
+    if (rowHeader && headers.length > 0) {
+      headers[0] = rowHeader;
+    }
+    return headers;
+  }
+
+  /** Rows of a custom table as the cells to draw (hidden rows / columns and cells covered by a span are left out). */
+  customRows(s: any): any[][] {
+    const m = this.customMatrix(s) || [];
+    const covered = new Set<string>();
+    const out: any[][] = [];
+    m.forEach((row, r) => {
+      if (s?.config?.tableRows?.[r]?.visible === false) return;
+      const cells: any[] = [];
+      row.forEach((cell: any, c: number) => {
+        if (!cell || !this.customColumnVisible(s, c) || covered.has(`${r}|${c}`)) return;
+        const cs = Math.max(1, Number(cell.colspan) || 1);
+        const rs = Math.max(1, Number(cell.rowspan) || 1);
+        for (let dr = 0; dr < rs; dr++) for (let dc = 0; dc < cs; dc++) if (dr || dc) covered.add(`${r + dr}|${c + dc}`);
+        cells.push(cell);
+      });
+      out.push(cells);
+    });
+    return out;
+  }
+
+  isCustomCellFixed(cell: any): boolean {
+    return cell?.bindingMode === 'static' || cell?.isLocked === true || cell?.dataType === 'formula';
+  }
+
+  private customCellRaw(s: any, cell: any): string {
+    if (cell?.bindingMode === 'static' || cell?.isLocked === true) return String(cell.staticValue ?? cell.value ?? '');
+    const saved = this.customCells[this.narrativeKey(s)]?.[cell.id];
+    return saved !== undefined ? saved : '';
+  }
+
+  /** Value a cell shows; a formula cell (=[r0,c1] * 1.05) is worked out from the cells it names. */
+  customCellValue(s: any, cell: any, depth = 0): string {
+    if (cell?.dataType !== 'formula') return this.customCellRaw(s, cell);
+    const m = this.customMatrix(s) || [];
+    let missing = depth > 5;
+    const expr = String(cell.formulaExpression ?? '').replace(/^\s*=/, '').replace(/\[\s*r(\d+)\s*,\s*c(\d+)\s*\]/gi, (_: string, r: string, c: string) => {
+      const ref = m[Number(r)]?.[Number(c)];
+      const v = ref && ref !== cell ? Number(this.customCellValue(s, ref, depth + 1)) : NaN;
+      if (!isFinite(v) || (ref && this.customCellValue(s, ref, depth + 1) === '')) missing = true;
+      return isFinite(v) ? `(${v})` : '0';
+    });
+    if (missing || !expr.trim() || !/^[0-9+\-*/().\s]+$/.test(expr)) return '';
+    try {
+      const result = Number(new Function(`return (${expr});`)());
+      if (!isFinite(result)) return '';
+      const p = Number(cell.precision);
+      return isFinite(p) && cell.precision !== undefined && cell.precision !== null && String(cell.precision) !== '' ? result.toFixed(Math.min(6, Math.max(0, p))) : String(Number(result.toFixed(4)));
+    } catch {
+      return '';
+    }
+  }
+
+  customCellOptions(cell: any): string[] {
+    if (Array.isArray(cell?.selectOptions) && cell.selectOptions.length) return cell.selectOptions;
+    return String(cell?.selectOptionsRaw ?? '').split(',').map((o: string) => o.trim()).filter(Boolean);
+  }
+
+  onCustomCellChange(s: any, cell: any, value: any): void {
+    if (this.isViewMode || this.isLocked) return;
+    const key = this.narrativeKey(s);
+    this.customCells = { ...this.customCells, [key]: { ...(this.customCells[key] || {}), [cell.id]: String(value ?? '') } };
+    this.syncCollectionsToTest();
+  }
+
+  // ----- classification / formula -----
+  classificationStandards(s: any): string[] {
+    const base = ['ASTM E45', 'ASTM A247', 'ASTM E112', 'ISO 4967'];
+    const own = String(s?.config?.ratingSystem ?? '').trim();
+    const saved = String(this.classification?.classificationStandard ?? '').trim();
+    return [own, saved].reduce((list, v) => (v && !list.includes(v) ? [...list, v] : list), base);
+  }
+
+  /** A formula section that names its result shows that parameter only; one that names none shows every calculated one. */
+  formulaShows(s: any, p: any): boolean {
+    if (!(p?.isCalculated || p?.formulaExpression)) return false;
+    const target = this.normKey(s?.config?.targetOutput);
+    if (!target) return true;
+    const names = (this.test?.parameters || []).filter((x: any) => x?.isCalculated || x?.formulaExpression).map((x: any) => this.normKey(x.parameterName));
+    return !names.includes(target) || this.normKey(p.parameterName) === target;
+  }
+
+  // ----- chart drawn from the layout (X and Y are parameters of the test, one point per specimen) -----
+  configuredChart(s: any): {
+    type: 'line' | 'scatter' | 'bar'; points: { px: number; py: number; x: number; y: number }[]; path: string;
+    xTitle: string; yTitle: string; xMin: number; xMax: number; yMin: number; yMax: number;
+    limits: { py: number; label: string }[]; showPoints: boolean; showGrid: boolean; baseY: number;
+  } | null {
+    const c = s?.config || {};
+    const xName = this.normKey(c.xField);
+    const yName = this.normKey(c.yField);
+    if (!xName || !yName) return null;
+    const rows: any[] = (this.parametersFormArray?.controls || []).map(ctl => (ctl as FormGroup).getRawValue());
+    const xRows = rows.filter(r => this.normKey(r.parameterName) === xName);
+    const yRows = rows.filter(r => this.normKey(r.parameterName) === yName);
+    if (!xRows.length || !yRows.length) return null;
+    const num = (v: any): number | null => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v));
+    const data: { x: number; y: number }[] = [];
+    for (const xr of xRows) {
+      const yr = yRows.find(r => (r.specimenIndex ?? 0) === (xr.specimenIndex ?? 0));
+      const x = num(xr.value);
+      const y = num(yr?.value);
+      if (x !== null && y !== null) data.push({ x, y });
+    }
+    data.sort((a, b) => a.x - b.x);
+    // the limit of the first specimen row that has one (not every specimen row carries it)
+    const firstLimit = (pick: (r: any) => any): number | null => {
+      for (const r of yRows) {
+        const v = num(pick(r));
+        if (v !== null) return v;
+      }
+      return null;
+    };
+    const yLimits = [firstLimit(r => r.minValue ?? r.specMinValue), firstLimit(r => r.maxValue ?? r.specMaxValue)];
+    const span = (vals: number[], lo: any, hi: any): [number, number] => {
+      let min = num(lo) ?? (vals.length ? Math.min(...vals) : 0);
+      let max = num(hi) ?? (vals.length ? Math.max(...vals) : 1);
+      if (max <= min) { max = min + 1; min = min - 1; }
+      return [min, max];
+    };
+    const wantLimit = c.showLimit === true;
+    const [xMin, xMax] = span(data.map(d => d.x), c.xMin, c.xMax);
+    const [yMin, yMax] = span([...data.map(d => d.y), ...(wantLimit ? (yLimits.filter(v => v !== null) as number[]) : [])], c.yMin, c.yMax);
+    const L = 45, R = 390, T = 10, B = 135;
+    const sx = (x: number) => L + ((x - xMin) / (xMax - xMin)) * (R - L);
+    const sy = (y: number) => B - ((y - yMin) / (yMax - yMin)) * (B - T);
+    const points = data.map(d => ({ ...d, px: Math.round(sx(d.x) * 10) / 10, py: Math.round(sy(d.y) * 10) / 10 }));
+    const t = String(c.chartType ?? '').toLowerCase();
+    const type: 'line' | 'scatter' | 'bar' = t.startsWith('bar') ? 'bar' : t.startsWith('scatter') ? 'scatter' : 'line';
+    const title = (label: any, field: any, unit: any) => {
+      const name = String(label ?? '').trim();
+      const text = name && !/^runtime/i.test(name) ? name : String(field ?? '').trim();
+      const u = String(unit ?? '').trim();
+      return u ? `${text} (${u})` : text;
+    };
+    const limits = wantLimit
+      ? [{ v: yLimits[0], label: 'Min' }, { v: yLimits[1], label: 'Max' }].filter(l => l.v !== null && l.v! >= yMin && l.v! <= yMax)
+        .map(l => ({ py: Math.round(sy(l.v as number) * 10) / 10, label: `${l.label} ${l.v}` }))
+      : [];
+    return {
+      type, points, path: points.map((p, i) => `${i ? 'L' : 'M'}${p.px},${p.py}`).join(' '),
+      xTitle: title(c.xLabel, c.xField, c.xUnit), yTitle: title(c.yLabel, c.yField, c.yUnit),
+      xMin, xMax, yMin, yMax, limits, showPoints: c.showPoints !== false || type === 'scatter', showGrid: c.showGrid !== false, baseY: B
+    };
+  }
+
+  // ----- what the layout requires before a test is completed / sent for verification -----
+  /** Required notes, required conditions and unanswered checklist items; empty when nothing is missing. */
+  requiredGaps(): string[] {
+    return layoutRequiredGaps(
+      this.sections,
+      {
+        narratives: this.narratives,
+        conditionValues: this.conditionValues,
+        conditionFields: this.runtimeConditionFields
+      },
+      this.checklistItems
+    );
+  }
+
+  /** Required photos still missing, for layouts that ask for them before verification. */
+  photoGaps(): string[] {
+    return layoutPhotoGaps(this.sections, this.testImages);
+  }
+
+  // ----- parameter table: the layout's own parameters first -----
+  private parameterSubset(): string[] {
+    const cfg = (this.sections || []).find(s => s.type === 'parameter')?.config;
+    if (!cfg || !/subset/i.test(String(cfg.parameterMode ?? '')) || !Array.isArray(cfg.subset)) return [];
+    return cfg.subset.map((n: any) => this.normKey(n)).filter(Boolean);
+  }
+
+  /** A parameter of the test that the layout's subset does not list (still entered, shown after the listed ones). */
+  isOutsideSubset(rowIdx: number): boolean {
+    const subset = this.parameterSubset();
+    if (!subset.length) return false;
+    return !subset.includes(this.normKey(this.parametersFormArray?.at(rowIdx)?.get('parameterName')?.value));
+  }
+
   getExecutionExtraJson(): string {
     const extra = {
-      decisionRule: this.decisionRule,
+      // every note with the text it shows (the layout's default text included), so the report prints the same
+      narratives: (this.sections || []).filter(s => s.type === 'narrative' && !this.isPrimaryNarrative(s))
+        .reduce((all: Record<string, string>, s: any) => ({ ...all, [this.narrativeKey(s)]: this.narrativeValue(s) }), { ...this.narratives }),
+      customCells: this.customCells,
+      conditionFields: this.runtimeConditionFields,
+      decisionRule: { ...this.decisionRule, ...this.resolvedRule() },
       classification: this.classification,
       custom: this.customAttributes,
-      conditionValues: this.conditionValues
+      conditionValues: this.conditionValues,
+      opinionData: this.opinionData,
+      hiddenRows: Array.from(this.hiddenFixedRoles),
+      tensileRowPrintMap: this.tensileRowPrintMap,
+      userSpecimenCount: this.specimens.length,
+      specimenCountApplied: this.specimenCountApplied
     };
     return JSON.stringify(extra);
   }

@@ -1,106 +1,250 @@
-<div class="nabl-verdict-card mb-2">
-
-  <!-- ── 1. GRAND VERDICT BANNER ── -->
-  <div class="verdict-banner"
-       [ngClass]="{
-         'verdict-pass': overallVerdict === 'PASS',
-         'verdict-fail': overallVerdict === 'FAIL',
-         'verdict-borderline': overallVerdict === 'BORDERLINE',
-         'verdict-pending': overallVerdict === 'PENDING'
-       }">
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <div class="d-flex align-items-center gap-2">
-        <i class="bi fs-5"
-           [ngClass]="{
-             'bi-patch-check-fill text-success': overallVerdict === 'PASS',
-             'bi-slash-circle-fill text-danger': overallVerdict === 'FAIL',
-             'bi-exclamation-diamond-fill text-warning': overallVerdict === 'BORDERLINE',
-             'bi-hourglass-split text-secondary': overallVerdict === 'PENDING'
-           }"></i>
-        <div>
-          <div class="verdict-title-text">
-            <span>{{ overallVerdictLabel }}</span>
-          </div>
-          <div class="text-xs text-muted">
-            <span>{{ overallVerdictSubtext }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Meta Chips & Accreditation Badges -->
-    <div class="verdict-meta-chips">
-      <!-- Material Spec Chip -->
-      <span class="verdict-chip verdict-chip-spec" title="Evaluated Material Specification">
-        <i class="bi bi-tag-fill me-1"></i>
-        <span>Spec: {{ getSpecificationTitle() }}</span>
-      </span>
-
-      <!-- Test Method Chip -->
-      <span class="verdict-chip verdict-chip-method" title="Standard Test Method">
-        <i class="bi bi-journal-bookmark-fill me-1"></i>
-        <span>Method: {{ getCleanTestMethod() }}</span>
-      </span>
-
-      <!-- NABL Scope Badge -->
-      <span class="verdict-chip"
-            [ngClass]="nablScopeStatus === 'ACCREDITED' ? 'verdict-chip-scope-in' : 'verdict-chip-scope-out'"
-            title="ISO/IEC 17025 Accreditation Status">
-        <i class="bi" [ngClass]="nablScopeStatus === 'ACCREDITED' ? 'bi-shield-check me-1' : 'bi-shield-exclamation me-1'"></i>
-        <span>{{ nablScopeStatus === 'ACCREDITED' ? 'NABL Accredited Scope' : nablScopeStatus === 'PARTIAL' ? 'Partial Scope' : 'Outside NABL Scope' }}</span>
-      </span>
-
-      <!-- Metric Pills -->
-      <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace text-xxs">
-        {{ passedCount }} Pass
-      </span>
-      <span *ngIf="failedCount > 0" class="badge bg-danger text-white font-monospace text-xxs">
-        {{ failedCount }} Fail
-      </span>
-      <span *ngIf="borderlineCount > 0" class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace text-xxs">
-        {{ borderlineCount }} Borderline
-      </span>
-      <span *ngIf="pendingCount > 0" class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">
-        {{ pendingCount }} Pending
-      </span>
-    </div>
-  </div>
-
-  <!-- ── 2. ISO 17025 CONFORMITY STATEMENT ── -->
-  <div class="conformity-statement d-flex align-items-start gap-2">
-    <i class="bi bi-info-circle-fill text-primary mt-0.5"></i>
-    <div class="flex-grow-1">
-      <div class="fw-semibold text-dark text-xs mb-0.5">
-        <span>ISO/IEC 17025:2017 Clause 7.8.6 Statement of Conformity</span>
-      </div>
-      <div>
-        <span>{{ getConformityStatement() }}</span>
+<section class="lims-section">
+  <div class="lims-section-head">
+    <h3>{{ requiresVerdict ? 'Conformity Assessment' : 'Observation & QA Summary' }}</h3>
+    <div class="d-flex align-items-center gap-1 flex-wrap position-relative">
+      <ng-container *ngIf="requiresVerdict; else noVerdictBadges">
+        <span class="badge"
+              [ngClass]="{
+                'bg-success': overallVerdict === 'PASS',
+                'bg-danger': overallVerdict === 'FAIL',
+                'bg-warning text-dark': overallVerdict === 'BORDERLINE',
+                'bg-secondary': overallVerdict === 'PENDING'
+              }">{{ overallVerdict }}</span>
+        <span class="badge bg-success" *ngIf="passedCount > 0" title="Results within the requirement">{{ passedCount }} pass</span>
+        <span class="badge bg-danger" *ngIf="failedCount > 0">{{ failedCount }} fail</span>
+        <span class="badge bg-warning text-dark" *ngIf="borderlineCount > 0">{{ borderlineCount }} borderline</span>
+        <span class="badge bg-info text-dark" *ngIf="infoCount > 0">{{ infoCount }} reported</span>
+        <span class="badge bg-secondary" *ngIf="pendingCount > 0">{{ pendingCount }} pending</span>
+      </ng-container>
+      <ng-template #noVerdictBadges>
+        <span class="badge bg-info text-dark">REPORTED</span>
+        <span class="badge bg-secondary-subtle text-secondary border">Conformity Not Required</span>
+      </ng-template>
+      <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 text-xxs ms-1"
+              (click)="showColumnMenu = !showColumnMenu"
+              title="Show or hide configurable columns">
+        <i class="bi bi-sliders me-1"></i><span>Columns</span>
+      </button>
+      <div *ngIf="showColumnMenu" class="verdict-col-menu shadow-sm border rounded bg-white p-2">
+        <div class="text-xxs fw-semibold text-muted mb-1">Configurable Columns</div>
+        <label class="form-check form-check-sm mb-1 text-xs" *ngIf="!isReadingMatrixMode">
+          <input type="checkbox" class="form-check-input" [checked]="isVerdictColShown('unit')" (change)="toggleVerdictCol('unit')" />
+          <span class="form-check-label">{{ colUnitLabel }}</span>
+        </label>
+        <label class="form-check form-check-sm mb-1 text-xs" *ngIf="!isReadingMatrixMode && multiSpecimen">
+          <input type="checkbox" class="form-check-input" [checked]="isVerdictColShown('avg')" (change)="toggleVerdictCol('avg')" />
+          <span class="form-check-label">{{ colAvgLabel }}</span>
+        </label>
+        <label class="form-check form-check-sm mb-1 text-xs">
+          <input type="checkbox" class="form-check-input" [checked]="isVerdictColShown('requirement')" (change)="toggleVerdictCol('requirement')" />
+          <span class="form-check-label">{{ colRequirementLabel }}</span>
+        </label>
+        <label class="form-check form-check-sm mb-1 text-xs">
+          <input type="checkbox" class="form-check-input" [checked]="isVerdictColShown('scope')" (change)="toggleVerdictCol('scope')" />
+          <span class="form-check-label">Scope Status (NABL)</span>
+        </label>
+        <label class="form-check form-check-sm mb-1 text-xs">
+          <input type="checkbox" class="form-check-input" [checked]="isVerdictColShown('uncertainty')" (change)="toggleVerdictCol('uncertainty')" />
+          <span class="form-check-label">Uncertainty (±U)</span>
+        </label>
+        <label class="form-check form-check-sm mb-0 text-xs" *ngIf="requiresVerdict">
+          <input type="checkbox" class="form-check-input" [checked]="isVerdictColShown('decisionDetail')" (change)="toggleVerdictCol('decisionDetail')" />
+          <span class="form-check-label">Decision Rule Detail</span>
+        </label>
       </div>
     </div>
   </div>
 
-  <!-- ── 3. PARAMETER COMPLIANCE MATRIX TABLE ── -->
-  <div class="table-responsive px-2 pb-2">
+  <!-- Verdict, what it was judged against, and the statement of conformity -->
+  <div class="verdict-summary">
+    <div class="verdict-summary-title">{{ overallVerdictLabel }}</div>
+    <div class="verdict-summary-text">{{ overallVerdictSubtext }}</div>
+  </div>
+  <div class="lims-kv-row">
+    <div class="lims-kv"><span class="lims-kv-label">Specification</span><span class="lims-kv-value">{{ getSpecificationTitle() }}</span></div>
+    <div class="lims-kv"><span class="lims-kv-label">Test method</span><span class="lims-kv-value">{{ getCleanTestMethod() }}</span></div>
+    <div class="lims-kv">
+      <span class="lims-kv-label">Accreditation scope</span>
+      <span class="lims-kv-value">{{ nablScopeStatus === 'ACCREDITED' ? 'In scope' : nablScopeStatus === 'PARTIAL' ? 'Partly in scope' : nablScopeStatus === 'OUTSIDE_SCOPE' ? 'Outside scope' : 'Not configured' }}</span>
+    </div>
+    <div class="lims-kv"><span class="lims-kv-label">Decision rule</span><span class="lims-kv-value">{{ requiresVerdict ? decisionRuleName : 'Not applicable' }}</span></div>
+  </div>
+  <p class="lims-section-note" *ngIf="requiresVerdict">
+    <strong>Statement of conformity (ISO/IEC 17025:2017 Cl 7.8.6):</strong> {{ getConformityStatement() }}
+  </p>
+
+  <!-- ── 3A. RELATABLE MULTI-READING MATRIX TABLE (e.g. Brinell Hardness A1-B2 + Overall Avg) ── -->
+  <div class="table-responsive" *ngIf="isReadingMatrixMode">
     <table class="table table-sm table-bordered align-middle result-table mb-0">
       <thead class="result-table-head text-center">
         <tr>
           <th class="w-col-35">#</th>
-          <th class="text-start w-col-22p">Parameter Name</th>
-          <th class="w-col-65">Unit</th>
-          <th class="w-col-130">Specified Requirement</th>
-          <th class="w-col-110">Observed Result</th>
-          <th class="w-col-95">Uncertainty (±U)</th>
-          <th class="w-col-100">Verdict</th>
-          <th class="text-start">Decision Rule &amp; Guard-Band Evaluation</th>
-          <th class="w-col-95">Scope Status</th>
+          <th class="text-start">Sample ID / Location</th>
+          <th *ngFor="let h of readingSpotHeaders" class="w-col-90">{{ h }}</th>
+          <th class="w-col-95">Average</th>
+          <th class="w-col-130" *ngIf="isVerdictColShown('requirement')">{{ colRequirementLabel }}</th>
+          <th class="w-col-95" *ngIf="isVerdictColShown('uncertainty')">Uncertainty (±U)</th>
+          <th class="w-col-100" *ngIf="requiresVerdict">Verdict</th>
+          <th class="text-start" *ngIf="requiresVerdict && isVerdictColShown('decisionDetail')">Decision Rule Detail</th>
+          <th class="w-col-95" *ngIf="isVerdictColShown('scope')">Scope Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of readingEvalRows"
+            [ngClass]="{
+              'table-danger-subtle': requiresVerdict && r.verdict === 'FAIL',
+              'table-success-subtle': requiresVerdict && r.verdict === 'PASS',
+              'table-warning-subtle': requiresVerdict && r.verdict === 'BORDERLINE'
+            }">
+          <td class="text-center font-monospace text-muted text-xxs">{{ r.index }}</td>
+          <td class="fw-semibold text-dark text-xs">{{ r.label }}</td>
+          <td *ngFor="let v of r.readingsDisplay" class="text-center font-monospace text-xs">{{ v }}</td>
+          <td class="text-center font-monospace fw-bold text-xs"
+              [ngClass]="{
+                'text-success': requiresVerdict && r.verdict === 'PASS',
+                'text-danger': requiresVerdict && r.verdict === 'FAIL',
+                'text-warning': requiresVerdict && r.verdict === 'BORDERLINE'
+              }">
+            {{ r.averageDisplay }}
+          </td>
+          <td class="text-center text-xs" *ngIf="isVerdictColShown('requirement')">
+            <span *ngIf="readingTargetSpecMin !== null && readingTargetSpecMax !== null" class="font-monospace fw-semibold">
+              {{ readingTargetSpecMin }} – {{ readingTargetSpecMax }}
+            </span>
+            <span *ngIf="readingTargetSpecMin !== null && readingTargetSpecMax === null" class="font-monospace fw-semibold">
+              Min {{ readingTargetSpecMin }}
+            </span>
+            <span *ngIf="readingTargetSpecMin === null && readingTargetSpecMax !== null" class="font-monospace fw-semibold">
+              Max {{ readingTargetSpecMax }}
+            </span>
+            <span *ngIf="readingTargetSpecMin === null && readingTargetSpecMax === null && readingTargetCriteria" class="text-muted">
+              {{ readingTargetCriteria }}
+            </span>
+            <span *ngIf="readingTargetSpecMin === null && readingTargetSpecMax === null && !readingTargetCriteria" class="text-muted">—</span>
+          </td>
+          <td class="text-center font-monospace text-xs" *ngIf="isVerdictColShown('uncertainty')">
+            <span *ngIf="readingTargetUncertainty > 0" class="badge bg-light text-dark border text-xxs">±{{ readingTargetUncertainty }}</span>
+            <span *ngIf="!readingTargetUncertainty" class="text-muted text-xxs">—</span>
+          </td>
+          <td class="text-center" *ngIf="requiresVerdict">
+            <span class="badge text-xxs"
+                  [title]="r.guardBandDetail"
+                  [ngClass]="{
+                    'bg-success': r.verdict === 'PASS',
+                    'bg-danger': r.verdict === 'FAIL',
+                    'bg-warning text-dark': r.verdict === 'BORDERLINE',
+                    'bg-info text-dark': r.verdict === 'INFO',
+                    'bg-secondary text-white': r.verdict === 'PENDING'
+                  }">
+              <i class="bi me-1"
+                 [ngClass]="{
+                   'bi-check-lg': r.verdict === 'PASS',
+                   'bi-x-lg': r.verdict === 'FAIL',
+                   'bi-exclamation-triangle': r.verdict === 'BORDERLINE',
+                   'bi-info-circle': r.verdict === 'INFO',
+                   'bi-clock': r.verdict === 'PENDING'
+                 }"></i>
+              <span>{{ r.verdictLabel }}</span>
+            </span>
+          </td>
+          <td class="text-xs text-muted" *ngIf="requiresVerdict && isVerdictColShown('decisionDetail')">{{ r.guardBandDetail }}</td>
+          <td class="text-center" *ngIf="isVerdictColShown('scope')">
+            <span *ngIf="readingTargetScopeStatus === 'WithinScope'" class="badge text-xxs bg-success-subtle text-success border border-success-subtle">In Scope</span>
+            <span *ngIf="readingTargetScopeStatus === 'OutsideScope'" class="badge text-xxs bg-danger-subtle text-danger border border-danger-subtle">Out of Scope</span>
+            <span *ngIf="readingTargetScopeStatus === 'NotAccredited'" class="text-muted text-xxs" title="Not configured in Lab Scope Master">—</span>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="table-light fw-bold">
+          <td [attr.colspan]="2 + readingSpotHeaders.length" class="text-start text-xs">
+            {{ tab1ReadingMatrix?.parameterName || 'Reading Result' }} (Overall Average)
+            <span *ngIf="tab1ReadingMatrix?.unit" class="text-muted fw-normal ms-1">({{ tab1ReadingMatrix?.unit }})</span>
+          </td>
+          <td class="text-center font-monospace text-xs"
+              [ngClass]="{
+                'text-success': requiresVerdict && readingOverallVerdict === 'PASS',
+                'text-danger': requiresVerdict && readingOverallVerdict === 'FAIL',
+                'text-warning': requiresVerdict && readingOverallVerdict === 'BORDERLINE'
+              }">
+            {{ readingOverallDisplay }}
+          </td>
+          <td class="text-center text-xs" *ngIf="isVerdictColShown('requirement')">
+            <span *ngIf="readingTargetSpecMin !== null && readingTargetSpecMax !== null" class="font-monospace">
+              {{ readingTargetSpecMin }} – {{ readingTargetSpecMax }}
+            </span>
+            <span *ngIf="readingTargetSpecMin !== null && readingTargetSpecMax === null" class="font-monospace">
+              Min {{ readingTargetSpecMin }}
+            </span>
+            <span *ngIf="readingTargetSpecMin === null && readingTargetSpecMax !== null" class="font-monospace">
+              Max {{ readingTargetSpecMax }}
+            </span>
+            <span *ngIf="readingTargetSpecMin === null && readingTargetSpecMax === null" class="text-muted">{{ readingTargetCriteria || '—' }}</span>
+          </td>
+          <td class="text-center font-monospace text-xs" *ngIf="isVerdictColShown('uncertainty')">
+            <span *ngIf="readingTargetUncertainty > 0">±{{ readingTargetUncertainty }}</span>
+            <span *ngIf="!readingTargetUncertainty" class="text-muted">—</span>
+          </td>
+          <td class="text-center" *ngIf="requiresVerdict">
+            <span class="badge text-xxs"
+                  [title]="readingOverallGuardDetail"
+                  [ngClass]="{
+                    'bg-success': readingOverallVerdict === 'PASS',
+                    'bg-danger': readingOverallVerdict === 'FAIL',
+                    'bg-warning text-dark': readingOverallVerdict === 'BORDERLINE',
+                    'bg-info text-dark': readingOverallVerdict === 'INFO',
+                    'bg-secondary text-white': readingOverallVerdict === 'PENDING'
+                  }">
+              <i class="bi me-1"
+                 [ngClass]="{
+                   'bi-check-lg': readingOverallVerdict === 'PASS',
+                   'bi-x-lg': readingOverallVerdict === 'FAIL',
+                   'bi-exclamation-triangle': readingOverallVerdict === 'BORDERLINE',
+                   'bi-info-circle': readingOverallVerdict === 'INFO',
+                   'bi-clock': readingOverallVerdict === 'PENDING'
+                 }"></i>
+              <span>{{ readingOverallVerdictLabel }}</span>
+            </span>
+          </td>
+          <td class="text-xs text-muted fw-normal" *ngIf="requiresVerdict && isVerdictColShown('decisionDetail')">{{ readingOverallGuardDetail }}</td>
+          <td class="text-center" *ngIf="isVerdictColShown('scope')">
+            <span *ngIf="readingTargetScopeStatus === 'WithinScope'" class="badge text-xxs bg-success-subtle text-success border border-success-subtle">In Scope</span>
+            <span *ngIf="readingTargetScopeStatus === 'OutsideScope'" class="badge text-xxs bg-danger-subtle text-danger border border-danger-subtle">Out of Scope</span>
+            <span *ngIf="readingTargetScopeStatus === 'NotAccredited'" class="text-muted text-xxs">—</span>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- ── 3B. PARAMETER COMPLIANCE MATRIX TABLE ── -->
+  <div class="table-responsive" *ngIf="!isReadingMatrixMode">
+    <table class="table table-sm table-bordered align-middle result-table mb-0">
+      <thead class="result-table-head text-center">
+        <tr>
+          <th class="w-col-35">#</th>
+          <th class="text-start w-col-22p">{{ colParamLabel }}</th>
+          <th class="w-col-65" *ngIf="isVerdictColShown('unit')">{{ colUnitLabel }}</th>
+          <ng-container *ngIf="multiSpecimen; else singleObsHead">
+            <th class="w-col-95" *ngFor="let lbl of displaySpecimenLabels">{{ lbl }}</th>
+            <th class="w-col-95" *ngIf="isVerdictColShown('avg')">{{ colAvgLabel }}</th>
+          </ng-container>
+          <ng-template #singleObsHead>
+            <th class="w-col-110">Observed Result</th>
+          </ng-template>
+          <th class="w-col-130" *ngIf="isVerdictColShown('requirement')">{{ colRequirementLabel }}</th>
+          <th class="w-col-95" *ngIf="isVerdictColShown('uncertainty')">Uncertainty (±U)</th>
+          <th class="w-col-100" *ngIf="requiresVerdict">Verdict</th>
+          <th class="text-start" *ngIf="requiresVerdict && isVerdictColShown('decisionDetail')">Decision Rule &amp; Guard-Band Evaluation</th>
+          <th class="w-col-95" *ngIf="isVerdictColShown('scope')">Scope Status</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let row of evaluationRows"
             [ngClass]="{
-              'table-danger-subtle': row.verdict === 'FAIL',
-              'table-success-subtle': row.verdict === 'PASS',
-              'table-warning-subtle': row.verdict === 'BORDERLINE'
+              'table-danger-subtle': requiresVerdict && row.verdict === 'FAIL',
+              'table-success-subtle': requiresVerdict && row.verdict === 'PASS',
+              'table-warning-subtle': requiresVerdict && row.verdict === 'BORDERLINE'
             }">
           <!-- # -->
           <td class="text-center font-monospace text-muted text-xxs">{{ row.index }}</td>
@@ -111,10 +255,44 @@
           </td>
 
           <!-- Unit -->
-          <td class="text-center font-monospace text-xs text-muted">{{ row.unit }}</td>
+          <td class="text-center font-monospace text-xs text-muted" *ngIf="isVerdictColShown('unit')">{{ row.unit }}</td>
 
-          <!-- Specified Requirement -->
-          <td class="text-center text-xs">
+          <!-- Observed Results (Side-by-side specimens + optional Average when multi-specimen, else single Observed Result) -->
+          <ng-container *ngIf="multiSpecimen; else singleObsCell">
+            <td class="text-center" *ngFor="let cell of row.specimenCells">
+              <span *ngIf="cell.displayValue !== ''"
+                    class="fw-bold font-monospace text-xs"
+                    [ngClass]="{
+                      'text-success': requiresVerdict && cell.verdict === 'PASS',
+                      'text-danger': requiresVerdict && cell.verdict === 'FAIL',
+                      'text-warning': requiresVerdict && cell.verdict === 'BORDERLINE'
+                    }">
+                {{ cell.displayValue }}
+              </span>
+              <span *ngIf="cell.displayValue === ''" class="text-muted fst-italic text-xxs">Pending</span>
+            </td>
+            <td class="text-center font-monospace text-xs text-muted fw-semibold" *ngIf="isVerdictColShown('avg')">{{ row.averageValue }}</td>
+          </ng-container>
+          <ng-template #singleObsCell>
+            <td class="text-center">
+              <span *ngIf="row.observedValue !== null && row.observedValue !== undefined && row.observedValue !== ''"
+                    class="fw-bold font-monospace text-xs"
+                    [ngClass]="{
+                      'text-success': requiresVerdict && row.verdict === 'PASS',
+                      'text-danger': requiresVerdict && row.verdict === 'FAIL',
+                      'text-warning': requiresVerdict && row.verdict === 'BORDERLINE'
+                    }">
+                {{ row.observedValue }}
+              </span>
+              <span *ngIf="row.observedValue === null || row.observedValue === undefined || row.observedValue === ''"
+                    class="text-muted fst-italic text-xxs">
+                Pending
+              </span>
+            </td>
+          </ng-template>
+
+          <!-- Specified Requirement (follows Result Entry layout order) -->
+          <td class="text-center text-xs" *ngIf="isVerdictColShown('requirement')">
             <span *ngIf="row.specifiedMin !== null && row.specifiedMax !== null" class="font-monospace fw-semibold">
               {{ row.specifiedMin }} – {{ row.specifiedMax }}
             </span>
@@ -132,25 +310,8 @@
             </span>
           </td>
 
-          <!-- Observed Result -->
-          <td class="text-center">
-            <span *ngIf="row.observedValue !== null && row.observedValue !== undefined && row.observedValue !== ''"
-                  class="fw-bold font-monospace text-xs"
-                  [ngClass]="{
-                    'text-success': row.verdict === 'PASS',
-                    'text-danger': row.verdict === 'FAIL',
-                    'text-warning': row.verdict === 'BORDERLINE'
-                  }">
-              {{ row.observedValue }}
-            </span>
-            <span *ngIf="row.observedValue === null || row.observedValue === undefined || row.observedValue === ''"
-                  class="text-muted fst-italic text-xxs">
-              Pending
-            </span>
-          </td>
-
           <!-- Uncertainty (±U) -->
-          <td class="text-center font-monospace text-xs">
+          <td class="text-center font-monospace text-xs" *ngIf="isVerdictColShown('uncertainty')">
             <span *ngIf="row.expandedUncertainty > 0" class="badge bg-light text-dark border text-xxs" title="Expanded Uncertainty (k={{ row.coverageFactor }})">
               ±{{ row.expandedUncertainty }}
             </span>
@@ -159,9 +320,10 @@
             </span>
           </td>
 
-          <!-- Parameter Verdict Badge -->
-          <td class="text-center">
+          <!-- Parameter Verdict Badge (shown only when conformity verdict is required) -->
+          <td class="text-center" *ngIf="requiresVerdict">
             <span class="badge text-xxs"
+                  [title]="row.guardBandDetail"
                   [ngClass]="{
                     'bg-success': row.verdict === 'PASS',
                     'bg-danger': row.verdict === 'FAIL',
@@ -181,34 +343,29 @@
             </span>
           </td>
 
-          <!-- Decision Rule & Guard-Band Detail -->
-          <td class="text-xs">
+          <!-- Decision Rule & Guard-Band Detail (optional configurable column) -->
+          <td class="text-xs" *ngIf="requiresVerdict && isVerdictColShown('decisionDetail')">
             <span class="text-muted">{{ row.guardBandDetail }}</span>
           </td>
 
-          <!-- Scope Status -->
-          <td class="text-center">
-            <span class="badge text-xxs"
-                  [ngClass]="row.scopeStatus === 'WithinScope' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
-              {{ row.scopeStatus === 'WithinScope' ? 'In Scope' : 'Out of Scope' }}
+          <!-- Scope Status (auto-shown when NABL Scope Master is configured, or toggled via Columns) -->
+          <td class="text-center" *ngIf="isVerdictColShown('scope')">
+            <span *ngIf="row.scopeStatus === 'WithinScope'"
+                  class="badge text-xxs bg-success-subtle text-success border border-success-subtle">
+              In Scope
+            </span>
+            <span *ngIf="row.scopeStatus === 'OutsideScope'"
+                  class="badge text-xxs bg-danger-subtle text-danger border border-danger-subtle">
+              Out of Scope
+            </span>
+            <span *ngIf="row.scopeStatus === 'NotAccredited'"
+                  class="text-muted text-xxs"
+                  title="Not configured in Lab Scope Master">
+              —
             </span>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
-
-  <!-- ── 4. DECISION RULE & ACCREDITATION FOOTER ── -->
-  <div class="decision-rule-box">
-    <div class="d-flex align-items-center gap-1.5">
-      <i class="bi bi-shield-lock-fill text-danger me-1"></i>
-      <strong>Accreditation Compliance:</strong>
-      <span>{{ decisionRuleName }}</span>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-      <span class="text-muted">Standard: <strong>ISO/IEC 17025:2017</strong></span>
-      <span class="badge bg-secondary-subtle text-secondary font-monospace text-xxs">Clause 7.8.6 Compliant</span>
-    </div>
-  </div>
-
-</div>
+</section>

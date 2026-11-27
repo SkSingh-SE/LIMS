@@ -346,16 +346,16 @@ export class ChemicalParameterComponent implements OnInit {
     if (type === 'create') {
       this.isEditMode = false;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'Create Chemical Parameter';
     } else if (type === 'edit') {
       this.isEditMode = true;
       this.isViewMode = false;
-      this.formTitle = 'Parameter Form';
+      this.formTitle = 'Edit Chemical Parameter';
     }
     else if (type === 'view') {
       this.isViewMode = true;
       this.isEditMode = false;
-      this.formTitle = 'View Parameter';
+      this.formTitle = 'View Chemical Parameter';
       this.ParameterForm.disable();
     }
 

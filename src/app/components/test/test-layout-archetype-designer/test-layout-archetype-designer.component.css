@@ -10,7 +10,8 @@
 }
 
 .studio-container {
-  height: calc(100vh - 48px);
+  height: calc(100vh - var(--nav-height, 61px));
+  max-height: calc(100vh - var(--nav-height, 61px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -22,7 +23,8 @@
 
 /* 1. Studio Topbar */
 .studio-topbar {
-  height: 42px;
+  height: 38px;
+  min-height: 38px;
   background: #ffffff;
   border-bottom: 1px solid #d9dee8;
   display: flex;
@@ -32,6 +34,8 @@
   flex: none;
   overflow-x: auto;
   overflow-y: hidden;
+  position: relative;
+  z-index: 10;
 }
 
 .studio-topbar::-webkit-scrollbar {
@@ -733,12 +737,27 @@ select.form-select:focus {
   min-width: 0;
 }
 
-.layout-structure-picker {
+.layout-structure-picker,
+.layout-preset-selector {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex: 0 1 340px;
-  min-width: 170px;
+  gap: 6px;
+  flex: 0 1 420px;
+  min-width: 220px;
+}
+
+.preset-selector-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.layout-preset-selector app-custom-select,
+.layout-structure-picker app-custom-select {
+  flex: 1 1 260px;
+  min-width: 180px;
+  max-width: 360px;
 }
 
 .layout-structure-picker .test-preview-select {
@@ -839,7 +858,7 @@ select.form-select:focus {
 .canvas-scroll-container {
   flex: 1;
   overflow: auto;
-  padding: 16px;
+  padding: 10px 12px;
   display: flex;
   justify-content: center;
 }
@@ -848,83 +867,108 @@ select.form-select:focus {
   background: #ffffff;
   width: 100%;
   max-width: 920px;
-  min-height: 840px;
+  min-height: 780px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
-  border-radius: 4px;
-  padding: 20px 24px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  border-radius: 6px;
+  padding: 10px 14px;
   color: #1e293b;
   transform-origin: top center;
   transition: transform 0.15s ease;
   align-self: flex-start;
 }
 
-/* Paper Head */
+/* Ultra-Compact 1-Row Worksheet Context Header */
 .paper-header {
-  border-bottom: 2px solid #0f172a;
-  padding-bottom: 12px;
-  display: grid;
-  grid-template-columns: 90px 1fr 190px;
-  gap: 14px;
-  align-items: center;
-}
-
-.paper-logo-box {
-  height: 52px;
-  border: 1.5px dashed #cbd5e1;
+  border-bottom: 1.5px solid #cbd5e1;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 0.68rem;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.paper-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.paper-iso-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #fef2f2;
+  color: var(--primary-color, #da261c);
+  border: 1px solid #fecaca;
+  font-size: 0.65rem;
   font-weight: 700;
-  color: #64748b;
-  background: #f8fafc;
-  border-radius: 6px;
-  letter-spacing: 0.05em;
-  gap: 2px;
-}
-
-.paper-logo-icon {
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-.paper-title-area {
-  text-align: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
 }
 
 .paper-main-title {
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: #0f172a;
-  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .paper-sub-title {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #64748b;
-  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
 }
 
-.paper-meta-box {
-  font-size: 0.7rem;
-  line-height: 1.55;
+.paper-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.paper-meta-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
   color: #475569;
-  text-align: right;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--bs-font-monospace, monospace);
+  white-space: nowrap;
+}
+
+.paper-status-tag {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--bs-font-monospace, monospace);
+  white-space: nowrap;
 }
 
 /* Section Cards Stack */
 .sections-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .exec-section-card {
@@ -1112,8 +1156,36 @@ select.form-select:focus {
 /* Tables inside sections */
 .table-exec {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.72rem;
+}
+
+.table-exec.table-wide {
+  table-layout: auto;
+  min-width: 100%;
+  width: max-content;
+}
+
+.table-exec.table-wide th,
+.table-exec.table-wide td {
+  white-space: nowrap;
+  min-width: 62px;
+}
+
+.table-exec.table-wide th:first-child,
+.table-exec.table-wide td:first-child {
+  min-width: 160px;
+  max-width: 210px;
+  width: 185px;
+}
+
+.master-source-mini-select {
+  width: 105px !important;
+  font-size: 0.68rem !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 1px 1.4rem 1px 6px !important;
 }
 
 .table-exec th,
@@ -1122,15 +1194,38 @@ select.form-select:focus {
   padding: 5px 8px;
   text-align: center;
   vertical-align: middle;
+  overflow: hidden;
 }
 
 .table-exec th {
+  position: relative;
   background: #f8fafc;
   font-weight: 700;
   color: #334155;
   font-size: 0.7rem;
   border-bottom: 2px solid #cbd5e1;
   white-space: nowrap;
+}
+
+.table-exec th .btn-cell-row-del {
+  display: none;
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  z-index: 2;
+}
+
+.table-exec th:hover .btn-cell-row-del {
+  display: inline-flex;
+}
+
+.table-exec th:first-child,
+.table-exec th:first-child .th-inline-input,
+.table-exec th:first-child .specimen-th-input {
+  text-align: left !important;
 }
 
 .table-merged-group-title {
@@ -1662,7 +1757,7 @@ select.form-select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #475569;
@@ -1673,12 +1768,14 @@ select.form-select:focus {
   cursor: pointer;
   transition: all 0.15s ease;
   line-height: 1.25;
+  white-space: nowrap;
+  flex-shrink: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .btn-xs-action i.bi,
 .btn-xs-action .bi {
-  margin-right: 5px !important;
+  margin-right: 0 !important;
   font-size: 0.72rem;
   line-height: 1;
   display: inline-block;
@@ -2271,7 +2368,8 @@ select.form-select:focus {
   background: transparent;
   transition: all 0.15s ease;
   width: 100%;
-  min-width: 140px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .location-canvas-row:hover .table-cell-inline-input,
@@ -2553,16 +2651,21 @@ td .btn-table-inline-add:hover,
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 3px 10px;
-  font-size: 0.72rem;
+  padding: 3px 5px;
+  font-size: 0.68rem;
   font-weight: 600;
   color: #64748b;
   cursor: pointer;
   transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  white-space: nowrap;
   border-radius: 4px 4px 0 0;
+}
+
+.binding-tab-btn i.bi {
+  margin-right: 2px !important;
 }
 
 .binding-tab-btn:hover {
@@ -2897,8 +3000,12 @@ th:hover .header-binding-icon-runtime {
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  width: 85px;
-  text-align: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: inherit;
+  text-overflow: ellipsis;
   transition: all 0.15s ease;
 }
 
@@ -3028,4 +3135,51 @@ th:hover .header-binding-icon-runtime {
 .dataset-check-row.is-selected {
   background-color: rgba(218, 38, 28, 0.035);
 }
+
+.col-input-type-select {
+  width: 102px;
+}
+
+.col-precision-input {
+  width: 46px;
+}
+
+/* Clean Enterprise Segmented Control (Data Derivation Mode) */
+.inspector-segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.inspector-seg-btn {
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inspector-seg-btn:hover {
+  color: #0f172a;
+}
+
+.inspector-seg-btn.is-active {
+  background: #ffffff;
+  color: var(--primary-color, #da261c);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+
 

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Modal } from 'bootstrap';
@@ -17,7 +17,17 @@ import { PaginationComponent } from '../../utility/components/pagination/paginat
 
 @Component({
   selector: 'app-product-condition',
-  imports: [ CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SearchableDropdownComponent, MultiSelectDropdownComponent, FormFieldErrorComponent, PaginationComponent ],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    SearchableDropdownComponent,
+    MultiSelectDropdownComponent,
+    FormFieldErrorComponent,
+    PaginationComponent
+  ],
   templateUrl: './product-condition.component.html',
   styleUrl: './product-condition.component.css'
 })
@@ -30,22 +40,27 @@ export class ProductConditionComponent implements OnInit {
     { key: 'id', type: 'number', label: 'SN', filter: false },
     { key: 'code', type: 'string', label: 'Code', filter: true },
     { key: 'name', type: 'string', label: 'Name', filter: true },
-    { key: 'modifiedOn', type: 'date', label: 'Modified At', filter: true },
+    { key: 'category', type: 'string', label: 'Condition Category', filter: true },
+    { key: 'linkedHeatTreatment', type: 'string', label: 'Linked Heat Treatment', filter: true },
+    { key: 'isHeatTreated', type: 'string', label: 'Condition Status', filter: true },
+    { key: 'modifiedOn', type: 'date', label: 'Modified By / At', filter: true },
   ];
+
   filterColumnTypes: Record<string, 'string' | 'number' | 'date' | 'bool'> = {
     code: 'string',
     name: 'string',
+    category: 'string',
+    linkedHeatTreatment: 'string',
+    isHeatTreated: 'string',
     modifiedOn: 'date',
-    modifiedByName: 'string',
   };
 
   filters: { column: string; type: string; value: any; value2?: any }[] = [];
-  filterColumn: string = 'string';
-  filterColumnTitle: string = 'string';
+  filterColumn: string = '';
+  filterColumnTitle: string = '';
   filterType: string = 'Contains';
   filterValue: string = '';
   filterValue2: string = '';
-  filterPosition = { top: '0px', left: '0px' };
   isFilterOpen = false;
   ProductConditionList: any[] = [];
 
@@ -58,7 +73,7 @@ export class ProductConditionComponent implements OnInit {
   sortOrder: string = 'desc';
   searchTerm: string = '';
 
-  payload = {
+  payload: any = {
     PageNumber: this.pageNumber,
     PageSize: this.pageSize,
     searchTerm: this.searchTerm,
@@ -67,19 +82,20 @@ export class ProductConditionComponent implements OnInit {
     filter: this.filters ?? null
   };
 
-  // form
+  // Form
   ProductConditionForm!: FormGroup;
   submitted = false;
   isEditMode: boolean = false;
   isViewMode: boolean = true;
   customerTypeObject: any = null;
   productConditionId: number = 0;
-  formTitle = 'Product Condition Form';
+  formTitle = 'Product Condition Master';
+
+  selectedCategoryItem: any = null;
+  selectedHeatTreatmentItem: any = null;
 
   constructor(
     private fb: FormBuilder,
-    private router: Router,
-    private route: ActivatedRoute,
     private productConditionService: ProductConditionService,
     private productConditionCategoryService: ProductConditionCategoryService,
     private heatTreatmentService: HeatTreatmentService,
@@ -87,11 +103,11 @@ export class ProductConditionComponent implements OnInit {
     private toastService: ToastService,
   ) {}
 
-
   ngOnInit() {
-    this.fetchData();
     this.initForm();
+    this.fetchData();
   }
+
   initForm() {
     this.ProductConditionForm = this.fb.group({
       id: [0],
@@ -99,14 +115,19 @@ export class ProductConditionComponent implements OnInit {
       name: ['', [Validators.required, Validators.maxLength(200), noWhitespaceValidator()]],
       productConditionCategoryID: [null],
       linkedHeatTreatmentID: [null],
-      calibrationRequired: [false],
-      isDestructive: [false],
-      propertiesCapturedIds: [[]],
-      propertiesCaptured: this.fb.array([]),
+      description: ['', [Validators.maxLength(500)]],
+      propertiesCapturedIds: [[]]
     });
   }
 
   fetchData() {
+    this.payload.PageNumber = this.pageNumber;
+    this.payload.PageSize = this.pageSize;
+    this.payload.searchTerm = this.searchTerm;
+    this.payload.sortByColumn = this.sortByColumn;
+    this.payload.sortOrder = this.sortOrder;
+    this.payload.filter = this.filters?.length ? this.filters : null;
+
     this.productConditionService.getAllProductConditions(this.payload).subscribe({
       next: (response) => {
         this.ProductConditionList = response?.items || [];
@@ -118,25 +139,145 @@ export class ProductConditionComponent implements OnInit {
         this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
         this.ProductConditionList = [];
       }
-    }
-
-    );
+    });
   }
+
   getDetails(): void {
     const requestId = this.productConditionId;
     this.productConditionService.getProductConditionById(requestId).subscribe({
       next: (response) => {
-        if (this.productConditionId !== requestId) return; // discard stale response
+        if (this.productConditionId !== requestId) return;
         this.customerTypeObject = response;
-        this.ProductConditionForm.patchValue(response);
+
         this.ProductConditionForm.patchValue({
-          propertiesCapturedIds: response?.propertiesCaptured?.map((x: any) => x.propertyTypeID ?? x.id) ?? [],
+          id: response.id,
+          code: response.code,
+          name: response.name,
+          productConditionCategoryID: response.productConditionCategoryID,
+          linkedHeatTreatmentID: response.linkedHeatTreatmentID,
+          description: response.description || ''
         });
+
+        // Set Category Item
+        if (response.productConditionCategoryID) {
+          this.selectedCategoryItem = {
+            id: response.productConditionCategoryID,
+            name: response.productConditionCategory?.name || response.productConditionCategoryName
+          };
+        } else {
+          this.selectedCategoryItem = null;
+        }
+
+        // Set Heat Treatment Item
+        if (response.linkedHeatTreatmentID) {
+          this.selectedHeatTreatmentItem = {
+            id: response.linkedHeatTreatmentID,
+            name: response.linkedHeatTreatment?.name || response.linkedHeatTreatmentName
+          };
+        } else {
+          this.selectedHeatTreatmentItem = null;
+        }
+
+        // Properties Captured
+        if (response.propertiesCaptured?.length > 0) {
+          const ids = response.propertiesCaptured.map((p: any) => p.propertyTypeID || p.id);
+          this.ProductConditionForm.patchValue({ propertiesCapturedIds: ids });
+        } else {
+          this.ProductConditionForm.patchValue({ propertiesCapturedIds: [] });
+        }
+
+        if (this.isViewMode) {
+          this.ProductConditionForm.disable();
+        }
       },
       error: (error) => {
-        console.error('Error fetching tax data:', error);
+        this.toastService.show(error?.error?.message || 'Error loading product condition details', 'error');
       }
     });
+  }
+
+  openModal(type: string, id: number): void {
+    this.initForm();
+    this.selectedCategoryItem = null;
+    this.selectedHeatTreatmentItem = null;
+    this.productConditionId = 0;
+    this.submitted = false;
+
+    if (type === 'create') {
+      this.isEditMode = false;
+      this.isViewMode = false;
+      this.formTitle = 'Create Product Condition';
+      this.ProductConditionForm.enable();
+    } else if (type === 'edit') {
+      this.isEditMode = true;
+      this.isViewMode = false;
+      this.formTitle = 'Edit Product Condition';
+      this.ProductConditionForm.enable();
+      this.productConditionId = id;
+      this.getDetails();
+    } else if (type === 'view') {
+      this.isViewMode = true;
+      this.isEditMode = false;
+      this.formTitle = 'View Product Condition';
+      this.productConditionId = id;
+      this.getDetails();
+    }
+
+    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
+    this.bsModal.show();
+  }
+
+  closeModal(): void {
+    if (this.bsModal) {
+      this.bsModal.hide();
+    }
+    this.selectedCategoryItem = null;
+    this.selectedHeatTreatmentItem = null;
+    this.initForm();
+    this.productConditionId = 0;
+    this.isEditMode = false;
+    this.isViewMode = false;
+    this.submitted = false;
+  }
+
+  isFieldInvalid(path: string): boolean {
+    return FormValidationHelper.isFieldInvalid(this.ProductConditionForm, path, this.submitted);
+  }
+
+  onCategorySelected(item: any): void {
+    this.selectedCategoryItem = item;
+    this.ProductConditionForm.patchValue({
+      productConditionCategoryID: item?.id ?? null
+    });
+    this.ProductConditionForm.markAsDirty();
+  }
+
+  onHeatTreatmentSelected(item: any): void {
+    this.selectedHeatTreatmentItem = item;
+    this.ProductConditionForm.patchValue({
+      linkedHeatTreatmentID: item?.id ?? null
+    });
+    this.ProductConditionForm.markAsDirty();
+  }
+
+  onPropertySelected(items: any[]): void {
+    const ids = items.map((x: any) => x.id || x);
+    this.ProductConditionForm.patchValue({ propertiesCapturedIds: ids });
+    this.ProductConditionForm.markAsDirty();
+  }
+
+  // Dropdown fetchers
+  getCategoryDropdown = (s: string, p: number, ps: number) =>
+    this.productConditionCategoryService.getProductConditionCategoryDropdown(s, p, ps);
+
+  getHeatTreatmentDropdown = (s: string, p: number, ps: number) =>
+    this.heatTreatmentService.getHeatTreatmentDropdown(s, p, ps);
+
+  getPropertyTypeDropdown = (s: string, p: number, ps: number) =>
+    this.propertyTypeService.getPropertyTypeDropdown(s, p, ps);
+
+  openLinkedMaster(route: string): void {
+    window.open(route, '_blank');
   }
 
   applySorting(column: string) {
@@ -146,35 +287,50 @@ export class ProductConditionComponent implements OnInit {
       this.sortByColumn = column;
       this.sortOrder = 'asc';
     }
-    this.payload.sortByColumn = this.sortByColumn;
-    this.payload.sortOrder = this.sortOrder;
     this.fetchData();
+  }
+
+  onSearch() {
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  onPageChange(page: number) {
+    this.pageNumber = page;
+    this.fetchData();
+  }
+
+  changePageSize(event: Event) {
+    this.pageSize = Number((event.target as HTMLSelectElement).value);
+    this.pageNumber = 1;
+    this.fetchData();
+  }
+
+  deleteFn(id: number): void {
+    if (id <= 0) return;
+    const confirmed = window.confirm('Are you sure you want to delete this Product Condition?');
+    if (confirmed) {
+      this.productConditionService.deleteProductCondition(id).subscribe({
+        next: (response) => {
+          this.fetchData();
+          this.toastService.show(response.message || 'Product Condition deleted successfully', 'success');
+        },
+        error: (error) => {
+          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
+        }
+      });
+    }
   }
 
   openFilterModal(column: string, event: MouseEvent) {
     this.filterColumn = column;
-    this.columns.forEach(col => {
-      if (col.key === column) {
-        this.filterColumnTitle = col.label;
-      }
-    })
+    const col = this.columns.find(c => c.key === column);
+    this.filterColumnTitle = col ? col.label : column;
     this.filterValue = '';
     this.filterValue2 = '';
 
-    const columnType = this.filterColumnTypes[column];
-    switch (columnType) {
-      case 'string':
-        this.filterType = 'Contains';
-        break;
-      case 'number':
-        this.filterType = 'Equal';
-        break;
-      case 'date':
-        this.filterType = 'Between';
-        break;
-      default:
-        this.filterType = 'Contains';
-    }
+    const columnType = this.filterColumnTypes[column] || 'string';
+    this.filterType = columnType === 'number' ? 'Equal' : 'Contains';
 
     this.isFilterOpen = true;
     const target = event.target as HTMLElement;
@@ -186,7 +342,6 @@ export class ProductConditionComponent implements OnInit {
       modal.style.top = `${rect.bottom + window.scrollY - 53}px`;
       modal.style.left = `${rect.left + window.scrollX}px`;
 
-      // Clamp to viewport so the popup doesn't overflow
       requestAnimationFrame(() => {
         const modalRect = modal.getBoundingClientRect();
         if (modalRect.right > window.innerWidth) {
@@ -201,24 +356,25 @@ export class ProductConditionComponent implements OnInit {
 
   applyFilter() {
     if (!this.filterColumn || this.filterValue === '') return;
-
-    const existingFilterIndex = this.filters.findIndex(f => f.column === this.filterColumn);
+    const existingIndex = this.filters.findIndex(f => f.column === this.filterColumn);
     const filterData = { column: this.filterColumn, type: this.filterType, value: this.filterValue, value2: this.filterValue2 };
 
-    if (existingFilterIndex > -1) {
-      this.filters[existingFilterIndex] = filterData;
+    if (existingIndex > -1) {
+      this.filters[existingIndex] = filterData;
     } else {
       this.filters.push(filterData);
     }
-
     this.fetchData();
     this.closeFilterModal();
   }
 
   resetFilter(column: string) {
-    this.filters = this.filters.filter(filter => filter.column !== column);
-    this.payload.filter = this.filters;
+    this.filters = this.filters.filter(f => f.column !== column);
     this.fetchData();
+  }
+
+  hasFilter(column: string): boolean {
+    return this.filters?.some(f => f.column === column) ?? false;
   }
 
   closeFilterModal() {
@@ -227,154 +383,27 @@ export class ProductConditionComponent implements OnInit {
     }
   }
 
-  onPageChange(page: number) {
-    this.pageNumber = page;
-    this.payload.PageNumber = this.pageNumber;
-    this.fetchData();
-  }
-
-  changePageSize(event: Event) {
-    this.pageSize = Number((event.target as HTMLSelectElement).value);
-    this.pageNumber = 1; // Reset to first page
-    this.payload.PageNumber = this.pageNumber;
-    this.payload.PageSize = this.pageSize;
-    this.fetchData();
-  }
-
-  onSearch() {
-    if (this.searchTerm !== this.payload.searchTerm) {
-      this.pageNumber = 1;
-      this.payload.PageNumber = 1;
-      this.payload.searchTerm = this.searchTerm;
-      this.fetchData();
-    }
-  }
-
-  get totalPages(): number[] {
-    return Array.from({ length: Math.ceil(this.totalItems / this.pageSize) }, (_, i) => i + 1);
-  }
-  getStartRecord(): number {
-    return this.totalItems === 0 ? 0 : (this.pageNumber - 1) * this.pageSize + 1;
-  }
-
-  getEndRecord(): number {
-    return Math.min(this.pageNumber * this.pageSize, this.totalItems);
-  }
-
-
-  hasFilter(column: string): boolean {
-    return this.filters?.some(f => f.column === column) ?? false;
-  }
-  getColumnType(columnKey: string): string | undefined {
-    const column = this.columns.find(col => col.key === columnKey);
-    return column ? column.type : undefined;
-  }
-
-  deleteFn(id: number): void {
-    if (id <= 0) return;
-    const confirmed = window.confirm('Are you sure you want to delete this item?');
-    if (confirmed) {
-      this.productConditionService.deleteProductCondition(id).subscribe({
-        next: (response) => {
-          this.fetchData();
-          this.toastService.show(response.message, 'success');
-        },
-        error: (error) => {
-          this.toastService.show(error?.error?.message || error?.errorMessage || 'Operation failed', 'error');
-        }
-      });
-    }
-  }
-  openModal(type: string, id: number): void {
-    this.initForm();
-    this.productConditionId = 0;
-    if (id > 0) {
-      this.productConditionId = id;
-      this.getDetails();
-    }
-    if (type === 'create') {
-      this.isEditMode = false;
-      this.isViewMode = false;
-      this.formTitle = 'Product Condition Form';
-    } else if (type === 'edit') {
-      this.isEditMode = true;
-      this.isViewMode = false;
-      this.formTitle = 'Product Condition Form';
-    }
-    else if (type === 'view') {
-      this.isViewMode = true;
-      this.isEditMode = false;
-      this.formTitle = 'View Product Condition';
-      this.ProductConditionForm.disable();
-    }
-
-    this.bsModal = new Modal(this.modalElement.nativeElement, { focus: false });
-    this.bsModal.show();
-  }
-
-  isFieldInvalid(path: string): boolean {
-    return FormValidationHelper.isFieldInvalid(this.ProductConditionForm, path, this.submitted);
-  }
-
-  closeModal(): void {
-    if (this.bsModal) {
-      this.bsModal.hide();
-    }
-    this.initForm();
-    this.productConditionId = 0;
-    this.isEditMode = false;
-    this.isViewMode = false;
-    this.submitted = false;
-  }
-
-  // Dropdown functions
-  getCategoryDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.productConditionCategoryService.getProductConditionCategoryDropdown(searchTerm, pageNo, pageSize);
-  };
-
-  getHeatTreatmentDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.heatTreatmentService.getHeatTreatmentDropdown(searchTerm, pageNo, pageSize);
-  };
-
-  getPropertyTypeDropdown = (searchTerm: string, pageNo: number, pageSize: number) => {
-    return this.propertyTypeService.getPropertyTypeDropdown(searchTerm, pageNo, pageSize);
-  };
-
-  openLinkedMaster(route: string): void {
-    window.open(route, '_blank');
-  }
-
-  onPropertySelected(items: any[]) {
-    const selectIds: number[] = [];
-    const propArray = this.ProductConditionForm.get('propertiesCaptured') as FormArray;
-    propArray.clear();
-    items.forEach((x) => {
-      const id = x.id || x;
-      selectIds.push(id);
-      propArray.push(
-        this.fb.group({
-          PropertyTypeID: [id],
-        })
-      );
-    });
-    this.ProductConditionForm.patchValue({ propertiesCapturedIds: selectIds });
-  }
-
-  @HostListener('window:focus')
-  onWindowFocus(): void {}
-
   onSubmit(): void {
     this.submitted = true;
     FormValidationHelper.markAllTouched(this.ProductConditionForm);
+
     if (!this.ProductConditionForm.valid) {
       this.toastService.show('Please fix the validation errors before submitting.', 'warning');
       return;
     }
-    let formData = this.ProductConditionForm.value;
+
+    const raw = this.ProductConditionForm.getRawValue();
+    const propIds = raw.propertiesCapturedIds || [];
+
+    const formData = {
+      ...raw,
+      propertiesCaptured: propIds.map((id: number) => ({ PropertyTypeID: id }))
+    };
+
     if (this.isEditMode) {
       this.productConditionService.updateProductCondition(formData).subscribe({
         next: (response) => {
-          this.toastService.show(response.message, 'success');
+          this.toastService.show(response.message || 'Product Condition updated successfully', 'success');
           this.closeModal();
           this.fetchData();
         },
@@ -386,7 +415,7 @@ export class ProductConditionComponent implements OnInit {
       formData.id = 0;
       this.productConditionService.createProductCondition(formData).subscribe({
         next: (response) => {
-          this.toastService.show(response.message, 'success');
+          this.toastService.show(response.message || 'Product Condition created successfully', 'success');
           this.closeModal();
           this.fetchData();
         },
@@ -396,5 +425,4 @@ export class ProductConditionComponent implements OnInit {
       });
     }
   }
-
 }

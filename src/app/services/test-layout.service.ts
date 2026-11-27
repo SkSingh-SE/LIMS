@@ -49,9 +49,22 @@ export class TestLayoutService {
     return this.http.get<any>(`${this.apiUrl}/details/${id}`);
   }
 
-  getLayoutByHierarchy(testId?: number | null, subGroupId?: number | null, analysisTypeId?: number | null, leafNode?: string | null, testMethodId?: number | null, testMethodName?: string | null): Observable<any> {
+  /**
+   * Resolve the layout for a test via the cascade.
+   * includeDrafts = true only for the Layout Studio (editing); Result Entry must resolve Published layouts only.
+   */
+  getLayoutByHierarchy(
+    testId?: number | null,
+    subGroupId?: number | null,
+    analysisTypeId?: number | null,
+    leafNode?: string | null,
+    testMethodId?: number | null,
+    testMethodName?: string | null,
+    includeDrafts = false
+  ): Observable<any> {
     let url = `${this.apiUrl}/by-hierarchy`;
     const params: string[] = [];
+    if (includeDrafts) params.push('includeDrafts=true');
     if (testId && testId > 0) params.push(`testId=${testId}`);
     if (subGroupId && subGroupId > 0) params.push(`subGroupId=${subGroupId}`);
     if (analysisTypeId && analysisTypeId > 0) params.push(`analysisTypeId=${analysisTypeId}`);

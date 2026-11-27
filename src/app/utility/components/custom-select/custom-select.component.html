@@ -33,7 +33,7 @@
 
     <!-- Selected Item Badge (Optional, pill style) -->
     <span *ngIf="showBadgeOnTrigger && selectedOption?.badge"
-          class="badge custom-select-badge ms-auto me-1"
+          class="badge custom-select-badge ms-auto me-1.5"
           [ngClass]="selectedOption?.badgeClass || 'bg-light text-secondary'">
       {{ selectedOption?.badge }}
     </span>
@@ -48,7 +48,7 @@
     </button>
 
     <!-- Animated Chevron Down -->
-    <i class="bi bi-chevron-down custom-select-chevron ms-1"
+    <i class="bi bi-chevron-down custom-select-chevron ms-1.5"
        [class.is-open]="isOpen"></i>
   </button>
 </div>
@@ -66,7 +66,8 @@
 
   <div class="custom-select-menu shadow-lg"
        [ngClass]="['size-' + size, panelClass]"
-       [style.width]="panelWidth ? panelWidth : null">
+       [style.width]="panelWidth ? panelWidth : null"
+       (keydown)="handleKeydown($event)">
 
     <!-- Search Header (shown if enabled) -->
     <div *ngIf="isSearchEnabled" class="custom-select-search-header">
@@ -76,6 +77,7 @@
              class="search-input"
              [value]="searchQuery"
              (input)="onSearchInput($any($event.target).value)"
+             (keydown)="handleKeydown($event)"
              [placeholder]="searchPlaceholder" />
       <button *ngIf="searchQuery"
               type="button"
@@ -90,7 +92,8 @@
     <ul #listEl
         class="custom-select-options-list"
         role="listbox"
-        tabindex="-1">
+        tabindex="-1"
+        (keydown)="handleKeydown($event)">
       <li *ngFor="let opt of filteredOptions; let i = index"
           class="custom-select-option"
           role="option"
@@ -98,6 +101,7 @@
           [class.is-selected]="isValueEqual(opt.value, selectedOption?.value)"
           [class.is-highlighted]="i === highlightedIndex"
           [class.is-disabled]="opt.disabled"
+          (mousedown)="onOptionMouseDown($event, opt)"
           (click)="selectOption(opt, $event)"
           (mouseenter)="highlightedIndex = i">
 
@@ -120,12 +124,12 @@
         <i *ngIf="isValueEqual(opt.value, selectedOption?.value)"
            class="bi bi-check2 option-check-icon"
            [class.ms-auto]="!opt.badge"
-           [class.ms-2]="opt.badge"></i>
+           [class.ms-1.5]="opt.badge"></i>
       </li>
 
       <!-- Empty State -->
       <li *ngIf="filteredOptions.length === 0" class="custom-select-empty">
-        <i class="bi bi-inbox text-muted me-2"></i>
+        <i class="bi bi-inbox text-muted me-1.5"></i>
         <span>No matching options</span>
       </li>
     </ul>

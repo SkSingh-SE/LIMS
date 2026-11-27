@@ -21,7 +21,7 @@
     <span class="fw-semibold">
       <i class="bi bi-fonts"></i><span>Symbol Picker</span>
     </span>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-1.5">
       <small class="header-shortcut">Ctrl+Shift+S</small>
       <button type="button" class="btn-close btn-close-white btn-close-sm" (click)="isOpen = false"></button>
     </div>
@@ -68,7 +68,7 @@
           </div>
         </div>
       </div>
-      <div *ngIf="filteredGroups.length === 0" class="text-center text-muted py-3">
+      <div *ngIf="filteredGroups.length === 0" class="text-center text-muted py-1.5">
         <small>No symbols found for "{{ searchText }}"</small>
       </div>
     </ng-container>
@@ -90,8 +90,8 @@
           </div>
         </div>
       </div>
-      <div *ngIf="favoriteSymbols.length === 0" class="text-center text-muted py-4">
-        <i class="bi bi-star fs-3 d-block mb-2"></i>
+      <div *ngIf="favoriteSymbols.length === 0" class="text-center text-muted py-1.5">
+        <i class="bi bi-star fs-3 d-block mb-1.5"></i>
         <small>No favorites yet</small><br />
         <small class="text-secondary">Click the star on any symbol to add it here</small>
       </div>
@@ -115,8 +115,8 @@
           </div>
         </div>
       </div>
-      <div *ngIf="recentSymbols.length === 0" class="text-center text-muted py-4">
-        <i class="bi bi-clock-history fs-3 d-block mb-2"></i>
+      <div *ngIf="recentSymbols.length === 0" class="text-center text-muted py-1.5">
+        <i class="bi bi-clock-history fs-3 d-block mb-1.5"></i>
         <small>No recently used symbols</small>
       </div>
     </ng-container>

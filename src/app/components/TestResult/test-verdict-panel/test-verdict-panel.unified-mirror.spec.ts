@@ -5,6 +5,10 @@ import {
   Tab1ReadingMatrixSummary,
   TestVerdictPanelComponent
 } from './test-verdict-panel.component';
+import {
+  buildReadingMatrixRowsFromSource,
+  resolveReadingMatrixDecimals
+} from './reading-matrix-summary.helper';
 
 function makeParamRow(overrides: Record<string, any>): FormGroup {
   return new FormGroup({
@@ -190,5 +194,53 @@ describe('TestVerdictPanelComponent — Tab 1 Unified Mirror (Wireframes 1–4)'
     const headers = Array.from(fixture.nativeElement.querySelectorAll('thead th')).map((th: any) => th.textContent.trim());
     expect(headers).toContain('Verdict');
     expect(headers).toContain('Scope Status');
+  });
+
+  it('Staging Regression: unscrambles SequenceNo-ordered flat test.readings by SpecimenCode and keeps spotCols 2-decimal precision', () => {
+    const seqOrderedReadings = [
+      // SequenceNo = 1 across S1..S4 (plus a voided stale row that must be ignored)
+      { parameterCode: 'BHN', specimenCode: 'S1', sequenceNo: 1, value: 999, isVoided: true, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S1', sequenceNo: 1, value: 130, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S2', sequenceNo: 1, value: 145.1, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S3', sequenceNo: 1, value: 140, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S4', sequenceNo: 1, value: 130, isActive: true },
+      // SequenceNo = 2 across S1..S4 (plus an inactive row)
+      { parameterCode: 'BHN', specimenCode: 'S2', sequenceNo: 2, value: 888, isActive: false },
+      { parameterCode: 'BHN', specimenCode: 'S1', sequenceNo: 2, value: 131, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S2', sequenceNo: 2, value: 146, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S3', sequenceNo: 2, value: 139.5, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S4', sequenceNo: 2, value: 131, isActive: true },
+      // SequenceNo = 3 across S1..S4
+      { parameterCode: 'BHN', specimenCode: 'S1', sequenceNo: 3, value: 131, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S2', sequenceNo: 3, value: 145.2, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S3', sequenceNo: 3, value: 140, isActive: true },
+      { parameterCode: 'BHN', specimenCode: 'S4', sequenceNo: 3, value: 131, isActive: true }
+    ];
+
+    const rows = buildReadingMatrixRowsFromSource({
+      rowLabels: ['A1', 'A2', 'B1', 'B2'],
+      spotCount: 3,
+      readings: seqOrderedReadings,
+      targetParamName: 'Brinell Hardness Number',
+      cfgTargetParamName: 'Brinell Hardness Number',
+      readingSectionCount: 1
+    });
+
+    expect(rows).toEqual([
+      { label: 'A1', readings: [130, 131, 131], average: 130.67 },
+      { label: 'A2', readings: [145.1, 146, 145.2], average: 145.43 },
+      { label: 'B1', readings: [140, 139.5, 140], average: 139.83 },
+      { label: 'B2', readings: [130, 131, 131], average: 130.67 }
+    ]);
+
+    const allNums = rows.flatMap(r => r.readings.filter((n): n is number => n !== null));
+    const overallAverage = Math.round((allNums.reduce((a, b) => a + b, 0) / allNums.length) * 100) / 100;
+    expect(overallAverage).toBe(136.65);
+
+    const decimals = resolveReadingMatrixDecimals({
+      spotCols: [{ decimalPrecision: 2 }, { decimalPrecision: 2 }, { decimalPrecision: 2 }],
+      paramDecimals: 1
+    });
+    expect(decimals).toBe(2);
   });
 });

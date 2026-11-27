@@ -36,6 +36,7 @@ import { Tab1ReadingMatrixSummary, Tab1ReadingRowSummary, TestVerdictPanelCompon
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
 import { ExecutionMetrics, countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
+import { buildReadingMatrixRowsFromSource, resolveReadingMatrixDecimals } from '../test-verdict-panel/reading-matrix-summary.helper';
 import {
   findByTensileRole,
   tensileArea, TensileRole
@@ -920,8 +921,8 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const rowLabels: string[] = configuredRows.length > 0
       ? configuredRows.map((r: any, idx: number) => String(r?.label || `S${idx + 1}`).trim())
       : (Array.isArray(cfg.specimenRows) && cfg.specimenRows.length > 0
-          ? cfg.specimenRows.map((x: any, idx: number) => String(x || `S${idx + 1}`).trim())
-          : ['S1']);
+        ? cfg.specimenRows.map((x: any, idx: number) => String(x || `S${idx + 1}`).trim())
+        : ['S1']);
 
     // Extract saved readings map: prefer JSON blob in remarks (contains exact per-row arrays), fallback to test.readings
     let jsonMap: Record<string, any[]> | null = null;
@@ -939,52 +940,28 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       }
     }
 
-    const flatReadings: any[] = Array.isArray(test?.readings) ? test.readings.filter((r: any) => !r?.isVoided) : [];
-    const cleanNum = (v: any): number | null => {
-      if (v === null || v === undefined || String(v).trim() === '') return null;
-      const n = Number(v);
-      return isNaN(n) ? null : Math.round(n * 1e6) / 1e6;
-    };
-
-    const summaryRows: Tab1ReadingRowSummary[] = [];
-    const allNums: number[] = [];
-
-    rowLabels.forEach((label, rowIdx) => {
-      let vals: (number | null)[] = [];
-      if (jsonMap) {
-        const byLabel = jsonMap[label] || jsonMap[`S${rowIdx + 1}`] || jsonMap[String(rowIdx + 1)];
-        if (Array.isArray(byLabel)) {
-          vals = Array.from({ length: spotCount }, (_, sIdx) => cleanNum(byLabel[sIdx]));
-        }
-      }
-      if (!vals.length && flatReadings.length > 0) {
-        const byRow = flatReadings.filter((r: any) =>
-          String(r?.specimenLabel || r?.location || '').trim().toLowerCase() === label.toLowerCase() ||
-          String(r?.specimenLabel || '').trim().toLowerCase() === `s${rowIdx + 1}`
-        );
-        if (byRow.length > 0) {
-          vals = Array.from({ length: spotCount }, (_, sIdx) => cleanNum(byRow[sIdx]?.readingValue ?? byRow[sIdx]?.value));
-        } else {
-          const slice = flatReadings.slice(rowIdx * spotCount, (rowIdx + 1) * spotCount);
-          vals = Array.from({ length: spotCount }, (_, sIdx) => cleanNum(slice[sIdx]?.readingValue ?? slice[sIdx]?.value));
-        }
-      }
-      if (!vals.length) {
-        vals = Array.from({ length: spotCount }, () => null);
-      }
-
-      const valid = vals.filter((x): x is number => x !== null);
-      valid.forEach(x => allNums.push(x));
-      const avg = valid.length > 0 ? Math.round((valid.reduce((a, b) => a + b, 0) / valid.length) * 100) / 100 : null;
-      summaryRows.push({ label, readings: vals, average: avg });
+    const readingSecCount = sections.filter((s: any) => String(s?.type || '').toLowerCase() === 'reading').length;
+    const summaryRows: Tab1ReadingRowSummary[] = buildReadingMatrixRowsFromSource({
+      rowLabels,
+      spotCount,
+      jsonMap,
+      readings: Array.isArray(test?.readings) ? test.readings : [],
+      targetParamName: target?.parameterName || '',
+      cfgTargetParamName: cfg.targetParamName || cfg.targetParameter || '',
+      readingSectionCount: readingSecCount
     });
+    const allNums = summaryRows.flatMap(r => r.readings.filter((x): x is number => x !== null));
 
     const overallAvg = allNums.length > 0
       ? Math.round((allNums.reduce((a, b) => a + b, 0) / allNums.length) * 100) / 100
       : null;
 
-    const rawDec = Number(target?.decimalPrecision ?? cfg.decimals ?? 2);
-    const decimals = rawDec > 0 && rawDec <= 4 ? rawDec : 2;
+    const decimals = resolveReadingMatrixDecimals({
+      tableCols,
+      spotCols,
+      cfgDecimals: cfg.decimals ?? null,
+      paramDecimals: target?.decimalPrecision ?? null
+    });
 
     const result: Tab1ReadingMatrixSummary = {
       sectionTitle: String(readingSec.title || 'Readings'),
@@ -3546,11 +3523,11 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const activeKeySet = activeKeys ? new Set(activeKeys) : null;
     const controlsToValidate = activeKeySet
       ? testParams.controls.filter((ctrl) => {
-          const pId = ctrl.get('parameterID')?.value;
-          const pName = String(ctrl.get('parameterName')?.value || '').trim().toLowerCase();
-          const k = pId != null && Number(pId) !== 0 ? `id:${pId}` : `name:${pName}`;
-          return activeKeySet.has(k);
-        })
+        const pId = ctrl.get('parameterID')?.value;
+        const pName = String(ctrl.get('parameterName')?.value || '').trim().toLowerCase();
+        const k = pId != null && Number(pId) !== 0 ? `id:${pId}` : `name:${pName}`;
+        return activeKeySet.has(k);
+      })
       : testParams.controls;
 
     const readingProgress = rendererForCheck ? rendererForCheck.readingProgress() : { entered: 0, expected: 0 };

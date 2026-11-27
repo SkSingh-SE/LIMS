@@ -15,6 +15,35 @@ export interface VerdictColumnConfig {
   showDecisionDetail: boolean;
 }
 
+export interface Tab1ReadingRowSummary {
+  label: string;
+  readings: (number | null)[];
+  average: number | null;
+}
+
+export interface Tab1ReadingMatrixSummary {
+  sectionTitle: string;
+  groupHeaderTitle: string;
+  parameterName: string;
+  parameterID: number | null;
+  unit: string;
+  spotCount: number;
+  rows: Tab1ReadingRowSummary[];
+  overallAverage: number | null;
+  decimals: number;
+}
+
+export interface ReadingMatrixEvalRow {
+  index: number;
+  label: string;
+  readingsDisplay: string[];
+  averageDisplay: string;
+  averageNum: number | null;
+  verdict: 'PASS' | 'FAIL' | 'BORDERLINE' | 'INFO' | 'PENDING';
+  verdictLabel: string;
+  guardBandDetail: string;
+}
+
 export interface SpecimenCellVerdict {
   label: string;
   displayValue: string;
@@ -67,10 +96,29 @@ export class TestVerdictPanelComponent implements OnChanges {
   @Input() decisionRuleText: string = '';
   @Input() useGuardBand: boolean | null = null;
   @Input() layoutColumnConfig: VerdictColumnConfig | null = null;
+  @Input() tab1ReadingMatrix: Tab1ReadingMatrixSummary | null = null;
+  @Input() layoutRuleConformityEnabled: boolean = true;
 
   /** Runtime per-column overrides via the Conformity Assessment Adjust menu. */
   showColumnMenu = false;
   private colOverrides: Record<string, boolean> = {};
+
+  /** True only when Inward requests Statement of Conformity AND at least 1 active Tab 1 row has a Grade limit AND Studio rule allows it. */
+  requiresVerdict: boolean = true;
+  /** True when Tab 1 is a Multi-Reading Matrix (e.g. Brinell Hardness A1-B2) so Tab 2 mirrors the exact reading rows + Overall Average. */
+  isReadingMatrixMode: boolean = false;
+  readingEvalRows: ReadingMatrixEvalRow[] = [];
+  readingSpotHeaders: string[] = [];
+  readingTargetSpecMin: number | null = null;
+  readingTargetSpecMax: number | null = null;
+  readingTargetCriteria: string = '';
+  readingTargetScopeStatus: 'WithinScope' | 'OutsideScope' | 'NotAccredited' = 'NotAccredited';
+  readingTargetUncertainty: number = 0;
+  readingTargetCoverageFactor: number = 2;
+  readingOverallDisplay: string = '—';
+  readingOverallVerdict: 'PASS' | 'FAIL' | 'BORDERLINE' | 'INFO' | 'PENDING' = 'PENDING';
+  readingOverallVerdictLabel: string = 'Pending';
+  readingOverallGuardDetail: string = '';
 
   get colParamLabel(): string {
     return this.layoutColumnConfig?.paramLabel || 'Parameter Name';
@@ -88,7 +136,11 @@ export class TestVerdictPanelComponent implements OnChanges {
     return this.layoutColumnConfig?.avgLabel || 'Average';
   }
 
-  isVerdictColShown(key: 'unit' | 'avg' | 'requirement' | 'uncertainty' | 'decisionDetail'): boolean {
+  get hasConfiguredNablScope(): boolean {
+    return this.inScopeCount > 0 || this.outOfScopeCount > 0;
+  }
+
+  isVerdictColShown(key: 'unit' | 'avg' | 'requirement' | 'uncertainty' | 'decisionDetail' | 'scope'): boolean {
     if (this.colOverrides[key] !== undefined) return this.colOverrides[key];
     const cfg = this.layoutColumnConfig;
     switch (key) {
@@ -97,10 +149,11 @@ export class TestVerdictPanelComponent implements OnChanges {
       case 'requirement': return cfg ? cfg.showRequirement : true;
       case 'uncertainty': return cfg ? cfg.showUncertainty : false;
       case 'decisionDetail': return cfg ? cfg.showDecisionDetail : false;
+      case 'scope': return this.hasConfiguredNablScope;
     }
   }
 
-  toggleVerdictCol(key: 'unit' | 'avg' | 'requirement' | 'uncertainty' | 'decisionDetail'): void {
+  toggleVerdictCol(key: 'unit' | 'avg' | 'requirement' | 'uncertainty' | 'decisionDetail' | 'scope'): void {
     this.colOverrides = { ...this.colOverrides, [key]: !this.isVerdictColShown(key) };
   }
 
@@ -161,8 +214,260 @@ export class TestVerdictPanelComponent implements OnChanges {
     return norm ? `name:${norm}` : `idx:${fallbackIdx}`;
   }
 
+  private isInwardConformityApplicable(): boolean {
+    const conformity = String(this.inward?.statementOfConformity ?? '').trim().toLowerCase();
+    return conformity === 'applicable';
+  }
+
+  private isTextCapableParam(pName: string, pType: string, inputType: string): boolean {
+    if (inputType === 'Text' || inputType === 'Qualitative' || inputType === 'Boolean' || pType === 'Qualitative') {
+      return true;
+    }
+    const lower = (pName || '').trim().toLowerCase();
+    return lower.includes('specimen type')
+      || lower.includes('type of specimen')
+      || lower.includes('specimen size')
+      || lower.includes('size of specimen')
+      || lower.includes('location of fracture');
+  }
+
+  private evaluateSingleNumericAgainstLimit(
+    val: number,
+    specMin: number | null,
+    specMax: number | null,
+    criteria: string,
+    withMU: boolean,
+    expandedU: number,
+    kFactor: number,
+    labelPrefix: string
+  ): { verdict: 'PASS' | 'FAIL' | 'BORDERLINE' | 'INFO'; verdictLabel: string; detail: string } {
+    if (specMin === null && specMax === null && !criteria) {
+      return { verdict: 'INFO', verdictLabel: 'Reported', detail: 'For information only (no specification limit)' };
+    }
+    const failsMin = specMin !== null && val < specMin;
+    const failsMax = specMax !== null && val > specMax;
+    if (failsMin || failsMax) {
+      let detail = `${labelPrefix} out of range`;
+      if (failsMin && failsMax) detail = `${labelPrefix} out of range (${specMin} – ${specMax})`;
+      else if (failsMin) detail = `${labelPrefix} below min (${val} < ${specMin})`;
+      else detail = `${labelPrefix} exceeds max (${val} > ${specMax})`;
+      return { verdict: 'FAIL', verdictLabel: 'Non-Conforming', detail };
+    }
+    const isNearMin = withMU && expandedU > 0 && specMin !== null && Math.abs(val - specMin) <= expandedU;
+    const isNearMax = withMU && expandedU > 0 && specMax !== null && Math.abs(val - specMax) <= expandedU;
+    if (isNearMin || isNearMax) {
+      return {
+        verdict: 'BORDERLINE',
+        verdictLabel: 'Guard-Band (Borderline)',
+        detail: `${labelPrefix} within ±${expandedU} (k=${kFactor})`
+      };
+    }
+    return {
+      verdict: 'PASS',
+      verdictLabel: 'Conforms',
+      detail: withMU && expandedU > 0
+        ? `Conforms with 95% confidence interval (U = ±${expandedU}, k=${kFactor})`
+        : 'Conforms to specified tolerance limits'
+    };
+  }
+
+  private evaluateReadingMatrixMode(matrix: Tab1ReadingMatrixSummary): void {
+    this.isReadingMatrixMode = true;
+    this.evaluationRows = [];
+    this.displaySpecimenLabels = [];
+    this.multiSpecimen = false;
+
+    const withMU = this.resolveUseGuardBand();
+    const spots = Math.max(1, Number(matrix.spotCount) || 3);
+    this.readingSpotHeaders = Array.from({ length: spots }, (_, idx) => `Reading ${idx + 1}`);
+
+    // Find matching Grade Requirement control in parametersFormArray (by parameterID or parameterName)
+    let targetCtrl: any = null;
+    if (this.parametersFormArray && this.parametersFormArray.length > 0) {
+      if (matrix.parameterID != null && Number(matrix.parameterID) > 0) {
+        targetCtrl = this.parametersFormArray.controls.find(
+          c => Number(c.get('parameterID')?.value) === Number(matrix.parameterID)
+        ) || null;
+      }
+      if (!targetCtrl && matrix.parameterName) {
+        const want = matrix.parameterName.trim().toLowerCase();
+        targetCtrl = this.parametersFormArray.controls.find(
+          c => String(c.get('parameterName')?.value || '').trim().toLowerCase() === want
+        ) || null;
+      }
+    }
+
+    const minRaw = targetCtrl?.get('specMinValue')?.value ?? targetCtrl?.get('minValue')?.value;
+    const maxRaw = targetCtrl?.get('specMaxValue')?.value ?? targetCtrl?.get('maxValue')?.value;
+    const criteria = String(targetCtrl?.get('acceptanceCriteria')?.value || '').trim();
+    const specMin = minRaw !== null && minRaw !== undefined && minRaw !== '' ? Number(minRaw) : null;
+    const specMax = maxRaw !== null && maxRaw !== undefined && maxRaw !== '' ? Number(maxRaw) : null;
+    this.readingTargetSpecMin = specMin;
+    this.readingTargetSpecMax = specMax;
+    this.readingTargetCriteria = criteria;
+
+    const pId = matrix.parameterID ?? targetCtrl?.get('parameterID')?.value ?? null;
+    const pName = (matrix.parameterName || targetCtrl?.get('parameterName')?.value || matrix.sectionTitle || 'Reading').trim();
+
+    // Uncertainty & NABL Scope lookup for the single primary reading parameter
+    const uncItem = this.uncertaintyData?.find((u: any) =>
+      (u.parameterId && pId && Number(u.parameterId) === Number(pId)) ||
+      (u.parameterID && pId && Number(u.parameterID) === Number(pId)) ||
+      (u.parameterName && u.parameterName.trim().toLowerCase() === pName.toLowerCase())
+    );
+    const expandedU = uncItem?.expandedUncertainty != null ? Number(uncItem.expandedUncertainty) : 0;
+    const kFactor = uncItem?.coverageFactor != null ? Number(uncItem.coverageFactor) : 2;
+    this.readingTargetUncertainty = expandedU;
+    this.readingTargetCoverageFactor = kFactor;
+
+    const scopeMatches = (this.nablScopeData || []).filter((s: any) =>
+      (s.parameterId && pId && Number(s.parameterId) === Number(pId)) ||
+      (s.parameterID && pId && Number(s.parameterID) === Number(pId)) ||
+      (s.parameterName && s.parameterName.trim().toLowerCase() === pName.toLowerCase())
+    );
+    const scopeItem = scopeMatches.find((s: any) => s.scopeStatus === 'OutsideScope')
+      || scopeMatches.find((s: any) => s.scopeStatus === 'WithinScope')
+      || scopeMatches[0];
+    this.readingTargetScopeStatus = scopeItem?.scopeStatus === 'WithinScope'
+      ? 'WithinScope'
+      : (scopeItem?.scopeStatus === 'OutsideScope' ? 'OutsideScope' : 'NotAccredited');
+
+    const hasGradeLimit = specMin !== null || specMax !== null || !!criteria;
+    this.requiresVerdict = this.isInwardConformityApplicable() && hasGradeLimit && this.layoutRuleConformityEnabled !== false;
+
+    const dec = Number.isFinite(matrix.decimals) ? matrix.decimals : 2;
+    const fmt = (n: number | null | undefined) => (n !== null && n !== undefined && !isNaN(Number(n))) ? Number(n).toFixed(dec) : '—';
+
+    let pass = 0;
+    let fail = 0;
+    let borderline = 0;
+    let info = 0;
+    let pending = 0;
+
+    this.readingEvalRows = (matrix.rows || []).map((row, idx) => {
+      const readingsDisplay = Array.from({ length: spots }, (_, sIdx) => fmt(row.readings?.[sIdx] ?? null));
+      const avgNum = row.average !== null && row.average !== undefined && !isNaN(Number(row.average)) ? Number(row.average) : null;
+      const avgDisplay = avgNum !== null ? avgNum.toFixed(dec) : '—';
+
+      let v: 'PASS' | 'FAIL' | 'BORDERLINE' | 'INFO' | 'PENDING' = 'PENDING';
+      let vLabel = 'Pending';
+      let detail = 'No readings recorded';
+
+      if (avgNum === null) {
+        pending++;
+      } else if (!this.requiresVerdict) {
+        v = 'INFO';
+        vLabel = 'Reported';
+        detail = 'Recorded for reporting only (conformity not required)';
+        info++;
+      } else {
+        const res = this.evaluateSingleNumericAgainstLimit(avgNum, specMin, specMax, criteria, withMU, expandedU, kFactor, row.label);
+        v = res.verdict;
+        vLabel = res.verdictLabel;
+        detail = res.detail;
+        if (v === 'FAIL') fail++;
+        else if (v === 'BORDERLINE') borderline++;
+        else if (v === 'PASS') pass++;
+        else info++;
+      }
+
+      return {
+        index: idx + 1,
+        label: row.label,
+        readingsDisplay,
+        averageDisplay: avgDisplay,
+        averageNum: avgNum,
+        verdict: v,
+        verdictLabel: vLabel,
+        guardBandDetail: detail
+      };
+    });
+
+    // Overall average evaluation
+    const overallNum = matrix.overallAverage !== null && matrix.overallAverage !== undefined && !isNaN(Number(matrix.overallAverage))
+      ? Number(matrix.overallAverage)
+      : null;
+    this.readingOverallDisplay = overallNum !== null ? overallNum.toFixed(dec) : '—';
+
+    if (overallNum === null) {
+      this.readingOverallVerdict = 'PENDING';
+      this.readingOverallVerdictLabel = 'Pending';
+      this.readingOverallGuardDetail = 'Awaiting readings';
+    } else if (!this.requiresVerdict) {
+      this.readingOverallVerdict = 'INFO';
+      this.readingOverallVerdictLabel = 'Reported';
+      this.readingOverallGuardDetail = 'Recorded for reporting only';
+    } else {
+      const ovRes = this.evaluateSingleNumericAgainstLimit(overallNum, specMin, specMax, criteria, withMU, expandedU, kFactor, 'Overall Average');
+      // Worst-case across all locations + overall average
+      if (fail > 0 || ovRes.verdict === 'FAIL') {
+        this.readingOverallVerdict = 'FAIL';
+        this.readingOverallVerdictLabel = 'Non-Conforming';
+        this.readingOverallGuardDetail = fail > 0 ? `${fail} location(s) outside specification limit` : ovRes.detail;
+      } else if (borderline > 0 || ovRes.verdict === 'BORDERLINE') {
+        this.readingOverallVerdict = 'BORDERLINE';
+        this.readingOverallVerdictLabel = 'Guard-Band (Borderline)';
+        this.readingOverallGuardDetail = ovRes.detail;
+      } else if (pending > 0) {
+        this.readingOverallVerdict = 'PENDING';
+        this.readingOverallVerdictLabel = 'Partial';
+        this.readingOverallGuardDetail = `${pending} location(s) pending readings`;
+      } else {
+        this.readingOverallVerdict = ovRes.verdict;
+        this.readingOverallVerdictLabel = ovRes.verdictLabel;
+        this.readingOverallGuardDetail = ovRes.detail;
+      }
+    }
+
+    // Also mirror into a single evaluationRow so any external consumers see accurate counts
+    this.totalParameters = 1;
+    this.inScopeCount = this.readingTargetScopeStatus === 'WithinScope' ? 1 : 0;
+    this.outOfScopeCount = this.readingTargetScopeStatus === 'OutsideScope' ? 1 : 0;
+    this.nablScopeStatus = this.inScopeCount > 0 ? 'ACCREDITED' : (this.outOfScopeCount > 0 ? 'OUTSIDE_SCOPE' : 'NOT_CONFIGURED');
+
+    this.passedCount = this.readingOverallVerdict === 'PASS' ? 1 : 0;
+    this.failedCount = this.readingOverallVerdict === 'FAIL' ? 1 : 0;
+    this.borderlineCount = this.readingOverallVerdict === 'BORDERLINE' ? 1 : 0;
+    this.infoCount = this.readingOverallVerdict === 'INFO' ? 1 : 0;
+    this.pendingCount = this.readingOverallVerdict === 'PENDING' ? 1 : 0;
+
+    if (!this.requiresVerdict) {
+      this.overallVerdict = overallNum !== null ? 'PASS' : 'PENDING';
+      this.overallVerdictLabel = overallNum !== null
+        ? 'Results recorded for reporting only'
+        : 'Observation entry in progress';
+      this.overallVerdictSubtext = 'Statement of conformity is not applicable for this test (no specification limits or customer opted out on Sample Inward).';
+    } else if (this.readingOverallVerdict === 'FAIL') {
+      this.overallVerdict = 'FAIL';
+      this.overallVerdictLabel = 'Does not conform to the specification';
+      this.overallVerdictSubtext = `${pName} (${this.readingEvalRows.length} locations × ${spots} readings, Overall Avg: ${this.readingOverallDisplay}) does not conform to ${this.getSpecificationTitle()}.`;
+    } else if (this.readingOverallVerdict === 'BORDERLINE') {
+      this.overallVerdict = 'BORDERLINE';
+      this.overallVerdictLabel = 'Inconclusive (borderline)';
+      this.overallVerdictSubtext = `${pName} falls within the measurement uncertainty guard band.`;
+    } else if (this.readingOverallVerdict === 'PASS') {
+      this.overallVerdict = 'PASS';
+      this.overallVerdictLabel = 'Conforms to the specification';
+      this.overallVerdictSubtext = `${pName} (${this.readingEvalRows.length} locations × ${spots} readings, Overall Avg: ${this.readingOverallDisplay}) conforms to ${this.getSpecificationTitle()}.`;
+    } else {
+      this.overallVerdict = 'PENDING';
+      this.overallVerdictLabel = overallNum !== null ? 'In progress (some locations pending)' : 'Results pending';
+      this.overallVerdictSubtext = overallNum !== null
+        ? `${this.readingEvalRows.length - pending} of ${this.readingEvalRows.length} locations recorded.`
+        : 'No readings have been entered yet.';
+    }
+  }
+
   evaluateResults(): void {
     this.decisionRuleName = this.resolveDecisionRuleName();
+
+    if (this.tab1ReadingMatrix && Array.isArray(this.tab1ReadingMatrix.rows) && this.tab1ReadingMatrix.rows.length > 0) {
+      this.evaluateReadingMatrixMode(this.tab1ReadingMatrix);
+      return;
+    }
+
+    this.isReadingMatrixMode = false;
+    this.readingEvalRows = [];
 
     if (!this.parametersFormArray || this.parametersFormArray.length === 0) {
       this.evaluationRows = [];
@@ -288,6 +593,8 @@ export class TestVerdictPanelComponent implements OnChanges {
         outScope++;
       }
 
+      const isTextLike = this.isTextCapableParam(pName, pType, inputType);
+
       // Evaluate each specimen cell
       const specimenCells: SpecimenCellVerdict[] = [];
       const numericVals: number[] = [];
@@ -299,9 +606,12 @@ export class TestVerdictPanelComponent implements OnChanges {
         const sLabel = labels[s];
         const rawVal = sCtrl?.get('value')?.value;
         const rawRemarks = sCtrl?.get('remarks')?.value;
+        const trimmedRemarks = String(rawRemarks ?? '').trim();
+        const isJsonBlob = trimmedRemarks.startsWith('{') && trimmedRemarks.endsWith('}');
+        const hasUsableRemarks = trimmedRemarks !== '' && !isJsonBlob;
         const effectiveRaw = (rawVal !== null && rawVal !== undefined && rawVal !== '')
           ? rawVal
-          : (inputType === 'Text' && String(rawRemarks ?? '').trim() !== '' ? String(rawRemarks).trim() : null);
+          : ((isTextLike || (hasUsableRemarks && specMin === null && specMax === null)) && hasUsableRemarks ? trimmedRemarks : null);
 
         let cellV: 'PASS' | 'FAIL' | 'BORDERLINE' | 'INFO' | 'PENDING' = 'PENDING';
         let cellNum: number | null = null;
@@ -310,7 +620,7 @@ export class TestVerdictPanelComponent implements OnChanges {
         if (effectiveRaw === null || effectiveRaw === undefined || effectiveRaw === '') {
           cellV = 'PENDING';
           displayValue = '';
-        } else if (pType === 'Qualitative' || inputType === 'Text' || inputType === 'Boolean') {
+        } else if (isTextLike || (rawVal == null && hasUsableRemarks)) {
           displayValue = String(effectiveRaw).trim();
           const strVal = displayValue.toLowerCase();
           if (strVal === 'pass' || strVal === 'satisfactory' || strVal === 'compliant' || strVal === 'conforms' || strVal === 'ok') {
@@ -458,6 +768,9 @@ export class TestVerdictPanelComponent implements OnChanges {
     this.evaluationRows = rows;
     const parameterCount = rows.length;
     const scopeText = `${parameterCount} parameter(s)${spmCount > 1 ? ` across ${spmCount} specimens` : ''}`;
+    const hasAnyGradeLimit = rows.some(r => r.specifiedMin !== null || r.specifiedMax !== null || !!r.acceptanceCriteria);
+    this.requiresVerdict = this.isInwardConformityApplicable() && hasAnyGradeLimit && this.layoutRuleConformityEnabled !== false;
+
     this.totalParameters = parameterCount;
     this.passedCount = pass;
     this.failedCount = fail;
@@ -468,7 +781,13 @@ export class TestVerdictPanelComponent implements OnChanges {
     this.outOfScopeCount = outScope;
 
     // Determine Overall Verdict
-    if (fail > 0) {
+    if (!this.requiresVerdict) {
+      this.overallVerdict = (enteredParams > 0 && pending === 0) ? 'PASS' : 'PENDING';
+      this.overallVerdictLabel = (enteredParams > 0 && pending === 0)
+        ? 'Results recorded for reporting only'
+        : (enteredParams > 0 ? 'Observation entry in progress' : 'Results pending');
+      this.overallVerdictSubtext = 'Statement of conformity is not applicable for this test (no specification limits or customer opted out on Sample Inward).';
+    } else if (fail > 0) {
       this.overallVerdict = 'FAIL';
       this.overallVerdictLabel = 'Does not conform to the specification';
       this.overallVerdictSubtext = `${fail} parameter(s) are outside the specification limits. The material does not comply.`;

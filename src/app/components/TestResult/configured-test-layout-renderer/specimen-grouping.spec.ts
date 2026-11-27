@@ -2,6 +2,9 @@ import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import {
   addSpecimenRows,
   insertPositionForSpecimen,
+  layoutDeclaredSpecimenCount,
+  layoutHasSpecimenSection,
+  layoutKeepsSpecimenRows,
   legacyBlockSize,
   matchingRowInSpecimen,
   removeParameterRows,
@@ -270,5 +273,28 @@ describe('removeParameterRows (one parameter out of every specimen)', () => {
       expect(specimenRemovalMessage('S2', { name: 'Width', reason: 'value' })).toContain('Specimen S2 has results');
       expect(specimenRemovalMessage('S2', { name: 'Width', reason: 'saved' })).toContain('Save Draft');
     });
+  });
+});
+
+describe('multi-specimen parameter table layout detection', () => {
+  const layout = {
+    sections: [
+      { type: 'parameter', config: { enableMultiSpecimen: true, specimenCount: 2, specimenNames: 'S.NO.1,S.NO.2' } },
+      { type: 'rule', config: {} }
+    ]
+  };
+
+  it('does NOT report a dedicated specimen section (renderer must keep drawing the parameter table)', () => {
+    expect(layoutHasSpecimenSection(layout)).toBeFalse();
+  });
+
+  it('keeps extra specimen rows for a multi-specimen parameter table', () => {
+    expect(layoutKeepsSpecimenRows(layout)).toBeTrue();
+    expect(layoutKeepsSpecimenRows({ sections: [{ type: 'parameter', config: {} }] })).toBeFalse();
+    expect(layoutKeepsSpecimenRows({ sections: [{ type: 'specimen', config: {} }] })).toBeTrue();
+  });
+
+  it('declares the specimen count from specimenNames / specimenCount', () => {
+    expect(layoutDeclaredSpecimenCount(layout)).toBe(2);
   });
 });

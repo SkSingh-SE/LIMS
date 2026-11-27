@@ -3790,6 +3790,29 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
     sec.config.hasDemoData = true;
   }
 
+  isReadingPreviewCardMode(s: ExecutionSection): boolean {
+    return s.config.layout === 'Compact cards' || s.config.layout === 'Two-column cards';
+  }
+
+  getPreviewReadingRowAverage(s: ExecutionSection, rIdx: number): string {
+    const cols = this.getVisibleTableColumns(s).slice(1);
+    const vals: number[] = [];
+    cols.forEach((c, cIdx) => {
+      const role = this.getEffectiveColumnRole(c);
+      if (c.key === 'avg' || role === 'agg_average' || role === 'agg_min' || role === 'agg_max' || c.key === 'requirement' || role === 'spec_requirement' || c.key === 'unit' || role === 'unit' || c.bindingMode === 'static') {
+        return;
+      }
+      const raw = this.previewEntries['read_' + s.id + '_' + rIdx + '_' + cIdx];
+      if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+        const num = Number(raw);
+        if (!isNaN(num)) vals.push(num);
+      }
+    });
+    if (!vals.length) return '—';
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    return (Math.round(avg * 100) / 100).toFixed(2);
+  }
+
   populatePreviewEntriesWithDemoData(): void {
     this.previewEntries = {};
     this.previewStatus = {};
@@ -3829,18 +3852,22 @@ export class TestLayoutArchetypeDesignerComponent implements OnInit {
         }
 
         case 'reading': {
-          if (s.config.layout !== 'Table') {
+          if (this.isReadingPreviewCardMode(s)) {
             const counts = this.getReadingCount(s);
             counts.forEach(i => {
               this.previewEntries['read_' + s.id + '_' + i] = String(142 + (i % 2 === 0 ? 3 : -1));
             });
           } else {
-            const rows = this.ensureTableRows(s);
-            const cols = this.ensureTableColumns(s);
+            const rows = this.getVisibleTableRows(s);
+            const cols = this.getVisibleTableColumns(s);
             rows.forEach((r, rIdx) => {
               cols.slice(1).forEach((c, cIdx) => {
+                const role = this.getEffectiveColumnRole(c);
+                if (c.key === 'avg' || role === 'agg_average' || role === 'agg_min' || role === 'agg_max' || c.key === 'requirement' || role === 'spec_requirement' || c.key === 'unit' || role === 'unit') {
+                  return;
+                }
                 const key = 'read_' + s.id + '_' + rIdx + '_' + cIdx;
-                this.previewEntries[key] = r.values?.[c.key] || String(142 + rIdx * 3);
+                this.previewEntries[key] = r.values?.[c.key] || String(141 + rIdx * 3 + cIdx * 2);
               });
             });
           }

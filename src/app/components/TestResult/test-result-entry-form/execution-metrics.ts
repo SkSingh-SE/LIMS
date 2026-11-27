@@ -24,9 +24,19 @@ export interface ExecutionMetricsRow {
 const PASS_STATUSES = ['Pass', 'Compliant', 'Within Range'];
 const FAIL_STATUSES = ['Fail', 'Non-compliant', 'Under Range', 'Over Range'];
 
+function isTextCapableRow(row: ExecutionMetricsRow | null | undefined): boolean {
+  if (row?.inputType === 'Text' || row?.inputType === 'Qualitative') return true;
+  const lower = String(row?.parameterName ?? '').trim().toLowerCase();
+  return lower.includes('specimen type')
+    || lower.includes('type of specimen')
+    || lower.includes('specimen size')
+    || lower.includes('size of specimen')
+    || lower.includes('location of fracture');
+}
+
 function isRowEntered(row: ExecutionMetricsRow | null | undefined): boolean {
   const val = row?.value;
-  const hasText = row?.inputType === 'Text' && String(row?.remarks ?? '').trim() !== '';
+  const hasText = isTextCapableRow(row) && String(row?.remarks ?? '').trim() !== '';
   return (val !== null && val !== undefined && val !== '') || hasText;
 }
 

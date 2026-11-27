@@ -32,7 +32,7 @@ import { environment } from '../../../../environments/environment';
 import { TestStatusBadgeComponent } from '../test-status-badge/test-status-badge.component';
 import { ConfiguredTestLayoutRendererComponent } from '../configured-test-layout-renderer/configured-test-layout-renderer.component';
 import { layoutRequiredGaps, layoutPhotoGaps } from '../configured-test-layout-renderer/layout-required-gaps';
-import { TestVerdictPanelComponent, VerdictColumnConfig } from '../test-verdict-panel/test-verdict-panel.component';
+import { Tab1ReadingMatrixSummary, Tab1ReadingRowSummary, TestVerdictPanelComponent, VerdictColumnConfig } from '../test-verdict-panel/test-verdict-panel.component';
 import { FormsModule } from '@angular/forms';
 import { formatFormulaDisplay, convertNamesToFormulaTokens } from '../../../utility/helper/formula.helper';
 import { ExecutionMetrics, countExecutionMetrics, sameExecutionMetricsList } from './execution-metrics';
@@ -45,6 +45,7 @@ import {
   filterEmptyExtraSpecimenRows,
   layoutDeclaredSpecimenCount,
   layoutHasSpecimenSection,
+  layoutKeepsSpecimenRows,
   removeSpecimenRows,
   resolveSpecimenCount,
   resolveSpecimenIndexes,
@@ -826,12 +827,187 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     return Math.max(1, Number(plan.tests?.[0]?.totalSpecimens || plan.totalSpecimens || plan.plannedQuantity || plan.quantity || 1));
   }
 
+  private getActiveLayoutSections(): any[] {
+    const raw: any[] = this.currentTestLayout?.sections || this.currentTestLayout?.parsedConfig?.sections || [];
+    return raw.filter((s: any) => s?.config?.enabled !== false);
+  }
+
   private getPrimaryLayoutSection(): any {
-    const sections: any[] = this.currentTestLayout?.sections || this.currentTestLayout?.parsedConfig?.sections || [];
+    const sections = this.getActiveLayoutSections();
     return sections.find((s: any) => s?.type === 'specimen' || s?.type === 'spm')
       || sections.find((s: any) => s?.type === 'parameter' || s?.type === 'param')
       || null;
   }
+
+  private resolveReadingTargetRow(sec: any, baseRows: any[], test: any): any {
+    if (!baseRows || !baseRows.length) return null;
+    const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const explicit = norm(sec?.config?.targetParamName || sec?.config?.targetParameter || '');
+    if (explicit) {
+      const exact = baseRows.find(r => norm(r?.parameterName) === explicit);
+      if (exact) return exact;
+    }
+    const isAuxSlot = (name: string) => {
+      const lower = name.toLowerCase();
+      return lower.includes('scale') || lower.includes('test point') || /\breading\s*\d+\b/i.test(lower);
+    };
+    const contextText = [
+      sec?.title,
+      test?.name,
+      test?.laboratoryTest,
+      this.currentTestLayout?.layoutName,
+      this.currentTestLayout?.leafNode
+    ].filter(Boolean).join(' ').toLowerCase();
+    const domainKeywords = ['brinell', 'vickers', 'rockwell', 'knoop', 'shore', 'hardness', 'charpy', 'izod', 'impact', 'bend', 'tensile'];
+    for (const kw of domainKeywords) {
+      if (!contextText.includes(kw)) continue;
+      const match = baseRows.find(r => {
+        const n = String(r?.parameterName || '').trim();
+        return !!n && !isAuxSlot(n) && n.toLowerCase().includes(kw);
+      });
+      if (match) return match;
+    }
+    return baseRows.find(r => {
+      const n = String(r?.parameterName || '').trim();
+      return !!n && !isAuxSlot(n);
+    }) || baseRows[0];
+  }
+
+  /** Returns false when the active layout explicitly disables Statement of Conformity on its Decision Rule section. */
+  getLayoutRuleConformityEnabled(): boolean {
+    const sections = this.getActiveLayoutSections();
+    const ruleSec = sections.find((s: any) => String(s?.type || '').toLowerCase() === 'rule');
+    return ruleSec?.config?.conformity !== false;
+  }
+
+  /**
+   * Builds a Tab 1 -> Tab 2 Multi-Reading Matrix snapshot (e.g. Brinell Hardness A1-B2 + 3 readings + averages)
+   * directly from Tab 1's active reading section and live/saved readings so Tab 2 mirrors Tab 1 cleanly even when unmounted.
+   */
+  getActiveReadingMatrixSummary(planIndex?: number, testIndex?: number): Tab1ReadingMatrixSummary | null {
+    const p = planIndex ?? this.activePlanIndex ?? 0;
+    const t = testIndex ?? 0;
+    if (p !== this.activePlanIndex) return null;
+
+    const sections = this.getActiveLayoutSections();
+    const hasParamOrSpm = sections.some((s: any) => ['parameter', 'param', 'specimen', 'spm'].includes(String(s?.type || '').toLowerCase()));
+    const readingSec = sections.find((s: any) => String(s?.type || '').toLowerCase() === 'reading');
+    if (!readingSec || hasParamOrSpm) return null;
+
+    const test = this.plans?.[p]?.tests?.[t];
+    const paramsFA = this.getParameters(p, t);
+    const rawRows: any[] = paramsFA?.getRawValue?.() || test?.parameters || [];
+    const baseRows = rawRows.filter(r => (Number(r?.specimenIndex) || 0) === 0);
+    const target = this.resolveReadingTargetRow(readingSec, baseRows, test);
+
+    const cfg = readingSec.config || {};
+    const tableCols: any[] = Array.isArray(cfg.tableColumns) ? cfg.tableColumns.filter((c: any) => c?.visible !== false) : [];
+    const spotCols = tableCols.filter((c: any) =>
+      String(c?.key || '').startsWith('spot_') ||
+      String(c?.key || '').startsWith('r') && /^r\d+$/i.test(String(c?.key || '')) ||
+      String(c?.role || '').toLowerCase() === 'observation_value'
+    );
+    const spotCount = Math.max(1, spotCols.length || Number(cfg.spotCount) || Number(cfg.count) || 3);
+
+    const isSummaryRow = (r: any) => {
+      const k = String(r?.key || '').toLowerCase();
+      const l = String(r?.label || '').toLowerCase();
+      return r?.isSummary || k.includes('avg') || k.includes('summary') || l.startsWith('average') || l.startsWith('overall');
+    };
+    const configuredRows: any[] = Array.isArray(cfg.tableRows)
+      ? cfg.tableRows.filter((r: any) => r?.visible !== false && !isSummaryRow(r))
+      : [];
+    const rowLabels: string[] = configuredRows.length > 0
+      ? configuredRows.map((r: any, idx: number) => String(r?.label || `S${idx + 1}`).trim())
+      : (Array.isArray(cfg.specimenRows) && cfg.specimenRows.length > 0
+          ? cfg.specimenRows.map((x: any, idx: number) => String(x || `S${idx + 1}`).trim())
+          : ['S1']);
+
+    // Extract saved readings map: prefer JSON blob in remarks (contains exact per-row arrays), fallback to test.readings
+    let jsonMap: Record<string, any[]> | null = null;
+    const candidateParams = target ? [target, ...baseRows.filter(b => b !== target)] : baseRows;
+    for (const bp of candidateParams) {
+      const rem = String(bp?.remarks ?? '').trim();
+      if (rem.startsWith('{') && rem.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(rem);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            jsonMap = parsed;
+            break;
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
+    const flatReadings: any[] = Array.isArray(test?.readings) ? test.readings.filter((r: any) => !r?.isVoided) : [];
+    const cleanNum = (v: any): number | null => {
+      if (v === null || v === undefined || String(v).trim() === '') return null;
+      const n = Number(v);
+      return isNaN(n) ? null : Math.round(n * 1e6) / 1e6;
+    };
+
+    const summaryRows: Tab1ReadingRowSummary[] = [];
+    const allNums: number[] = [];
+
+    rowLabels.forEach((label, rowIdx) => {
+      let vals: (number | null)[] = [];
+      if (jsonMap) {
+        const byLabel = jsonMap[label] || jsonMap[`S${rowIdx + 1}`] || jsonMap[String(rowIdx + 1)];
+        if (Array.isArray(byLabel)) {
+          vals = Array.from({ length: spotCount }, (_, sIdx) => cleanNum(byLabel[sIdx]));
+        }
+      }
+      if (!vals.length && flatReadings.length > 0) {
+        const byRow = flatReadings.filter((r: any) =>
+          String(r?.specimenLabel || r?.location || '').trim().toLowerCase() === label.toLowerCase() ||
+          String(r?.specimenLabel || '').trim().toLowerCase() === `s${rowIdx + 1}`
+        );
+        if (byRow.length > 0) {
+          vals = Array.from({ length: spotCount }, (_, sIdx) => cleanNum(byRow[sIdx]?.readingValue ?? byRow[sIdx]?.value));
+        } else {
+          const slice = flatReadings.slice(rowIdx * spotCount, (rowIdx + 1) * spotCount);
+          vals = Array.from({ length: spotCount }, (_, sIdx) => cleanNum(slice[sIdx]?.readingValue ?? slice[sIdx]?.value));
+        }
+      }
+      if (!vals.length) {
+        vals = Array.from({ length: spotCount }, () => null);
+      }
+
+      const valid = vals.filter((x): x is number => x !== null);
+      valid.forEach(x => allNums.push(x));
+      const avg = valid.length > 0 ? Math.round((valid.reduce((a, b) => a + b, 0) / valid.length) * 100) / 100 : null;
+      summaryRows.push({ label, readings: vals, average: avg });
+    });
+
+    const overallAvg = allNums.length > 0
+      ? Math.round((allNums.reduce((a, b) => a + b, 0) / allNums.length) * 100) / 100
+      : null;
+
+    const rawDec = Number(target?.decimalPrecision ?? cfg.decimals ?? 2);
+    const decimals = rawDec > 0 && rawDec <= 4 ? rawDec : 2;
+
+    const result: Tab1ReadingMatrixSummary = {
+      sectionTitle: String(readingSec.title || 'Readings'),
+      groupHeaderTitle: String(cfg.headerMerge?.title || readingSec.title || 'Readings'),
+      parameterName: String(target?.parameterName || cfg.targetParamName || readingSec.title || 'Hardness'),
+      parameterID: target?.parameterID != null && Number(target.parameterID) > 0 ? Number(target.parameterID) : null,
+      unit: String(target?.unit || cfg.targetUnit || cfg.unit || ''),
+      spotCount,
+      rows: summaryRows,
+      overallAverage: overallAvg,
+      decimals
+    };
+    const fp = JSON.stringify(result);
+    if (this._readingMatrixCacheKey === fp && this._readingMatrixCacheVal) {
+      return this._readingMatrixCacheVal;
+    }
+    this._readingMatrixCacheKey = fp;
+    this._readingMatrixCacheVal = result;
+    return result;
+  }
+
+  private _readingMatrixCacheKey = '';
+  private _readingMatrixCacheVal: Tab1ReadingMatrixSummary | null = null;
 
   private laboratoryTestService = inject(LaboratoryTestService);
   /** Headers where the user explicitly clicked "Sync Lab Test" to pull actual Lab Test Master parameters. */
@@ -849,7 +1025,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
 
   /**
    * Returns ordered active parameter keys (`id:<id>` or `name:<lower>`) when the active layout's
-   * primary section is in Template Configured mode, or `null` in Runtime Auto-Load / Synced mode.
+   * primary section is in Template Configured mode or is a Reading-only layout, or `null` in Runtime Auto-Load / Synced mode.
    * Works even when Tab 2 is open and `<app-configured-test-layout-renderer>` is unmounted.
    */
   getActiveLayoutParameterKeys(planIndex?: number, testIndex?: number): string[] | null {
@@ -864,20 +1040,32 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
       return this.layoutRendererComponent.getActiveLayoutParameterKeys();
     }
 
-    const sec = this.getPrimaryLayoutSection();
-    if (!sec || !this.isSectionTemplateConfigured(sec)) return null;
-
-    const tableRows: any[] = Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : [];
-    const layoutRows = tableRows.filter(r => r?.visible !== false && r?.rowSource !== 'custom_text' && r?.rowOrigin !== 'custom' && !r?.isStatic && r?.source !== 'static' && r?.bindingMode !== 'static');
-    if (!layoutRows.length) return null;
-
     const paramsFA = this.getParameters(p, t);
     const rawRows: any[] = paramsFA?.getRawValue?.() || this.plans?.[p]?.tests?.[t]?.parameters || [];
     const baseRows = rawRows.filter(r => (Number(r?.specimenIndex) || 0) === 0);
-    const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const keyOf = (r: any) => (r?.parameterID != null && Number(r.parameterID) !== 0)
       ? `id:${r.parameterID}`
       : `name:${String(r?.parameterName || '').trim().toLowerCase()}`;
+
+    const sec = this.getPrimaryLayoutSection();
+    if (!sec) {
+      // Reading-only layout when Tab 2 is open (renderer unmounted): scope strictly to the reading target parameter
+      const sections = this.getActiveLayoutSections();
+      const readingSec = sections.find((s: any) => String(s?.type || '').toLowerCase() === 'reading');
+      if (readingSec) {
+        const target = this.resolveReadingTargetRow(readingSec, baseRows, this.plans?.[p]?.tests?.[t]);
+        if (target) return [keyOf(target)];
+      }
+      return null;
+    }
+
+    if (!this.isSectionTemplateConfigured(sec)) return null;
+
+    const tableRows: any[] = Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : [];
+    const layoutRows = tableRows.filter(r => r?.visible !== false && !r?.isStatic && r?.source !== 'static' && r?.bindingMode !== 'static');
+    if (!layoutRows.length) return null;
+
+    const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
     const keys: string[] = [];
     const used = new Set<string>();
@@ -1677,7 +1865,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         );
 
         const plannedQuantity = Number(generalTest.plannedQuantity || generalTest.quantity || 1);
-        const hasSpmSec = layoutHasSpecimenSection(generalTest.layoutSnapshotJson);
+        const hasSpmSec = layoutKeepsSpecimenRows(generalTest.layoutSnapshotJson);
         const keepExtra = hasSpmSec || plannedQuantity > 1;
         const validParams = filterEmptyExtraSpecimenRows(generalTest.parameters || [], keepExtra, {
           readings: generalTest.readings,
@@ -1801,7 +1989,7 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
         );
 
         const chemPlannedQuantity = Number(chemicalTest.plannedQuantity || chemicalTest.quantity || 1);
-        const chemHasSpmSec = layoutHasSpecimenSection(chemicalTest.layoutSnapshotJson);
+        const chemHasSpmSec = layoutKeepsSpecimenRows(chemicalTest.layoutSnapshotJson);
         const chemKeepExtra = chemHasSpmSec || chemPlannedQuantity > 1;
         const chemValidParams = filterEmptyExtraSpecimenRows(chemicalTest.parameters || [], chemKeepExtra, {
           readings: chemicalTest.readings,
@@ -3369,8 +3557,18 @@ export class TestResultEntryFormComponent implements OnInit, OnChanges, DoCheck,
     const hasRecordedReadings = readingProgress.entered > 0 || (Array.isArray(test.readings) && test.readings.some((r: any) => r?.isVoided !== true));
 
     const missingValues = controlsToValidate.filter((ctrl) => {
-      // a Text parameter (e.g. Location of Fracture) keeps its result in Remarks
-      const raw = ctrl.get('inputType')?.value === 'Text' ? ctrl.get('remarks')?.value : ctrl.get('value')?.value;
+      // Text-capable parameters (InputType Text, Qualitative, or Specimen Type/Size/Location of Fracture) keep their result in Remarks
+      const pName = String(ctrl.get('parameterName')?.value || '').toLowerCase();
+      const isText = ctrl.get('inputType')?.value === 'Text'
+        || ctrl.get('parameterType')?.value === 'Qualitative'
+        || pName.includes('specimen type')
+        || pName.includes('type of specimen')
+        || pName.includes('specimen size')
+        || pName.includes('size of specimen')
+        || pName.includes('location of fracture');
+      const val = ctrl.get('value')?.value;
+      const rem = ctrl.get('remarks')?.value;
+      const raw = isText ? (rem ?? val) : val;
       return raw === null || raw === undefined || String(raw).trim() === '';
     });
 

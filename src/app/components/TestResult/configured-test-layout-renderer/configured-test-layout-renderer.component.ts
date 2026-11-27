@@ -782,11 +782,26 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     return { status: 'PASS', label: 'CONFORMING (PASS)', detail: `${judged} of ${withValue} result(s) judged, all within the specification limits${ruleNote}` };
   }
 
+  private lastBoundHeaderId: number | null = null;
+
   private initLayoutData(): void {
     if (!this.layoutConfig) return;
     if (this.printMode) {
       this.isViewMode = true;
       this.isLocked = true;
+    }
+
+    // When switching between tests in the same Sample (e.g. Tensile -> Brinell),
+    // reset per-test transient specimen/reading caches so values never leak across headers.
+    const incomingHeaderId = Number(this.test?.headerId ?? this.test?.id ?? 0) || null;
+    if (incomingHeaderId !== null && this.lastBoundHeaderId !== null && incomingHeaderId !== this.lastBoundHeaderId) {
+      this.specimens = [];
+      this.readingValues = {};
+      this.readingStats = {};
+      this.userTypedDerivedRows = new WeakSet();
+    }
+    if (incomingHeaderId !== null) {
+      this.lastBoundHeaderId = incomingHeaderId;
     }
 
     // Resolve sections: legacy / shorthand type names (spm, loc, chk, note ...) become the studio's canonical names
@@ -1126,7 +1141,15 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       if (ctrl) {
         const pName = ctrl.get('parameterName')?.value || `Parameter ${i + 1}`;
         const rawInputType = ctrl.get('inputType')?.value || 'Decimal';
-        const isTextRow = rawInputType === 'Text' || rawInputType === 'Qualitative' || String(pName).toLowerCase().includes('location of fracture');
+        const rawParamType = String(ctrl.get('parameterType')?.value || '');
+        const lowerName = String(pName).toLowerCase();
+        const isTextRow = rawInputType === 'Text' || rawInputType === 'Qualitative'
+          || rawParamType === 'Qualitative'
+          || lowerName.includes('location of fracture')
+          || lowerName.includes('specimen type')
+          || lowerName.includes('type of specimen')
+          || lowerName.includes('specimen size')
+          || lowerName.includes('size of specimen');
         list.push({
           index: i,
           parameterID: ctrl.get('parameterID')?.value ?? null,
@@ -2251,13 +2274,30 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     for (let i = 0; i < fa.length; i++) {
       if (this.normKey(fa.at(i).get('parameterName')?.value) === want) return fa.at(i);
     }
-    // Fallback when a Studio preset left a generic/stale targetParamName (e.g. "Rockwell Hardness" on a Brinell test):
-    // bind to the test's primary non-auxiliary reading parameter (preferring summary/hardness/impact over "Reading 1/2").
+    // Fallback when a Studio preset left a generic/stale targetParamName (e.g. "Rockwell Hardness" on a Brinell test)
+    // or blank targetParamName: first prefer a parameter matching keywords from the section/test/layout title
+    // (e.g. "Brinell" -> "Brinell Hardness Number"), then fall back to the first non-auxiliary reading parameter.
     if (this.hasConfiguredReadingStructure(s) || this.isReadingGrid(s)) {
       const isAuxSlot = (name: string) => {
         const lower = name.toLowerCase();
         return lower.includes('scale') || lower.includes('test point') || /\breading\s*\d+\b/i.test(lower);
       };
+      const contextText = [
+        s?.title,
+        this.test?.name,
+        this.test?.laboratoryTest,
+        this.layoutConfig?.layoutName,
+        this.layoutConfig?.leafNode
+      ].filter(Boolean).join(' ').toLowerCase();
+      const domainKeywords = ['brinell', 'vickers', 'rockwell', 'knoop', 'shore', 'hardness', 'charpy', 'izod', 'impact', 'bend', 'tensile'];
+      const matchedKeywords = domainKeywords.filter(kw => contextText.includes(kw));
+      for (const kw of matchedKeywords) {
+        const domainMatch = fa.controls.find(c => {
+          const n = String(c.get('parameterName')?.value ?? '').trim();
+          return !!n && !isAuxSlot(n) && n.toLowerCase().includes(kw);
+        });
+        if (domainMatch) return domainMatch;
+      }
       const primary = fa.controls.find(c => {
         const n = String(c.get('parameterName')?.value ?? '').trim();
         return !!n && !isAuxSlot(n);
@@ -3287,7 +3327,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
     const norm = (v: any) => String(v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const base = this.getBaseParameterList();
     const rows: any[] = (Array.isArray(sec?.config?.tableRows) ? sec.config.tableRows : []).filter((r: any) => !String(r?.key ?? '').startsWith('tensile_'));
-    const isStaticRow = (r: any) => (r?.bindingMode === 'static' && !r.sourceName && !r.parameterId && !r.dbMasterId && !String(r.key ?? '').startsWith('param_')) || (r?.rowOrigin === 'custom' && !r.parameterId && !r.dbMasterId && !r.sourceName);
+    const isStaticRow = (r: any) => r?.bindingMode === 'static' && !r.sourceName && !r.parameterId && !r.dbMasterId && !String(r.key ?? '').startsWith('param_');
     const nameCandidatesOfRow = (r: any) => [r?.dbMasterName, r?.sourceName, r?.label].map(norm).filter(Boolean);
     const nameOfRow = (r: any) => norm(r?.dbMasterName || r?.sourceName || r?.label);
     const matchParam = (r: any, usedSet?: Set<number>) => {
@@ -3418,7 +3458,7 @@ export class ConfiguredTestLayoutRendererComponent implements OnInit, OnChanges 
       if (!this.isTemplateConfiguredMode(primary)) return null;
       const rows = this.specimenParams(primary).filter(p => !p.isDivider && !p.isStatic);
       if (!rows.length) return null;
-      return rows.map(p => p.parameterID != null ? `id:${p.parameterID}` : `name:${String(p.name || '').trim().toLowerCase()}`);
+      return rows.map(p => p.parameterID != null && Number(p.parameterID) !== 0 ? `id:${p.parameterID}` : `name:${String(p.name || '').trim().toLowerCase()}`);
     }
     // Reading-grid / Location-grid only layout (no parameter/specimen section): scope active keys to grid target parameters
     const gridKeys: string[] = [];

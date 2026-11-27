@@ -181,6 +181,30 @@ export function layoutHasSpecimenSection(layoutOrSnapshot: any): boolean {
 }
 
 /**
+ * True when the layout keeps one row set per specimen: a dedicated specimen section OR a parameter table with
+ * multi-specimen columns. Unlike layoutHasSpecimenSection this does NOT switch the renderer to the specimen matrix,
+ * it only tells the form not to drop empty extra-specimen rows on load.
+ */
+export function layoutKeepsSpecimenRows(layoutOrSnapshot: any): boolean {
+  if (layoutHasSpecimenSection(layoutOrSnapshot)) return true;
+  if (!layoutOrSnapshot) return false;
+  let parsed = layoutOrSnapshot;
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed); } catch { return false; }
+  }
+  if (parsed.layoutConfigJson) {
+    try { parsed = JSON.parse(parsed.layoutConfigJson); } catch {}
+  } else if (parsed.parsedConfig) {
+    parsed = parsed.parsedConfig;
+  }
+  const sections = Array.isArray(parsed?.sections) ? parsed.sections : (Array.isArray(parsed) ? parsed : []);
+  return sections.some((s: any) => {
+    const t = String(s?.type || '').toLowerCase();
+    return (t === 'parameter' || t === 'param') && !!s?.config?.enableMultiSpecimen;
+  });
+}
+
+/**
  * Declared specimen count configured on the layout's specimen section, or 0 when none.
  */
 export function layoutDeclaredSpecimenCount(layoutOrSnapshot: any): number {
@@ -203,13 +227,16 @@ export function layoutDeclaredSpecimenCount(layoutOrSnapshot: any): number {
   const sections = Array.isArray(parsed?.sections) ? parsed.sections : (Array.isArray(parsed) ? parsed : []);
   const spm = sections.find((s: any) => {
     const t = String(s?.type || '').toLowerCase();
-    return t === 'specimen' || t === 'spm';
+    return t === 'specimen' || t === 'spm' || ((t === 'parameter' || t === 'param') && !!s?.config?.enableMultiSpecimen);
   });
   if (!spm?.config) return 0;
   const named = Array.isArray(spm.config.specimenRows)
     ? spm.config.specimenRows.filter((n: any) => String(n ?? '').trim() !== '').length
     : 0;
-  return Math.min(20, named || Number(spm.config.count) || 0);
+  const namedCsv = typeof spm.config.specimenNames === 'string'
+    ? spm.config.specimenNames.split(',').map((n: string) => n.trim()).filter((n: string) => n !== '').length
+    : 0;
+  return Math.min(20, named || namedCsv || Number(spm.config.specimenCount) || Number(spm.config.count) || 0);
 }
 
 /**

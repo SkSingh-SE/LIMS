@@ -3884,7 +3884,7 @@
         <div class="d-flex align-items-center gap-2">
           <span class="workbench-badge">TECHNICIAN WORKBENCH</span>
           <strong class="workbench-title">Execution Result Entry Simulation</strong>
-          <span class="text-muted small">({{ currentTest.label }} • {{ currentTest.sub }})</span>
+          <span class="text-muted small">({{ layoutName || currentLabTestName || currentTest.label }} • {{ hasSelectedTest ? currentLabTestName : currentTest.sub }})</span>
         </div>
         <div class="ms-auto d-flex align-items-center gap-2">
           <button type="button" class="btn-lims btn-lims-save btn-sm" (click)="submitPreviewResult()">
@@ -3902,8 +3902,8 @@
           <div class="card p-3 mb-3 border bg-white shadow-sm">
             <div class="d-flex align-items-center justify-content-between">
               <div>
-                <h5 class="fw-bold mb-1 text-dark">{{ currentTest.label }}</h5>
-                <div class="text-muted small">{{ currentTest.sub }} • Leaf Node: {{ currentTest.leaf }}</div>
+                <h5 class="fw-bold mb-1 text-dark">{{ layoutName || currentLabTestName || currentTest.label }}</h5>
+                <div class="text-muted small">{{ hasSelectedTest ? currentLabTestName : currentTest.sub }} • Leaf Node: {{ resolvedHierarchy?.fullDisplayName || currentTest.leaf }}</div>
                 <div class="text-secondary small mt-1">
                   Interactive technician data-entry view. Status evaluates live against requirements upon keystroke.
                 </div>
@@ -4168,25 +4168,44 @@
 
               <!-- Reading live entry -->
               <ng-container *ngIf="s.type === 'reading'">
-                <div class="row g-2" *ngIf="s.config.layout !== 'Table'">
+                <div class="row g-2" *ngIf="isReadingPreviewCardMode(s)">
                   <div *ngFor="let i of getReadingCount(s)"
                     [ngClass]="{'col-md-3': s.config.layout === 'Compact cards', 'col-md-6': s.config.layout === 'Two-column cards', 'col-12': !s.config.layout}">
-                    <label class="form-label compact-label">Reading {{ i }} ({{ s.config.unit || 'HV' }})</label>
+                    <label class="form-label compact-label">{{ s.config.readingLabel || 'Reading' }} {{ i }}<span *ngIf="s.config.unit || s.config.targetUnit"> ({{ s.config.unit || s.config.targetUnit }})</span></label>
                     <input type="number" class="form-control form-control-sm compact-input text-center font-monospace"
                       [(ngModel)]="previewEntries['read_' + s.id + '_' + i]">
                   </div>
                 </div>
-                <div class="table-responsive" *ngIf="s.config.layout === 'Table'">
+                <div class="table-responsive" *ngIf="!isReadingPreviewCardMode(s)">
                   <table class="table-exec">
                     <thead>
-                      <tr>
+                      <ng-container *ngIf="hasMergedHeader(s) && isSubLabelsVisible(s)">
+                        <tr class="table-merged-header-row">
+                          <th *ngFor="let c of getPreMergedColumns(s)" rowspan="2" class="align-middle text-center">{{ c.label }}</th>
+                          <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                            {{ getMergedHeaderText(s) }}
+                          </th>
+                          <th *ngFor="let c of getPostMergedColumns(s)" rowspan="2" class="align-middle text-center">{{ c.label }}</th>
+                        </tr>
+                        <tr>
+                          <th *ngFor="let c of getMergedColumnsList(s)" class="text-center table-sub-col-header">{{ c.label }}</th>
+                        </tr>
+                      </ng-container>
+                      <tr *ngIf="hasMergedHeader(s) && !isSubLabelsVisible(s)">
+                        <th *ngFor="let c of getPreMergedColumns(s)" class="text-center">{{ c.label }}</th>
+                        <th [attr.colspan]="getMergedColumnsList(s).length" class="text-center table-merged-group-title">
+                          {{ getMergedHeaderText(s) }}
+                        </th>
+                        <th *ngFor="let c of getPostMergedColumns(s)" class="text-center">{{ c.label }}</th>
+                      </tr>
+                      <tr *ngIf="!hasMergedHeader(s)">
                         <th *ngFor="let col of getVisibleTableColumns(s)" class="text-center">
                           {{ col.label }}
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index">
+                      <tr *ngFor="let r of getVisibleTableRows(s); let rIdx = index; trackBy: trackByIndex">
                         <td class="fw-semibold text-start">{{ r.label }}</td>
                         <ng-container *ngFor="let c of getVisibleTableColumns(s).slice(1); let cIdx = index">
                           <td class="text-center font-monospace">
@@ -4197,18 +4216,21 @@
                               <i class="bi bi-pin-angle me-1"></i>{{ r.staticValue || c.staticValue || 'Static' }}
                             </span>
 
-                            <!-- Calculated / Read-only Columns -->
+                            <!-- Calculated / Read-only & Spot Inputs -->
                             <ng-container *ngIf="r.bindingMode !== 'static' && c.bindingMode !== 'static'">
-                              <span *ngIf="c.key === 'avg'" class="fw-bold text-primary font-monospace">
-                                {{ previewEntries['read_' + s.id + '_' + rIdx + '_0'] ? previewEntries['read_' + s.id + '_' + rIdx + '_0'] : '585' }}
+                              <span *ngIf="c.key === 'avg' || getEffectiveColumnRole(c) === 'agg_average'" class="fw-bold text-primary font-monospace">
+                                {{ getPreviewReadingRowAverage(s, rIdx) }}
                               </span>
-                              <span *ngIf="c.key === 'requirement'" class="text-muted">
-                                {{ r.requirement || '≥ 550 HV' }}
+                              <span *ngIf="c.key === 'unit' || getEffectiveColumnRole(c) === 'unit'" class="text-muted">
+                                {{ r.unit || s.config.targetUnit || '—' }}
                               </span>
-                              <span *ngIf="c.key !== 'avg' && c.key !== 'requirement'">
+                              <span *ngIf="c.key === 'requirement' || getEffectiveColumnRole(c) === 'spec_requirement'" class="text-muted">
+                                {{ r.requirement || s.config.targetRequirement || '—' }}
+                              </span>
+                              <span *ngIf="c.key !== 'avg' && getEffectiveColumnRole(c) !== 'agg_average' && c.key !== 'unit' && getEffectiveColumnRole(c) !== 'unit' && c.key !== 'requirement' && getEffectiveColumnRole(c) !== 'spec_requirement'">
                                 <input type="number" class="form-control form-control-sm text-center entry-input"
                                   [placeholder]="c.label"
-                                  [ngModel]="previewEntries['read_' + s.id + '_' + rIdx + '_' + cIdx] || (580 + rIdx * 5 + cIdx * 2)"
+                                  [ngModel]="previewEntries['read_' + s.id + '_' + rIdx + '_' + cIdx]"
                                   (ngModelChange)="previewEntries['read_' + s.id + '_' + rIdx + '_' + cIdx] = $event">
                               </span>
                             </ng-container>
